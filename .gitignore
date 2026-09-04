@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.vercel/
+.DS_Store
+*.log
+tests/*.png
+
+# prototype artefacts kept beside the repo, not in it
+/netsingularity-inventory.html
+/screens/
+/*.tar.gz
+
+# TypeScript build cache
+tsconfig.app.tsbuildinfo
