@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+
+/* the single-file preview build has no server to rewrite deep links, so it routes by hash */
+const Router = import.meta.env.VITE_ROUTER === 'hash' ? HashRouter : BrowserRouter;
 import Sidebar from './shell/Sidebar';
 import Topbar from './shell/Topbar';
 import LegacyView from './legacy/LegacyView';
@@ -17,7 +20,7 @@ function useCollapsed() {
 export default function App() {
   const [collapsed, toggle] = useCollapsed();
   return (
-    <BrowserRouter>
+    <Router>
       <div className={`app${collapsed ? ' is-collapsed' : ''}`}>
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className="grow">
@@ -32,6 +35,6 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </Router>
   );
 }

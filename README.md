@@ -7,9 +7,20 @@ Vite · React 19 · TypeScript · react-router 7. No UI library: every element i
 `.vw-*` / `.nst-*` class from the design system bundle in `src/styles/`.
 
 ```bash
+./app.sh run       # installs on first run, then http://localhost:5173
+./app.sh test      # production build + end-to-end checks
+./app.sh push "message"
+./app.sh deploy    # Vercel production (logs in the first time)
+./app.sh ship "message"   # test → push → deploy
+```
+
+Or the underlying npm scripts:
+
+```bash
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # dist/
+npm run build:single   # dist/app.html — one file, hash routing, opens from disk or an artifact
 npm test           # builds, serves, runs the end-to-end harness
 ```
 
