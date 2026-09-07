@@ -65,7 +65,7 @@ export function StackedBars({ days, series, values, height = 240 }: {
 
 /* ── donut ──────────────────────────────────────────────── */
 export interface Slice { k: string; n: string; c: number; hex: string }
-export function Donut({ slices, total, label, size = 220 }: { slices: Slice[]; total: number; label: string; size?: number }) {
+export function Donut({ slices, total, label, size = 220, onSliceClick }: { slices: Slice[]; total: number; label: string; size?: number; onSliceClick?: (k: string) => void }) {
   const [hov, setHov] = useState<{ k: string; x: number; y: number } | null>(null);
   const R = 100, r = 62, C = 110, gap = 0.028;
   let a = -Math.PI / 2;
@@ -81,6 +81,7 @@ export function Donut({ slices, total, label, size = 220 }: { slices: Slice[]; t
     <div className="ch-donut" onMouseLeave={() => setHov(null)}>
       <svg viewBox="0 0 220 220" width={size} height={size} role="img" aria-label={label}>
         {arcs.map(s => <path key={s.k} d={s.d} fill={s.hex} opacity={hov && hov.k !== s.k ? 0.4 : 1}
+          style={onSliceClick ? { cursor: 'pointer' } : undefined} onClick={onSliceClick ? () => onSliceClick(s.k) : undefined}
           onMouseEnter={e => setHov({ k: s.k, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ k: s.k, x: e.clientX, y: e.clientY })} />)}
         <text x={C} y={C - 4} textAnchor="middle" className="ch-hero">{fmt(cur ? cur.c : total)}</text>
         <text x={C} y={C + 18} textAnchor="middle" className="ch-hero-s">{cur ? cur.n : label}</text>

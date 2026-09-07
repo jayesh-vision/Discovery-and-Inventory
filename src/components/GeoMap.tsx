@@ -49,7 +49,7 @@ function Ring({ x, y, R, r, parts, label, cls, onClick, onEnter, onMove }: {
   );
 }
 
-export function GeoMap({ bubbles, legend, region }: { bubbles: Bubble[]; legend: { n: string; hex: string }[]; region?: string }) {
+export function GeoMap({ bubbles, legend, region, onStateOpen }: { bubbles: Bubble[]; legend: { n: string; hex: string }[]; region?: string; onStateOpen?: (st: string) => void }) {
   const nav = useNavigate();
   const sites = useMemo(() => region ? SITES.filter(s => s.region === region) : SITES, [region]);
   const wrap = useRef<HTMLDivElement>(null);
@@ -237,6 +237,7 @@ export function GeoMap({ bubbles, legend, region }: { bubbles: Bubble[]; legend:
               {selStats.parts.map(p => <span key={p.n}><b className="num">{fmt(p.c)}</b> {p.n.toLowerCase()}</span>)}
               <span><b className="num">{fmt(selStats.parts.reduce((a, p) => a + p.c, 0))}</b> identified</span>
             </div>
+            {onStateOpen && <div className="row vw-gap-sm"><button className="nst-btn nst-btn--xs nst-btn--filled" onClick={() => onStateOpen(selStats.st)}>View all devices</button></div>}
             <div className="vw-card-metric-label-sub">Click a site for its details, or drag to pan.</div>
           </>}
         </div>

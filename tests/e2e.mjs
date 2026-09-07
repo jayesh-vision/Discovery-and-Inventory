@@ -127,16 +127,59 @@ await p.click('.grid-tools [aria-label="Filters"]'); await p.waitForTimeout(150)
 await p.selectOption('.fpanel .fp-sel', 'Failed'); await p.click('.fpanel-foot .nst-btn--filled'); await p.waitForTimeout(300);
 ok('filtering to Failed lands on the tile\'s 52', (await text('.grid-count')) === 'Showing 25 of 52', await text('.grid-count'));
 await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
-await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('#view .page');
-ok('insights KPI → legacy targets', p.url().endsWith('/discovery/targets'), p.url());
+await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('.nst-table tbody tr');
+ok('insights KPI → devices list, all 2,308 targets', p.url().includes('/discovery/insights/devices?') && (await text('.grid-count')) === 'Showing 25 of 2,308', p.url() + ' ' + await text('.grid-count'));
+await p.goto(BASE + '/discovery/targets'); await p.waitForSelector('#view .page');
 ok('targets: quick filter lives in the grid bar, no page bar', await count('.grid-bar .seg [data-tgt-filter]') === 4 && await count('#view .page-bar') === 0);
 ok('targets: no loose Run now button', !(await text('.grid-bar')).includes('Run now'));
 await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(150);
 ok('targets: Run now is the kebab primary action', (await text('.grid-bar .kmenu .kmenu-i.is-primary')) === 'Run now');
 await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(100);
+
+/* ── every clickable count on Insights opens exactly that many records ── */
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
+await p.click('.kpi3:nth-child(2) .kpi3-act'); await p.waitForSelector('.nst-table tbody tr');
+ok('"See the 175 that failed" → devices list, status=Failed, exactly 175', p.url().includes('status=Failed') && (await text('.grid-count')) === 'Showing 25 of 175', p.url() + ' ' + await text('.grid-count'));
+
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-donut-l');
+const reasonRows = await p.$$eval('.ins2-reason', els => els.map(e => ({ n: e.querySelector('.grow').textContent.trim(), c: e.querySelector('.num').textContent.trim() })));
+await p.click('.ins2-reason:first-child'); await p.waitForSelector('.nst-table tbody tr');
+ok(`failure reason "${reasonRows[0].n}" → exactly ${reasonRows[0].c} matching records`,
+  p.url().includes('status=Failed') && p.url().includes('reason=') && (await text('.grid-count')) === `Showing ${Math.min(25, +reasonRows[0].c)} of ${reasonRows[0].c}`,
+  p.url() + ' ' + await text('.grid-count'));
+
 await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-6-6 .mtbl');
-await p.click('.ins2-6-6 .mtbl tbody tr:first-child'); await p.waitForSelector('.stock-chips');
-ok('insights vendor → React physical', p.url().includes('/inventory/physical?oem=JUNIPER'), p.url());
+const vendorFirstFail = await text('.ins2-6-6 > *:nth-child(1) .mtbl tbody tr:first-child td:last-child');
+await p.click('.ins2-6-6 > *:nth-child(1) .mtbl tbody tr:first-child td:last-child button'); await p.waitForSelector('.nst-table tbody tr');
+ok(`vendor row's failed count (${vendorFirstFail}) → exactly that many records`,
+  p.url().includes('status=Failed') && p.url().includes('vendor=') && (await text('.grid-count')) === `Showing ${Math.min(25, +vendorFirstFail)} of ${vendorFirstFail}`,
+  p.url() + ' ' + await text('.grid-count'));
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-6-6 .mtbl');
+await p.click('.ins2-6-6 > *:nth-child(1) .mtbl tbody tr:first-child'); await p.waitForSelector('.nst-table tbody tr');
+ok('vendor row (not the failed cell) → the wider identified-devices list', p.url().includes('/discovery/insights/discovered') && p.url().includes('vendor='), p.url());
+
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-6-6 .mtbl');
+const modelFirstFail = await text('.ins2-6-6 > *:nth-child(2) .mtbl tbody tr:first-child td:nth-child(4)');
+await p.click('.ins2-6-6 > *:nth-child(2) .mtbl tbody tr:first-child td:nth-child(4) button'); await p.waitForSelector('.nst-table tbody tr');
+ok(`model row's failed count (${modelFirstFail}) → exactly that many records`,
+  p.url().includes('status=Failed') && p.url().includes('model=') && (await text('.grid-count')) === `Showing ${Math.min(25, +modelFirstFail)} of ${modelFirstFail}`,
+  p.url() + ' ' + await text('.grid-count'));
+
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-states');
+const stateFirst = await p.$eval('.ins2-states tbody tr:first-child', tr => ({ st: tr.children[0].textContent.trim(), total: tr.children[4].textContent.trim() }));
+await p.click('.ins2-states tbody tr:first-child'); await p.waitForSelector('.nst-table tbody tr');
+ok(`state "${stateFirst.st}" (${stateFirst.total}) → exactly that many identified devices`,
+  p.url().includes('/discovery/insights/discovered') && p.url().includes('state=') && (await text('.grid-count')) === `Showing ${Math.min(25, +stateFirst.total.replace(/,/g, ''))} of ${stateFirst.total}`,
+  p.url() + ' ' + await text('.grid-count'));
+
+/* ── the circle filter carries into every drill-down ─────── */
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
+await p.selectOption('select[aria-label="Scope"]', 'North'); await p.waitForTimeout(150);
+const northFail = await text('.ch-hero');
+await p.click('.kpi3:nth-child(2) .kpi3-act'); await p.waitForSelector('.nst-table tbody tr');
+ok(`circle filter carries: North's ${northFail} failed → region/North, status=Failed, exact`,
+  p.url().includes('/discovery/insights/region/North') && p.url().includes('status=Failed') && (await text('.grid-count')) === `Showing ${Math.min(25, +northFail)} of ${northFail}`,
+  p.url() + ' ' + await text('.grid-count'));
 
 /* ── legacy → React: a drill from a legacy screen lands on a React one ── */
 await p.goto(BASE + '/discovery/reconcile'); await p.waitForSelector('#view .page');

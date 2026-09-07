@@ -176,6 +176,11 @@ const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) =
   });
 })();
 
+/* MODELS.fail was hand-typed and only ever checked to sum below DL.runFail —
+   never against the actual rows that name each model. Recomputed here, from
+   the failures that now exist, so the number on screen and the row count
+   behind its link are the same query, not two guesses that happen to be close. */
+MODELS.forEach(m => { m.fail = ATTENTION.filter(a => a.model === m.model).length; });
 
 /* ── the estate, device by device, by region ────────────────
    Each region tile on Insights quotes two numbers — North is "636 devices,
@@ -188,10 +193,21 @@ const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) =
 export type DeviceStatus = 'Answered' | 'Failed';
 export interface RegionDevice {
   name: string; ip: string; region: Region; state: string;
-  vendor: string; model: string; status: DeviceStatus; reason: string | null; last: string;
+  vendor: string; model: string; status: DeviceStatus; reason: string | null; reasonKey: string | null; last: string;
 }
 export const REGION_DEVICES: RegionDevice[] = [];
 export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region === region);
+
+/** the one filter predicate every screen that reads REGION_DEVICES uses —
+    Insights' own counts and the drill-down list both call this, so a count
+    on the dashboard and the rows behind its link can never drift apart. */
+export interface DeviceFilter { region?: Region; status?: DeviceStatus; vendor?: string; model?: string; reasonKey?: string }
+export function filterRegionDevices(f: DeviceFilter): RegionDevice[] {
+  return REGION_DEVICES.filter(d =>
+    (!f.region || d.region === f.region) && (!f.status || d.status === f.status) &&
+    (!f.vendor || d.vendor === f.vendor) && (!f.model || d.model === f.model) &&
+    (!f.reasonKey || d.reasonKey === f.reasonKey));
+}
 
 (() => {
   const rnd = lcg(90217);
@@ -211,7 +227,7 @@ export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region
     failed.forEach((a, i) => list.push({
       name: a.name, ip: a.ip, region, state: stateOf(i * 3),
       vendor: a.vendor, model: a.model, status: 'Failed',
-      reason: REASONS.find(r => r.k === a.reason)?.n ?? a.reason, last: a.last
+      reason: REASONS.find(r => r.k === a.reason)?.n ?? a.reason, reasonKey: a.reason, last: a.last
     }));
 
     /* and everything that answered cleanly */
@@ -223,7 +239,7 @@ export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region
       list.push({
         name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
         ip: `10.${20 + REGIONS.findIndex(r => r.region === region)}.${(i * 3) % 250}.${1 + (i * 11) % 253}`,
-        region, state: st, vendor, model, status: 'Answered', reason: null,
+        region, state: st, vendor, model, status: 'Answered', reason: null, reasonKey: null,
         last: `01 Sep 26, ${pad2(2 + i % 7)}:${pad2(i % 60)}`
       });
     }
@@ -235,6 +251,71 @@ export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region
     list.sort((a, c) => a.state.localeCompare(c.state) || a.name.localeCompare(c.name));
     REGION_DEVICES.push(...list);
   });
+})();
+
+/* ── the wider estate: every identified device, by state ────
+   STATE_DEVICES and VENDORS.ok are the only ledgers that carry the network's
+   full identified count (2,603 — a larger, separately-tracked population
+   than the 2,308 devices actually polled this cycle: identification also
+   comes from topology, not only from the seed list). Neither the state map
+   nor the vendor table had a roster behind it before, so a click could only
+   land on an unrelated screen with an unrelated count. This one roster
+   backs both: it is built from two pools sized exactly to STATE_DEVICES and
+   to VENDORS.ok and then paired off, so grouping it by state reproduces
+   STATE_DEVICES exactly and grouping it by vendor reproduces VENDORS.ok
+   exactly — both at once, by construction, not by coincidence. */
+export interface IdentifiedDevice { name: string; ip: string; state: string; region: Region; cls: DiscClass; vendor: string; model: string }
+export const IDENTIFIED_DEVICES: IdentifiedDevice[] = [];
+export const filterIdentified = (f: { state?: string; region?: Region; vendor?: string; model?: string }) =>
+  IDENTIFIED_DEVICES.filter(d => (!f.state || d.state === f.state) && (!f.region || d.region === f.region) &&
+    (!f.vendor || d.vendor === f.vendor) && (!f.model || d.model === f.model));
+
+(() => {
+  const rnd = lcg(52411);
+  const shuffle = <T,>(a: T[]) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+
+  /* pool 1: one slot per state, per class — sums to STATE_DEVICES exactly */
+  const statePool = shuffle(STATE_DEVICES.flatMap(s => [
+    ...Array(s.router).fill({ st: s.st, region: s.region, cls: 'router' as DiscClass }),
+    ...Array(s.switch).fill({ st: s.st, region: s.region, cls: 'switch' as DiscClass })
+  ]));
+  /* pool 2: one slot per vendor — sums to VENDORS.ok exactly */
+  const vendorPool = shuffle(flatten(VENDORS.map(v => [v.n, v.ok] as [string, number])));
+
+  /* the model each vendor's models were originally weighted by MODELS'
+     hand-picked totals; every other model in its catalog splits what is left */
+  const modelWeight: Record<string, [string, number][]> = {};
+  for (const [vendor, models] of Object.entries(MODELS_BY_VENDOR)) {
+    const named = MODELS.filter(m => m.oem === vendor);
+    const namedTotal = named.reduce((a, m) => a + m.total, 0);
+    const vendorTotal = VENDORS.find(v => v.n === vendor)?.ok ?? 0;
+    const rest = models.filter(m => !named.some(n => n.model === m));
+    const restShare = Math.max(0, vendorTotal - namedTotal) / Math.max(1, rest.length);
+    modelWeight[vendor] = [...named.map(m => [m.model, m.total] as [string, number]), ...rest.map(m => [m, restShare] as [string, number])];
+  }
+  const modelFor = (vendor: string) => {
+    const w = modelWeight[vendor] ?? [[MODELS_BY_VENDOR[vendor][0], 1]];
+    const total = w.reduce((a, [, c]) => a + c, 0), r = rnd() * total;
+    let acc = 0; for (const [m, c] of w) { acc += c; if (r <= acc) return m; }
+    return w[w.length - 1][0];
+  };
+
+  statePool.forEach((slot, i) => {
+    const vendor = vendorPool[i];
+    const model = modelFor(vendor);
+    const code = STATE_DEVICES.find(s => s.st === slot.st)?.c ?? slot.region.slice(0, 2).toUpperCase();
+    IDENTIFIED_DEVICES.push({
+      name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
+      ip: `10.${30 + STATE_DEVICES.findIndex(s => s.st === slot.st)}.${(i * 7) % 250}.${1 + (i * 17) % 253}`,
+      state: slot.st, region: slot.region, cls: slot.cls, vendor, model
+    });
+  });
+
+  /* the display table only ever quoted the six models it names — recompute
+     their totals from the roster that now actually backs them, so a click
+     on "526" (say) opens exactly the rows counted to make 526 */
+  MODELS.forEach(m => { m.total = IDENTIFIED_DEVICES.filter(d => d.model === m.model).length; });
 })();
 
 /* ── scoping the whole page to one circle/region ───────────
@@ -267,19 +348,6 @@ export interface DiscoveryScope {
   regions: RegionRow[];
 }
 
-/** largest-remainder allocation: splits `total` across `shares` (weights) so
-    the parts are proportional and still sum back to `total` exactly. */
-function allocate(total: number, shares: number[]): number[] {
-  const sum = shares.reduce((a, b) => a + b, 0);
-  if (sum <= 0) return shares.map(() => 0);
-  const raw = shares.map(s => (s / sum) * total);
-  const out = raw.map(Math.floor);
-  let left = total - out.reduce((a, b) => a + b, 0);
-  const order = raw.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0]);
-  for (let k = 0; k < left; k++) out[order[k][1]]++;
-  return out;
-}
-
 export function scopeDiscovery(scope: Scope): DiscoveryScope {
   if (scope === 'all') {
     return {
@@ -309,14 +377,11 @@ export function scopeDiscovery(scope: Scope): DiscoveryScope {
   const attention = ATTENTION.filter(a => a.region === scope);
   const reasons = REASONS.map(r => ({ ...r, c: attention.filter(a => a.reason === r.k).length }));
 
-  const vendorOk = allocate(identified, VENDORS.map(v => v.ok));
-  const vendors = VENDORS.map((v, i) => ({ n: v.n, ok: vendorOk[i], fail: attention.filter(a => a.vendor === v.n).length }));
-
-  const modelVolume = allocate(Math.round(identified * (MODELS.reduce((a, m) => a + m.total, 0) / DL.identified)), MODELS.map(m => m.total));
-  const models = MODELS.map((m, i) => {
-    const fail = attention.filter(a => a.model === m.model).length;
-    return { model: m.model, oem: m.oem, total: Math.max(modelVolume[i], fail), fail };
-  });
+  /* real per-region counts, not an estimate: IDENTIFIED_DEVICES already
+     carries a region on every row, so filtering it is exact — the same
+     query the vendor/model drill-down list runs. */
+  const vendors = VENDORS.map(v => ({ n: v.n, ok: filterIdentified({ region: scope, vendor: v.n }).length, fail: attention.filter(a => a.vendor === v.n).length }));
+  const models = MODELS.map(m => ({ model: m.model, oem: m.oem, total: filterIdentified({ region: scope, model: m.model }).length, fail: attention.filter(a => a.model === m.model).length }));
 
   const routerShare = discRouter / DL.discRouter, switchShare = discSwitch / DL.discSwitch;
   const targetsShare = targets / DL.targets;
@@ -357,4 +422,15 @@ export function scopeDiscovery(scope: Scope): DiscoveryScope {
     chk(d.length === r.total, `${r.region} roster ≠ its device count`);
     chk(d.filter(x => x.status === 'Failed').length === r.fail, `${r.region} failures ≠ its failure count`);
   });
+  /* the identified-estate roster must reproduce, exactly, every marginal the
+     state map and the vendor table quote — a click on either must land on
+     precisely that many rows */
+  chk(IDENTIFIED_DEVICES.length === DL.identified, 'identified roster ≠ identified');
+  STATE_DEVICES.forEach(s => {
+    const d = filterIdentified({ state: s.st });
+    chk(d.length === s.router + s.switch, `${s.st} roster ≠ its device count`);
+    chk(d.filter(x => x.cls === 'router').length === s.router && d.filter(x => x.cls === 'switch').length === s.switch, `${s.st} roster class split ≠ router/switch counts`);
+  });
+  VENDORS.forEach(v => chk(filterIdentified({ vendor: v.n }).length === v.ok, `${v.n} identified roster ≠ its identified count`));
+  MODELS.forEach(m => chk(filterIdentified({ model: m.model }).length === m.total, `${m.model} identified roster ≠ its device count`));
 })();
