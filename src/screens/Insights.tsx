@@ -63,6 +63,9 @@ export default function Insights() {
     sp.set('from', 'Insights');
     nav(`/inventory/physical?${sp.toString()}`);
   };
+  /** A region tile counts devices, so it opens the devices — every target the
+      region polled, the failed ones among them — not the sites they sit in. */
+  const toRegion = (region: string) => nav(`/discovery/insights/region/${encodeURIComponent(region)}?from=Insights`);
   /** Location (legacy) needs view=list for its state/region filters to have any
       effect — the default sub-view ignores them entirely. */
   const toLocation = (params: Record<string, string>, label: string) => {
@@ -202,7 +205,7 @@ export default function Insights() {
         {/* row D: one tile per region — four rows of a table were mostly empty card */}
         <div className="ins2-row ins2-3x4">
           {REGIONS.map(r => (
-            <button key={r.region} className="rtile" onClick={() => toLocation({ region: r.region }, `${r.region} region`)}>
+            <button key={r.region} className="rtile" onClick={() => toRegion(r.region)}>
               <span className="rtile-h"><span className="vw-card-title-sm">{r.region}</span><span className="vw-card-description">{fmt(r.total)} devices</span></span>
               <span className="rtile-v num" style={{ color: cv('emerald', 700) }}>{pct(successRate(r))}</span>
               <span className="rtile-bar"><span style={{ width: `${(successRate(r) * 100).toFixed(1)}%`, background: cv('emerald', 500) }} /></span>

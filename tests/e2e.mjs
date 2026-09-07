@@ -112,6 +112,21 @@ ok('insights: 6 reasons listed', await count('.ins2-reason') === 6);
 ok('insights: vendor rows', await count('.ins2-6-6 .mtbl tbody tr') === 12);
 ok('insights: attention grid ≥ 10 rows', await count('.nst-table tbody tr') >= 10);
 ok('insights: 21 state bubbles', await count('.geo-b') === 21);
+
+/* ── a region tile opens that region's devices, and only those ── */
+await p.click('.rtile'); await p.waitForSelector('.nst-table tbody tr'); await p.waitForTimeout(300);
+ok('region tile → devices by region', p.url().includes('/discovery/insights/region/North'), p.url());
+ok('region grid holds every device the tile counts', (await text('.grid-count')) === 'Showing 25 of 636', await text('.grid-count'));
+ok('region screen is the grid, nothing else', await count('.stat-strip') === 0 && await count('.kpi-row') === 0 && await count('.kpi3') === 0);
+ok('region screen names its failures', (await text('.grid-bar')).includes('52 of 636 failed'), await text('.grid-bar'));
+ok('and mixes them into the roster, not a page of red', await p.evaluate(() => {
+  const c = [...document.querySelectorAll('.nst-table tbody tr td:first-child')].map(t => t.textContent.trim());
+  return c.some(x => x === 'Answered');
+}));
+await p.click('.grid-tools [aria-label="Filters"]'); await p.waitForTimeout(150);
+await p.selectOption('.fpanel .fp-sel', 'Failed'); await p.click('.fpanel-foot .nst-btn--filled'); await p.waitForTimeout(300);
+ok('filtering to Failed lands on the tile\'s 52', (await text('.grid-count')) === 'Showing 25 of 52', await text('.grid-count'));
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
 await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('#view .page');
 ok('insights KPI → legacy targets', p.url().endsWith('/discovery/targets'), p.url());
 ok('targets: quick filter lives in the grid bar, no page bar', await count('.grid-bar .seg [data-tgt-filter]') === 4 && await count('#view .page-bar') === 0);

@@ -136,22 +136,24 @@ export const STATE_DEVICES: StateDot[] = [
    actually open, search and filter, not just a number. Region, vendor and
    reason are each distributed to close exactly on REGIONS.fail, VENDORS.fail
    and REASONS.c once the twelve hand-written rows are accounted for. */
-(() => {
-  let seed = 34811;
-  const rnd = () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
-  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
-  const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) => Array(c).fill(k)) as K[];
-  const pad2 = (v: number) => String(v).padStart(2, '0');
+const MODELS_BY_VENDOR: Record<string, string[]> = {
+  Juniper: ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
+  Cisco: ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
+  'Cisco SDN': ['N9K-C93180YC'],
+  Nokia: ['7750', '7750 SR-7'],
+  Adva: ['FSP 3000'],
+  Edgecore: ['AS7712-32X']
+};
+const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+const slug = (model: string) => model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase();
+const pad2 = (v: number) => String(v).padStart(2, '0');
+/* a small deterministic source, so every reload lists the same estate */
+const lcg = (seed: number) => () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
+const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) => Array(c).fill(k)) as K[];
 
-  const MODELS_BY_VENDOR: Record<string, string[]> = {
-    Juniper: ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
-    Cisco: ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
-    'Cisco SDN': ['N9K-C93180YC'],
-    Nokia: ['7750', '7750 SR-7'],
-    Adva: ['FSP 3000'],
-    Edgecore: ['AS7712-32X']
-  };
-  const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+(() => {
+  const rnd = lcg(34811);
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
 
   /* remaining share once the twelve hand-written rows above are subtracted */
   const regions = flatten<Region>([['North', 49], ['East', 45], ['West', 35], ['South', 34]]);
@@ -166,11 +168,71 @@ export const STATE_DEVICES: StateDot[] = [
     const code = st.length ? st[i % st.length].c : region.slice(0, 2).toUpperCase();
     const h = 9 - Math.floor(i / 12), m = 59 - (i * 7) % 60;
     ATTENTION.push({
-      name: `${code}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${pick(ROLE)}-${pad2(10 + i % 88)}`,
+      name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 88)}`,
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       region, vendor, model, reason,
       last: `01 Sep 26, ${pad2(Math.max(0, h))}:${pad2(m)}`
     });
+  });
+})();
+
+/* ── the estate, device by device, by region ────────────────
+   Each region tile on Insights quotes two numbers — North is "636 devices,
+   52 failed" — and until now nothing stood behind them: the tile could only
+   hand off to a screen that counted something else (sites). This roster gives
+   every one of the 2,308 polled targets a row, and the failures in it *are*
+   the ATTENTION rows, so a region's grid holds exactly the devices its tile
+   counts, failures included and marked. The ledger check at the bottom of the
+   file is what keeps that true. */
+export type DeviceStatus = 'Answered' | 'Failed';
+export interface RegionDevice {
+  name: string; ip: string; region: Region; state: string;
+  vendor: string; model: string; status: DeviceStatus; reason: string | null; last: string;
+}
+export const REGION_DEVICES: RegionDevice[] = [];
+export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region === region);
+
+(() => {
+  const rnd = lcg(90217);
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+  /* the answered estate leans the same way the vendor ledger does */
+  const vendors = flatten(VENDORS.map(v => [v.n, Math.max(1, Math.round(v.ok / 40))] as [string, number]));
+
+  REGIONS.forEach(({ region, total }) => {
+    const states = STATE_DEVICES.filter(s => s.region === region);
+    const weighted = flatten(states.map(s => [s.st, Math.max(1, Math.round((s.router + s.switch) / 10))] as [string, number]));
+    const stateOf = (i: number) => weighted[i % weighted.length] ?? states[0]?.st ?? region;
+
+    const failed = ATTENTION.filter(a => a.region === region);
+    const list: RegionDevice[] = [];
+
+    /* the region's failures, carried over whole from the attention list */
+    failed.forEach((a, i) => list.push({
+      name: a.name, ip: a.ip, region, state: stateOf(i * 3),
+      vendor: a.vendor, model: a.model, status: 'Failed',
+      reason: REASONS.find(r => r.k === a.reason)?.n ?? a.reason, last: a.last
+    }));
+
+    /* and everything that answered cleanly */
+    for (let i = 0; i < total - failed.length; i++) {
+      const vendor = vendors[i % vendors.length];
+      const model = pick(MODELS_BY_VENDOR[vendor]);
+      const st = stateOf(i);
+      const code = states.find(s => s.st === st)?.c ?? region.slice(0, 2).toUpperCase();
+      list.push({
+        name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
+        ip: `10.${20 + REGIONS.findIndex(r => r.region === region)}.${(i * 3) % 250}.${1 + (i * 11) % 253}`,
+        region, state: st, vendor, model, status: 'Answered', reason: null,
+        last: `01 Sep 26, ${pad2(2 + i % 7)}:${pad2(i % 60)}`
+      });
+    }
+
+    /* Ordered as an estate roster — by state, then by name — rather than
+       failures first, which would open a 91.8%-healthy region on a page of
+       nothing but red. The Status filter and the toolbar's failed count are
+       how you get to the failures. */
+    list.sort((a, c) => a.state.localeCompare(c.state) || a.name.localeCompare(c.name));
+    REGION_DEVICES.push(...list);
   });
 })();
 
@@ -188,4 +250,11 @@ export const STATE_DEVICES: StateDot[] = [
   chk(sum(STATE_DEVICES.map(s => s.router)) === DL.discRouter && sum(STATE_DEVICES.map(s => s.switch)) === DL.discSwitch, 'states ≠ classes');
   chk(sum(MODELS.map(m => m.fail)) <= DL.runFail, 'model failures exceed failures');
   chk(ATTENTION.length === DL.runFail, 'attention rows ≠ failures');
+  /* the region grids must hold exactly what the region tiles count */
+  chk(REGION_DEVICES.length === DL.targets, 'region roster ≠ targets');
+  REGIONS.forEach(r => {
+    const d = devicesIn(r.region);
+    chk(d.length === r.total, `${r.region} roster ≠ its device count`);
+    chk(d.filter(x => x.status === 'Failed').length === r.fail, `${r.region} failures ≠ its failure count`);
+  });
 })();

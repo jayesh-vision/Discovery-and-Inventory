@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
 import InactiveInventory from './screens/InactiveInventory';
 import Insights from './screens/Insights';
+import RegionDevices from './screens/RegionDevices';
 import SiteDetails from './screens/SiteDetails';
 import SiteEquipment from './screens/SiteEquipment';
 
@@ -20,6 +21,8 @@ export interface Screen {
 
 export const SCREENS: Screen[] = [
   { key: 'insights',  path: '/discovery/insights',  module: 'Discovery and reconciliation', crumb: 'Insights',       component: Insights },
+  { key: 'regiondevices', path: '/discovery/insights/region/:region', module: 'Discovery and reconciliation',
+    crumb: 'Insights · Devices by region', rail: 'insights', component: RegionDevices },
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },

@@ -778,28 +778,11 @@ const LOC_STATES = [
   { k:'planned', n:'Planned', tone:'sky' }, { k:'failed', n:'Failed', tone:'red' }
 ];
 
-function locKpis() {
-  const { live, build, fail } = locStats();
-  return `<div class="kpi-row">
-    ${kpi('Total sites', n(IL.locations), 'Central 118 · Regional 342 · Edge 1,294', 'slate',
-      { v:'location', l:'All sites', q:'view=list' })}
-    ${kpi('On-air', `${(live/IL.locations*100).toFixed(1)}%`, `${n(live)} of ${n(IL.locations)} sites carrying traffic`, 'emerald',
-      { v:'location', l:'On-air sites', q:'view=list&st=On-air' })}
-    ${kpi('In build', n(build), `${LOC_AGING[2].c + LOC_AGING[3].c} running over 90 days`, 'amber',
-      { v:'location', l:'Sites in build', q:'view=list&st=In progress' })}
-    ${kpi('Failed builds', n(fail), 'across 14 circles · 9 unassigned', 'red',
-      { v:'location', l:'Failed builds', q:'view=list&st=Failed' })}
-    ${kpi('Sites not reconciled', '214', 'network and record disagree', 'orange',
-      { v:'reconcile', l:'Sites where record and network disagree', q:'ne=Open' })}
-  </div>`;
-}
-
 /* ---- view 1 · Insights ---- */
 function locInsights() {
   const { live, build, plan, fail } = locStats();
   const cMax = Math.max(...LOC_CIRCLES.map(c=>c.c));
   return `
-    ${locKpis()}
     <div class="row-t" style="align-items:stretch">
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
@@ -1386,7 +1369,6 @@ function viewLocation() {
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${sub}</span>${locTabs()}`)}
     ${drillBar()}
-    ${LOC_VIEW === 'insights' ? '' : locKpis()}
     ${body}
   </div>`;
 }
