@@ -176,6 +176,7 @@ const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) =
   });
 })();
 
+
 /* ── the estate, device by device, by region ────────────────
    Each region tile on Insights quotes two numbers — North is "636 devices,
    52 failed" — and until now nothing stood behind them: the tile could only
@@ -235,6 +236,105 @@ export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region
     REGION_DEVICES.push(...list);
   });
 })();
+
+/* ── scoping the whole page to one circle/region ───────────
+   Only REGIONS (totals + failures) and STATE_DEVICES (identified, split by
+   class) are tracked per region in the ledger; everything else on the
+   Insights screen is a network-wide figure. A region view is built by taking
+   the real per-region numbers where they exist (region totals, region
+   failures, per-state router/switch counts, and every dimension already on
+   the failed-device rows) and, only where the ledger has no regional split at
+   all (the 7-day trend, "seen for the first time", vendor/model volumes),
+   allocating the network-wide figure across regions in proportion to that
+   region's real share of identified devices — so every card and chart moves
+   together and the parts still sum back to the network-wide total. The one
+   exception is cycle timing: discovery runs as a single job across every
+   circle at once, so "time the cycle took" has no per-region meaning and
+   stays the same regardless of scope. */
+export type Scope = Region | 'all';
+
+export interface DiscoveryScope {
+  scope: Scope;
+  targets: number; runFull: number; runPartial: number; runFail: number;
+  identified: number; discRouter: number; discSwitch: number; newThisCycle: number;
+  rate: number;
+  daily: Cycle[];
+  reasons: Reason[];
+  vendors: Vendor[];
+  models: ModelRow[];
+  attention: AttentionRow[];
+  states: StateDot[];
+  regions: RegionRow[];
+}
+
+/** largest-remainder allocation: splits `total` across `shares` (weights) so
+    the parts are proportional and still sum back to `total` exactly. */
+function allocate(total: number, shares: number[]): number[] {
+  const sum = shares.reduce((a, b) => a + b, 0);
+  if (sum <= 0) return shares.map(() => 0);
+  const raw = shares.map(s => (s / sum) * total);
+  const out = raw.map(Math.floor);
+  let left = total - out.reduce((a, b) => a + b, 0);
+  const order = raw.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0]);
+  for (let k = 0; k < left; k++) out[order[k][1]]++;
+  return out;
+}
+
+export function scopeDiscovery(scope: Scope): DiscoveryScope {
+  if (scope === 'all') {
+    return {
+      scope, targets: DL.targets, runFull: DL.runFull, runPartial: DL.runPartial, runFail: DL.runFail,
+      identified: DL.identified, discRouter: DL.discRouter, discSwitch: DL.discSwitch, newThisCycle: DL.newThisCycle,
+      rate: discoveryRate(), daily: DAILY, reasons: REASONS, vendors: VENDORS, models: MODELS,
+      attention: ATTENTION, states: STATE_DEVICES, regions: REGIONS
+    };
+  }
+
+  /* two independent populations, exactly as at network level: "answered"
+     (runFull + runPartial) always sums with runFail to the region's targets;
+     "identified" (router + switch catalogued) is a separate, larger count
+     that is not bounded by targets — real per-region figures for both come
+     straight from the ledger (REGIONS and STATE_DEVICES), never from each other. */
+  const rr = REGIONS.find(r => r.region === scope)!;
+  const states = STATE_DEVICES.filter(s => s.region === scope);
+  const discRouter = states.reduce((a, s) => a + s.router, 0);
+  const discSwitch = states.reduce((a, s) => a + s.switch, 0);
+  const identified = discRouter + discSwitch;
+  const targets = rr.total, runFail = rr.fail, answered = targets - runFail;
+  const fullShare = DL.runFull / (DL.runFull + DL.runPartial);
+  const runFull = Math.round(answered * fullShare), runPartial = answered - runFull;
+  const identifiedShare = identified / DL.identified;
+  const newThisCycle = Math.round(DL.newThisCycle * identifiedShare);
+
+  const attention = ATTENTION.filter(a => a.region === scope);
+  const reasons = REASONS.map(r => ({ ...r, c: attention.filter(a => a.reason === r.k).length }));
+
+  const vendorOk = allocate(identified, VENDORS.map(v => v.ok));
+  const vendors = VENDORS.map((v, i) => ({ n: v.n, ok: vendorOk[i], fail: attention.filter(a => a.vendor === v.n).length }));
+
+  const modelVolume = allocate(Math.round(identified * (MODELS.reduce((a, m) => a + m.total, 0) / DL.identified)), MODELS.map(m => m.total));
+  const models = MODELS.map((m, i) => {
+    const fail = attention.filter(a => a.model === m.model).length;
+    return { model: m.model, oem: m.oem, total: Math.max(modelVolume[i], fail), fail };
+  });
+
+  const routerShare = discRouter / DL.discRouter, switchShare = discSwitch / DL.discSwitch;
+  const targetsShare = targets / DL.targets;
+  const daily: Cycle[] = DAILY.map((d, i) => {
+    if (i === DAILY.length - 1) return { day: d.day, router: discRouter, switch: discSwitch, polled: targets, answered, fresh: newThisCycle, hours: d.hours };
+    return {
+      day: d.day, router: Math.round(d.router * routerShare), switch: Math.round(d.switch * switchShare),
+      polled: Math.round(d.polled * targetsShare), answered: Math.round(d.answered * targetsShare),
+      fresh: Math.round(d.fresh * identifiedShare), hours: d.hours
+    };
+  });
+
+  return {
+    scope, targets, runFull, runPartial, runFail, identified, discRouter, discSwitch, newThisCycle,
+    rate: answered / targets, daily, reasons, vendors, models, attention, states, regions: [rr]
+  };
+}
+
 
 /* ledger self-check */
 (() => {

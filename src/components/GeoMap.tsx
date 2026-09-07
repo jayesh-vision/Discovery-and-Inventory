@@ -49,8 +49,9 @@ function Ring({ x, y, R, r, parts, label, cls, onClick, onEnter, onMove }: {
   );
 }
 
-export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: string; hex: string }[] }) {
+export function GeoMap({ bubbles, legend, region }: { bubbles: Bubble[]; legend: { n: string; hex: string }[]; region?: string }) {
   const nav = useNavigate();
+  const sites = useMemo(() => region ? SITES.filter(s => s.region === region) : SITES, [region]);
   const wrap = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });       /* translate + scale, in map units */
   const [anim, setAnim] = useState(true);
@@ -121,7 +122,7 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
     const t = term.trim().toLowerCase(); if (!t) return;
     const st = bubbles.find(b => b.st.toLowerCase().startsWith(t) || b.c.toLowerCase() === t);
     if (st) { openState(st.st); return; }
-    const s = SITES.find(x => x.name.toLowerCase().includes(t) || x.city.toLowerCase().startsWith(t) || x.id.toLowerCase() === t);
+    const s = sites.find(x => x.name.toLowerCase().includes(t) || x.city.toLowerCase().startsWith(t) || x.id.toLowerCase() === t);
     if (s) { setSel(s.st); setSite(s); setAnim(true); const k = 6; setView({ k, x: GEO.W / 2 - s.x * k, y: GEO.H / 2 - s.y * k }); }
   };
 
@@ -129,11 +130,11 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
   const visibleSites = useMemo(() => {
     if (!broken) return [];
     const x0 = -view.x / view.k, y0 = -view.y / view.k, x1 = (GEO.W - view.x) / view.k, y1 = (GEO.H - view.y) / view.k;
-    return SITES.filter(s => s.x > x0 - 40 && s.x < x1 + 40 && s.y > y0 - 40 && s.y < y1 + 40);
-  }, [broken, view]);
+    return sites.filter(s => s.x > x0 - 40 && s.x < x1 + 40 && s.y > y0 - 40 && s.y < y1 + 40);
+  }, [broken, view, sites]);
 
   const hb = hov?.kind === 'state' ? byState[hov.id] : null;
-  const hs = hov?.kind === 'site' ? SITES.find(s => s.id === hov.id) : null;
+  const hs = hov?.kind === 'site' ? sites.find(s => s.id === hov.id) : null;
   const selStats = sel ? byState[sel] : null;
   const R = 27 / Math.sqrt(view.k), r = R * 0.78;          /* bubbles shrink a little as you zoom in */
   const sR = 15 / Math.sqrt(view.k), sr = sR * 0.72;
@@ -202,7 +203,7 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
         <Tip x={hov.x} y={hov.y}>
           <div className="ch-tip-h">{hb.st} <span className="ch-tip-dim">· {hb.region}</span></div>
           <div className="ch-tip-cols">{hb.parts.map(p => <div key={p.n} className="ch-tip-col"><span><span className="ch-dot" style={{ background: p.hex }} />{p.n}</span><span className="num">{fmt(p.c)}</span></div>)}</div>
-          <div className="ch-tip-r ch-tip-dim">{SITES.filter(s => s.st === hb.st).length} sites · click to open</div>
+          <div className="ch-tip-r ch-tip-dim">{sites.filter(s => s.st === hb.st).length} sites · click to open</div>
         </Tip>
       )}
       {hov && hs && (
@@ -231,7 +232,7 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
             </div>
           </> : selStats && <>
             <div className="geo-card-h"><span className="vw-card-title-sm">{selStats.st}</span><button className="fp-x" onClick={reset} aria-label="Close">×</button></div>
-            <div className="vw-card-description">{selStats.region} region · {SITES.filter(s => s.st === sel).length} sites</div>
+            <div className="vw-card-description">{selStats.region} region · {sites.filter(s => s.st === sel).length} sites</div>
             <div className="geo-card-stats">
               {selStats.parts.map(p => <span key={p.n}><b className="num">{fmt(p.c)}</b> {p.n.toLowerCase()}</span>)}
               <span><b className="num">{fmt(selStats.parts.reduce((a, p) => a + p.c, 0))}</b> identified</span>
