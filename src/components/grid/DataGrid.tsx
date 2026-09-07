@@ -75,7 +75,6 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
         </div>
       </div>
       <div className="fpanel-foot">
-        <button className="nst-btn nst-btn--sm">Advance</button>
         <span className="grow" />
         <button className="nst-btn nst-btn--sm" onClick={() => { setValues({}); onReset(); onClose(); }}>Reset to default</button>
         <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => { onApply(values); onClose(); }}>Apply filters</button>
@@ -84,7 +83,34 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
   );
 }
 
-const STD_ACTIONS = ['Export as CSV', 'Export as XLSX', 'Choose columns', 'Save this view', 'Print'];
+/* Reads the grid's own rendered table — search and filters already applied —
+   and turns exactly what's on screen into a real file, mirroring the
+   prototype's exportNearestTable so both sides export the same thing. */
+function exportTable(wrap: HTMLDivElement | null, kind: 'csv' | 'xlsx') {
+  const table = wrap?.querySelector('table');
+  if (!table) { alert('Nothing to export — this grid has no rows yet.'); return; }
+  const cell = (td: Element) => `"${(td.textContent ?? '').replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`;
+  const lines = [...table.querySelectorAll('tr')].map(tr =>
+    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cell).join(','));
+  const name = location.pathname.split('/').filter(Boolean).pop() || 'export';
+  const ext = kind === 'xlsx' ? 'xls' : 'csv';
+  const blob = new Blob([lines.join('\r\n')], { type: kind === 'xlsx' ? 'application/vnd.ms-excel' : 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${name}-export.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function stdActions(wrap: HTMLDivElement | null): Action[] {
+  return [
+    { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
+    { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') },
+    { l: 'Choose columns' },
+    { l: 'Save this view' },
+    { l: 'Print', onClick: () => window.print() }
+  ];
+}
 
 function MenuItem({ a, onDone }: { a: Action; onDone: () => void }) {
   return (
@@ -95,10 +121,10 @@ function MenuItem({ a, onDone }: { a: Action; onDone: () => void }) {
   );
 }
 
-function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onRefresh, onSearch, searchValue, onFilterChange }: {
+function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onRefresh, onSearch, searchValue, onFilterChange, wrap }: {
   showing: number; total: number; placeholder: string; filters?: FilterField[];
   extra?: ReactNode; gridActions?: Action[]; onRefresh?: () => void; onSearch?: (q: string) => void;
-  searchValue?: string; onFilterChange?: (values: Record<string, string>) => void;
+  searchValue?: string; onFilterChange?: (values: Record<string, string>) => void; wrap: React.RefObject<HTMLDivElement | null>;
 }) {
   const [menu, setMenu] = useState(false);
   const [filter, setFilter] = useState(false);
@@ -134,7 +160,7 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onR
                 {gridActions.map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
                 <div className="kmenu-sep" />
               </> : null}
-              {STD_ACTIONS.map(l => <MenuItem key={l} a={{ l }} onDone={closeMenu} />)}
+              {stdActions(wrap.current).map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
             </div>
           )}
         </div>
@@ -261,7 +287,7 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
       {/* the toolbar counts what is on screen, so the page size is visible without scrolling */}
       <Toolbar showing={Math.min(count, p.rows.length)} total={p.total} placeholder={p.searchPlaceholder}
         filters={p.filters} extra={p.extra} gridActions={p.gridActions} onRefresh={p.onRefresh} onSearch={p.onSearch}
-        searchValue={p.searchValue} onFilterChange={p.onFilterChange} />
+        searchValue={p.searchValue} onFilterChange={p.onFilterChange} wrap={wrap} />
       <div className="tbl-wrap" ref={wrap}>
         <table className="nst-table">
           <thead>

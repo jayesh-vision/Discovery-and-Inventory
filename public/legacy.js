@@ -3809,9 +3809,9 @@ function resHardware() {
 }
 
 function resIfaces() {
-  const rows = IFACES.filter(i => IF_FILTER === 'all' ? true
+  const rows = gridApply('interfaces', IFACES.filter(i => IF_FILTER === 'all' ? true
     : IF_FILTER === 'down' ? (i.oper === 'down' && i.admin === 'up')
-    : IF_FILTER === 'free' ? i.admin === 'down' : i.oper === 'up');
+    : IF_FILTER === 'free' ? i.admin === 'down' : i.oper === 'up'));
   const st = i => i.admin === 'down' ? chip('Free','neutral')
     : i.oper === 'down' ? chip('Down','error') : chip('Up','success');
   const pct = (a,b) => (a/b*100).toFixed(0);
@@ -3848,7 +3848,8 @@ function resIfaces() {
     <div class="grid-bar">
       <span class="vw-card-description grid-count">Showing ${rows.length} of ${IF_CAP.total}</span>
       <span class="nst-input-shell grid-search"><span class="gs-ic">${IC_SEARCH}</span>
-        <input class="nst-input" placeholder="Name, description, IP" aria-label="Search interfaces"></span>
+        <input class="nst-input" placeholder="Name, description, IP" aria-label="Search interfaces"
+          data-gridsearch="interfaces" value="${esc(gridOf('interfaces').search)}"></span>
       <span class="grow"></span>
       <div class="seg">
         ${[['all','All'],['up','Up'],['down','Down'],['free','Free']].map(([k,n2])=>
@@ -5625,7 +5626,7 @@ document.addEventListener('click', e => {
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
   const ack = e.target.closest('.js-ack');
-  if (ack) { KEBAB = null; GRIDMENU = false; alert(`"${ack.textContent.trim()}" — sent. This preview has no backend connected, so nothing changes server-side, but the action fired correctly.`); go(CURRENT); return; }
+  if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
@@ -5706,6 +5707,8 @@ document.addEventListener('click', e => {
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');
   if (iff) { IF_FILTER = iff.dataset.iffilter; go('resource'); return; }
+  const hf = e.target.closest('[data-histfilter]');
+  if (hf) { RES_HIST_FILTER = hf.dataset.histfilter; go('resource'); return; }
   const nbt = e.target.closest('[data-nbrtab]');
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
@@ -5765,7 +5768,7 @@ document.addEventListener('click', e => {
     return;
   }
   const txrr = e.target.closest('[data-txrerun]');
-  if (txrr) { alert(`Re-run queued for ${TRANSCRIPT.host} (${TRANSCRIPT.ip}).`); return; }
+  if (txrr) return;
 
   const nav = e.target.closest('[data-nav]');
   if (nav) { go(nav.dataset.nav); return; }

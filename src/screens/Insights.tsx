@@ -52,7 +52,7 @@ export default function Insights() {
       filter key and a drill label, so it lands filtered and shows a way back */
   const toTargets = (q = '', label?: string) => {
     const sp = new URLSearchParams(q);
-    sp.set('from', 'Insights'); sp.set('back', 'insights');
+    if (label) { sp.set('from', 'Insights'); sp.set('back', 'insights'); }
     nav(legacyPath('targets', label ? { label, q: sp.toString() } : { q: sp.toString() }));
   };
   /** Physical Resources is React-owned; build its query directly, the same
@@ -222,14 +222,12 @@ export default function Insights() {
             searchPlaceholder="Device, IP, model" filters={[{ n: 'Region', o: ['North', 'East', 'West', 'South'] }, { n: 'Vendor', o: VENDORS.map(v => v.n) }, { n: 'Failure reason', o: REASONS.map(r => r.n) }]}
             onSearch={setAttnQuery} searchValue={attnQuery} onFilterChange={setAttnFilters} onRefresh={() => { setAttnQuery(''); setAttnFilters({}); }}
             gridActions={[
-              { l: 'Re-run discovery for all', primary: true, onClick: () => alert(`Discovery re-run queued for ${fmt(DL.runFail)} failed targets.`) },
-              { l: 'Download report', onClick: () => alert('Preparing the failure report for download…') }
+              { l: 'Re-run discovery for all', primary: true }, { l: 'Download report' }
             ]}
             rowActions={r => [
               { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(r.name)}`) },
               { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-              { l: 'Re-run discovery for this IP', onClick: () => alert(`Discovery re-run queued for ${r.ip}.`) },
-              { l: 'Change credential profile' },
+              { l: 'Re-run discovery for this IP' }, { l: 'Change credential profile' },
               { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(r.ip); } }
             ]}
             renderRow={r => [
