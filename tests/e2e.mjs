@@ -44,17 +44,49 @@ ok('site screen has its own way back', (await text('#view')).includes('Back to l
 /* ── React ↔ React: decommissioned → archive with class ─ */
 await p.goto(BASE + '/inventory/physical?cls=dwdm'); await p.waitForSelector('.stock-presets');
 await p.click('.stock-presets button:nth-child(2)');
-await p.waitForSelector('.pgr');
+await p.waitForSelector('.nst-table tbody .ro-lock');   /* the archive's read-only rows, not the ones we came from */
 ok('→ archive with class', p.url().endsWith('/inventory/inactive?cls=dwdm'), p.url());
-ok('archive DWDM 19 rows', await count('.nst-table tbody tr') === 19);
+ok('archive DWDM 19 rows, all under one page', await count('.nst-table tbody tr') === 19 && await count('.tbl-more') === 0);
 ok('archive tab active', (await text('.tab.is-on')).startsWith('DWDM'));
-await p.click('.tab:first-child'); await p.waitForTimeout(100);
-ok('router archive paginates 20', await count('.nst-table tbody tr') === 20);
-ok('pager range', (await text('.pgr-note')).startsWith('Showing 1–20 of 289'), await text('.pgr-note'));
-await p.click('.pgr-b[aria-label="Next page"]'); await p.waitForTimeout(80);
-ok('page 2', (await text('.pgr-note')).startsWith('Showing 21–40'));
-await p.selectOption('.pgr-sel', '50'); await p.waitForTimeout(80);
-ok('50 per page', await count('.nst-table tbody tr') === 50);
+await p.click('.tab:first-child'); await p.waitForTimeout(150);
+ok('router archive starts at 25 rows', await count('.nst-table tbody tr') === 25, String(await count('.nst-table tbody tr')));
+ok('grid count reads what is painted, not the whole set', (await text('.grid-count')) === 'Showing 25 of 289', await text('.grid-count'));
+ok('strip names the next page', (await text('.tbl-more')).includes('25'), await text('.tbl-more'));
+/* the grid is a bounded scroll box of its own, and the strip at its end is the
+   sentinel: reaching it asks for the next block */
+const wrap = () => p.evaluate(() => {
+  const w = document.querySelector('.tbl-wrap');
+  return { client: w.clientHeight, scroll: w.scrollHeight, top: w.scrollTop, vh: innerHeight, pageY: scrollY };
+});
+const toEnd = async () => { await p.evaluate(() => { const w = document.querySelector('.tbl-wrap'); w.scrollTop = w.scrollHeight; }); await p.waitForTimeout(350); };
+let w0 = await wrap();
+ok('grid is bounded and scrolls inside itself', w0.client < w0.scroll && w0.client <= w0.vh, JSON.stringify(w0));
+await toEnd();
+const after1 = await count('.nst-table tbody tr');
+ok('scrolling the grid to its end reveals a block of 25', after1 > 25 && after1 % 25 === 0, String(after1));
+ok('the page itself never moved', (await wrap()).pageY === 0);
+ok('the header stayed pinned', await p.evaluate(() => {
+  const w = document.querySelector('.tbl-wrap');
+  return Math.abs(w.querySelector('thead th').getBoundingClientRect().top - w.getBoundingClientRect().top) <= 1;
+}));
+await toEnd();
+ok('and keeps going down the list', await count('.nst-table tbody tr') > after1, String(await count('.nst-table tbody tr')));
+/* a row menu must clear the scroll box it lives in */
+await p.evaluate(() => {
+  const w = document.querySelector('.tbl-wrap'), wb = w.getBoundingClientRect();
+  const seen = [...w.querySelectorAll('tbody tr')].filter(r => {
+    const b = r.getBoundingClientRect();
+    return !r.hidden && b.top >= wb.top && b.bottom <= wb.bottom;
+  });
+  seen[seen.length - 1].querySelector('.kb').click();
+});
+await p.waitForTimeout(200);
+ok('the bottom row\'s menu opens fully on screen', await p.evaluate(() => {
+  const r = document.querySelector('.kmenu').getBoundingClientRect();
+  return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0;
+}));
+await p.mouse.click(5, 5); await p.waitForTimeout(150);
+await p.evaluate(() => { window.scrollTo(0, 0); document.querySelector('.tbl-wrap').scrollTop = 0; });
 ok('archive has no stock chips', await count('.stock-chip') === 0);
 ok('status pill class on Physical only', await count('.st-td') === 0);
 await p.click('.grid-tools [aria-label="More actions"]');

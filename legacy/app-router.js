@@ -30,6 +30,24 @@ const viewEl = document.getElementById('view'),
       modEl  = document.getElementById('module');
 let CURRENT = 'insights';
 
+/* Reads whatever table the grid toolbar sits above and turns exactly what's
+   on screen right now (search and filters already applied) into a real
+   file, so "Export" produces the rows the reader is actually looking at. */
+function exportNearestTable(btn, kind) {
+  const table = btn.closest('.vw-card-section, .card, section')?.querySelector('table');
+  if (!table) { alert('Nothing to export — this grid has no rows yet.'); return; }
+  const cell = td => `"${td.textContent.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`;
+  const lines = [...table.querySelectorAll('tr')].map(tr =>
+    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cell).join(','));
+  const ext = kind === 'xlsx' ? 'xls' : 'csv';
+  const blob = new Blob([lines.join('\r\n')], { type: kind === 'xlsx' ? 'application/vnd.ms-excel' : 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${CURRENT}-export.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ── drill-down ───────────────────────────────────────── */
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
@@ -42,7 +60,8 @@ function applyDrillQuery(view, q) {
   const p = {};
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
-  if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; }
+  if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
+  if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
     if (p.tab) TAB.phy = p.tab;
     PHY_OEM = p.oem || null;
@@ -53,27 +72,33 @@ function applyDrillQuery(view, q) {
   if (view === 'inactive') { if (p.cls) INACT_CLS = p.cls; }
   if (view === 'location') {
     if (p.view) LOC_VIEW = p.view;
-    LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null;
+    LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
   }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
-  if (view === 'links')    { if (p.tab) TAB.link = p.tab; }
+  if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
   if (!d) return;
   if (d.view === 'reconcile') { NE_FILTER = 'All'; REC_CIRCLE = null; }
-  if (d.view === 'targets')   { TGT_FILTER = 'All'; }
+  if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
+  if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
-  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; }
+  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; }
+  if (d.view === 'links')     { LINK_NE_FILTER = null; }
   go(d.view);
 }
 
 function go(k) {
   const v = VIEWS[k] || VIEWS.insights;
+  const isNav = k !== CURRENT;              // false when a control just refreshes the view it's already on
   DRILL = DRILL_PENDING; DRILL_PENDING = null;
   GRID_N = 0;
-  if (k !== CURRENT) { KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0; }
+  /* the render below throws away every grid element, so note where the reader
+     was in each one first — a row action must not fling the list back to row 1 */
+  if (!isNav) saveGridScroll();
+  if (isNav) { KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0; LAZY = {}; }
   CURRENT = VIEWS[k] ? k : 'insights';
   modEl.textContent = v.mod;
   crumbEl.textContent = v.crumb;
@@ -81,7 +106,9 @@ function go(k) {
   const active = RAIL_OF[CURRENT] || CURRENT;
   document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('is-active',
     CURRENT === 'inactive' ? b.hasAttribute('data-inactive') : b.dataset.nav === active));
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  /* only a real navigation jumps the reader to the top; an in-place refresh
+     (a tab, a run switch, a filter) must not fling the scroll position around */
+  if (isNav) window.scrollTo({ top: 0, behavior: 'instant' });
   bindMap();
   document.querySelectorAll('.tbl-wrap').forEach(w => {
     const mark = () => {
@@ -92,6 +119,7 @@ function go(k) {
     mark(); w.addEventListener('scroll', mark, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
+  lazyGrids();
 }
 
 document.addEventListener('click', e => {
@@ -103,11 +131,21 @@ document.addEventListener('click', e => {
   const gr = e.target.closest('[data-gridrefresh]');
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
+  const fr = e.target.closest('[data-filterreset]');
+  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; go(CURRENT); return; }
+  const fa = e.target.closest('[data-filterapply]');
+  if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
   if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  const gx = e.target.closest('[data-gridexport]');
+  if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
+  const gp = e.target.closest('[data-gridprint]');
+  if (gp) { window.print(); return; }
+  const ack = e.target.closest('.js-ack');
+  if (ack) { KEBAB = null; GRIDMENU = false; alert(`"${ack.textContent.trim()}" — sent. This preview has no backend connected, so nothing changes server-side, but the action fired correctly.`); go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
@@ -172,8 +210,6 @@ document.addEventListener('click', e => {
     go('physical'); return; }
   const ss = e.target.closest('[data-stockset]');
   if (ss) { PHY_STOCK = new Set(ACTIVE_STATES); go('physical'); return; }
-  const pgb = e.target.closest('[data-pg]');
-  if (pgb) { if (pgb.disabled) return; PAGE[pgb.dataset.pg] = Number(pgb.dataset.pgn); DRILL_PENDING = DRILL; go(CURRENT); return; }
   const inact = e.target.closest('[data-inactive]');
   if (inact) { go('inactive'); return; }
   const icl = e.target.closest('[data-inactcls]');
@@ -232,8 +268,24 @@ document.addEventListener('click', e => {
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 
+  const jbf = e.target.closest('[data-job-filter]');
+  if (jbf) { JOB_FILTER = jbf.dataset.jobFilter; go('jobs'); return; }
+
   const run = e.target.closest('[data-run]');
   if (run) { TXRUN = Number(run.dataset.run); go('target'); return; }
+
+  const txdl = e.target.closest('[data-txdownload]');
+  if (txdl) {
+    const blob = new Blob([JSON.stringify({ run: TXRUN, target: TRANSCRIPT, steps: txSteps() }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `run-${TXRUN}-${TRANSCRIPT.host}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+  const txrr = e.target.closest('[data-txrerun]');
+  if (txrr) { alert(`Re-run queued for ${TRANSCRIPT.host} (${TRANSCRIPT.ip}).`); return; }
 
   const nav = e.target.closest('[data-nav]');
   if (nav) { go(nav.dataset.nav); return; }
@@ -309,6 +361,20 @@ document.addEventListener('input', e => {
   if (el.hasAttribute && el.hasAttribute('data-nperfsel')) {
     NODE_PERF = el.value; go('node'); return;
   }
+  if (el.hasAttribute && el.hasAttribute('data-gridsearch')) {
+    const key = el.dataset.gridsearch, pos = el.selectionStart;
+    gridOf(key).search = el.value;
+    /* go() rebuilds the DOM, which would drop focus mid-word — put it back */
+    DRILL_PENDING = DRILL; go(CURRENT);
+    const again = document.querySelector(`[data-gridsearch="${CSS.escape(key)}"]`);
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+    return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-filterval')) {
+    const [key, field] = el.dataset.filterval.split('|');
+    gridOf(key).filters[field] = el.value;
+    return; /* applied on "Apply filters", not per keystroke */
+  }
   if (el.classList && el.classList.contains('ox-hd')) {
     const d = opexDraft();
     d[el.dataset.f] = el.dataset.f === 'budget' ? Number(el.value) || 0 : el.value;
@@ -326,9 +392,10 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.hasAttribute && e.target.hasAttribute('data-pgsize')) {
-    const k = e.target.dataset.pgsize;
-    PAGE_SIZE[k] = Number(e.target.value); PAGE[k] = 1; DRILL_PENDING = DRILL; go(CURRENT); return;
+  if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
+    const [key, field] = e.target.dataset.filterval.split('|');
+    gridOf(key).filters[field] = e.target.value;
+    return;
   }
   const c = e.target.classList;
   if (c && (c.contains('cx-in') || c.contains('cx-hd') || c.contains('ox-in') || c.contains('ox-hd')))
@@ -337,6 +404,13 @@ document.addEventListener('change', e => {
 
 /* ── map pan / zoom ───────────────────────────────────── */
 let MZ = { k: 1, x: 0, y: 0 };
+/* Unbounded pan/zoom can carry the whole map off-canvas and leave it looking
+   blank with nothing left to click back to. Keep a slice always on screen. */
+function clampMZ() {
+  const sx = GEO.W * 0.4, sy = GEO.H * 0.4;
+  MZ.x = Math.min(GEO.W - sx, Math.max(sx - GEO.W * MZ.k, MZ.x));
+  MZ.y = Math.min(GEO.H - sy, Math.max(sy - GEO.H * MZ.k, MZ.y));
+}
 function applyMZ() {
   const g = document.getElementById('mapzoom');
   if (g) g.setAttribute('transform', `translate(${MZ.x} ${MZ.y}) scale(${MZ.k})`);
@@ -348,7 +422,7 @@ function mapZoom(dir) {
   const cx = GEO.W/2, cy = GEO.H/2;
   MZ.x = cx - (cx - MZ.x) * (k2 / MZ.k);
   MZ.y = cy - (cy - MZ.y) * (k2 / MZ.k);
-  MZ.k = k2; applyMZ(); repin();
+  MZ.k = k2; clampMZ(); applyMZ(); repin();
 }
 function repin() {
   const g = document.getElementById('mapzoom'); if (!g || CURRENT !== 'location' || LOC_VIEW !== 'map') return;
@@ -366,7 +440,7 @@ function bindMap() {
   svg.addEventListener('pointermove', e => {
     if (!drag) return;
     const r = svg.getBoundingClientRect(), s = GEO.W / r.width;
-    MZ.x = drag.ox + (e.clientX - drag.x) * s; MZ.y = drag.oy + (e.clientY - drag.y) * s; applyMZ();
+    MZ.x = drag.ox + (e.clientX - drag.x) * s; MZ.y = drag.oy + (e.clientY - drag.y) * s; clampMZ(); applyMZ();
   });
   const stop = () => { drag = null; };
   svg.addEventListener('pointerup', stop); svg.addEventListener('pointercancel', stop); svg.addEventListener('pointerleave', stop);
@@ -375,7 +449,7 @@ function bindMap() {
     const r = svg.getBoundingClientRect(), s = GEO.W / r.width;
     const mx = (e.clientX - r.left) * s, my = (e.clientY - r.top) * s;
     const f = e.deltaY < 0 ? 1.18 : 1/1.18, k2 = Math.min(8, Math.max(1, MZ.k * f));
-    MZ.x = mx - (mx - MZ.x) * (k2 / MZ.k); MZ.y = my - (my - MZ.y) * (k2 / MZ.k); MZ.k = k2; applyMZ();
+    MZ.x = mx - (mx - MZ.x) * (k2 / MZ.k); MZ.y = my - (my - MZ.y) * (k2 / MZ.k); MZ.k = k2; clampMZ(); applyMZ();
     clearTimeout(window.__rp); window.__rp = setTimeout(repin, 160);
   }, { passive: false });
   applyMZ();

@@ -11,6 +11,25 @@ let FILTER_OPEN = false;   /* the Filters panel                          */
 let FILTER_FIELD = 0;
 let GRID_N = 0;            /* reset each render so grid ids are stable   */
 
+/* ── search + filters, per grid ───────────────────────────
+   Keyed by the grid's own key (one per screen). A grid's search box and
+   filter panel write into this; the view reads it back through gridApply()
+   before it builds its rows, so both actually narrow what's on screen. */
+let GRID_STATE = {};
+const gridOf = key => GRID_STATE[key] || (GRID_STATE[key] = { search: '', filters: {} });
+/* No per-grid field mapping to keep in sync: a row matches if the query (or
+   every active filter value) appears anywhere in that row's own data. */
+function gridApply(key, rows) {
+  const st = gridOf(key);
+  const q = st.search.trim().toLowerCase();
+  const need = Object.values(st.filters).filter(Boolean).map(v => String(v).toLowerCase());
+  if (!q && !need.length) return rows;
+  return rows.filter(r => {
+    const text = JSON.stringify(r).toLowerCase();
+    return (!q || text.includes(q)) && need.every(v => text.includes(v));
+  });
+}
+
 /* one action: A('Label') or A('Label', {v,l,q}) or A('Label', null, true) for danger */
 /* Row actions carry a leading icon, as the platform grids do. The icon is
    inferred from the verb so no call site has to name one. */
@@ -63,39 +82,43 @@ function kebabCell(items, gid, i) {
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}${it.d ? '' : ' js-ack'}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 
 /* ── toolbar ───────────────────────────────────────────── */
-function gridBar(showing, total, placeholder, spec, extra = '', acts = []) {
+function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '') {
+  const st = gridOf(key);
+  const activeFilters = Object.values(st.filters).filter(Boolean).length;
   return `<div class="grid-bar">
     <span class="vw-card-description grid-count">${showing === null
       ? `<span class="num">${total}</span> records` : `Showing ${showing} of ${total}`}</span>
     <span class="nst-input-shell grid-search"><span class="gs-ic">${IC_SEARCH}</span>
-      <input class="nst-input" placeholder="${placeholder}" aria-label="Search"></span>
+      <input class="nst-input" placeholder="${placeholder}" aria-label="Search" data-gridsearch="${key}" value="${esc(st.search)}"></span>
     ${extra}
     <span class="grow"></span>
     <div class="grid-tools">
       <button class="icon-btn" data-gridrefresh="1" aria-label="Refresh">${IC_REFRESH}</button>
-      <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}" data-filteropen="1" aria-label="Filters"
+      <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}${activeFilters ? ' has-value' : ''}" data-filteropen="${key}" aria-label="Filters"
         aria-expanded="${FILTER_OPEN}">${IC_FILTER}</button>
       <button class="icon-btn${GRIDMENU ? ' is-on' : ''}" data-gridmenu="1" aria-label="More actions"
         aria-expanded="${GRIDMENU}">${IC_KEBAB}</button>
       ${GRIDMENU ? `<div class="kmenu kmenu-r">
-        ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}"${a.d ? dA(a.d) : ''}${
+        ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}${(a.d || a.nav) ? '' : ' js-ack'}"${a.d ? dA(a.d) : ''}${
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
-        ${['Export as CSV', 'Export as XLSX', 'Choose columns', 'Save this view', 'Print']
-          .map(l => `<button class="kmenu-i">${kIcon(l)}<span>${l}</span></button>`).join('')}</div>` : ''}
-      ${FILTER_OPEN ? filterPanel(spec) : ''}
+        <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
+        <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button>
+        <button class="kmenu-i" data-gridprint="1">${kIcon('Print')}<span>Print</span></button></div>` : ''}
+      ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
   </div>`;
 }
 
 /* ── filter panel ──────────────────────────────────────── */
-function filterPanel(spec) {
+function filterPanel(spec, key = '') {
   const fields = spec && spec.length ? spec : [{ n: 'Status', o: ['On-air', 'Planned'] }];
   const f = fields[Math.min(FILTER_FIELD, fields.length - 1)];
+  const val = gridOf(key).filters[f.n] || '';
   return `<div class="fpanel" role="dialog" aria-label="Filters">
     <div class="fpanel-head">
       <span class="vw-card-title-sm">Filters</span>
@@ -103,24 +126,24 @@ function filterPanel(spec) {
     </div>
     <div class="fpanel-body">
       <div class="fpanel-nav">
-        ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}"
+        ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}${gridOf(key).filters[x.n] ? ' has-value' : ''}"
           data-filterfield="${i}">${x.n}</button>`).join('')}
       </div>
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
         ${f.o
-          ? `<span class="nst-select-shell"><select class="nst-input fp-sel">
-               <option value=""></option>
-               ${f.o.map(o => `<option>${o}</option>`).join('')}</select></span>`
-          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…"></span>`}
+          ? `<span class="nst-select-shell"><select class="nst-input fp-sel" data-filterval="${key}|${esc(f.n)}">
+               <option value=""${val ? '' : ' selected'}></option>
+               ${f.o.map(o => `<option${o === val ? ' selected' : ''}>${o}</option>`).join('')}</select></span>`
+          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
         ${f.h ? `<span class="fp-hint">${f.h}</span>` : ''}
       </div>
     </div>
     <div class="fpanel-foot">
-      <button class="nst-btn nst-btn--sm">Advance</button>
+      <span class="vw-card-description">${Object.values(gridOf(key).filters).filter(Boolean).length} field(s) set</span>
       <span class="grow"></span>
-      <button class="nst-btn nst-btn--sm" data-filterclose="1">Reset to default</button>
-      <button class="nst-btn nst-btn--sm nst-btn--filled" data-filterclose="1">Apply filters</button>
+      <button class="nst-btn nst-btn--sm" data-filterreset="${key}">Reset to default</button>
+      <button class="nst-btn nst-btn--sm nst-btn--filled" data-filterapply="${key}">Apply filters</button>
     </div>
   </div>`;
 }
@@ -166,58 +189,124 @@ const FS = {
              { n:'Trunk port' }, { n:'Access port' }]
 };
 
-/* ── pagination ────────────────────────────────────────── */
-let PAGE = {};          /* key -> 1-based page   */
-let PAGE_SIZE = {};     /* key -> rows per page  */
-const PG_SIZES = [20, 50, 100];
-const pgSize = k => PAGE_SIZE[k] || 20;
-const pgNo   = (k, total) => Math.min(PAGE[k] || 1, Math.max(1, Math.ceil(total / pgSize(k))));
-const pgSlice = (rows, k) => {
-  const p = pgNo(k, rows.length), s = pgSize(k);
-  return rows.slice((p - 1) * s, p * s);
-};
-const IC_PREV = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"
-  stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>`;
-const IC_NEXT = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"
-  stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>`;
+/* ── infinite scroll ───────────────────────────────────────
+   A view renders every row it has; the DOM shows the first LAZY_STEP of
+   each grid and reveals the next LAZY_STEP whenever the reader reaches the
+   end of the list. It runs over the rendered table rather than each view's
+   row array, so every grid on every screen gets it without a call site.
 
-/* windowed page numbers with ellipses, so 15 pages never becomes 15 buttons */
-function pgWindow(cur, last) {
-  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
-  const out = [1];
-  let a = Math.max(2, cur - 1), b = Math.min(last - 1, cur + 1);
-  if (cur <= 3) { a = 2; b = 4; }
-  if (cur >= last - 2) { a = last - 3; b = last - 1; }
-  if (a > 2) out.push('…');
-  for (let i = a; i <= b; i++) out.push(i);
-  if (b < last - 1) out.push('…');
-  out.push(last);
-  return out;
+   Reveal counts survive an in-place re-render (a kebab, a tab, a chip) by
+   being keyed on the view and the grid's position in it; a changed row
+   count — a search, a filter — means a new result set, so it restarts. */
+const LAZY_STEP = 25;
+const GRID_GAP = 72;  /* card padding and footer below the grid */
+const GRID_MIN = 320; /* never squeezed below ~6 rows            */
+let LAZY = {};        /* "<view>:<grid index>" -> { n, total, top } */
+let LAZY_IO = [];     /* observers of the render now on screen      */
+let LAZY_BOUND = false;
+
+const grids = () => {
+  const view = document.getElementById('view');
+  return view ? Array.from(view.querySelectorAll('.tbl-wrap > table.nst-table')) : [];
+};
+
+/* A grid is as tall as its page of 25 rows, and never taller than the room left
+   on screen below where it starts — so a screen whose grid is the content fills
+   the window, while a grid under KPI cards takes the space it has. Measured,
+   because a row carrying a second line is half again as tall as a plain one. */
+function sizeGrid(tbl) {
+  const wrap = tbl.parentNode, row = tbl.tBodies[0] && tbl.tBodies[0].rows[0];
+  if (!row) return;
+  const head = tbl.tHead ? tbl.tHead.offsetHeight : 0;
+  const page = head + row.offsetHeight * LAZY_STEP;
+  let avail = window.innerHeight - Math.max(0, wrap.getBoundingClientRect().top) - GRID_GAP;
+  /* below the fold (a dashboard): a screenful, which is what it gets once
+     the reader scrolls down to it */
+  if (avail < GRID_MIN) avail = window.innerHeight - GRID_GAP;
+  wrap.style.setProperty('--grid-h', Math.min(page, Math.max(GRID_MIN, avail)) + 'px');
 }
 
-function pager(total, k, note = '') {
-  const size = pgSize(k), last = Math.max(1, Math.ceil(total / size)), cur = pgNo(k, total);
-  const from = total ? (cur - 1) * size + 1 : 0, to = Math.min(total, cur * size);
-  return `<div class="pgr">
-    <span class="vw-card-description pgr-note">${total
-      ? `Showing <span class="num">${n(from)}–${n(to)}</span> of <span class="num">${n(total)}</span>${note ? ' ' + note : ''}`
-      : 'No records'}</span>
-    <span class="grow"></span>
-    <span class="pgr-size">
-      <span class="vw-card-description">Rows</span>
-      <select class="nst-input pgr-sel" data-pgsize="${k}" aria-label="Rows per page">
-        ${PG_SIZES.map(s => `<option value="${s}"${s === size ? ' selected' : ''}>${s}</option>`).join('')}
-      </select>
-    </span>
-    <span class="pgr-nav">
-      <button class="pgr-b" data-pg="${k}" data-pgn="${cur - 1}"${cur === 1 ? ' disabled' : ''}
-        aria-label="Previous page">${IC_PREV}</button>
-      ${pgWindow(cur, last).map(v => v === '…'
-        ? `<span class="pgr-gap">…</span>`
-        : `<button class="pgr-b pgr-num${v === cur ? ' is-on' : ''}" data-pg="${k}" data-pgn="${v}"
-             ${v === cur ? 'aria-current="page"' : ''}>${v}</button>`).join('')}
-      <button class="pgr-b" data-pg="${k}" data-pgn="${cur + 1}"${cur === last ? ' disabled' : ''}
-        aria-label="Next page">${IC_NEXT}</button>
-    </span>
-  </div>`;
+/* the reader's place in each grid, kept across the re-render that a kebab, a
+   tab or a chip triggers — the wrapper is a new element every time */
+function saveGridScroll() {
+  grids().forEach((tbl, i) => {
+    const st = LAZY[CURRENT + ':' + i];
+    if (st) st.top = tbl.parentNode.scrollTop;
+  });
+}
+
+/* A row menu is anchored inside the grid's scroll box, which would clip it;
+   place it against the button's position on screen instead. */
+function placeMenus() {
+  document.querySelectorAll('#view .kb-td .kmenu').forEach(m => {
+    const b = m.previousElementSibling;
+    if (!b) return;
+    m.classList.add('kmenu--fixed');
+    const r = b.getBoundingClientRect(), gap = 4;
+    const below = r.bottom + gap + m.offsetHeight <= window.innerHeight;
+    m.style.top = (below ? r.bottom + gap : Math.max(gap, r.top - gap - m.offsetHeight)) + 'px';
+    m.style.left = Math.max(gap, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - gap)) + 'px';
+  });
+}
+
+function lazyGrids() {
+  LAZY_IO.forEach(io => io.disconnect());
+  LAZY_IO = [];
+  if (!LAZY_BOUND) {
+    LAZY_BOUND = true;
+    window.addEventListener('resize', () => { grids().forEach(sizeGrid); placeMenus(); });
+  }
+  grids().forEach((tbl, i) => {
+    const body = tbl.tBodies[0];
+    if (!body) return;
+    const rows = Array.from(body.rows);
+    const key = CURRENT + ':' + i;
+    const st = LAZY[key] && LAZY[key].total === rows.length ? LAZY[key] : (LAZY[key] = { n: LAZY_STEP, total: rows.length, top: 0 });
+    sizeGrid(tbl);
+    /* an open menu follows its row while the grid scrolls under it */
+    tbl.parentNode.addEventListener('scroll', placeMenus, { passive: true });
+    const restore = () => { tbl.parentNode.scrollTop = st.top || 0; };
+    if (rows.length <= LAZY_STEP) { restore(); return; }
+
+    /* the grid bar sits just above the table: its count follows what is
+       painted, so the page size shows without scrolling to the end */
+    let bar = tbl.parentNode.previousElementSibling;
+    while (bar && !bar.classList.contains('grid-bar')) bar = bar.previousElementSibling;
+    const label = bar && bar.querySelector('.grid-count');
+    const labelHtml = label ? label.innerHTML : '';
+
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'tbl-more';
+    tbl.parentNode.appendChild(more);
+    const paint = () => {
+      rows.forEach((r, x) => { r.hidden = x >= st.n; });
+      const left = rows.length - st.n;
+      more.hidden = left <= 0;
+      more.innerHTML = left > 0
+        ? `Load the next ${n(Math.min(LAZY_STEP, left))}
+           <span class="tbl-more-of">· ${n(st.n)} of ${n(rows.length)} loaded</span>` : '';
+      if (label) label.innerHTML = labelHtml.replace(/^Showing\s+[\d,]+/, 'Showing ' + n(st.n));
+    };
+    paint();
+    restore();
+    more.addEventListener('click', () => {
+      st.n = Math.min(st.n + LAZY_STEP, rows.length);
+      paint();
+    });
+    if (typeof IntersectionObserver === 'undefined') { st.n = rows.length; paint(); return; }
+
+    const io = new IntersectionObserver(es => {
+      if (!es.some(e => e.isIntersecting) || st.n >= rows.length) return;
+      st.n = Math.min(st.n + LAZY_STEP, rows.length);
+      paint();
+      /* re-observe so the next block reveals itself when 25 more rows
+         still do not fill the grid */
+      if (st.n >= rows.length) io.disconnect();
+      else { io.unobserve(more); io.observe(more); }
+    }, { root: tbl.parentNode, rootMargin: '200px' });
+    io.observe(more);
+    LAZY_IO.push(io);
+  });
+  placeMenus();
 }

@@ -130,6 +130,50 @@ export const STATE_DEVICES: StateDot[] = [
   { st: 'Uttarakhand',    c: 'UK', region: 'North', lat: 30.07, lon: 79.09, router: 31,  switch: 5 }
 ];
 
+/* Grown after ATTENTION's own declaration — the twelve hand-written rows there
+   stay for their narrative detail; the rest of the runFail figure (175, quoted
+   throughout Insights) is filled in here so the grid is something you can
+   actually open, search and filter, not just a number. Region, vendor and
+   reason are each distributed to close exactly on REGIONS.fail, VENDORS.fail
+   and REASONS.c once the twelve hand-written rows are accounted for. */
+(() => {
+  let seed = 34811;
+  const rnd = () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+  const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) => Array(c).fill(k)) as K[];
+  const pad2 = (v: number) => String(v).padStart(2, '0');
+
+  const MODELS_BY_VENDOR: Record<string, string[]> = {
+    Juniper: ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
+    Cisco: ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
+    'Cisco SDN': ['N9K-C93180YC'],
+    Nokia: ['7750', '7750 SR-7'],
+    Adva: ['FSP 3000'],
+    Edgecore: ['AS7712-32X']
+  };
+  const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+
+  /* remaining share once the twelve hand-written rows above are subtracted */
+  const regions = flatten<Region>([['North', 49], ['East', 45], ['West', 35], ['South', 34]]);
+  const vendors = flatten([['Juniper', 92], ['Cisco', 45], ['Cisco SDN', 11], ['Nokia', 7], ['Adva', 5], ['Edgecore', 3]]);
+  const reasons = flatten([['unreach', 65], ['timeout', 38], ['auth', 30], ['adapter', 17], ['parse', 8], ['dupip', 5]]);
+
+  regions.forEach((region, i) => {
+    const vendor = vendors[i % vendors.length];
+    const model = pick(MODELS_BY_VENDOR[vendor]);
+    const reason = reasons[i % reasons.length];
+    const st = STATE_DEVICES.filter(s => s.region === region);
+    const code = st.length ? st[i % st.length].c : region.slice(0, 2).toUpperCase();
+    const h = 9 - Math.floor(i / 12), m = 59 - (i * 7) % 60;
+    ATTENTION.push({
+      name: `${code}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${pick(ROLE)}-${pad2(10 + i % 88)}`,
+      ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
+      region, vendor, model, reason,
+      last: `01 Sep 26, ${pad2(Math.max(0, h))}:${pad2(m)}`
+    });
+  });
+})();
+
 /* ledger self-check */
 (() => {
   const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
@@ -143,4 +187,5 @@ export const STATE_DEVICES: StateDot[] = [
   chk(sum(REGIONS.map(r => r.total)) === DL.targets, 'region totals ≠ targets');
   chk(sum(STATE_DEVICES.map(s => s.router)) === DL.discRouter && sum(STATE_DEVICES.map(s => s.switch)) === DL.discSwitch, 'states ≠ classes');
   chk(sum(MODELS.map(m => m.fail)) <= DL.runFail, 'model failures exceed failures');
+  chk(ATTENTION.length === DL.runFail, 'attention rows ≠ failures');
 })();

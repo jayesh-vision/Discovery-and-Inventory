@@ -1485,6 +1485,7 @@ body {
   color: var(--vw-color-gray-500);
   white-space: nowrap;
 }
+.nst-table th.t-right { text-align: right; }
 
 .nst-table td {
   padding: var(--vw-space-md) var(--vw-space-lg);

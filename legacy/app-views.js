@@ -250,27 +250,45 @@ function viewInsights() {
 }
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
+let JOB_FILTER = 'All';
+const JOB_TESTS = {
+  All:        () => true,
+  exceptions: j => j.chip !== 'success',
+  failed:     j => j.chip === 'error',
+  stale:      j => j.next === 'held' || j.chip === 'neutral'
+};
+
 function viewJobs() {
+  const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
+  const rows = gridApply('jobs', JOBS.filter(test));
+  const onDemand = JOBS.filter(j => j.sched === 'On demand').length;
+  const weekly = JOBS.filter(j => /^Weekly/.test(j.sched)).length;
+  const scheduled = JOBS.length - onDemand;                 // a weekly cadence is still a schedule
+  const attention = JOBS.filter(j => j.chip === 'error' || j.chip === 'warning' || j.chip === 'neutral' || j.next === 'held').length;
+  const nextJob = JOBS.find(j => j.id === 'DSC-SOUTH-CORE') || JOBS[0];
+  const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Active jobs', '8', '5 scheduled · 2 weekly · 1 on demand', 'sky')}
-      ${kpi('Next run', '15:00 IST', 'DSC-SOUTH-CORE · 412 targets', 'cyan')}
-      ${kpi('Jobs needing attention', '3', 'errors, held schedule, or no adapter', 'amber')}
+      ${kpi('Active jobs', n(JOBS.length), `${n(scheduled)} scheduled (incl. ${n(weekly)} weekly) · ${n(onDemand)} on demand`, 'sky')}
+      ${kpi('Next run', '15:00 IST', `${nextJob.id} · ${nextJob.sched} · ${n(nextJob.targets)} targets`, 'cyan')}
+      ${kpi('Jobs needing attention', n(attention), 'errors, held schedule, or no adapter', 'amber')}
       ${kpi('Collector nodes', '6', 'clr-blr-02 carries 588 targets', 'purple')}
     </div>
 
+    ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`).join('')}</div>`)}
+
     ${card(`
-      ${gridBar(JOBS.length, JOBS.length, 'Job, scope, collector', FS.jobs,
+      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
         `${chip('1 running','info')}${chip('2 with errors','warning')}`,
-        [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }])}
+        [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
-        JOBS.map(j => [
+        rows.map(j => [
           chip(j.state, j.chip),
           `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
            <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
@@ -285,7 +303,7 @@ function viewJobs() {
             <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
           j.next === 'held' ? chip('Held', 'error') : `<span class="vw-card-metric-label-sub">${j.next}</span>`,
         ]), 'job-table',
-        i => [A('View targets', { v:'targets', l:`Targets in ${JOBS[i].id}`, q:'tgt=All' }),
+        i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
               A('Run now'), A('Edit schedule'), A('Edit credential profile'),
               A('Duplicate job'), A('Hold schedule', null, true)])}`)}
 
@@ -318,6 +336,7 @@ const TGT_TESTS = {
   clean:      t => t.ch.every(c => c === 'ok' || c === 'na'),
   partial:    t => t.ch.includes('fail') && t.ch.includes('ok'),
   failed:     t => t.ch.includes('fail'),
+  new:        t => !!t.isNew,
   exceptions: t => t.out !== 'Exact match',
   stale:      t => t.fresh > 168,
   fresh24:    t => t.fresh <= 24,
@@ -327,12 +346,16 @@ const TGT_TESTS = {
   age90:      t => t.fresh > 2160
 };
 const TGT_LABEL = { All:'All targets', answered:'Targets that answered', clean:'Runs where every step passed',
-  partial:'Runs that partly failed', failed:'Runs with a failed collector', exceptions:'Targets with an exception',
-  stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
+  partial:'Runs that partly failed', failed:'Runs with a failed collector', new: 'Seen for the first time this cycle',
+  exceptions:'Targets with an exception', stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
+const TGT_REASON = { unreach: 'Host unreachable', timeout: 'SNMP timeout', auth: 'Authentication failed',
+  adapter: 'No adapter for model', parse: 'Response parse error', dupip: 'Duplicate management IP' };
+const TGT_REASON_CHIP = { unreach: 'purple', timeout: 'cyan', auth: 'pink', adapter: 'warning', parse: 'info', dupip: 'neutral' };
 
+let TGT_REASON_FILTER = null;
 function viewTargets() {
   const test = TGT_TESTS[TGT_FILTER] || TGT_TESTS.All;
-  const rows = TARGETS.filter(test);
+  const rows = gridApply('targets', TARGETS.filter(test).filter(t => !TGT_REASON_FILTER || t.reason === TGT_REASON_FILTER));
   const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
   return `<div class="page">
     ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
@@ -340,10 +363,10 @@ function viewTargets() {
     ${card(`
       ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
         `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
-         <button class="nst-btn nst-btn--filled nst-btn--sm">Run now</button>`)}
+         <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
         [{ t: 'Outcome' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
-         { t: 'Last run' }, { t: 'Age' }, { t: 'Collector chain' }],
+         { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => [
           chip(t.out, t.chip),
           `<span class="mono">${t.ip}</span>`,
@@ -352,6 +375,7 @@ function viewTargets() {
           `<span class="vw-value">${t.oem}</span> <span class="vw-card-metric-label-sub mono">${t.model}</span>`,
           `<span class="num">${t.sync}</span>`,
           freshChip(t.fresh),
+          t.reason ? chip(TGT_REASON[t.reason], TGT_REASON_CHIP[t.reason]) : `<span style="color:${cv('gray',300)}">—</span>`,
           chainOf(t.ch)
         ]), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
@@ -449,8 +473,8 @@ function viewTarget() {
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
-      `<button class="nst-btn nst-btn--sm">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
@@ -533,11 +557,11 @@ function recOutcomes() {
 
 function recTable() {
   const f = NE_FILTER;
-  const rows = NE_RECON
+  const rows = gridApply('reconcile', NE_RECON
     .filter(r => f === 'All' ? true
       : f === 'Open' ? (r.out !== 'Agree' && r.out !== 'Stale')
       : r.out === f)
-    .filter(r => !REC_CIRCLE || r.circle === REC_CIRCLE);
+    .filter(r => !REC_CIRCLE || r.circle === REC_CIRCLE));
   const cell = (r, key) => {
     if (r.inv && r.net && r.diff.includes(key))
       return `<span class="mono rec-was">${r.inv[key]}</span><span class="mono rec-now">${r.net[key]}</span>`;
@@ -568,7 +592,7 @@ function recTable() {
                  ['Only in inventory','Only in inventory'],['Only on network','Only on network'],['Unidentified','Unidentified']];
   return card(`
     ${headSm('Which elements reconciled', 'One row per network element. Where the two sides disagree the inventory value is struck through and the value the network reported is shown beneath it.')}
-    ${gridBar(rows.length, n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c), 'Element, IP, serial', FS.reconcile)}
+    ${gridBar(rows.length, n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c), 'Element, IP, serial', FS.reconcile, '', [], 'reconcile')}
     <div class="stock-bar" style="border-bottom:0;padding-bottom:var(--vw-space-sm)">
       ${chips.map(([k,l]) => `<button class="stock-chip${NE_FILTER===k?' is-on':''}" data-ne-filter="${k}">${l}</button>`).join('')}
     </div>
@@ -582,8 +606,8 @@ function recTable() {
     </table></div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Showing ${rows.length} of ${n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c)} comparable elements.</span>
-      <div class="row"><button class="nst-btn nst-btn--xs">Keep inventory for all</button>
-        <button class="nst-btn nst-btn--xs nst-btn--filled">Accept network for all</button></div>
+      <div class="row"><button class="nst-btn nst-btn--xs js-ack">Keep inventory for all</button>
+        <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept network for all</button></div>
     </div>`);
 }
 
@@ -593,8 +617,8 @@ function viewReconcile() {
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${pmeta().recNote}</span>
       <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>
-      <button class="nst-btn nst-btn--sm">Export</button>
-      <button class="nst-btn nst-btn--filled nst-btn--sm">Re-reconcile</button>`)}
+      <button class="nst-btn nst-btn--sm js-ack">Export</button>
+      <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Re-reconcile</button>`)}
     ${drillBar()}
 
     ${card(`
@@ -605,11 +629,11 @@ function viewReconcile() {
     ${recTable()}
 
     <div class="row-t" style="align-items:stretch">
-      ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements`)}
+      ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements — device-reported attributes only`)}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
         <div class="vw-card-footer-divider row vw-justify-between">
           <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
-          <button class="nst-btn nst-btn--xs nst-btn--filled">Accept all</button>
+          <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept all</button>
         </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
       ${card(`${headSm('How a device is matched to a record', `Rules run in priority order; the first that resolves wins. ${n(ruleTotal)} devices resolved this cycle.`)}
@@ -639,7 +663,16 @@ let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
-let LOC_ST = null, LOC_CAT = null, LOC_STATE = null;
+let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null;
+/* state → operating region, the same grouping Insights uses */
+const STATE_REGION = {
+  'Maharashtra': 'West', 'Uttar Pradesh': 'North', 'Karnataka': 'South', 'Madhya Pradesh': 'East',
+  'Delhi': 'North', 'Tamil Nadu': 'South', 'Gujarat': 'West', 'Andhra Pradesh': 'South',
+  'Rajasthan': 'North', 'West Bengal': 'East', 'Odisha': 'East', 'Telangana': 'South',
+  'Bihar': 'East', 'Punjab': 'North', 'Kerala': 'South', 'Haryana': 'North',
+  'Chhattisgarh': 'East', 'Jharkhand': 'East', 'Assam': 'East', 'Jammu and Kashmir': 'North',
+  'Uttarakhand': 'North'
+};
 
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
   `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}
@@ -672,8 +705,7 @@ function viewHome() {
   ];
   return `<div class="page">
     ${pageHead('Inventory', 'Network elements, connectivity and services across the estate.',
-      `<div class="seg"><button class="is-on">All circles</button><button>South</button><button>North</button><button>West</button></div>
-       <button class="nst-btn nst-btn--sm">Export</button>`)}
+      `<button class="nst-btn nst-btn--sm js-ack">Export</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Locations', n(IL.locations), 'Central 118 · Regional 342 · Edge 1,294', 'amber',
@@ -807,7 +839,7 @@ function locInsights() {
         <div class="vw-card-footer-divider">
           <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
             ${headSm('Failed builds', `${n(fail)} sites, and what is blocking each group.`)}
-            <button class="nst-btn nst-btn--xs">Open exceptions</button>
+            <button class="nst-btn nst-btn--xs js-ack">Open exceptions</button>
           </div>
           ${table([{t:'Circle'},{t:'Sites',r:true},{t:'Blocking reason'}],
             LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
@@ -848,17 +880,18 @@ function locInsights() {
 
 /* ---- view 2 · Locations list ---- */
 function locRows() {
-  return LOCATIONS
+  return gridApply('location', LOCATIONS
     .filter(l => !LOC_ST || l.st === LOC_ST)
     .filter(l => !LOC_CAT || l.cat === LOC_CAT)
-    .filter(l => !LOC_STATE || l.state === LOC_STATE);
+    .filter(l => !LOC_STATE || l.state === LOC_STATE)
+    .filter(l => !LOC_REGION || STATE_REGION[l.state] === LOC_REGION));
 }
 function locList() {
   const shown = locRows();
   return `${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         `${chip('214 not reconciled','warning')}${chip('34 failed','error')}`,
-        [{ l:'Create location', primary:true }, { l:'Download report' }])}
+        [{ l:'Create location', primary:true }, { l:'Download report' }], 'location')}
 
       ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
@@ -1052,7 +1085,7 @@ function viewSite() {
   const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
-  const rows = ne[SITE_TAB] || [];
+  const rows = gridApply('site', ne[SITE_TAB] || []);
   const tot = counts.reduce((a,c)=>a+c.c,0);
   const drift = Object.values(ne).flat().filter(r => r.st === 'drift' || r.st === 'dup').length;
   const notDisc = Object.values(ne).flat().filter(r => r.st === 'none').length;
@@ -1084,8 +1117,8 @@ function viewSite() {
   return `<div class="page">
     ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
       `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>
-       <button class="nst-btn nst-btn--sm">Download report</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Edit site</button>`)}
+       <button class="nst-btn nst-btn--sm js-ack">Download report</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Edit site</button>`)}
 
     ${card(`
       <div class="meta-bar">
@@ -1133,7 +1166,7 @@ function viewSite() {
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}
         <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
-      ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site)}
+      ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
               A('Open element', { v:'resource', l:rows[i].name }),
@@ -1191,7 +1224,7 @@ function capexSection(l, neCount) {
         <span class="vw-card-description">${cx.fy} · ${cx.afe} · ${cx.cc} · owner ${cx.owner}</span>
       </div>
       <div class="row">
-        <button class="nst-btn nst-btn--sm">Export</button>
+        <button class="nst-btn nst-btn--sm js-ack">Export</button>
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
       </div>
     </div>
@@ -1482,6 +1515,7 @@ function viewPhysical() {
 
 /* ── Virtual Resources ────────────────────────────────── */
 function viewVirtual() {
+  const rows = gridApply('virtual', VNFS);
   return `<div class="page">
 
     ${drillBar()}
@@ -1504,11 +1538,11 @@ function viewVirtual() {
     </div>
 
     ${card(`
-      ${gridBar(VNFS.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
+      ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
         `${chip('Sourced from the EMS, not from discovery','purple')}`,
-        [{ l:'Instantiate NF', primary:true }, { l:'Download report' }])}
+        [{ l:'Instantiate NF', primary:true }, { l:'Download report' }], 'virtual')}
       ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
-        VNFS.map((v, i) => [
+        rows.map((v, i) => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           v.type === 'Others'
             ? `<span style="color:${cv('gray',400)}">not RAN</span>`
@@ -1528,8 +1562,10 @@ function viewVirtual() {
 }
 
 /* ── Links ────────────────────────────────────────────── */
+let LINK_NE_FILTER = null;
 function viewLinks() {
-  const t = TAB.link, rows = LINKS[t] || [], meta = LINK_TABS.find(x => x.k === t);
+  const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
+  const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
   return `<div class="page">
 
@@ -1550,7 +1586,7 @@ function viewLinks() {
       ${tabs(LINK_TABS, t, 'link')}
       ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', FS.links,
         `${chip('44 new this cycle','info')}${chip('18 no longer seen','error')}`,
-        [{ l:'Open topology', primary:true }, { l:'Download report' }])}
+        [{ l:'Open topology', primary:true }, { l:'Download report' }], 'links')}
       ${table([{t:'State'},{t:'Source NE'},{t:'Source IP'},{t:t==='lldp'?'Source interface':'Local'},
                {t:'Destination NE'},{t:t==='lldp'?'Destination interface':'Session'},{t:'Link name'},{t:'Verified'}],
         rows.map(r => [
@@ -1577,7 +1613,7 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 function viewServices() {
-  const t = TAB.svc, rows = SERVICES[t] || [], meta = SVC_TABS.find(x => x.k === t);
+  const t = TAB.svc, rows = gridApply('services', SERVICES[t] || []), meta = SVC_TABS.find(x => x.k === t);
   return `<div class="page">
 
     ${drillBar()}
@@ -1594,7 +1630,7 @@ function viewServices() {
     ${card(`
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
-        [{ l:'Download report' }])}
+        [{ l:'Download report' }], 'services')}
       ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'Verified'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
@@ -1610,9 +1646,8 @@ function viewServices() {
 /* ── Inactive inventory ───────────────────────────────── */
 function viewInactive() {
   const t = INACT_CLS, meta = PHY_TABS.find(x => x.k === t);
-  const all = decommRows(t), total = all.length;
-  const pk = 'arch-' + t, rows = pgSlice(all, pk);
-  const zomb = all.filter(r => r.zombie).length;
+  const rows = decommRows(t), total = rows.length;
+  const zomb = rows.filter(r => r.zombie).length;
   return `<div class="page">
 
     ${drillBar()}
@@ -1649,7 +1684,7 @@ function viewInactive() {
           ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions</button>` : ''}
       </div>
 
-      ${gridBar(null, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
+      ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
         chip('Archive · read-only', 'neutral'),
         [{ l:'Go to active inventory', nav:'physical', primary:true }, { l:'Download report' }])}
       ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
@@ -1668,7 +1703,6 @@ function viewInactive() {
               ...(rows[i].zombie ? [A('Open reconciliation exception',
                   { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
               A('Purge record', null, true)])}
-      ${pager(total, pk, `${meta.n.toLowerCase()} records`)}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
         <span class="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
@@ -1678,6 +1712,7 @@ function viewInactive() {
 
 /* ── Reports ──────────────────────────────────────────── */
 function viewReports() {
+  const rows = gridApply('reports', REPORTS);
   return `<div class="page">
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -1691,11 +1726,11 @@ function viewReports() {
     </div>
 
     ${card(`
-      ${gridBar(REPORTS.length, IL.reports, 'Report name, type, creator', FS.reports,
+      ${gridBar(rows.length, IL.reports, 'Report name, type, creator', FS.reports,
         `${chip('1 failed','error')}${chip('1 pending','warning')}`,
-        [{ l:'Generate report', primary:true }, { l:'Schedules' }])}
+        [{ l:'Generate report', primary:true }, { l:'Schedules' }], 'reports')}
       ${table([{t:'Status'},{t:'Report name'},{t:'Type'},{t:'Generated'},{t:'Frequency'},{t:'Creator'},{t:'Created on'},{t:'Size'}],
-        REPORTS.map(r => [
+        rows.map(r => [
           chip(r.st, r.chip), `<span class="vw-value">${r.name}</span>`, r.type, r.gen, r.freq, r.by,
           `<span class="num">${r.on}</span>`, `<span class="num">${r.size}</span>`
         ]), '',

@@ -6,7 +6,7 @@ import {
   ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt,
   phyCount, stockCount, stockMeta, type NeClass, type StockState
 } from '../data/ledger';
-import { complianceOf, eosOf, isActive, phyRows, portsOf, type NeRow } from '../data/physical';
+import { complianceOf, eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
 
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
@@ -40,7 +40,17 @@ export default function PhysicalResources() {
   const [sp, setSp] = useSearchParams();
 
   /* screen state lives in the URL, so drill-downs and reloads land on the same view */
-  const cls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : 'router';
+  const oem = sp.get('oem');
+  const model = sp.get('model');
+  /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
+     the other classes have no collector and never appear in that breakdown */
+  const discoveryScoped = !!(oem || model);
+  /* a model belongs to exactly one class — land on it instead of defaulting
+     to Router, or a switch model's drill would open to an empty grid */
+  const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
+  const rawCls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : modelClass || 'router';
+  const cls: NeClass = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
+  const tabs = discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS;
   const stockParam = sp.get('stock');
   const stock = useMemo<Set<StockState>>(() => {
     const req = (stockParam ? stockParam.split(',') : []).filter(isActive);
@@ -61,7 +71,12 @@ export default function PhysicalResources() {
   };
 
   const meta = classMeta(cls);
-  const rows: NeRow[] = useMemo(() => phyRows(cls, stock), [cls, stock, refreshKey]);
+  const rows: NeRow[] = useMemo(() => {
+    let r = phyRows(cls, stock);
+    if (oem) r = r.filter(x => x.oem.toUpperCase() === oem.toUpperCase());
+    if (model) r = r.filter(x => x.model === model);
+    return r;
+  }, [cls, stock, oem, model, refreshKey]);
   const total = phyCount(cls, stock);
   const notVerified = meta.c - meta.disc;
 
@@ -74,9 +89,15 @@ export default function PhysicalResources() {
     { l: 'Decommission', danger: true }
   ];
 
+  const clearDrill = () => {
+    const next = new URLSearchParams(sp);
+    next.delete('drill'); next.delete('from'); next.delete('oem'); next.delete('model');
+    setSp(next, { replace: true });
+  };
+
   return (
     <div className="page">
-      {drill && <DrillBar from="Inventory" label={drill} onBack={() => nav(-1)} onClear={() => set('drill', null)} />}
+      {drill && <DrillBar from={sp.get('from') ?? 'Inventory'} label={drill} onBack={() => nav(-1)} onClear={clearDrill} />}
 
       <StatStrip cells={[
         { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
@@ -91,7 +112,7 @@ export default function PhysicalResources() {
 
       <Card>
         <TabBar
-          tabs={PHY_TABS.map(x => ({
+          tabs={tabs.map(x => ({
             k: x.k, n: x.n, count: phyCount(x.k, stock), dot: cv(x.disc ? 'emerald' : 'red', 400),
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
               x.disc ? ` · ${fmt(x.disc)} discovered` : ' · no collector reaches this class'}`

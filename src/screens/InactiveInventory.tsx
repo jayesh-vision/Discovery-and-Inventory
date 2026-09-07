@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
-import { DataGrid, Pager, usePager, type Action } from '../components/grid/DataGrid';
+import { DataGrid, type Action } from '../components/grid/DataGrid';
 import { NE_CLASSES, PHY_TABS, classMeta, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 
@@ -22,13 +22,11 @@ export default function InactiveInventory() {
   const cls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : 'router';
   const meta = classMeta(cls);
 
-  const all = useMemo(() => decommRows(cls), [cls]);
-  const total = all.length;
-  const pager = usePager(total);
-  const rows = pager.slice(all);
-  const zombies = all.filter(r => r.zombie).length;
+  const rows = useMemo(() => decommRows(cls), [cls]);
+  const total = rows.length;
+  const zombies = rows.filter(r => r.zombie).length;
 
-  const setCls = (k: NeClass) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); pager.setPage(1); };
+  const setCls = (k: NeClass) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
 
   const rowActions = (r: ArchiveRow): Action[] => [
@@ -68,7 +66,7 @@ export default function InactiveInventory() {
         <DataGrid<ArchiveRow>
           columns={[{ t: 'Name' }, { t: 'Model / OEM' }, { t: 'Serial number' }, { t: 'Last IP / location' },
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}
-          rows={rows} total={total} paginated rowKey={r => r.sn}
+          rows={rows} total={total} rowKey={r => r.sn}
           searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
           extra={<Chip tone="neutral">Archive · read-only</Chip>}
           gridActions={[{ l: 'Go to active inventory', primary: true, onClick: () => nav('/inventory/physical') }, { l: 'Download report' }]}
@@ -84,8 +82,6 @@ export default function InactiveInventory() {
             r.zombie ? <Chip tone="error">Still answering</Chip> : <Chip tone="neutral">Silent</Chip>
           ]}
         />
-        <Pager total={total} page={pager.page} size={pager.size} last={pager.last}
-          note={`${meta.n.toLowerCase()} records`} onPage={pager.setPage} onSize={pager.setSize} />
         <div className="vw-card-footer-divider row vw-justify-between vw-wrap">
           <span className="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
           <span className="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>

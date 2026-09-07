@@ -65,11 +65,11 @@ patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-site
     </div>`, 'site details tab');
 
 /* 2d. the transcript has no breadcrumb to go back by — give it a button */
-patch(`      \`<button class="nst-btn nst-btn--sm">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>\`)}`,
+patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>\`)}`,
 `      \`<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>\`)}`, 'transcript back button');
+       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>\`)}`, 'transcript back button');
 
 /* 2e. scan targets: the quick filter sits in the grid bar, Run now in its kebab */
 patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>\`)}
@@ -77,22 +77,24 @@ patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class=
     \${card(\`
       \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
         \`\${chip(\`\${n(DL.runFail)} failed\`,'error')}\${chip(\`\${n(DL.runPartial)} partial\`,'warning')}
-         <button class="nst-btn nst-btn--filled nst-btn--sm">Run now</button>\`)}`,
+         <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>\`, [], 'targets')}`,
 `    \${drillBar()}
     \${card(\`
       \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
         \`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>
          \${chip(\`\${n(DL.runFail)} failed\`,'error')}\${chip(\`\${n(DL.runPartial)} partial\`,'warning')}\`,
-        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }])}`, 'targets quick filter in grid bar');
+        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }], 'targets')}`, 'targets quick filter in grid bar');
 patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`,
       `  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`, 'run-now icon');
 
 /* 3. after an in-place render, tell React so the URL follows the screen */
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
+  lazyGrids();
 }
 `, `    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
+  lazyGrids();
   if (window.__nsBridge && window.__nsBridge.sync) window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT));
 }
 function __legacyParams(k) {

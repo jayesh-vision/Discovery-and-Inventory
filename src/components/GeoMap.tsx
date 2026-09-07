@@ -65,18 +65,29 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
   const broken = view.k >= BREAK_AT;
 
   /* ── camera ──────────────────────────────────────────── */
+  /* Panning and zoom-to-cursor are otherwise unbounded, so a drag or a wheel
+     zoom can carry the whole estate off-canvas and leave the map looking
+     blank with nothing to click back to. Keep at least a slice of the
+     content on screen at every zoom level. */
+  const clamp = (x: number, y: number, k: number) => {
+    const sx = GEO.W * 0.4, sy = GEO.H * 0.4;
+    return {
+      x: Math.min(GEO.W - sx, Math.max(sx - GEO.W * k, x)),
+      y: Math.min(GEO.H - sy, Math.max(sy - GEO.H * k, y))
+    };
+  };
   const fit = useCallback((bb: number[], pad = 0.25, maxK = 6) => {
     const bw = bb[2] - bb[0], bh = bb[3] - bb[1];
     const k = Math.min(maxK, Math.max(1, Math.min(GEO.W / (bw * (1 + pad)), GEO.H / (bh * (1 + pad)))));
     const cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2;
-    setAnim(true); setView({ k, x: GEO.W / 2 - cx * k, y: GEO.H / 2 - cy * k });
+    setAnim(true); setView({ k, ...clamp(GEO.W / 2 - cx * k, GEO.H / 2 - cy * k, k) });
   }, []);
   const reset = () => { setAnim(true); setView({ k: 1, x: 0, y: 0 }); setSel(null); setSite(null); };
   const zoomBy = (f: number, px = GEO.W / 2, py = GEO.H / 2) => setView(v => {
     const k = Math.min(MAX_K, Math.max(1, v.k * f)); if (k === v.k) return v;
     /* keep the point under (px,py) fixed */
     const x = px - (px - v.x) * (k / v.k), y = py - (py - v.y) * (k / v.k);
-    return { k, x, y };
+    return { k, ...clamp(x, y, k) };
   });
   const openState = (st: string) => { setSel(st); setSite(null); fit(BBOX[st] ?? [0, 0, GEO.W, GEO.H], 0.35, Math.max(BREAK_AT + 0.3, 3)); };
 
@@ -91,7 +102,11 @@ export function GeoMap({ bubbles, legend }: { bubbles: Bubble[]; legend: { n: st
     const r = wrap.current!.getBoundingClientRect(); const s = GEO.W / r.width;
     const dx = (e.clientX - drag.current.x) * s, dy = (e.clientY - drag.current.y) * s;
     if (Math.abs(dx) + Math.abs(dy) > 3) drag.current.moved = true;
-    setView(v => ({ ...v, x: drag.current!.vx + dx, y: drag.current!.vy + dy }));
+    /* read drag.current now, not inside the updater — a pointerup can null it
+       out before React gets around to applying this state update, which
+       crashed the whole map (and everything below it) mid-gesture */
+    const nx = drag.current.vx + dx, ny = drag.current.vy + dy;
+    setView(v => ({ ...v, ...clamp(nx, ny, v.k) }));
   };
   const onUp = () => { drag.current = null; };
   useEffect(() => {

@@ -101,17 +101,21 @@ export function SplitBar({ ok, fail, max }: { ok: number; fail: number; max: num
   );
 }
 
-/* ── single-series line with a padded baseline ──────────────
-   For a level that barely moves, a zero-based bar chart says nothing; a
-   line on a padded axis shows the movement, and the axis labels make the
-   padding explicit so it cannot mislead. One series, so no legend. */
+/* ── single-series line, zero-based ──────────────────────────
+   One series, so no legend. */
+/** The floor/ceiling a LineChart draws its axis to — exported so callers can
+    read the same bounds the chart actually draws. Floor is always zero. */
+export function lineAxisBounds(values: number[]) {
+  const hi = Math.max(...values), lo = Math.min(...values), pad = Math.max(1, (hi - lo) * 0.35);
+  return { y0: 0, y1: Math.ceil((hi + pad) / 10) * 10 };
+}
+
 export function LineChart({ labels, values, detail, height = 210, format }: {
   labels: string[]; values: number[]; detail?: (i: number) => ReactNode; height?: number; format: (v: number) => string;
 }) {
   const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
   const W = 1000, H = height, padL = 54, padR = 24, padT = 18, padB = 32;
-  const lo = Math.min(...values), hi = Math.max(...values), pad = Math.max(1, (hi - lo) * 0.35);
-  const y0 = Math.floor((lo - pad) / 10) * 10, y1 = Math.ceil((hi + pad) / 10) * 10;
+  const { y0, y1 } = lineAxisBounds(values);
   const y = (v: number) => padT + (H - padT - padB) * (1 - (v - y0) / (y1 - y0));
   const x = (i: number) => padL + (W - padL - padR) * (values.length === 1 ? 0.5 : i / (values.length - 1));
   const ticks = [y0, (y0 + y1) / 2, y1];

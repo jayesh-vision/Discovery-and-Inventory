@@ -1,5 +1,5 @@
 /* ═══ Resource detail ═══ */
-let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp';
+let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
 const RES_TABS = [
   { k:'overview',  n:'Overview' },   { k:'hardware', n:'Hardware',  c:()=>HW_TREE.length },
   { k:'ifaces',    n:'Interfaces', c:()=>IF_CAP.total },
@@ -233,13 +233,17 @@ function resConfig() {
 }
 
 function resHistory() {
+  const histTest = { All: () => true, Discovery: h => h.src.includes('collector'),
+    Manual: h => h.src.startsWith('Manual'), Workorder: h => h.src.startsWith('Workorder') };
+  const hist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('History', 'Every change to this record, who made it and from which source')}
-      <div class="seg"><button class="is-on">All</button><button>Discovery</button><button>Manual</button><button>Workorder</button></div>
+      <div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
+        `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
     ${table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
-      RES_HISTORY.map(h => [`<span class="num">${h.at}</span>`,
+      hist.map(h => [`<span class="num">${h.at}</span>`,
         h.who === 'discovery' || h.who === 'fault mgmt' || h.who === 'CIQ import'
           ? `<span class="mono" style="color:${cv('gray',500)}">${h.who}</span>` : `<span class="vw-value">${h.who}</span>`,
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,
@@ -299,7 +303,7 @@ function rackStrip(r) {
   return `<div class="rack-el">${cells.join('')}</div>`;
 }
 function viewPassive() {
-  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t), rows = PASSIVE[t] || [];
+  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t), rows = gridApply('passive', PASSIVE[t] || []);
   const P = PASSIVE_STATS;
   const cols = { fiber:[{t:'Status'},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status'},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
@@ -365,13 +369,13 @@ function viewPassive() {
           <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
           Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
         </span>
-        <button class="nst-btn nst-btn--xs" style="flex-shrink:0">Survey backlog</button>
+        <button class="nst-btn nst-btn--xs js-ack" style="flex-shrink:0">Survey backlog</button>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
           <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
-        [{ l:'Create passive record', primary:true }, { l:'Import survey' }])}
+        [{ l:'Create passive record', primary:true }, { l:'Import survey' }], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('View record'), A('Open site', { v:'site', l:rows[i].site || rows[i].n }),
               A('Record a new survey'), A('Attach OTDR trace / photo'),

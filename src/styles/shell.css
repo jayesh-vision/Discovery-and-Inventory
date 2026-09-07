@@ -688,6 +688,9 @@ button.sb-row.is-drill::after { display: none; }
   background: var(--vw-color-white); border: 1px solid var(--vw-color-gray-200);
   border-radius: var(--vw-radius-md); box-shadow: 0 8px 24px rgba(15, 23, 42, .14); }
 .kmenu-r { right: 0; top: calc(100% + 6px); }
+/* A row menu inside the grid's own scroll box would be clipped by it, so it is
+   taken out of flow and placed against the kebab button's screen position. */
+.kmenu--fixed { position: fixed; right: auto; bottom: auto; top: auto; }
 .kmenu-i { display: block; width: 100%; text-align: left; font: inherit; font-size: 0.8125rem;
   padding: var(--vw-space-xs) var(--vw-space-sm); border: 0; background: none; cursor: pointer;
   color: var(--vw-color-gray-800); border-radius: var(--vw-radius-sm); white-space: nowrap; }
@@ -750,8 +753,21 @@ button.sb-row.is-drill::after { display: none; }
   border: 1px solid var(--vw-color-slate-200);
   border-radius: var(--vw-radius-md);
   background: var(--vw-color-white);
+  /* The grid keeps its own scroll: a height comes from JS (25 rows, capped by the
+     screen) and lands in --grid-h. Set --grid-h on a wrapper to override it. */
+  overflow: auto;
+  max-height: var(--grid-h, none);
+  overscroll-behavior: contain;   /* reaching the last row must not scroll the page */
 }
 .tbl-wrap > .nst-table { border: 0; border-radius: 0; }
+
+/* The header stays put while the rows move under it — which means every header
+   cell has to be opaque, including the action column's, which is otherwise
+   transparent so it does not read as a column of its own. */
+.tbl-wrap .nst-table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--vw-color-white);
+}
 
 /* The action column is the last cell of the row, not a column of its own: no
    header label, no rule down its left edge, no separate background. It scrolls
@@ -955,48 +971,24 @@ button.is-drill.tier-h, button.is-drill.circ-row { background: none; border: 0; 
 button.is-drill.tier-h:hover, button.is-drill.circ-row:hover { background: var(--vw-color-slate-50); }
 button.is-drill.tier-h::after, button.is-drill.circ-row::after { display: none; }
 
-/* ── pagination ─────────────────────────────────────────── */
-.pgr {
-  display: flex; align-items: center; flex-wrap: wrap;
-  gap: var(--vw-space-md);
-  padding: var(--vw-space-md) 0 var(--vw-space-xs);
-  border-top: 1px solid var(--vw-color-slate-200);
-  margin-top: var(--vw-space-md);
-}
-.pgr-note { white-space: nowrap; }
-.pgr-note .num { font-variant-numeric: tabular-nums; color: var(--vw-color-slate-700); font-weight: 500; }
-.pgr-size { display: flex; align-items: center; gap: var(--vw-space-xs); white-space: nowrap; flex-shrink: 0; }
-.pgr-sel {
-  height: 28px; padding: 0 22px 0 var(--vw-space-sm);
-  font-size: var(--vw-font-size-xs);
-  border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-sm);
-  background-color: var(--vw-color-white);
-  color: var(--vw-color-slate-700);
-  cursor: pointer;
-}
-.pgr-nav { display: flex; align-items: center; gap: 2px; }
-.pgr-b {
-  min-width: 28px; height: 28px; padding: 0 6px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid transparent; border-radius: var(--vw-radius-sm);
-  background: transparent; cursor: pointer;
+/* ── infinite scroll ────────────────────────────────────────
+   The strip under a partly revealed grid: it doubles as the sentinel the
+   observer watches, so reaching it is what asks for the next 25 rows. */
+.tbl-more {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--vw-space-sm);
+  padding: var(--vw-space-sm) var(--vw-space-md);
+  border: 0; border-top: 1px solid var(--vw-color-slate-200);
+  background: var(--vw-color-slate-50);
+  color: var(--vw-color-slate-600);
   font-family: inherit; font-size: var(--vw-font-size-xs); font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--vw-color-slate-600);
+  cursor: pointer;
 }
-.pgr-b:hover:not(:disabled) { background-color: var(--vw-color-slate-100); color: var(--vw-color-slate-900); }
-.pgr-b:disabled { opacity: .35; cursor: default; }
-.pgr-b.is-on {
-  background-color: var(--vw-color-slate-900);
-  border-color: var(--vw-color-slate-900);
-  color: var(--vw-color-white);
-}
-.pgr-gap { padding: 0 2px; color: var(--vw-color-slate-400); font-size: var(--vw-font-size-xs); }
-@media (max-width: 900px) {
-  .pgr { gap: var(--vw-space-sm); }
-  .pgr-size { display: none; }
-}
+.tbl-more:hover { background: var(--vw-color-slate-100); color: var(--vw-color-slate-900); }
+.tbl-more-of { color: var(--vw-color-slate-400); font-weight: 400; }
+.nst-table tbody tr[hidden] { display: none; }
 
 .cell-sub {
   display: block;
@@ -1152,6 +1144,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .mtbl { width: 100%; border-collapse: collapse; margin-top: var(--vw-space-md); }
 .mtbl th { text-align: left; font-size: var(--vw-font-size-xs); font-weight: 400; color: var(--vw-color-gray-500);
   padding: 8px var(--vw-space-sm); background: var(--vw-color-slate-50); }
+.mtbl th.t-right { text-align: right; }
 .mtbl td { padding: 11px var(--vw-space-sm); border-top: 1px solid var(--vw-color-slate-100); font-size: var(--vw-font-size-sm); white-space: nowrap; }
 .mtbl th.vtbl-bar, .mtbl td.vtbl-bar { width: 38%; }
 .mtbl tr.is-click { cursor: pointer; } .mtbl tr.is-click:hover td { background: var(--vw-color-slate-50); }

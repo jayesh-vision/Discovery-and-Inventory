@@ -127,7 +127,7 @@ const CH = { ok: 'ok', fail: 'fail', na: 'na', run: 'run', wait: 'wait' };
 const TARGETS = [
   { ip: '192.168.10.235', host: 'SP-CNOC-LAB-J204-PE-T3-NR1', oem: 'Juniper', model: 'MX204',
     circle: 'Karnataka', sync: '01-Sep-2026 09:19', fresh: 3, job: 'DSC-LAB-SEED',
-    ch: ['ok','ok','ok','fail','na','na'], out: 'Drifted', chip: 'warning' },
+    ch: ['ok','ok','ok','fail','na','na'], out: 'Drifted', chip: 'warning', reason: 'timeout' },
   { ip: '172.31.33.100', host: 'NDLS-J960-P_R1-T1-NR', oem: 'Juniper', model: 'MX960',
     circle: 'Delhi', sync: '01-Sep-2026 09:10', fresh: 3, job: 'DSC-DEL-EDGE',
     ch: ['ok','ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
@@ -136,22 +136,22 @@ const TARGETS = [
     ch: ['ok','ok','ok','ok','na','ok'], out: 'Stale', chip: 'orange' },
   { ip: '172.31.41.84', host: '—', oem: '—', model: '—',
     circle: 'Andhra Pradesh', sync: '21-Jan-2025 03:02', fresh: 14400, job: 'DSC-AP-ACCESS',
-    ch: ['fail','na','na','na','na','na'], out: 'Missing', chip: 'error' },
+    ch: ['fail','na','na','na','na','na'], out: 'Missing', chip: 'error', reason: 'unreach' },
   { ip: '172.31.41.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024',
     circle: 'Karnataka', sync: '01-Sep-2026 08:44', fresh: 4, job: 'DSC-SOUTH-CORE',
-    ch: ['ok','ok','ok','ok','na','na'], out: 'Rogue', chip: 'pink' },
+    ch: ['ok','ok','ok','ok','na','na'], out: 'Rogue', chip: 'pink', isNew: true },
   { ip: '172.31.49.88', host: '—', oem: 'Nokia', model: '7750 SR-7',
     circle: 'Andhra Pradesh', sync: '01-Sep-2026 02:31', fresh: 10, job: 'DSC-AP-ACCESS',
-    ch: ['ok','fail','fail','na','na','na'], out: 'Unclaimed', chip: 'purple' },
+    ch: ['ok','fail','fail','na','na','na'], out: 'Unclaimed', chip: 'purple', reason: 'parse' },
   { ip: '172.31.61.10', host: 'ODI-ACX2200-PE-T4', oem: 'Juniper', model: 'ACX2200',
     circle: 'Odisha', sync: '31-Aug-2026 02:30', fresh: 31, job: 'DSC-ODI-ACCESS',
-    ch: ['ok','ok','ok','ok','ok','fail'], out: 'Drifted', chip: 'warning' },
+    ch: ['ok','ok','ok','ok','ok','fail'], out: 'Drifted', chip: 'warning', reason: 'auth' },
   { ip: '172.31.39.144', host: 'INDR-C9300-TEMP', oem: 'Cisco', model: 'C9300-48UXM',
     circle: 'Madhya Pradesh', sync: '01-Sep-2026 02:00', fresh: 7, job: 'DSC-INDR-ACCESS',
-    ch: ['ok','ok','ok','na','na','na'], out: 'Rogue', chip: 'pink' },
+    ch: ['ok','ok','ok','na','na','na'], out: 'Rogue', chip: 'pink', isNew: true },
   { ip: '172.31.47.144', host: 'WR-ADVA-FSP3000-01', oem: 'Adva', model: 'FSP 3000',
     circle: 'Maharashtra', sync: '19-Nov-2025 04:00', fresh: 6960, job: 'DSC-DWDM-RING',
-    ch: ['fail','na','na','na','na','na'], out: 'No adapter', chip: 'neutral' },
+    ch: ['fail','na','na','na','na','na'], out: 'No adapter', chip: 'neutral', reason: 'adapter' },
   { ip: '172.31.53.186', host: 'VZG-N540X-PE-T4-NR', oem: 'Cisco', model: 'NCS-540',
     circle: 'Andhra Pradesh', sync: '01-Sep-2026 02:30', fresh: 10, job: 'DSC-AP-ACCESS',
     ch: ['ok','ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
@@ -259,12 +259,15 @@ const DRIFT_ROWS = [
     master: 'FW488AS342W ×5', network: '5 distinct serials', src: 'chassis inventory', conf: 'Exact', age: '3 h' }
 ];
 
+/* Attributes the device itself reports, so a mismatch here is a real conflict
+   between what the network says and what the record says. Circle/site is an
+   assignment made in inventory, never reported by the device — it belongs to
+   the location record, not a discovery collector, so it does not belong here. */
 const DRIFT_BY_FIELD = [
   { n: 'OEM name',      c: 118, tone: 'red' },
   { n: 'OS version',    c: 104, tone: 'amber' },
   { n: 'Model name',    c: 61,  tone: 'amber' },
   { n: 'Serial number', c: 54,  tone: 'red' },
-  { n: 'Circle / site', c: 33,  tone: 'amber' },
   { n: 'Interface set', c: 22,  tone: 'orange' }
 ];
 
@@ -1070,4 +1073,69 @@ REPORTS.push(
   { st:'Completed', chip:'success', name:'COLLECTOR-CREDENTIAL-FAILURES',  type:'Discovery',gen:'Automated', freq:'Daily',   by:'scheduler',    on:'01-Sep-2026', size:'910 KB' },
   { st:'Pending',   chip:'warning', name:'KOL-204-RRU-POWER-AUDIT',        type:'Site',     gen:'Scheduled', freq:'Weekly',  by:'Rohan Mehta',  on:'01-Sep-2026', size:'—' }
 );
+
+/* grown after its own declaration — the eleven hand-written rows above stay
+   for their narrative detail; the rest of "the 175 that failed" and "68 seen
+   for the first time" (both quoted on Insights) are filled in here so the
+   count on Scan targets is something you can actually open and read, in the
+   exact reason mix the Insights donut and DROPS already state. */
+(function growTargets() {
+  let seed = 7919;
+  const rnd = () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const pad2 = v => String(v).padStart(2, '0');
+  const flatten = mix => mix.flatMap(([k, c]) => Array(c).fill(k));
+
+  const MODELS_BY_OEM = {
+    Juniper:  ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
+    Cisco:    ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
+    Nokia:    ['7750', '7750 SR-7'],
+    Adva:     ['FSP 3000'],
+    Edgecore: ['AS7712-32X']
+  };
+  const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+
+  /* one row per unit of runFail, split across reasons exactly as DROPS states;
+     the 5 hand-written failures above already carry one of each but dupip, so
+     the generated share is trimmed by one apiece to land on 175 in total */
+  const reasons = flatten([['unreach', 67], ['timeout', 40], ['auth', 32], ['adapter', 17], ['parse', 8], ['dupip', 6]]);
+  const oems = flatten([['Juniper', 96], ['Cisco', 63], ['Nokia', 8], ['Adva', 5], ['Edgecore', 3]]);
+
+  reasons.forEach((reason, i) => {
+    const oem = oems[i % oems.length];
+    const model = pick(MODELS_BY_OEM[oem]);
+    const circle = CIRCLES[i % CIRCLES.length];
+    const job = JOBS[i % JOBS.length].id;
+    /* unreachable / timed-out targets never got far enough to answer the
+       device collector, so nothing about them is known yet */
+    const known = reason !== 'unreach' && reason !== 'timeout';
+    const host = known ? `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${pick(ROLE)}-${pad2(10 + i % 88)}` : '—';
+    TARGETS.push({
+      ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
+      host, oem: known ? oem : '—', model: known ? model : '—',
+      circle: circle.n, sync: `01-Sep-2026 0${2 + i % 7}:${pad2((i * 11) % 60)}`,
+      fresh: 1 + i % 18, job,
+      ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
+    });
+  });
+
+  /* devices seen for the first time this cycle: identified, not yet in
+     Inventory — the two hand-written rows above are Rogue outcomes of the
+     same shape, so the rest follow suit */
+  for (let i = 0; i < 66; i++) {
+    const circle = CIRCLES[(i + 5) % CIRCLES.length];
+    const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
+    const model = pick(MODELS_BY_OEM[oem]);
+    const job = JOBS[(i + 3) % JOBS.length].id;
+    TARGETS.push({
+      ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
+      host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
+      oem, model, circle: circle.n,
+      sync: `01-Sep-2026 0${1 + i % 8}:${pad2((i * 19) % 60)}`,
+      fresh: 1 + i % 12, job,
+      ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
+      out: 'Rogue', chip: 'pink', isNew: true
+    });
+  }
+})();
 

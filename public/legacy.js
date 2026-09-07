@@ -250,7 +250,7 @@ const CH = { ok: 'ok', fail: 'fail', na: 'na', run: 'run', wait: 'wait' };
 const TARGETS = [
   { ip: '192.168.10.235', host: 'SP-CNOC-LAB-J204-PE-T3-NR1', oem: 'Juniper', model: 'MX204',
     circle: 'Karnataka', sync: '01-Sep-2026 09:19', fresh: 3, job: 'DSC-LAB-SEED',
-    ch: ['ok','ok','ok','fail','na','na'], out: 'Drifted', chip: 'warning' },
+    ch: ['ok','ok','ok','fail','na','na'], out: 'Drifted', chip: 'warning', reason: 'timeout' },
   { ip: '172.31.33.100', host: 'NDLS-J960-P_R1-T1-NR', oem: 'Juniper', model: 'MX960',
     circle: 'Delhi', sync: '01-Sep-2026 09:10', fresh: 3, job: 'DSC-DEL-EDGE',
     ch: ['ok','ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
@@ -259,22 +259,22 @@ const TARGETS = [
     ch: ['ok','ok','ok','ok','na','ok'], out: 'Stale', chip: 'orange' },
   { ip: '172.31.41.84', host: '—', oem: '—', model: '—',
     circle: 'Andhra Pradesh', sync: '21-Jan-2025 03:02', fresh: 14400, job: 'DSC-AP-ACCESS',
-    ch: ['fail','na','na','na','na','na'], out: 'Missing', chip: 'error' },
+    ch: ['fail','na','na','na','na','na'], out: 'Missing', chip: 'error', reason: 'unreach' },
   { ip: '172.31.41.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024',
     circle: 'Karnataka', sync: '01-Sep-2026 08:44', fresh: 4, job: 'DSC-SOUTH-CORE',
-    ch: ['ok','ok','ok','ok','na','na'], out: 'Rogue', chip: 'pink' },
+    ch: ['ok','ok','ok','ok','na','na'], out: 'Rogue', chip: 'pink', isNew: true },
   { ip: '172.31.49.88', host: '—', oem: 'Nokia', model: '7750 SR-7',
     circle: 'Andhra Pradesh', sync: '01-Sep-2026 02:31', fresh: 10, job: 'DSC-AP-ACCESS',
-    ch: ['ok','fail','fail','na','na','na'], out: 'Unclaimed', chip: 'purple' },
+    ch: ['ok','fail','fail','na','na','na'], out: 'Unclaimed', chip: 'purple', reason: 'parse' },
   { ip: '172.31.61.10', host: 'ODI-ACX2200-PE-T4', oem: 'Juniper', model: 'ACX2200',
     circle: 'Odisha', sync: '31-Aug-2026 02:30', fresh: 31, job: 'DSC-ODI-ACCESS',
-    ch: ['ok','ok','ok','ok','ok','fail'], out: 'Drifted', chip: 'warning' },
+    ch: ['ok','ok','ok','ok','ok','fail'], out: 'Drifted', chip: 'warning', reason: 'auth' },
   { ip: '172.31.39.144', host: 'INDR-C9300-TEMP', oem: 'Cisco', model: 'C9300-48UXM',
     circle: 'Madhya Pradesh', sync: '01-Sep-2026 02:00', fresh: 7, job: 'DSC-INDR-ACCESS',
-    ch: ['ok','ok','ok','na','na','na'], out: 'Rogue', chip: 'pink' },
+    ch: ['ok','ok','ok','na','na','na'], out: 'Rogue', chip: 'pink', isNew: true },
   { ip: '172.31.47.144', host: 'WR-ADVA-FSP3000-01', oem: 'Adva', model: 'FSP 3000',
     circle: 'Maharashtra', sync: '19-Nov-2025 04:00', fresh: 6960, job: 'DSC-DWDM-RING',
-    ch: ['fail','na','na','na','na','na'], out: 'No adapter', chip: 'neutral' },
+    ch: ['fail','na','na','na','na','na'], out: 'No adapter', chip: 'neutral', reason: 'adapter' },
   { ip: '172.31.53.186', host: 'VZG-N540X-PE-T4-NR', oem: 'Cisco', model: 'NCS-540',
     circle: 'Andhra Pradesh', sync: '01-Sep-2026 02:30', fresh: 10, job: 'DSC-AP-ACCESS',
     ch: ['ok','ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
@@ -382,12 +382,15 @@ const DRIFT_ROWS = [
     master: 'FW488AS342W ×5', network: '5 distinct serials', src: 'chassis inventory', conf: 'Exact', age: '3 h' }
 ];
 
+/* Attributes the device itself reports, so a mismatch here is a real conflict
+   between what the network says and what the record says. Circle/site is an
+   assignment made in inventory, never reported by the device — it belongs to
+   the location record, not a discovery collector, so it does not belong here. */
 const DRIFT_BY_FIELD = [
   { n: 'OEM name',      c: 118, tone: 'red' },
   { n: 'OS version',    c: 104, tone: 'amber' },
   { n: 'Model name',    c: 61,  tone: 'amber' },
   { n: 'Serial number', c: 54,  tone: 'red' },
-  { n: 'Circle / site', c: 33,  tone: 'amber' },
   { n: 'Interface set', c: 22,  tone: 'orange' }
 ];
 
@@ -1194,6 +1197,71 @@ REPORTS.push(
   { st:'Pending',   chip:'warning', name:'KOL-204-RRU-POWER-AUDIT',        type:'Site',     gen:'Scheduled', freq:'Weekly',  by:'Rohan Mehta',  on:'01-Sep-2026', size:'—' }
 );
 
+/* grown after its own declaration — the eleven hand-written rows above stay
+   for their narrative detail; the rest of "the 175 that failed" and "68 seen
+   for the first time" (both quoted on Insights) are filled in here so the
+   count on Scan targets is something you can actually open and read, in the
+   exact reason mix the Insights donut and DROPS already state. */
+(function growTargets() {
+  let seed = 7919;
+  const rnd = () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const pad2 = v => String(v).padStart(2, '0');
+  const flatten = mix => mix.flatMap(([k, c]) => Array(c).fill(k));
+
+  const MODELS_BY_OEM = {
+    Juniper:  ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
+    Cisco:    ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
+    Nokia:    ['7750', '7750 SR-7'],
+    Adva:     ['FSP 3000'],
+    Edgecore: ['AS7712-32X']
+  };
+  const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+
+  /* one row per unit of runFail, split across reasons exactly as DROPS states;
+     the 5 hand-written failures above already carry one of each but dupip, so
+     the generated share is trimmed by one apiece to land on 175 in total */
+  const reasons = flatten([['unreach', 67], ['timeout', 40], ['auth', 32], ['adapter', 17], ['parse', 8], ['dupip', 6]]);
+  const oems = flatten([['Juniper', 96], ['Cisco', 63], ['Nokia', 8], ['Adva', 5], ['Edgecore', 3]]);
+
+  reasons.forEach((reason, i) => {
+    const oem = oems[i % oems.length];
+    const model = pick(MODELS_BY_OEM[oem]);
+    const circle = CIRCLES[i % CIRCLES.length];
+    const job = JOBS[i % JOBS.length].id;
+    /* unreachable / timed-out targets never got far enough to answer the
+       device collector, so nothing about them is known yet */
+    const known = reason !== 'unreach' && reason !== 'timeout';
+    const host = known ? `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${pick(ROLE)}-${pad2(10 + i % 88)}` : '—';
+    TARGETS.push({
+      ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
+      host, oem: known ? oem : '—', model: known ? model : '—',
+      circle: circle.n, sync: `01-Sep-2026 0${2 + i % 7}:${pad2((i * 11) % 60)}`,
+      fresh: 1 + i % 18, job,
+      ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
+    });
+  });
+
+  /* devices seen for the first time this cycle: identified, not yet in
+     Inventory — the two hand-written rows above are Rogue outcomes of the
+     same shape, so the rest follow suit */
+  for (let i = 0; i < 66; i++) {
+    const circle = CIRCLES[(i + 5) % CIRCLES.length];
+    const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
+    const model = pick(MODELS_BY_OEM[oem]);
+    const job = JOBS[(i + 3) % JOBS.length].id;
+    TARGETS.push({
+      ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
+      host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
+      oem, model, circle: circle.n,
+      sync: `01-Sep-2026 0${1 + i % 8}:${pad2((i * 19) % 60)}`,
+      fresh: 1 + i % 12, job,
+      ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
+      out: 'Rogue', chip: 'pink', isNew: true
+    });
+  }
+})();
+
 
 /* ═══ reporting period ═══════════════════════════════════
    The Insights period switch is global to the discovery and
@@ -1378,6 +1446,25 @@ let FILTER_OPEN = false;   /* the Filters panel                          */
 let FILTER_FIELD = 0;
 let GRID_N = 0;            /* reset each render so grid ids are stable   */
 
+/* ── search + filters, per grid ───────────────────────────
+   Keyed by the grid's own key (one per screen). A grid's search box and
+   filter panel write into this; the view reads it back through gridApply()
+   before it builds its rows, so both actually narrow what's on screen. */
+let GRID_STATE = {};
+const gridOf = key => GRID_STATE[key] || (GRID_STATE[key] = { search: '', filters: {} });
+/* No per-grid field mapping to keep in sync: a row matches if the query (or
+   every active filter value) appears anywhere in that row's own data. */
+function gridApply(key, rows) {
+  const st = gridOf(key);
+  const q = st.search.trim().toLowerCase();
+  const need = Object.values(st.filters).filter(Boolean).map(v => String(v).toLowerCase());
+  if (!q && !need.length) return rows;
+  return rows.filter(r => {
+    const text = JSON.stringify(r).toLowerCase();
+    return (!q || text.includes(q)) && need.every(v => text.includes(v));
+  });
+}
+
 /* one action: A('Label') or A('Label', {v,l,q}) or A('Label', null, true) for danger */
 /* Row actions carry a leading icon, as the platform grids do. The icon is
    inferred from the verb so no call site has to name one. */
@@ -1430,39 +1517,43 @@ function kebabCell(items, gid, i) {
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}${it.d ? '' : ' js-ack'}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 
 /* ── toolbar ───────────────────────────────────────────── */
-function gridBar(showing, total, placeholder, spec, extra = '', acts = []) {
+function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '') {
+  const st = gridOf(key);
+  const activeFilters = Object.values(st.filters).filter(Boolean).length;
   return `<div class="grid-bar">
     <span class="vw-card-description grid-count">${showing === null
       ? `<span class="num">${total}</span> records` : `Showing ${showing} of ${total}`}</span>
     <span class="nst-input-shell grid-search"><span class="gs-ic">${IC_SEARCH}</span>
-      <input class="nst-input" placeholder="${placeholder}" aria-label="Search"></span>
+      <input class="nst-input" placeholder="${placeholder}" aria-label="Search" data-gridsearch="${key}" value="${esc(st.search)}"></span>
     ${extra}
     <span class="grow"></span>
     <div class="grid-tools">
       <button class="icon-btn" data-gridrefresh="1" aria-label="Refresh">${IC_REFRESH}</button>
-      <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}" data-filteropen="1" aria-label="Filters"
+      <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}${activeFilters ? ' has-value' : ''}" data-filteropen="${key}" aria-label="Filters"
         aria-expanded="${FILTER_OPEN}">${IC_FILTER}</button>
       <button class="icon-btn${GRIDMENU ? ' is-on' : ''}" data-gridmenu="1" aria-label="More actions"
         aria-expanded="${GRIDMENU}">${IC_KEBAB}</button>
       ${GRIDMENU ? `<div class="kmenu kmenu-r">
-        ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}"${a.d ? dA(a.d) : ''}${
+        ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}${(a.d || a.nav) ? '' : ' js-ack'}"${a.d ? dA(a.d) : ''}${
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
-        ${['Export as CSV', 'Export as XLSX', 'Choose columns', 'Save this view', 'Print']
-          .map(l => `<button class="kmenu-i">${kIcon(l)}<span>${l}</span></button>`).join('')}</div>` : ''}
-      ${FILTER_OPEN ? filterPanel(spec) : ''}
+        <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
+        <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button>
+        <button class="kmenu-i" data-gridprint="1">${kIcon('Print')}<span>Print</span></button></div>` : ''}
+      ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
   </div>`;
 }
 
 /* ── filter panel ──────────────────────────────────────── */
-function filterPanel(spec) {
+function filterPanel(spec, key = '') {
   const fields = spec && spec.length ? spec : [{ n: 'Status', o: ['On-air', 'Planned'] }];
   const f = fields[Math.min(FILTER_FIELD, fields.length - 1)];
+  const val = gridOf(key).filters[f.n] || '';
   return `<div class="fpanel" role="dialog" aria-label="Filters">
     <div class="fpanel-head">
       <span class="vw-card-title-sm">Filters</span>
@@ -1470,24 +1561,24 @@ function filterPanel(spec) {
     </div>
     <div class="fpanel-body">
       <div class="fpanel-nav">
-        ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}"
+        ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}${gridOf(key).filters[x.n] ? ' has-value' : ''}"
           data-filterfield="${i}">${x.n}</button>`).join('')}
       </div>
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
         ${f.o
-          ? `<span class="nst-select-shell"><select class="nst-input fp-sel">
-               <option value=""></option>
-               ${f.o.map(o => `<option>${o}</option>`).join('')}</select></span>`
-          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…"></span>`}
+          ? `<span class="nst-select-shell"><select class="nst-input fp-sel" data-filterval="${key}|${esc(f.n)}">
+               <option value=""${val ? '' : ' selected'}></option>
+               ${f.o.map(o => `<option${o === val ? ' selected' : ''}>${o}</option>`).join('')}</select></span>`
+          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
         ${f.h ? `<span class="fp-hint">${f.h}</span>` : ''}
       </div>
     </div>
     <div class="fpanel-foot">
-      <button class="nst-btn nst-btn--sm">Advance</button>
+      <span class="vw-card-description">${Object.values(gridOf(key).filters).filter(Boolean).length} field(s) set</span>
       <span class="grow"></span>
-      <button class="nst-btn nst-btn--sm" data-filterclose="1">Reset to default</button>
-      <button class="nst-btn nst-btn--sm nst-btn--filled" data-filterclose="1">Apply filters</button>
+      <button class="nst-btn nst-btn--sm" data-filterreset="${key}">Reset to default</button>
+      <button class="nst-btn nst-btn--sm nst-btn--filled" data-filterapply="${key}">Apply filters</button>
     </div>
   </div>`;
 }
@@ -1533,60 +1624,126 @@ const FS = {
              { n:'Trunk port' }, { n:'Access port' }]
 };
 
-/* ── pagination ────────────────────────────────────────── */
-let PAGE = {};          /* key -> 1-based page   */
-let PAGE_SIZE = {};     /* key -> rows per page  */
-const PG_SIZES = [20, 50, 100];
-const pgSize = k => PAGE_SIZE[k] || 20;
-const pgNo   = (k, total) => Math.min(PAGE[k] || 1, Math.max(1, Math.ceil(total / pgSize(k))));
-const pgSlice = (rows, k) => {
-  const p = pgNo(k, rows.length), s = pgSize(k);
-  return rows.slice((p - 1) * s, p * s);
-};
-const IC_PREV = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"
-  stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>`;
-const IC_NEXT = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"
-  stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>`;
+/* ── infinite scroll ───────────────────────────────────────
+   A view renders every row it has; the DOM shows the first LAZY_STEP of
+   each grid and reveals the next LAZY_STEP whenever the reader reaches the
+   end of the list. It runs over the rendered table rather than each view's
+   row array, so every grid on every screen gets it without a call site.
 
-/* windowed page numbers with ellipses, so 15 pages never becomes 15 buttons */
-function pgWindow(cur, last) {
-  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
-  const out = [1];
-  let a = Math.max(2, cur - 1), b = Math.min(last - 1, cur + 1);
-  if (cur <= 3) { a = 2; b = 4; }
-  if (cur >= last - 2) { a = last - 3; b = last - 1; }
-  if (a > 2) out.push('…');
-  for (let i = a; i <= b; i++) out.push(i);
-  if (b < last - 1) out.push('…');
-  out.push(last);
-  return out;
+   Reveal counts survive an in-place re-render (a kebab, a tab, a chip) by
+   being keyed on the view and the grid's position in it; a changed row
+   count — a search, a filter — means a new result set, so it restarts. */
+const LAZY_STEP = 25;
+const GRID_GAP = 72;  /* card padding and footer below the grid */
+const GRID_MIN = 320; /* never squeezed below ~6 rows            */
+let LAZY = {};        /* "<view>:<grid index>" -> { n, total, top } */
+let LAZY_IO = [];     /* observers of the render now on screen      */
+let LAZY_BOUND = false;
+
+const grids = () => {
+  const view = document.getElementById('view');
+  return view ? Array.from(view.querySelectorAll('.tbl-wrap > table.nst-table')) : [];
+};
+
+/* A grid is as tall as its page of 25 rows, and never taller than the room left
+   on screen below where it starts — so a screen whose grid is the content fills
+   the window, while a grid under KPI cards takes the space it has. Measured,
+   because a row carrying a second line is half again as tall as a plain one. */
+function sizeGrid(tbl) {
+  const wrap = tbl.parentNode, row = tbl.tBodies[0] && tbl.tBodies[0].rows[0];
+  if (!row) return;
+  const head = tbl.tHead ? tbl.tHead.offsetHeight : 0;
+  const page = head + row.offsetHeight * LAZY_STEP;
+  let avail = window.innerHeight - Math.max(0, wrap.getBoundingClientRect().top) - GRID_GAP;
+  /* below the fold (a dashboard): a screenful, which is what it gets once
+     the reader scrolls down to it */
+  if (avail < GRID_MIN) avail = window.innerHeight - GRID_GAP;
+  wrap.style.setProperty('--grid-h', Math.min(page, Math.max(GRID_MIN, avail)) + 'px');
 }
 
-function pager(total, k, note = '') {
-  const size = pgSize(k), last = Math.max(1, Math.ceil(total / size)), cur = pgNo(k, total);
-  const from = total ? (cur - 1) * size + 1 : 0, to = Math.min(total, cur * size);
-  return `<div class="pgr">
-    <span class="vw-card-description pgr-note">${total
-      ? `Showing <span class="num">${n(from)}–${n(to)}</span> of <span class="num">${n(total)}</span>${note ? ' ' + note : ''}`
-      : 'No records'}</span>
-    <span class="grow"></span>
-    <span class="pgr-size">
-      <span class="vw-card-description">Rows</span>
-      <select class="nst-input pgr-sel" data-pgsize="${k}" aria-label="Rows per page">
-        ${PG_SIZES.map(s => `<option value="${s}"${s === size ? ' selected' : ''}>${s}</option>`).join('')}
-      </select>
-    </span>
-    <span class="pgr-nav">
-      <button class="pgr-b" data-pg="${k}" data-pgn="${cur - 1}"${cur === 1 ? ' disabled' : ''}
-        aria-label="Previous page">${IC_PREV}</button>
-      ${pgWindow(cur, last).map(v => v === '…'
-        ? `<span class="pgr-gap">…</span>`
-        : `<button class="pgr-b pgr-num${v === cur ? ' is-on' : ''}" data-pg="${k}" data-pgn="${v}"
-             ${v === cur ? 'aria-current="page"' : ''}>${v}</button>`).join('')}
-      <button class="pgr-b" data-pg="${k}" data-pgn="${cur + 1}"${cur === last ? ' disabled' : ''}
-        aria-label="Next page">${IC_NEXT}</button>
-    </span>
-  </div>`;
+/* the reader's place in each grid, kept across the re-render that a kebab, a
+   tab or a chip triggers — the wrapper is a new element every time */
+function saveGridScroll() {
+  grids().forEach((tbl, i) => {
+    const st = LAZY[CURRENT + ':' + i];
+    if (st) st.top = tbl.parentNode.scrollTop;
+  });
+}
+
+/* A row menu is anchored inside the grid's scroll box, which would clip it;
+   place it against the button's position on screen instead. */
+function placeMenus() {
+  document.querySelectorAll('#view .kb-td .kmenu').forEach(m => {
+    const b = m.previousElementSibling;
+    if (!b) return;
+    m.classList.add('kmenu--fixed');
+    const r = b.getBoundingClientRect(), gap = 4;
+    const below = r.bottom + gap + m.offsetHeight <= window.innerHeight;
+    m.style.top = (below ? r.bottom + gap : Math.max(gap, r.top - gap - m.offsetHeight)) + 'px';
+    m.style.left = Math.max(gap, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - gap)) + 'px';
+  });
+}
+
+function lazyGrids() {
+  LAZY_IO.forEach(io => io.disconnect());
+  LAZY_IO = [];
+  if (!LAZY_BOUND) {
+    LAZY_BOUND = true;
+    window.addEventListener('resize', () => { grids().forEach(sizeGrid); placeMenus(); });
+  }
+  grids().forEach((tbl, i) => {
+    const body = tbl.tBodies[0];
+    if (!body) return;
+    const rows = Array.from(body.rows);
+    const key = CURRENT + ':' + i;
+    const st = LAZY[key] && LAZY[key].total === rows.length ? LAZY[key] : (LAZY[key] = { n: LAZY_STEP, total: rows.length, top: 0 });
+    sizeGrid(tbl);
+    /* an open menu follows its row while the grid scrolls under it */
+    tbl.parentNode.addEventListener('scroll', placeMenus, { passive: true });
+    const restore = () => { tbl.parentNode.scrollTop = st.top || 0; };
+    if (rows.length <= LAZY_STEP) { restore(); return; }
+
+    /* the grid bar sits just above the table: its count follows what is
+       painted, so the page size shows without scrolling to the end */
+    let bar = tbl.parentNode.previousElementSibling;
+    while (bar && !bar.classList.contains('grid-bar')) bar = bar.previousElementSibling;
+    const label = bar && bar.querySelector('.grid-count');
+    const labelHtml = label ? label.innerHTML : '';
+
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'tbl-more';
+    tbl.parentNode.appendChild(more);
+    const paint = () => {
+      rows.forEach((r, x) => { r.hidden = x >= st.n; });
+      const left = rows.length - st.n;
+      more.hidden = left <= 0;
+      more.innerHTML = left > 0
+        ? `Load the next ${n(Math.min(LAZY_STEP, left))}
+           <span class="tbl-more-of">· ${n(st.n)} of ${n(rows.length)} loaded</span>` : '';
+      if (label) label.innerHTML = labelHtml.replace(/^Showing\s+[\d,]+/, 'Showing ' + n(st.n));
+    };
+    paint();
+    restore();
+    more.addEventListener('click', () => {
+      st.n = Math.min(st.n + LAZY_STEP, rows.length);
+      paint();
+    });
+    if (typeof IntersectionObserver === 'undefined') { st.n = rows.length; paint(); return; }
+
+    const io = new IntersectionObserver(es => {
+      if (!es.some(e => e.isIntersecting) || st.n >= rows.length) return;
+      st.n = Math.min(st.n + LAZY_STEP, rows.length);
+      paint();
+      /* re-observe so the next block reveals itself when 25 more rows
+         still do not fill the grid */
+      if (st.n >= rows.length) io.disconnect();
+      else { io.unobserve(more); io.observe(more); }
+    }, { root: tbl.parentNode, rootMargin: '200px' });
+    io.observe(more);
+    LAZY_IO.push(io);
+  });
+  placeMenus();
 }
 
 /* ═══ Resource detail · sub-resource hierarchy, interfaces, compliance ═══ */
@@ -2078,27 +2235,45 @@ function viewInsights() {
 }
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
+let JOB_FILTER = 'All';
+const JOB_TESTS = {
+  All:        () => true,
+  exceptions: j => j.chip !== 'success',
+  failed:     j => j.chip === 'error',
+  stale:      j => j.next === 'held' || j.chip === 'neutral'
+};
+
 function viewJobs() {
+  const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
+  const rows = gridApply('jobs', JOBS.filter(test));
+  const onDemand = JOBS.filter(j => j.sched === 'On demand').length;
+  const weekly = JOBS.filter(j => /^Weekly/.test(j.sched)).length;
+  const scheduled = JOBS.length - onDemand;                 // a weekly cadence is still a schedule
+  const attention = JOBS.filter(j => j.chip === 'error' || j.chip === 'warning' || j.chip === 'neutral' || j.next === 'held').length;
+  const nextJob = JOBS.find(j => j.id === 'DSC-SOUTH-CORE') || JOBS[0];
+  const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Active jobs', '8', '5 scheduled · 2 weekly · 1 on demand', 'sky')}
-      ${kpi('Next run', '15:00 IST', 'DSC-SOUTH-CORE · 412 targets', 'cyan')}
-      ${kpi('Jobs needing attention', '3', 'errors, held schedule, or no adapter', 'amber')}
+      ${kpi('Active jobs', n(JOBS.length), `${n(scheduled)} scheduled (incl. ${n(weekly)} weekly) · ${n(onDemand)} on demand`, 'sky')}
+      ${kpi('Next run', '15:00 IST', `${nextJob.id} · ${nextJob.sched} · ${n(nextJob.targets)} targets`, 'cyan')}
+      ${kpi('Jobs needing attention', n(attention), 'errors, held schedule, or no adapter', 'amber')}
       ${kpi('Collector nodes', '6', 'clr-blr-02 carries 588 targets', 'purple')}
     </div>
 
+    ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`).join('')}</div>`)}
+
     ${card(`
-      ${gridBar(JOBS.length, JOBS.length, 'Job, scope, collector', FS.jobs,
+      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
         `${chip('1 running','info')}${chip('2 with errors','warning')}`,
-        [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }])}
+        [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
-        JOBS.map(j => [
+        rows.map(j => [
           chip(j.state, j.chip),
           `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
            <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
@@ -2113,7 +2288,7 @@ function viewJobs() {
             <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
           j.next === 'held' ? chip('Held', 'error') : `<span class="vw-card-metric-label-sub">${j.next}</span>`,
         ]), 'job-table',
-        i => [A('View targets', { v:'targets', l:`Targets in ${JOBS[i].id}`, q:'tgt=All' }),
+        i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
               A('Run now'), A('Edit schedule'), A('Edit credential profile'),
               A('Duplicate job'), A('Hold schedule', null, true)])}`)}
 
@@ -2146,6 +2321,7 @@ const TGT_TESTS = {
   clean:      t => t.ch.every(c => c === 'ok' || c === 'na'),
   partial:    t => t.ch.includes('fail') && t.ch.includes('ok'),
   failed:     t => t.ch.includes('fail'),
+  new:        t => !!t.isNew,
   exceptions: t => t.out !== 'Exact match',
   stale:      t => t.fresh > 168,
   fresh24:    t => t.fresh <= 24,
@@ -2155,12 +2331,16 @@ const TGT_TESTS = {
   age90:      t => t.fresh > 2160
 };
 const TGT_LABEL = { All:'All targets', answered:'Targets that answered', clean:'Runs where every step passed',
-  partial:'Runs that partly failed', failed:'Runs with a failed collector', exceptions:'Targets with an exception',
-  stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
+  partial:'Runs that partly failed', failed:'Runs with a failed collector', new: 'Seen for the first time this cycle',
+  exceptions:'Targets with an exception', stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
+const TGT_REASON = { unreach: 'Host unreachable', timeout: 'SNMP timeout', auth: 'Authentication failed',
+  adapter: 'No adapter for model', parse: 'Response parse error', dupip: 'Duplicate management IP' };
+const TGT_REASON_CHIP = { unreach: 'purple', timeout: 'cyan', auth: 'pink', adapter: 'warning', parse: 'info', dupip: 'neutral' };
 
+let TGT_REASON_FILTER = null;
 function viewTargets() {
   const test = TGT_TESTS[TGT_FILTER] || TGT_TESTS.All;
-  const rows = TARGETS.filter(test);
+  const rows = gridApply('targets', TARGETS.filter(test).filter(t => !TGT_REASON_FILTER || t.reason === TGT_REASON_FILTER));
   const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
   return `<div class="page">
     ${drillBar()}
@@ -2168,10 +2348,10 @@ function viewTargets() {
       ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
         `<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>
          ${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}`,
-        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }])}
+        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }], 'targets')}
       ${table(
         [{ t: 'Outcome' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
-         { t: 'Last run' }, { t: 'Age' }, { t: 'Collector chain' }],
+         { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => [
           chip(t.out, t.chip),
           `<span class="mono">${t.ip}</span>`,
@@ -2180,6 +2360,7 @@ function viewTargets() {
           `<span class="vw-value">${t.oem}</span> <span class="vw-card-metric-label-sub mono">${t.model}</span>`,
           `<span class="num">${t.sync}</span>`,
           freshChip(t.fresh),
+          t.reason ? chip(TGT_REASON[t.reason], TGT_REASON_CHIP[t.reason]) : `<span style="color:${cv('gray',300)}">—</span>`,
           chainOf(t.ch)
         ]), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
@@ -2278,8 +2459,8 @@ function viewTarget() {
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
       `<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>`)}
+       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
@@ -2362,11 +2543,11 @@ function recOutcomes() {
 
 function recTable() {
   const f = NE_FILTER;
-  const rows = NE_RECON
+  const rows = gridApply('reconcile', NE_RECON
     .filter(r => f === 'All' ? true
       : f === 'Open' ? (r.out !== 'Agree' && r.out !== 'Stale')
       : r.out === f)
-    .filter(r => !REC_CIRCLE || r.circle === REC_CIRCLE);
+    .filter(r => !REC_CIRCLE || r.circle === REC_CIRCLE));
   const cell = (r, key) => {
     if (r.inv && r.net && r.diff.includes(key))
       return `<span class="mono rec-was">${r.inv[key]}</span><span class="mono rec-now">${r.net[key]}</span>`;
@@ -2397,7 +2578,7 @@ function recTable() {
                  ['Only in inventory','Only in inventory'],['Only on network','Only on network'],['Unidentified','Unidentified']];
   return card(`
     ${headSm('Which elements reconciled', 'One row per network element. Where the two sides disagree the inventory value is struck through and the value the network reported is shown beneath it.')}
-    ${gridBar(rows.length, n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c), 'Element, IP, serial', FS.reconcile)}
+    ${gridBar(rows.length, n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c), 'Element, IP, serial', FS.reconcile, '', [], 'reconcile')}
     <div class="stock-bar" style="border-bottom:0;padding-bottom:var(--vw-space-sm)">
       ${chips.map(([k,l]) => `<button class="stock-chip${NE_FILTER===k?' is-on':''}" data-ne-filter="${k}">${l}</button>`).join('')}
     </div>
@@ -2411,8 +2592,8 @@ function recTable() {
     </table></div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Showing ${rows.length} of ${n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c)} comparable elements.</span>
-      <div class="row"><button class="nst-btn nst-btn--xs">Keep inventory for all</button>
-        <button class="nst-btn nst-btn--xs nst-btn--filled">Accept network for all</button></div>
+      <div class="row"><button class="nst-btn nst-btn--xs js-ack">Keep inventory for all</button>
+        <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept network for all</button></div>
     </div>`);
 }
 
@@ -2422,8 +2603,8 @@ function viewReconcile() {
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${pmeta().recNote}</span>
       <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>
-      <button class="nst-btn nst-btn--sm">Export</button>
-      <button class="nst-btn nst-btn--filled nst-btn--sm">Re-reconcile</button>`)}
+      <button class="nst-btn nst-btn--sm js-ack">Export</button>
+      <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Re-reconcile</button>`)}
     ${drillBar()}
 
     ${card(`
@@ -2434,11 +2615,11 @@ function viewReconcile() {
     ${recTable()}
 
     <div class="row-t" style="align-items:stretch">
-      ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements`)}
+      ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements — device-reported attributes only`)}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
         <div class="vw-card-footer-divider row vw-justify-between">
           <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
-          <button class="nst-btn nst-btn--xs nst-btn--filled">Accept all</button>
+          <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept all</button>
         </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
       ${card(`${headSm('How a device is matched to a record', `Rules run in priority order; the first that resolves wins. ${n(ruleTotal)} devices resolved this cycle.`)}
@@ -2468,7 +2649,16 @@ let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
-let LOC_ST = null, LOC_CAT = null, LOC_STATE = null;
+let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null;
+/* state → operating region, the same grouping Insights uses */
+const STATE_REGION = {
+  'Maharashtra': 'West', 'Uttar Pradesh': 'North', 'Karnataka': 'South', 'Madhya Pradesh': 'East',
+  'Delhi': 'North', 'Tamil Nadu': 'South', 'Gujarat': 'West', 'Andhra Pradesh': 'South',
+  'Rajasthan': 'North', 'West Bengal': 'East', 'Odisha': 'East', 'Telangana': 'South',
+  'Bihar': 'East', 'Punjab': 'North', 'Kerala': 'South', 'Haryana': 'North',
+  'Chhattisgarh': 'East', 'Jharkhand': 'East', 'Assam': 'East', 'Jammu and Kashmir': 'North',
+  'Uttarakhand': 'North'
+};
 
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
   `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}
@@ -2501,8 +2691,7 @@ function viewHome() {
   ];
   return `<div class="page">
     ${pageHead('Inventory', 'Network elements, connectivity and services across the estate.',
-      `<div class="seg"><button class="is-on">All circles</button><button>South</button><button>North</button><button>West</button></div>
-       <button class="nst-btn nst-btn--sm">Export</button>`)}
+      `<button class="nst-btn nst-btn--sm js-ack">Export</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Locations', n(IL.locations), 'Central 118 · Regional 342 · Edge 1,294', 'amber',
@@ -2636,7 +2825,7 @@ function locInsights() {
         <div class="vw-card-footer-divider">
           <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
             ${headSm('Failed builds', `${n(fail)} sites, and what is blocking each group.`)}
-            <button class="nst-btn nst-btn--xs">Open exceptions</button>
+            <button class="nst-btn nst-btn--xs js-ack">Open exceptions</button>
           </div>
           ${table([{t:'Circle'},{t:'Sites',r:true},{t:'Blocking reason'}],
             LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
@@ -2677,17 +2866,18 @@ function locInsights() {
 
 /* ---- view 2 · Locations list ---- */
 function locRows() {
-  return LOCATIONS
+  return gridApply('location', LOCATIONS
     .filter(l => !LOC_ST || l.st === LOC_ST)
     .filter(l => !LOC_CAT || l.cat === LOC_CAT)
-    .filter(l => !LOC_STATE || l.state === LOC_STATE);
+    .filter(l => !LOC_STATE || l.state === LOC_STATE)
+    .filter(l => !LOC_REGION || STATE_REGION[l.state] === LOC_REGION));
 }
 function locList() {
   const shown = locRows();
   return `${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         `${chip('214 not reconciled','warning')}${chip('34 failed','error')}`,
-        [{ l:'Create location', primary:true }, { l:'Download report' }])}
+        [{ l:'Create location', primary:true }, { l:'Download report' }], 'location')}
 
       ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
@@ -2881,7 +3071,7 @@ function viewSite() {
   const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
-  const rows = ne[SITE_TAB] || [];
+  const rows = gridApply('site', ne[SITE_TAB] || []);
   const tot = counts.reduce((a,c)=>a+c.c,0);
   const drift = Object.values(ne).flat().filter(r => r.st === 'drift' || r.st === 'dup').length;
   const notDisc = Object.values(ne).flat().filter(r => r.st === 'none').length;
@@ -2913,8 +3103,8 @@ function viewSite() {
   return `<div class="page">
     ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
       `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>
-       <button class="nst-btn nst-btn--sm">Download report</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Edit site</button>`)}
+       <button class="nst-btn nst-btn--sm js-ack">Download report</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Edit site</button>`)}
 
     ${card(`
       <div class="meta-bar">
@@ -2964,7 +3154,7 @@ function viewSite() {
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}
         <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
-      ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site)}
+      ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
               A('Open element', { v:'resource', l:rows[i].name }),
@@ -3022,7 +3212,7 @@ function capexSection(l, neCount) {
         <span class="vw-card-description">${cx.fy} · ${cx.afe} · ${cx.cc} · owner ${cx.owner}</span>
       </div>
       <div class="row">
-        <button class="nst-btn nst-btn--sm">Export</button>
+        <button class="nst-btn nst-btn--sm js-ack">Export</button>
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
       </div>
     </div>
@@ -3313,6 +3503,7 @@ function viewPhysical() {
 
 /* ── Virtual Resources ────────────────────────────────── */
 function viewVirtual() {
+  const rows = gridApply('virtual', VNFS);
   return `<div class="page">
 
     ${drillBar()}
@@ -3335,11 +3526,11 @@ function viewVirtual() {
     </div>
 
     ${card(`
-      ${gridBar(VNFS.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
+      ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
         `${chip('Sourced from the EMS, not from discovery','purple')}`,
-        [{ l:'Instantiate NF', primary:true }, { l:'Download report' }])}
+        [{ l:'Instantiate NF', primary:true }, { l:'Download report' }], 'virtual')}
       ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
-        VNFS.map((v, i) => [
+        rows.map((v, i) => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           v.type === 'Others'
             ? `<span style="color:${cv('gray',400)}">not RAN</span>`
@@ -3359,8 +3550,10 @@ function viewVirtual() {
 }
 
 /* ── Links ────────────────────────────────────────────── */
+let LINK_NE_FILTER = null;
 function viewLinks() {
-  const t = TAB.link, rows = LINKS[t] || [], meta = LINK_TABS.find(x => x.k === t);
+  const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
+  const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
   return `<div class="page">
 
@@ -3381,7 +3574,7 @@ function viewLinks() {
       ${tabs(LINK_TABS, t, 'link')}
       ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', FS.links,
         `${chip('44 new this cycle','info')}${chip('18 no longer seen','error')}`,
-        [{ l:'Open topology', primary:true }, { l:'Download report' }])}
+        [{ l:'Open topology', primary:true }, { l:'Download report' }], 'links')}
       ${table([{t:'State'},{t:'Source NE'},{t:'Source IP'},{t:t==='lldp'?'Source interface':'Local'},
                {t:'Destination NE'},{t:t==='lldp'?'Destination interface':'Session'},{t:'Link name'},{t:'Verified'}],
         rows.map(r => [
@@ -3408,7 +3601,7 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 function viewServices() {
-  const t = TAB.svc, rows = SERVICES[t] || [], meta = SVC_TABS.find(x => x.k === t);
+  const t = TAB.svc, rows = gridApply('services', SERVICES[t] || []), meta = SVC_TABS.find(x => x.k === t);
   return `<div class="page">
 
     ${drillBar()}
@@ -3425,7 +3618,7 @@ function viewServices() {
     ${card(`
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
-        [{ l:'Download report' }])}
+        [{ l:'Download report' }], 'services')}
       ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'Verified'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
@@ -3441,9 +3634,8 @@ function viewServices() {
 /* ── Inactive inventory ───────────────────────────────── */
 function viewInactive() {
   const t = INACT_CLS, meta = PHY_TABS.find(x => x.k === t);
-  const all = decommRows(t), total = all.length;
-  const pk = 'arch-' + t, rows = pgSlice(all, pk);
-  const zomb = all.filter(r => r.zombie).length;
+  const rows = decommRows(t), total = rows.length;
+  const zomb = rows.filter(r => r.zombie).length;
   return `<div class="page">
 
     ${drillBar()}
@@ -3480,7 +3672,7 @@ function viewInactive() {
           ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions</button>` : ''}
       </div>
 
-      ${gridBar(null, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
+      ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
         chip('Archive · read-only', 'neutral'),
         [{ l:'Go to active inventory', nav:'physical', primary:true }, { l:'Download report' }])}
       ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
@@ -3499,7 +3691,6 @@ function viewInactive() {
               ...(rows[i].zombie ? [A('Open reconciliation exception',
                   { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
               A('Purge record', null, true)])}
-      ${pager(total, pk, `${meta.n.toLowerCase()} records`)}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
         <span class="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
@@ -3509,6 +3700,7 @@ function viewInactive() {
 
 /* ── Reports ──────────────────────────────────────────── */
 function viewReports() {
+  const rows = gridApply('reports', REPORTS);
   return `<div class="page">
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -3522,11 +3714,11 @@ function viewReports() {
     </div>
 
     ${card(`
-      ${gridBar(REPORTS.length, IL.reports, 'Report name, type, creator', FS.reports,
+      ${gridBar(rows.length, IL.reports, 'Report name, type, creator', FS.reports,
         `${chip('1 failed','error')}${chip('1 pending','warning')}`,
-        [{ l:'Generate report', primary:true }, { l:'Schedules' }])}
+        [{ l:'Generate report', primary:true }, { l:'Schedules' }], 'reports')}
       ${table([{t:'Status'},{t:'Report name'},{t:'Type'},{t:'Generated'},{t:'Frequency'},{t:'Creator'},{t:'Created on'},{t:'Size'}],
-        REPORTS.map(r => [
+        rows.map(r => [
           chip(r.st, r.chip), `<span class="vw-value">${r.name}</span>`, r.type, r.gen, r.freq, r.by,
           `<span class="num">${r.on}</span>`, `<span class="num">${r.size}</span>`
         ]), '',
@@ -3537,7 +3729,7 @@ function viewReports() {
 
 
 /* ═══ Resource detail ═══ */
-let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp';
+let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
 const RES_TABS = [
   { k:'overview',  n:'Overview' },   { k:'hardware', n:'Hardware',  c:()=>HW_TREE.length },
   { k:'ifaces',    n:'Interfaces', c:()=>IF_CAP.total },
@@ -3771,13 +3963,17 @@ function resConfig() {
 }
 
 function resHistory() {
+  const histTest = { All: () => true, Discovery: h => h.src.includes('collector'),
+    Manual: h => h.src.startsWith('Manual'), Workorder: h => h.src.startsWith('Workorder') };
+  const hist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('History', 'Every change to this record, who made it and from which source')}
-      <div class="seg"><button class="is-on">All</button><button>Discovery</button><button>Manual</button><button>Workorder</button></div>
+      <div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
+        `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
     ${table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
-      RES_HISTORY.map(h => [`<span class="num">${h.at}</span>`,
+      hist.map(h => [`<span class="num">${h.at}</span>`,
         h.who === 'discovery' || h.who === 'fault mgmt' || h.who === 'CIQ import'
           ? `<span class="mono" style="color:${cv('gray',500)}">${h.who}</span>` : `<span class="vw-value">${h.who}</span>`,
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,
@@ -3837,7 +4033,7 @@ function rackStrip(r) {
   return `<div class="rack-el">${cells.join('')}</div>`;
 }
 function viewPassive() {
-  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t), rows = PASSIVE[t] || [];
+  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t), rows = gridApply('passive', PASSIVE[t] || []);
   const P = PASSIVE_STATS;
   const cols = { fiber:[{t:'Status'},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status'},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
@@ -3903,13 +4099,13 @@ function viewPassive() {
           <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
           Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
         </span>
-        <button class="nst-btn nst-btn--xs" style="flex-shrink:0">Survey backlog</button>
+        <button class="nst-btn nst-btn--xs js-ack" style="flex-shrink:0">Survey backlog</button>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
           <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
-        [{ l:'Create passive record', primary:true }, { l:'Import survey' }])}
+        [{ l:'Create passive record', primary:true }, { l:'Import survey' }], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('View record'), A('Open site', { v:'site', l:rows[i].site || rows[i].n }),
               A('Record a new survey'), A('Attach OTDR trace / photo'),
@@ -5010,10 +5206,10 @@ function nodeVlans(N) {
       ${kpi('Trunk ports', String(N.vlans.reduce((a, v) => a + v.tr, 0)), 'carrying tagged traffic', 'amber')}
       ${kpi('Access ports', String(N.vlans.reduce((a, v) => a + v.acc, 0)), 'untagged, one VLAN each', 'purple')}
     </div>
-    ${gridBar(N.vlans.length, N.vlans.length + 51, 'VLAN ID, name, type', FS.vlan)}
+    ${gridBar(gridApply('vlan:' + N.name, N.vlans).length, N.vlans.length + 51, 'VLAN ID, name, type', FS.vlan, '', [], 'vlan:' + N.name)}
     ${table([{t:'VLAN ID'},{t:'Name'},{t:'Type'},{t:'Trunk ports',r:true},{t:'Access ports',r:true},
              {t:'STP state'},{t:'Status'},{t:'Learned MAC',r:true},{t:'Traffic utilisation',r:true}],
-      N.vlans.map(v => [
+      gridApply('vlan:' + N.name, N.vlans).map(v => [
         `<span class="mono">${v.id}</span>`, `<span class="vw-value">${v.n}</span>`,
         chip(v.t, { Data:'info', Server:'success', Wireless:'purple', Voice:'warning', Guest:'neutral', Management:'error' }[v.t] || 'neutral'),
         v.tr, v.acc, chip(v.stp, 'success'), chip(v.st, 'success'), n(v.mac),
@@ -5036,7 +5232,7 @@ function nodeLinks(N) {
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
         <button class="vw-card-section vw-card--accent stack-x is-drill"
-          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}` })}
+          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}&ne=${encodeURIComponent(N.name)}` })}
           style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)">
           <div class="vw-card-accent" style="background:${cv(p.tone,400)}"></div>
           <div class="row vw-justify-between vw-items-baseline">
@@ -5301,6 +5497,24 @@ const _el = id => document.getElementById(id) || document.createElement('div');
 let viewEl, crumbEl, modEl;
 let CURRENT = 'insights';
 
+/* Reads whatever table the grid toolbar sits above and turns exactly what's
+   on screen right now (search and filters already applied) into a real
+   file, so "Export" produces the rows the reader is actually looking at. */
+function exportNearestTable(btn, kind) {
+  const table = btn.closest('.vw-card-section, .card, section')?.querySelector('table');
+  if (!table) { alert('Nothing to export — this grid has no rows yet.'); return; }
+  const cell = td => `"${td.textContent.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`;
+  const lines = [...table.querySelectorAll('tr')].map(tr =>
+    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cell).join(','));
+  const ext = kind === 'xlsx' ? 'xls' : 'csv';
+  const blob = new Blob([lines.join('\r\n')], { type: kind === 'xlsx' ? 'application/vnd.ms-excel' : 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${CURRENT}-export.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ── drill-down ───────────────────────────────────────── */
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
@@ -5313,7 +5527,8 @@ function applyDrillQuery(view, q) {
   const p = {};
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
-  if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; }
+  if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
+  if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
     if (p.tab) TAB.phy = p.tab;
     PHY_OEM = p.oem || null;
@@ -5324,19 +5539,21 @@ function applyDrillQuery(view, q) {
   if (view === 'inactive') { if (p.cls) INACT_CLS = p.cls; }
   if (view === 'location') {
     if (p.view) LOC_VIEW = p.view;
-    LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null;
+    LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
   }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
-  if (view === 'links')    { if (p.tab) TAB.link = p.tab; }
+  if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
   if (!d) return;
   if (d.view === 'reconcile') { NE_FILTER = 'All'; REC_CIRCLE = null; }
-  if (d.view === 'targets')   { TGT_FILTER = 'All'; }
+  if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
+  if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
-  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; }
+  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; }
+  if (d.view === 'links')     { LINK_NE_FILTER = null; }
   go(d.view);
 }
 
@@ -5349,16 +5566,22 @@ function go(k) {
   }
   viewEl = _el('view'); crumbEl = _el('crumb'); modEl = _el('module');
   const v = VIEWS[k] || VIEWS.insights;
+  const isNav = k !== CURRENT;              // false when a control just refreshes the view it's already on
   DRILL = DRILL_PENDING; DRILL_PENDING = null;
   GRID_N = 0;
-  if (k !== CURRENT) { KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0; }
+  /* the render below throws away every grid element, so note where the reader
+     was in each one first — a row action must not fling the list back to row 1 */
+  if (!isNav) saveGridScroll();
+  if (isNav) { KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0; LAZY = {}; }
   CURRENT = VIEWS[k] ? k : 'insights';
   modEl.textContent = v.mod;
   crumbEl.textContent = v.crumb;
   viewEl.innerHTML = v.render();
   const active = RAIL_OF[CURRENT] || CURRENT;
   void active; /* rail highlight is owned by the React sidebar */
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  /* only a real navigation jumps the reader to the top; an in-place refresh
+     (a tab, a run switch, a filter) must not fling the scroll position around */
+  if (isNav) window.scrollTo({ top: 0, behavior: 'instant' });
   bindMap();
   document.querySelectorAll('.tbl-wrap').forEach(w => {
     const mark = () => {
@@ -5369,6 +5592,7 @@ function go(k) {
     mark(); w.addEventListener('scroll', mark, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
+  lazyGrids();
   if (window.__nsBridge && window.__nsBridge.sync) window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT));
 }
 function __legacyParams(k) {
@@ -5387,11 +5611,21 @@ document.addEventListener('click', e => {
   const gr = e.target.closest('[data-gridrefresh]');
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
+  const fr = e.target.closest('[data-filterreset]');
+  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; go(CURRENT); return; }
+  const fa = e.target.closest('[data-filterapply]');
+  if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
   if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  const gx = e.target.closest('[data-gridexport]');
+  if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
+  const gp = e.target.closest('[data-gridprint]');
+  if (gp) { window.print(); return; }
+  const ack = e.target.closest('.js-ack');
+  if (ack) { KEBAB = null; GRIDMENU = false; alert(`"${ack.textContent.trim()}" — sent. This preview has no backend connected, so nothing changes server-side, but the action fired correctly.`); go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
@@ -5456,8 +5690,6 @@ document.addEventListener('click', e => {
     go('physical'); return; }
   const ss = e.target.closest('[data-stockset]');
   if (ss) { PHY_STOCK = new Set(ACTIVE_STATES); go('physical'); return; }
-  const pgb = e.target.closest('[data-pg]');
-  if (pgb) { if (pgb.disabled) return; PAGE[pgb.dataset.pg] = Number(pgb.dataset.pgn); DRILL_PENDING = DRILL; go(CURRENT); return; }
   const inact = e.target.closest('[data-inactive]');
   if (inact) { go('inactive'); return; }
   const icl = e.target.closest('[data-inactcls]');
@@ -5516,8 +5748,24 @@ document.addEventListener('click', e => {
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 
+  const jbf = e.target.closest('[data-job-filter]');
+  if (jbf) { JOB_FILTER = jbf.dataset.jobFilter; go('jobs'); return; }
+
   const run = e.target.closest('[data-run]');
   if (run) { TXRUN = Number(run.dataset.run); go('target'); return; }
+
+  const txdl = e.target.closest('[data-txdownload]');
+  if (txdl) {
+    const blob = new Blob([JSON.stringify({ run: TXRUN, target: TRANSCRIPT, steps: txSteps() }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `run-${TXRUN}-${TRANSCRIPT.host}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+  const txrr = e.target.closest('[data-txrerun]');
+  if (txrr) { alert(`Re-run queued for ${TRANSCRIPT.host} (${TRANSCRIPT.ip}).`); return; }
 
   const nav = e.target.closest('[data-nav]');
   if (nav) { go(nav.dataset.nav); return; }
@@ -5588,6 +5836,20 @@ document.addEventListener('input', e => {
   if (el.hasAttribute && el.hasAttribute('data-nperfsel')) {
     NODE_PERF = el.value; go('node'); return;
   }
+  if (el.hasAttribute && el.hasAttribute('data-gridsearch')) {
+    const key = el.dataset.gridsearch, pos = el.selectionStart;
+    gridOf(key).search = el.value;
+    /* go() rebuilds the DOM, which would drop focus mid-word — put it back */
+    DRILL_PENDING = DRILL; go(CURRENT);
+    const again = document.querySelector(`[data-gridsearch="${CSS.escape(key)}"]`);
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (err) {} }
+    return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-filterval')) {
+    const [key, field] = el.dataset.filterval.split('|');
+    gridOf(key).filters[field] = el.value;
+    return; /* applied on "Apply filters", not per keystroke */
+  }
   if (el.classList && el.classList.contains('ox-hd')) {
     const d = opexDraft();
     d[el.dataset.f] = el.dataset.f === 'budget' ? Number(el.value) || 0 : el.value;
@@ -5605,9 +5867,10 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.hasAttribute && e.target.hasAttribute('data-pgsize')) {
-    const k = e.target.dataset.pgsize;
-    PAGE_SIZE[k] = Number(e.target.value); PAGE[k] = 1; DRILL_PENDING = DRILL; go(CURRENT); return;
+  if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
+    const [key, field] = e.target.dataset.filterval.split('|');
+    gridOf(key).filters[field] = e.target.value;
+    return;
   }
   const c = e.target.classList;
   if (c && (c.contains('cx-in') || c.contains('cx-hd') || c.contains('ox-in') || c.contains('ox-hd')))
@@ -5616,6 +5879,13 @@ document.addEventListener('change', e => {
 
 /* ── map pan / zoom ───────────────────────────────────── */
 let MZ = { k: 1, x: 0, y: 0 };
+/* Unbounded pan/zoom can carry the whole map off-canvas and leave it looking
+   blank with nothing left to click back to. Keep a slice always on screen. */
+function clampMZ() {
+  const sx = GEO.W * 0.4, sy = GEO.H * 0.4;
+  MZ.x = Math.min(GEO.W - sx, Math.max(sx - GEO.W * MZ.k, MZ.x));
+  MZ.y = Math.min(GEO.H - sy, Math.max(sy - GEO.H * MZ.k, MZ.y));
+}
 function applyMZ() {
   const g = document.getElementById('mapzoom');
   if (g) g.setAttribute('transform', `translate(${MZ.x} ${MZ.y}) scale(${MZ.k})`);
@@ -5627,7 +5897,7 @@ function mapZoom(dir) {
   const cx = GEO.W/2, cy = GEO.H/2;
   MZ.x = cx - (cx - MZ.x) * (k2 / MZ.k);
   MZ.y = cy - (cy - MZ.y) * (k2 / MZ.k);
-  MZ.k = k2; applyMZ(); repin();
+  MZ.k = k2; clampMZ(); applyMZ(); repin();
 }
 function repin() {
   const g = document.getElementById('mapzoom'); if (!g || CURRENT !== 'location' || LOC_VIEW !== 'map') return;
@@ -5645,7 +5915,7 @@ function bindMap() {
   svg.addEventListener('pointermove', e => {
     if (!drag) return;
     const r = svg.getBoundingClientRect(), s = GEO.W / r.width;
-    MZ.x = drag.ox + (e.clientX - drag.x) * s; MZ.y = drag.oy + (e.clientY - drag.y) * s; applyMZ();
+    MZ.x = drag.ox + (e.clientX - drag.x) * s; MZ.y = drag.oy + (e.clientY - drag.y) * s; clampMZ(); applyMZ();
   });
   const stop = () => { drag = null; };
   svg.addEventListener('pointerup', stop); svg.addEventListener('pointercancel', stop); svg.addEventListener('pointerleave', stop);
@@ -5654,7 +5924,7 @@ function bindMap() {
     const r = svg.getBoundingClientRect(), s = GEO.W / r.width;
     const mx = (e.clientX - r.left) * s, my = (e.clientY - r.top) * s;
     const f = e.deltaY < 0 ? 1.18 : 1/1.18, k2 = Math.min(8, Math.max(1, MZ.k * f));
-    MZ.x = mx - (mx - MZ.x) * (k2 / MZ.k); MZ.y = my - (my - MZ.y) * (k2 / MZ.k); MZ.k = k2; applyMZ();
+    MZ.x = mx - (mx - MZ.x) * (k2 / MZ.k); MZ.y = my - (my - MZ.y) * (k2 / MZ.k); MZ.k = k2; clampMZ(); applyMZ();
     clearTimeout(window.__rp); window.__rp = setTimeout(repin, 160);
   }, { passive: false });
   applyMZ();

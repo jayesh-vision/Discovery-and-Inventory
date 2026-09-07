@@ -294,10 +294,10 @@ function nodeVlans(N) {
       ${kpi('Trunk ports', String(N.vlans.reduce((a, v) => a + v.tr, 0)), 'carrying tagged traffic', 'amber')}
       ${kpi('Access ports', String(N.vlans.reduce((a, v) => a + v.acc, 0)), 'untagged, one VLAN each', 'purple')}
     </div>
-    ${gridBar(N.vlans.length, N.vlans.length + 51, 'VLAN ID, name, type', FS.vlan)}
+    ${gridBar(gridApply('vlan:' + N.name, N.vlans).length, N.vlans.length + 51, 'VLAN ID, name, type', FS.vlan, '', [], 'vlan:' + N.name)}
     ${table([{t:'VLAN ID'},{t:'Name'},{t:'Type'},{t:'Trunk ports',r:true},{t:'Access ports',r:true},
              {t:'STP state'},{t:'Status'},{t:'Learned MAC',r:true},{t:'Traffic utilisation',r:true}],
-      N.vlans.map(v => [
+      gridApply('vlan:' + N.name, N.vlans).map(v => [
         `<span class="mono">${v.id}</span>`, `<span class="vw-value">${v.n}</span>`,
         chip(v.t, { Data:'info', Server:'success', Wireless:'purple', Voice:'warning', Guest:'neutral', Management:'error' }[v.t] || 'neutral'),
         v.tr, v.acc, chip(v.stp, 'success'), chip(v.st, 'success'), n(v.mac),
@@ -320,7 +320,7 @@ function nodeLinks(N) {
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
         <button class="vw-card-section vw-card--accent stack-x is-drill"
-          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}` })}
+          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}&ne=${encodeURIComponent(N.name)}` })}
           style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)">
           <div class="vw-card-accent" style="background:${cv(p.tone,400)}"></div>
           <div class="row vw-justify-between vw-items-baseline">

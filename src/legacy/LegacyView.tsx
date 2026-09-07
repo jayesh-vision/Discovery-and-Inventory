@@ -67,11 +67,13 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     const L = window.__nsLegacy;
     const sp = new URLSearchParams(loc.search);
     const label = sp.get('drill');
-    sp.delete('drill');
+    const from = sp.get('from') ?? 'Inventory';
+    const back = sp.get('back') ?? 'physical';
+    sp.delete('drill'); sp.delete('from'); sp.delete('back');
     const q = sp.toString();
     L.setParams(legacyKey, params as Record<string, string>);
     if (q) L.applyDrillQuery(legacyKey, q);
-    L.setDrill(label ? { view: legacyKey, label, q, from: 'Inventory', back: 'physical' } : null);
+    L.setDrill(label ? { view: legacyKey, label, q, from, back } : null);
     L.go(legacyKey);
   }, [ready, legacyKey, loc.search, params]);
 

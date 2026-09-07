@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Donut, LineChart, SplitBar } from '../components/charts';
 import { GeoMap } from '../components/GeoMap';
 import { Against, KpiCard, Segments } from '../components/KpiCard';
+import { legacyPath } from '../routes';
 import {
   ATTENTION, CYCLE, CYCLE_SLA_H, DAILY, DISC_CLASSES, DL, LAST, MODELS, PREV, REASONS, REASON_CHIP, REGIONS, STATE_DEVICES, VENDORS,
   discoveryRate, successRate, type AttentionRow
@@ -41,11 +42,44 @@ export default function Insights() {
   const nav = useNavigate();
   const [syn, setSyn] = useState(false);
   const [vendorView, setVendorView] = useState<'bars' | 'cards'>('bars');
+  const [attnQuery, setAttnQuery] = useState('');
+  const [attnFilters, setAttnFilters] = useState<Record<string, string>>({});
   const rate = discoveryRate();
   const reasonTotal = REASONS.reduce((a, r) => a + r.c, 0);
   const vendorMax = Math.max(...VENDORS.map(v => v.ok + v.fail));
   const reasonOf = (k: string) => REASONS.find(r => r.k === k)!;
-  const toTargets = (q = '') => nav(`/discovery/targets${q ? '?' + q : ''}`);
+  /** hands off to the legacy Scan targets screen with the matching lower-case
+      filter key and a drill label, so it lands filtered and shows a way back */
+  const toTargets = (q = '', label?: string) => {
+    const sp = new URLSearchParams(q);
+    sp.set('from', 'Insights'); sp.set('back', 'insights');
+    nav(legacyPath('targets', label ? { label, q: sp.toString() } : { q: sp.toString() }));
+  };
+  /** Physical Resources is React-owned; build its query directly, the same
+      drill + from convention the legacy bridge uses, so it shows a way back */
+  const toPhysical = (params: Record<string, string>, label: string) => {
+    const sp = new URLSearchParams(params);
+    sp.set('drill', label);
+    sp.set('from', 'Insights');
+    nav(`/inventory/physical?${sp.toString()}`);
+  };
+  /** Location (legacy) needs view=list for its state/region filters to have any
+      effect — the default sub-view ignores them entirely. */
+  const toLocation = (params: Record<string, string>, label: string) => {
+    const sp = new URLSearchParams({ view: 'list', ...params });
+    sp.set('drill', label); sp.set('from', 'Insights'); sp.set('back', 'insights');
+    nav(`/inventory/location?${sp.toString()}`);
+  };
+  const attnRows = useMemo(() => {
+    const q = attnQuery.trim().toLowerCase();
+    return ATTENTION.filter(r => {
+      if (q && !(r.name.toLowerCase().includes(q) || r.ip.includes(q) || r.model.toLowerCase().includes(q))) return false;
+      if (attnFilters.Region && r.region !== attnFilters.Region) return false;
+      if (attnFilters.Vendor && r.vendor !== attnFilters.Vendor) return false;
+      if (attnFilters['Failure reason'] && reasonOf(r.reason).n !== attnFilters['Failure reason']) return false;
+      return true;
+    });
+  }, [attnQuery, attnFilters]);
 
   return (
     <div className={`page ins2${syn ? ' has-syn' : ''}`}>
@@ -75,14 +109,14 @@ export default function Insights() {
               { n: 'Partial', c: DL.runPartial, hex: cv('amber', 400) },
               { n: 'Failed', c: DL.runFail, hex: cv('red', 500) }]} />}
             delta={{ text: `${((LAST.answered / LAST.polled - PREV.answered / PREV.polled) * 100).toFixed(1)} pt better than last cycle`, better: true }}
-            action={{ label: `See the ${fmt(DL.runFail)} that failed`, onClick: () => toTargets('tgt=Failed') }} />
+            action={{ label: `See the ${fmt(DL.runFail)} that failed`, onClick: () => toTargets('tgt=failed', `The ${fmt(DL.runFail)} that failed this cycle`) }} />
 
           <KpiCard tone="purple"
             title="Seen for the first time"
             definition="Devices identified in this cycle that had no discovery record before. They are new to the network, newly reachable, or newly in scope — and are not yet in Inventory until reconciliation runs."
             value={fmt(LAST.fresh)} unit="devices" of="not in Inventory yet"
             delta={{ text: `${fmt(Math.abs(LAST.fresh - PREV.fresh))} ${LAST.fresh >= PREV.fresh ? 'more' : 'fewer'} than last cycle`, better: null }}
-            action={{ label: 'Review new devices', onClick: () => toTargets('tgt=New') }} />
+            action={{ label: 'Review new devices', onClick: () => toTargets('tgt=new', `${fmt(LAST.fresh)} seen for the first time this cycle`) }} />
 
           <KpiCard tone="amber"
             title="Time the cycle took"
@@ -108,7 +142,7 @@ export default function Insights() {
               <span><span className="ch-dot" style={{ background: DISC_CLASSES[0].hex }} /> Router {fmt(DL.discRouter)}</span>
               <span><span className="ch-dot" style={{ background: DISC_CLASSES[1].hex }} /> Switch {fmt(DL.discSwitch)}</span>
               <span className="grow" />
-              <span>axis starts at {fmt(Math.floor((Math.min(...DAILY.map(d => d.router + d.switch)) - 60) / 10) * 10)}, not zero — hover a point for the split</span>
+              <span>hover a point for the split</span>
             </div>
           </Card>
           <Card className="ins2-fill">
@@ -116,7 +150,7 @@ export default function Insights() {
             <div className="ins2-donut">
               <Donut slices={REASONS.map(r => ({ k: r.k, n: r.n, c: r.c, hex: r.hex }))} total={reasonTotal} label="Total failures" size={168} />
               <div className="ins2-donut-l">{REASONS.map(r => (
-                <button key={r.k} className="ins2-reason" onClick={() => toTargets(`reason=${r.k}`)}>
+                <button key={r.k} className="ins2-reason" onClick={() => toTargets(`tgt=failed&reason=${r.k}`, `Failed · ${r.n}`)}>
                   <span className="ch-dot" style={{ background: r.hex }} /><span className="grow">{r.n}</span><span className="num">{r.c}</span><span className="vw-card-metric-label-sub num">{pct(r.c / reasonTotal, 0)}</span>
                 </button>))}</div>
             </div>
@@ -134,7 +168,7 @@ export default function Insights() {
               <table className="mtbl">
                 <thead><tr><th>Vendor</th><th className="vtbl-bar">Identified <span className="ch-dot" style={{ background: cv('emerald', 500), marginLeft: 6 }} /> · failed <span className="ch-dot" style={{ background: cv('red', 500) }} /></th><th className="t-right">Identified</th><th className="t-right">Share</th><th className="t-right">Failed</th></tr></thead>
                 <tbody>{VENDORS.map(v => (
-                  <tr key={v.n} className="is-click" onClick={() => nav(`/inventory/physical?oem=${encodeURIComponent(v.n.toUpperCase())}`)}>
+                  <tr key={v.n} className="is-click" onClick={() => toPhysical({ oem: v.n.toUpperCase() }, `Vendor: ${v.n}`)}>
                     <td className="vw-value">{v.n}</td>
                     <td className="vtbl-bar"><SplitBar ok={v.ok} fail={v.fail} max={vendorMax} /></td>
                     <td className="t-right num">{fmt(v.ok)}</td>
@@ -145,7 +179,7 @@ export default function Insights() {
               </table>
             ) : (
               <div className="vcards">{VENDORS.map(v => (
-                <button key={v.n} className="vcard" onClick={() => nav(`/inventory/physical?oem=${encodeURIComponent(v.n.toUpperCase())}`)}>
+                <button key={v.n} className="vcard" onClick={() => toPhysical({ oem: v.n.toUpperCase() }, `Vendor: ${v.n}`)}>
                   <span className="vw-value">{v.n}</span><span className="kpi3-v num">{fmt(v.ok)}</span>
                   <span className="vw-card-description">{pct(v.ok / DL.identified)} of fleet · <span style={{ color: cv('red', 600) }}>{v.fail} failed</span></span>
                 </button>))}</div>
@@ -155,7 +189,7 @@ export default function Insights() {
             <div className="row vw-justify-between"><span className="vw-card-title">Failure rate by model</span><span className="vw-card-description">models carrying the most failures</span></div>
             <table className="mtbl"><thead><tr><th>Model</th><th>Vendor</th><th className="t-right">Devices</th><th className="t-right">Failed</th><th className="t-right">Failure rate</th></tr></thead>
               <tbody>{[...MODELS].sort((a, b) => b.fail / b.total - a.fail / a.total).map(m => (
-                <tr key={m.model} className="is-click" onClick={() => nav(`/inventory/physical?model=${encodeURIComponent(m.model)}`)}>
+                <tr key={m.model} className="is-click" onClick={() => toPhysical({ model: m.model }, `Model: ${m.model}`)}>
                   <td><span className="vw-value mono">{m.model}</span></td>
                   <td>{m.oem}</td>
                   <td className="t-right num">{fmt(m.total)}</td>
@@ -168,7 +202,7 @@ export default function Insights() {
         {/* row D: one tile per region — four rows of a table were mostly empty card */}
         <div className="ins2-row ins2-3x4">
           {REGIONS.map(r => (
-            <button key={r.region} className="rtile" onClick={() => nav(`/inventory/location?region=${r.region}`)}>
+            <button key={r.region} className="rtile" onClick={() => toLocation({ region: r.region }, `${r.region} region`)}>
               <span className="rtile-h"><span className="vw-card-title-sm">{r.region}</span><span className="vw-card-description">{fmt(r.total)} devices</span></span>
               <span className="rtile-v num" style={{ color: cv('emerald', 700) }}>{pct(successRate(r))}</span>
               <span className="rtile-bar"><span style={{ width: `${(successRate(r) * 100).toFixed(1)}%`, background: cv('emerald', 500) }} /></span>
@@ -184,18 +218,25 @@ export default function Insights() {
           <div className="row vw-justify-between"><span className="vw-card-title">Devices needing attention</span><span className="vw-card-description">failed in the last cycle · no record produced</span></div>
           <DataGrid<AttentionRow>
             columns={[{ t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'Vendor' }, { t: 'Model' }, { t: 'Failure reason' }, { t: 'Last attempt' }]}
-            rows={ATTENTION} total={DL.runFail} rowKey={r => r.name}
+            rows={attnRows} total={attnQuery || Object.values(attnFilters).some(Boolean) ? attnRows.length : DL.runFail} rowKey={r => r.name}
             searchPlaceholder="Device, IP, model" filters={[{ n: 'Region', o: ['North', 'East', 'West', 'South'] }, { n: 'Vendor', o: VENDORS.map(v => v.n) }, { n: 'Failure reason', o: REASONS.map(r => r.n) }]}
-            gridActions={[{ l: 'Re-run discovery for all', primary: true }, { l: 'Download report' }]}
+            onSearch={setAttnQuery} searchValue={attnQuery} onFilterChange={setAttnFilters} onRefresh={() => { setAttnQuery(''); setAttnFilters({}); }}
+            gridActions={[
+              { l: 'Re-run discovery for all', primary: true, onClick: () => alert(`Discovery re-run queued for ${fmt(DL.runFail)} failed targets.`) },
+              { l: 'Download report', onClick: () => alert('Preparing the failure report for download…') }
+            ]}
             rowActions={r => [
               { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(r.name)}`) },
               { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-              { l: 'Re-run discovery for this IP' }, { l: 'Change credential profile' }, { l: 'Copy IP address' }
+              { l: 'Re-run discovery for this IP', onClick: () => alert(`Discovery re-run queued for ${r.ip}.`) },
+              { l: 'Change credential profile' },
+              { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(r.ip); } }
             ]}
             renderRow={r => [
               <span className="vw-value">{r.name}</span>, <span className="mono">{r.ip}</span>, r.region, r.vendor, <span className="mono">{r.model}</span>,
               <Chip tone={REASON_CHIP[r.reason]}>{reasonOf(r.reason).n}</Chip>, <span className="num">{r.last}</span>
             ]}
+            emptyText="No failed devices match the current search and filters."
           />
         </Card>
 
@@ -207,7 +248,7 @@ export default function Insights() {
                 parts: [{ n: 'Routers', c: s.router, hex: DISC_CLASSES[0].hex }, { n: 'Switches', c: s.switch, hex: DISC_CLASSES[1].hex }] }))} />
             <table className="mtbl ins2-states"><thead><tr><th>State</th><th>Region</th><th className="t-right">Routers</th><th className="t-right">Switches</th><th className="t-right">Total</th></tr></thead>
               <tbody>{[...STATE_DEVICES].sort((a, b) => (b.router + b.switch) - (a.router + a.switch)).map(s => (
-                <tr key={s.c} className="is-click" onClick={() => nav(`/inventory/location?state=${encodeURIComponent(s.st)}`)}>
+                <tr key={s.c} className="is-click" onClick={() => toLocation({ state: s.st }, s.st)}>
                   <td className="vw-value">{s.st}</td><td>{s.region}</td>
                   <td className="t-right num">{fmt(s.router)}</td><td className="t-right num">{fmt(s.switch)}</td>
                   <td className="t-right num">{fmt(s.router + s.switch)}</td>
