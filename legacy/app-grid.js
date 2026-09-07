@@ -259,21 +259,26 @@ function lazyGrids() {
   grids().forEach((tbl, i) => {
     const body = tbl.tBodies[0];
     if (!body) return;
-    const rows = Array.from(body.rows);
+    /* the "no records" placeholder is not a record */
+    const rows = Array.from(body.rows).filter(r => !(r.cells[0] && r.cells[0].classList.contains('tbl-empty')));
     const key = CURRENT + ':' + i;
     const st = LAZY[key] && LAZY[key].total === rows.length ? LAZY[key] : (LAZY[key] = { n: LAZY_STEP, total: rows.length, top: 0 });
     sizeGrid(tbl);
     /* an open menu follows its row while the grid scrolls under it */
     tbl.parentNode.addEventListener('scroll', placeMenus, { passive: true });
     const restore = () => { tbl.parentNode.scrollTop = st.top || 0; };
-    if (rows.length <= LAZY_STEP) { restore(); return; }
 
-    /* the grid bar sits just above the table: its count follows what is
-       painted, so the page size shows without scrolling to the end */
+    /* The grid bar sits just above the table. It counts the rows on screen out
+       of the rows this result set holds — not the estate-wide population, which
+       would read as though nothing had been paginated: a filter down to 175
+       failed targets shows "25 of 175", never "175 of 2,308". */
     let bar = tbl.parentNode.previousElementSibling;
     while (bar && !bar.classList.contains('grid-bar')) bar = bar.previousElementSibling;
     const label = bar && bar.querySelector('.grid-count');
-    const labelHtml = label ? label.innerHTML : '';
+    const setLabel = shown => {
+      if (label) label.textContent = `Showing ${n(shown)} of ${n(rows.length)}`;
+    };
+    if (rows.length <= LAZY_STEP) { setLabel(rows.length); restore(); return; }
 
     const more = document.createElement('button');
     more.type = 'button';
@@ -286,7 +291,7 @@ function lazyGrids() {
       more.innerHTML = left > 0
         ? `Load the next ${n(Math.min(LAZY_STEP, left))}
            <span class="tbl-more-of">· ${n(st.n)} of ${n(rows.length)} loaded</span>` : '';
-      if (label) label.innerHTML = labelHtml.replace(/^Showing\s+[\d,]+/, 'Showing ' + n(st.n));
+      setLabel(st.n);
     };
     paint();
     restore();
