@@ -82,6 +82,11 @@ ok('insights: attention grid ≥ 10 rows', await count('.nst-table tbody tr') >=
 ok('insights: 21 state bubbles', await count('.geo-b') === 21);
 await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('#view .page');
 ok('insights KPI → legacy targets', p.url().endsWith('/discovery/targets'), p.url());
+ok('targets: quick filter lives in the grid bar, no page bar', await count('.grid-bar .seg [data-tgt-filter]') === 4 && await count('#view .page-bar') === 0);
+ok('targets: no loose Run now button', !(await text('.grid-bar')).includes('Run now'));
+await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(150);
+ok('targets: Run now is the kebab primary action', (await text('.grid-bar .kmenu .kmenu-i.is-primary')) === 'Run now');
+await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(100);
 await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-6-6 .mtbl');
 await p.click('.ins2-6-6 .mtbl tbody tr:first-child'); await p.waitForSelector('.stock-chips');
 ok('insights vendor → React physical', p.url().includes('/inventory/physical?oem=JUNIPER'), p.url());

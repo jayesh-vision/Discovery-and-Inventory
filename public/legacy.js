@@ -1406,7 +1406,7 @@ const kiFor = l => {
   if (/life ?cycle|change|edit|rename|assign|stock state/.test(t)) return KI.life;
   if (/job|history|log|audit|workorder/.test(t)) return KI.jobs;
   if (/purge|delete|retire|remove/.test(t)) return KI.del;
-  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
+  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
   if (/copy/.test(t)) return KI.copy;
   if (/download|export|report/.test(t)) return KI.down;
   if (/restore|recover|revert/.test(t)) return KI.undo;
@@ -2163,12 +2163,12 @@ function viewTargets() {
   const rows = TARGETS.filter(test);
   const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
   return `<div class="page">
-    ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
     ${drillBar()}
     ${card(`
       ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
-         <button class="nst-btn nst-btn--filled nst-btn--sm">Run now</button>`)}
+        `<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>
+         ${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}`,
+        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }])}
       ${table(
         [{ t: 'Outcome' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Collector chain' }],
