@@ -29,7 +29,7 @@ patch(`function go(k) {
   /* React owns some screens now: hand those over with the pending drill */
   if (window.__nsBridge && window.__nsBridge.owns(k)) {
     const d = DRILL_PENDING; DRILL_PENDING = null;
-    window.__nsBridge.navigate(k, d);
+    window.__nsBridge.navigate(k, d, __legacyParams(k));
     return;
   }
   viewEl = _el('view'); crumbEl = _el('crumb'); modEl = _el('module');
@@ -55,6 +55,22 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
     CURRENT === 'inactive' ? b.hasAttribute('data-inactive') : b.dataset.nav === active));`,
 `  void active; /* rail highlight is owned by the React sidebar */`, 'rail highlight');
 
+/* 2c. the Site details tab is a React screen */
+patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
+        <span class="tab-n num">\${inrShort(oxRun)}/mo</span></button>
+    </div>`, `      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
+        <span class="tab-n num">\${inrShort(oxRun)}/mo</span></button>
+      <button class="stab" data-nav="sitedetails">Site details</button>
+      <button class="stab" data-nav="siteequipment">Site equipment</button>
+    </div>`, 'site details tab');
+
+/* 2d. the transcript has no breadcrumb to go back by — give it a button */
+patch(`      \`<button class="nst-btn nst-btn--sm">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>\`)}`,
+`      \`<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
+       <button class="nst-btn nst-btn--sm">Download payload</button>
+       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>\`)}`, 'transcript back button');
+
 /* 3. after an in-place render, tell React so the URL follows the screen */
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
@@ -66,6 +82,7 @@ patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID }
+    : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
 `, 'sync after render');

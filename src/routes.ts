@@ -1,6 +1,9 @@
 import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
 import InactiveInventory from './screens/InactiveInventory';
+import Insights from './screens/Insights';
+import SiteDetails from './screens/SiteDetails';
+import SiteEquipment from './screens/SiteEquipment';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -16,7 +19,7 @@ export interface Screen {
 }
 
 export const SCREENS: Screen[] = [
-  { key: 'insights',  path: '/discovery/insights',  module: 'Discovery and reconciliation', crumb: 'Insights',       legacy: true },
+  { key: 'insights',  path: '/discovery/insights',  module: 'Discovery and reconciliation', crumb: 'Insights',       component: Insights },
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },
@@ -27,6 +30,8 @@ export const SCREENS: Screen[] = [
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },
+  { key: 'sitedetails', path: '/inventory/location/site/:id/details', module: 'Inventory', crumb: 'Location · Site details · Facility', rail: 'location', component: SiteDetails },
+  { key: 'siteequipment', path: '/inventory/location/site/:id/equipment', module: 'Inventory', crumb: 'Location · Site details · Site equipment', rail: 'location', component: SiteEquipment },
   { key: 'node',      path: '/inventory/node/:name',              module: 'Inventory', crumb: 'Location · Site details · Node view', rail: 'location', legacy: true },
   { key: 'virtual',   path: '/inventory/virtual',   module: 'Inventory', crumb: 'Resources · Virtual Resources', legacy: true },
   { key: 'physical',  path: '/inventory/physical',  module: 'Inventory', crumb: 'Resources · Physical Resources', component: PhysicalResources },

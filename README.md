@@ -6,6 +6,35 @@ OSS platform, on the NST / Vision Waves design system.
 Vite · React 19 · TypeScript · react-router 7. No UI library: every element is a
 `.vw-*` / `.nst-*` class from the design system bundle in `src/styles/`.
 
+## Embedding
+
+The host application owns the header and the left navigation; this app renders
+neither (only `document.title` names the screen). Each screen is one URL, so a
+host menu item is an iframe pointing at it:
+
+| menu item | iframe src |
+| --- | --- |
+| Insights | `/discovery/insights` |
+| Scan jobs · Scan targets · Reconciliation | `/discovery/jobs` · `/discovery/targets` · `/discovery/reconcile` |
+| Location | `/inventory/location` |
+| Physical · Virtual · Passive | `/inventory/physical` · `/inventory/virtual` · `/inventory/passive` |
+| Links · Services · Reports | `/inventory/links` · `/inventory/services` · `/inventory/reports` |
+| Inactive inventory | `/inventory/inactive` |
+
+Drill-downs stay inside the iframe and the breadcrumb links back to the list
+screen. Filters are query parameters (`?cls=switch&stock=instore`), so a host
+menu can deep-link a filtered view.
+
+### Site equipment (cable view)
+
+`/inventory/location/site/<id>/equipment` hosts the Fiberneo cable view
+(`public/cable-view/`, unmodified) in its own frame. With no query the tab
+builds a `siteInfo` payload from the site's cabling ledger
+(`src/data/facility.ts` → `src/data/cableView.ts`) and injects it into the
+frame the way Fiberneo does. Append `?token=<jwt>&facility_id=<id>` to hand
+those through instead; the frame then fetches the live facility from
+`qa.visionwaves.com` and the header badge reads *Live · Fiberneo*.
+
 ```bash
 ./app.sh run       # installs on first run, then http://localhost:5173
 ./app.sh test      # production build + end-to-end checks
@@ -39,10 +68,13 @@ prototype's own renderer through a bridge.
 
 | screen | state |
 | --- | --- |
+| Insights | React — `src/screens/Insights.tsx` |
 | Physical Resources | React — `src/screens/PhysicalResources.tsx` |
 | Inactive inventory | React — `src/screens/InactiveInventory.tsx` |
-| Insights, Scan jobs, Scan targets, Reconciliation | legacy bridge |
-| Location, Site details, Capex, Opex, Node view | legacy bridge |
+| Site details · Facility tab | React — `src/screens/SiteDetails.tsx` (the other site tabs are legacy) |
+| Site details · Site equipment tab | React — `src/screens/SiteEquipment.tsx`, framing `public/cable-view/` |
+| Scan jobs, Scan targets, Reconciliation | legacy bridge |
+| Location, Site details (NE / Capex / Opex tabs), Node view | legacy bridge |
 | Virtual Resources, Passive Infrastructure, Links, Services, Reports, Element | legacy bridge |
 
 `src/routes.ts` is the single registry: sidebar, breadcrumb, routes and the
@@ -90,7 +122,7 @@ Reports → Passive Infrastructure → Scan jobs and Scan targets → Reconcilia
 src/
   main.tsx, App.tsx        shell: sidebar, topbar, routes
   routes.ts                screen registry
-  shell/                   Sidebar, Topbar
+  shell/RouteTitle.tsx     document title per route (the host app draws the header and menu)
   components/ui.tsx        Chip, Card, StatStrip, TabBar, DrillBar
   components/grid/         DataGrid, toolbar, filter panel, row menu, Pager, icons
   data/                    typed ledgers and sample rows, self-checked at import

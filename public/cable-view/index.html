@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>POP Cable View — Fiberneo</title>
+  <style id="cv-boot-css">
+    .cv-body { position: relative; flex: 1; min-height: 200px; display: flex; flex-direction: column; }
+    .cv-body.cv-content-loading #sub-toolbar,
+    .cv-body.cv-content-loading #seg-bar,
+    .cv-body.cv-content-loading #main-wrap,
+    .cv-body.cv-content-loading #fab,
+    .cv-body.cv-content-loading #bottom-nav { visibility: hidden; }
+    #cv-loader {
+      position: absolute; inset: 0; z-index: 50;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      background: #f4f5f7;
+    }
+    html[data-theme="dark"] #cv-loader { background: #0d1117; }
+    #cv-loader[hidden] { display: none !important; }
+    .cv-loader-spin {
+      width: 42px; height: 42px;
+      border: 3px solid #d0d5dd; border-top-color: #2563eb;
+      border-radius: 50%; animation: cv-spin 0.7s linear infinite;
+    }
+    @keyframes cv-spin { to { transform: rotate(360deg); } }
+    .cv-loader-text { margin: 0; font-size: 13px; font-weight: 500; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div id="cv-app-shell">
+
+  <header class="topbar">
+    <button type="button" class="tb-back" data-action="go-back" aria-label="Back">←</button>
+    <div class="tb-info" id="tb-info"></div>
+    <div class="tb-actions">
+      <button type="button" class="tb-btn ghost" id="btn-connect" data-action="connect-start" style="display:none">🔗 Connect</button>
+      
+      
+    </div>
+  </header>
+
+  <div id="cv-body" class="cv-body cv-content-loading">
+
+  <div class="cv-loader" id="cv-loader" role="status" aria-live="polite" aria-busy="true" aria-label="Loading cable view">
+    <div class="cv-loader-spin" aria-hidden="true"></div>
+    <p class="cv-loader-text">Loading cable view…</p>
+  </div>
+  
+  
+  <div class="sub-toolbar" id="sub-toolbar">
+    <div class="stat-strip" id="stat-strip"></div>
+
+    <div class="conn-prog-wrap" id="conn-prog-wrap" aria-hidden="true">
+      <div class="conn-prog" id="conn-prog" role="status">
+        <div class="cp-steps">
+          <div class="cp-step active" id="cps1">1</div>
+          <div class="cp-line" id="cpl1"></div>
+          <div class="cp-step" id="cps2">2</div>
+          <div class="cp-line" id="cpl2"></div>
+          <div class="cp-step" id="cps3">3</div>
+        </div>
+        <div class="cp-hint" id="cp-hint">Pick an <strong>IN-FDMS</strong> port from the list</div>
+        <button type="button" class="cp-cancel" data-action="connect-cancel" aria-label="Cancel connect mode">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="seg-bar" id="seg-bar" style="display:none">
+    <button class="seg-tab active">🗺️ Diagram</button>
+    <button class="seg-tab">⚙️ Equipment</button>
+    <button class="seg-tab">📋 Ports</button>
+  </div>
+  
+  
+  <div class="main-wrap" id="main-wrap">
+  
+    
+    <div class="panel panel-diagram active" id="panel-diagram">
+  
+      
+      <div class="diag-panel-header panel-col-header">
+        <div class="panel-col-header-text">
+          <h3 class="plh-title">Cable Diagram</h3>
+          <p class="plh-meta">IN-FDMS · Equipment · OUT-FDMS</p>
+        </div>
+        <div class="diag-panel-actions">
+          <div class="zoom-controls" id="zoom-controls" style="display:none">
+            <button type="button" class="zoom-btn" data-action="zoom-out" title="Zoom out">−</button>
+            <span class="zoom-label" id="zoom-label" data-action="zoom-reset" title="Reset zoom" role="button" tabindex="0">85%</span>
+            <button type="button" class="zoom-btn" data-action="zoom-in" title="Zoom in">+</button>
+            <button type="button" class="zoom-btn" data-action="zoom-fit" title="Fit to screen" style="font-size:13px">⊡</button>
+          </div>
+          <button type="button" class="fs-btn" id="btn-fullscreen" data-action="toggle-fullscreen" style="display:none">⛶ Fullscreen</button>
+        </div>
+      </div>
+  
+      
+      <div class="mobile-zoom-bar" id="mobile-zoom-bar" style="display:none">
+        <div class="mob-zoom-controls">
+          <button type="button" class="zoom-btn" data-action="zoom-out" title="Zoom out">−</button>
+          <span class="zoom-label" id="zoom-label-mob" data-action="zoom-reset" title="Reset zoom" role="button" tabindex="0">85%</span>
+          <button type="button" class="zoom-btn" data-action="zoom-in" title="Zoom in">+</button>
+          <button type="button" class="zoom-btn" data-action="zoom-fit" title="Fit to screen" style="font-size:13px">⊡</button>
+        </div>
+        <button type="button" class="fs-btn-mob" id="btn-fullscreen-mob" data-action="toggle-fullscreen" title="Fullscreen">⛶ Fullscreen</button>
+      </div>
+  
+      <div class="diag-scroll" id="diag-scroll" aria-label="Cable diagram">
+        <div class="diag-connectivity-loader" id="diag-connectivity-loader" hidden="" role="status" aria-live="polite" aria-busy="false" aria-label="Loading cable connectivity">
+          <div class="cv-loader-spin" aria-hidden="true"></div>
+          <p class="cv-loader-text">Loading connectivity…</p>
+        </div>
+        <div class="diag-scroll-inner" id="diag-scroll-inner" tabindex="0">
+        <div class="diag-zoom-stage" id="diag-zoom-stage">
+        <div class="diag-wrap" id="diag-wrap">
+          
+          <div class="d-col">
+            <div class="d-col-hdr in">IN-FDMS</div>
+            <div class="d-col-body" id="d-in"></div>
+          </div>
+          
+          <div class="d-wire-zone" id="svgz-l">
+            <svg id="svg-l" style="position:absolute;top:0;left:0;width:100%;pointer-events:none;overflow:visible"></svg>
+          </div>
+          
+          <div class="d-eq-col" id="d-eq"></div>
+          
+          <div class="d-wire-zone" id="svgz-r">
+            <svg id="svg-r" style="position:absolute;top:0;left:0;width:100%;pointer-events:none;overflow:visible"></svg>
+          </div>
+          
+          <div class="d-col">
+            <div class="d-col-hdr out">OUT-FDMS</div>
+            <div class="d-col-body" id="d-out"></div>
+          </div>
+        </div>
+        </div>
+        </div>
+      </div>
+  
+      <div class="diag-legend" style="flex-shrink:0">
+        <div class="dl-item"><div class="dl-line" style="background:var(--c-rly)"></div>Railway Eq.</div>
+        <div class="dl-item"><div class="dl-line" style="background:var(--c-dwdm)"></div>DWDM</div>
+        <div class="dl-item"><div class="dl-line" style="background:var(--c-sw)"></div>Switch</div>
+        <div class="dl-item"><div class="dl-line" style="background:var(--c-amp)"></div>Amplifier</div>
+        <div class="dl-item">
+          <div class="dl-line" style="border-top:2px dashed var(--c-dir);height:0;width:22px"></div>Direct
+        </div>
+      </div>
+    </div>
+  
+    
+    <div class="panel panel-equip" id="panel-equip">
+      <div class="panel-list-header panel-col-header">
+        <div class="panel-col-header-text">
+          <h3 class="plh-title">Equipment</h3>
+          <p class="plh-meta" id="equip-count"></p>
+        </div>
+      </div>
+      <div class="eq-list-wrap">
+        <div id="equip-list"></div>
+        <button type="button" class="eq-add-btn" id="btn-add-equip" data-action="add-equip" style="display:none">+ Add Equipment</button>
+      </div>
+    </div>
+  
+    
+    <div class="ports-collapsed-strip" id="ports-collapsed-strip" data-action="toggle-ports-panel" title="Expand ports panel" role="button" tabindex="0" aria-label="Expand ports panel">
+      <span class="pcs-icon">📋</span>
+      <span class="pcs-label">P<br>O<br>R<br>T<br>S</span>
+      <span class="pcs-arrow">◀</span>
+    </div>
+  
+    
+    <div class="panel panel-list" id="panel-ports">
+      <div class="panel-list-header panel-col-header">
+        <div class="panel-col-header-text">
+          <h3 class="plh-title">IN → OUT Mapping</h3>
+          <p class="plh-meta" id="list-count"></p>
+        </div>
+        <button type="button" class="collapse-btn" id="collapse-ports-btn" data-action="toggle-ports-panel" title="Collapse ports panel" aria-label="Collapse ports panel">▶</button>
+      </div>
+      <div id="sk-ports"></div>
+      <div id="port-list"></div>
+      <div class="cable-exit" id="cable-exit" style="display:none">
+        <span class="ce-icon">🔌</span>
+        <div>
+          <h4 id="ce-title">24 Core Cable → Next Station</h4>
+          <p>OUT-FDMS ports route to the next POP</p>
+        </div>
+        <span class="ce-arr">›</span>
+      </div>
+    </div>
+  
+  </div>
+  
+  
+  <button class="fab" id="fab" aria-label="Connect port" style="display:none">＋</button>
+  
+  
+  <nav class="bottom-nav" id="bottom-nav" style="display:none">
+    <div class="nav-it active" id="nav-0">
+      <span class="ni">📋</span>Ports
+    </div>
+    <div class="nav-it" id="nav-1">
+      <span class="ni">⚙️</span>Equip
+    </div>
+    <div class="nav-it" id="nav-2">
+      <span class="ni">🗺️</span>Diagram
+    </div>
+    <div class="nav-it" id="nav-3" data-action="connect-start" role="button" tabindex="0">
+      <span class="ni">🔗</span>Connect
+    </div>
+  </nav>
+  
+  
+  <div class="fs-overlay" id="fs-overlay">
+    <div class="fs-bar">
+      <div>
+        <span class="fs-title">Cable Diagram</span>
+        <span class="fs-station" id="fs-station"></span>
+      </div>
+      <div class="fs-bar-right">
+        
+        <div class="zoom-controls" style="margin-right:10px">
+          <button type="button" class="zoom-btn" data-action="zoom-out" title="Zoom out">−</button>
+          <span class="zoom-label" id="zoom-label-fs" data-action="zoom-reset" title="Reset zoom" role="button" tabindex="0">85%</span>
+          <button type="button" class="zoom-btn" data-action="zoom-in" title="Zoom in">+</button>
+          <button type="button" class="zoom-btn" data-action="zoom-fit" title="Fit to screen" style="font-size:13px">⊡</button>
+        </div>
+        <button type="button" class="fs-close" data-action="toggle-fullscreen">✕ Exit Fullscreen</button>
+      </div>
+    </div>
+    <div class="fs-body" id="fs-body"></div>
+    <div class="diag-legend fs-legend" id="fs-legend">
+      <div class="dl-item"><div class="dl-line" style="background:var(--c-rly)"></div>Railway Eq.</div>
+      <div class="dl-item"><div class="dl-line" style="background:var(--c-dwdm)"></div>DWDM</div>
+      <div class="dl-item"><div class="dl-line" style="background:var(--c-sw)"></div>Switch</div>
+      <div class="dl-item"><div class="dl-line" style="background:var(--c-amp)"></div>Amplifier</div>
+      <div class="dl-item"><div class="dl-line" style="border-top:2px dashed var(--c-dir);height:0;width:22px"></div>Direct</div>
+    </div>
+  </div>
+
+  </div>
+
+  </div>
+  
+  <div id="toast" role="alert" aria-live="polite"></div>
+  
+  
+  
+  <div class="sheet-ov" id="sh-port">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title" id="pd-title">Port A</div>
+        <div class="sh-sub" id="pd-sub">IN-FDMS</div>
+        <div id="pd-body"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sheet-ov" id="sh-confirm">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title">Confirm Connection</div>
+        <div class="sh-sub">Review path before saving</div>
+        <div class="path-chips" id="cf-path"></div>
+        <div class="info-blk">
+          <h4>Connection Details</h4>
+          <div class="ir"><span class="il">IN-FDMS Port</span>  <strong class="iv" id="cf-src">—</strong></div>
+          <div class="ir"><span class="il">OUT-FDMS Port</span> <strong class="iv" id="cf-dst">—</strong></div>
+          <div class="ir"><span class="il">Via Equipment</span> <strong class="iv" id="cf-via">—</strong></div>
+          <div class="ir" id="cf-eq-row-in" style="display:none"><span class="il">EQ IN Port</span>  <strong class="iv" id="cf-eqin">—</strong></div>
+          <div class="ir" id="cf-eq-row-out" style="display:none"><span class="il">EQ OUT Port</span> <strong class="iv" id="cf-eqout">—</strong></div>
+          <div class="ir"><span class="il">Strand Color</span>  <strong class="iv" id="cf-strand">—</strong></div>
+        </div>
+        <div class="act-row">
+          <button type="button" class="act-btn success" data-action="confirm-save">✓ Save Connection</button>
+          <button type="button" class="act-btn secondary" data-action="connect-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sheet-ov" id="sh-pick-out">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title">Select OUT-FDMS Port</div>
+        <div class="sh-sub" id="spo-sub">Choose destination port</div>
+        <div class="out-grid" id="out-picker"></div>
+        <div class="act-row" style="margin-top:12px">
+          <button type="button" class="act-btn secondary" data-action="connect-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-ov" id="sh-pick-in">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title">Select IN-FDMS Port</div>
+        <div class="sh-sub" id="spi-sub">Choose source port</div>
+        <div class="out-grid" id="in-picker"></div>
+        <div class="act-row" style="margin-top:12px">
+          <button type="button" class="act-btn secondary" data-action="connect-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sheet-ov" id="sh-pick-eq">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title">Route via Equipment?</div>
+        <div class="sh-sub">Pick an equipment port or go direct</div>
+        <div id="eq-port-picker"></div>
+        <div class="act-row" style="margin-top:12px">
+          <button type="button" class="act-btn secondary" data-action="connect-out-dest-back" style="display:none">← Back</button>
+          <button type="button" class="act-btn secondary" data-action="connect-skip-equip" style="color:var(--c-dir);border-color:var(--c-dir)">↷ Direct (no equipment)</button>
+          <button type="button" class="act-btn secondary" data-action="connect-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sheet-ov" id="sh-add-eq">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-add-eq-title">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title" id="sh-add-eq-title">Add Equipment</div>
+        <div class="sh-sub">Install new equipment at this POP location</div>
+        <div class="fg eq-type-fg">
+          <label class="fl" for="eq-type-select">Equipment Type</label>
+          <div class="fi-select-wrap">
+            <select class="fi fi-select" id="eq-type-select">
+              <option value="" selected="" disabled="">Select type</option>
+              <option value="rly">Railway Eq.</option>
+              <option value="dwdm">DWDM</option>
+              <option value="sw">Switch</option>
+              <option value="router">Router</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl" for="eq-name-inp">Equipment Name</label>
+          <input type="text" class="fi" id="eq-name-inp" placeholder="e.g. DWDM-02, RLY-EQ-01" autocomplete="off">
+        </div>
+        <div class="pc-row">
+          <div class="fg">
+            <label class="fl" for="eq-in-cnt">IN Ports</label>
+            <div class="fi-select-wrap">
+              <select class="fi fi-select" id="eq-in-cnt">
+                <option value="1">1</option>
+                <option value="2" selected="">2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl" for="eq-out-cnt">OUT Ports</label>
+            <div class="fi-select-wrap">
+              <select class="fi fi-select" id="eq-out-cnt">
+                <option value="1">1</option>
+                <option value="2" selected="">2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="act-row">
+          <button type="button" class="act-btn primary" id="btn-save-equip" aria-busy="false">+ Add Equipment</button>
+          <button type="button" class="act-btn secondary" id="btn-cancel-add-eq">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sheet-ov" id="sh-line-detail">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title" id="ld-title">Connection</div>
+        <div class="sh-sub" id="ld-sub">Cable diagram link</div>
+        <div id="ld-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-ov" id="sh-eq-detail">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sh-handle"></div>
+      <div class="sh-in">
+        <div class="sh-title" id="eqd-title">Equipment</div>
+        <div class="sh-sub" id="eqd-sub">Port connectivity</div>
+        <div id="eqd-body"></div>
+        <div class="act-row">
+          <button type="button" class="act-btn secondary" data-action="close-eq-detail">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  
+
+  <script src="./app.js"></script>
+</body>
+</html>

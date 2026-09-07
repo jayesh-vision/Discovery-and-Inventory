@@ -15,7 +15,7 @@ declare global {
     };
     __nsBridge?: {
       owns: (k: string) => boolean;
-      navigate: (k: string, drill: { label?: string; q?: string } | null) => void;
+      navigate: (k: string, drill: { label?: string; q?: string } | null, params?: Record<string, string>) => void;
       sync: (k: string, params: Record<string, string>) => void;
     };
   }
@@ -50,7 +50,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
   useEffect(() => {
     window.__nsBridge = {
       owns: isReactOwned,
-      navigate: (k, drill) => nav(legacyPath(k, drill)),
+      navigate: (k, drill, params) => nav(legacyPath(k, drill, params ?? {})),
       /* the prototype re-rendered itself (a tab, a drill, a row action): follow it */
       sync: (k, params) => {
         const target = legacyPath(k, null, params);

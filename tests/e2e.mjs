@@ -15,8 +15,9 @@ const count = sel => p.evaluate(s => document.querySelectorAll(s).length, sel);
 /* ── React-owned: Physical Resources ───────────────────── */
 await p.goto(BASE + '/inventory/physical'); await p.waitForSelector('.nst-table tbody tr');
 ok('physical renders 12 rows', await count('.nst-table tbody tr') === 12);
-ok('crumb', (await text('.topbar-crumb')) === 'Resources · Physical Resources', await text('.topbar-crumb'));
-ok('rail highlights Physical', (await text('.side-item.is-active')) === 'Physical Resources');
+ok('no header of our own (host draws it)', await count('.topbar') === 0 && await count('header') === 0);
+ok('title names the screen', (await p.title()).startsWith('Resources · Physical Resources'), await p.title());
+ok('embedded: no left menu', await count('.side') === 0);
 const tabs = async () => (await text('.tabbar')).replace(/([a-zA-Z])(\d)/g, '$1 $2');
 ok('tabs from ledger', (await tabs()).includes('Router 2,148') && (await tabs()).includes('gNodeB 14'), await tabs());
 ok('4 active stock chips, no archive chip', await count('.stock-chip') === 4);
@@ -37,8 +38,8 @@ await p.waitForTimeout(400);
 ok('row action → legacy site screen', p.url().includes('/inventory/location/site/'), p.url());
 await p.waitForSelector('#view .page');
 ok('legacy site renders', (await text('#view')).length > 200);
-ok('crumb for site', (await text('.topbar-crumb')) === 'Location · Site details');
-ok('rail highlights Location', (await text('.side-item.is-active')) === 'Location');
+ok('title for site', (await p.title()).startsWith('Location · Site details'), await p.title());
+ok('site screen has its own way back', (await text('#view')).includes('Back to list'));
 
 /* ── React ↔ React: decommissioned → archive with class ─ */
 await p.goto(BASE + '/inventory/physical?cls=dwdm'); await p.waitForSelector('.stock-presets');
@@ -61,9 +62,33 @@ ok('grid menu: page actions first', (await text('.kmenu-r')).startsWith('Go to a
 await p.click('.kmenu-r .kmenu-i:first-child'); await p.waitForTimeout(150);
 ok('→ back to active inventory', p.url().endsWith('/inventory/physical'), p.url());
 
+/* ── React Insights ─────────────────────────────────────── */
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
+ok('insights: 4 KPI cards', await count('.kpi3') === 4);
+ok('insights: KPI reads the ledger', (await text('.kpi3:first-child .kpi3-v')) === '2,308', await text('.kpi3:first-child .kpi3-v'));
+ok('insights: answered card = rate over polled', (await text('.kpi3:nth-child(2) .kpi3-v')) === '92.4%' && (await text('.kpi3:nth-child(2) .kpi3-of')).includes('2,133 of 2,308'), await text('.kpi3:nth-child(2) .kpi3-of'));
+ok('insights: no sparkline duplicating the chart', await count('.kpi3-cyc') === 0);
+ok('insights: every KPI has a definition', await count('.kpi3 .kpi3-info') === 4);
+ok('insights: every KPI names its action', await count('.kpi3 .kpi3-act') === 4);
+await p.click('.kpi3:nth-child(2) .kpi3-info'); await p.waitForTimeout(80);
+ok('insights: definition opens', (await text('.kpi3-def')).includes('at least one collector'));
+ok('insights: 7 cycle points on the line', await count('.ch-svg circle') === 7);
+ok('insights: region tiles', await count('.rtile') === 4);
+ok('insights: model rows match vendor rows', await p.evaluate(() => { const t = [...document.querySelectorAll('.ins2-6-6 .mtbl')]; return t.length === 2 && t[0].querySelectorAll('tbody tr').length === t[1].querySelectorAll('tbody tr').length; }));
+ok('insights: donut total = failures', (await text('.ch-hero')) === '175', await text('.ch-hero'));
+ok('insights: 6 reasons listed', await count('.ins2-reason') === 6);
+ok('insights: vendor rows', await count('.ins2-6-6 .mtbl tbody tr') === 12);
+ok('insights: attention grid ≥ 10 rows', await count('.nst-table tbody tr') >= 10);
+ok('insights: 21 state bubbles', await count('.geo-b') === 21);
+await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('#view .page');
+ok('insights KPI → legacy targets', p.url().endsWith('/discovery/targets'), p.url());
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.ins2-6-6 .mtbl');
+await p.click('.ins2-6-6 .mtbl tbody tr:first-child'); await p.waitForSelector('.stock-chips');
+ok('insights vendor → React physical', p.url().includes('/inventory/physical?oem=JUNIPER'), p.url());
+
 /* ── legacy → React: a drill from a legacy screen lands on a React one ── */
-await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('#view .page');
-ok('legacy insights renders', (await text('#view')).includes('collector'));
+await p.goto(BASE + '/discovery/reconcile'); await p.waitForSelector('#view .page');
+ok('legacy reconcile renders', (await text('#view')).length > 200);
 const drilled = await p.evaluate(() => { window.__nsLegacy.drillTo('physical', 'Spares in store', 'stock=instore'); return location.pathname + location.search; });
 await p.waitForSelector('.stock-chips');
 ok('legacy drill → React physical with filter', drilled.startsWith('/inventory/physical?stock=instore'), drilled);
@@ -83,18 +108,66 @@ for (const path of ['/discovery/jobs', '/discovery/targets', '/discovery/reconci
 await p.goto(BASE + '/inventory/location'); await p.waitForSelector('#view .page');
 await p.evaluate(() => window.__nsLegacy.go('reports')); await p.waitForTimeout(150);
 ok('legacy go() syncs URL', p.url().endsWith('/inventory/reports'), p.url());
-ok('crumb follows', (await text('.topbar-crumb')) === 'Reports');
+ok('title follows', (await p.title()).startsWith('Reports'), await p.title());
 
 /* ── deep link + reload keeps state ─────────────────────── */
 await p.goto(BASE + '/inventory/physical?cls=server&stock=planned'); await p.waitForSelector('.stock-chips');
 ok('deep link restores class', (await text('.tab.is-on')).startsWith('Server'));
 ok('deep link restores stock', await count('.stock-chip.is-on') === 1);
 
-/* ── sidebar collapse persists and reaches legacy CSS ───── */
-await p.click('.side-toggle'); await p.waitForTimeout(50);
-ok('collapsed class', await p.evaluate(() => document.querySelector('.app').classList.contains('is-collapsed')));
-await p.reload(); await p.waitForSelector('.stock-chips');
-ok('collapse persists', await p.evaluate(() => document.querySelector('.app').classList.contains('is-collapsed')));
+/* ── map: clusters break into sites, sites open a card ──── */
+await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.geo-svg');
+ok('map: 21 state clusters', await count('.geo-b') === 21);
+await p.evaluate(() => { const b = [...document.querySelectorAll('.geo-b')].find(e => e.textContent.trim() === '211'); b.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+await p.waitForTimeout(600);
+ok('map: click breaks the cluster into sites', await count('.geo-b') > 21, String(await count('.geo-b')));
+ok('map: selected state highlighted', await count('.geo-st.is-sel') === 1);
+ok('map: crumb shows the state', (await text('.geo-crumb')).includes('Karnataka'));
+ok('map: state card totals = cluster', (await text('.geo-card')).includes('211'));
+await p.evaluate(() => { const b = [...document.querySelectorAll('.geo-b:not(.is-other)')][0]; b.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+await p.waitForTimeout(200);
+ok('map: site card with an action', (await text('.geo-card')).includes('Open site'));
+await p.click('.geo-zoom [aria-label="Reset view"]'); await p.waitForTimeout(600);
+ok('map: reset returns to clusters', await count('.geo-b') === 21);
+await p.fill('.geo-search input', 'Bhopal'); await p.press('.geo-search input', 'Enter'); await p.waitForTimeout(600);
+ok('map: search finds a site', (await text('.geo-card')).includes('Bhopal'));
+
+/* ── Site details: legacy tab → React screen, facility ledger ── */
+await p.goto(BASE + '/inventory/location/site/BGLK-277'); await p.waitForSelector('.section-tabs');
+ok('site: legacy tab row has Site details + Site equipment', (await text('.section-tabs')).includes('Site details') && (await text('.section-tabs')).includes('Site equipment'));
+await p.click('.section-tabs [data-nav="sitedetails"]'); await p.waitForSelector('.kpi3');
+ok('site: tab → React facility screen', p.url().endsWith('/inventory/location/site/BGLK-277/details'), p.url());
+ok('site: 4 facility KPIs', await count('.kpi3') === 4);
+ok('site: power KPI = sum of feeds', (await text('.kpi3:first-child .kpi3-v')) === '14.5', await text('.kpi3:first-child .kpi3-v'));
+ok('site: rack KPI = sum of racks', (await text('.kpi3:nth-child(2) .kpi3-v')) === '107');
+ok('site: React tab row keeps all five sections', await count('.section-tabs .stab') === 5);
+await p.click('.section-tabs .stab:first-child'); await p.waitForSelector('#view .page');
+ok('site: tab → back to legacy NE list', p.url().endsWith('/inventory/location/site/BGLK-277'), p.url());
+await p.goto(BASE + '/inventory/location/site/DEL-279/details'); await p.waitForSelector('.kpi3');
+ok('site: any site has a facility record', (await text('.kpi3:first-child .kpi3-v')).length > 0);
+
+/* ── Site equipment: the Fiberneo cable view in a frame ── */
+await p.goto(BASE + '/inventory/location/site/BGLK-277'); await p.waitForSelector('.section-tabs');
+await p.click('.section-tabs [data-nav="siteequipment"]'); await p.waitForSelector('.cv-frame');
+ok('equipment: legacy tab → React frame screen', p.url().endsWith('/inventory/location/site/BGLK-277/equipment'), p.url());
+const cvSrc = await p.getAttribute('.cv-frame', 'src');
+ok('equipment: frame carries the site id, no mock flag', cvSrc.startsWith('/cable-view/index.html?') && cvSrc.includes('station_id=BGLK-277') && !cvSrc.includes('mock='), cvSrc);
+ok('equipment: ledger badge and 12 lit cores', (await text('.cv-bar')).includes('Ledger data') && (await text('.cv-bar')).includes('12 of 24'));
+const cvFrame = await (await p.waitForSelector('.cv-frame')).contentFrame();
+await cvFrame.waitForSelector('#cv-loader[hidden]', { state: 'attached', timeout: 15000 }); await p.waitForTimeout(800);
+ok('equipment: cable view took the injected payload (4 ledger equipment)', await cvFrame.locator('#equip-list > *').count() === 4, String(await cvFrame.locator('#equip-list > *').count()));
+ok('equipment: site header from the ledger', (await cvFrame.locator('#tb-info').innerText()).includes('KA-BGLK-277'));
+ok('equipment: mapping shows 12 / 24 cores used', (await cvFrame.locator('body').innerText()).includes('12 / 24 used'));
+const wires = await cvFrame.evaluate(() => [...document.querySelectorAll('#ov__diag-wrap path[stroke], #ov__diag-wrap path[style*="stroke"]')].length);
+ok('equipment: wires drawn in the diagram', wires >= 19, String(wires));
+await p.goto(BASE + '/inventory/location/site/DEL-279/equipment'); await p.waitForSelector('.cv-frame');
+const cvFrame2 = await (await p.waitForSelector('.cv-frame')).contentFrame();
+await cvFrame2.waitForSelector('#cv-loader[hidden]', { state: 'attached', timeout: 15000 }); await p.waitForTimeout(500);
+ok('equipment: any site gets a ledger-derived cable view', await cvFrame2.locator('#equip-list > *').count() === 2);
+await p.goto(BASE + '/inventory/location/site/BGLK-277/equipment?token=abc&facility_id=F1'); await p.waitForSelector('.cv-frame');
+const cvLive = await p.getAttribute('.cv-frame', 'src');
+ok('equipment: token + facility handed through, demo off', cvLive.includes('token=abc') && cvLive.includes('facility_id=F1') && !cvLive.includes('mock='), cvLive);
+ok('equipment: live badge', (await text('.cv-bar')).includes('Live'));
 
 console.log('\n' + (errs.length ? 'ERRORS:\n  ' + errs.join('\n  ') : 'no page or console errors'));
 console.log(fails ? `${fails} FAILED` : 'all passed');

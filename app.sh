@@ -93,11 +93,17 @@ cmd_deploy() {
     say "Log in to Vercel (one time; opens a browser)"
     vercel login
   fi
+  # The CLI names a new project after the folder, and "Inventory" fails
+  # Vercel's lowercase rule, so the project is named explicitly and linked
+  # once; the link is remembered in .vercel/ (gitignored).
+  local project="${VERCEL_PROJECT:-discovery-and-inventory}"
+  if [[ ! -f .vercel/project.json ]]; then
+    say "Linking this folder to Vercel project '$project' (created if new)"
+    vercel link --yes --project "$project"
+  fi
   say "Production build"
   npm run build
-  say "Deploying dist/ to Vercel production"
-  # --prebuilt is not used: Vercel rebuilds from source so the deployment
-  # matches what a Git-connected project would produce.
+  say "Deploying to Vercel production as '$project'"
   vercel --prod --yes
   ok "Deployed"
 }

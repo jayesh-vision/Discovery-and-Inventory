@@ -12,3 +12,5 @@ tests/*.png
 
 # TypeScript build cache
 tsconfig.app.tsbuildinfo
+.vercel
+.env*

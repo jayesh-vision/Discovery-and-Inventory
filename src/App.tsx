@@ -1,30 +1,21 @@
-import { useEffect, useState } from 'react';
 import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
-
-/* the single-file preview build has no server to rewrite deep links, so it routes by hash */
-const Router = import.meta.env.VITE_ROUTER === 'hash' ? HashRouter : BrowserRouter;
-import Sidebar from './shell/Sidebar';
-import Topbar from './shell/Topbar';
+import RouteTitle from './shell/RouteTitle';
 import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
 
-function useCollapsed() {
-  const [collapsed, set] = useState(() => { try { return localStorage.getItem('nst-side') === '1'; } catch { return false; } });
-  useEffect(() => {
-    try { localStorage.setItem('nst-side', collapsed ? '1' : '0'); } catch { /* private mode */ }
-    window.__nsLegacy?.setCollapsed(collapsed);
-  }, [collapsed]);
-  return [collapsed, () => set(v => !v)] as const;
-}
+/* The screens are embedded in the host application as iframes, one route per
+   menu item; the host owns the header and the left navigation, so this shell
+   draws neither — only the document title names the screen.
+   The single-file preview build has no server to rewrite deep links, so it
+   routes by hash. */
+const Router = import.meta.env.VITE_ROUTER === 'hash' ? HashRouter : BrowserRouter;
 
 export default function App() {
-  const [collapsed, toggle] = useCollapsed();
   return (
     <Router>
-      <div className={`app${collapsed ? ' is-collapsed' : ''}`}>
-        <Sidebar collapsed={collapsed} onToggle={toggle} />
+      <div className="app is-embedded">
         <main className="grow">
-          <Topbar />
+          <RouteTitle />
           <Routes>
             <Route path="/" element={<Navigate to="/discovery/insights" replace />} />
             {SCREENS.map(s => (

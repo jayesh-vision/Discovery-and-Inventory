@@ -2277,7 +2277,8 @@ function viewTarget() {
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
-      `<button class="nst-btn nst-btn--sm">Download payload</button>
+      `<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
+       <button class="nst-btn nst-btn--sm">Download payload</button>
        <button class="nst-btn nst-btn--filled nst-btn--sm">Re-run</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -2955,6 +2956,8 @@ function viewSite() {
         <span class="tab-n num">${inrShort(cxTotal)}</span></button>
       <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
         <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
+      <button class="stab" data-nav="sitedetails">Site details</button>
+      <button class="stab" data-nav="siteequipment">Site equipment</button>
     </div>
 
     ${SITE_SECTION === 'capex' ? capexSection(l, tot)
@@ -5341,7 +5344,7 @@ function go(k) {
   /* React owns some screens now: hand those over with the pending drill */
   if (window.__nsBridge && window.__nsBridge.owns(k)) {
     const d = DRILL_PENDING; DRILL_PENDING = null;
-    window.__nsBridge.navigate(k, d);
+    window.__nsBridge.navigate(k, d, __legacyParams(k));
     return;
   }
   viewEl = _el('view'); crumbEl = _el('crumb'); modEl = _el('module');
@@ -5371,6 +5374,7 @@ function go(k) {
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID }
+    : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
 
