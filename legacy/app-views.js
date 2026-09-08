@@ -1558,7 +1558,7 @@ function viewPhysical() {
         }), '',
         i => rows[i].stock === 'decomm'
           ? [CP('Copy serial number', rows[i].sn)]
-          : [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
              A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
@@ -1570,6 +1570,161 @@ function viewPhysical() {
         <span class="legend-i">${rst('miss')} did not answer</span>
         <span class="legend-i">${rst('none')} no collector reaches this class</span>
       </div>`)}
+  </div>`;
+}
+
+/* ── VNF lifecycle operation ──────────────────────────── */
+let VNF_LC_ID = null, VNF_LC_STAGE = 'day0';
+/* task drawer: which step is open, and which of its two accordion
+   sections are expanded — reset whenever the drawer opens on a new step */
+let VNF_LC_DRAWER = null; /* { stage, step } | null */
+let VNF_LC_DRAWER_OPEN = { req: true, res: true };
+
+function lcDot(st, small) {
+  const [label, tone, glyph] = LC_STATUS[st];
+  const size = small ? '0.75rem' : '1.375rem', fs = small ? '0.5rem' : '0.625rem';
+  return `<span class="step-dot" style="width:${size};height:${size};min-width:${size};font-size:${fs};background:${cv(tone,100)};color:${cv(tone,700)}" title="${label}">${glyph}</span>`;
+}
+
+/* One collector call per step, shaped by what the step actually does — the
+   same request/response contract every other task in this workflow uses,
+   just addressed and payloaded for that step's own job. */
+function vnfStepPayload(stepName, nf) {
+  const host = 'https://reach.c4.ocloud.visionwaves.com:9443';
+  const now = new Date().toISOString();
+  if (/subcloud/i.test(stepName)) return {
+    req: { request: `${host}/subclouds/verify`, payload: { sc: { name: 'bglkct01cl', addr: '2001:56b:f10:f011:301:7000:2080:1' } } },
+    res: { result: { Status: 'completed', Progress: [{ Start: now, State: 'success', Error: '', Process: 'subcloud_verification', Update: now }] } }
+  };
+  if (/generate|values\.yaml|package list/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/values/generate`, payload: { nf, template: 'vdu-default-v2', step: stepName } },
+    res: { result: { Status: 'completed', file: stepName, Update: now } }
+  };
+  if (/push/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/config/push`, payload: { nf, file: stepName.replace(/^Push /, '') } },
+    res: { result: { Status: 'completed', ack: true, Update: now } }
+  };
+  if (/deploy|publish/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/deploy`, payload: { nf, action: stepName } },
+    res: { result: { Status: 'completed', pods: 3, ready: 3, Update: now } }
+  };
+  if (/check|status|verify capacity/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/status`, payload: { nf } },
+    res: { result: { Status: 'completed', deploymentState: 'Ready', Update: now } }
+  };
+  return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/task`, payload: { nf, task: stepName } },
+    res: { result: { Status: 'completed', task: stepName, Update: now } }
+  };
+}
+
+/* pretty JSON with the platform's existing (until now unused) payload
+   syntax colours — keys in .k, string values in .g */
+function jsonView(obj) {
+  const json = esc(JSON.stringify(obj, null, 2))
+    .replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="g">"$1"</span>');
+  return `<pre class="payload" style="max-height:16rem;overflow:auto">${json}</pre>`;
+}
+
+function vnfLcAccordion(key, title, obj) {
+  const open = VNF_LC_DRAWER_OPEN[key];
+  return `<div class="vw-card-section" style="padding:0;overflow:hidden">
+    <button class="row vw-justify-between vw-items-center drawer-acc-h" data-vnflcaccordion="${key}" aria-expanded="${open}">
+      <span class="vw-card-title-sm">${title}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        style="transform:rotate(${open ? 0 : 180}deg);transition:transform .15s ease;flex-shrink:0"><path d="m6 15 6-6 6 6"/></svg>
+    </button>
+    ${open ? `<div style="padding:0 var(--vw-space-lg) var(--vw-space-lg)">
+      <div class="row vw-justify-end" style="margin-bottom:6px">
+        <button class="nst-btn nst-btn--xs nst-btn--ghost" data-copy="${esc(JSON.stringify(obj, null, 2))}">${kIcon('Copy')}<span>Copy</span></button>
+      </div>
+      ${jsonView(obj)}
+    </div>` : ''}
+  </div>`;
+}
+
+function vnfLcDrawer(nf) {
+  if (!VNF_LC_DRAWER) return '';
+  const stageObj = VNF_LC_STAGES.find(s => s.k === VNF_LC_DRAWER.stage);
+  const step = stageObj && stageObj.steps[VNF_LC_DRAWER.step];
+  if (!step) return '';
+  const [label, tone] = LC_STATUS[step.st];
+  const { req, res } = vnfStepPayload(step.n, nf);
+  return `
+    <div class="drawer-overlay" data-vnflcclose="1"></div>
+    <div class="drawer-panel" role="dialog" aria-label="${esc(step.n)} details">
+      <div class="row" style="padding:var(--vw-space-lg) var(--vw-space-lg) 0">
+        <button class="fp-x" data-vnflcclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="row vw-justify-between vw-items-center" style="padding:var(--vw-space-md) var(--vw-space-lg) var(--vw-space-lg)">
+        <span class="vw-card-title">${step.n}</span>
+        ${chip(label, tone)}
+      </div>
+      <div class="stack-s" style="padding-bottom:var(--vw-space-lg)">
+        ${vnfLcAccordion('req', 'View Requests', req)}
+        ${vnfLcAccordion('res', 'View Response', res)}
+      </div>
+    </div>`;
+}
+
+function viewVnfLifecycle() {
+  const nf = VNF_LC_ID || (VNFS[0] && VNFS[0].nf) || '—';
+  const stages = VNF_LC_STAGES;
+  const stage = stages.find(s => s.k === VNF_LC_STAGE) || stages[0];
+  const stageStatus = s => s.steps.some(x => x.st === 'failed') ? 'failed'
+    : s.steps.every(x => x.st === 'done') ? 'done'
+    : s.steps.some(x => x.st === 'progress') ? 'progress' : 'pending';
+  return `<div class="page">
+    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
+      `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+    ${drillBar()}
+    <div class="row-t" style="align-items:flex-start">
+      <div class="stack-s" style="width:min(320px,100%);flex-shrink:0">
+        ${stages.map(s => `
+          <div class="step">
+            ${lcDot(stageStatus(s))}
+            <button class="vw-card-section stack-x${s.k === VNF_LC_STAGE ? ' is-sel' : ''}" data-vnflcstage="${s.k}"
+              style="width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit">
+              <div class="row vw-justify-between vw-items-center">
+                <span class="vw-card-title-sm">${s.n} (${nf})</span>
+                <span class="vw-card-metric-label-sub">›</span>
+              </div>
+              <div class="row vw-gap-xxs" style="margin:4px 0">${s.steps.map(x => lcDot(x.st, true)).join('')}</div>
+              <span class="vw-card-metric-label-sub">Start date: ${s.start}</span>
+              <span class="vw-card-metric-label-sub">End date: ${s.end}</span>
+            </button>
+          </div>`).join('')}
+      </div>
+      <div class="grow">
+        ${card(`
+          <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-lg);gap:var(--vw-space-md)">
+            <span class="vw-card-title">${stage.n} (${nf})</span>
+            <div class="row vw-gap-md vw-wrap" style="row-gap:var(--vw-space-xs)">
+              ${Object.entries(LC_STATUS).map(([k, [label]]) =>
+                `<span class="legend-i">${lcDot(k, true)}<span style="margin-left:4px">${label}</span></span>`).join('')}
+              <button class="nst-btn nst-btn--sm nst-btn--icon" data-vnflcrefresh="1" aria-label="Refresh">${IC_REFRESH}</button>
+            </div>
+          </div>
+          <div class="steps">
+            ${stage.steps.map((st, i) => `
+              <div class="step">
+                ${lcDot(st.st)}
+                <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
+                  <div class="stack-x">
+                    <span class="vw-value" style="font-weight:500">${st.n}</span>
+                    <span class="vw-card-metric-label-sub" style="color:${cv(LC_STATUS[st.st][1],700)}">${LC_STATUS[st.st][0]}</span>
+                  </div>
+                  <span class="row vw-gap-sm vw-items-center">
+                    <span class="vw-card-metric-label-sub num t-right">${st.at}<br>Modified date</span>
+                    <button class="kb" data-vnflctask="${stage.k}:${i}" aria-label="Task actions for ${esc(st.n)}">${IC_KEBAB}</button>
+                  </span>
+                </div>
+              </div>`).join('')}
+          </div>`)}
+      </div>
+    </div>
+    ${vnfLcDrawer(nf)}
   </div>`;
 }
 
@@ -1610,7 +1765,8 @@ function viewVirtual() {
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        i => [A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
+        i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
+              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
       <div class="vw-card-footer-divider vw-card-description">
         <strong>The RAN split.</strong> A gNodeB is one logical node, but its radio unit sits under Physical Resources while its
         CU-CP, CU-UP and vDU sit here. The <em>Parent RAN node</em> column rejoins them — without it the same node is two

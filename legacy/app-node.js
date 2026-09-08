@@ -12,6 +12,7 @@ let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
+let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -102,11 +103,20 @@ function nodeOf(name) {
       tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
     };
   });
-  const capTrend = Array.from({ length: 7 }, (_, i) => ({
-    m: ['Dec','Jan','Feb','Mar','Apr','May','Jun'][i],
-    a: Math.round(nrand(s, 1000 + i, 28, 52) + i * 6),
-    f: Math.round(nrand(s, 1100 + i, 44, 62) + i * 5.5)
-  }));
+  /* one capacity trend per protocol card — same deterministic-seed technique
+     as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
+     each get their own stable, plausible curve instead of sharing one */
+  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600 };
+  const capTrendFor = proto => {
+    const off = PROTO_SEED_OFF[proto] || 0;
+    return Array.from({ length: 7 }, (_, i) => ({
+      m: ['Dec','Jan','Feb','Mar','Apr','May','Jun'][i],
+      a: Math.round(nrand(s, 1000 + off + i, 28, 52) + i * 6),
+      f: Math.round(nrand(s, 1100 + off + i, 44, 62) + i * 5.5)
+    }));
+  };
+  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS') };
+  const capTrend = capTrendByProto.LLDP;
 
   const svcTypes = [
     { n:'IRV',         c:nint(s, 20, 1, 4),  a:nint(s, 21, 1, 3), deg:0, dn:0, sla:99.9 },
@@ -167,7 +177,7 @@ function nodeOf(name) {
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend,
+    sfp, protoRows, capRows, capTrend, capTrendByProto,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),

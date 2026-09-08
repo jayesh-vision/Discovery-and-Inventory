@@ -616,6 +616,11 @@ const PHY_TABS = [
   { k:'server', n:'Server', c:96,  disc:0 },     { k:'dwdm',   n:'DWDM',   c:78,  disc:0 },
   { k:'enodeb', n:'eNodeB', c:18,  disc:0 },     { k:'gnodeb', n:'gNodeB', c:14,  disc:0 }
 ];
+/* Classes that have a Node view destination. Server has no node-level page —
+   nothing to view — so it's the one class left out; every other class opens
+   Node view, even where the page itself has no live assurance feed to show. */
+const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb', 'gnodeb'];
+const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
 const PHY = {
   router: [
     { st:'ok',   name:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', model:'MX960',   os:'21.2R3-S8.5', sn:'JN1236F87AFB', oem:'JUNIPER', loc:'DEL-279',  s:'d', stock:'deployed', v:3 },
@@ -706,6 +711,31 @@ const VNFS = [
   { st:'Ready',  chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
   { st:'Failed', chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
   { st:'Planned',chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' }
+];
+
+/* ── VNF lifecycle (Day 0 / Grow / Events / GPL) ──────────
+   One representative RAN ZTP workflow — the stage/step shape a lifecycle
+   operation actually has — reused for whichever NF the reader opens; the
+   NF name is substituted into each stage's title. */
+const LC_STATUS = {
+  notstarted: ['Not started', 'amber',   '…'],
+  pending:    ['Pending',     'slate',   '–'],
+  progress:   ['In progress', 'sky',     '▶'],
+  done:       ['Completed',   'emerald', '✓'],
+  failed:     ['Failed',      'red',     '✕'],
+  skipped:    ['Skipped',     'purple',  '»']
+};
+const vnfLcSteps = names => names.map(n => ({ n, st: 'done', at: '02-Aug-26 09:05:30 PM' }));
+const VNF_LC_STAGES = [
+  { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
+      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status']) },
+  { k: 'grow',   n: 'Grow',   start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity']) },
+  { k: 'events', n: 'Events', start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events']) },
+  { k: 'gpl',    n: 'GPL',    start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL']) }
 ];
 
 const LINK_TABS = [

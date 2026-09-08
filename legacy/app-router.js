@@ -13,6 +13,7 @@ const VIEWS = {
   capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewCapex },
   opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
+  vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -23,7 +24,7 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual' };
 
 const viewEl = document.getElementById('view'),
       crumbEl = document.getElementById('crumb'),
@@ -77,6 +78,7 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
@@ -139,6 +141,23 @@ document.addEventListener('click', e => {
      them. It must not double-fire: go() is synchronous, and closing the menu
      here means a second click can't land on the same button mid-refresh. */
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlcs = e.target.closest('[data-vnflcstage]');
+  /* a step index only means anything within the stage it belongs to, so
+     switching stages closes any open task drawer rather than carry it over */
+  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlcr = e.target.closest('[data-vnflcrefresh]');
+  if (vlcr) { DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlct = e.target.closest('[data-vnflctask]');
+  if (vlct) {
+    const [stage, step] = vlct.dataset.vnflctask.split(':');
+    VNF_LC_DRAWER = { stage, step: Number(step) };
+    VNF_LC_DRAWER_OPEN = { req: true, res: true };
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const vlcx = e.target.closest('[data-vnflcclose]');
+  if (vlcx) { VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlca = e.target.closest('[data-vnflcaccordion]');
+  if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
   if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
@@ -232,11 +251,13 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
   if (npf) { NODE_PERF = npf.dataset.nperf; go('node'); return; }
   const nal = e.target.closest('[data-nalert]');
   if (nal) { NODE_ALERT_TAB = nal.dataset.nalert; go('node'); return; }
+  const nlk = e.target.closest('[data-nlink]');
+  if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; go('node'); return; }
   const rtab = e.target.closest('[data-restab]');
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');

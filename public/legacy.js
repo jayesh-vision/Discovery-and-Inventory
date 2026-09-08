@@ -773,6 +773,11 @@ const PHY_TABS = [
   { k:'server', n:'Server', c:96,  disc:0 },     { k:'dwdm',   n:'DWDM',   c:78,  disc:0 },
   { k:'enodeb', n:'eNodeB', c:18,  disc:0 },     { k:'gnodeb', n:'gNodeB', c:14,  disc:0 }
 ];
+/* Classes that have a Node view destination. Server has no node-level page —
+   nothing to view — so it's the one class left out; every other class opens
+   Node view, even where the page itself has no live assurance feed to show. */
+const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb', 'gnodeb'];
+const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
 const PHY = {
   router: [
     { st:'ok',   name:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', model:'MX960',   os:'21.2R3-S8.5', sn:'JN1236F87AFB', oem:'JUNIPER', loc:'DEL-279',  s:'d', stock:'deployed', v:3 },
@@ -863,6 +868,31 @@ const VNFS = [
   { st:'Ready',  chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
   { st:'Failed', chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
   { st:'Planned',chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' }
+];
+
+/* ── VNF lifecycle (Day 0 / Grow / Events / GPL) ──────────
+   One representative RAN ZTP workflow — the stage/step shape a lifecycle
+   operation actually has — reused for whichever NF the reader opens; the
+   NF name is substituted into each stage's title. */
+const LC_STATUS = {
+  notstarted: ['Not started', 'amber',   '…'],
+  pending:    ['Pending',     'slate',   '–'],
+  progress:   ['In progress', 'sky',     '▶'],
+  done:       ['Completed',   'emerald', '✓'],
+  failed:     ['Failed',      'red',     '✕'],
+  skipped:    ['Skipped',     'purple',  '»']
+};
+const vnfLcSteps = names => names.map(n => ({ n, st: 'done', at: '02-Aug-26 09:05:30 PM' }));
+const VNF_LC_STAGES = [
+  { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
+      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status']) },
+  { k: 'grow',   n: 'Grow',   start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity']) },
+  { k: 'events', n: 'Events', start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events']) },
+  { k: 'gpl',    n: 'GPL',    start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
+    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL']) }
 ];
 
 const LINK_TABS = [
@@ -3633,7 +3663,7 @@ function viewPhysical() {
         }), '',
         i => rows[i].stock === 'decomm'
           ? [CP('Copy serial number', rows[i].sn)]
-          : [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
              A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
@@ -3645,6 +3675,161 @@ function viewPhysical() {
         <span class="legend-i">${rst('miss')} did not answer</span>
         <span class="legend-i">${rst('none')} no collector reaches this class</span>
       </div>`)}
+  </div>`;
+}
+
+/* ── VNF lifecycle operation ──────────────────────────── */
+let VNF_LC_ID = null, VNF_LC_STAGE = 'day0';
+/* task drawer: which step is open, and which of its two accordion
+   sections are expanded — reset whenever the drawer opens on a new step */
+let VNF_LC_DRAWER = null; /* { stage, step } | null */
+let VNF_LC_DRAWER_OPEN = { req: true, res: true };
+
+function lcDot(st, small) {
+  const [label, tone, glyph] = LC_STATUS[st];
+  const size = small ? '0.75rem' : '1.375rem', fs = small ? '0.5rem' : '0.625rem';
+  return `<span class="step-dot" style="width:${size};height:${size};min-width:${size};font-size:${fs};background:${cv(tone,100)};color:${cv(tone,700)}" title="${label}">${glyph}</span>`;
+}
+
+/* One collector call per step, shaped by what the step actually does — the
+   same request/response contract every other task in this workflow uses,
+   just addressed and payloaded for that step's own job. */
+function vnfStepPayload(stepName, nf) {
+  const host = 'https://reach.c4.ocloud.visionwaves.com:9443';
+  const now = new Date().toISOString();
+  if (/subcloud/i.test(stepName)) return {
+    req: { request: `${host}/subclouds/verify`, payload: { sc: { name: 'bglkct01cl', addr: '2001:56b:f10:f011:301:7000:2080:1' } } },
+    res: { result: { Status: 'completed', Progress: [{ Start: now, State: 'success', Error: '', Process: 'subcloud_verification', Update: now }] } }
+  };
+  if (/generate|values\.yaml|package list/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/values/generate`, payload: { nf, template: 'vdu-default-v2', step: stepName } },
+    res: { result: { Status: 'completed', file: stepName, Update: now } }
+  };
+  if (/push/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/config/push`, payload: { nf, file: stepName.replace(/^Push /, '') } },
+    res: { result: { Status: 'completed', ack: true, Update: now } }
+  };
+  if (/deploy|publish/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/deploy`, payload: { nf, action: stepName } },
+    res: { result: { Status: 'completed', pods: 3, ready: 3, Update: now } }
+  };
+  if (/check|status|verify capacity/i.test(stepName)) return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/status`, payload: { nf } },
+    res: { result: { Status: 'completed', deploymentState: 'Ready', Update: now } }
+  };
+  return {
+    req: { request: `${host}/nf/${encodeURIComponent(nf)}/task`, payload: { nf, task: stepName } },
+    res: { result: { Status: 'completed', task: stepName, Update: now } }
+  };
+}
+
+/* pretty JSON with the platform's existing (until now unused) payload
+   syntax colours — keys in .k, string values in .g */
+function jsonView(obj) {
+  const json = esc(JSON.stringify(obj, null, 2))
+    .replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="g">"$1"</span>');
+  return `<pre class="payload" style="max-height:16rem;overflow:auto">${json}</pre>`;
+}
+
+function vnfLcAccordion(key, title, obj) {
+  const open = VNF_LC_DRAWER_OPEN[key];
+  return `<div class="vw-card-section" style="padding:0;overflow:hidden">
+    <button class="row vw-justify-between vw-items-center drawer-acc-h" data-vnflcaccordion="${key}" aria-expanded="${open}">
+      <span class="vw-card-title-sm">${title}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        style="transform:rotate(${open ? 0 : 180}deg);transition:transform .15s ease;flex-shrink:0"><path d="m6 15 6-6 6 6"/></svg>
+    </button>
+    ${open ? `<div style="padding:0 var(--vw-space-lg) var(--vw-space-lg)">
+      <div class="row vw-justify-end" style="margin-bottom:6px">
+        <button class="nst-btn nst-btn--xs nst-btn--ghost" data-copy="${esc(JSON.stringify(obj, null, 2))}">${kIcon('Copy')}<span>Copy</span></button>
+      </div>
+      ${jsonView(obj)}
+    </div>` : ''}
+  </div>`;
+}
+
+function vnfLcDrawer(nf) {
+  if (!VNF_LC_DRAWER) return '';
+  const stageObj = VNF_LC_STAGES.find(s => s.k === VNF_LC_DRAWER.stage);
+  const step = stageObj && stageObj.steps[VNF_LC_DRAWER.step];
+  if (!step) return '';
+  const [label, tone] = LC_STATUS[step.st];
+  const { req, res } = vnfStepPayload(step.n, nf);
+  return `
+    <div class="drawer-overlay" data-vnflcclose="1"></div>
+    <div class="drawer-panel" role="dialog" aria-label="${esc(step.n)} details">
+      <div class="row" style="padding:var(--vw-space-lg) var(--vw-space-lg) 0">
+        <button class="fp-x" data-vnflcclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="row vw-justify-between vw-items-center" style="padding:var(--vw-space-md) var(--vw-space-lg) var(--vw-space-lg)">
+        <span class="vw-card-title">${step.n}</span>
+        ${chip(label, tone)}
+      </div>
+      <div class="stack-s" style="padding-bottom:var(--vw-space-lg)">
+        ${vnfLcAccordion('req', 'View Requests', req)}
+        ${vnfLcAccordion('res', 'View Response', res)}
+      </div>
+    </div>`;
+}
+
+function viewVnfLifecycle() {
+  const nf = VNF_LC_ID || (VNFS[0] && VNFS[0].nf) || '—';
+  const stages = VNF_LC_STAGES;
+  const stage = stages.find(s => s.k === VNF_LC_STAGE) || stages[0];
+  const stageStatus = s => s.steps.some(x => x.st === 'failed') ? 'failed'
+    : s.steps.every(x => x.st === 'done') ? 'done'
+    : s.steps.some(x => x.st === 'progress') ? 'progress' : 'pending';
+  return `<div class="page">
+    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
+      `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+    ${drillBar()}
+    <div class="row-t" style="align-items:flex-start">
+      <div class="stack-s" style="width:min(320px,100%);flex-shrink:0">
+        ${stages.map(s => `
+          <div class="step">
+            ${lcDot(stageStatus(s))}
+            <button class="vw-card-section stack-x${s.k === VNF_LC_STAGE ? ' is-sel' : ''}" data-vnflcstage="${s.k}"
+              style="width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit">
+              <div class="row vw-justify-between vw-items-center">
+                <span class="vw-card-title-sm">${s.n} (${nf})</span>
+                <span class="vw-card-metric-label-sub">›</span>
+              </div>
+              <div class="row vw-gap-xxs" style="margin:4px 0">${s.steps.map(x => lcDot(x.st, true)).join('')}</div>
+              <span class="vw-card-metric-label-sub">Start date: ${s.start}</span>
+              <span class="vw-card-metric-label-sub">End date: ${s.end}</span>
+            </button>
+          </div>`).join('')}
+      </div>
+      <div class="grow">
+        ${card(`
+          <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-lg);gap:var(--vw-space-md)">
+            <span class="vw-card-title">${stage.n} (${nf})</span>
+            <div class="row vw-gap-md vw-wrap" style="row-gap:var(--vw-space-xs)">
+              ${Object.entries(LC_STATUS).map(([k, [label]]) =>
+                `<span class="legend-i">${lcDot(k, true)}<span style="margin-left:4px">${label}</span></span>`).join('')}
+              <button class="nst-btn nst-btn--sm nst-btn--icon" data-vnflcrefresh="1" aria-label="Refresh">${IC_REFRESH}</button>
+            </div>
+          </div>
+          <div class="steps">
+            ${stage.steps.map((st, i) => `
+              <div class="step">
+                ${lcDot(st.st)}
+                <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
+                  <div class="stack-x">
+                    <span class="vw-value" style="font-weight:500">${st.n}</span>
+                    <span class="vw-card-metric-label-sub" style="color:${cv(LC_STATUS[st.st][1],700)}">${LC_STATUS[st.st][0]}</span>
+                  </div>
+                  <span class="row vw-gap-sm vw-items-center">
+                    <span class="vw-card-metric-label-sub num t-right">${st.at}<br>Modified date</span>
+                    <button class="kb" data-vnflctask="${stage.k}:${i}" aria-label="Task actions for ${esc(st.n)}">${IC_KEBAB}</button>
+                  </span>
+                </div>
+              </div>`).join('')}
+          </div>`)}
+      </div>
+    </div>
+    ${vnfLcDrawer(nf)}
   </div>`;
 }
 
@@ -3685,7 +3870,8 @@ function viewVirtual() {
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        i => [A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
+        i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
+              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
       <div class="vw-card-footer-divider vw-card-description">
         <strong>The RAN split.</strong> A gNodeB is one logical node, but its radio unit sits under Physical Resources while its
         CU-CP, CU-UP and vDU sit here. The <em>Parent RAN node</em> column rejoins them — without it the same node is two
@@ -4597,6 +4783,7 @@ let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
+let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -4687,11 +4874,20 @@ function nodeOf(name) {
       tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
     };
   });
-  const capTrend = Array.from({ length: 7 }, (_, i) => ({
-    m: ['Dec','Jan','Feb','Mar','Apr','May','Jun'][i],
-    a: Math.round(nrand(s, 1000 + i, 28, 52) + i * 6),
-    f: Math.round(nrand(s, 1100 + i, 44, 62) + i * 5.5)
-  }));
+  /* one capacity trend per protocol card — same deterministic-seed technique
+     as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
+     each get their own stable, plausible curve instead of sharing one */
+  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600 };
+  const capTrendFor = proto => {
+    const off = PROTO_SEED_OFF[proto] || 0;
+    return Array.from({ length: 7 }, (_, i) => ({
+      m: ['Dec','Jan','Feb','Mar','Apr','May','Jun'][i],
+      a: Math.round(nrand(s, 1000 + off + i, 28, 52) + i * 6),
+      f: Math.round(nrand(s, 1100 + off + i, 44, 62) + i * 5.5)
+    }));
+  };
+  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS') };
+  const capTrend = capTrendByProto.LLDP;
 
   const svcTypes = [
     { n:'IRV',         c:nint(s, 20, 1, 4),  a:nint(s, 21, 1, 3), deg:0, dn:0, sla:99.9 },
@@ -4752,7 +4948,7 @@ function nodeOf(name) {
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend,
+    sfp, protoRows, capRows, capTrend, capTrendByProto,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),
@@ -5091,7 +5287,7 @@ function nodeOverview(N) {
   const sw = N.cls === 'switch';
   const tiles = [
     nvTile('Device health', `${N.ov.health}%`, `CPU ${N.perf.cpu}% · Mem ${N.perf.mem}% · ${N.perf.temp}°C`, 'emerald'),
-    nvTile('Protocol links', n(N.ov.proto), `LLDP · OSPF · BGP · ISIS`, 'sky'),
+    nvTile('Physical links', n(N.ov.proto), `LLDP · OSPF · BGP · ISIS`, 'sky'),
     ...(sw ? [nvTile('In ARP', n(N.ov.arp), 'MAC addresses learned', 'cyan')] : []),
     nvTile('Interface status', `${n(N.ov.ifUp)}/${n(N.ov.ifTotal)}`, `${n(N.ov.ifTotal - N.ov.ifUp)} down or reserved`, 'amber'),
     nvTile('Active alarms', String(N.ov.alarms), `1 critical · 2 major · ${Math.max(0, N.ov.alarms - 3)} minor`, 'red'),
@@ -5368,13 +5564,17 @@ function nodeVlans(N) {
 }
 
 function nodeLinks(N) {
+  /* the protocol selected here drives the capacity dashboard below it, on
+     this same page — it never navigates, so it's a plain in-page selection
+     like NODE_SVC_TAB, not a drill */
+  const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
   return card(`
     ${headSm('Links', 'Protocol and transport link intelligence')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
-        <button class="vw-card-section vw-card--accent stack-x is-drill"
-          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}&ne=${encodeURIComponent(N.name)}` })}
-          style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)">
+        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${p.k === sel.k ? ' is-on' : ''}"
+          data-nlink="${p.k}" aria-pressed="${p.k === sel.k}"
+          style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs);--oc-a:${cv(p.tone,500)}">
           <div class="vw-card-accent" style="background:${cv(p.tone,400)}"></div>
           <div class="row vw-justify-between vw-items-baseline">
             <span class="vw-card-metric-label">${p.k}</span>
@@ -5387,21 +5587,23 @@ function nodeLinks(N) {
     <div class="nv-cap">
       <div class="cx-panel">
         <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">Link capacity forecast — ${N.capRows[0].n}</span>
+          <span class="eyebrow">Link capacity forecast — ${sel.k}</span>
           <span class="legend">
             <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>actual</span>
             <span class="legend-i"><span class="legend-sw" style="background:${cv('orange',500)}"></span>forecast</span>
           </span>
         </div>
-        ${nvTrend(N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
+        ${nvTrend(N.capTrendByProto[sel.k] || N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
         <span class="vw-card-description">Forecast is a straight-line projection of the last six months of
-          inbound utilisation. It crosses the 90% engineering threshold in <strong>${N.capRows[0].fc}</strong>.</span>
+          inbound utilisation on ${sel.k} links. It crosses the 90% engineering threshold in
+          <strong>${(N.capRows[N.protoRows.findIndex(p => p.k === sel.k)] || N.capRows[0]).fc}</strong>.</span>
       </div>
 
       <div class="cx-panel">
         <div class="row vw-justify-between vw-items-baseline cx-panel-head">
           <span class="eyebrow">Link capacity dashboard</span>
-          ${chip('LLDP protocol', 'info')}
+          ${chip(`${sel.k} protocol`, 'info')}
+          <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
           <span class="grow"></span>
           <span class="vw-card-description">${N.capRows.filter(r => r.util > 70).length} links in countdown to capacity</span>
         </div>
@@ -5617,6 +5819,7 @@ const VIEWS = {
   capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewCapex },
   opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
+  vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -5627,7 +5830,7 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual' };
 
 const _el = id => document.getElementById(id) || document.createElement('div');
 let viewEl, crumbEl, modEl;
@@ -5680,6 +5883,7 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
@@ -5755,6 +5959,23 @@ document.addEventListener('click', e => {
      them. It must not double-fire: go() is synchronous, and closing the menu
      here means a second click can't land on the same button mid-refresh. */
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlcs = e.target.closest('[data-vnflcstage]');
+  /* a step index only means anything within the stage it belongs to, so
+     switching stages closes any open task drawer rather than carry it over */
+  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlcr = e.target.closest('[data-vnflcrefresh]');
+  if (vlcr) { DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlct = e.target.closest('[data-vnflctask]');
+  if (vlct) {
+    const [stage, step] = vlct.dataset.vnflctask.split(':');
+    VNF_LC_DRAWER = { stage, step: Number(step) };
+    VNF_LC_DRAWER_OPEN = { req: true, res: true };
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const vlcx = e.target.closest('[data-vnflcclose]');
+  if (vlcx) { VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vlca = e.target.closest('[data-vnflcaccordion]');
+  if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
   if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
@@ -5848,11 +6069,13 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
   if (npf) { NODE_PERF = npf.dataset.nperf; go('node'); return; }
   const nal = e.target.closest('[data-nalert]');
   if (nal) { NODE_ALERT_TAB = nal.dataset.nalert; go('node'); return; }
+  const nlk = e.target.closest('[data-nlink]');
+  if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; go('node'); return; }
   const rtab = e.target.closest('[data-restab]');
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');
@@ -6092,7 +6315,7 @@ window.__nsLegacy = {
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; }
+    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed

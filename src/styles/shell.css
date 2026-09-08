@@ -137,6 +137,25 @@ button { font: inherit; }
 .payload .g { color: var(--vw-color-emerald-300); }
 .payload .r { color: var(--vw-color-red-300); }
 
+/* ── right-side drawer ────────────────────────────────────
+   A generic side panel for viewing a record's detail without navigating
+   away — first use is the lifecycle task drawer, but the pattern (overlay +
+   sliding panel + accordion sections) is meant to be reused wherever a
+   "view details without leaving the page" need comes up next. */
+.drawer-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 90; }
+.drawer-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(30rem, 92vw);
+  background: var(--vw-color-white); box-shadow: -12px 0 34px rgba(15,23,42,.18);
+  z-index: 91; overflow-y: auto; animation: drawer-in 160ms ease-out;
+}
+@keyframes drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .drawer-panel { animation: none; } }
+.drawer-acc-h {
+  width: 100%; padding: var(--vw-space-md) var(--vw-space-lg); background: none; border: 0;
+  cursor: pointer; font: inherit; color: inherit; text-align: left;
+}
+.drawer-acc-h:hover { background: var(--vw-color-slate-50); }
+
 /* Provenance */
 .prov { display: grid; grid-template-columns: 10rem 1fr; gap: var(--vw-space-sm) var(--vw-space-md); align-items: baseline; }
 
@@ -548,6 +567,15 @@ path.st.has-c:hover { fill-opacity: .78; }
 .rec-table td:nth-child(1) .vw-card-metric-label-sub { display: block; margin-top: 3px; }
 .rec-table td:nth-child(2) .vw-card-metric-label-sub { display: block; white-space: normal; line-height: 1.4; }
 .rec-table td.cmp { font-size: 0.8125rem; }
+
+/* a selected vw-card--accent tile (e.g. Node view's Links protocol cards) —
+   same emphasis the reconciliation outcome tiles already use for --oc-a/--oc-b */
+.vw-card--accent.is-on { border-color: var(--oc-a, var(--vw-color-slate-400));
+  box-shadow: inset 0 0 0 1px var(--oc-a, var(--vw-color-slate-400)); }
+
+/* a selected item in a vertical card list (e.g. Lifecycle operation's stage
+   picker) — same blue the platform already uses for a selected table row */
+.vw-card-section.is-sel { background: var(--vw-color-blue-50); border-color: var(--vw-color-blue-300); }
 
 /* ── drill-down ───────────────────────────────────────── */
 .is-drill { position: relative; cursor: pointer; font: inherit; color: inherit; text-align: left; }

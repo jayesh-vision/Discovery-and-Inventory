@@ -48,7 +48,7 @@ function nodeOverview(N) {
   const sw = N.cls === 'switch';
   const tiles = [
     nvTile('Device health', `${N.ov.health}%`, `CPU ${N.perf.cpu}% · Mem ${N.perf.mem}% · ${N.perf.temp}°C`, 'emerald'),
-    nvTile('Protocol links', n(N.ov.proto), `LLDP · OSPF · BGP · ISIS`, 'sky'),
+    nvTile('Physical links', n(N.ov.proto), `LLDP · OSPF · BGP · ISIS`, 'sky'),
     ...(sw ? [nvTile('In ARP', n(N.ov.arp), 'MAC addresses learned', 'cyan')] : []),
     nvTile('Interface status', `${n(N.ov.ifUp)}/${n(N.ov.ifTotal)}`, `${n(N.ov.ifTotal - N.ov.ifUp)} down or reserved`, 'amber'),
     nvTile('Active alarms', String(N.ov.alarms), `1 critical · 2 major · ${Math.max(0, N.ov.alarms - 3)} minor`, 'red'),
@@ -325,13 +325,17 @@ function nodeVlans(N) {
 }
 
 function nodeLinks(N) {
+  /* the protocol selected here drives the capacity dashboard below it, on
+     this same page — it never navigates, so it's a plain in-page selection
+     like NODE_SVC_TAB, not a drill */
+  const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
   return card(`
     ${headSm('Links', 'Protocol and transport link intelligence')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
-        <button class="vw-card-section vw-card--accent stack-x is-drill"
-          ${dA({ v:'links', l:`${p.k} links from ${N.name}`, q:`tab=${p.k.toLowerCase()}&ne=${encodeURIComponent(N.name)}` })}
-          style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)">
+        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${p.k === sel.k ? ' is-on' : ''}"
+          data-nlink="${p.k}" aria-pressed="${p.k === sel.k}"
+          style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs);--oc-a:${cv(p.tone,500)}">
           <div class="vw-card-accent" style="background:${cv(p.tone,400)}"></div>
           <div class="row vw-justify-between vw-items-baseline">
             <span class="vw-card-metric-label">${p.k}</span>
@@ -344,21 +348,23 @@ function nodeLinks(N) {
     <div class="nv-cap">
       <div class="cx-panel">
         <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">Link capacity forecast — ${N.capRows[0].n}</span>
+          <span class="eyebrow">Link capacity forecast — ${sel.k}</span>
           <span class="legend">
             <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>actual</span>
             <span class="legend-i"><span class="legend-sw" style="background:${cv('orange',500)}"></span>forecast</span>
           </span>
         </div>
-        ${nvTrend(N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
+        ${nvTrend(N.capTrendByProto[sel.k] || N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
         <span class="vw-card-description">Forecast is a straight-line projection of the last six months of
-          inbound utilisation. It crosses the 90% engineering threshold in <strong>${N.capRows[0].fc}</strong>.</span>
+          inbound utilisation on ${sel.k} links. It crosses the 90% engineering threshold in
+          <strong>${(N.capRows[N.protoRows.findIndex(p => p.k === sel.k)] || N.capRows[0]).fc}</strong>.</span>
       </div>
 
       <div class="cx-panel">
         <div class="row vw-justify-between vw-items-baseline cx-panel-head">
           <span class="eyebrow">Link capacity dashboard</span>
-          ${chip('LLDP protocol', 'info')}
+          ${chip(`${sel.k} protocol`, 'info')}
+          <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
           <span class="grow"></span>
           <span class="vw-card-description">${N.capRows.filter(r => r.util > 70).length} links in countdown to capacity</span>
         </div>

@@ -42,6 +42,7 @@ export const SCREENS: Screen[] = [
   { key: 'siteequipment', path: '/inventory/location/site/:id/equipment', module: 'Inventory', crumb: 'Location · Site details · Site equipment', rail: 'location', component: SiteEquipment },
   { key: 'node',      path: '/inventory/node/:name',              module: 'Inventory', crumb: 'Location · Site details · Node view', rail: 'location', legacy: true },
   { key: 'virtual',   path: '/inventory/virtual',   module: 'Inventory', crumb: 'Resources · Virtual Resources', legacy: true },
+  { key: 'vnflifecycle', path: '/inventory/virtual/lifecycle', module: 'Inventory', crumb: 'Resources · Virtual Resources · Lifecycle operation', rail: 'virtual', legacy: true },
   { key: 'physical',  path: '/inventory/physical',  module: 'Inventory', crumb: 'Resources · Physical Resources', component: PhysicalResources },
   { key: 'resource',  path: '/inventory/resource/:name', module: 'Inventory', crumb: 'Resources · Physical Resources · Element', rail: 'physical', legacy: true },
   { key: 'passive',   path: '/inventory/passive',   module: 'Inventory', crumb: 'Resources · Passive Infrastructure', legacy: true },

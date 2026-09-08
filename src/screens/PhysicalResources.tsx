@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, DrillBar, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
-  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt,
+  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView,
   phyCount, stockCount, stockMeta, type NeClass, type StockState
 } from '../data/ledger';
 import { complianceOf, eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
@@ -80,8 +80,10 @@ export default function PhysicalResources() {
   const total = phyCount(cls, stock);
   const notVerified = meta.c - meta.disc;
 
+  /* every row on screen belongs to the active class tab, so cls alone decides
+     whether Node view belongs in the menu — server has no node-level page */
   const rowActions = (r: NeRow): Action[] => [
-    { l: 'Node view', onClick: () => nav(`/inventory/node/${encodeURIComponent(r.name)}`) },
+    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(`/inventory/node/${encodeURIComponent(r.name)}`) }] : []),
     { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
     { l: 'Open site', onClick: () => nav(`/inventory/location/site/${r.loc}`) },
     { l: 'View in reconciliation', onClick: () => nav(`/discovery/reconcile?ne=${encodeURIComponent(r.name)}`) },
