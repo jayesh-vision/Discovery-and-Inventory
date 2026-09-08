@@ -139,19 +139,33 @@ document.addEventListener('click', e => {
      go() always rebuilds the view fresh, never from a cached render — while
      leaving search, filters, tab and pagination exactly as the reader left
      them. It must not double-fire: go() is synchronous, and closing the menu
-     here means a second click can't land on the same button mid-refresh. */
-  if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
+     here means a second click can't land on the same button mid-refresh.
+     Nothing here has real latency to show a spinner for, but with static
+     sample data the reload is otherwise invisible — a small confirmation
+     is the honest way to prove the click did something. */
+  if (gr) {
+    const r = gr.getBoundingClientRect();
+    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT);
+    showCopyToast(r.left, r.top, 'Refreshed');
+    return;
+  }
   const vlcs = e.target.closest('[data-vnflcstage]');
   /* a step index only means anything within the stage it belongs to, so
      switching stages closes any open task drawer rather than carry it over */
-  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const vlcr = e.target.closest('[data-vnflcrefresh]');
-  if (vlcr) { DRILL_PENDING = DRILL; go(CURRENT); return; }
-  const vlct = e.target.closest('[data-vnflctask]');
-  if (vlct) {
-    const [stage, step] = vlct.dataset.vnflctask.split(':');
+  if (vlcr) {
+    const r = vlcr.getBoundingClientRect();
+    DRILL_PENDING = DRILL; go(CURRENT);
+    showCopyToast(r.left, r.top, 'Refreshed');
+    return;
+  }
+  const vlce = e.target.closest('[data-vnflceye]');
+  if (vlce) {
+    const [stage, step] = vlce.dataset.vnflceye.split(':');
     VNF_LC_DRAWER = { stage, step: Number(step) };
     VNF_LC_DRAWER_OPEN = { req: true, res: true };
+    KEBAB = null;
     DRILL_PENDING = DRILL; go(CURRENT); return;
   }
   const vlcx = e.target.closest('[data-vnflcclose]');

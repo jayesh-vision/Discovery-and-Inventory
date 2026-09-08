@@ -882,7 +882,9 @@ const LC_STATUS = {
   failed:     ['Failed',      'red',     '✕'],
   skipped:    ['Skipped',     'purple',  '»']
 };
-const vnfLcSteps = names => names.map(n => ({ n, st: 'done', at: '02-Aug-26 09:05:30 PM' }));
+/* step status is NOT baked in here — it depends on the NF's own status
+   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time */
+const vnfLcSteps = names => names.map(n => ({ n, at: '02-Aug-26 09:05:30 PM' }));
 const VNF_LC_STAGES = [
   { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
     steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
@@ -3684,6 +3686,7 @@ let VNF_LC_ID = null, VNF_LC_STAGE = 'day0';
    sections are expanded — reset whenever the drawer opens on a new step */
 let VNF_LC_DRAWER = null; /* { stage, step } | null */
 let VNF_LC_DRAWER_OPEN = { req: true, res: true };
+const IC_EYE = `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${KI.view}</svg>`;
 
 function lcDot(st, small) {
   const [label, tone, glyph] = LC_STATUS[st];
@@ -3691,36 +3694,62 @@ function lcDot(st, small) {
   return `<span class="step-dot" style="width:${size};height:${size};min-width:${size};font-size:${fs};background:${cv(tone,100)};color:${cv(tone,700)}" title="${label}">${glyph}</span>`;
 }
 
+/* A step's status is never stored on the step itself — it depends on the NF
+   it belongs to, so it's derived here, once, from the NF's own status:
+     Ready       → every step completed
+     Failed      → completed up to a real failure point, nothing after it
+                    has run yet (not "everything after also failed")
+     In progress → completed up to the current step, the rest still pending
+     anything else (Planned) → the caller never reaches this; see viewVnfLifecycle
+   The failure/current point is derived the same deterministic-seed way every
+   other sample figure in this file is — stable per NF, not random per render. */
+function vnfLifecycleStages(vnf) {
+  const flat = VNF_LC_STAGES.flatMap(s => s.steps);
+  const total = flat.length;
+  const failAt = vnf.st === 'Failed' ? nint(vnf.nf, 999, 1, Math.max(1, total - 2)) : -1;
+  const curAt = vnf.st === 'In progress' ? nint(vnf.nf, 998, 0, total - 1) : -1;
+  let i = -1;
+  return VNF_LC_STAGES.map(s => ({
+    ...s,
+    steps: s.steps.map(step => {
+      i++;
+      let st;
+      if (vnf.st === 'Ready') st = 'done';
+      else if (vnf.st === 'Failed') st = i < failAt ? 'done' : i === failAt ? 'failed' : 'notstarted';
+      else if (vnf.st === 'In progress') st = i < curAt ? 'done' : i === curAt ? 'progress' : 'pending';
+      else st = 'notstarted';
+      return { ...step, st };
+    })
+  }));
+}
+/* request/response only exists for a step that has actually run */
+const vnfStepHasPayload = st => st === 'done' || st === 'failed' || st === 'progress';
+
 /* One collector call per step, shaped by what the step actually does — the
    same request/response contract every other task in this workflow uses,
-   just addressed and payloaded for that step's own job. */
-function vnfStepPayload(stepName, nf) {
+   just addressed and payloaded for that step's own job. A failed step gets
+   an actual error response, not a rebadged success one. */
+function vnfStepPayload(stepName, nf, status) {
   const host = 'https://reach.c4.ocloud.visionwaves.com:9443';
   const now = new Date().toISOString();
-  if (/subcloud/i.test(stepName)) return {
-    req: { request: `${host}/subclouds/verify`, payload: { sc: { name: 'bglkct01cl', addr: '2001:56b:f10:f011:301:7000:2080:1' } } },
-    res: { result: { Status: 'completed', Progress: [{ Start: now, State: 'success', Error: '', Process: 'subcloud_verification', Update: now }] } }
-  };
-  if (/generate|values\.yaml|package list/i.test(stepName)) return {
-    req: { request: `${host}/nf/${encodeURIComponent(nf)}/values/generate`, payload: { nf, template: 'vdu-default-v2', step: stepName } },
-    res: { result: { Status: 'completed', file: stepName, Update: now } }
-  };
-  if (/push/i.test(stepName)) return {
-    req: { request: `${host}/nf/${encodeURIComponent(nf)}/config/push`, payload: { nf, file: stepName.replace(/^Push /, '') } },
-    res: { result: { Status: 'completed', ack: true, Update: now } }
-  };
-  if (/deploy|publish/i.test(stepName)) return {
-    req: { request: `${host}/nf/${encodeURIComponent(nf)}/deploy`, payload: { nf, action: stepName } },
-    res: { result: { Status: 'completed', pods: 3, ready: 3, Update: now } }
-  };
-  if (/check|status|verify capacity/i.test(stepName)) return {
-    req: { request: `${host}/nf/${encodeURIComponent(nf)}/status`, payload: { nf } },
-    res: { result: { Status: 'completed', deploymentState: 'Ready', Update: now } }
-  };
-  return {
-    req: { request: `${host}/nf/${encodeURIComponent(nf)}/task`, payload: { nf, task: stepName } },
-    res: { result: { Status: 'completed', task: stepName, Update: now } }
-  };
+  const req = /subcloud/i.test(stepName)
+    ? { request: `${host}/subclouds/verify`, payload: { sc: { name: 'bglkct01cl', addr: '2001:56b:f10:f011:301:7000:2080:1' } } }
+    : /generate|values\.yaml|package list/i.test(stepName)
+    ? { request: `${host}/nf/${encodeURIComponent(nf)}/values/generate`, payload: { nf, template: 'vdu-default-v2', step: stepName } }
+    : /push/i.test(stepName)
+    ? { request: `${host}/nf/${encodeURIComponent(nf)}/config/push`, payload: { nf, file: stepName.replace(/^Push /, '') } }
+    : /deploy|publish/i.test(stepName)
+    ? { request: `${host}/nf/${encodeURIComponent(nf)}/deploy`, payload: { nf, action: stepName } }
+    : /check|status|verify capacity/i.test(stepName)
+    ? { request: `${host}/nf/${encodeURIComponent(nf)}/status`, payload: { nf } }
+    : { request: `${host}/nf/${encodeURIComponent(nf)}/task`, payload: { nf, task: stepName } };
+  if (status === 'failed') return { req, res: { result: {
+    Status: 'failed', Process: stepName,
+    Error: 'Timed out waiting for acknowledgement from target host',
+    Update: now
+  } } };
+  if (status === 'progress') return { req, res: { result: { Status: 'in_progress', Process: stepName, Update: now } } };
+  return { req, res: { result: { Status: 'completed', Process: stepName, Update: now } } };
 }
 
 /* pretty JSON with the platform's existing (until now unused) payload
@@ -3749,13 +3778,13 @@ function vnfLcAccordion(key, title, obj) {
   </div>`;
 }
 
-function vnfLcDrawer(nf) {
+function vnfLcDrawer(nf, stages) {
   if (!VNF_LC_DRAWER) return '';
-  const stageObj = VNF_LC_STAGES.find(s => s.k === VNF_LC_DRAWER.stage);
+  const stageObj = stages.find(s => s.k === VNF_LC_DRAWER.stage);
   const step = stageObj && stageObj.steps[VNF_LC_DRAWER.step];
-  if (!step) return '';
+  if (!step || !vnfStepHasPayload(step.st)) return '';
   const [label, tone] = LC_STATUS[step.st];
-  const { req, res } = vnfStepPayload(step.n, nf);
+  const { req, res } = vnfStepPayload(step.n, nf, step.st);
   return `
     <div class="drawer-overlay" data-vnflcclose="1"></div>
     <div class="drawer-panel" role="dialog" aria-label="${esc(step.n)} details">
@@ -3775,7 +3804,29 @@ function vnfLcDrawer(nf) {
 
 function viewVnfLifecycle() {
   const nf = VNF_LC_ID || (VNFS[0] && VNFS[0].nf) || '—';
-  const stages = VNF_LC_STAGES;
+  const vnf = VNFS.find(v => v.nf === nf) || VNFS[0];
+
+  /* Planned means execution has not started — there is no real flow to
+     show yet, so don't draw one; an empty/fabricated timeline would lie
+     about what's actually happened on this NF */
+  if (vnf.st === 'Planned') {
+    return `<div class="page">
+      ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
+        `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+      ${drillBar()}
+      ${card(`
+        <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-2xl);text-align:center">
+          ${chip('Planned', 'info')}
+          <span class="vw-card-title" style="margin-top:var(--vw-space-sm)">This operation has not started yet</span>
+          <span class="vw-card-description" style="max-width:48ch;margin:0 auto">
+            <strong>${esc(nf)}</strong> is on the provisioning schedule. Day 0, Grow, Events and GPL will appear here
+            once execution begins — there is nothing to show before then.
+          </span>
+        </div>`)}
+    </div>`;
+  }
+
+  const stages = vnfLifecycleStages(vnf);
   const stage = stages.find(s => s.k === VNF_LC_STAGE) || stages[0];
   const stageStatus = s => s.steps.some(x => x.st === 'failed') ? 'failed'
     : s.steps.every(x => x.st === 'done') ? 'done'
@@ -3822,14 +3873,17 @@ function viewVnfLifecycle() {
                   </div>
                   <span class="row vw-gap-sm vw-items-center">
                     <span class="vw-card-metric-label-sub num t-right">${st.at}<br>Modified date</span>
-                    <button class="kb" data-vnflctask="${stage.k}:${i}" aria-label="Task actions for ${esc(st.n)}">${IC_KEBAB}</button>
+                    ${vnfStepHasPayload(st.st)
+                      ? `<button class="nst-btn nst-btn--xs nst-btn--icon nst-btn--ghost" data-vnflceye="${stage.k}:${i}"
+                           aria-label="View request/response for ${esc(st.n)}" title="View request/response">${IC_EYE}</button>`
+                      : ''}
                   </span>
                 </div>
               </div>`).join('')}
           </div>`)}
       </div>
     </div>
-    ${vnfLcDrawer(nf)}
+    ${vnfLcDrawer(nf, stages)}
   </div>`;
 }
 
@@ -5957,19 +6011,33 @@ document.addEventListener('click', e => {
      go() always rebuilds the view fresh, never from a cached render — while
      leaving search, filters, tab and pagination exactly as the reader left
      them. It must not double-fire: go() is synchronous, and closing the menu
-     here means a second click can't land on the same button mid-refresh. */
-  if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
+     here means a second click can't land on the same button mid-refresh.
+     Nothing here has real latency to show a spinner for, but with static
+     sample data the reload is otherwise invisible — a small confirmation
+     is the honest way to prove the click did something. */
+  if (gr) {
+    const r = gr.getBoundingClientRect();
+    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT);
+    showCopyToast(r.left, r.top, 'Refreshed');
+    return;
+  }
   const vlcs = e.target.closest('[data-vnflcstage]');
   /* a step index only means anything within the stage it belongs to, so
      switching stages closes any open task drawer rather than carry it over */
-  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  if (vlcs) { VNF_LC_STAGE = vlcs.dataset.vnflcstage; VNF_LC_DRAWER = null; KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const vlcr = e.target.closest('[data-vnflcrefresh]');
-  if (vlcr) { DRILL_PENDING = DRILL; go(CURRENT); return; }
-  const vlct = e.target.closest('[data-vnflctask]');
-  if (vlct) {
-    const [stage, step] = vlct.dataset.vnflctask.split(':');
+  if (vlcr) {
+    const r = vlcr.getBoundingClientRect();
+    DRILL_PENDING = DRILL; go(CURRENT);
+    showCopyToast(r.left, r.top, 'Refreshed');
+    return;
+  }
+  const vlce = e.target.closest('[data-vnflceye]');
+  if (vlce) {
+    const [stage, step] = vlce.dataset.vnflceye.split(':');
     VNF_LC_DRAWER = { stage, step: Number(step) };
     VNF_LC_DRAWER_OPEN = { req: true, res: true };
+    KEBAB = null;
     DRILL_PENDING = DRILL; go(CURRENT); return;
   }
   const vlcx = e.target.closest('[data-vnflcclose]');

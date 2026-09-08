@@ -117,10 +117,32 @@ function stdActions(wrap: HTMLDivElement | null, onRefresh?: () => void): Action
   ];
 }
 
+/* Refresh re-derives rows from source with no real latency behind it in this
+   build (no backend) — with static sample data that reload is otherwise
+   invisible, so a small confirmation is the honest way to prove the click
+   did something, without pretending there's a server round-trip to wait on. */
+function showRefreshToast(x: number, y: number) {
+  const el = document.createElement('div');
+  el.className = 'copy-toast';
+  el.textContent = 'Refreshed';
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-in'));
+  setTimeout(() => {
+    el.classList.remove('is-in');
+    setTimeout(() => el.remove(), 200);
+  }, 1000);
+}
+
 function MenuItem({ a, onDone }: { a: Action; onDone: () => void }) {
   return (
     <button className={`kmenu-i${a.danger ? ' is-danger' : ''}${a.primary ? ' is-primary' : ''}`}
-      onClick={() => { a.onClick?.(); onDone(); }}>
+      onClick={e => {
+        const r = e.currentTarget.getBoundingClientRect();
+        a.onClick?.(); onDone();
+        if (a.l === 'Refresh') showRefreshToast(r.left, r.top);
+      }}>
       <ActionIcon label={a.l} /><span>{a.l}</span>
     </button>
   );

@@ -725,7 +725,9 @@ const LC_STATUS = {
   failed:     ['Failed',      'red',     '✕'],
   skipped:    ['Skipped',     'purple',  '»']
 };
-const vnfLcSteps = names => names.map(n => ({ n, st: 'done', at: '02-Aug-26 09:05:30 PM' }));
+/* step status is NOT baked in here — it depends on the NF's own status
+   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time */
+const vnfLcSteps = names => names.map(n => ({ n, at: '02-Aug-26 09:05:30 PM' }));
 const VNF_LC_STAGES = [
   { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
     steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
