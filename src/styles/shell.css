@@ -705,7 +705,19 @@ button.sb-row.is-drill::after { display: none; }
 .grid-search { width: 18rem; max-width: 100%; position: relative; }
 .grid-search .gs-ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--vw-color-gray-400); display: flex; pointer-events: none; }
-.grid-search .nst-input { padding-left: 2rem; }
+/* .nst-input-shell and .nst-input are each a whole field in the design system —
+   same 36px min-height, same 6px/8px padding, same border and radius. The search
+   box nests one in the other for the sake of the icon, so the inner one must draw
+   no frame of its own: two of them stacked made a 50px control ringed in white,
+   half again the height of the buttons beside it. */
+.grid-search .nst-input {
+  min-height: 0;
+  padding: 0 0 0 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.grid-search .nst-input:focus { outline: none; }
 .grid-tools { display: flex; gap: var(--vw-space-xs); position: relative; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: var(--vw-radius-md);
@@ -763,10 +775,12 @@ button.sb-row.is-drill::after { display: none; }
 
 /* The header stays put while the rows move under it — which means every header
    cell has to be opaque, including the action column's, which is otherwise
-   transparent so it does not read as a column of its own. */
+   transparent so it does not read as a column of its own. It repeats the band
+   colour rather than picking one: white here would quietly overrule the
+   .nst-table th shade below and flatten the header into the rows. */
 .tbl-wrap .nst-table thead th {
   position: sticky; top: 0; z-index: 3;
-  background: var(--vw-color-white);
+  background: var(--vw-color-slate-50);
 }
 
 /* The action column is the last cell of the row, not a column of its own: no

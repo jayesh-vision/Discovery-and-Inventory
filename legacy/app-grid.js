@@ -164,7 +164,10 @@ const FS = {
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
-  jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter','Held'] },
+  /* Status lists run states only — "held" describes the schedule, not the run,
+     and lives in its own field */
+  jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
+             { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },

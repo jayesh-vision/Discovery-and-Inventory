@@ -1270,10 +1270,13 @@ REPORTS.push(
    disagree about which window they are describing.
 
    Today  = the position at the close of the last cycle.
-   7 / 30 = the WORST state each element reached across the
-            window. An element that drifted on Thursday and
-            was corrected on Friday counts as Drifted here,
-            which is the point — a snapshot hides flapping.
+   7 / 30 = every element the window touched, counted at its
+            last comparison inside it. A wider window sees
+            more of the estate — elements added, retired, or
+            reached only by a weekly job all fall inside it —
+            so every bucket grows as the window widens and
+            none of them can shrink. That is what the counts
+            below assert, and what checkPeriods() enforces.
    ═══════════════════════════════════════════════════════ */
 const PERIODS = [
   { k:'today', n:'Today',   cycles:1,  range:'01-Sep-2026',
@@ -1282,12 +1285,12 @@ const PERIODS = [
     recNote:'State of each element at the close of the cycle.' },
   { k:'d7', n:'7 days', cycles:7, range:'26-Aug – 01-Sep-2026',
     note:'Seven discovery cycles, 26-Aug to 01-Sep-2026.',
-    runNote:'Worst run outcome each target reached in 7 cycles.',
-    recNote:'Worst state each element reached across 7 cycles.' },
+    runNote:'Every target polled in 7 cycles, at its last run.',
+    recNote:'Every element compared in 7 cycles, at its last comparison.' },
   { k:'d30', n:'30 days', cycles:30, range:'03-Aug – 01-Sep-2026',
     note:'Thirty discovery cycles, 03-Aug to 01-Sep-2026.',
-    runNote:'Worst run outcome each target reached in 30 cycles.',
-    recNote:'Worst state each element reached across 30 cycles.' }
+    runNote:'Every target polled in 30 cycles, at its last run.',
+    recNote:'Every element compared in 30 cycles, at its last comparison.' }
 ];
 let PERIOD = 'today';
 let NAT_RATE = 0;
@@ -1304,27 +1307,27 @@ const DLP = {
            master:2703, noCollector:206, discoverable:2497,
            matched:2379, missing:118, exact:1829, drifted:392, stale:158,
            rogue:160, unclaimed:64, identified:2603, discRouter:2212, discSwitch:391 },
-  d7:    { targets:2371, runFull:1689, runPartial:402, runFail:280,
-           master:2741, noCollector:206, discoverable:2535,
-           matched:2394, missing:141, exact:1604, drifted:561, stale:229,
-           rogue:198, unclaimed:81, identified:2673, discRouter:2270, discSwitch:403 },
-  d30:   { targets:2468, runFull:1502, runPartial:508, runFail:458,
-           master:2806, noCollector:214, discoverable:2592,
-           matched:2389, missing:203, exact:1318, drifted:742, stale:329,
-           rogue:271, unclaimed:112, identified:2772, discRouter:2351, discSwitch:421 }
+  d7:    { targets:2371, runFull:1861, runPartial:320, runFail:190,
+           master:2784, noCollector:209, discoverable:2575,
+           matched:2447, missing:128, exact:1846, drifted:425, stale:176,
+           rogue:172, unclaimed:70, identified:2689, discRouter:2285, discSwitch:404 },
+  d30:   { targets:2468, runFull:1902, runPartial:358, runFail:208,
+           master:2931, noCollector:214, discoverable:2717,
+           matched:2572, missing:145, exact:1878, drifted:486, stale:208,
+           rogue:194, unclaimed:82, identified:2848, discRouter:2419, discSwitch:429 }
 };
 
 /* freshness buckets — sum to identified in every period */
 const FRESH_P = {
   today: [1142, 786, 402, 189, 84],
-  d7:    [1096, 812, 447, 216, 102],
-  d30:   [1041, 838, 496, 268, 129]
+  d7:    [1168, 806, 418, 197, 100],
+  d30:   [1224, 848, 446, 212, 118]
 };
 /* discovered devices by OEM — sum to identified in every period */
 const OEM_P = {
   today: [1612, 806, 98, 54, 21, 12],
-  d7:    [1648, 832, 101, 56, 22, 14],
-  d30:   [1704, 866, 105, 59, 23, 15]
+  d7:    [1657, 838, 102, 57, 22, 13],
+  d30:   [1748, 886, 108, 61, 25, 20]
 };
 const OEM_ROWS = [
   { n:'Juniper', tone:'sky' }, { n:'Cisco', tone:'cyan' }, { n:'Cisco SDN', tone:'indigo' },
@@ -1333,8 +1336,8 @@ const OEM_ROWS = [
 /* collector families — ok + fail + na sum to targets in every period */
 const COLL_P = {
   today: [[2133,175,0],[2041,92,175],[2098,35,175],[1412,63,833],[604,21,1683],[1289,47,972]],
-  d7:    [[2130,241,0],[2032,98,241],[2094,36,241],[1441,68,862],[617,24,1730],[1316,52,1003]],
-  d30:   [[2110,358,0],[2001,109,358],[2071,39,358],[1479,74,915],[641,28,1799],[1358,61,1049]]
+  d7:    [[2181,190,0],[2085,96,190],[2144,37,190],[1447,66,858],[619,23,1729],[1321,50,1000]],
+  d30:   [[2260,208,0],[2159,101,208],[2221,39,208],[1502,70,896],[645,26,1797],[1375,53,1040]]
 };
 
 /* what moved inside the window — regressions against recoveries */
@@ -1380,6 +1383,43 @@ function spread(src, total) {
   let diff = total - out.reduce((a, b) => a + b, 0);
   if (diff) { let bi = 0; out.forEach((v, i) => { if (v > out[bi]) bi = i; }); out[bi] += diff; }
   return out;
+}
+
+/* Four parallel number tables kept by hand is exactly how a window ends up
+   claiming fewer records than a narrower one. Each is a closed ledger, and
+   widening the window may only ever add — so both are asserted here rather
+   than trusted. */
+function checkPeriods() {
+  const order = ['today', 'd7', 'd30'];
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  const bad = m => { throw new Error('period ledger: ' + m); };
+
+  order.forEach(k => {
+    const d = DLP[k];
+    if (d.runFull + d.runPartial + d.runFail !== d.targets) bad(`${k} run outcomes ≠ targets`);
+    if (d.exact + d.drifted + d.stale !== d.matched)        bad(`${k} match states ≠ matched`);
+    if (d.matched + d.missing !== d.discoverable)           bad(`${k} matched + missing ≠ discoverable`);
+    if (d.noCollector + d.discoverable !== d.master)        bad(`${k} discoverable + no-collector ≠ master`);
+    if (d.matched + d.rogue + d.unclaimed !== d.identified) bad(`${k} matched + rogue + unclaimed ≠ identified`);
+    if (d.discRouter + d.discSwitch !== d.identified)       bad(`${k} classes ≠ identified`);
+    if (sum(FRESH_P[k]) !== d.identified)                   bad(`${k} freshness ≠ identified`);
+    if (sum(OEM_P[k]) !== d.identified)                     bad(`${k} OEM split ≠ identified`);
+    COLL_P[k].forEach((row, i) => { if (sum(row) !== d.targets) bad(`${k} collector ${i} ≠ targets`); });
+  });
+
+  /* nothing a window counts may fall as the window widens */
+  const rises = (label, of) => order.slice(1).forEach((k, i) => {
+    const prev = of(order[i]), now = of(k);
+    if (now < prev) bad(`${label} falls from ${order[i]} (${prev}) to ${k} (${now})`);
+  });
+  Object.keys(DLP.today).forEach(f => rises(f, k => DLP[k][f]));
+  FRESH_P.today.forEach((_, i) => rises(`freshness[${i}]`, k => FRESH_P[k][i]));
+  OEM_P.today.forEach((_, i) => rises(`oem[${i}]`, k => OEM_P[k][i]));
+  COLL_P.today.forEach((_, i) => {
+    rises(`collector[${i}].ok`, k => COLL_P[k][i][0]);
+    rises(`collector[${i}].fail`, k => COLL_P[k][i][1]);
+  });
+  MOVE_P.today.forEach((m, i) => rises(`moved · ${m.n}`, k => MOVE_P[k][i].v));
 }
 
 function applyPeriod() {
@@ -1431,6 +1471,7 @@ function applyPeriod() {
   REC_BANDS.netOnly.parts[1].c = DL.unclaimed;
   REC_BANDS.notComparable.c = DL.noCollector;
 }
+checkPeriods();
 applyPeriod();
 
 /* ═══ grid chrome: row kebab menus, toolbar, filter panel ═══ */
@@ -1599,7 +1640,10 @@ const FS = {
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
-  jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter','Held'] },
+  /* Status lists run states only — "held" describes the schedule, not the run,
+     and lives in its own field */
+  jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
+             { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },
@@ -2240,46 +2284,144 @@ function viewInsights() {
 }
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
+/* Every figure on this screen is read off JOBS against one clock: the cycle
+   that closed at 01-Sep-2026 09:19. Nothing here is a literal — a count that
+   cannot be traced back to a row does not belong on the screen. */
+const JOB_NOW = new Date(2026, 8, 1, 9, 19);
+const jobAt = s => {
+  const [d, t] = String(s).split(' '), [dd, mon, yy] = d.split('-'), [hh, mi] = (t || '00:00').split(':');
+  return new Date(Number(yy), DK_MON.indexOf(mon), Number(dd), Number(hh), Number(mi));
+};
+
+/* Colour follows the state, so one status can never be drawn two ways. It used
+   to be stored per row, and two jobs both "Completed with errors" came out in
+   different colours — with the red one alone answering the Failed filter. */
+const JOB_CHIP = {
+  'Completed': 'success', 'Completed with errors': 'warning',
+  'Running': 'info', 'No adapter': 'error', 'Failed': 'error', 'Held': 'warning'
+};
+const jobChip = j => JOB_CHIP[j.state] || 'neutral';
+
+/* How often a job is meant to run, in hours — null when it only runs on demand */
+function cadenceH(sched) {
+  const every = /^Every\s+(\d+)\s*h/i.exec(sched);
+  if (every) return Number(every[1]);
+  if (/^Daily/i.test(sched))  return 24;
+  if (/^Weekly/i.test(sched)) return 168;
+  return null;
+}
+const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
+
+const jobHeld    = j => j.next === 'held';
+const jobRunning = j => j.state === 'Running';
+const jobFailed  = j => j.state === 'Failed';        /* the run did not complete */
+const jobErrors  = j => j.state === 'Completed with errors';  /* it completed; some targets did not */
+const jobNoAdapt = j => j.state === 'No adapter';
+/* Overdue: a whole cadence plus the grace has passed with no run. On-demand
+   jobs have no cadence, so they can never be overdue. */
+const jobOverdue = j => {
+  const c = cadenceH(j.sched);
+  return c !== null && (JOB_NOW - jobAt(j.last)) / 36e5 > c + JOB_GRACE_H;
+};
+
+/* One reason per job, most serious first, so the reasons add up to the total
+   rather than double-counting the job that is both held and erroring. */
+const JOB_REASONS = [
+  ['failed', jobFailed], ['no adapter', jobNoAdapt], ['held', jobHeld],
+  ['with errors', jobErrors], ['overdue', jobOverdue]
+];
+const jobReason = j => (JOB_REASONS.find(([, test]) => test(j)) || [null])[0];
+const jobAttention = j => jobReason(j) !== null;
+
+/* Hours until a job is next due; null when nothing is scheduled — a held job
+   and an on-demand job are both "no next run", and neither may win the card. */
+function jobNextIn(j) {
+  const s = j.next;
+  if (!s || s === '—' || s === 'held') return null;
+  const hm = /(\d{1,2}):(\d{2})/.exec(s);
+  const mins = hm ? Number(hm[1]) * 60 + Number(hm[2]) : 0;
+  const midnight = new Date(JOB_NOW.getFullYear(), JOB_NOW.getMonth(), JOB_NOW.getDate());
+  let day;
+  if (/^today/i.test(s)) day = 0;
+  else if (/^tomorrow/i.test(s)) day = 1;
+  else {
+    const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(s.slice(0, 3));
+    if (wd >= 0) day = ((wd - JOB_NOW.getDay()) + 7) % 7 || 7;
+    else { const d = jobAt(s); return isNaN(d) ? null : (d - JOB_NOW) / 36e5; }
+  }
+  return (midnight.getTime() + day * 864e5 + mins * 6e4 - JOB_NOW) / 36e5;
+}
+
+/* targets carried per collector node, busiest first */
+function collectorLoad() {
+  const load = {};
+  JOBS.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
+  return Object.entries(load).sort((a, b) => b[1] - a[1]);
+}
+
 let JOB_FILTER = 'All';
 const JOB_TESTS = {
-  All:        () => true,
-  exceptions: j => j.chip !== 'success',
-  failed:     j => j.chip === 'error',
-  stale:      j => j.next === 'held' || j.chip === 'neutral'
+  All:       () => true,
+  attention: jobAttention,
+  errors:    jobErrors,
+  held:      jobHeld,
+  overdue:   jobOverdue
 };
 
 function viewJobs() {
   const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
   const rows = gridApply('jobs', JOBS.filter(test));
-  const onDemand = JOBS.filter(j => j.sched === 'On demand').length;
-  const weekly = JOBS.filter(j => /^Weekly/.test(j.sched)).length;
-  const scheduled = JOBS.length - onDemand;                 // a weekly cadence is still a schedule
-  const attention = JOBS.filter(j => j.chip === 'error' || j.chip === 'warning' || j.chip === 'neutral' || j.next === 'held').length;
-  const nextJob = JOBS.find(j => j.id === 'DSC-SOUTH-CORE') || JOBS[0];
-  const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
+
+  const onDemand = JOBS.filter(j => cadenceH(j.sched) === null).length;
+  const weekly   = JOBS.filter(j => /^Weekly/i.test(j.sched)).length;
+  const held     = JOBS.filter(jobHeld).length;
+  const live     = JOBS.length - onDemand - held;      /* the three partition the whole */
+  const running  = JOBS.filter(jobRunning).length;
+  const errors   = JOBS.filter(jobErrors).length;
+  const attention = JOBS.filter(jobAttention).length;
+  /* named in the same order the reasons are ranked, so the parts sum to the card */
+  const reasons = JOB_REASONS
+    .map(([label, test]) => [label, JOBS.filter(j => jobReason(j) === label && test(j)).length])
+    .filter(([, c]) => c > 0).map(([label, c]) => `${n(c)} ${label}`).join(' · ');
+
+  const due = JOBS.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
+    .sort((a, b) => a.h - b.h)[0];
+  const load = collectorLoad();
+
+  const segs = [['All','All'], ['attention','Needs attention'], ['errors','With errors'],
+                ['held','Held'], ['overdue','Overdue']];
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Active jobs', n(JOBS.length), `${n(scheduled)} scheduled (incl. ${n(weekly)} weekly) · ${n(onDemand)} on demand`, 'sky')}
-      ${kpi('Next run', '15:00 IST', `${nextJob.id} · ${nextJob.sched} · ${n(nextJob.targets)} targets`, 'cyan')}
-      ${kpi('Jobs needing attention', n(attention), 'errors, held schedule, or no adapter', 'amber')}
-      ${kpi('Collector nodes', '6', 'clr-blr-02 carries 588 targets', 'purple')}
+      ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
+      ${due
+        ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1] + ' IST',
+            `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
+        : kpi('Next run', '—', 'nothing scheduled — every job is held or on demand', 'cyan')}
+      ${kpi('Jobs needing attention', n(attention), reasons || 'every job ran clean and on time', 'amber')}
+      ${load.length
+        ? kpi('Collector nodes in use', n(load.length), `${load[0][0]} carries ${n(load[0][1])} targets`, 'purple')
+        : kpi('Collector nodes in use', '0', 'no job names a collector', 'purple')}
     </div>
 
-    ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`).join('')}</div>`)}
+    ${pageBar(`<div class="seg">${segs.map(([k,l]) => {
+      const c = JOBS.filter(JOB_TESTS[k]).length;
+      return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
+        <span class="tab-n num">${n(c)}</span></button>`;
+    }).join('')}</div>`)}
 
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `${chip('1 running','info')}${chip('2 with errors','warning')}`,
+        `${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
         rows.map(j => [
-          chip(j.state, j.chip),
+          chip(j.state, jobChip(j)),
           `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
            <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
           `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
@@ -2291,7 +2433,9 @@ function viewJobs() {
             <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
             <span style="color:${cv('gray',300)}">·</span>
             <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
-          j.next === 'held' ? chip('Held', 'error') : `<span class="vw-card-metric-label-sub">${j.next}</span>`,
+          jobHeld(j) ? chip('Held', 'warning')
+            : `<span class="vw-card-metric-label-sub">${j.next}</span>${
+                jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
         ]), 'job-table',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
               A('Run now'), A('Edit schedule'), A('Edit credential profile'),

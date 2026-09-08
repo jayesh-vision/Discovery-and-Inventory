@@ -190,6 +190,49 @@ ok('legacy drill → React physical with filter', drilled.startsWith('/inventory
 ok('drill banner shows', (await text('.drill-bar')).includes('Spares in store'));
 ok('only In store selected', (await text('.stock-chip.is-on')) .includes('In store') && await count('.stock-chip.is-on') === 1);
 
+/* ── Scan jobs: every figure traced back to the JOBS rows ── */
+await p.goto(BASE + '/discovery/jobs'); await p.waitForSelector('#view .tbl-wrap table');
+await p.waitForTimeout(400);
+/* recompute independently from the dataset the page loaded */
+const jt = await p.evaluate(() => {
+  const NOW = new Date(2026, 8, 1, 9, 19), M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const at = s => { const [d,t]=String(s).split(' '),[dd,mo,yy]=d.split('-'),[hh,mi]=(t||'00:00').split(':');
+    return new Date(+yy, M.indexOf(mo), +dd, +hh, +mi); };
+  const cad = s => { const e=/^Every\s+(\d+)\s*h/i.exec(s); if (e) return +e[1];
+    if (/^Daily/i.test(s)) return 24; if (/^Weekly/i.test(s)) return 168; return null; };
+  const over = j => { const c = cad(j.sched); return c !== null && (NOW - at(j.last))/36e5 > c + 6; };
+  const reason = j => j.state === 'Failed' ? 1 : j.state === 'No adapter' ? 1 : j.next === 'held' ? 1
+    : j.state === 'Completed with errors' ? 1 : over(j) ? 1 : 0;
+  return { total: JOBS.length, attention: JOBS.filter(reason).length, overdue: JOBS.filter(over).length,
+    errors: JOBS.filter(j => j.state === 'Completed with errors').length, held: JOBS.filter(j => j.next === 'held').length,
+    running: JOBS.filter(j => j.state === 'Running').length,
+    collectors: new Set(JOBS.map(j => j.collector)).size,
+    sums: JOBS.every(j => j.clean + j.partial + j.fail === j.targets) };
+});
+const jcards = await p.evaluate(() => [...document.querySelectorAll('.vw-grid > *')].map(c => c.innerText.replace(/\s+/g,' ').trim()));
+ok('jobs: card counts the jobs the table holds', jcards[0].includes(`Total jobs ${jt.total}`), jcards[0]);
+ok('jobs: next run is derived, not a literal', jcards[1].includes('DSC-SOUTH-CORE') && !/held/i.test(jcards[1]), jcards[1]);
+ok('jobs: attention includes overdue runs', jcards[2].includes(` ${jt.attention} `) && jt.attention === 5, jcards[2]);
+ok('jobs: collector nodes counted, not hardcoded', jcards[3].includes(` ${jt.collectors} `) && jt.collectors === 11, jcards[3]);
+ok('jobs: clean + partial + failed = targets on every row', jt.sums);
+ok('jobs: one status never renders in two colours', await p.evaluate(() => {
+  const m = {};
+  document.querySelectorAll('#view .nst-table tbody tr').forEach(tr => {
+    const c = tr.querySelector('td .vw-chip'); if (!c) return;
+    (m[c.textContent.trim()] ??= new Set()).add([...c.classList].find(x => x.startsWith('vw-chip--')));
+  });
+  return Object.values(m).every(v => v.size === 1);
+}));
+for (const [key, want] of [['attention', jt.attention], ['errors', jt.errors], ['held', jt.held], ['overdue', jt.overdue]]) {
+  await p.click(`[data-job-filter="${key}"]`); await p.waitForTimeout(250);
+  const got = await p.evaluate(() => [...document.querySelectorAll('#view .nst-table tbody tr')].filter(r => !r.hidden).length);
+  ok(`jobs: filter ${key.padEnd(9)} returns the ${want} rows it claims`, got === want, `got ${got}`);
+}
+await p.click('[data-job-filter="All"]'); await p.waitForTimeout(250);
+ok('jobs: toolbar chips derived from the rows',
+  (await text('#view .grid-bar')).includes(`${jt.running} running`) && (await text('#view .grid-bar')).includes(`${jt.errors} with errors`),
+  await text('#view .grid-bar'));
+
 /* ── every legacy screen mounts through the bridge ─────── */
 for (const path of ['/discovery/jobs', '/discovery/targets', '/discovery/reconcile', '/inventory', '/inventory/location',
   '/inventory/virtual', '/inventory/passive', '/inventory/links', '/inventory/services', '/inventory/reports',

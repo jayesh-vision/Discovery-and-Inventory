@@ -250,46 +250,144 @@ function viewInsights() {
 }
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
+/* Every figure on this screen is read off JOBS against one clock: the cycle
+   that closed at 01-Sep-2026 09:19. Nothing here is a literal — a count that
+   cannot be traced back to a row does not belong on the screen. */
+const JOB_NOW = new Date(2026, 8, 1, 9, 19);
+const jobAt = s => {
+  const [d, t] = String(s).split(' '), [dd, mon, yy] = d.split('-'), [hh, mi] = (t || '00:00').split(':');
+  return new Date(Number(yy), DK_MON.indexOf(mon), Number(dd), Number(hh), Number(mi));
+};
+
+/* Colour follows the state, so one status can never be drawn two ways. It used
+   to be stored per row, and two jobs both "Completed with errors" came out in
+   different colours — with the red one alone answering the Failed filter. */
+const JOB_CHIP = {
+  'Completed': 'success', 'Completed with errors': 'warning',
+  'Running': 'info', 'No adapter': 'error', 'Failed': 'error', 'Held': 'warning'
+};
+const jobChip = j => JOB_CHIP[j.state] || 'neutral';
+
+/* How often a job is meant to run, in hours — null when it only runs on demand */
+function cadenceH(sched) {
+  const every = /^Every\s+(\d+)\s*h/i.exec(sched);
+  if (every) return Number(every[1]);
+  if (/^Daily/i.test(sched))  return 24;
+  if (/^Weekly/i.test(sched)) return 168;
+  return null;
+}
+const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
+
+const jobHeld    = j => j.next === 'held';
+const jobRunning = j => j.state === 'Running';
+const jobFailed  = j => j.state === 'Failed';        /* the run did not complete */
+const jobErrors  = j => j.state === 'Completed with errors';  /* it completed; some targets did not */
+const jobNoAdapt = j => j.state === 'No adapter';
+/* Overdue: a whole cadence plus the grace has passed with no run. On-demand
+   jobs have no cadence, so they can never be overdue. */
+const jobOverdue = j => {
+  const c = cadenceH(j.sched);
+  return c !== null && (JOB_NOW - jobAt(j.last)) / 36e5 > c + JOB_GRACE_H;
+};
+
+/* One reason per job, most serious first, so the reasons add up to the total
+   rather than double-counting the job that is both held and erroring. */
+const JOB_REASONS = [
+  ['failed', jobFailed], ['no adapter', jobNoAdapt], ['held', jobHeld],
+  ['with errors', jobErrors], ['overdue', jobOverdue]
+];
+const jobReason = j => (JOB_REASONS.find(([, test]) => test(j)) || [null])[0];
+const jobAttention = j => jobReason(j) !== null;
+
+/* Hours until a job is next due; null when nothing is scheduled — a held job
+   and an on-demand job are both "no next run", and neither may win the card. */
+function jobNextIn(j) {
+  const s = j.next;
+  if (!s || s === '—' || s === 'held') return null;
+  const hm = /(\d{1,2}):(\d{2})/.exec(s);
+  const mins = hm ? Number(hm[1]) * 60 + Number(hm[2]) : 0;
+  const midnight = new Date(JOB_NOW.getFullYear(), JOB_NOW.getMonth(), JOB_NOW.getDate());
+  let day;
+  if (/^today/i.test(s)) day = 0;
+  else if (/^tomorrow/i.test(s)) day = 1;
+  else {
+    const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(s.slice(0, 3));
+    if (wd >= 0) day = ((wd - JOB_NOW.getDay()) + 7) % 7 || 7;
+    else { const d = jobAt(s); return isNaN(d) ? null : (d - JOB_NOW) / 36e5; }
+  }
+  return (midnight.getTime() + day * 864e5 + mins * 6e4 - JOB_NOW) / 36e5;
+}
+
+/* targets carried per collector node, busiest first */
+function collectorLoad() {
+  const load = {};
+  JOBS.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
+  return Object.entries(load).sort((a, b) => b[1] - a[1]);
+}
+
 let JOB_FILTER = 'All';
 const JOB_TESTS = {
-  All:        () => true,
-  exceptions: j => j.chip !== 'success',
-  failed:     j => j.chip === 'error',
-  stale:      j => j.next === 'held' || j.chip === 'neutral'
+  All:       () => true,
+  attention: jobAttention,
+  errors:    jobErrors,
+  held:      jobHeld,
+  overdue:   jobOverdue
 };
 
 function viewJobs() {
   const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
   const rows = gridApply('jobs', JOBS.filter(test));
-  const onDemand = JOBS.filter(j => j.sched === 'On demand').length;
-  const weekly = JOBS.filter(j => /^Weekly/.test(j.sched)).length;
-  const scheduled = JOBS.length - onDemand;                 // a weekly cadence is still a schedule
-  const attention = JOBS.filter(j => j.chip === 'error' || j.chip === 'warning' || j.chip === 'neutral' || j.next === 'held').length;
-  const nextJob = JOBS.find(j => j.id === 'DSC-SOUTH-CORE') || JOBS[0];
-  const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
+
+  const onDemand = JOBS.filter(j => cadenceH(j.sched) === null).length;
+  const weekly   = JOBS.filter(j => /^Weekly/i.test(j.sched)).length;
+  const held     = JOBS.filter(jobHeld).length;
+  const live     = JOBS.length - onDemand - held;      /* the three partition the whole */
+  const running  = JOBS.filter(jobRunning).length;
+  const errors   = JOBS.filter(jobErrors).length;
+  const attention = JOBS.filter(jobAttention).length;
+  /* named in the same order the reasons are ranked, so the parts sum to the card */
+  const reasons = JOB_REASONS
+    .map(([label, test]) => [label, JOBS.filter(j => jobReason(j) === label && test(j)).length])
+    .filter(([, c]) => c > 0).map(([label, c]) => `${n(c)} ${label}`).join(' · ');
+
+  const due = JOBS.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
+    .sort((a, b) => a.h - b.h)[0];
+  const load = collectorLoad();
+
+  const segs = [['All','All'], ['attention','Needs attention'], ['errors','With errors'],
+                ['held','Held'], ['overdue','Overdue']];
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Active jobs', n(JOBS.length), `${n(scheduled)} scheduled (incl. ${n(weekly)} weekly) · ${n(onDemand)} on demand`, 'sky')}
-      ${kpi('Next run', '15:00 IST', `${nextJob.id} · ${nextJob.sched} · ${n(nextJob.targets)} targets`, 'cyan')}
-      ${kpi('Jobs needing attention', n(attention), 'errors, held schedule, or no adapter', 'amber')}
-      ${kpi('Collector nodes', '6', 'clr-blr-02 carries 588 targets', 'purple')}
+      ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
+      ${due
+        ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1] + ' IST',
+            `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
+        : kpi('Next run', '—', 'nothing scheduled — every job is held or on demand', 'cyan')}
+      ${kpi('Jobs needing attention', n(attention), reasons || 'every job ran clean and on time', 'amber')}
+      ${load.length
+        ? kpi('Collector nodes in use', n(load.length), `${load[0][0]} carries ${n(load[0][1])} targets`, 'purple')
+        : kpi('Collector nodes in use', '0', 'no job names a collector', 'purple')}
     </div>
 
-    ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`).join('')}</div>`)}
+    ${pageBar(`<div class="seg">${segs.map(([k,l]) => {
+      const c = JOBS.filter(JOB_TESTS[k]).length;
+      return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
+        <span class="tab-n num">${n(c)}</span></button>`;
+    }).join('')}</div>`)}
 
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `${chip('1 running','info')}${chip('2 with errors','warning')}`,
+        `${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
         rows.map(j => [
-          chip(j.state, j.chip),
+          chip(j.state, jobChip(j)),
           `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
            <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
           `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
@@ -301,7 +399,9 @@ function viewJobs() {
             <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
             <span style="color:${cv('gray',300)}">·</span>
             <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
-          j.next === 'held' ? chip('Held', 'error') : `<span class="vw-card-metric-label-sub">${j.next}</span>`,
+          jobHeld(j) ? chip('Held', 'warning')
+            : `<span class="vw-card-metric-label-sub">${j.next}</span>${
+                jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
         ]), 'job-table',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
               A('Run now'), A('Edit schedule'), A('Edit credential profile'),
