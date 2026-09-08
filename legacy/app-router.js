@@ -93,7 +93,11 @@ function clearDrill() {
 function go(k) {
   const v = VIEWS[k] || VIEWS.insights;
   const isNav = k !== CURRENT;              // false when a control just refreshes the view it's already on
-  DRILL = DRILL_PENDING; DRILL_PENDING = null;
+  /* an in-place refresh (a filter, a chip, a search keystroke) that does not
+     set its own DRILL_PENDING must not silently drop the drill/back context —
+     only a real navigation is allowed to leave it behind */
+  DRILL = isNav ? DRILL_PENDING : (DRILL_PENDING || DRILL);
+  DRILL_PENDING = null;
   GRID_N = 0;
   /* the render below throws away every grid element, so note where the reader
      was in each one first — a row action must not fling the list back to row 1 */
@@ -129,6 +133,11 @@ document.addEventListener('click', e => {
   const gm = e.target.closest('[data-gridmenu]');
   if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; go(CURRENT); return; }
   const gr = e.target.closest('[data-gridrefresh]');
+  /* Refresh re-derives every grid's rows from the underlying data arrays —
+     go() always rebuilds the view fresh, never from a cached render — while
+     leaving search, filters, tab and pagination exactly as the reader left
+     them. It must not double-fire: go() is synchronous, and closing the menu
+     here means a second click can't land on the same button mid-refresh. */
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
   if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
@@ -145,8 +154,11 @@ document.addEventListener('click', e => {
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
   const cp = e.target.closest('[data-copy]');
-  if (cp) { navigator.clipboard && navigator.clipboard.writeText(cp.dataset.copy);
-    KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (cp) {
+    const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
+    copyToClipboard(value).then(() => showCopyToast(r.left, r.top, 'Copied'));
+    KEBAB = null; GRIDMENU = false; go(CURRENT); return;
+  }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
@@ -289,9 +301,6 @@ document.addEventListener('click', e => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return;
   }
-  const txrr = e.target.closest('[data-txrerun]');
-  if (txrr) return;
-
   const nav = e.target.closest('[data-nav]');
   if (nav) { go(nav.dataset.nav); return; }
 

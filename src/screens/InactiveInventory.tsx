@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
@@ -22,7 +22,12 @@ export default function InactiveInventory() {
   const cls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : 'router';
   const meta = classMeta(cls);
 
-  const rows = useMemo(() => decommRows(cls), [cls]);
+  /* Refresh has no server round-trip to make in this build (no backend), so
+     "reload" means re-deriving rows from the archive's current in-memory
+     state — the same store any restore/purge action already writes to —
+     without touching cls, search or filters. */
+  const [refreshKey, setRefreshKey] = useState(0);
+  const rows = useMemo(() => decommRows(cls), [cls, refreshKey]);
   const total = rows.length;
   const zombies = rows.filter(r => r.zombie).length;
 
@@ -65,10 +70,11 @@ export default function InactiveInventory() {
         <DataGrid<ArchiveRow>
           columns={[{ t: 'Name' }, { t: 'Model / OEM' }, { t: 'Serial number' }, { t: 'Last IP / location' },
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}
-          rows={rows} total={total} rowKey={r => r.sn}
+          rows={rows} total={total} rowKey={r => r.sn} resetKey={cls}
           searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
           extra={<Chip tone="neutral">Archive · read-only</Chip>}
           gridActions={[{ l: 'Go to active inventory', primary: true, onClick: () => nav('/inventory/physical') }]}
+          onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={r => [
             <><span className="vw-value">{r.name}</span> <span className="ro-lock" title="Read-only">🔒</span></>,

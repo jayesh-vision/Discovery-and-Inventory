@@ -50,7 +50,6 @@ function resOverview() {
         </div>
         <div class="vw-card-footer-divider row vw-justify-between">
           <span class="vw-card-description">${svcDown} services already impaired.</span>
-          <button class="nst-btn nst-btn--xs">Open topology</button>
         </div>`)}
     </div>
   </div>`;
@@ -72,8 +71,6 @@ function resHardware() {
         i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
-      <div class="row"><button class="nst-btn nst-btn--xs">Spares availability</button>
-        <button class="nst-btn nst-btn--xs nst-btn--filled">Raise RMA for PEM 1</button></div>
     </div>`);
 }
 
@@ -151,8 +148,7 @@ function resNbrs() {
       <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
     <div class="nst-table-toolbar row vw-justify-between" style="margin:var(--vw-space-md) 0">
       <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-      <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}
-        <button class="nst-btn nst-btn--sm">Topology</button></div>
+      <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
     </div>
     ${rows.length ? table([{t:'State'},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
              {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
@@ -189,11 +185,10 @@ function resAlarms() {
       ${headSm('Alarms', 'Current alarms bound to this inventory record and its components')}
       <div class="chip-row">${chip('1 critical','error')}${chip('2 major','warning')}${chip('2 minor','info')}${chip('2 unacked','error')}</div>
     </div>
-    ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'},{t:''}],
+    ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
-        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack,
-        `<button class="nst-btn nst-btn--xs">Ticket</button>`]), '',
+        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), '',
         () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
@@ -225,8 +220,6 @@ function resConfig() {
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">Last backup ${c.lastBackup} · ${c.backupSize}.</span>
-        <div class="row"><button class="nst-btn nst-btn--xs">View config</button>
-          <button class="nst-btn nst-btn--xs nst-btn--filled">Raise remediation CR</button></div>
       </div>`, 'grow')}
   </div>`;
 }
@@ -262,15 +255,14 @@ function viewResource() {
   return `<div class="page">
     ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`,
       `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>
-       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-verify now</button>`)}
+       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>`)}
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
         ${chip('Behind golden OS','warning')}${chip('Past end of sale','error')}</div>
       <span class="meta-summary mono">${r.ip} · ${r.sn} · ${r.os} · rack ${r.rack || 'A · U42-43'}</span>
       <span class="grow"></span>
-      <button class="nst-btn nst-btn--xs" data-nav="reconcile">Reconciliation</button>
+      <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Reconciliation' })}>Reconciliation</button>
     </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
@@ -307,7 +299,7 @@ function viewPassive() {
   const cols = { fiber:[{t:'Status'},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status'},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
                  rack:[{t:'Status'},{t:'Rack'},{t:'Site'},{t:'Height',r:true},{t:'U used',r:true},{t:'U free',r:true},{t:'Elevation'},{t:'Power'},{t:'Cooling'}],
-                 power:[{t:'Status'},{t:'Unit'},{t:'Site'},{t:'Type'},{t:'Rating'},{t:'Autonomy'},{t:'Last tested'},{t:'Vendor'},{t:''}],
+                 power:[{t:'Status'},{t:'Unit'},{t:'Site'},{t:'Type'},{t:'Rating'},{t:'Autonomy'},{t:'Last tested'},{t:'Vendor'}],
                  splice:[{t:'Status'},{t:'Closure'},{t:'Site'},{t:'On span'},{t:'Type'},{t:'Fibers spliced'},{t:'Mean splice loss'},{t:'Housing'},{t:'Last surveyed'}],
                  cord:[{t:'Status'},{t:'Patch cord'},{t:'Site'},{t:'A end'},{t:'B end'},{t:'Connector'},{t:'Length',r:true},{t:'Insertion loss'},{t:'Last surveyed'}],
                  duct:[{t:'Status'},{t:'Duct'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Ways used'},{t:'Bore'},{t:'Ownership'},{t:'Last surveyed'}] }[t];
@@ -329,8 +321,7 @@ function viewPassive() {
     : t === 'power'
     ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`,
        chip(r.type, r.type==='DG set'?'warning':r.type==='Battery'?'purple':'info'), `<span class="mono">${r.rating}</span>`,
-       r.runtime, `<span class="num">${r.tested}</span>`, r.vendor,
-       `<button class="nst-btn nst-btn--xs">Test log</button>`]
+       r.runtime, `<span class="num">${r.tested}</span>`, r.vendor]
     : t === 'splice'
     ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`,
        `<span class="mono">${r.span}</span>`, r.type, `<span class="mono">${r.fibers}</span>`,

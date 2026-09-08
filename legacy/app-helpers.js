@@ -114,6 +114,40 @@ const legendRows = segs => `<div class="stack-x grow" style="gap:5px">${segs.map
 
 
 
+/* ── copy-to-clipboard, with a fallback and visible confirmation ──
+   navigator.clipboard.writeText() can reject silently (no document focus, no
+   secure context, a permissions policy that blocks it) — the row action then
+   looked broken because nothing ever told the reader it had failed. */
+function copyFallback(value) {
+  const ta = document.createElement('textarea');
+  ta.value = value;
+  ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch (err) { /* nothing left to try */ }
+  document.body.removeChild(ta);
+}
+function copyToClipboard(value) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(value).catch(() => copyFallback(value));
+  }
+  copyFallback(value);
+  return Promise.resolve();
+}
+function showCopyToast(x, y, text) {
+  const el = document.createElement('div');
+  el.className = 'copy-toast';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-in'));
+  setTimeout(() => {
+    el.classList.remove('is-in');
+    setTimeout(() => el.remove(), 200);
+  }, 1000);
+}
+
 /* ── currency ─────────────────────────────────────────── */
 const inr = v => '₹' + Math.round(v).toLocaleString('en-IN');
 const inrShort = v => v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr'

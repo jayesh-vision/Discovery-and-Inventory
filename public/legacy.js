@@ -116,6 +116,40 @@ const legendRows = segs => `<div class="stack-x grow" style="gap:5px">${segs.map
 
 
 
+/* ── copy-to-clipboard, with a fallback and visible confirmation ──
+   navigator.clipboard.writeText() can reject silently (no document focus, no
+   secure context, a permissions policy that blocks it) — the row action then
+   looked broken because nothing ever told the reader it had failed. */
+function copyFallback(value) {
+  const ta = document.createElement('textarea');
+  ta.value = value;
+  ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch (err) { /* nothing left to try */ }
+  document.body.removeChild(ta);
+}
+function copyToClipboard(value) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(value).catch(() => copyFallback(value));
+  }
+  copyFallback(value);
+  return Promise.resolve();
+}
+function showCopyToast(x, y, text) {
+  const el = document.createElement('div');
+  el.className = 'copy-toast';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-in'));
+  setTimeout(() => {
+    el.classList.remove('is-in');
+    setTimeout(() => el.remove(), 200);
+  }, 1000);
+}
+
 /* ── currency ─────────────────────────────────────────── */
 const inr = v => '₹' + Math.round(v).toLocaleString('en-IN');
 const inrShort = v => v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr'
@@ -533,7 +567,7 @@ const ADJACENCY = [
 /* ── field provenance for the sample record ─────────────── */
 const PROV = [
   { f: 'Management IP', v: '172.31.33.100',   src: 'Scope',                when: 'this run',   ok: true },
-  { f: 'OEM',           v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3 h ago',   ok: true },
+  { f: 'Vendor',        v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3 h ago',   ok: true },
   { f: 'Model',         v: 'MX960',           src: 'Device collector',     when: '3 h ago',    ok: true },
   { f: 'Serial number', v: 'JN1236F87AFB',    src: 'Hardware collector',   when: '3 h ago',    ok: true },
   { f: 'OS version',    v: '21.2R3-S8.5',     src: 'Device collector',     when: '3 h ago',    ok: true },
@@ -1623,7 +1657,6 @@ function filterPanel(spec, key = '') {
       </div>
     </div>
     <div class="fpanel-foot">
-      <button class="nst-btn nst-btn--sm js-ack" type="button">Advance</button>
       <span class="grow"></span>
       <button class="nst-btn nst-btn--sm" data-filterreset="${key}">Reset to default</button>
       <button class="nst-btn nst-btn--sm fp-apply" data-filterapply="${key}">Apply filters</button>
@@ -1654,9 +1687,7 @@ const FS = {
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },
-             { n:'Network element' }, { n:'IP address' }, { n:'Circle' },
-             { n:'Matched by', o:['Serial','Chassis MAC','sysName + circle','Management IP'] },
-             { n:'Differing attribute', o:['OEM','Model','OS version','Serial number'] }, { n:'Verified' }],
+             { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
   virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
              { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
   links:    [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Source NE' },
@@ -2152,8 +2183,7 @@ function viewInsights() {
 
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${pmeta().note}</span>
-      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>
-      <button class="nst-btn nst-btn--sm">Export</button>`)}
+      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Targets polled', n(DL.targets), `${n(DL.runFull)} clean · ${n(DL.runPartial)} partial · ${n(DL.runFail)} failed`, 'sky',
@@ -2613,8 +2643,7 @@ function viewTarget() {
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
       `<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>`)}
+       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
@@ -2651,7 +2680,7 @@ function viewTarget() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${head('Collector transcript', 'What was asked, what came back, and what it wrote.')}
+        ${head('Collector transcript')}
         <div class="seg">
           <button class="${TXRUN === 4412 ? 'is-on' : ''}" data-run="4412">Run #4412 · clean</button>
           <button class="${TXRUN === 4364 ? 'is-on' : ''}" data-run="4364">Run #4364 · partial</button>
@@ -2740,7 +2769,7 @@ function recTable() {
       <tbody>${body}</tbody>
     </table></div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Showing ${rows.length} of ${n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c)} comparable elements.</span>
+      <span class="vw-card-description">Showing ${rows.length} of ${rows.length} comparable elements.</span>
     </div>`);
 }
 
@@ -3676,14 +3705,21 @@ function viewLinks() {
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${LINK_TABS.map(x => `
+      ${LINK_TABS.map(x => {
+        /* arriving scoped to one element's links must not show the whole
+           estate's count on the tile — that reads as "all links", not "its links" */
+        const c = LINK_NE_FILTER
+          ? (LINKS[x.k] || []).filter(r => r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER).length
+          : x.c;
+        return `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
           style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:2px">
           <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-lg num">${n(x.c)}</span>
-          <span class="vw-card-metric-label-sub">discovered links</span>
-        </button>`).join('')}
+          <span class="vw-card-metric-lg num">${n(c)}</span>
+          <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
+        </button>`;
+      }).join('')}
     </div>
 
     ${card(`
@@ -3892,7 +3928,6 @@ function resOverview() {
         </div>
         <div class="vw-card-footer-divider row vw-justify-between">
           <span class="vw-card-description">${svcDown} services already impaired.</span>
-          <button class="nst-btn nst-btn--xs">Open topology</button>
         </div>`)}
     </div>
   </div>`;
@@ -3914,8 +3949,6 @@ function resHardware() {
         i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
-      <div class="row"><button class="nst-btn nst-btn--xs">Spares availability</button>
-        <button class="nst-btn nst-btn--xs nst-btn--filled">Raise RMA for PEM 1</button></div>
     </div>`);
 }
 
@@ -3993,8 +4026,7 @@ function resNbrs() {
       <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
     <div class="nst-table-toolbar row vw-justify-between" style="margin:var(--vw-space-md) 0">
       <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-      <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}
-        <button class="nst-btn nst-btn--sm">Topology</button></div>
+      <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
     </div>
     ${rows.length ? table([{t:'State'},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
              {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
@@ -4031,11 +4063,10 @@ function resAlarms() {
       ${headSm('Alarms', 'Current alarms bound to this inventory record and its components')}
       <div class="chip-row">${chip('1 critical','error')}${chip('2 major','warning')}${chip('2 minor','info')}${chip('2 unacked','error')}</div>
     </div>
-    ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'},{t:''}],
+    ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
-        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack,
-        `<button class="nst-btn nst-btn--xs">Ticket</button>`]), '',
+        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), '',
         () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
@@ -4067,8 +4098,6 @@ function resConfig() {
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">Last backup ${c.lastBackup} · ${c.backupSize}.</span>
-        <div class="row"><button class="nst-btn nst-btn--xs">View config</button>
-          <button class="nst-btn nst-btn--xs nst-btn--filled">Raise remediation CR</button></div>
       </div>`, 'grow')}
   </div>`;
 }
@@ -4104,15 +4133,14 @@ function viewResource() {
   return `<div class="page">
     ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`,
       `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>
-       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Re-verify now</button>`)}
+       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>`)}
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
         ${chip('Behind golden OS','warning')}${chip('Past end of sale','error')}</div>
       <span class="meta-summary mono">${r.ip} · ${r.sn} · ${r.os} · rack ${r.rack || 'A · U42-43'}</span>
       <span class="grow"></span>
-      <button class="nst-btn nst-btn--xs" data-nav="reconcile">Reconciliation</button>
+      <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Reconciliation' })}>Reconciliation</button>
     </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
@@ -4149,7 +4177,7 @@ function viewPassive() {
   const cols = { fiber:[{t:'Status'},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status'},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
                  rack:[{t:'Status'},{t:'Rack'},{t:'Site'},{t:'Height',r:true},{t:'U used',r:true},{t:'U free',r:true},{t:'Elevation'},{t:'Power'},{t:'Cooling'}],
-                 power:[{t:'Status'},{t:'Unit'},{t:'Site'},{t:'Type'},{t:'Rating'},{t:'Autonomy'},{t:'Last tested'},{t:'Vendor'},{t:''}],
+                 power:[{t:'Status'},{t:'Unit'},{t:'Site'},{t:'Type'},{t:'Rating'},{t:'Autonomy'},{t:'Last tested'},{t:'Vendor'}],
                  splice:[{t:'Status'},{t:'Closure'},{t:'Site'},{t:'On span'},{t:'Type'},{t:'Fibers spliced'},{t:'Mean splice loss'},{t:'Housing'},{t:'Last surveyed'}],
                  cord:[{t:'Status'},{t:'Patch cord'},{t:'Site'},{t:'A end'},{t:'B end'},{t:'Connector'},{t:'Length',r:true},{t:'Insertion loss'},{t:'Last surveyed'}],
                  duct:[{t:'Status'},{t:'Duct'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Ways used'},{t:'Bore'},{t:'Ownership'},{t:'Last surveyed'}] }[t];
@@ -4171,8 +4199,7 @@ function viewPassive() {
     : t === 'power'
     ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`,
        chip(r.type, r.type==='DG set'?'warning':r.type==='Battery'?'purple':'info'), `<span class="mono">${r.rating}</span>`,
-       r.runtime, `<span class="num">${r.tested}</span>`, r.vendor,
-       `<button class="nst-btn nst-btn--xs">Test log</button>`]
+       r.runtime, `<span class="num">${r.tested}</span>`, r.vendor]
     : t === 'splice'
     ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`,
        `<span class="mono">${r.span}</span>`, r.type, `<span class="mono">${r.fibers}</span>`,
@@ -4378,7 +4405,6 @@ function opexSection(l, neCount) {
         <span class="vw-card-description">${ox.fy} · ${ox.cc} · owner ${ox.owner} · recurring run cost, not project spend</span>
       </div>
       <div class="row">
-        <button class="nst-btn nst-btn--sm">Export</button>
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-opex="${l.id}">Update opex</button>
       </div>
     </div>
@@ -4392,7 +4418,6 @@ function opexSection(l, neCount) {
             — ${lapsed.map(r => `${r.v} (${r.ref}, ended ${r.end})`).join('; ')}. The service is still being consumed and billed.` : ''}
           ${overdue.length ? ` ${overdue.length} payment${overdue.length > 1 ? 's are' : ' is'} overdue.` : ''}
         </span>
-        <button class="nst-btn nst-btn--xs" style="flex-shrink:0">Raise renewal</button>
       </div>` : ''}
 
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>
@@ -5017,6 +5042,20 @@ const nvAI = (title, sub, tone, cards) => `
   </div>`;
 
 /* ═══ NODE VIEW · the screen ══════════════════════════════ */
+/* one glyph per NE class, so the header thumbnail actually says what the
+   element is rather than showing the same three bars for everything */
+const NODE_ICON = {
+  router: '<path d="M4 15h16M4 15l3-4M4 15l3 4M20 15l-3-4M20 15l-3 4"/><circle cx="12" cy="7" r="2.5"/><path d="M12 9.5V15"/>',
+  switch: '<rect x="3" y="9" width="18" height="6" rx="1"/><path d="M6 9V6M10 9V6M14 9V6M18 9V6M6 15v3M10 15v3M14 15v3M18 15v3"/>',
+  dwdm:   '<path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
+  server: '<rect x="4" y="3" width="16" height="6" rx="1"/><rect x="4" y="11" width="16" height="6" rx="1"/><circle cx="8" cy="6" r="0.8" fill="currentColor"/><circle cx="8" cy="14" r="0.8" fill="currentColor"/>',
+  enodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>',
+  gnodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>'
+};
+function nodeThumb(cls) {
+  const d = NODE_ICON[cls] || NODE_ICON.router;
+  return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+}
 function nodeHeader(N) {
   const r = N.r, sw = N.cls === 'switch';
   const cells = [
@@ -5028,7 +5067,7 @@ function nodeHeader(N) {
   return card(`
     <div class="nv-head">
       <div class="nv-thumb" aria-hidden="true">
-        <span class="nv-thumb-b"></span><span class="nv-thumb-b"></span><span class="nv-thumb-b"></span>
+        ${nodeThumb(N.cls)}
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm)">
@@ -5499,7 +5538,6 @@ function nodeAlerts(N) {
               ${[['Critical','red'],['Major','amber'],['Minor','orange'],['Warning','slate']].map(([l, t]) =>
                 `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
             </span>
-            <button class="nst-btn nst-btn--xs">Clear acknowledged</button>
           </div>`
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
             [['INC-4471','Critical','30-Jun-2026 12:34','Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
@@ -5545,16 +5583,13 @@ function viewNode() {
           </span>
           <div class="row vw-justify-center" style="margin-top:var(--vw-space-md)">
             <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Open in reconciliation</button>
-            <button class="nst-btn nst-btn--sm nst-btn--filled">Request an integration</button>
           </div>
         </div>`)}
     </div>`;
   }
   return `<div class="page">
     ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
-      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>
-       <button class="nst-btn nst-btn--sm">Download report</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Open console</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
     ${drillBar()}
     ${nodeHeader(N)}
     ${nodeOverview(N)}
@@ -5668,7 +5703,11 @@ function go(k) {
   viewEl = _el('view'); crumbEl = _el('crumb'); modEl = _el('module');
   const v = VIEWS[k] || VIEWS.insights;
   const isNav = k !== CURRENT;              // false when a control just refreshes the view it's already on
-  DRILL = DRILL_PENDING; DRILL_PENDING = null;
+  /* an in-place refresh (a filter, a chip, a search keystroke) that does not
+     set its own DRILL_PENDING must not silently drop the drill/back context —
+     only a real navigation is allowed to leave it behind */
+  DRILL = isNav ? DRILL_PENDING : (DRILL_PENDING || DRILL);
+  DRILL_PENDING = null;
   GRID_N = 0;
   /* the render below throws away every grid element, so note where the reader
      was in each one first — a row action must not fling the list back to row 1 */
@@ -5710,6 +5749,11 @@ document.addEventListener('click', e => {
   const gm = e.target.closest('[data-gridmenu]');
   if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; go(CURRENT); return; }
   const gr = e.target.closest('[data-gridrefresh]');
+  /* Refresh re-derives every grid's rows from the underlying data arrays —
+     go() always rebuilds the view fresh, never from a cached render — while
+     leaving search, filters, tab and pagination exactly as the reader left
+     them. It must not double-fire: go() is synchronous, and closing the menu
+     here means a second click can't land on the same button mid-refresh. */
   if (gr) { KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
   if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
@@ -5726,8 +5770,11 @@ document.addEventListener('click', e => {
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
   const cp = e.target.closest('[data-copy]');
-  if (cp) { navigator.clipboard && navigator.clipboard.writeText(cp.dataset.copy);
-    KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (cp) {
+    const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
+    copyToClipboard(value).then(() => showCopyToast(r.left, r.top, 'Copied'));
+    KEBAB = null; GRIDMENU = false; go(CURRENT); return;
+  }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
@@ -5870,9 +5917,6 @@ document.addEventListener('click', e => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return;
   }
-  const txrr = e.target.closest('[data-txrerun]');
-  if (txrr) return;
-
   const nav = e.target.closest('[data-nav]');
   if (nav) { go(nav.dataset.nav); return; }
 

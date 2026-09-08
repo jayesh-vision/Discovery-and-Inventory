@@ -65,11 +65,9 @@ patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-site
     </div>`, 'site details tab');
 
 /* 2d. the transcript has no breadcrumb to go back by — give it a button */
-patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>\`)}`,
+patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`,
 `      \`<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>\`)}`, 'transcript back button');
+       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`, 'transcript back button');
 
 /* 2e. scan targets: the quick filter sits in the grid bar, Run now in its kebab */
 patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>\`)}

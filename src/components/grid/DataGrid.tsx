@@ -21,13 +21,19 @@ export interface DataGridProps<Row> {
   /** chips or controls rendered after the search box */
   extra?: ReactNode;
   emptyText?: string;
+  /** Refresh re-derives `rows` from source; it must not also change search,
+      filters, sort or the page the reader is on. */
   onRefresh?: () => void;
   onSearch?: (q: string) => void;
-  /** makes the search box controlled — pass the same state onSearch writes to,
-      so a Refresh (or anything else) that resets it also clears the box */
+  /** makes the search box controlled — pass the same state onSearch writes to */
   searchValue?: string;
   /** field name → chosen value (or "Contains…" text); called on Apply, and with {} on Reset */
   onFilterChange?: (values: Record<string, string>) => void;
+  /** identifies the current query (scope + search + filters). Pagination resets
+      to page 1 when this changes; it does NOT reset just because `rows` got a
+      new array identity (a Refresh does that on every call). Defaults to `rows`
+      for callers that don't pass one, matching the previous behaviour. */
+  resetKey?: unknown;
 }
 
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
@@ -75,7 +81,6 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
         </div>
       </div>
       <div className="fpanel-foot">
-        <button className="nst-btn nst-btn--sm" type="button">Advance</button>
         <span className="grow" />
         <button className="nst-btn nst-btn--sm" onClick={() => { setValues({}); onReset(); onClose(); }}>Reset to default</button>
         <button className="nst-btn nst-btn--sm fp-apply" onClick={() => { onApply(values); onClose(); }}>Apply filters</button>
@@ -240,15 +245,18 @@ export function gridHeight(wrap: HTMLElement): string {
   return `${Math.min(page, Math.max(GRID_MIN, avail))}px`;
 }
 
-function useInfinite<Row>(rows: Row[]) {
+function useInfinite<Row>(rows: Row[], resetKey: unknown) {
   const [count, setCount] = useState(PAGE_STEP);
   const sentinel = useRef<HTMLButtonElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
-  /* a new result set (a search, a filter, a tab) starts at the top again */
+  /* a new result set (a search, a filter, a tab) starts at the top again —
+     keyed on resetKey rather than the rows array itself, so a Refresh (which
+     re-derives rows into a new array but keeps the same query) does not
+     fling the reader back to page 1 */
   useEffect(() => {
     setCount(PAGE_STEP);
     if (wrap.current) wrap.current.scrollTop = 0;
-  }, [rows]);
+  }, [resetKey]);
   const more = count < rows.length;
   const loadMore = () => setCount(c => Math.min(c + PAGE_STEP, rows.length));
 
@@ -281,7 +289,7 @@ function useInfinite<Row>(rows: Row[]) {
 export function DataGrid<Row>(p: DataGridProps<Row>) {
   const [openRow, setOpenRow] = useState<string | null>(null);
   const span = p.columns.length + (p.rowActions ? 1 : 0);
-  const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite(p.rows);
+  const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite(p.rows, p.resetKey ?? p.rows);
   const n = (v: number) => v.toLocaleString('en-IN');
   return (
     <>

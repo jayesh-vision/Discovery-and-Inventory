@@ -111,8 +111,7 @@ function viewInsights() {
 
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${pmeta().note}</span>
-      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>
-      <button class="nst-btn nst-btn--sm">Export</button>`)}
+      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Targets polled', n(DL.targets), `${n(DL.runFull)} clean · ${n(DL.runPartial)} partial · ${n(DL.runFail)} failed`, 'sky',
@@ -571,8 +570,7 @@ function viewTarget() {
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
-      `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm" data-txrerun="1">Re-run</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
@@ -609,7 +607,7 @@ function viewTarget() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${head('Collector transcript', 'What was asked, what came back, and what it wrote.')}
+        ${head('Collector transcript')}
         <div class="seg">
           <button class="${TXRUN === 4412 ? 'is-on' : ''}" data-run="4412">Run #4412 · clean</button>
           <button class="${TXRUN === 4364 ? 'is-on' : ''}" data-run="4364">Run #4364 · partial</button>
@@ -698,7 +696,7 @@ function recTable() {
       <tbody>${body}</tbody>
     </table></div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Showing ${rows.length} of ${n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c)} comparable elements.</span>
+      <span class="vw-card-description">Showing ${rows.length} of ${rows.length} comparable elements.</span>
     </div>`);
 }
 
@@ -1632,14 +1630,21 @@ function viewLinks() {
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${LINK_TABS.map(x => `
+      ${LINK_TABS.map(x => {
+        /* arriving scoped to one element's links must not show the whole
+           estate's count on the tile — that reads as "all links", not "its links" */
+        const c = LINK_NE_FILTER
+          ? (LINKS[x.k] || []).filter(r => r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER).length
+          : x.c;
+        return `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
           style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:2px">
           <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-lg num">${n(x.c)}</span>
-          <span class="vw-card-metric-label-sub">discovered links</span>
-        </button>`).join('')}
+          <span class="vw-card-metric-lg num">${n(c)}</span>
+          <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
+        </button>`;
+      }).join('')}
     </div>
 
     ${card(`

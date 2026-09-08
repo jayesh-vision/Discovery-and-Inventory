@@ -145,7 +145,6 @@ function opexSection(l, neCount) {
         <span class="vw-card-description">${ox.fy} · ${ox.cc} · owner ${ox.owner} · recurring run cost, not project spend</span>
       </div>
       <div class="row">
-        <button class="nst-btn nst-btn--sm">Export</button>
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-opex="${l.id}">Update opex</button>
       </div>
     </div>
@@ -159,7 +158,6 @@ function opexSection(l, neCount) {
             — ${lapsed.map(r => `${r.v} (${r.ref}, ended ${r.end})`).join('; ')}. The service is still being consumed and billed.` : ''}
           ${overdue.length ? ` ${overdue.length} payment${overdue.length > 1 ? 's are' : ' is'} overdue.` : ''}
         </span>
-        <button class="nst-btn nst-btn--xs" style="flex-shrink:0">Raise renewal</button>
       </div>` : ''}
 
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>

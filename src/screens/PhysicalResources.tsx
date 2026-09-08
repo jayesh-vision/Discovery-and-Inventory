@@ -146,6 +146,7 @@ export default function PhysicalResources() {
           columns={[{ t: 'Status' }, { t: 'Stock state' }, { t: 'Name / IP' }, { t: 'Model / OEM' }, { t: 'OS version' },
             { t: 'Ports', r: true }, { t: 'End of sale' }, { t: 'Location' }, { t: 'Source · verified' }]}
           rows={rows} total={total} rowKey={r => r.name}
+          resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS}
           extra={meta.disc === 0
             ? <Chip tone="error">No collector defined for this class</Chip>

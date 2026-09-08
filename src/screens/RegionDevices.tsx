@@ -36,7 +36,11 @@ export default function RegionDevices() {
     return f;
   });
 
-  const base = useMemo(() => filterRegionDevices({ region }), [region]);
+  /* Refresh re-derives rows from the region's current device store without
+     touching search or filters — clearing those is the drill bar's job, not
+     this one's. */
+  const [refreshKey, setRefreshKey] = useState(0);
+  const base = useMemo(() => filterRegionDevices({ region }), [region, refreshKey]);
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter(d => {
@@ -66,6 +70,7 @@ export default function RegionDevices() {
           columns={[{ t: 'Status' }, { t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'State' },
             { t: 'Vendor' }, { t: 'Model' }, { t: 'Failure reason' }, { t: 'Last attempt' }]}
           rows={rows} total={rows.length} rowKey={(d, i) => `${d.name}-${i}`}
+          resetKey={`${region ?? ''}|${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Device, IP, model"
           filters={[
             { n: 'Status', o: ['Answered', 'Failed'] },
@@ -75,7 +80,7 @@ export default function RegionDevices() {
             { n: 'Failure reason', o: REASONS.map(r => r.n), h: 'Answered devices have no failure reason.' }
           ]}
           extra={<Chip tone={failed ? 'error' : 'success'}>{fmt(failed)} of {fmt(meta.total)} failed this cycle</Chip>}
-          onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
+          onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={() => setRefreshKey(k => k + 1)}
           renderRow={d => [
             <Chip tone={d.status === 'Failed' ? 'error' : 'success'}>{d.status}</Chip>,
             <span className="vw-value">{d.name}</span>,

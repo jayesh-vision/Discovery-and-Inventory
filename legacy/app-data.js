@@ -410,7 +410,7 @@ const ADJACENCY = [
 /* ── field provenance for the sample record ─────────────── */
 const PROV = [
   { f: 'Management IP', v: '172.31.33.100',   src: 'Scope',                when: 'this run',   ok: true },
-  { f: 'OEM',           v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3 h ago',   ok: true },
+  { f: 'Vendor',        v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3 h ago',   ok: true },
   { f: 'Model',         v: 'MX960',           src: 'Device collector',     when: '3 h ago',    ok: true },
   { f: 'Serial number', v: 'JN1236F87AFB',    src: 'Hardware collector',   when: '3 h ago',    ok: true },
   { f: 'OS version',    v: '21.2R3-S8.5',     src: 'Device collector',     when: '3 h ago',    ok: true },

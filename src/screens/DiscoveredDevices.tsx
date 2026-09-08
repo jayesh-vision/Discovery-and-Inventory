@@ -28,8 +28,12 @@ export default function DiscoveredDevices() {
     if (urlModel) f.Model = urlModel;
     return f;
   });
+  /* Refresh re-derives rows from the identified-devices store as it stands
+     right now, without touching the reader's search or filters — clearing
+     those is what "Clear filter" (the drill bar) is for, not this. */
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const base = useMemo(() => filterIdentified({ state: urlState, vendor: urlVendor, model: urlModel, region: urlRegion }), [urlState, urlVendor, urlModel, urlRegion]);
+  const base = useMemo(() => filterIdentified({ state: urlState, vendor: urlVendor, model: urlModel, region: urlRegion }), [urlState, urlVendor, urlModel, urlRegion, refreshKey]);
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter(d => {
@@ -55,6 +59,7 @@ export default function DiscoveredDevices() {
         <DataGrid<IdentifiedDevice>
           columns={[{ t: 'Device name' }, { t: 'IP address' }, { t: 'State' }, { t: 'Region' }, { t: 'Class' }, { t: 'Vendor' }, { t: 'Model' }]}
           rows={rows} total={rows.length} rowKey={(d, i) => `${d.name}-${i}`}
+          resetKey={`${urlState ?? ''}|${urlVendor ?? ''}|${urlModel ?? ''}|${urlRegion ?? ''}|${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Device, IP, model"
           filters={[
             { n: 'State', o: (urlRegion ? STATE_DEVICES.filter(s => s.region === urlRegion) : STATE_DEVICES).map(s => s.st) },
@@ -62,7 +67,7 @@ export default function DiscoveredDevices() {
             { n: 'Model' },
             { n: 'Class', o: ['Router', 'Switch'] }
           ]}
-          onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
+          onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={() => setRefreshKey(k => k + 1)}
           renderRow={d => [
             <span className="vw-value">{d.name}</span>, <Mono>{d.ip}</Mono>, d.state, d.region,
             d.cls === 'router' ? 'Router' : 'Switch', d.vendor, <Mono>{d.model}</Mono>

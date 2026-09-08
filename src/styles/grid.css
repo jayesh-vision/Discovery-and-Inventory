@@ -139,9 +139,13 @@
   overflow: auto; max-height: var(--grid-h, none);
   overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
-.tbl-wrap > .nst-table { border: 0; border-radius: 0; }
+/* overflow: visible is scoped to .tbl-wrap > .nst-table (specificity 0,2,0) rather
+   than the bare .nst-table below, so it deterministically beats the design
+   system bundle's own .nst-table { overflow: hidden } (0,1,0) — which would
+   otherwise clip every row's kebab menu — regardless of stylesheet load order. */
+.tbl-wrap > .nst-table { border: 0; border-radius: 0; overflow: visible; }
 
-.nst-table { width: 100%; overflow: visible; border-collapse: separate; border-spacing: 0; }  /* separate borders: sticky header */
+.nst-table { width: 100%; border-collapse: separate; border-spacing: 0; }  /* separate borders: sticky header */
 .nst-table th, .nst-table td { white-space: nowrap; padding-left: var(--vw-space-md); padding-right: var(--vw-space-md); }
 .t-right { text-align: right; }
 
@@ -190,4 +194,15 @@
   cursor: pointer;
 }
 .tbl-more:hover { background: var(--vw-color-slate-100); color: var(--vw-color-slate-900); }
+
+/* a brief confirmation for a "Copy" row action, positioned at the button that
+   triggered it; not a full toast system, just proof the copy actually happened */
+.copy-toast {
+  position: fixed; z-index: 80; transform: translateY(-100%) translateY(-6px);
+  padding: 4px 10px; border-radius: var(--vw-radius-full);
+  background: var(--vw-color-gray-900); color: var(--vw-color-white);
+  font-size: 0.75rem; font-weight: 500; white-space: nowrap;
+  opacity: 0; transition: opacity 120ms ease-out; pointer-events: none;
+}
+.copy-toast.is-in { opacity: 1; }
 .tbl-more-of { color: var(--vw-color-slate-400); font-weight: 400; }

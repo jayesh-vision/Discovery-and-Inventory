@@ -1,4 +1,18 @@
 /* ═══ NODE VIEW · the screen ══════════════════════════════ */
+/* one glyph per NE class, so the header thumbnail actually says what the
+   element is rather than showing the same three bars for everything */
+const NODE_ICON = {
+  router: '<path d="M4 15h16M4 15l3-4M4 15l3 4M20 15l-3-4M20 15l-3 4"/><circle cx="12" cy="7" r="2.5"/><path d="M12 9.5V15"/>',
+  switch: '<rect x="3" y="9" width="18" height="6" rx="1"/><path d="M6 9V6M10 9V6M14 9V6M18 9V6M6 15v3M10 15v3M14 15v3M18 15v3"/>',
+  dwdm:   '<path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
+  server: '<rect x="4" y="3" width="16" height="6" rx="1"/><rect x="4" y="11" width="16" height="6" rx="1"/><circle cx="8" cy="6" r="0.8" fill="currentColor"/><circle cx="8" cy="14" r="0.8" fill="currentColor"/>',
+  enodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>',
+  gnodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>'
+};
+function nodeThumb(cls) {
+  const d = NODE_ICON[cls] || NODE_ICON.router;
+  return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+}
 function nodeHeader(N) {
   const r = N.r, sw = N.cls === 'switch';
   const cells = [
@@ -10,7 +24,7 @@ function nodeHeader(N) {
   return card(`
     <div class="nv-head">
       <div class="nv-thumb" aria-hidden="true">
-        <span class="nv-thumb-b"></span><span class="nv-thumb-b"></span><span class="nv-thumb-b"></span>
+        ${nodeThumb(N.cls)}
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm)">
@@ -481,7 +495,6 @@ function nodeAlerts(N) {
               ${[['Critical','red'],['Major','amber'],['Minor','orange'],['Warning','slate']].map(([l, t]) =>
                 `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
             </span>
-            <button class="nst-btn nst-btn--xs">Clear acknowledged</button>
           </div>`
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
             [['INC-4471','Critical','30-Jun-2026 12:34','Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
@@ -527,16 +540,13 @@ function viewNode() {
           </span>
           <div class="row vw-justify-center" style="margin-top:var(--vw-space-md)">
             <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Open in reconciliation</button>
-            <button class="nst-btn nst-btn--sm nst-btn--filled">Request an integration</button>
           </div>
         </div>`)}
     </div>`;
   }
   return `<div class="page">
     ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
-      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>
-       <button class="nst-btn nst-btn--sm">Download report</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm">Open console</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
     ${drillBar()}
     ${nodeHeader(N)}
     ${nodeOverview(N)}

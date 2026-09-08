@@ -662,11 +662,8 @@ button.sb-row.is-drill::after { display: none; }
 /* ══ node view ═══════════════════════════════════════════ */
 .nv-head { display: flex; align-items: center; gap: var(--vw-space-lg); flex-wrap: wrap; }
 .nv-thumb { width: 88px; height: 52px; flex-shrink: 0; border-radius: var(--vw-radius-sm);
-  background: var(--vw-color-slate-800); display: flex; flex-direction: column;
-  justify-content: center; gap: 4px; padding: 8px; }
-.nv-thumb-b { display: block; height: 6px; border-radius: 2px; background: var(--vw-color-slate-500); }
-.nv-thumb-b:nth-child(2) { background: var(--vw-color-emerald-400); width: 70%; }
-.nv-thumb-b:nth-child(3) { width: 45%; }
+  background: var(--vw-color-slate-800); display: flex; align-items: center;
+  justify-content: center; color: var(--vw-color-emerald-400); }
 .nv-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   gap: var(--vw-space-md); margin-top: var(--vw-space-lg);
   padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-slate-100); }

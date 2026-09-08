@@ -147,7 +147,6 @@ function filterPanel(spec, key = '') {
       </div>
     </div>
     <div class="fpanel-foot">
-      <button class="nst-btn nst-btn--sm js-ack" type="button">Advance</button>
       <span class="grow"></span>
       <button class="nst-btn nst-btn--sm" data-filterreset="${key}">Reset to default</button>
       <button class="nst-btn nst-btn--sm fp-apply" data-filterapply="${key}">Apply filters</button>
@@ -178,9 +177,7 @@ const FS = {
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },
-             { n:'Network element' }, { n:'IP address' }, { n:'Circle' },
-             { n:'Matched by', o:['Serial','Chassis MAC','sysName + circle','Management IP'] },
-             { n:'Differing attribute', o:['OEM','Model','OS version','Serial number'] }, { n:'Verified' }],
+             { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
   virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
              { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
   links:    [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Source NE' },
