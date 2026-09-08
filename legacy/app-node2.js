@@ -204,8 +204,7 @@ function nodeHardware(N) {
           : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
         c.ber === null ? `<span style="color:${cv('gray',300)}">—</span>` : `<span class="mono">${c.ber}</span>`
       ]), '',
-      i => [A('Open wavelength'), A('Graph OSNR history'), A('Run optical loopback'),
-            A('Open the service it carries'), A('Take channel out of service', null, true)])}
+      () => [])}
 
     <div class="nv-portsplit" style="margin-top:var(--vw-space-lg)">
       <div class="cx-panel">
@@ -262,8 +261,7 @@ function nodeHardware(N) {
           `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
             <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb>85?'red':i.outb>70?'amber':'emerald',400)}"></span></span>${i.outb}%</span>`
         ]), '',
-        i => [A('Open interface'), A('Graph 24-hour throughput'), A('Open neighbour'),
-              A('Reset counters'), A('Shut interface', null, true)])}
+        () => [])}
 
       <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
         <span class="eyebrow">SFP module details</span>
@@ -277,8 +275,7 @@ function nodeHardware(N) {
           `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red',700)}"` : ''}>${s.rx} dBm</span>`,
           `${s.temp} °C`
         ]), '',
-        i => [A('Open transceiver'), A('Graph optical power'), A('Copy serial number'),
-              A('Raise RMA', null, true)])}`)}`;
+        () => [])}`)}`;
 }
 
 function nodeVlans(N) {
@@ -305,8 +302,7 @@ function nodeVlans(N) {
           <span class="hbar-track" style="width:3.5rem;height:7px"><span class="hbar-fill"
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
       ]), '',
-      i => [A('Open VLAN'), A('View member ports'), A('View MAC table'),
-            A('Edit VLAN'), A('Delete VLAN', null, true)])}
+      () => [])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Largest VLAN is <strong>${big.n} (${big.id})</strong> with ${n(big.mac)} learned MACs.
         Highest utilisation is <strong>${hi.n} (${hi.id})</strong> at ${hi.pct}%.</span>
@@ -421,8 +417,7 @@ function nodeServices(N) {
               <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util>90?'red':r.util>75?'amber':'emerald',400)}"></span></span>${r.util}%</span>`,
             `${r.sla}%`, `${r.up}%`
           ]), '',
-          i => [A('Open service'), A('View customer'), A('Open attachment interface'),
-                A('View SLA report'), A('Raise change request')])}
+          () => [])}
       </div>
       ${nvAI('AI service analytics', 'Intelligent service optimisation', 'red', [
         { t:'Top 5 premium customers', s:'Highest committed bandwidth on this node',
@@ -495,7 +490,7 @@ function nodeAlerts(N) {
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
                        `<span class="vw-card-description">${r[5]}</span>`]), '',
-            i => [A('Open incident'), A('Assign owner'), A('Add note'), A('Close incident', null, true)])}
+            () => [])}
       </div>
 
       ${nvAI('AI diagnostics', 'Intelligent root cause analysis', 'red', [

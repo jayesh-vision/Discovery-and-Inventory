@@ -68,7 +68,6 @@ export default function DiscoveredDevices() {
             { n: 'Class', o: ['Router', 'Switch'] }
           ]}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
-          gridActions={[{ l: 'Download report' }]}
           rowActions={rowActions}
           renderRow={d => [
             <span className="vw-value">{d.name}</span>, <Mono>{d.ip}</Mono>, d.state, d.region,

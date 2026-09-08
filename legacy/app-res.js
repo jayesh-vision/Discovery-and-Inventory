@@ -23,7 +23,7 @@ function resOverview() {
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
           :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
-        i => [A('Edit value'), A('Lock field against discovery'), A('View source run'), A('Copy value')])}
+        i => [CP('Copy value', PROV[i].v)])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position', 'Lifecycle and cover')}
@@ -69,8 +69,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [A('View component detail'), A('Copy part number'), A('Copy serial number'),
-              A('Raise RMA', null, true)])}
+        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
       <div class="row"><button class="nst-btn nst-btn--xs">Spares availability</button>
@@ -177,7 +176,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [A('Open service'), A('View endpoints'), A('Copy ERP number'), A('Raise change request')])}
+        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}
     <div class="vw-card-footer-divider vw-card-description">
       Both down services attach to interfaces that are themselves down — <span class="mono">xe-0/0/2</span> and
       <span class="mono">xe-0/0/5</span>. One fault, two service outages.
@@ -195,8 +194,7 @@ function resAlarms() {
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
         a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack,
         `<button class="nst-btn nst-btn--xs">Ticket</button>`]), '',
-        i => [A('Acknowledge'), A('Raise ticket'), A('View source component'),
-              A('Suppress this alarm', null, true)])}
+        () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
     </div>`);
@@ -222,7 +220,7 @@ function resConfig() {
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
             `<span class="mono" style="color:${cv('red',700)}">${d.got}</span>`,
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
-        i => [A('View full config path'), A('Copy expected value'), A('Raise remediation change')])}
+        i => [CP('Copy expected value', c.drift[i].want)])}
         </div>
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
@@ -251,7 +249,7 @@ function resHistory() {
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
           :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), '',
-        i => [A('View change detail'), A('View source run'), A('Revert this change', null, true)])}
+        () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       A record with no history is a record nobody can audit. Retention 7 years, matching the asset register.
     </div>`);
@@ -370,7 +368,6 @@ function viewPassive() {
           <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
           Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
         </span>
-        <button class="nst-btn nst-btn--xs js-ack" style="flex-shrink:0">Survey backlog</button>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
@@ -378,9 +375,7 @@ function viewPassive() {
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [{ l:'Create passive record', primary:true }, { l:'Import survey' }], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
-        i => [A('View record'), A('Open site', { v:'site', l:rows[i].site || rows[i].n }),
-              A('Record a new survey'), A('Attach OTDR trace / photo'),
-              A('Print label'), A('Retire record', null, true)])
+        i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(meta.c)} records. Detailed columns are modelled for Fiber spans, ODF, Racks and Power first —
              the recommendation is to model one passive domain end to end before generalising.</div>`}

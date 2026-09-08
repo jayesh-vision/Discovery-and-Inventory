@@ -1551,14 +1551,20 @@ const kiFor = l => {
 const kIcon = l => `<svg class="kmi" viewBox="0 0 16 16" width="15" height="15" fill="none"
   stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${kiFor(l)}</svg>`;
 const A = (l, d, danger) => ({ l, d, danger });
+/* A row action that copies one of the row's own values. Every menu item on a
+   screen either goes somewhere or does something — nothing is listed that only
+   closes the menu again. */
+const CP = (l, v) => ({ l, copy: v });
 
 function kebabCell(items, gid, i) {
   const open = KEBAB === `${gid}:${i}`;
+  if (!items.length) return '<td class="kb-td"></td>';
   return `<td class="kb-td">
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}${it.d ? '' : ' js-ack'}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
+        it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 
@@ -2438,8 +2444,7 @@ function viewJobs() {
                 jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
         ]), 'job-table',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
-              A('Run now'), A('Edit schedule'), A('Edit credential profile'),
-              A('Duplicate job'), A('Hold schedule', null, true)])}`)}
+              ])}`)}
 
   </div>`;
 }
@@ -2513,8 +2518,8 @@ function viewTargets() {
           chainOf(t.ch)
         ]), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
-              A('Re-run this target now'), A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' }),
-              A('Edit credential profile'), A('Copy gateway IP'), A('Remove from scope', null, true)])}
+              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' }),
+              CP('Copy gateway IP', rows[i].ip)])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -2659,6 +2664,8 @@ function viewTarget() {
 /* ══ 4 · RECONCILIATION ═══════════════════════════════════ */
 let SEL_NE = 'CHE-J2.2K-PE-T4-ER', NE_FILTER = 'All', REC_CIRCLE = null;
 const REC_FIELDS = [['oem','OEM'],['model','Model'],['os','OS version'],['sn','Serial number']];
+/* whichever side reported one — a row with neither has nothing to copy */
+const recSerial = r => (r.inv && r.inv.sn) || (r.net && r.net.sn) || '';
 
 function recOutcomes() {
   const B = REC_BANDS;
@@ -2683,10 +2690,6 @@ function recOutcomes() {
       <span class="oc-nc-v num">${n(B.notComparable.c)}</span>
       <span class="oc-nc-k">Cannot be compared</span>
       <span class="oc-nc-d">${B.notComparable.q}</span>
-    </div>
-    <div class="vw-card-footer-divider oc-sums">
-      <span><b class="num">${n(DL.master)}</b> inventory records &nbsp;=&nbsp; ${[DL.exact, DL.drifted, DL.stale, DL.missing, DL.noCollector].map(n).join(' + ')}</span>
-      <span><b class="num">${n(DL.identified)}</b> devices that answered &nbsp;=&nbsp; ${[DL.exact, DL.drifted, DL.stale, DL.rogue, DL.unclaimed].map(n).join(' + ')}</span>
     </div>`;
 }
 
@@ -2711,16 +2714,13 @@ function recTable() {
       <td><span class="vw-card-metric-label-sub num">${r.ver}</span></td>
       ${kebabCell(
         r.inv && r.net && r.diff.length
-          ? [A('Accept the network as truth'), A('Keep the inventory record'), A('Open element', { v:'resource', l:r.ne }),
-             A('Re-run discovery for this IP'), A('Raise a workorder'), A('Ignore this difference', null, true)]
+          ? [A('Open element', { v:'resource', l:r.ne })]
         : !r.inv
-          ? [A('Onboard into inventory'), A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` }),
-             A('Assign to a site'), A('Add a match rule'), A('Quarantine device', null, true)]
+          ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
-          ? [A('Raise a field check'), A('Open element', { v:'resource', l:r.ne }),
-             A('Re-run discovery for this IP'), A('Extend the grace period'), A('Retire the record', null, true)]
-          : [A('Open element', { v:'resource', l:r.ne }), A('Re-verify now'),
-             A('Open site'), A('Copy serial number')], 'rec', ri)}
+          ? [A('Open element', { v:'resource', l:r.ne })]
+          : [A('Open element', { v:'resource', l:r.ne }),
+             ...(recSerial(r) ? [CP('Copy serial number', recSerial(r))] : [])], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -2741,8 +2741,6 @@ function recTable() {
     </table></div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Showing ${rows.length} of ${n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c)} comparable elements.</span>
-      <div class="row"><button class="nst-btn nst-btn--xs js-ack">Keep inventory for all</button>
-        <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept network for all</button></div>
     </div>`);
 }
 
@@ -2751,9 +2749,7 @@ function viewReconcile() {
   const ruleTotal = MATCH_RULES.reduce((a, r) => a + r.hits, 0);
   return `<div class="page">
     ${pageBar(`<span class="vw-card-description grow">${pmeta().recNote}</span>
-      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>
-      <button class="nst-btn nst-btn--sm js-ack">Export</button>
-      <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Re-reconcile</button>`)}
+      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
     ${drillBar()}
 
     ${card(`
@@ -2766,9 +2762,8 @@ function viewReconcile() {
     <div class="row-t" style="align-items:stretch">
       ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements — device-reported attributes only`)}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
-        <div class="vw-card-footer-divider row vw-justify-between">
+        <div class="vw-card-footer-divider">
           <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
-          <button class="nst-btn nst-btn--xs nst-btn--filled js-ack">Accept all</button>
         </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
       ${card(`${headSm('How a device is matched to a record', `Rules run in priority order; the first that resolves wins. ${n(ruleTotal)} devices resolved this cycle.`)}
@@ -2839,8 +2834,7 @@ function viewHome() {
     { n:'Never verified', c:324, tone:'red',            d:verD('never','never') }
   ];
   return `<div class="page">
-    ${pageHead('Inventory', 'Network elements, connectivity and services across the estate.',
-      `<button class="nst-btn nst-btn--sm js-ack">Export</button>`)}
+    ${pageHead('Inventory', 'Network elements, connectivity and services across the estate.')}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Locations', n(IL.locations), 'Central 118 · Regional 342 · Edge 1,294', 'amber',
@@ -2880,7 +2874,7 @@ function viewHome() {
               A('Open element', { v:'resource', l:PHY.router[i].name }),
               A('Open site', { v:'site', l:PHY.router[i].loc }),
               A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' }),
-              A('Re-run discovery for this IP'), A('Copy serial number')])}`)}
+              CP('Copy serial number', PHY.router[i].sn)])}`)}
   </div>`;
 }
 
@@ -2955,9 +2949,8 @@ function locInsights() {
           </span>
         </div>
         <div class="vw-card-footer-divider">
-          <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
+          <div style="margin-bottom:var(--vw-space-md)">
             ${headSm('Failed builds', `${n(fail)} sites, and what is blocking each group.`)}
-            <button class="nst-btn nst-btn--xs js-ack">Open exceptions</button>
           </div>
           ${table([{t:'Circle'},{t:'Sites',r:true},{t:'Blocking reason'}],
             LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
@@ -3032,7 +3025,7 @@ function locList() {
               A('Open capex', { v:'capex', l:`Capex · ${locRows()[i].name}` }),
               A('Open opex', { v:'opex', l:`Opex · ${locRows()[i].name}` }),
               A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' }),
-              A('Copy location ID'), A('Retire site', null, true)])}
+              CP('Copy location ID', locRows()[i].id)])}
       <div class="vw-card-footer-divider vw-card-description">
         <strong>Coverage</strong> is discovered network elements over network elements on record. A planned site reads “—”
         because nothing is expected there yet; an on-air site below 100% is a reconciliation exception.
@@ -3234,9 +3227,7 @@ function viewSite() {
 
   return `<div class="page">
     ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
-      `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>
-       <button class="nst-btn nst-btn--sm js-ack">Download report</button>
-       <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Edit site</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>`)}
 
     ${card(`
       <div class="meta-bar">
@@ -3293,8 +3284,7 @@ function viewSite() {
               A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
               A('Open capex line', { v:'capex', l:`Capex · ${SITE_ID}` }),
               A('Open opex contracts', { v:'opex', l:`Opex · ${SITE_ID}` }),
-              A('Re-run discovery for this IP'), A('Copy serial number'),
-              A('Move to another site', null, true)])
+              CP('Copy serial number', rows[i].sn)])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
       ${rows.length ? `<div class="vw-card-footer-divider legend">
@@ -3344,7 +3334,6 @@ function capexSection(l, neCount) {
         <span class="vw-card-description">${cx.fy} · ${cx.afe} · ${cx.cc} · owner ${cx.owner}</span>
       </div>
       <div class="row">
-        <button class="nst-btn nst-btn--sm js-ack">Export</button>
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
       </div>
     </div>
@@ -3615,13 +3604,12 @@ function viewPhysical() {
           ];
         }), '',
         i => rows[i].stock === 'decomm'
-          ? [A('View record'), A('Open decommission workorder'), A('Restore to store'), A('Copy serial number')]
+          ? [CP('Copy serial number', rows[i].sn)]
           : [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
              A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-             A('Re-run discovery for this IP'), A('Change stock state'), A('Copy serial number'),
-             A('Decommission', null, true)])}
+             CP('Copy serial number', rows[i].sn)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>
@@ -3669,9 +3657,7 @@ function viewVirtual() {
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        i => [A('Open network function'), A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' }),
-              A('View host'), A('View network service'), A('Re-sync from EMS'),
-              A('Terminate instance', null, true)])}
+        i => [A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
       <div class="vw-card-footer-divider vw-card-description">
         <strong>The RAN split.</strong> A gNodeB is one logical node, but its radio unit sits under Physical Resources while its
         CU-CP, CU-UP and vDU sit here. The <em>Parent RAN node</em> column rejoins them — without it the same node is two
@@ -3716,8 +3702,7 @@ function viewLinks() {
         ]), '',
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
               A('Open destination element', { v:'resource', l:rows[i].dne }),
-              A('Re-verify this link'), A('View in topology'), A('Copy link name'),
-              A('Mark as decommissioned', null, true)])}
+              CP('Copy link name', rows[i].name)])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">
           A link that stops appearing is not deleted — it is marked <strong>no longer seen</strong> and raised as an exception.
@@ -3756,9 +3741,8 @@ function viewServices() {
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
           `<span class="mono">${s.ifc}</span>`, ver(s.v)
         ]), '',
-        i => [A('Open service'), A('View endpoints'),
-              A('Open attachment element', { v:'resource', l:rows[i].name }),
-              A('Re-verify from device'), A('Copy ERP number'), A('Raise change request')])}`)}
+        i => [A('Open attachment element', { v:'resource', l:rows[i].name }),
+              CP('Copy ERP number', rows[i].erp)])}`)}
   </div>`;
 }
 
@@ -3817,11 +3801,10 @@ function viewInactive() {
           `<span class="vw-card-description">${r.why}</span>`, r.by,
           r.zombie ? chip('Still answering', 'error') : chip('Silent', 'neutral')
         ]), '',
-        i => [A('View record'), A('Open decommission workorder'), A('Restore to store'),
-              A('Copy serial number'),
+        i => [CP('Copy serial number', rows[i].sn),
               ...(rows[i].zombie ? [A('Open reconciliation exception',
                   { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
-              A('Purge record', null, true)])}
+              ])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <span class="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
         <span class="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
@@ -3853,8 +3836,7 @@ function viewReports() {
           chip(r.st, r.chip), `<span class="vw-value">${r.name}</span>`, r.type, r.gen, r.freq, r.by,
           `<span class="num">${r.on}</span>`, `<span class="num">${r.size}</span>`
         ]), '',
-        i => [A('Download'), A('Re-generate now'), A('Edit schedule'), A('Change recipients'),
-              A('Duplicate'), A('Delete report', null, true)])}`)}
+        () => [])}`)}
   </div>`;
 }
 
@@ -3884,7 +3866,7 @@ function resOverview() {
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
           :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
-        i => [A('Edit value'), A('Lock field against discovery'), A('View source run'), A('Copy value')])}
+        i => [CP('Copy value', PROV[i].v)])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position', 'Lifecycle and cover')}
@@ -3930,8 +3912,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [A('View component detail'), A('Copy part number'), A('Copy serial number'),
-              A('Raise RMA', null, true)])}
+        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
       <div class="row"><button class="nst-btn nst-btn--xs">Spares availability</button>
@@ -4038,7 +4019,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [A('Open service'), A('View endpoints'), A('Copy ERP number'), A('Raise change request')])}
+        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}
     <div class="vw-card-footer-divider vw-card-description">
       Both down services attach to interfaces that are themselves down — <span class="mono">xe-0/0/2</span> and
       <span class="mono">xe-0/0/5</span>. One fault, two service outages.
@@ -4056,8 +4037,7 @@ function resAlarms() {
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
         a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack,
         `<button class="nst-btn nst-btn--xs">Ticket</button>`]), '',
-        i => [A('Acknowledge'), A('Raise ticket'), A('View source component'),
-              A('Suppress this alarm', null, true)])}
+        () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
     </div>`);
@@ -4083,7 +4063,7 @@ function resConfig() {
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
             `<span class="mono" style="color:${cv('red',700)}">${d.got}</span>`,
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
-        i => [A('View full config path'), A('Copy expected value'), A('Raise remediation change')])}
+        i => [CP('Copy expected value', c.drift[i].want)])}
         </div>
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
@@ -4112,7 +4092,7 @@ function resHistory() {
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
           :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), '',
-        i => [A('View change detail'), A('View source run'), A('Revert this change', null, true)])}
+        () => [])}
     <div class="vw-card-footer-divider vw-card-description">
       A record with no history is a record nobody can audit. Retention 7 years, matching the asset register.
     </div>`);
@@ -4231,7 +4211,6 @@ function viewPassive() {
           <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
           Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
         </span>
-        <button class="nst-btn nst-btn--xs js-ack" style="flex-shrink:0">Survey backlog</button>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
@@ -4239,9 +4218,7 @@ function viewPassive() {
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [{ l:'Create passive record', primary:true }, { l:'Import survey' }], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
-        i => [A('View record'), A('Open site', { v:'site', l:rows[i].site || rows[i].n }),
-              A('Record a new survey'), A('Attach OTDR trace / photo'),
-              A('Print label'), A('Retire record', null, true)])
+        i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(meta.c)} records. Detailed columns are modelled for Fiber spans, ODF, Racks and Power first —
              the recommendation is to model one passive domain end to end before generalising.</div>`}
@@ -4487,9 +4464,7 @@ function opexSection(l, neCount) {
             : `<span class="num">${r.end}</span>`
         ];
       }), '',
-      i => [A('Open contract'), A('Raise renewal'), A('Record a payment'),
-            A('View vendor'), A('Compare with sibling sites'),
-            A('Terminate contract', null, true)])}
+      () => [])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Last updated ${ox.updated}. Escalations apply on the contract anniversary.</span>
       <span class="row vw-gap-xl">
@@ -5248,8 +5223,7 @@ function nodeHardware(N) {
           : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
         c.ber === null ? `<span style="color:${cv('gray',300)}">—</span>` : `<span class="mono">${c.ber}</span>`
       ]), '',
-      i => [A('Open wavelength'), A('Graph OSNR history'), A('Run optical loopback'),
-            A('Open the service it carries'), A('Take channel out of service', null, true)])}
+      () => [])}
 
     <div class="nv-portsplit" style="margin-top:var(--vw-space-lg)">
       <div class="cx-panel">
@@ -5306,8 +5280,7 @@ function nodeHardware(N) {
           `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
             <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb>85?'red':i.outb>70?'amber':'emerald',400)}"></span></span>${i.outb}%</span>`
         ]), '',
-        i => [A('Open interface'), A('Graph 24-hour throughput'), A('Open neighbour'),
-              A('Reset counters'), A('Shut interface', null, true)])}
+        () => [])}
 
       <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
         <span class="eyebrow">SFP module details</span>
@@ -5321,8 +5294,7 @@ function nodeHardware(N) {
           `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red',700)}"` : ''}>${s.rx} dBm</span>`,
           `${s.temp} °C`
         ]), '',
-        i => [A('Open transceiver'), A('Graph optical power'), A('Copy serial number'),
-              A('Raise RMA', null, true)])}`)}`;
+        () => [])}`)}`;
 }
 
 function nodeVlans(N) {
@@ -5349,8 +5321,7 @@ function nodeVlans(N) {
           <span class="hbar-track" style="width:3.5rem;height:7px"><span class="hbar-fill"
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
       ]), '',
-      i => [A('Open VLAN'), A('View member ports'), A('View MAC table'),
-            A('Edit VLAN'), A('Delete VLAN', null, true)])}
+      () => [])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Largest VLAN is <strong>${big.n} (${big.id})</strong> with ${n(big.mac)} learned MACs.
         Highest utilisation is <strong>${hi.n} (${hi.id})</strong> at ${hi.pct}%.</span>
@@ -5465,8 +5436,7 @@ function nodeServices(N) {
               <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util>90?'red':r.util>75?'amber':'emerald',400)}"></span></span>${r.util}%</span>`,
             `${r.sla}%`, `${r.up}%`
           ]), '',
-          i => [A('Open service'), A('View customer'), A('Open attachment interface'),
-                A('View SLA report'), A('Raise change request')])}
+          () => [])}
       </div>
       ${nvAI('AI service analytics', 'Intelligent service optimisation', 'red', [
         { t:'Top 5 premium customers', s:'Highest committed bandwidth on this node',
@@ -5539,7 +5509,7 @@ function nodeAlerts(N) {
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
                        `<span class="vw-card-description">${r[5]}</span>`]), '',
-            i => [A('Open incident'), A('Assign owner'), A('Add note'), A('Close incident', null, true)])}
+            () => [])}
       </div>
 
       ${nvAI('AI diagnostics', 'Intelligent root cause analysis', 'red', [
@@ -5756,6 +5726,9 @@ document.addEventListener('click', e => {
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
+  const cp = e.target.closest('[data-copy]');
+  if (cp) { navigator.clipboard && navigator.clipboard.writeText(cp.dataset.copy);
+    KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }

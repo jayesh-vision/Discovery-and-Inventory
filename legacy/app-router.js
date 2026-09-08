@@ -144,6 +144,9 @@ document.addEventListener('click', e => {
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
+  const cp = e.target.closest('[data-copy]');
+  if (cp) { navigator.clipboard && navigator.clipboard.writeText(cp.dataset.copy);
+    KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }

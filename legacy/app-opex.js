@@ -230,9 +230,7 @@ function opexSection(l, neCount) {
             : `<span class="num">${r.end}</span>`
         ];
       }), '',
-      i => [A('Open contract'), A('Raise renewal'), A('Record a payment'),
-            A('View vendor'), A('Compare with sibling sites'),
-            A('Terminate contract', null, true)])}
+      () => [])}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Last updated ${ox.updated}. Escalations apply on the contract anniversary.</span>
       <span class="row vw-gap-xl">

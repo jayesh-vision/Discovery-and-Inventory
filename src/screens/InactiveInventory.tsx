@@ -30,9 +30,8 @@ export default function InactiveInventory() {
   const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
 
   const rowActions = (r: ArchiveRow): Action[] => [
-    { l: 'View record' }, { l: 'Open decommission workorder' }, { l: 'Restore to store' }, { l: 'Copy serial number' },
-    ...(r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : []),
-    { l: 'Purge record', danger: true }
+    { l: 'Copy serial number', onClick: () => { navigator.clipboard?.writeText(r.sn); } },
+    ...(r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : [])
   ];
 
   return (
@@ -69,7 +68,7 @@ export default function InactiveInventory() {
           rows={rows} total={total} rowKey={r => r.sn}
           searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
           extra={<Chip tone="neutral">Archive · read-only</Chip>}
-          gridActions={[{ l: 'Go to active inventory', primary: true, onClick: () => nav('/inventory/physical') }, { l: 'Download report' }]}
+          gridActions={[{ l: 'Go to active inventory', primary: true, onClick: () => nav('/inventory/physical') }]}
           rowActions={rowActions}
           renderRow={r => [
             <><span className="vw-value">{r.name}</span> <span className="ro-lock" title="Read-only">🔒</span></>,

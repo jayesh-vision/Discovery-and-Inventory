@@ -58,7 +58,6 @@ export default function RegionDevices() {
   const rowActions = (d: RegionDevice): Action[] => [
     { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(d.name)}`) },
     { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(d.name)}`) },
-    { l: 'Re-run discovery for this IP' }, { l: 'Change credential profile' },
     { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(d.ip); } }
   ];
 
@@ -82,9 +81,6 @@ export default function RegionDevices() {
           ]}
           extra={<Chip tone={failed ? 'error' : 'success'}>{fmt(failed)} of {fmt(meta.total)} failed this cycle</Chip>}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
-          gridActions={[
-            { l: 'Re-run discovery for all', primary: true }, { l: 'Download report' }
-          ]}
           rowActions={rowActions}
           renderRow={d => [
             <Chip tone={d.status === 'Failed' ? 'error' : 'success'}>{d.status}</Chip>,

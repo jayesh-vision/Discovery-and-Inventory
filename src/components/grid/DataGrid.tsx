@@ -106,8 +106,6 @@ function stdActions(wrap: HTMLDivElement | null): Action[] {
   return [
     { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
     { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') },
-    { l: 'Choose columns' },
-    { l: 'Save this view' },
     { l: 'Print', onClick: () => window.print() }
   ];
 }
@@ -197,6 +195,8 @@ function RowMenu({ actions, open, onToggle, onClose }: { actions: Action[]; open
   const btn = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   useMenuPosition(open, btn, menu);
+  /* a row with nothing to offer gets no menu button rather than an empty one */
+  if (!actions.length) return <td className="kb-td" />;
   return (
     <td className="kb-td">
       <div ref={ref} style={{ display: 'contents' }}>

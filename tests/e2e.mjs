@@ -31,8 +31,12 @@ ok('switch tab → URL', p.url().includes('cls=switch'));
 ok('switch chips', /In store\s*8/.test(await text('.stock-chips')), await text('.stock-chips'));
 /* row menu with icons */
 await p.click('.nst-table tbody tr:first-child .kb');
-ok('row menu opens', await count('.kmenu .kmenu-i') === 8);
-ok('every item has an icon', await count('.kmenu .kmenu-i svg.kmi') === 8);
+ok('row menu opens', await count('.kmenu .kmenu-i') === 5);
+ok('every item has an icon', await count('.kmenu .kmenu-i svg.kmi') === await count('.kmenu .kmenu-i'));
+/* every item in it does something — placeholders were removed, not hidden */
+ok('no placeholder items left in the row menu', await p.evaluate(() =>
+  ![...document.querySelectorAll('.kmenu .kmenu-i')].some(x =>
+    /Re-run discovery|Change stock state|Decommission/.test(x.textContent))));
 await p.click('.kmenu .kmenu-i:nth-child(3)'); /* Open site */
 await p.waitForTimeout(400);
 ok('row action → legacy site screen', p.url().includes('/inventory/location/site/'), p.url());

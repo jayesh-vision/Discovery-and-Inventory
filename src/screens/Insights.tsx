@@ -236,13 +236,9 @@ export default function Insights() {
               { n: 'Vendor', o: S.vendors.map(v => v.n) }, { n: 'Failure reason', o: S.reasons.map(r => r.n) }
             ]}
             onSearch={setAttnQuery} searchValue={attnQuery} onFilterChange={setAttnFilters} onRefresh={() => { setAttnQuery(''); setAttnFilters({}); }}
-            gridActions={[
-              { l: 'Re-run discovery for all', primary: true }, { l: 'Download report' }
-            ]}
             rowActions={r => [
               { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(r.name)}`) },
               { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-              { l: 'Re-run discovery for this IP' }, { l: 'Change credential profile' },
               { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(r.ip); } }
             ]}
             renderRow={r => [

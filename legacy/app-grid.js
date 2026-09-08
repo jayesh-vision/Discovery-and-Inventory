@@ -75,14 +75,20 @@ const kiFor = l => {
 const kIcon = l => `<svg class="kmi" viewBox="0 0 16 16" width="15" height="15" fill="none"
   stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${kiFor(l)}</svg>`;
 const A = (l, d, danger) => ({ l, d, danger });
+/* A row action that copies one of the row's own values. Every menu item on a
+   screen either goes somewhere or does something — nothing is listed that only
+   closes the menu again. */
+const CP = (l, v) => ({ l, copy: v });
 
 function kebabCell(items, gid, i) {
   const open = KEBAB === `${gid}:${i}`;
+  if (!items.length) return '<td class="kb-td"></td>';
   return `<td class="kb-td">
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}${it.d ? '' : ' js-ack'}"${it.d ? dA(it.d) : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
+        it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 

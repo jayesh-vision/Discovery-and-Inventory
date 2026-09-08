@@ -545,9 +545,6 @@ path.st.has-c:hover { fill-opacity: .78; }
 .oc-nc-v { font-size: 1rem; font-weight: 400; color: var(--vw-color-gray-700); }
 .oc-nc-k { font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-700); }
 .oc-nc-d { font-size: 0.6875rem; color: var(--vw-color-gray-500); min-width: 0; }
-.oc-sums { display: flex; gap: var(--vw-space-lg); flex-wrap: wrap;
-  font-size: 0.75rem; color: var(--vw-color-gray-500); }
-.oc-sums b { font-weight: 500; color: var(--vw-color-gray-800); }
 .rec-table td.cmp { white-space: nowrap; }
 .rec-was { display: block; color: var(--vw-color-red-700); text-decoration: line-through;
   text-decoration-thickness: 1px; font-size: 0.75rem; line-height: 1.3; }

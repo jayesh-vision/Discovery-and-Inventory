@@ -85,8 +85,7 @@ export default function PhysicalResources() {
     { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
     { l: 'Open site', onClick: () => nav(`/inventory/location/site/${r.loc}`) },
     { l: 'View in reconciliation', onClick: () => nav(`/discovery/reconcile?ne=${encodeURIComponent(r.name)}`) },
-    { l: 'Re-run discovery for this IP' }, { l: 'Change stock state' }, { l: 'Copy serial number' },
-    { l: 'Decommission', danger: true }
+    { l: 'Copy serial number', onClick: () => { navigator.clipboard?.writeText(r.sn); } }
   ];
 
   const clearDrill = () => {
@@ -152,7 +151,6 @@ export default function PhysicalResources() {
             ? <Chip tone="error">No collector defined for this class</Chip>
             : <Chip tone="warning">{fmt(notVerified)} of {fmt(meta.c)} not verified</Chip>}
           gridActions={[
-            { l: 'Create network element', primary: true }, { l: 'Download report' },
             { l: 'View decommissioned', onClick: () => nav(`/inventory/inactive?cls=${cls}`) }
           ]}
           onRefresh={() => setRefreshKey(k => k + 1)}
