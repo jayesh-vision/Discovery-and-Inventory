@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { ActionIcon, IcFilter, IcKebab, IcRefresh, IcSearch, IcX } from './icons';
+import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 
 /* ── types ──────────────────────────────────────────────── */
 export interface Column { t: string; r?: boolean }
@@ -30,7 +30,7 @@ export interface DataGridProps<Row> {
   onFilterChange?: (values: Record<string, string>) => void;
 }
 
-const STATUS_COL = /^(status|state)$/i;
+const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* ── toolbar ────────────────────────────────────────────── */
 function useOutsideClose(open: boolean, close: () => void) {
@@ -75,9 +75,10 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
         </div>
       </div>
       <div className="fpanel-foot">
+        <button className="nst-btn nst-btn--sm" type="button">Advance</button>
         <span className="grow" />
         <button className="nst-btn nst-btn--sm" onClick={() => { setValues({}); onReset(); onClose(); }}>Reset to default</button>
-        <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => { onApply(values); onClose(); }}>Apply filters</button>
+        <button className="nst-btn nst-btn--sm fp-apply" onClick={() => { onApply(values); onClose(); }}>Apply filters</button>
       </div>
     </div>
   );
@@ -102,11 +103,13 @@ function exportTable(wrap: HTMLDivElement | null, kind: 'csv' | 'xlsx') {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function stdActions(wrap: HTMLDivElement | null): Action[] {
+/* The platform's grid menu: refresh lives here, not as a toolbar button. */
+function stdActions(wrap: HTMLDivElement | null, onRefresh?: () => void): Action[] {
   return [
+    { l: 'Refresh', onClick: () => onRefresh?.() },
     { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
     { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') },
-    { l: 'Print', onClick: () => window.print() }
+    { l: 'Table options' }
   ];
 }
 
@@ -142,7 +145,6 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onR
       {extra}
       <span className="grow" />
       <div className="grid-tools">
-        <button className="icon-btn" onClick={onRefresh} aria-label="Refresh"><IcRefresh /></button>
         <div ref={filterRef} style={{ display: 'contents' }}>
           <button className={`icon-btn${filter ? ' is-on' : ''}`} onClick={() => { setFilter(v => !v); setMenu(false); }}
             aria-label="Filters" aria-expanded={filter}><IcFilter /></button>
@@ -158,7 +160,7 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onR
                 {gridActions.map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
                 <div className="kmenu-sep" />
               </> : null}
-              {stdActions(wrap.current).map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
+              {stdActions(wrap.current, onRefresh).map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
             </div>
           )}
         </div>

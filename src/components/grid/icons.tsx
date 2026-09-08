@@ -26,6 +26,7 @@ const K: Record<string, string> = {
   print: '<path d="M4.5 6V2.5h7V6M4.5 12.5h7V10h-7Z"/><rect x="2" y="6" width="12" height="4.5" rx="1"/>',
   cal:   '<rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 2v2M10.5 2v2"/>',
   cols:  '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6.5 3v10M10 3v10"/>',
+  opts:  '<path d="M2 4.5h7M12 4.5h2M2 8h2M7 8h7M2 11.5h9M14 11.5h0"/><circle cx="10.5" cy="4.5" r="1.6"/><circle cx="5.5" cy="8" r="1.6"/><circle cx="12.5" cy="11.5" r="1.6"/>',
   save:  '<path d="M3 2.5h8L13.5 5v8.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"/><path d="M5 2.5v4h6"/>',
   node:  '<rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6.5 1.5v2.5M9.5 1.5v2.5M6.5 12v2.5M9.5 12v2.5M1.5 6.5H4M1.5 9.5H4M12 6.5h2.5M12 9.5h2.5"/>',
   file:  '<path d="M9 2H4.5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/><path d="M9 2v3.5h3.5"/>',
@@ -45,6 +46,7 @@ export function iconFor(label: string): string {
   if (/create|new |add|instantiate|generate/.test(t)) return K.add;
   if (/print|label/.test(t)) return K.print;
   if (/schedule/.test(t)) return K.cal;
+  if (/table option|setting|preference/.test(t)) return K.opts;
   if (/column/.test(t)) return K.cols;
   if (/save/.test(t)) return K.save;
   if (/site|location/.test(t)) return K.pin;

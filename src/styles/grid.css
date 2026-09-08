@@ -1,0 +1,193 @@
+/* ══ The grid ═══════════════════════════════════════════════
+   One stylesheet for every list in the application: the toolbar (count, search,
+   filter, menu), the filter panel, the action menus, the table and its
+   scroll box. Both renderers — DataGrid.tsx and the prototype's gridBar()/
+   table() — emit the same markup, and this is the only place that markup is
+   styled. It draws only on NST tokens (--vw-*) and NST primitives (.nst-table,
+   .nst-btn, .nst-input, .vw-chip); nothing here is overridden elsewhere.
+
+   Markup contract
+     .grid-bar   .grid-count · .grid-search(.nst-input-shell > .gs-ic + .nst-input)
+                 · [extra] · .grow · .grid-tools(.icon-btn[Filters] .icon-btn[More]
+                 · .fpanel? · .kmenu.kmenu-r?)
+     .fpanel     .fpanel-head(.vw-card-title-sm .fp-x) · .fpanel-body(.fpanel-nav>.fp-f*
+                 · .fpanel-ctl(.fp-label + control [.fp-hint])) · .fpanel-foot(Advance
+                 · .grow · Reset · .fp-apply)
+     .kmenu      .kmenu-i(.kmi + span)* · .kmenu-sep · .kmenu-i.is-primary/.is-danger
+     .tbl-wrap   table.nst-table(thead th[.t-right][.kb-th] · tbody td[.st-td][.t-right.num]
+                 [.kb-td>.kb + .kmenu]) · .tbl-more?
+   ════════════════════════════════════════════════════════════ */
+
+/* ── toolbar ─────────────────────────────────────────────── */
+.grid-bar {
+  display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap;
+  margin: var(--vw-space-sm) 0 var(--vw-space-md);
+}
+.grid-count { white-space: nowrap; font-size: 0.875rem; color: var(--vw-color-gray-700); }
+
+/* The search box nests an .nst-input inside an .nst-input-shell for the sake
+   of the icon, so the inner one draws no frame of its own. */
+.grid-search { width: 27rem; max-width: 100%; position: relative; }
+.grid-search.nst-input-shell { min-height: 40px; border-radius: var(--vw-radius-md); border-color: var(--vw-color-slate-200); }
+.grid-search .gs-ic {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--vw-color-gray-400); display: flex; pointer-events: none;
+}
+.grid-search .nst-input { min-height: 0; padding: 0 0 0 1.75rem; border: 0; border-radius: 0; background: none; font-size: 0.875rem; }
+.grid-search .nst-input:focus { outline: none; }
+
+.grid-tools { display: flex; gap: var(--vw-space-sm); position: relative; }
+
+/* 40px square tools on a soft fill; the open one is outlined, not inverted;
+   a filter with a value carries a dot. */
+.icon-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: var(--vw-radius-md);
+  border: 1px solid transparent; background: var(--vw-color-slate-50);
+  color: var(--vw-color-gray-800); cursor: pointer;
+}
+.icon-btn:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
+.icon-btn.is-on {
+  background: var(--vw-color-white); color: var(--vw-color-gray-900);
+  border-color: var(--vw-color-gray-900); box-shadow: inset 0 0 0 1px var(--vw-color-gray-900);
+}
+.icon-btn.has-value::after {
+  content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--vw-color-blue-500);
+}
+.icon-btn:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
+
+/* ── action menus (toolbar and row) ──────────────────────── */
+.kmenu {
+  position: absolute; right: var(--vw-space-sm); top: calc(100% - 4px); z-index: 40;
+  min-width: 14.5rem; padding: 6px; text-align: left;
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg); box-shadow: 0 10px 30px rgba(15, 23, 42, .12);
+}
+.kmenu-r { right: 0; top: calc(100% + 6px); }
+/* A row menu inside the grid's scroll box would be clipped by it, so it is
+   taken out of flow and placed against the button's screen position. */
+.kmenu--fixed { position: fixed; right: auto; bottom: auto; top: auto; }
+.kmenu-i {
+  display: flex; align-items: center; gap: var(--vw-space-sm); width: 100%;
+  text-align: left; font: inherit; font-size: 0.875rem; white-space: nowrap;
+  padding: 9px var(--vw-space-sm); border: 0; border-radius: var(--vw-radius-sm);
+  background: none; color: var(--vw-color-gray-800); cursor: pointer;
+}
+.kmenu-i::after { display: none; }
+.kmenu-i .kmi { flex-shrink: 0; color: var(--vw-color-gray-500); }
+.kmenu-i:hover { background: var(--vw-color-slate-50); }
+.kmenu-i:hover .kmi { color: var(--vw-color-gray-800); }
+.kmenu-i.is-primary { font-weight: 500; color: var(--vw-color-gray-900); }
+.kmenu-i.is-danger { color: var(--vw-color-red-700); }
+.kmenu-i.is-danger .kmi { color: var(--vw-color-red-500); }
+.kmenu-i.is-danger:hover { background: var(--vw-color-red-50); }
+.kmenu-sep { height: 1px; margin: 4px 0; background: var(--vw-color-slate-100); }
+
+/* ── filter panel ────────────────────────────────────────── */
+.fpanel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
+  width: min(38rem, 94vw); text-align: left;
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-gray-200);
+  border-radius: var(--vw-radius-lg); box-shadow: 0 12px 34px rgba(15, 23, 42, .18);
+}
+.fpanel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--vw-space-lg) var(--vw-space-lg) var(--vw-space-md);
+}
+.fpanel-head .vw-card-title-sm { font-size: 1.0625rem; font-weight: 500; }
+.fp-x { border: 0; background: none; cursor: pointer; color: var(--vw-color-gray-500); display: flex; padding: 2px; border-radius: var(--vw-radius-sm); }
+.fp-x:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
+.fpanel-body { display: grid; grid-template-columns: 12rem 1fr; min-height: 22rem; }
+.fpanel-nav {
+  display: flex; flex-direction: column; gap: 2px; max-height: 22rem; overflow-y: auto;
+  padding: 0 0 var(--vw-space-sm); border-right: 1px solid var(--vw-color-slate-100);
+}
+.fp-f {
+  position: relative; text-align: left; font: inherit; font-size: 0.9375rem; cursor: pointer;
+  padding: 10px var(--vw-space-md); border: 0; background: none; color: var(--vw-color-gray-700);
+}
+.fp-f:hover { background: var(--vw-color-slate-50); }
+.fp-f.is-on { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
+.fp-f.is-on::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--vw-color-gray-900); }
+.fpanel-ctl { display: flex; flex-direction: column; gap: var(--vw-space-xs); padding: var(--vw-space-sm) var(--vw-space-lg) var(--vw-space-lg); }
+.fp-label { font-size: 0.875rem; color: var(--vw-color-gray-500); }
+.fp-hint { font-size: 0.6875rem; color: var(--vw-color-gray-400); }
+.nst-select-shell { display: block; }
+.fp-sel { width: 100%; }
+.fpanel-ctl .nst-input, .fpanel-ctl select { min-height: 40px; border-radius: var(--vw-radius-md); }
+.fpanel-foot {
+  display: flex; align-items: center; gap: var(--vw-space-sm);
+  padding: var(--vw-space-md) var(--vw-space-lg) var(--vw-space-lg);
+  border-top: 1px solid var(--vw-color-slate-100);
+}
+/* the platform's primary in this panel is the dark one */
+.fp-apply, .fp-apply:hover { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
+@media (max-width: 620px) {
+  .fpanel-body { grid-template-columns: 1fr; }
+  .fpanel-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--vw-color-slate-100); }
+}
+
+/* ── the table and its scroll box ────────────────────────── */
+/* The frame belongs to the scroll container, not the table, so the rounded edge
+   always encloses what you can see. The grid keeps its own scroll: a height
+   comes from JS (25 rows, capped by the screen) and lands in --grid-h. */
+.tbl-wrap {
+  min-width: 0; max-width: 100%;
+  border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md);
+  background: var(--vw-color-white);
+  overflow: auto; max-height: var(--grid-h, none);
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+}
+.tbl-wrap > .nst-table { border: 0; border-radius: 0; }
+
+.nst-table { width: 100%; overflow: visible; border-collapse: separate; border-spacing: 0; }  /* separate borders: sticky header */
+.nst-table th, .nst-table td { white-space: nowrap; padding-left: var(--vw-space-md); padding-right: var(--vw-space-md); }
+.t-right { text-align: right; }
+
+/* header: a quiet grey band that stays put while the rows move under it */
+.nst-table th {
+  padding-top: 14px; padding-bottom: 14px;
+  font-size: 0.875rem; font-weight: 400; color: var(--vw-color-gray-600);
+  background: var(--vw-color-slate-50);
+}
+.tbl-wrap .nst-table thead th { position: sticky; top: 0; z-index: 3; background: var(--vw-color-slate-50); }
+
+/* rows */
+.nst-table td { padding-top: 16px; padding-bottom: 16px; }
+.nst-table tbody tr:hover td { background: var(--vw-color-slate-50); }
+.nst-table tbody tr[hidden] { display: none; }
+.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
+.nst-table td select.nst-input { min-width: 9rem; }
+.tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }
+
+/* a first column of Status / State / Outcome / Result is a full-width pill */
+.st-td > .vw-chip {
+  display: flex; width: 100%; min-width: 7rem; justify-content: center;
+  padding-top: 7px; padding-bottom: 7px; font-size: 0.875rem; border-radius: var(--vw-radius-full);
+}
+
+/* the action column is the last cell of the row, not a column of its own */
+.kb-th, .kb-td { width: 40px; min-width: 40px; }
+.nst-table th.kb-th, .nst-table td.kb-td { background: transparent; padding-left: 0; padding-right: 6px; }
+.kb-td { position: relative; text-align: right; overflow: visible !important; }
+.kb {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: var(--vw-radius-full); border: 0;
+  background: none; color: var(--vw-color-gray-500); cursor: pointer;
+}
+.kb:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-800); }
+.kb.is-on { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
+.kb:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
+
+/* the strip under a partly revealed grid: the sentinel for the next 25 rows */
+.tbl-more {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--vw-space-sm);
+  padding: var(--vw-space-sm) var(--vw-space-md);
+  border: 0; border-top: 1px solid var(--vw-color-slate-200);
+  background: var(--vw-color-slate-50); color: var(--vw-color-slate-600);
+  font-family: inherit; font-size: var(--vw-font-size-xs); font-weight: 500; font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.tbl-more:hover { background: var(--vw-color-slate-100); color: var(--vw-color-slate-900); }
+.tbl-more-of { color: var(--vw-color-slate-400); font-weight: 400; }

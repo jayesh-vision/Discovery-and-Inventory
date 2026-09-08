@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, cv } from '../components/ui';
-import { DataGrid } from '../components/grid/DataGrid';
+import { Card, cv } from '../components/ui';
 import { Donut, LineChart, SplitBar } from '../components/charts';
 import { GeoMap } from '../components/GeoMap';
 import { Against, KpiCard, Segments } from '../components/KpiCard';
 import { legacyPath } from '../routes';
 import {
-  CYCLE, CYCLE_SLA_H, DISC_CLASSES, REASON_CHIP, REGIONS, scopeDiscovery, successRate,
-  type AttentionRow, type Region, type Scope
+  CYCLE, CYCLE_SLA_H, DISC_CLASSES, REGIONS, scopeDiscovery, successRate,
+  type Region, type Scope
 } from '../data/discovery';
 
 const fmt = (v: number) => v.toLocaleString('en-IN');
@@ -22,16 +21,11 @@ export default function Insights() {
   const setScope = (v: Scope) => { const n = new URLSearchParams(sp); if (v === 'all') n.delete('region'); else n.set('region', v); setSp(n, { replace: true }); };
 
   const [vendorView, setVendorView] = useState<'bars' | 'cards'>('bars');
-  const [attnQuery, setAttnQuery] = useState('');
-  const [attnFilters, setAttnFilters] = useState<Record<string, string>>({});
-  /* a filter or search picked in one circle rarely still applies to another */
-  useEffect(() => { setAttnQuery(''); setAttnFilters({}); }, [scope]);
 
   const S = useMemo(() => scopeDiscovery(scope), [scope]);
   const last = S.daily[S.daily.length - 1], prev = S.daily[S.daily.length - 2];
   const reasonTotal = S.reasons.reduce((a, r) => a + r.c, 0);
   const vendorMax = Math.max(...S.vendors.map(v => v.ok + v.fail));
-  const reasonOf = (k: string) => S.reasons.find(r => r.k === k)!;
 
   /** hands off to the legacy Scan targets screen with the matching lower-case
       filter key and a drill label, so it lands filtered and shows a way back */
@@ -67,16 +61,6 @@ export default function Insights() {
     sp.set('from', 'Insights');
     nav(`/discovery/insights/discovered?${sp.toString()}`);
   };
-  const attnRows = useMemo(() => {
-    const q = attnQuery.trim().toLowerCase();
-    return S.attention.filter(r => {
-      if (q && !(r.name.toLowerCase().includes(q) || r.ip.includes(q) || r.model.toLowerCase().includes(q))) return false;
-      if (attnFilters.Region && r.region !== attnFilters.Region) return false;
-      if (attnFilters.Vendor && r.vendor !== attnFilters.Vendor) return false;
-      if (attnFilters['Failure reason'] && reasonOf(r.reason).n !== attnFilters['Failure reason']) return false;
-      return true;
-    });
-  }, [S, attnQuery, attnFilters]);
 
   return (
     <div className="page ins2">
@@ -102,7 +86,7 @@ export default function Insights() {
 
           <KpiCard tone="emerald"
             title="Devices that answered"
-            definition="Polled devices that responded to at least one collector. A full answer produced a complete record; a partial one produced a record with gaps; a failure produced no record and is listed under Devices needing attention."
+            definition="Polled devices that responded to at least one collector. A full answer produced a complete record; a partial one produced a record with gaps; a failure produced no record; the failed count opens that list."
             value={pct(S.rate)} of={`${fmt(last.answered)} of ${fmt(last.polled)} polled`}
             visual={<Segments total={S.targets} parts={[
               { n: 'Full', c: S.runFull, hex: cv('emerald', 500) },
@@ -225,29 +209,6 @@ export default function Insights() {
           ))}
         </div>
 
-        <Card>
-          <div className="row vw-justify-between"><span className="vw-card-title">Devices needing attention</span><span className="vw-card-description">failed in the last cycle · no record produced</span></div>
-          <DataGrid<AttentionRow>
-            columns={[{ t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'Vendor' }, { t: 'Model' }, { t: 'Failure reason' }, { t: 'Last attempt' }]}
-            rows={attnRows} total={attnQuery || Object.values(attnFilters).some(Boolean) ? attnRows.length : S.runFail} rowKey={r => r.name}
-            searchPlaceholder="Device, IP, model"
-            filters={[
-              ...(scope === 'all' ? [{ n: 'Region', o: REGIONS.map(r => r.region) }] : []),
-              { n: 'Vendor', o: S.vendors.map(v => v.n) }, { n: 'Failure reason', o: S.reasons.map(r => r.n) }
-            ]}
-            onSearch={setAttnQuery} searchValue={attnQuery} onFilterChange={setAttnFilters} onRefresh={() => { setAttnQuery(''); setAttnFilters({}); }}
-            rowActions={r => [
-              { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(r.name)}`) },
-              { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-              { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(r.ip); } }
-            ]}
-            renderRow={r => [
-              <span className="vw-value">{r.name}</span>, <span className="mono">{r.ip}</span>, r.region, r.vendor, <span className="mono">{r.model}</span>,
-              <Chip tone={REASON_CHIP[r.reason]}>{reasonOf(r.reason).n}</Chip>, <span className="num">{r.last}</span>
-            ]}
-            emptyText="No failed devices match the current search and filters."
-          />
-        </Card>
 
         <Card>
           <div className="row vw-justify-between"><span className="vw-card-title">Discovered devices by state</span><span className="vw-card-description">identified devices · ring shows the class split</span></div>

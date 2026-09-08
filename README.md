@@ -120,7 +120,7 @@ Reports → Passive Infrastructure → Scan jobs and Scan targets → Reconcilia
 
 ```
 src/
-  main.tsx, App.tsx        shell: sidebar, topbar, routes
+  main.tsx, App.tsx        shell: routes (no header, no menu — the host draws them)
   routes.ts                screen registry
   shell/RouteTitle.tsx     document title per route (the host app draws the header and menu)
   components/ui.tsx        Chip, Card, StatStrip, TabBar, DrillBar
@@ -128,11 +128,33 @@ src/
   data/                    typed ledgers and sample rows, self-checked at import
   screens/                 ported screens
   legacy/LegacyView.tsx    the bridge
-  styles/                  ds-bundle.css (design system), shell.css (layout)
+  styles/                  ds-bundle.css (NST design system) · grid.css (every list) · shell.css (screen layout)
 legacy/                    the prototype renderer, one file per module
 scripts/bundle-legacy.mjs  builds public/legacy.js from legacy/
 tests/e2e.mjs              end-to-end harness: ledgers, both bridge directions, every screen
 ```
+
+## The grid
+
+Every list in the application is one grid. There are two renderers for now —
+`src/components/grid/DataGrid.tsx` for React screens and the prototype's
+`gridBar()` / `table()` / `filterPanel()` in `legacy/app-grid.js` +
+`app-helpers.js` for screens not yet ported — but they emit the same markup
+and `src/styles/grid.css` is the only place that markup is styled. The
+contract (toolbar → filter panel → menus → table) is written at the top of
+`grid.css`; the end-to-end suite renders one grid of each kind and fails if
+their skeletons diverge.
+
+Rules that follow from this:
+
+- A grid change is a change to `grid.css` and, if the markup moves, to both
+  renderers in the same commit. Never a per-screen override.
+- `grid.css` uses NST tokens (`--vw-*`) and NST primitives (`.nst-table`,
+  `.nst-btn`, `.nst-input`, `.vw-chip`) only. The NST bundle has no grid
+  composite of its own — no toolbar, filter panel, action menu or bounded
+  scroll box — which is why this file exists.
+- Porting a legacy list screen means giving it a React screen that uses
+  `DataGrid`; when the last one is ported, `app-grid.js` goes.
 
 ## Conventions
 
@@ -142,5 +164,6 @@ tests/e2e.mjs              end-to-end harness: ledgers, both bridge directions, 
   at import if the class × stock cross-tab stops closing.
 - Row-action menus lead with an icon inferred from the verb (`icons.tsx`); do
   not hand-pick icons per call site.
-- The first column of a grid headed *Status* or *State* renders as a full-width
-  state pill; the grid does this from the column header, not per screen.
+- The first column of a grid headed *Status*, *State*, *Outcome*, *Result* or
+  *Stock state* renders as a full-width state pill; the grid does this from the
+  column header, not per screen.

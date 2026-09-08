@@ -372,15 +372,14 @@ function viewJobs() {
         : kpi('Collector nodes in use', '0', 'no job names a collector', 'purple')}
     </div>
 
-    ${pageBar(`<div class="seg">${segs.map(([k,l]) => {
-      const c = JOBS.filter(JOB_TESTS[k]).length;
-      return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
-        <span class="tab-n num">${n(c)}</span></button>`;
-    }).join('')}</div>`)}
-
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
+        `<div class="seg">${segs.map(([k,l]) => {
+          const c = JOBS.filter(JOB_TESTS[k]).length;
+          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
+            <span class="tab-n num">${n(c)}</span></button>`;
+        }).join('')}</div>
+         ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },

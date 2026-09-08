@@ -3,6 +3,7 @@
 #
 #   ./app.sh run              start the dev server (installs on first run)
 #   ./app.sh test             production build + end-to-end checks
+#   ./app.sh pull             get the latest from GitHub (keeps local edits)
 #   ./app.sh push [message]   commit everything and push to GitHub
 #   ./app.sh deploy           build and publish to Vercel (production)
 #   ./app.sh ship [message]   test, push, deploy — in that order, stop on failure
@@ -57,6 +58,24 @@ cmd_test() {
   say "Production build + end-to-end checks"
   npm test
   ok "All checks passed"
+}
+
+cmd_pull() {
+  ensure_tools; clear_git_locks
+  local branch; branch=$(git rev-parse --abbrev-ref HEAD)
+  local stashed=0
+  if [[ -n $(git status --porcelain) ]]; then
+    say "Setting local edits aside while pulling"
+    git stash push -u -q -m "app.sh pull $(date '+%Y-%m-%d %H:%M')"; stashed=1
+  fi
+  say "Pulling $branch from origin"
+  git pull --rebase origin "$branch"
+  if (( stashed )); then
+    say "Restoring local edits"
+    git stash pop -q || die "Your local edits conflict with what was pulled — resolve the files git lists, then: git stash drop"
+  fi
+  ensure_deps
+  ok "Up to date with $(git remote get-url origin) — $(git log --oneline -1)"
 }
 
 cmd_push() {
@@ -118,11 +137,12 @@ cmd_ship() {
 case "${1:-}" in
   run)     cmd_run ;;
   test)    cmd_test ;;
+  pull)    cmd_pull ;;
   push)    shift; cmd_push "${1:-}" ;;
   deploy)  cmd_deploy ;;
   ship)    shift; cmd_ship "${1:-}" ;;
   *)
-    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
     printf '\n%sfirst time:%s  ./app.sh run\n' "$dim" "$off"
     exit 2 ;;
 esac

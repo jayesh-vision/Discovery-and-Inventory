@@ -21,7 +21,7 @@ const pageHead = (t, d, right = '') =>
 
 /* A first column called Status or State gets the platform's full-width state
    pill rather than a chip that hugs its text. */
-const STATUS_COL = /^(status|state)$/i;
+const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
 const table = (cols, rows, cls = '', acts = null) => {
@@ -1523,6 +1523,7 @@ const KI = {
   print: '<path d="M4.5 6V2.5h7V6M4.5 12.5h7V10h-7Z"/><rect x="2" y="6" width="12" height="4.5" rx="1"/>',
   cal:   '<rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 2v2M10.5 2v2"/>',
   cols:  '<rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6.5 3v10M10 3v10"/>',
+  opts:  '<path d="M2 4.5h7M12 4.5h2M2 8h2M7 8h7M2 11.5h9"/><circle cx="10.5" cy="4.5" r="1.6"/><circle cx="5.5" cy="8" r="1.6"/><circle cx="12.5" cy="11.5" r="1.6"/>',
   save:  '<path d="M3 2.5h8L13.5 5v8.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"/><path d="M5 2.5v4h6"/>',
   node:  '<rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6.5 1.5v2.5M9.5 1.5v2.5M6.5 12v2.5M9.5 12v2.5M1.5 6.5H4M1.5 9.5H4M12 6.5h2.5M12 9.5h2.5"/>',
   file:  '<path d="M9 2H4.5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/><path d="M9 2v3.5h3.5"/>',
@@ -1541,6 +1542,7 @@ const kiFor = l => {
   if (/create|new |add|instantiate|generate/.test(t)) return KI.add;
   if (/print|label/.test(t)) return KI.print;
   if (/schedule/.test(t)) return KI.cal;
+  if (/table option|setting|preference/.test(t)) return KI.opts;
   if (/column/.test(t)) return KI.cols;
   if (/save/.test(t)) return KI.save;
   if (/site|location/.test(t)) return KI.pin;
@@ -1580,7 +1582,6 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
     ${extra}
     <span class="grow"></span>
     <div class="grid-tools">
-      <button class="icon-btn" data-gridrefresh="1" aria-label="Refresh">${IC_REFRESH}</button>
       <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}${activeFilters ? ' has-value' : ''}" data-filteropen="${key}" aria-label="Filters"
         aria-expanded="${FILTER_OPEN}">${IC_FILTER}</button>
       <button class="icon-btn${GRIDMENU ? ' is-on' : ''}" data-gridmenu="1" aria-label="More actions"
@@ -1588,9 +1589,10 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
       ${GRIDMENU ? `<div class="kmenu kmenu-r">
         ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}${(a.d || a.nav) ? '' : ' js-ack'}"${a.d ? dA(a.d) : ''}${
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
+        <button class="kmenu-i" data-gridrefresh="1">${kIcon('Refresh')}<span>Refresh</span></button>
         <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
         <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button>
-        <button class="kmenu-i" data-gridprint="1">${kIcon('Print')}<span>Print</span></button></div>` : ''}
+        <button class="kmenu-i js-ack">${kIcon('Table options')}<span>Table options</span></button></div>` : ''}
       ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
   </div>`;
@@ -1622,10 +1624,10 @@ function filterPanel(spec, key = '') {
       </div>
     </div>
     <div class="fpanel-foot">
-      <span class="vw-card-description">${Object.values(gridOf(key).filters).filter(Boolean).length} field(s) set</span>
+      <button class="nst-btn nst-btn--sm js-ack" type="button">Advance</button>
       <span class="grow"></span>
       <button class="nst-btn nst-btn--sm" data-filterreset="${key}">Reset to default</button>
-      <button class="nst-btn nst-btn--sm nst-btn--filled" data-filterapply="${key}">Apply filters</button>
+      <button class="nst-btn nst-btn--sm fp-apply" data-filterapply="${key}">Apply filters</button>
     </div>
   </div>`;
 }
@@ -2412,15 +2414,14 @@ function viewJobs() {
         : kpi('Collector nodes in use', '0', 'no job names a collector', 'purple')}
     </div>
 
-    ${pageBar(`<div class="seg">${segs.map(([k,l]) => {
-      const c = JOBS.filter(JOB_TESTS[k]).length;
-      return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
-        <span class="tab-n num">${n(c)}</span></button>`;
-    }).join('')}</div>`)}
-
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
+        `<div class="seg">${segs.map(([k,l]) => {
+          const c = JOBS.filter(JOB_TESTS[k]).length;
+          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
+            <span class="tab-n num">${n(c)}</span></button>`;
+        }).join('')}</div>
+         ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },

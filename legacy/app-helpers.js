@@ -19,7 +19,7 @@ const pageHead = (t, d, right = '') =>
 
 /* A first column called Status or State gets the platform's full-width state
    pill rather than a chip that hugs its text. */
-const STATUS_COL = /^(status|state)$/i;
+const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
 const table = (cols, rows, cls = '', acts = null) => {

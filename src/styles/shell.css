@@ -141,11 +141,7 @@ button { font: inherit; }
 .prov { display: grid; grid-template-columns: 10rem 1fr; gap: var(--vw-space-sm) var(--vw-space-md); align-items: baseline; }
 
 /* Table helpers */
-.nst-table { width: 100%; }
-.nst-table th, .nst-table td { white-space: nowrap; }
-.t-right { text-align: right; }
 .chip-row { display: flex; gap: var(--vw-space-xxs); flex-wrap: wrap; }
-.tbl-wrap { overflow-x: auto; border-radius: var(--vw-radius-md); }
 
 /* Sparkline */
 .spark { display: block; width: 100%; height: 40px; }
@@ -174,8 +170,8 @@ button { font: inherit; }
 }
 /* grid/flex children must be allowed to shrink below content width */
 .app > * { min-width: 0; }
-.page, .stack, .stack-s, .stack-x, .row, .row-t, .grow, .tbl-wrap, .scroll-x, .facets { min-width: 0; }
-.tbl-wrap, .scroll-x { max-width: 100%; }
+.page, .stack, .stack-s, .stack-x, .row, .row-t, .grow, .scroll-x, .facets { min-width: 0; }
+.scroll-x { max-width: 100%; }
 @media (max-width: 900px) {
   .row-t > * { align-self: stretch !important; width: 100% !important; max-width: 100% !important; }
 }
@@ -332,8 +328,6 @@ button { font: inherit; }
 @media (max-width: 560px) {
   .hbar { grid-template-columns: 1fr 3rem !important; }
   .hbar-track { display: none; }
-  .tbl-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .nst-table { min-width: 0; }
   .row-t > * { max-width: 100%; }
   .legend { gap: var(--vw-space-sm); }
 }
@@ -427,8 +421,6 @@ path.st.has-c:hover { fill-opacity: .78; }
 .capex-form { display: grid; gap: var(--vw-space-md); grid-template-columns: repeat(5, minmax(0,1fr)); }
 @media (max-width: 1100px) { .capex-form { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 560px)  { .capex-form { grid-template-columns: 1fr; } }
-.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
-.nst-table td select.nst-input { min-width: 9rem; }
 /* site detail section tabs */
 .section-tabs { display: flex; gap: var(--vw-space-xs); overflow-x: auto; max-width: 100%;
   scrollbar-width: thin; padding-bottom: 2px; }
@@ -588,8 +580,6 @@ button.ledger-row.is-drill::after { top: 50%; transform: translateY(-50%); right
 .drill-back:hover { text-decoration: underline; }
 .drill-sep { color: var(--vw-color-gray-400); }
 .drill-label { color: var(--vw-color-gray-800); font-weight: 500; }
-.tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic;
-  padding: var(--vw-space-xl) var(--vw-space-md) !important; }
 
 /* ── Insights: four cards, four different forms, one skeleton ── */
 .ins-row { align-items: stretch; }
@@ -668,127 +658,6 @@ button.sb-row.is-drill::after { display: none; }
 /* Scan jobs: cap the job/scope column so the run-outcome columns stay on screen */
 .job-table th:nth-child(2), .job-table td:nth-child(2) { max-width: 19rem; }
 .job-table td:nth-child(2) .vw-card-metric-label-sub { display: block; white-space: normal; line-height: 1.4; }
-
-/* ══ grid chrome: kebab row menus, toolbar, filter panel ══ */
-.kb-th, .kb-td { width: 40px; min-width: 40px; }
-.kb-td { position: relative; text-align: right; overflow: visible !important; }
-.nst-table td.kb-td, .nst-table th.kb-th { padding-left: 0; padding-right: 6px; }
-.kb { display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: var(--vw-radius-full); border: 0;
-  background: none; color: var(--vw-color-gray-500); cursor: pointer; }
-.kb:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-800); }
-.kb.is-on { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
-.kb:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
-
-.kmenu { position: absolute; right: var(--vw-space-sm); top: calc(100% - 4px); z-index: 40;
-  min-width: 13rem; padding: 4px; text-align: left;
-  background: var(--vw-color-white); border: 1px solid var(--vw-color-gray-200);
-  border-radius: var(--vw-radius-md); box-shadow: 0 8px 24px rgba(15, 23, 42, .14); }
-.kmenu-r { right: 0; top: calc(100% + 6px); }
-/* A row menu inside the grid's own scroll box would be clipped by it, so it is
-   taken out of flow and placed against the kebab button's screen position. */
-.kmenu--fixed { position: fixed; right: auto; bottom: auto; top: auto; }
-.kmenu-i { display: block; width: 100%; text-align: left; font: inherit; font-size: 0.8125rem;
-  padding: var(--vw-space-xs) var(--vw-space-sm); border: 0; background: none; cursor: pointer;
-  color: var(--vw-color-gray-800); border-radius: var(--vw-radius-sm); white-space: nowrap; }
-.kmenu-i:hover { background: var(--vw-color-slate-50); }
-.kmenu-i.is-danger { color: var(--vw-color-red-700); }
-.kmenu-i.is-danger:hover { background: var(--vw-color-red-50); }
-.kmenu-i::after { display: none; }
-
-.grid-bar { display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap;
-  margin: var(--vw-space-md) 0; }
-.grid-count { white-space: nowrap; }
-.grid-search { width: 18rem; max-width: 100%; position: relative; }
-.grid-search .gs-ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-  color: var(--vw-color-gray-400); display: flex; pointer-events: none; }
-/* .nst-input-shell and .nst-input are each a whole field in the design system —
-   same 36px min-height, same 6px/8px padding, same border and radius. The search
-   box nests one in the other for the sake of the icon, so the inner one must draw
-   no frame of its own: two of them stacked made a 50px control ringed in white,
-   half again the height of the buttons beside it. */
-.grid-search .nst-input {
-  min-height: 0;
-  padding: 0 0 0 1.5rem;
-  border: 0;
-  border-radius: 0;
-  background: none;
-}
-.grid-search .nst-input:focus { outline: none; }
-.grid-tools { display: flex; gap: var(--vw-space-xs); position: relative; }
-.icon-btn { display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: var(--vw-radius-md);
-  border: 1px solid var(--vw-color-gray-200); background: var(--vw-color-white);
-  color: var(--vw-color-gray-600); cursor: pointer; }
-.icon-btn:hover { border-color: var(--vw-color-slate-400); color: var(--vw-color-gray-900); }
-.icon-btn.is-on { border-color: var(--vw-color-gray-900); color: var(--vw-color-gray-900); }
-.icon-btn:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
-
-.fpanel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
-  width: min(34rem, 92vw); text-align: left;
-  background: var(--vw-color-white); border: 1px solid var(--vw-color-gray-200);
-  border-radius: var(--vw-radius-lg); box-shadow: 0 12px 34px rgba(15, 23, 42, .18); }
-.fpanel-head { display: flex; align-items: center; justify-content: space-between;
-  padding: var(--vw-space-md) var(--vw-space-lg); }
-.fp-x { border: 0; background: none; cursor: pointer; color: var(--vw-color-gray-500);
-  display: flex; padding: 2px; border-radius: var(--vw-radius-sm); }
-.fp-x:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
-.fpanel-body { display: grid; grid-template-columns: 11rem 1fr; min-height: 15rem; }
-.fpanel-nav { display: flex; flex-direction: column; gap: 2px; max-height: 17rem; overflow-y: auto;
-  padding: 0 var(--vw-space-sm) var(--vw-space-sm) var(--vw-space-md);
-  border-right: 1px solid var(--vw-color-slate-100); }
-.fp-f { text-align: left; font: inherit; font-size: 0.875rem; cursor: pointer;
-  padding: var(--vw-space-sm) var(--vw-space-md); border: 0; background: none;
-  color: var(--vw-color-gray-700); border-radius: var(--vw-radius-sm); position: relative; }
-.fp-f:hover { background: var(--vw-color-slate-50); }
-.fp-f.is-on { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); font-weight: 500; }
-.fp-f.is-on::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
-  border-radius: 2px; background: var(--vw-color-gray-900); }
-.fpanel-ctl { display: flex; flex-direction: column; gap: var(--vw-space-xs);
-  padding: 0 var(--vw-space-lg) var(--vw-space-lg); }
-.fp-label { font-size: 0.8125rem; color: var(--vw-color-gray-500); }
-.fp-hint { font-size: 0.6875rem; color: var(--vw-color-gray-400); }
-.nst-select-shell { display: block; }
-.fp-sel { width: 100%; }
-.fpanel-foot { display: flex; align-items: center; gap: var(--vw-space-sm);
-  padding: var(--vw-space-md) var(--vw-space-lg);
-  border-top: 1px solid var(--vw-color-slate-100); }
-@media (max-width: 620px) { .fpanel-body { grid-template-columns: 1fr; }
-  .fpanel-nav { flex-direction: row; overflow-x: auto; border-right: 0;
-    border-bottom: 1px solid var(--vw-color-slate-100); } }
-/* The card frame belongs to the scroll container, not the table, so the rounded
-   edge always encloses what you can see — including the action column. */
-.tbl-wrap {
-  border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-md);
-  background: var(--vw-color-white);
-  /* The grid keeps its own scroll: a height comes from JS (25 rows, capped by the
-     screen) and lands in --grid-h. Set --grid-h on a wrapper to override it. */
-  overflow: auto;
-  max-height: var(--grid-h, none);
-  overscroll-behavior: contain;   /* reaching the last row must not scroll the page */
-}
-.tbl-wrap > .nst-table { border: 0; border-radius: 0; }
-
-/* The header stays put while the rows move under it — which means every header
-   cell has to be opaque, including the action column's, which is otherwise
-   transparent so it does not read as a column of its own. It repeats the band
-   colour rather than picking one: white here would quietly overrule the
-   .nst-table th shade below and flatten the header into the rows. */
-.tbl-wrap .nst-table thead th {
-  position: sticky; top: 0; z-index: 3;
-  background: var(--vw-color-slate-50);
-}
-
-/* The action column is the last cell of the row, not a column of its own: no
-   header label, no rule down its left edge, no separate background. It scrolls
-   with the row like every other cell. */
-.nst-table th.kb-th, .nst-table td.kb-td { background: transparent; }
-
-/* Chrome needs separate borders for position:sticky on table cells */
-.nst-table { border-collapse: separate; border-spacing: 0; }
-/* the table's own overflow:hidden traps position:sticky — the wrapper does the clipping */
-.nst-table { overflow: visible; }
 
 /* ══ node view ═══════════════════════════════════════════ */
 .nv-head { display: flex; align-items: center; gap: var(--vw-space-lg); flex-wrap: wrap; }
@@ -982,24 +851,6 @@ button.is-drill.tier-h, button.is-drill.circ-row { background: none; border: 0; 
 button.is-drill.tier-h:hover, button.is-drill.circ-row:hover { background: var(--vw-color-slate-50); }
 button.is-drill.tier-h::after, button.is-drill.circ-row::after { display: none; }
 
-/* ── infinite scroll ────────────────────────────────────────
-   The strip under a partly revealed grid: it doubles as the sentinel the
-   observer watches, so reaching it is what asks for the next 25 rows. */
-.tbl-more {
-  width: 100%;
-  display: flex; align-items: center; justify-content: center;
-  gap: var(--vw-space-sm);
-  padding: var(--vw-space-sm) var(--vw-space-md);
-  border: 0; border-top: 1px solid var(--vw-color-slate-200);
-  background: var(--vw-color-slate-50);
-  color: var(--vw-color-slate-600);
-  font-family: inherit; font-size: var(--vw-font-size-xs); font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-.tbl-more:hover { background: var(--vw-color-slate-100); color: var(--vw-color-slate-900); }
-.tbl-more-of { color: var(--vw-color-slate-400); font-weight: 400; }
-.nst-table tbody tr[hidden] { display: none; }
 
 .cell-sub {
   display: block;
@@ -1015,50 +866,6 @@ button.is-drill.tier-h::after, button.is-drill.circ-row::after { display: none; 
   margin-bottom: var(--vw-space-md);
 }
 .page-bar:empty { display: none; }
-.kmenu-sep { height: 1px; margin: 4px 0; background: var(--vw-color-slate-100); }
-.kmenu-i.is-primary { font-weight: 500; color: var(--vw-color-gray-900); }
-
-/* Wide grids: tighter gutters so the action column stays on screen */
-.nst-table td, .nst-table th { padding-left: var(--vw-space-md); padding-right: var(--vw-space-md); }
-
-/* ══ grid theme, matched to the platform ═════════════════ */
-/* Roomier rows and a quieter header, as the platform grids read. */
-.nst-table th {
-  padding-top: var(--vw-space-md); padding-bottom: var(--vw-space-md);
-  font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500);
-  background: var(--vw-color-slate-50);
-}
-.nst-table td { padding-top: 14px; padding-bottom: 14px; }
-.nst-table tbody tr:hover td { background: var(--vw-color-slate-50); }
-
-/* Status is a full-width state pill, not a chip hugging its label. */
-.st-td { padding-left: var(--vw-space-md); padding-right: var(--vw-space-md); }
-.st-td > .vw-chip {
-  display: flex; width: 100%; min-width: 5.5rem; justify-content: center;
-  padding-top: 5px; padding-bottom: 5px; border-radius: var(--vw-radius-full);
-}
-
-/* Toolbar buttons sit on a soft fill rather than an outline. */
-.icon-btn {
-  border-color: transparent;
-  background: var(--vw-color-slate-50);
-}
-.icon-btn:hover { background: var(--vw-color-slate-100); border-color: transparent; color: var(--vw-color-gray-900); }
-.icon-btn.is-on { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
-
-/* Action menus: leading icon, roomier rows. */
-.kmenu { min-width: 14.5rem; padding: 6px; border-radius: var(--vw-radius-lg);
-  border-color: var(--vw-color-slate-200); box-shadow: 0 10px 30px rgba(15, 23, 42, .12); }
-.kmenu-i {
-  display: flex; align-items: center; gap: var(--vw-space-sm);
-  font-size: 0.875rem; padding: 9px var(--vw-space-sm);
-  color: var(--vw-color-gray-800);
-}
-.kmenu-i .kmi { flex-shrink: 0; color: var(--vw-color-gray-500); }
-.kmenu-i:hover { background: var(--vw-color-slate-50); }
-.kmenu-i:hover .kmi { color: var(--vw-color-gray-800); }
-.kmenu-i.is-danger .kmi { color: var(--vw-color-red-500); }
-
 /* ── React shell ────────────────────────────────────────── */
 /* rail items are router links now, not buttons */
 a.side-item, a.side-item:hover, a.side-item:visited { text-decoration: none; color: inherit; }

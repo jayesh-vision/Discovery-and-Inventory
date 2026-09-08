@@ -15,6 +15,13 @@ const count = sel => p.evaluate(s => document.querySelectorAll(s).length, sel);
 /* ── React-owned: Physical Resources ───────────────────── */
 await p.goto(BASE + '/inventory/physical'); await p.waitForSelector('.nst-table tbody tr');
 ok('physical renders 12 rows', await count('.nst-table tbody tr') === 12);
+ok('grid theme: no refresh button in the toolbar; refresh is in the menu', await count('.grid-bar .icon-btn') === 2);
+await p.click('.grid-bar [aria-label="More actions"]'); await p.waitForTimeout(120);
+ok('grid theme: menu carries Refresh and Table options', (await text('.grid-bar .kmenu')).includes('Refresh') && (await text('.grid-bar .kmenu')).includes('Table options'));
+await p.click('.grid-bar [aria-label="More actions"]'); await p.waitForTimeout(80);
+await p.click('.grid-bar [aria-label="Filters"]'); await p.waitForTimeout(120);
+ok('grid theme: filter panel footer = Advance · Reset · Apply', await p.evaluate(() => [...document.querySelectorAll('.fpanel-foot .nst-btn')].map(b => b.textContent.trim()).join(' · ')) === 'Advance · Reset to default · Apply filters', await text('.fpanel-foot'));
+await p.click('.fpanel .fp-x'); await p.waitForTimeout(80);
 ok('no header of our own (host draws it)', await count('.topbar') === 0 && await count('header') === 0);
 ok('title names the screen', (await p.title()).startsWith('Resources · Physical Resources'), await p.title());
 ok('embedded: no left menu', await count('.side') === 0);
@@ -114,7 +121,7 @@ ok('insights: model rows match vendor rows', await p.evaluate(() => { const t = 
 ok('insights: donut total = failures', (await text('.ch-hero')) === '175', await text('.ch-hero'));
 ok('insights: 6 reasons listed', await count('.ins2-reason') === 6);
 ok('insights: vendor rows', await count('.ins2-6-6 .mtbl tbody tr') === 12);
-ok('insights: attention grid ≥ 10 rows', await count('.nst-table tbody tr') >= 10);
+ok('insights: no attention grid on the dashboard (it has its own screen)', await count('.nst-table') === 0 && !(await text('.ins2')).includes('Devices needing attention'));
 ok('insights: 21 state bubbles', await count('.geo-b') === 21);
 
 /* ── a region tile opens that region's devices, and only those ── */
@@ -128,7 +135,7 @@ ok('and mixes them into the roster, not a page of red', await p.evaluate(() => {
   return c.some(x => x === 'Answered');
 }));
 await p.click('.grid-tools [aria-label="Filters"]'); await p.waitForTimeout(150);
-await p.selectOption('.fpanel .fp-sel', 'Failed'); await p.click('.fpanel-foot .nst-btn--filled'); await p.waitForTimeout(300);
+await p.selectOption('.fpanel .fp-sel', 'Failed'); await p.click('.fpanel-foot .fp-apply'); await p.waitForTimeout(300);
 ok('filtering to Failed lands on the tile\'s 52', (await text('.grid-count')) === 'Showing 25 of 52', await text('.grid-count'));
 await p.goto(BASE + '/discovery/insights'); await p.waitForSelector('.kpi2-row');
 await p.click('.kpi3:first-child .kpi3-act'); await p.waitForSelector('.nst-table tbody tr');
@@ -233,6 +240,7 @@ for (const [key, want] of [['attention', jt.attention], ['errors', jt.errors], [
   ok(`jobs: filter ${key.padEnd(9)} returns the ${want} rows it claims`, got === want, `got ${got}`);
 }
 await p.click('[data-job-filter="All"]'); await p.waitForTimeout(250);
+ok('jobs: quick filter lives in the grid bar, no page bar', await count('#view .grid-bar .seg [data-job-filter]') === 5 && await count('#view .page-bar') === 0);
 ok('jobs: toolbar chips derived from the rows',
   (await text('#view .grid-bar')).includes(`${jt.running} running`) && (await text('#view .grid-bar')).includes(`${jt.errors} with errors`),
   await text('#view .grid-bar'));
@@ -310,6 +318,48 @@ await p.goto(BASE + '/inventory/location/site/BGLK-277/equipment?token=abc&facil
 const cvLive = await p.getAttribute('.cv-frame', 'src');
 ok('equipment: token + facility handed through, demo off', cvLive.includes('token=abc') && cvLive.includes('facility_id=F1') && !cvLive.includes('mock='), cvLive);
 ok('equipment: live badge', (await text('.cv-bar')).includes('Live'));
+
+
+/* ── one grid: the React DataGrid and the prototype's gridBar()/table() must
+   emit the same skeleton (tags and classes, state and text ignored, runs of
+   identical siblings collapsed), because grid.css is the only place either
+   is styled ── */
+const skel = sel => p.evaluate(sel => {
+  const root = document.querySelector(sel);
+  if (!root) return null;
+  const walk = (el, depth = 0) => {
+    /* a row is compared by its cells, not by what each screen puts in them */
+    if (el.tagName === 'TD' && el.classList.contains('kb-td') === false) return 'td' + (el.classList.contains('st-td') ? '.st-td' : '');
+    /* state, the prototype's js-ack marker, and which control a field takes are not structure */
+    const cls = [...el.classList].filter(c => !/^(is-|has-|js-|t-right$|num$)/.test(c)).map(c => c.replace(/^nst-(select|input)-shell$/, 'control')).sort().join('.');
+    let kids = [];
+    for (const k of el.children) {
+      if (/^(svg|option|input|select)$/i.test(k.tagName)) continue;
+      const ks = walk(k);
+      /* unclassed wrappers (React's display:contents divs) are not structure */
+      if (!k.classList.length && k.tagName === 'DIV') { kids.push(...ks.slice(ks.indexOf('(') + 1, -1).split('|').filter(Boolean)); continue; }
+      kids.push(ks);
+    }
+    kids = kids.filter((k, i) => k !== kids[i - 1]);
+    return el.tagName.toLowerCase() + (cls ? '.' + cls : '') + '(' + kids.join('|') + ')';
+  };
+  return walk(root);
+}, sel);
+const gridSkeleton = async (openMenu, openFilter) => {
+  await p.click(openMenu); await p.waitForTimeout(120);
+  const menu = await skel('.grid-bar .kmenu');
+  const tools = await skel('.grid-tools');
+  await p.click(openMenu); await p.waitForTimeout(60);
+  await p.click(openFilter); await p.waitForTimeout(120);
+  const fpanel = await skel('.fpanel');
+  await p.click('.fpanel .fp-x'); await p.waitForTimeout(60);
+  return { tools, menu, fpanel, head: await skel('.tbl-wrap thead tr'), row: await skel('.tbl-wrap tbody tr') };
+};
+await p.goto(BASE + '/inventory/physical'); await p.waitForSelector('.tbl-wrap table');
+const reactG = await gridSkeleton('.grid-bar [aria-label="More actions"]', '.grid-bar [aria-label="Filters"]');
+await p.goto(BASE + '/inventory/virtual'); await p.waitForSelector('#view .tbl-wrap table');
+const legacyG = await gridSkeleton('#view [data-gridmenu]', '#view [data-filteropen]');
+for (const k of Object.keys(reactG)) ok(`one grid: ${k} skeleton identical in both renderers`, reactG[k] === legacyG[k], reactG[k] === legacyG[k] ? '' : `\n    react  ${reactG[k]}\n    legacy ${legacyG[k]}`);
 
 console.log('\n' + (errs.length ? 'ERRORS:\n  ' + errs.join('\n  ') : 'no page or console errors'));
 console.log(fails ? `${fails} FAILED` : 'all passed');
