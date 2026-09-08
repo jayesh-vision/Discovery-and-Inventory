@@ -108,8 +108,7 @@ function stdActions(wrap: HTMLDivElement | null, onRefresh?: () => void): Action
   return [
     { l: 'Refresh', onClick: () => onRefresh?.() },
     { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
-    { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') },
-    { l: 'Table options' }
+    { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') }
   ];
 }
 

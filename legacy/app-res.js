@@ -373,7 +373,7 @@ function viewPassive() {
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
           <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
-        [{ l:'Create passive record', primary:true }, { l:'Import survey' }], 'passive')}
+        [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">

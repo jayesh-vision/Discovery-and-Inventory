@@ -17,7 +17,7 @@ await p.goto(BASE + '/inventory/physical'); await p.waitForSelector('.nst-table 
 ok('physical renders 12 rows', await count('.nst-table tbody tr') === 12);
 ok('grid theme: no refresh button in the toolbar; refresh is in the menu', await count('.grid-bar .icon-btn') === 2);
 await p.click('.grid-bar [aria-label="More actions"]'); await p.waitForTimeout(120);
-ok('grid theme: menu carries Refresh and Table options', (await text('.grid-bar .kmenu')).includes('Refresh') && (await text('.grid-bar .kmenu')).includes('Table options'));
+ok('grid theme: menu carries Refresh and the exports', (await text('.grid-bar .kmenu')).includes('Refresh') && (await text('.grid-bar .kmenu')).includes('Export as CSV'));
 await p.click('.grid-bar [aria-label="More actions"]'); await p.waitForTimeout(80);
 await p.click('.grid-bar [aria-label="Filters"]'); await p.waitForTimeout(120);
 ok('grid theme: filter panel footer = Advance · Reset · Apply', await p.evaluate(() => [...document.querySelectorAll('.fpanel-foot .nst-btn')].map(b => b.textContent.trim()).join(' · ')) === 'Advance · Reset to default · Apply filters', await text('.fpanel-foot'));
@@ -144,7 +144,9 @@ await p.goto(BASE + '/discovery/targets'); await p.waitForSelector('#view .page'
 ok('targets: quick filter lives in the grid bar, no page bar', await count('.grid-bar .seg [data-tgt-filter]') === 4 && await count('#view .page-bar') === 0);
 ok('targets: no loose Run now button', !(await text('.grid-bar')).includes('Run now'));
 await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(150);
-ok('targets: Run now is the kebab primary action', (await text('.grid-bar .kmenu .kmenu-i.is-primary')) === 'Run now');
+ok('targets: menu holds only actions that work', (await p.evaluate(() =>
+  [...document.querySelectorAll('.grid-bar .kmenu .kmenu-i')].map(x => x.textContent.trim()))).join(' · ') === 'Refresh · Export as CSV · Export as XLSX',
+  await text('.grid-bar .kmenu'));
 await p.click('.grid-bar [data-gridmenu]'); await p.waitForTimeout(100);
 
 /* ── every clickable count on Insights opens exactly that many records ── */
@@ -359,7 +361,12 @@ await p.goto(BASE + '/inventory/physical'); await p.waitForSelector('.tbl-wrap t
 const reactG = await gridSkeleton('.grid-bar [aria-label="More actions"]', '.grid-bar [aria-label="Filters"]');
 await p.goto(BASE + '/inventory/virtual'); await p.waitForSelector('#view .tbl-wrap table');
 const legacyG = await gridSkeleton('#view [data-gridmenu]', '#view [data-filteropen]');
-for (const k of Object.keys(reactG)) ok(`one grid: ${k} skeleton identical in both renderers`, reactG[k] === legacyG[k], reactG[k] === legacyG[k] ? '' : `\n    react  ${reactG[k]}\n    legacy ${legacyG[k]}`);
+/* the screen-action block above the separator is per-screen content, not chrome */
+const chromeOnly = v => v.replace(/button\.kmenu-i\(span\(\)\)\|div\.kmenu-sep\(\)\|/g, '');
+for (const k of Object.keys(reactG)) {
+  const [a, c] = [chromeOnly(reactG[k]), chromeOnly(legacyG[k])];
+  ok(`one grid: ${k} skeleton identical in both renderers`, a === c, a === c ? '' : `\n    react  ${a}\n    legacy ${c}`);
+}
 
 console.log('\n' + (errs.length ? 'ERRORS:\n  ' + errs.join('\n  ') : 'no page or console errors'));
 console.log(fails ? `${fails} FAILED` : 'all passed');

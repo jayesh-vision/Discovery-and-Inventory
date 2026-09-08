@@ -115,8 +115,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
         <button class="kmenu-i" data-gridrefresh="1">${kIcon('Refresh')}<span>Refresh</span></button>
         <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
-        <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button>
-        <button class="kmenu-i js-ack">${kIcon('Table options')}<span>Table options</span></button></div>` : ''}
+        <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button></div>` : ''}
       ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
   </div>`;

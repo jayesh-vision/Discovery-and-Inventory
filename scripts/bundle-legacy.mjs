@@ -83,7 +83,7 @@ patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class=
       \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
         \`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>
          \${chip(\`\${n(DL.runFail)} failed\`,'error')}\${chip(\`\${n(DL.runPartial)} partial\`,'warning')}\`,
-        [{ l: 'Run now', primary: true }, { l: 'Re-run failed targets' }, { l: 'Edit schedule' }], 'targets')}`, 'targets quick filter in grid bar');
+        [], 'targets')}`, 'targets quick filter in grid bar');
 patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`,
       `  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`, 'run-now icon');
 

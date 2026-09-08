@@ -380,7 +380,7 @@ function viewJobs() {
             <span class="tab-n num">${n(c)}</span></button>`;
         }).join('')}</div>
          ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
-        [{ l:'New job', primary:true }, { l:'Collectors' }, { l:'Credential profiles' }], 'jobs')}
+        [], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
@@ -960,7 +960,7 @@ function locList() {
   return `${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         `${chip('214 not reconciled','warning')}${chip('34 failed','error')}`,
-        [{ l:'Create location', primary:true }, { l:'Download report' }], 'location')}
+        [], 'location')}
 
       ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
@@ -1535,8 +1535,7 @@ function viewPhysical() {
         'Name, IP address, serial', FS.physical,
         meta.disc === 0 ? chip('No collector defined for this class', 'error')
           : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning'),
-        [{ l:'Create network element', primary:true }, { l:'Download report' },
-         { l:'View decommissioned', d:{ v:'inactive', q:'cls=' + t } }])}
+        [{ l:'View decommissioned', d:{ v:'inactive', q:'cls=' + t } }])}
       ${table(
         [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
          {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source · verified'}],
@@ -1603,7 +1602,7 @@ function viewVirtual() {
     ${card(`
       ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
         `${chip('Sourced from the EMS, not from discovery','purple')}`,
-        [{ l:'Instantiate NF', primary:true }, { l:'Download report' }], 'virtual')}
+        [], 'virtual')}
       ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
         rows.map((v, i) => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
@@ -1647,7 +1646,7 @@ function viewLinks() {
       ${tabs(LINK_TABS, t, 'link')}
       ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', FS.links,
         `${chip('44 new this cycle','info')}${chip('18 no longer seen','error')}`,
-        [{ l:'Open topology', primary:true }, { l:'Download report' }], 'links')}
+        [], 'links')}
       ${table([{t:'State'},{t:'Source NE'},{t:'Source IP'},{t:t==='lldp'?'Source interface':'Local'},
                {t:'Destination NE'},{t:t==='lldp'?'Destination interface':'Session'},{t:'Link name'},{t:'Verified'}],
         rows.map(r => [
@@ -1690,7 +1689,7 @@ function viewServices() {
     ${card(`
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
-        [{ l:'Download report' }], 'services')}
+        [], 'services')}
       ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'Verified'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
@@ -1745,7 +1744,7 @@ function viewInactive() {
 
       ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
         chip('Archive · read-only', 'neutral'),
-        [{ l:'Go to active inventory', nav:'physical', primary:true }, { l:'Download report' }])}
+        [{ l:'Go to active inventory', nav:'physical', primary:true }])}
       ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [
@@ -1786,7 +1785,7 @@ function viewReports() {
     ${card(`
       ${gridBar(rows.length, IL.reports, 'Report name, type, creator', FS.reports,
         `${chip('1 failed','error')}${chip('1 pending','warning')}`,
-        [{ l:'Generate report', primary:true }, { l:'Schedules' }], 'reports')}
+        [], 'reports')}
       ${table([{t:'Status'},{t:'Report name'},{t:'Type'},{t:'Generated'},{t:'Frequency'},{t:'Creator'},{t:'Created on'},{t:'Size'}],
         rows.map(r => [
           chip(r.st, r.chip), `<span class="vw-value">${r.name}</span>`, r.type, r.gen, r.freq, r.by,

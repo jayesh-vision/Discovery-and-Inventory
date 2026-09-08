@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, DrillBar, Mono } from '../components/ui';
-import { DataGrid, type Action } from '../components/grid/DataGrid';
+import { DataGrid } from '../components/grid/DataGrid';
 import { REGIONS, STATE_DEVICES, VENDORS, filterIdentified, type IdentifiedDevice, type Region } from '../data/discovery';
 
 const isRegion = (v: string | null): v is Region => !!v && REGIONS.some(r => r.region === v);
@@ -45,11 +45,6 @@ export default function DiscoveredDevices() {
   const title = [urlRegion, urlState, urlVendor, urlModel].filter(Boolean).join(' · ') || 'Discovered devices';
   const reset = () => { setQuery(''); setFilters({}); };
 
-  const rowActions = (d: IdentifiedDevice): Action[] => [
-    { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(d.name)}`) },
-    { l: 'Open site', onClick: () => nav(`/inventory/location?view=list&state=${encodeURIComponent(d.state)}`) },
-    { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(d.ip); } }
-  ];
 
   return (
     <div className="page">
@@ -68,7 +63,6 @@ export default function DiscoveredDevices() {
             { n: 'Class', o: ['Router', 'Switch'] }
           ]}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
-          rowActions={rowActions}
           renderRow={d => [
             <span className="vw-value">{d.name}</span>, <Mono>{d.ip}</Mono>, d.state, d.region,
             d.cls === 'router' ? 'Router' : 'Switch', d.vendor, <Mono>{d.model}</Mono>

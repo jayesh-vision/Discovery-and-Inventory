@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card, Chip, DrillBar, Mono, Sub, cv } from '../components/ui';
-import { DataGrid, type Action } from '../components/grid/DataGrid';
+import { DataGrid } from '../components/grid/DataGrid';
 import { REASONS, REGIONS, STATE_DEVICES, VENDORS, filterRegionDevices, type DeviceStatus, type Region, type RegionDevice } from '../data/discovery';
 
 const fmt = (v: number) => v.toLocaleString('en-IN');
@@ -55,11 +55,6 @@ export default function RegionDevices() {
   const reset = () => { setQuery(''); setFilters({}); };
   const title = region ? `${region} region` : 'All circles';
 
-  const rowActions = (d: RegionDevice): Action[] => [
-    { l: 'View target', onClick: () => nav(`/discovery/targets/${encodeURIComponent(d.name)}`) },
-    { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(d.name)}`) },
-    { l: 'Copy IP address', onClick: () => { navigator.clipboard?.writeText(d.ip); } }
-  ];
 
   return (
     <div className="page">
@@ -81,7 +76,6 @@ export default function RegionDevices() {
           ]}
           extra={<Chip tone={failed ? 'error' : 'success'}>{fmt(failed)} of {fmt(meta.total)} failed this cycle</Chip>}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={reset}
-          rowActions={rowActions}
           renderRow={d => [
             <Chip tone={d.status === 'Failed' ? 'error' : 'success'}>{d.status}</Chip>,
             <span className="vw-value">{d.name}</span>,
