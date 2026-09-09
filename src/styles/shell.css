@@ -876,6 +876,40 @@ button.is-drill.tier-h, button.is-drill.circ-row { background: none; border: 0; 
 button.is-drill.tier-h:hover, button.is-drill.circ-row:hover { background: var(--vw-color-slate-50); }
 button.is-drill.tier-h::after, button.is-drill.circ-row::after { display: none; }
 
+/* ── Location · KPI strip ───────────────────────────────────
+   see kpiProgress() — built from the app's own type scale
+   (vw-card-metric-*, .meter, .legend), so it's the same typographic
+   family as every other card on this page; only the container (tone
+   border, progress bar, legend, link) is new. */
+.kpi-progress { position: relative; display: flex; flex-direction: column; text-align: left;
+  width: 100%; padding: var(--vw-space-lg); border: 1px solid; border-radius: var(--vw-radius-lg);
+  background: var(--vw-color-white); font: inherit; color: inherit; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+div.kpi-progress { cursor: default; }
+button.kpi-progress { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+button.kpi-progress:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, .09); }
+.kprog-label { text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.kprog-link { display: inline-block; margin-top: var(--vw-space-md); font-size: var(--vw-font-label-sm);
+  font-weight: 600; color: var(--vw-color-purple-600); }
+
+/* ── Location · network hierarchy diagram ─────────────────
+   Datacenters (hub) → PoPs (mid ring) → Sites (outer ring), one spoke per
+   circle; see hierarchySvg(). Colour is by type — purple/sky/teal — never
+   by Central/Regional/Edge tier, which this widget does not use. */
+.hier-wrap { display: flex; flex-direction: column; gap: var(--vw-space-sm); align-items: center; }
+.hier-svg { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
+.hier-node { cursor: pointer; transform-box: fill-box; transform-origin: center;
+  transition: transform .12s ease; }
+.hier-node:hover, .hier-node:focus-visible { transform: scale(1.14); outline: none; }
+.hier-node:focus-visible circle { stroke: var(--vw-color-blue-500); stroke-width: 3; }
+.hier-n { font: inherit; font-size: 10px; font-weight: 600; fill: var(--vw-color-gray-900);
+  stroke: var(--vw-color-white); stroke-width: 3px; paint-order: stroke; pointer-events: none; }
+.hier-hub .hier-n { font-size: 13px; }
+.hier-lab { font: inherit; font-size: 9px; font-weight: 600; fill: var(--vw-color-gray-500);
+  stroke: var(--vw-color-white); stroke-width: 3px; paint-order: stroke; pointer-events: none; }
+.hier-link { fill: none; stroke: var(--vw-color-slate-200); stroke-width: 1.4; }
+.hier-legend { display: flex; gap: var(--vw-space-md); flex-wrap: wrap; align-items: center; width: 100%;
+  padding-top: var(--vw-space-sm); border-top: 1px solid var(--vw-color-slate-100); font-size: var(--vw-font-label-sm); }
+
 
 .cell-sub {
   display: block;

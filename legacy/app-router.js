@@ -79,6 +79,7 @@ function applyDrillQuery(view, q) {
   if (view === 'location') {
     if (p.view) LOC_VIEW = p.view;
     LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
+    LOC_TYPEGRP = p.type || null;
   }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
@@ -92,7 +93,7 @@ function clearDrill() {
   if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
   if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
-  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; }
+  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
   go(d.view);
 }

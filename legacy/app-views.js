@@ -807,7 +807,7 @@ let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
-let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null;
+let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null, LOC_TYPEGRP = null;
 /* state → operating region, the same grouping Insights uses */
 const STATE_REGION = {
   'Maharashtra': 'West', 'Uttar Pradesh': 'North', 'Karnataka': 'South', 'Madhya Pradesh': 'East',
@@ -920,84 +920,140 @@ const LOC_STATES = [
 ];
 
 /* ---- view 1 · Insights ---- */
+/* Datacenters → PoPs → Sites, radial: one hub at the centre, a PoP node
+   per circle on a middle ring, that circle's sites one ring further out —
+   the shape the estate is actually wired in, not a chart of it. Colour
+   is read off the type a node belongs to (purple hub, sky PoP, teal
+   site) — never the Central/Regional/Edge tier, which this widget does
+   not distinguish. Node size is location count (sqrt-scaled). Every node
+   carries a real dA() drill into the Locations list. */
+function hierarchySvg() {
+  const W = 640, H = 640, cx = 320, cy = 320;
+  const popR = 175, siteR = 275;
+  const rows = LOC_HIER, N = rows.length;
+  const popMax = Math.max(...rows.map(r => r.pop)), siteMax = Math.max(...rows.map(r => r.site));
+  const dc = LOC_TYPES.find(t => t.k === 'dc');
+
+  const links = [], pops = [], sites = [];
+  rows.forEach((r, i) => {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const px = (cx + popR * Math.cos(a)).toFixed(1), py = (cy + popR * Math.sin(a)).toFixed(1);
+    const sx = (cx + siteR * Math.cos(a)).toFixed(1), sy = (cy + siteR * Math.sin(a)).toFixed(1);
+    const popRad = (11 + 10 * Math.sqrt(r.pop / popMax)).toFixed(1);
+    const siteRad = (11 + 13 * Math.sqrt(r.site / siteMax)).toFixed(1);
+    const onair = (r.live / r.tot * 100).toFixed(0);
+
+    links.push(`<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" class="hier-link"/>`);
+    links.push(`<line x1="${px}" y1="${py}" x2="${sx}" y2="${sy}" class="hier-link"/>`);
+
+    /* "Other circles" is a rollup, not a real state — a state filter on it
+       would never match a row, so it opens the type unfiltered by circle
+       instead of a guaranteed-empty list. */
+    const stateQ = r.code === 'OTH' ? '' : `&state=${encodeURIComponent(r.n)}`;
+
+    pops.push(`<g class="hier-node" tabindex="0" role="button"${dA({ v:'location', l:`${r.n} — PoP locations`, q:`view=list&type=pop${stateQ}` })}>
+      <title>${r.n} · ${n(r.pop)} PoP locations · ${onair}% on-air</title>
+      <circle cx="${px}" cy="${py}" r="${popRad}" fill="${cv('sky',50)}" stroke="${cv('sky',500)}" stroke-width="2"/>
+      <text x="${px}" y="${(+py+3).toFixed(1)}" text-anchor="middle" class="hier-n">${r.pop}</text>
+      <text x="${px}" y="${(+py-popRad-7).toFixed(1)}" text-anchor="middle" class="hier-lab">${r.code}</text>
+    </g>`);
+
+    sites.push(`<g class="hier-node" tabindex="0" role="button"${dA({ v:'location', l:`${r.n} — Sites`, q:`view=list&type=site${stateQ}` })}>
+      <title>${r.n} · ${n(r.site)} sites · ${onair}% on-air</title>
+      <circle cx="${sx}" cy="${sy}" r="${siteRad}" fill="${cv('teal',50)}" stroke="${cv('teal',500)}" stroke-width="2"/>
+      <text x="${sx}" y="${(+sy+3).toFixed(1)}" text-anchor="middle" class="hier-n">${r.site}</text>
+    </g>`);
+  });
+
+  const hub = `<g class="hier-node hier-hub" tabindex="0" role="button"${dA({ v:'location', l:'Datacenters — filtered list', q:'view=list&type=dc' })}>
+    <title>Datacenters · ${n(dc.total)} locations · ${(dc.live/dc.total*100).toFixed(0)}% on-air</title>
+    <circle cx="${cx}" cy="${cy}" r="52" fill="${cv('purple',50)}" stroke="${cv('purple',500)}" stroke-width="3"/>
+    <text x="${cx}" y="${cy-3}" text-anchor="middle" class="hier-n" style="fill:${cv('purple',700)}">${dc.total}</text>
+    <text x="${cx}" y="${cy+13}" text-anchor="middle" class="hier-lab" style="fill:${cv('purple',600)}">Datacenters</text>
+  </g>`;
+
+  return `<div class="hier-wrap">
+    <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: datacenters, PoP locations and sites, by top circles">
+      ${links.join('')}${hub}${pops.join('')}${sites.join('')}
+    </svg>
+    <div class="hier-legend">
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',500)}"></span>Datacenters</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>PoP locations, by circle</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('teal',500)}"></span>Sites, by circle</span>
+      <span class="vw-card-metric-label-sub" style="margin-left:auto">node size = location count · hover for numbers · click to open</span>
+    </div>
+  </div>`;
+}
+
+/* A KPI tile with its own progress bar and legend, built entirely from
+   the app's existing type scale (vw-card-metric-*, .meter, .legend) so it
+   reads as the same family as every other card on this page — the only
+   thing new is the container, not the typography. Two shapes share it:
+   the Total tile splits by location type, the three type tiles split by
+   build status; both pass the same {c,hex,n} segment shape. */
+const kpiProgress = (label, value, sub, segs, tone, d) => {
+  const total = segs.reduce((a,s) => a + s.c, 0) || 1;
+  const bar = segs.map(s => `<span style="width:${(s.c/total*100).toFixed(2)}%;background:${s.hex}" title="${s.n}: ${n(s.c)}"></span>`).join('');
+  const legend = segs.map(s => `<span class="legend-i"><span class="legend-sw" style="background:${s.hex}"></span>${n(s.c)} ${s.n}</span>`).join('');
+  const inner = `
+    <div class="vw-card-metric-label kprog-label">${label}</div>
+    <div class="row vw-items-baseline" style="gap:6px;margin-top:2px">
+      <span class="vw-card-metric-xl num">${value}</span><span class="vw-card-metric-label-sub">locations</span>
+    </div>
+    <div class="vw-card-metric-label-sub" style="margin-top:2px">${sub}</div>
+    <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">${bar}</div>
+    <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>
+    ${d ? `<span class="kprog-link">Open filtered list →</span>` : ''}`;
+  const style = `border-color:${cv(tone,200)}`;
+  return d
+    ? `<button class="kpi-progress" style="${style}"${dA(d)}>${inner}</button>`
+    : `<div class="kpi-progress" style="${style}">${inner}</div>`;
+};
+
 function locInsights() {
-  const { live, build, plan, fail } = locStats();
-  const cMax = Math.max(...LOC_CIRCLES.map(c=>c.c));
+  const { live, fail } = locStats();
+  const totalLoc = LOC_TYPES.reduce((a,t) => a + t.total, 0);
+  const totalSegs = LOC_TYPES.map(t => ({ c: t.total, hex: cv(t.tone,500), n: t.n.toLowerCase() }));
+  const statusSegs = t => LOC_STATES.map(st => ({ c: t[st.k], hex: cv(st.tone,500), n: st.n.toLowerCase() }));
+
   return `
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
+      ${kpiProgress('Total locations', n(totalLoc), `${n(live)} on-air`, totalSegs, 'slate',
+        { v:'location', l:'All locations', q:'view=list' })}
+      ${LOC_TYPES.map(t => kpiProgress(t.n, n(t.total),
+        `${(t.live/t.total*100).toFixed(0)}% on-air · ${n(t.failed)} failed`, statusSegs(t), t.tone,
+        { v:'location', l:`${t.n} — filtered list`, q:`view=list&type=${t.k}` })).join('')}
+    </div>
+
     <div class="row-t" style="align-items:stretch">
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Build status by tier')}
-          <div class="legend">${LOC_STATES.map(st=>`<span class="legend-i">
-            <span class="legend-sw" style="background:${cv(st.tone,400)}"></span>${st.n}</span>`).join('')}</div>
+          ${headSm('Network hierarchy', 'Datacenters → PoPs → Sites, by top circles · node size = location count')}
         </div>
-        <div class="stack" style="gap:var(--vw-space-lg)">
-          ${LOC_TIERS.map(t => `
-            <div class="stack-s">
-              <div class="row vw-justify-between vw-items-baseline">
-                <button class="row is-drill tier-h" style="gap:var(--vw-space-sm);width:auto"
-                  ${dA({ v:'location', l:`${t.n} sites`, q:`view=list&cat=${t.n}` })}>
-                  <span class="vw-card-title-sm">${t.n}</span>
-                  <span class="vw-card-metric-label-sub">${(t.live/t.c*100).toFixed(0)}% on-air</span>
-                </button>
-                <span class="vw-value num" style="font-weight:500">${n(t.c)} <span class="vw-card-metric-label-sub">sites</span></span>
-              </div>
-              <div class="meter" style="height:22px;border-radius:var(--vw-radius-xs)">
-                ${LOC_STATES.map(st=>`<span style="width:${(t[st.k]/t.c*100).toFixed(2)}%;background:${cv(st.tone,400)}"
-                  title="${st.n}: ${n(t[st.k])}"></span>`).join('')}
-              </div>
-              <div class="row vw-gap-lg vw-wrap">
-                ${LOC_STATES.map(st=>`<span class="legend-i">
-                  <span class="legend-sw" style="background:${cv(st.tone,400)}"></span>${st.n}
-                  <strong class="num" style="color:var(--vw-color-gray-900)">${n(t[st.k])}</strong></span>`).join('')}
-              </div>
-            </div>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
-          <span class="row vw-gap-lg">
-            ${LOC_STATES.map(st=>`<span class="stack-x t-right"><span class="vw-label">${st.n}</span>
-              <span class="vw-value num">${n({live,building:build,planned:plan,failed:fail}[st.k])}</span></span>`).join('')}
-          </span>
-        </div>
-        <div class="vw-card-footer-divider">
-          <div style="margin-bottom:var(--vw-space-md)">
-            ${headSm('Failed builds')}
-          </div>
-          ${table([{t:'Circle'},{t:'Sites',r:true},{t:'Blocking reason'}],
-            LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
-              `<span style="color:${cv('red',700)};font-weight:500">${f.c}</span>`,
-              `<span class="vw-card-description" style="white-space:normal">${f.why}</span>`]))}
-        </div>`, 'grow')}
+        ${hierarchySvg()}`, 'grow')}
 
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Sites by circle')}
-          <div class="legend">
-            <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',400)}"></span>on-air</span>
-            <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',200)}"></span>not yet</span>
-          </div>
+          ${headSm('Coverage by circle', 'datacenters · PoPs · sites, ranked by total')}
         </div>
-        <div class="stack-s">
-          ${LOC_CIRCLES.map(c=>`
-            <button class="stack-x is-drill circ-row" style="gap:4px;width:100%"
-              ${dA({ v:'location', l:`Sites in ${c.n}`, q:`view=list&state=${c.n}` })}>
-              <div class="row vw-justify-between vw-items-baseline">
-                <span class="vw-value">${c.n}</span>
-                <span class="vw-card-metric-label-sub num">${n(c.live)} / ${n(c.c)}
-                  <span style="color:${cv(c.live/c.c < .65 ? 'amber' : 'gray', 600)}">· ${(c.live/c.c*100).toFixed(0)}%</span></span>
-              </div>
-              <div class="hbar-track" style="height:9px">
-                <div class="hbar-fill" style="width:${(c.c/cMax*100).toFixed(1)}%;background:${cv('slate',200)};position:relative">
-                  <span style="position:absolute;inset:0 auto 0 0;width:${(c.live/c.c*100).toFixed(1)}%;background:${cv('emerald',400)};border-radius:var(--vw-radius-xs);display:block"></span>
-                </div>
-              </div>
-            </button>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider row vw-justify-between">
-          <span class="vw-card-description">Bar length is total sites; fill is on-air.</span>
-          <button class="nst-btn nst-btn--xs" data-locview="map">Open map</button>
-        </div>`, '', 'width:min(360px,100%);flex-shrink:0')}
-    </div>`;
+        ${table([{t:'Circle'},{t:'DC',r:true},{t:'PoP',r:true},{t:'Sites',r:true},{t:'Total',r:true},{t:'On-air'}],
+          [...LOC_HIER].sort((a,b)=>b.tot-a.tot).map(c => [
+            `<button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" style="padding:0;font-weight:500"${dA({ v:'location', l:`Locations in ${c.n}`, q:`view=list&state=${encodeURIComponent(c.n)}` })}>${c.n}</button>`,
+            n(c.dc), n(c.pop), n(c.site), n(c.tot),
+            `<span class="row vw-gap-sm vw-items-center" style="min-width:6.5rem">
+              <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${(c.live/c.tot*100).toFixed(0)}%;background:${cv('emerald',400)}"></span></span>
+              <span class="num" style="color:${cv('gray',700)}">${(c.live/c.tot*100).toFixed(0)}%</span></span>`
+          ]))}`, 'grow')}
+    </div>
+
+    ${card(`
+      <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
+        ${headSm('Blocked builds', `${n(fail)} locations · blocking reason`)}
+      </div>
+      ${table([{t:'Circle'},{t:'Locations',r:true},{t:'Blocking reason'}],
+        LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
+          `<span style="color:${cv('red',700)};font-weight:500">${f.c}</span>`,
+          `<span class="vw-card-description" style="white-space:normal">${f.why}</span>`]))}`)}`;
 }
 
 /* ---- view 2 · Locations list ---- */
@@ -1006,7 +1062,8 @@ function locRows() {
     .filter(l => !LOC_ST || l.st === LOC_ST)
     .filter(l => !LOC_CAT || l.cat === LOC_CAT)
     .filter(l => !LOC_STATE || l.state === LOC_STATE)
-    .filter(l => !LOC_REGION || STATE_REGION[l.state] === LOC_REGION));
+    .filter(l => !LOC_REGION || STATE_REGION[l.state] === LOC_REGION)
+    .filter(l => !LOC_TYPEGRP || typeGroupOf(l.type) === LOC_TYPEGRP));
 }
 function locList() {
   const shown = locRows();

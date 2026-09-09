@@ -556,16 +556,43 @@ const LOC_FAILED = [
   { n:'Odisha',         c:3, why:'Transport ring incomplete' },
   { n:'Other circles',  c:9, why:'Mixed — see the exception queue' }
 ];
-const LOC_CIRCLES = (() => {
-  const top = LOC_GEO.slice(0, 8).map(g => ({ n: g.n, c: g.tot, live: g.live }));
-  const rest = LOC_GEO.slice(8);
-  top.push({ n: 'Other circles', c: rest.reduce((a,g)=>a+g.tot,0), live: rest.reduce((a,g)=>a+g.live,0) });
-  return top;
-})();
 const LOC_AGING = [
   { n:'Under 30 days', c:96,  tone:'emerald' }, { n:'30 – 90 days', c:79, tone:'amber' },
   { n:'90 – 180 days', c:41,  tone:'orange' },  { n:'Over 180 days', c:20, tone:'red' }
 ];
+
+/* ── location hierarchy: every site type groups into one of three tiers
+   the estate is actually built from — a Datacenter core, PoP locations
+   that anchor a circle, and the sites (macro/micro/cell) hanging off
+   them. Insights' hierarchy widget and its drill-downs read this grouping,
+   not the raw `type` field, so a new site type only needs one line here. */
+const TYPE_GROUP = { 'Datacenter':'dc', 'POP':'pop', 'Macro-O':'site', 'Micro-CO':'site', 'Cell Site':'site' };
+const typeGroupOf = t => TYPE_GROUP[t] || 'site';
+
+const LOC_TYPES = [
+  { k:'dc',   n:'Datacenters',   tone:'purple', total:24,   live:21,   building:2,   planned:1,   failed:0 },
+  { k:'pop',  n:'PoP locations', tone:'sky',    total:210,  live:165,  building:27,  planned:15,  failed:3 },
+  { k:'site', n:'Sites',         tone:'teal',   total:1520, live:1046, building:207, planned:236, failed:31 }
+];
+
+/* per-circle DC/PoP/Site split — derived from LOC_GEO so the three counts
+   always foot to LOC_TYPES; only the DC/PoP seed for the top circles is
+   hand-set, sites and the "other circles" remainder are the difference. */
+const LOC_HIER = (() => {
+  const seed = { MH:{dc:4,pop:32}, UP:{dc:3,pop:27}, KA:{dc:3,pop:26}, MP:{dc:2,pop:24},
+                 DL:{dc:3,pop:22}, TN:{dc:2,pop:19}, GJ:{dc:2,pop:18}, AP:{dc:2,pop:17} };
+  const top = LOC_GEO.slice(0, 8).map(g => {
+    const s = seed[g.c] || { dc:0, pop:0 };
+    return { code:g.c, n:g.n, dc:s.dc, pop:s.pop, site:g.tot-s.dc-s.pop, tot:g.tot, live:g.live };
+  });
+  const rest = LOC_GEO.slice(8);
+  const restTot = rest.reduce((a,g)=>a+g.tot,0), restLive = rest.reduce((a,g)=>a+g.live,0);
+  const dcTotal = LOC_TYPES.find(t=>t.k==='dc').total, popTotal = LOC_TYPES.find(t=>t.k==='pop').total;
+  const restDc = dcTotal - top.reduce((a,c)=>a+c.dc,0), restPop = popTotal - top.reduce((a,c)=>a+c.pop,0);
+  top.push({ code:'OTH', n:'Other circles', dc:restDc, pop:restPop, site:restTot-restDc-restPop, tot:restTot, live:restLive });
+  return top;
+})();
+
 const LOCATIONS = [
   { st:'On-air',      chip:'success', name:'KA-BGLK-277', cat:'Central',  ct:'amber',   type:'POP',      id:'BGLK-277',   addr:'277, Bagalkot',        city:'Bagalkot',    state:'Karnataka',      ne:25, disc:17, lat:16.181, lon:75.696 },
   { st:'On-air',      chip:'success', name:'DEL-279',     cat:'Edge',     ct:'emerald', type:'Cell Site',id:'DEL-279',    addr:'279, Delhi',           city:'Delhi',       state:'Delhi',          ne:14, disc:14, lat:28.644, lon:77.216 },
@@ -576,7 +603,22 @@ const LOCATIONS = [
   { st:'On-air',      chip:'success', name:'Vijayawada',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'VJA-118',    addr:'Vijayawada',           city:'Vijayawada',  state:'Andhra Pradesh', ne:9,  disc:8, lat:16.506, lon:80.648 },
   { st:'In progress', chip:'warning', name:'MP-INDR-397', cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'MP-INDR-510',addr:'Scheme 78-Part-ii',    city:'Indore',      state:'Madhya Pradesh', ne:5,  disc:3, lat:22.681, lon:75.803 },
   { st:'Failed',      chip:'error',   name:'TL-JSAT-3S',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'TL-JSAT-3S', addr:'Indore AICTSL',        city:'Indore',      state:'Madhya Pradesh', ne:3,  disc:0, lat:22.702, lon:75.951 },
-  { st:'On-air',      chip:'success', name:'DND-ART-98',  cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'DND-ART-98', addr:'Govt girls school',    city:'Dindigul',    state:'Tamil Nadu',     ne:7,  disc:7, lat:10.365, lon:77.975 }
+  { st:'On-air',      chip:'success', name:'DND-ART-98',  cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'DND-ART-98', addr:'Govt girls school',    city:'Dindigul',    state:'Tamil Nadu',     ne:7,  disc:7, lat:10.365, lon:77.975 },
+  { st:'On-air',      chip:'success', name:'Mumbai Core DC-01', cat:'Central', ct:'amber', type:'Datacenter', id:'MUM-DC01', addr:'Bandra Kurla Complex', city:'Mumbai',    state:'Maharashtra',    ne:186,disc:181,lat:19.062, lon:72.868 },
+  { st:'In progress', chip:'warning', name:'Bengaluru DC-02',   cat:'Central', ct:'amber', type:'Datacenter', id:'BLR-DC02',  addr:'Electronic City Phase 2', city:'Bengaluru', state:'Karnataka', ne:64, disc:38, lat:12.845, lon:77.660 },
+
+  /* one PoP + one site per top circle, so every Network hierarchy node
+     opens a Locations list that actually has rows in it, not zero. */
+  { st:'On-air',      chip:'success', name:'MH-MUM-POP-04', cat:'Central',  ct:'amber',   type:'POP',      id:'MUM-POP04',  addr:'BKC Annexe',           city:'Mumbai',      state:'Maharashtra',    ne:19, disc:16, lat:19.076, lon:72.878 },
+  { st:'On-air',      chip:'success', name:'MH-NGP-118',   cat:'Edge',     ct:'emerald', type:'Cell Site',id:'NGP-118',    addr:'Wardha Road',          city:'Nagpur',      state:'Maharashtra',    ne:6,  disc:6,  lat:21.146, lon:79.088 },
+  { st:'On-air',      chip:'success', name:'UP-LKO-POP-11', cat:'Central',  ct:'amber',   type:'POP',      id:'LKO-POP11',  addr:'Gomti Nagar',          city:'Lucknow',     state:'Uttar Pradesh',  ne:15, disc:13, lat:26.847, lon:80.994 },
+  { st:'In progress', chip:'warning', name:'UP-KNP-330',   cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'KNP-330',    addr:'Kalyanpur',            city:'Kanpur',      state:'Uttar Pradesh',  ne:5,  disc:2,  lat:26.466, lon:80.312 },
+  { st:'On-air',      chip:'success', name:'MP-BPL-POP-07', cat:'Central',  ct:'amber',   type:'POP',      id:'BPL-POP07',  addr:'Arera Colony',         city:'Bhopal',      state:'Madhya Pradesh', ne:12, disc:11, lat:23.234, lon:77.435 },
+  { st:'On-air',      chip:'success', name:'DL-CP-POP-02',  cat:'Central',  ct:'amber',   type:'POP',      id:'CP-POP02',   addr:'Connaught Place',      city:'New Delhi',   state:'Delhi',          ne:22, disc:21, lat:28.632, lon:77.219 },
+  { st:'On-air',      chip:'success', name:'TN-CHN-POP-05', cat:'Central',  ct:'amber',   type:'POP',      id:'CHN-POP05',  addr:'Guindy',                city:'Chennai',     state:'Tamil Nadu',     ne:17, disc:16, lat:13.010, lon:80.218 },
+  { st:'On-air',      chip:'success', name:'GJ-AMD-POP-06', cat:'Central',  ct:'amber',   type:'POP',      id:'AMD-POP06',  addr:'SG Highway',           city:'Ahmedabad',   state:'Gujarat',        ne:14, disc:12, lat:23.026, lon:72.508 },
+  { st:'Planned',     chip:'info',    name:'GJ-SUR-221',   cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'SUR-221',    addr:'Adajan',               city:'Surat',       state:'Gujarat',        ne:3,  disc:0,  lat:21.196, lon:72.789 },
+  { st:'On-air',      chip:'success', name:'AP-VZG-POP-03', cat:'Regional', ct:'sky',     type:'POP',      id:'VZG-POP03',  addr:'Dwaraka Nagar',        city:'Visakhapatnam',state:'Andhra Pradesh',ne:10, disc:9,  lat:17.687, lon:83.219 }
 ];
 
 const STOCK_ST = [
