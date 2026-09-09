@@ -1,6 +1,6 @@
 /* ── App shell: layout only. Colours, type and components come from the
       NST design system bundle above. No literal hex, no invented components. ── */
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; overscroll-behavior: auto; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;

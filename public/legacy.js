@@ -2220,8 +2220,7 @@ function viewInsights() {
 
 
   return `<div class="page">
-    ${pageBar(`<span class="vw-card-description grow">${pmeta().note}</span>
-      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
+    ${pageBar(`<div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Targets polled', n(DL.targets), `${n(DL.runFull)} clean · ${n(DL.runPartial)} partial · ${n(DL.runFail)} failed`, 'sky',
@@ -2236,11 +2235,11 @@ function viewInsights() {
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md ins-row">
 
-      ${card(`${insHead('Reconciliation outcome', pmeta().recNote)}
+      ${card(`${insHead('Reconciliation outcome')}
         <div class="ins-viz">${donut(outSegs, DL.union, n(DL.exact), 'agree', 124)}</div>
         <div class="ins-legend lg2">${legendRows(outSegs)}</div>`, 'ins-card')}
 
-      ${card(`${insHead('Discovery coverage', 'Share of the inventory a collector can actually reach')}
+      ${card(`${insHead('Discovery coverage')}
         <div class="ins-viz ins-viz-c">
           <span class="hero num">${(DL.discoverable / DL.master * 100).toFixed(1)}<i>%</i></span>
           <span class="hero-sub">${n(DL.discoverable)} of ${n(DL.master)} records</span>
@@ -2251,7 +2250,7 @@ function viewInsights() {
         </div>
         <div class="ins-legend">${legendRows(covSegs)}</div>`, 'ins-card')}
 
-      ${card(`${insHead('Run outcome', pmeta().runNote)}
+      ${card(`${insHead('Run outcome')}
         <div class="ins-viz ins-viz-s">
           <div class="meter ins-meter" style="margin-bottom:var(--vw-space-xs)">
             ${runSegs.map(s => `<span style="width:${(s.c / DL.targets * 100).toFixed(2)}%;background:${cv(s.tone,400)}"></span>`).join('')}
@@ -2270,7 +2269,7 @@ function viewInsights() {
             ${(DL.runFull / DL.targets * 100).toFixed(1)}% clean</span>
         </div>`, 'ins-card')}
 
-      ${card(`${insHead('What moved in this window', 'Regressions against recoveries. A snapshot cannot show this.')}
+      ${card(`${insHead('What moved in this window')}
         <div class="ins-viz ins-viz-s ins-viz-m">
           ${MOVE_P[PERIOD].map(m => `
             <div class="mv-row">
@@ -2289,7 +2288,7 @@ function viewInsights() {
     <div class="row-t" style="align-items:stretch">
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-          ${headSm('Exceptions by circle', 'Select a circle to see its breakdown.')}
+          ${headSm('Exceptions by circle')}
           ${chip(`${n(DL.open - DL.unclaimed)} placed · ${n(DL.unclaimed)} unplaceable`, 'neutral')}
         </div>
         <div class="carto-row">
@@ -2301,7 +2300,7 @@ function viewInsights() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('The six collector families', 'What each one asks the device, and what it writes to inventory.')}
+        ${headSm('The six collector families')}
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',400)}"></span>passed</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('red',400)}"></span>failed</span>
@@ -2341,7 +2340,7 @@ function viewInsights() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Why a target drops out', 'Every target that did not reach a written record, and the stage it stopped at.')}
+        ${headSm('Why a target drops out')}
         ${chip(`${n(DL.runFail)} of ${n(DL.targets)} targets`, 'error')}
       </div>
       ${table([{ t: 'Stopped between' }, { t: 'Typed reason' }, { t: 'Targets', r: true }, { t: 'Share of failures', r: true },
@@ -2689,7 +2688,7 @@ function viewTarget() {
     </div>
 
     <div class="row-t" style="align-items:stretch">
-      ${card(`${headSm('Run history', 'Last four runs of this target')}
+      ${card(`${headSm('Run history')}
         <div style="margin-top:var(--vw-space-md)">
         ${table([{ t: 'Run' }, { t: 'Started' }, { t: 'Elapsed' }, { t: 'Steps' }, { t: 'Outcome' }, { t: 'What changed' }, { t: '' }],
           RUN_HISTORY.map(r => [
@@ -2700,7 +2699,7 @@ function viewTarget() {
           ]))}
         </div>`, 'grow')}
 
-      ${card(`${headSm('Objects discovered', 'Written to inventory on the current run')}
+      ${card(`${headSm('Objects discovered')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
           ${ADJACENCY.map(a => `
             <div class="stack-x" style="gap:2px">
@@ -2807,8 +2806,7 @@ function viewReconcile() {
   const dMax = Math.max(...DRIFT_BY_FIELD.map(d => d.c));
   const ruleTotal = MATCH_RULES.reduce((a, r) => a + r.hits, 0);
   return `<div class="page">
-    ${pageBar(`<span class="vw-card-description grow">${pmeta().recNote}</span>
-      <div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
+    ${pageBar(`<div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
     ${drillBar()}
 
     ${card(`
@@ -2818,13 +2816,13 @@ function viewReconcile() {
     ${recTable()}
 
     <div class="row-t" style="align-items:stretch">
-      ${card(`${headSm('Which attribute disagrees', `Across all ${n(DL.drifted)} differing elements — device-reported attributes only`)}
+      ${card(`${headSm('Which attribute disagrees')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
         <div class="vw-card-footer-divider">
           <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
         </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
-      ${card(`${headSm('How a device is matched to a record', `Rules run in priority order; the first that resolves wins. ${n(ruleTotal)} devices resolved this cycle.`)}
+      ${card(`${headSm('How a device is matched to a record')}
         <div style="margin-top:var(--vw-space-md)">
         ${MATCH_RULES.map(r => `
           <div class="rule">
@@ -2919,7 +2917,7 @@ function viewHome() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Recently discovered', 'Network elements written or updated by the last discovery cycle.')}
+        ${headSm('Recently discovered')}
         <button class="nst-btn nst-btn--sm" data-nav="physical">Open Physical Resources</button>
       </div>
       ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OEM'},{t:'Location'},{t:'Source'},{t:'Verified'}],
@@ -2972,7 +2970,7 @@ function locInsights() {
     <div class="row-t" style="align-items:stretch">
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Build status by tier', 'One scale, so the three tiers can actually be compared.')}
+          ${headSm('Build status by tier')}
           <div class="legend">${LOC_STATES.map(st=>`<span class="legend-i">
             <span class="legend-sw" style="background:${cv(st.tone,400)}"></span>${st.n}</span>`).join('')}</div>
         </div>
@@ -3007,7 +3005,7 @@ function locInsights() {
         </div>
         <div class="vw-card-footer-divider">
           <div style="margin-bottom:var(--vw-space-md)">
-            ${headSm('Failed builds', `${n(fail)} sites, and what is blocking each group.`)}
+            ${headSm('Failed builds')}
           </div>
           ${table([{t:'Circle'},{t:'Sites',r:true},{t:'Blocking reason'}],
             LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
@@ -3017,7 +3015,7 @@ function locInsights() {
 
       ${card(`
         <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Sites by circle', 'On-air against total')}
+          ${headSm('Sites by circle')}
           <div class="legend">
             <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',400)}"></span>on-air</span>
             <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',200)}"></span>not yet</span>
@@ -3079,10 +3077,7 @@ function locList() {
         }), '',
         i => [A('View site details', { v:'site', l:locRows()[i].name }),
               A('Show on map', { v:'location', l:`${locRows()[i].name} on the map`, q:'view=map' }),
-              A('Open capex', { v:'capex', l:`Capex · ${locRows()[i].name}` }),
-              A('Open opex', { v:'opex', l:`Opex · ${locRows()[i].name}` }),
-              A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' }),
-              CP('Copy location ID', locRows()[i].id)])}`)}`;
+              A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' })])}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -3209,7 +3204,7 @@ function locMap() {
     : [['30+ in build','amber',500],['15 – 29','amber',300],['5 – 14','amber',100],['< 5','slate',100]];
   return `${card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-md);gap:var(--vw-space-md)">
-      ${headSm('Sites by geography', 'State boundaries, Web Mercator. Click a state or a site pin.')}
+      ${headSm('Sites by geography')}
       <div class="row vw-wrap">
         <span class="vw-card-metric-label-sub">Colour by</span>
         <div class="seg">${MAP_MODES.map(m=>`<button class="${MAP_COLOR===m.k?'is-on':''}" data-mapcolor="${m.k}">${m.n}</button>`).join('')}</div>
@@ -3328,12 +3323,12 @@ function viewSite() {
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
-        i => [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
-              A('Open element', { v:'resource', l:rows[i].name }),
-              A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-              A('Open capex line', { v:'capex', l:`Capex · ${SITE_ID}` }),
-              A('Open opex contracts', { v:'opex', l:`Opex · ${SITE_ID}` }),
-              CP('Copy serial number', rows[i].sn)])
+        i => [
+          ...(hasNodeView(rows[i].type) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
+          A('Open element', { v:'resource', l:rows[i].name }),
+          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
+          ...(hasNodeView(rows[i].type) ? [] : (rows[i].sn ? [CP('Copy serial number', rows[i].sn)] : []))
+        ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
       ${rows.length ? `<div class="vw-card-footer-divider legend">
@@ -3506,7 +3501,7 @@ function viewCapex() {
         <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
 
     ${card(`
-      ${headSm('Budget header', 'Applies to every line item on this site.')}
+      ${headSm('Budget header')}
       <div class="capex-form" style="margin-top:var(--vw-space-md)">
         <div class="stack-x"><label class="nst-input-label" for="cxfy">Financial year</label>
           <select class="nst-input cx-hd" id="cxfy" data-f="fy">
@@ -3523,7 +3518,7 @@ function viewCapex() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Line items', 'Amount is quantity × unit cost and recalculates as you type.')}
+        ${headSm('Line items')}
         <button class="nst-btn nst-btn--sm" data-cxadd="1">Add line item</button>
       </div>
       <div class="tbl-wrap"><table class="nst-table">
@@ -3537,11 +3532,8 @@ function viewCapex() {
 
 function viewLocation() {
   const body = LOC_VIEW === 'list' ? locList() : LOC_VIEW === 'map' ? locMap() : locInsights();
-  const sub = { insights:'Build progress and reconciliation across the estate.',
-                list:'Every site on record, with what discovery found there.',
-                map:'Where the estate sits, by telecom circle.' }[LOC_VIEW];
   return `<div class="page">
-    ${pageBar(`<span class="vw-card-description grow">${sub}</span>${locTabs()}`)}
+    ${pageBar(locTabs())}
     ${drillBar()}
     ${body}
   </div>`;
@@ -4091,7 +4083,7 @@ function resOverview() {
   const svcDown = RES_SERVICES.filter(s => s.st === 'Down').length;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Identity and provenance', 'Every field with where it came from')}
+    ${card(`${headSm('Identity and provenance')}
       <div style="margin-top:var(--vw-space-md)">
       ${table([{t:'Field'},{t:'Value'},{t:'Source'},{t:'Verified'}], PROV.map(p => [
         `<span class="vw-label">${p.f}</span>`,
@@ -4102,7 +4094,7 @@ function resOverview() {
         i => [CP('Copy value', PROV[i].v)])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
-      ${card(`${headSm('Support position', 'Lifecycle and cover')}
+      ${card(`${headSm('Support position')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
           ${[['End of sale','30-Jun-2025','past','red'],['End of support','31-Dec-2028','2 y 4 mo away','amber'],
              ['Warranty / AMC','31-Mar-2027','7 mo away','amber'],['Purchased','12-Mar-2024','PO-2024-1188','slate']]
@@ -4110,7 +4102,7 @@ function resOverview() {
               <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
               ${chip(s, t==='red'?'error':t==='amber'?'warning':'neutral')}</div>`).join('')}
         </div>`)}
-      ${card(`${headSm('Impact if this element fails', 'Traversed from discovered adjacency')}
+      ${card(`${headSm('Impact if this element fails')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
           ${[['Directly attached elements','19','LLDP neighbours','sky'],
              ['Downstream sites isolated','3','no alternate path','red'],
@@ -4128,7 +4120,7 @@ function resOverview() {
 function resHardware() {
   return card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Hardware', 'Chassis → slot → card → port → transceiver. 51 components, 16 optical modules.')}
+      ${headSm('Hardware')}
       <div class="chip-row">${chip('1 failed','error')}${chip('1 degrading','warning')}${chip('1 slot free','info')}</div>
     </div>
     ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
@@ -4151,7 +4143,7 @@ function resIfaces() {
   return `
   ${card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-lg)">
-      ${headSm('Port capacity', 'The planning question: is there a free port here?')}
+      ${headSm('Port capacity')}
       ${chip(IF_CAP.forecast, 'warning')}
     </div>
     <div class="cx-util">
@@ -4224,7 +4216,7 @@ function resNbrs() {
 function resSvcs() {
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Services', 'Riding on this element, discovered from device configuration')}
+      ${headSm('Services')}
       <div class="chip-row">${chip('4 L3VPN','info')}${chip('1 L2VPN','cyan')}${chip('2 down','error')}</div>
     </div>
     ${table([{t:'Status'},{t:'Type'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
@@ -4237,7 +4229,7 @@ function resSvcs() {
 function resAlarms() {
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Alarms', 'Current alarms bound to this inventory record and its components')}
+      ${headSm('Alarms')}
       <div class="chip-row">${chip('1 critical','error')}${chip('2 major','warning')}${chip('2 minor','info')}${chip('2 unacked','error')}</div>
     </div>
     ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
@@ -4251,7 +4243,7 @@ function resConfig() {
   const c = RES_CONFIG;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Configuration drift', 'Running configuration against the model template')}
+    ${card(`${headSm('Configuration drift')}
       <div style="margin-top:var(--vw-space-md)">
         ${table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
           c.drift.map(d => [`<span class="mono">${d.p}</span>`,
@@ -4705,7 +4697,7 @@ function viewOpex() {
         <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
 
     ${card(`
-      ${headSm('Budget header', 'The monthly budget every contract on this site is measured against.')}
+      ${headSm('Budget header')}
       <div class="capex-form" style="margin-top:var(--vw-space-md)">
         <div class="stack-x"><label class="nst-input-label" for="oxfy">Financial year</label>
           <select class="nst-input ox-hd" id="oxfy" data-f="fy">
@@ -4720,7 +4712,7 @@ function viewOpex() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Recurring contracts', 'Per month is the billed amount divided by its billing period, and recalculates as you type.')}
+        ${headSm('Recurring contracts')}
         <button class="nst-btn nst-btn--sm" data-oxadd="1">Add contract</button>
       </div>
       <div class="tbl-wrap"><table class="nst-table">
@@ -5256,7 +5248,7 @@ function nodeOverview(N) {
     nvTile('System uptime', N.ov.uptime, `last reboot ${N.ov.since}`, 'purple')
   ];
   return card(`
-    ${headSm('Overview', `${N.meta.n} health snapshot and network services · polled by assurance, not by the discovery collectors`)}
+    ${headSm('Overview')}
     <div class="nv-tiles" style="margin-top:var(--vw-space-md)">${tiles.join('')}</div>
 
     <div class="nv-health-row">
@@ -5281,7 +5273,7 @@ function nodeOverview(N) {
 function nodeAvailability(N) {
   const pct = a => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(2);
   return card(`
-    ${headSm('24-hour service availability', 'Hourly probe result for each monitored service. One cell is one hour.')}
+    ${headSm('24-hour service availability')}
     <div style="margin-top:var(--vw-space-md)">
       ${nvStrip(N.avail.icmp, 'ICMP health', pct(N.avail.icmp))}
       ${nvStrip(N.avail.ntp, 'NTP sync', pct(N.avail.ntp))}
@@ -5300,7 +5292,7 @@ function nodeHardware(N) {
 
   const perfCard = card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      ${headSm('Performance forecast', `${NODE_PERF === '24h' ? '24-hour' : '7-day'} prediction with capacity thresholds`)}
+      ${headSm('Performance forecast')}
       <div class="row">
         <div class="nv-fcgroup">
           ${[['CPU forecast', N.perf.fCpu + '%', 'blue'],
@@ -5449,7 +5441,7 @@ function nodeHardware(N) {
     </div>` : '';
 
   return `
-    ${card(`${headSm('Hardware & interfaces', 'Physical ports, modules and component health')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
+    ${card(`${headSm('Hardware & interfaces')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
     <div class="row-t nv-hw" style="align-items:stretch">
       ${perfCard}
       ${aiHw}
@@ -5499,7 +5491,7 @@ function nodeVlans(N) {
   const big = N.vlans.reduce((a, v) => a.mac > v.mac ? a : v);
   const hi  = N.vlans.reduce((a, v) => a.pct > v.pct ? a : v);
   return card(`
-    ${headSm('VLAN dashboard', 'Layer-2 segmentation overview')}
+    ${headSm('VLAN dashboard')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${kpi('Configured VLANs', String(N.vlans.length + 51), 'maximum supported 4,094', 'sky')}
       ${kpi('Active VLANs', String(N.vlans.length + 45), 'carrying traffic this hour', 'emerald')}
@@ -5531,7 +5523,7 @@ function nodeLinks(N) {
      like NODE_SVC_TAB, not a drill */
   const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
   return card(`
-    ${headSm('Links', 'Protocol and transport link intelligence')}
+    ${headSm('Links')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${p.k === sel.k ? ' is-on' : ''}"
@@ -5594,7 +5586,7 @@ function nodeLinks(N) {
 function nodeServices(N) {
   const rows = N.instances;
   return card(`
-    ${headSm('Network services', 'Service inventory, utilisation and SLA trends')}
+    ${headSm('Network services')}
     <div class="vw-grid vw-grid-cols-5 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.svcTypes.map(t => `
         <div class="vw-card-child stack-x" style="padding:var(--vw-space-md);gap:2px">
@@ -5662,7 +5654,7 @@ function nodeAlerts(N) {
   const SEV = { Critical:'error', Major:'warning', Minor:'orange', Warning:'neutral' };
   return card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      ${headSm('Alerts & diagnostics', 'Active alerts and incident diagnostics')}
+      ${headSm('Alerts & diagnostics')}
       <div class="tabbar" style="margin:0">
         ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l]) =>
           `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}</button>`).join('')}
@@ -6012,7 +6004,8 @@ document.addEventListener('click', e => {
   if (cp) {
     const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
     copyToClipboard(value).then(() => showCopyToast(r.left, r.top, 'Copied'));
-    KEBAB = null; GRIDMENU = false; go(CURRENT); return;
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; go(CURRENT); }
+    return;
   }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }

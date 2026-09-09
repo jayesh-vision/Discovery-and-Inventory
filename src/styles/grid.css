@@ -138,7 +138,7 @@
   border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md);
   background: var(--vw-color-white);
   overflow: auto; max-height: var(--grid-h, none);
-  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto; -webkit-overflow-scrolling: touch;
 }
 
 /* ── grid refresh loader ─────────────────────────────────── */

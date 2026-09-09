@@ -54,7 +54,7 @@ function nodeOverview(N) {
     nvTile('System uptime', N.ov.uptime, `last reboot ${N.ov.since}`, 'purple')
   ];
   return card(`
-    ${headSm('Overview', `${N.meta.n} health snapshot and network services · polled by assurance, not by the discovery collectors`)}
+    ${headSm('Overview')}
     <div class="nv-tiles" style="margin-top:var(--vw-space-md)">${tiles.join('')}</div>
 
     <div class="nv-health-row">
@@ -79,7 +79,7 @@ function nodeOverview(N) {
 function nodeAvailability(N) {
   const pct = a => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(2);
   return card(`
-    ${headSm('24-hour service availability', 'Hourly probe result for each monitored service. One cell is one hour.')}
+    ${headSm('24-hour service availability')}
     <div style="margin-top:var(--vw-space-md)">
       ${nvStrip(N.avail.icmp, 'ICMP health', pct(N.avail.icmp))}
       ${nvStrip(N.avail.ntp, 'NTP sync', pct(N.avail.ntp))}
@@ -98,7 +98,7 @@ function nodeHardware(N) {
 
   const perfCard = card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      ${headSm('Performance forecast', `${NODE_PERF === '24h' ? '24-hour' : '7-day'} prediction with capacity thresholds`)}
+      ${headSm('Performance forecast')}
       <div class="row">
         <div class="nv-fcgroup">
           ${[['CPU forecast', N.perf.fCpu + '%', 'blue'],
@@ -247,7 +247,7 @@ function nodeHardware(N) {
     </div>` : '';
 
   return `
-    ${card(`${headSm('Hardware & interfaces', 'Physical ports, modules and component health')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
+    ${card(`${headSm('Hardware & interfaces')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
     <div class="row-t nv-hw" style="align-items:stretch">
       ${perfCard}
       ${aiHw}
@@ -297,7 +297,7 @@ function nodeVlans(N) {
   const big = N.vlans.reduce((a, v) => a.mac > v.mac ? a : v);
   const hi  = N.vlans.reduce((a, v) => a.pct > v.pct ? a : v);
   return card(`
-    ${headSm('VLAN dashboard', 'Layer-2 segmentation overview')}
+    ${headSm('VLAN dashboard')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${kpi('Configured VLANs', String(N.vlans.length + 51), 'maximum supported 4,094', 'sky')}
       ${kpi('Active VLANs', String(N.vlans.length + 45), 'carrying traffic this hour', 'emerald')}
@@ -329,7 +329,7 @@ function nodeLinks(N) {
      like NODE_SVC_TAB, not a drill */
   const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
   return card(`
-    ${headSm('Links', 'Protocol and transport link intelligence')}
+    ${headSm('Links')}
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.protoRows.map(p => `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${p.k === sel.k ? ' is-on' : ''}"
@@ -392,7 +392,7 @@ function nodeLinks(N) {
 function nodeServices(N) {
   const rows = N.instances;
   return card(`
-    ${headSm('Network services', 'Service inventory, utilisation and SLA trends')}
+    ${headSm('Network services')}
     <div class="vw-grid vw-grid-cols-5 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${N.svcTypes.map(t => `
         <div class="vw-card-child stack-x" style="padding:var(--vw-space-md);gap:2px">
@@ -460,7 +460,7 @@ function nodeAlerts(N) {
   const SEV = { Critical:'error', Major:'warning', Minor:'orange', Warning:'neutral' };
   return card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      ${headSm('Alerts & diagnostics', 'Active alerts and incident diagnostics')}
+      ${headSm('Alerts & diagnostics')}
       <div class="tabbar" style="margin:0">
         ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l]) =>
           `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}</button>`).join('')}

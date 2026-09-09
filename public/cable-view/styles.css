@@ -1237,7 +1237,7 @@ html[data-theme="dark"] .diag-connectivity-loader {
   overflow-x: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   touch-action: pan-x pan-y;
   padding: 16px 20px;
 }

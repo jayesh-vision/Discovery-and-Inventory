@@ -9,8 +9,6 @@ export const IcFilter  = () => I('<path d="M3 5h18l-7 8v6l-4 2v-8z"/>');
 export const IcKebab   = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>;
 export const IcX       = () => I('<path d="M6 6l12 12M18 6L6 18"/>');
 export const IcRefresh = ({ className }: { className?: string } = {}) => <svg className={className} viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 8a6 6 0 1 1-1.9-4.4"/><path d="M14 2v3.6h-3.6"/></svg>;
-export const IcPrev    = () => <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3 5 8l5 5"/></svg>;
-export const IcNext    = () => <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5"/></svg>;
 
 const K: Record<string, string> = {
   view:  '<path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z"/><circle cx="8" cy="8" r="2"/>',

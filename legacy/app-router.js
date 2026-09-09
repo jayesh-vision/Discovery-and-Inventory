@@ -225,7 +225,8 @@ document.addEventListener('click', e => {
   if (cp) {
     const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
     copyToClipboard(value).then(() => showCopyToast(r.left, r.top, 'Copied'));
-    KEBAB = null; GRIDMENU = false; go(CURRENT); return;
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; go(CURRENT); }
+    return;
   }
   const ack = e.target.closest('.js-ack');
   if (ack) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }

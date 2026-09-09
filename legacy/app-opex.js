@@ -295,7 +295,7 @@ function viewOpex() {
         <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
 
     ${card(`
-      ${headSm('Budget header', 'The monthly budget every contract on this site is measured against.')}
+      ${headSm('Budget header')}
       <div class="capex-form" style="margin-top:var(--vw-space-md)">
         <div class="stack-x"><label class="nst-input-label" for="oxfy">Financial year</label>
           <select class="nst-input ox-hd" id="oxfy" data-f="fy">
@@ -310,7 +310,7 @@ function viewOpex() {
 
     ${card(`
       <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Recurring contracts', 'Per month is the billed amount divided by its billing period, and recalculates as you type.')}
+        ${headSm('Recurring contracts')}
         <button class="nst-btn nst-btn--sm" data-oxadd="1">Add contract</button>
       </div>
       <div class="tbl-wrap"><table class="nst-table">

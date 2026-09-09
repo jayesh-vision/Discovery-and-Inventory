@@ -15,7 +15,7 @@ function resOverview() {
   const svcDown = RES_SERVICES.filter(s => s.st === 'Down').length;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Identity and provenance', 'Every field with where it came from')}
+    ${card(`${headSm('Identity and provenance')}
       <div style="margin-top:var(--vw-space-md)">
       ${table([{t:'Field'},{t:'Value'},{t:'Source'},{t:'Verified'}], PROV.map(p => [
         `<span class="vw-label">${p.f}</span>`,
@@ -26,7 +26,7 @@ function resOverview() {
         i => [CP('Copy value', PROV[i].v)])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
-      ${card(`${headSm('Support position', 'Lifecycle and cover')}
+      ${card(`${headSm('Support position')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
           ${[['End of sale','30-Jun-2025','past','red'],['End of support','31-Dec-2028','2 y 4 mo away','amber'],
              ['Warranty / AMC','31-Mar-2027','7 mo away','amber'],['Purchased','12-Mar-2024','PO-2024-1188','slate']]
@@ -34,7 +34,7 @@ function resOverview() {
               <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
               ${chip(s, t==='red'?'error':t==='amber'?'warning':'neutral')}</div>`).join('')}
         </div>`)}
-      ${card(`${headSm('Impact if this element fails', 'Traversed from discovered adjacency')}
+      ${card(`${headSm('Impact if this element fails')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
           ${[['Directly attached elements','19','LLDP neighbours','sky'],
              ['Downstream sites isolated','3','no alternate path','red'],
@@ -52,7 +52,7 @@ function resOverview() {
 function resHardware() {
   return card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Hardware', 'Chassis → slot → card → port → transceiver. 51 components, 16 optical modules.')}
+      ${headSm('Hardware')}
       <div class="chip-row">${chip('1 failed','error')}${chip('1 degrading','warning')}${chip('1 slot free','info')}</div>
     </div>
     ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
@@ -75,7 +75,7 @@ function resIfaces() {
   return `
   ${card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-lg)">
-      ${headSm('Port capacity', 'The planning question: is there a free port here?')}
+      ${headSm('Port capacity')}
       ${chip(IF_CAP.forecast, 'warning')}
     </div>
     <div class="cx-util">
@@ -148,7 +148,7 @@ function resNbrs() {
 function resSvcs() {
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Services', 'Riding on this element, discovered from device configuration')}
+      ${headSm('Services')}
       <div class="chip-row">${chip('4 L3VPN','info')}${chip('1 L2VPN','cyan')}${chip('2 down','error')}</div>
     </div>
     ${table([{t:'Status'},{t:'Type'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
@@ -161,7 +161,7 @@ function resSvcs() {
 function resAlarms() {
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Alarms', 'Current alarms bound to this inventory record and its components')}
+      ${headSm('Alarms')}
       <div class="chip-row">${chip('1 critical','error')}${chip('2 major','warning')}${chip('2 minor','info')}${chip('2 unacked','error')}</div>
     </div>
     ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
@@ -175,7 +175,7 @@ function resConfig() {
   const c = RES_CONFIG;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Configuration drift', 'Running configuration against the model template')}
+    ${card(`${headSm('Configuration drift')}
       <div style="margin-top:var(--vw-space-md)">
         ${table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
           c.drift.map(d => [`<span class="mono">${d.p}</span>`,
