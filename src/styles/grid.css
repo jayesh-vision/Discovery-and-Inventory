@@ -239,3 +239,12 @@
 }
 .copy-toast.is-in { opacity: 1; }
 .tbl-more-of { color: var(--vw-color-slate-400); font-weight: 400; }
+
+/* ── Mobile grid responsiveness ────────────────────────── */
+@media (max-width: 640px) {
+  .grid-bar { flex-direction: column; align-items: stretch; gap: var(--vw-space-xs); }
+  .grid-search { width: 100%; max-width: 100%; }
+  .grid-tools { width: 100%; justify-content: flex-end; }
+  .grid-count { width: 100%; text-align: left; }
+  .tbl-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
