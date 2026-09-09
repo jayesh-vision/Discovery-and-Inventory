@@ -2593,7 +2593,6 @@ function viewTargets() {
           <span class="legend-i"><span class="legend-sw" style="background:${cv('amber',100)};border:1px solid ${cv('amber',400)}"></span>skipped</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',100)};border:1px solid ${cv('slate',300)}"></span>not applicable</span>
         </div>
-        <span class="vw-card-description">Chain order: Device · Hardware · LLDP · OSPF · BGP · Service</span>
       </div>`)}
 
   </div>`;
@@ -2817,10 +2816,7 @@ function viewReconcile() {
 
     <div class="row-t" style="align-items:stretch">
       ${card(`${headSm('Which attribute disagrees')}
-        <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
-        <div class="vw-card-footer-divider">
-          <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
-        </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
+        <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
       ${card(`${headSm('How a device is matched to a record')}
         <div style="margin-top:var(--vw-space-md)">
@@ -2835,8 +2831,7 @@ function viewReconcile() {
             <span class="vw-value num t-right" style="font-weight:500">${n(r.hits)}</span>
           </div>`).join('')}
         </div>
-        <div class="vw-card-footer-divider row vw-justify-between">
-          <span class="vw-card-description">${n(DL.unclaimed)} devices matched no rule — no serial, no sysName, no neighbours.</span>
+        <div class="vw-card-footer-divider row vw-justify-end">
           <button class="nst-btn nst-btn--xs" data-ne-filter="Unidentified">Show them</button>
         </div>`, 'grow')}
     </div>
@@ -2996,8 +2991,7 @@ function locInsights() {
               </div>
             </div>`).join('')}
         </div>
-        <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-          <span class="vw-card-description">Edge carries 74% of the estate and 68% of the failures.</span>
+        <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
           <span class="row vw-gap-lg">
             ${LOC_STATES.map(st=>`<span class="stack-x t-right"><span class="vw-label">${st.n}</span>
               <span class="vw-value num">${n({live,building:build,planned:plan,failed:fail}[st.k])}</span></span>`).join('')}
@@ -3159,7 +3153,6 @@ function mapPanel() {
       ${items.map(l=>`<button class="site-row" data-site="${l.id}">
         <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
-      <span class="vw-card-description">Zoom in to separate these pins on the map.</span>
     </div>`;
   }
   const g = LOC_GEO.find(x => x.c === LOC_SEL) || LOC_GEO[0];
@@ -3228,8 +3221,7 @@ function locMap() {
       </div>
       <div class="map-side" id="mappanel">${mapPanel()}</div>
     </div>
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Drag to pan, scroll or use the controls to zoom. ${noSite} states carry no sites on record.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="row vw-gap-lg">
         <span class="stack-x t-right"><span class="vw-label">Circles</span><span class="vw-value num">${LOC_GEO.length}</span></span>
         <span class="stack-x t-right"><span class="vw-label">Sites</span><span class="vw-value num">${n(IL.locations)}</span></span>
@@ -3421,7 +3413,6 @@ function capexSection(l, neCount) {
 
     <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
       <span class="eyebrow">Line items</span>
-      <span class="vw-card-metric-label-sub">Amounts are ex-GST and exclude recurring opex</span>
     </div>
     ${table([{t:'Line item'},{t:'Category'},{t:'Vendor · PO'},{t:'Qty',r:true},{t:'Unit cost',r:true},
              {t:'Amount',r:true},{t:'Stage'},{t:'Linked elements'}],
@@ -3940,10 +3931,7 @@ function viewLinks() {
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
               A('Open destination element', { v:'resource', l:rows[i].dne }),
               CP('Copy link name', rows[i].name)])}
-      <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-        <span class="vw-card-description">
-          A link that stops appearing is not deleted — it is marked <strong>no longer seen</strong> and raised as an exception.
-        </span>
+      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
         <div class="row">
           <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
           <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
@@ -4395,7 +4383,6 @@ function viewPassive() {
         <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>switch</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
         <span class="legend-i"><span class="legend-sw" style="background:var(--vw-color-slate-100);border:1px solid var(--vw-color-slate-300)"></span>free U</span>
-        <span class="vw-card-description">Elevation runs U1 at the left to the top of the rack at the right. Hover a unit for what occupies it.</span>
       </div>` : ''}`)}
   </div>`;
 }
@@ -5278,8 +5265,7 @@ function nodeAvailability(N) {
       ${nvStrip(N.avail.icmp, 'ICMP health', pct(N.avail.icmp))}
       ${nvStrip(N.avail.ntp, 'NTP sync', pct(N.avail.ntp))}
     </div>
-    <div class="vw-card-footer-divider row vw-justify-between">
-      <span class="vw-card-description">Green is a clean hour; amber and red are degraded probes. Hover a cell for the hour and its score.</span>
+    <div class="vw-card-footer-divider row vw-justify-end">
       <span class="vw-card-metric-label-sub">Last 24 hours · updated 1 min ago</span>
     </div>`);
 }
@@ -5352,7 +5338,6 @@ function nodeHardware(N) {
         <span class="eyebrow">Interface utilisation</span>
         <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
       </div>
-      <span class="vw-card-description">Real-time bandwidth usage · last 24 hours</span>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -5423,7 +5408,6 @@ function nodeHardware(N) {
               background:${cv(a.st === 'Active' ? 'emerald' : 'slate', a.st === 'Active' ? 400 : 300)}"></span></span>
             <span class="vw-value num t-right">${a.gain} dB</span>
           </div>`).join('')}
-        <span class="vw-card-description">Gain tilt held within ±1.2 dB across the band.</span>
       </div>
       <div class="cx-panel">
         <div class="cx-panel-head"><span class="eyebrow">Span loss against budget</span></div>
@@ -5436,7 +5420,6 @@ function nodeHardware(N) {
             <span class="vw-value num t-right">${sp.loss} / ${sp.budget} dB</span>
           </div>`;
         }).join('')}
-        <span class="vw-card-description">${N.optical.spans.map(sp => `${sp.n.split(' → ')[0]} ${sp.km} km, PMD ${sp.pmd} ps`).join(' · ')}.</span>
       </div>
     </div>` : '';
 
@@ -5510,9 +5493,7 @@ function nodeVlans(N) {
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
       ]), '',
       () => [])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Largest VLAN is <strong>${big.n} (${big.id})</strong> with ${n(big.mac)} learned MACs.
-        Highest utilisation is <strong>${hi.n} (${hi.id})</strong> at ${hi.pct}%.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="vw-card-metric-label-sub num">${n(tot)} MAC addresses learned</span>
     </div>`);
 }
@@ -5548,9 +5529,6 @@ function nodeLinks(N) {
           </span>
         </div>
         ${nvTrend(N.capTrendByProto[sel.k] || N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
-        <span class="vw-card-description">Forecast is a straight-line projection of the last six months of
-          inbound utilisation on ${sel.k} links. It crosses the 90% engineering threshold in
-          <strong>${(N.capRows[N.protoRows.findIndex(p => p.k === sel.k)] || N.capRows[0]).fc}</strong>.</span>
       </div>
 
       <div class="cx-panel">
@@ -5558,8 +5536,6 @@ function nodeLinks(N) {
           <span class="eyebrow">Link capacity dashboard</span>
           ${chip(`${sel.k} protocol`, 'info')}
           <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
-          <span class="grow"></span>
-          <span class="vw-card-description">${N.capRows.filter(r => r.util > 70).length} links in countdown to capacity</span>
         </div>
         <div class="nv-linkgrid">
           ${N.capRows.map(r => `

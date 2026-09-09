@@ -327,7 +327,6 @@ function viewPassive() {
         <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>switch</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
         <span class="legend-i"><span class="legend-sw" style="background:var(--vw-color-slate-100);border:1px solid var(--vw-color-slate-300)"></span>free U</span>
-        <span class="vw-card-description">Elevation runs U1 at the left to the top of the rack at the right. Hover a unit for what occupies it.</span>
       </div>` : ''}`)}
   </div>`;
 }

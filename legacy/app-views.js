@@ -483,7 +483,6 @@ function viewTargets() {
           <span class="legend-i"><span class="legend-sw" style="background:${cv('amber',100)};border:1px solid ${cv('amber',400)}"></span>skipped</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',100)};border:1px solid ${cv('slate',300)}"></span>not applicable</span>
         </div>
-        <span class="vw-card-description">Chain order: Device · Hardware · LLDP · OSPF · BGP · Service</span>
       </div>`)}
 
   </div>`;
@@ -706,10 +705,7 @@ function viewReconcile() {
 
     <div class="row-t" style="align-items:stretch">
       ${card(`${headSm('Which attribute disagrees')}
-        <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>
-        <div class="vw-card-footer-divider">
-          <span class="vw-card-description">${n(DRIFT_BY_FIELD[0].c)} OEM conflicts resolve from <span class="mono">sysObjectID</span>.</span>
-        </div>`, '', 'width:min(400px,100%);flex-shrink:0')}
+        <div class="stack-s" style="margin-top:var(--vw-space-md)">${bars(DRIFT_BY_FIELD, dMax)}</div>`, '', 'width:min(400px,100%);flex-shrink:0')}
 
       ${card(`${headSm('How a device is matched to a record')}
         <div style="margin-top:var(--vw-space-md)">
@@ -724,8 +720,7 @@ function viewReconcile() {
             <span class="vw-value num t-right" style="font-weight:500">${n(r.hits)}</span>
           </div>`).join('')}
         </div>
-        <div class="vw-card-footer-divider row vw-justify-between">
-          <span class="vw-card-description">${n(DL.unclaimed)} devices matched no rule — no serial, no sysName, no neighbours.</span>
+        <div class="vw-card-footer-divider row vw-justify-end">
           <button class="nst-btn nst-btn--xs" data-ne-filter="Unidentified">Show them</button>
         </div>`, 'grow')}
     </div>
@@ -885,8 +880,7 @@ function locInsights() {
               </div>
             </div>`).join('')}
         </div>
-        <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-          <span class="vw-card-description">Edge carries 74% of the estate and 68% of the failures.</span>
+        <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
           <span class="row vw-gap-lg">
             ${LOC_STATES.map(st=>`<span class="stack-x t-right"><span class="vw-label">${st.n}</span>
               <span class="vw-value num">${n({live,building:build,planned:plan,failed:fail}[st.k])}</span></span>`).join('')}
@@ -1048,7 +1042,6 @@ function mapPanel() {
       ${items.map(l=>`<button class="site-row" data-site="${l.id}">
         <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
-      <span class="vw-card-description">Zoom in to separate these pins on the map.</span>
     </div>`;
   }
   const g = LOC_GEO.find(x => x.c === LOC_SEL) || LOC_GEO[0];
@@ -1117,8 +1110,7 @@ function locMap() {
       </div>
       <div class="map-side" id="mappanel">${mapPanel()}</div>
     </div>
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Drag to pan, scroll or use the controls to zoom. ${noSite} states carry no sites on record.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="row vw-gap-lg">
         <span class="stack-x t-right"><span class="vw-label">Circles</span><span class="vw-value num">${LOC_GEO.length}</span></span>
         <span class="stack-x t-right"><span class="vw-label">Sites</span><span class="vw-value num">${n(IL.locations)}</span></span>
@@ -1306,7 +1298,6 @@ function capexSection(l, neCount) {
 
     <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
       <span class="eyebrow">Line items</span>
-      <span class="vw-card-metric-label-sub">Amounts are ex-GST and exclude recurring opex</span>
     </div>
     ${table([{t:'Line item'},{t:'Category'},{t:'Vendor · PO'},{t:'Qty',r:true},{t:'Unit cost',r:true},
              {t:'Amount',r:true},{t:'Stage'},{t:'Linked elements'}],
@@ -1825,10 +1816,7 @@ function viewLinks() {
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
               A('Open destination element', { v:'resource', l:rows[i].dne }),
               CP('Copy link name', rows[i].name)])}
-      <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-        <span class="vw-card-description">
-          A link that stops appearing is not deleted — it is marked <strong>no longer seen</strong> and raised as an exception.
-        </span>
+      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
         <div class="row">
           <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
           <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>

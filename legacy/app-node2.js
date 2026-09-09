@@ -84,8 +84,7 @@ function nodeAvailability(N) {
       ${nvStrip(N.avail.icmp, 'ICMP health', pct(N.avail.icmp))}
       ${nvStrip(N.avail.ntp, 'NTP sync', pct(N.avail.ntp))}
     </div>
-    <div class="vw-card-footer-divider row vw-justify-between">
-      <span class="vw-card-description">Green is a clean hour; amber and red are degraded probes. Hover a cell for the hour and its score.</span>
+    <div class="vw-card-footer-divider row vw-justify-end">
       <span class="vw-card-metric-label-sub">Last 24 hours · updated 1 min ago</span>
     </div>`);
 }
@@ -158,7 +157,6 @@ function nodeHardware(N) {
         <span class="eyebrow">Interface utilisation</span>
         <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
       </div>
-      <span class="vw-card-description">Real-time bandwidth usage · last 24 hours</span>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -229,7 +227,6 @@ function nodeHardware(N) {
               background:${cv(a.st === 'Active' ? 'emerald' : 'slate', a.st === 'Active' ? 400 : 300)}"></span></span>
             <span class="vw-value num t-right">${a.gain} dB</span>
           </div>`).join('')}
-        <span class="vw-card-description">Gain tilt held within ±1.2 dB across the band.</span>
       </div>
       <div class="cx-panel">
         <div class="cx-panel-head"><span class="eyebrow">Span loss against budget</span></div>
@@ -242,7 +239,6 @@ function nodeHardware(N) {
             <span class="vw-value num t-right">${sp.loss} / ${sp.budget} dB</span>
           </div>`;
         }).join('')}
-        <span class="vw-card-description">${N.optical.spans.map(sp => `${sp.n.split(' → ')[0]} ${sp.km} km, PMD ${sp.pmd} ps`).join(' · ')}.</span>
       </div>
     </div>` : '';
 
@@ -316,9 +312,7 @@ function nodeVlans(N) {
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
       ]), '',
       () => [])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Largest VLAN is <strong>${big.n} (${big.id})</strong> with ${n(big.mac)} learned MACs.
-        Highest utilisation is <strong>${hi.n} (${hi.id})</strong> at ${hi.pct}%.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="vw-card-metric-label-sub num">${n(tot)} MAC addresses learned</span>
     </div>`);
 }
@@ -354,9 +348,6 @@ function nodeLinks(N) {
           </span>
         </div>
         ${nvTrend(N.capTrendByProto[sel.k] || N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
-        <span class="vw-card-description">Forecast is a straight-line projection of the last six months of
-          inbound utilisation on ${sel.k} links. It crosses the 90% engineering threshold in
-          <strong>${(N.capRows[N.protoRows.findIndex(p => p.k === sel.k)] || N.capRows[0]).fc}</strong>.</span>
       </div>
 
       <div class="cx-panel">
@@ -364,8 +355,6 @@ function nodeLinks(N) {
           <span class="eyebrow">Link capacity dashboard</span>
           ${chip(`${sel.k} protocol`, 'info')}
           <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
-          <span class="grow"></span>
-          <span class="vw-card-description">${N.capRows.filter(r => r.util > 70).length} links in countdown to capacity</span>
         </div>
         <div class="nv-linkgrid">
           ${N.capRows.map(r => `
