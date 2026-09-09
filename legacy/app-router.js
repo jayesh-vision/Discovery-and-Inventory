@@ -10,8 +10,10 @@ const VIEWS = {
   home:      { mod:'Inventory', crumb:'Home',                        render:viewHome },
   location:  { mod:'Inventory', crumb:'Location',                    render:viewLocation },
   site:      { mod:'Inventory', crumb:'Location · Site details',     render:viewSite },
-  capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewCapex },
-  opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewOpex },
+  capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewSite },
+  opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewSite },
+  capexForm: { mod:'Inventory', crumb:'Location · Site details · Capex edit', render:viewCapex },
+  opexForm:  { mod:'Inventory', crumb:'Location · Site details · Opex edit',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
@@ -240,9 +242,9 @@ document.addEventListener('click', e => {
     return;
   }
   const cx = e.target.closest('[data-capex]');
-  if (cx) { CAPEX_ID = cx.dataset.capex; CAPEX_DRAFT = null; CAPEX_SAVED = false; go('capex'); return; }
+  if (cx) { CAPEX_ID = cx.dataset.capex; CAPEX_DRAFT = null; CAPEX_SAVED = false; go('capexForm'); return; }
   const ox = e.target.closest('[data-opex]');
-  if (ox) { OPEX_ID = ox.dataset.opex; OPEX_DRAFT = null; OPEX_SAVED = false; go('opex'); return; }
+  if (ox) { OPEX_ID = ox.dataset.opex; OPEX_DRAFT = null; OPEX_SAVED = false; go('opexForm'); return; }
   const oxa = e.target.closest('[data-oxadd]');
   if (oxa) {
     opexDraft().items.push({ d:'New recurring contract', c:'amc', v:'', ref:'—', f:'Monthly',
@@ -257,7 +259,7 @@ document.addEventListener('click', e => {
     OPEX[OPEX_ID] = { ...opexOf(OPEX_ID, 25), fy:d.fy, cc:d.cc, owner:d.owner,
       budget:Number(d.budget) || 0, items:d.items.map(x => ({ ...x })), trend:d.trend,
       updated:'01-Sep-2026 · Jayesh Verma' };
-    OPEX_SAVED = true; go('opex'); return;
+    OPEX_SAVED = true; SITE_SECTION = 'opex'; go('site'); return;
   }
   const cxa = e.target.closest('[data-cxadd]');
   if (cxa) {

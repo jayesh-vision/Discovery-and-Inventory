@@ -2,7 +2,22 @@
    The last daily cycle, closed at 01-Sep-2026 09:19. Every figure on the
    Insights screen is read from here; nothing is typed into a widget. */
 
-export const CYCLE = { closed: '01-Sep-2026 09:19', durationH: 4.2 };
+const getPastDayLabel = (offset: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  const day = String(d.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day} ${months[d.getMonth()]}`;
+};
+
+const getClosedTime = () => {
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day}-${months[d.getMonth()]}-${d.getFullYear()} 09:19`;
+};
+
+export const CYCLE = { closed: getClosedTime(), durationH: 4.2 };
 
 export const DL = {
   targets: 2308,                              /* gateway / seed IPs polled          */
@@ -27,13 +42,13 @@ export type DiscClass = typeof DISC_CLASSES[number]['k'];
    polled = targets, answered = full + partial, fresh = identified for the first time */
 export interface Cycle { day: string; router: number; switch: number; polled: number; answered: number; fresh: number; hours: number }
 export const DAILY: Cycle[] = [
-  { day: '26 Aug', router: 2166, switch: 379, polled: 2217, answered: 2029, fresh: 52, hours: 5.1 },
-  { day: '27 Aug', router: 2171, switch: 383, polled: 2231, answered: 2044, fresh: 41, hours: 5.4 },
-  { day: '28 Aug', router: 2158, switch: 380, polled: 2240, answered: 2038, fresh: 36, hours: 5.6 },
-  { day: '29 Aug', router: 2190, switch: 386, polled: 2262, answered: 2071, fresh: 58, hours: 5.0 },
-  { day: '30 Aug', router: 2181, switch: 384, polled: 2274, answered: 2079, fresh: 47, hours: 5.2 },
-  { day: '31 Aug', router: 2203, switch: 389, polled: 2289, answered: 2098, fresh: 66, hours: 5.3 },
-  { day: '01 Sep', router: DL.discRouter, switch: DL.discSwitch, polled: DL.targets, answered: DL.runFull + DL.runPartial, fresh: DL.newThisCycle, hours: CYCLE.durationH }
+  { day: getPastDayLabel(6), router: 2166, switch: 379, polled: 2217, answered: 2029, fresh: 52, hours: 5.1 },
+  { day: getPastDayLabel(5), router: 2171, switch: 383, polled: 2231, answered: 2044, fresh: 41, hours: 5.4 },
+  { day: getPastDayLabel(4), router: 2158, switch: 380, polled: 2240, answered: 2038, fresh: 36, hours: 5.6 },
+  { day: getPastDayLabel(3), router: 2190, switch: 386, polled: 2262, answered: 2071, fresh: 58, hours: 5.0 },
+  { day: getPastDayLabel(2), router: 2181, switch: 384, polled: 2274, answered: 2079, fresh: 47, hours: 5.2 },
+  { day: getPastDayLabel(1), router: 2203, switch: 389, polled: 2289, answered: 2098, fresh: 66, hours: 5.3 },
+  { day: getPastDayLabel(0), router: DL.discRouter, switch: DL.discSwitch, polled: DL.targets, answered: DL.runFull + DL.runPartial, fresh: DL.newThisCycle, hours: CYCLE.durationH }
 ];
 export const CYCLE_SLA_H = 6;                    /* a cycle must close inside six hours */
 export const LAST = DAILY[DAILY.length - 1], PREV = DAILY[DAILY.length - 2];
@@ -86,22 +101,31 @@ export const REGIONS: RegionRow[] = [
 export const successRate = (r: RegionRow) => 1 - r.fail / r.total;
 
 /* ── devices needing attention: the failed targets ─────────── */
+export const getLiveDateStr = (hh: number, mm: number) => {
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${day} ${month} ${yy}, ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+};
+
 export interface AttentionRow {
   name: string; ip: string; region: Region; vendor: string; model: string; reason: string; last: string;
 }
 export const ATTENTION: AttentionRow[] = [
-  { name: 'RTR-WEST-2045', ip: '10.20.34.45',  region: 'West',  vendor: 'Cisco',   model: 'ASR920',     reason: 'auth',    last: '01 Sep 26, 09:12' },
-  { name: 'SW-WEST-1120',  ip: '10.20.11.20',  region: 'West',  vendor: 'Cisco',   model: 'C9300-48UXM',reason: 'unreach', last: '01 Sep 26, 09:08' },
-  { name: 'BGLK-EX4300-T-CHR-07', ip: '172.31.31.2', region: 'South', vendor: 'Juniper', model: 'EX4300-48P', reason: 'timeout', last: '01 Sep 26, 09:05' },
-  { name: 'EDGE-RTR-012',  ip: '10.100.2.10',  region: 'East',  vendor: 'Juniper', model: 'MX204',      reason: 'timeout', last: '01 Sep 26, 08:58' },
-  { name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', region: 'South', vendor: 'Nokia', model: '7750', reason: 'adapter', last: '01 Sep 26, 08:51' },
-  { name: 'DEL-C9300-ACC-07', ip: '172.31.35.61', region: 'North', vendor: 'Cisco', model: 'C9300-48UXM', reason: 'auth', last: '01 Sep 26, 08:47' },
-  { name: 'KOL-NCS540-AGG-91', ip: '172.31.145.215', region: 'East', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: '01 Sep 26, 08:44' },
-  { name: 'PUN-MX204-AGG-07', ip: '172.31.106.37', region: 'West', vendor: 'Juniper', model: 'MX204', reason: 'parse', last: '01 Sep 26, 08:40' },
-  { name: 'HYD-NCS540-PE-T4', ip: '172.31.132.7', region: 'South', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: '01 Sep 26, 08:36' },
-  { name: 'JAI-MX204-PE-T2', ip: '172.31.101.115', region: 'North', vendor: 'Juniper', model: 'MX204', reason: 'auth', last: '01 Sep 26, 08:31' },
-  { name: 'CHE-920-WIFI-R2', ip: '172.31.38.43', region: 'South', vendor: 'Cisco', model: 'ASR920', reason: 'timeout', last: '01 Sep 26, 08:27' },
-  { name: 'DEL-N540X-SPARE', ip: '172.31.35.207', region: 'North', vendor: 'Cisco', model: 'NCS-540', reason: 'dupip', last: '01 Sep 26, 08:22' }
+  { name: 'RTR-WEST-2045', ip: '10.20.34.45',  region: 'West',  vendor: 'Cisco',   model: 'ASR920',     reason: 'auth',    last: getLiveDateStr(9, 12) },
+  { name: 'SW-WEST-1120',  ip: '10.20.11.20',  region: 'West',  vendor: 'Cisco',   model: 'C9300-48UXM',reason: 'unreach', last: getLiveDateStr(9, 8) },
+  { name: 'BGLK-EX4300-T-CHR-07', ip: '172.31.31.2', region: 'South', vendor: 'Juniper', model: 'EX4300-48P', reason: 'timeout', last: getLiveDateStr(9, 5) },
+  { name: 'EDGE-RTR-012',  ip: '10.100.2.10',  region: 'East',  vendor: 'Juniper', model: 'MX204',      reason: 'timeout', last: getLiveDateStr(8, 58) },
+  { name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', region: 'South', vendor: 'Nokia', model: '7750', reason: 'adapter', last: getLiveDateStr(8, 51) },
+  { name: 'DEL-C9300-ACC-07', ip: '172.31.35.61', region: 'North', vendor: 'Cisco', model: 'C9300-48UXM', reason: 'auth', last: getLiveDateStr(8, 47) },
+  { name: 'KOL-NCS540-AGG-91', ip: '172.31.145.215', region: 'East', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 44) },
+  { name: 'PUN-MX204-AGG-07', ip: '172.31.106.37', region: 'West', vendor: 'Juniper', model: 'MX204', reason: 'parse', last: getLiveDateStr(8, 40) },
+  { name: 'HYD-NCS540-PE-T4', ip: '172.31.132.7', region: 'South', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 36) },
+  { name: 'JAI-MX204-PE-T2', ip: '172.31.101.115', region: 'North', vendor: 'Juniper', model: 'MX204', reason: 'auth', last: getLiveDateStr(8, 31) },
+  { name: 'CHE-920-WIFI-R2', ip: '172.31.38.43', region: 'South', vendor: 'Cisco', model: 'ASR920', reason: 'timeout', last: getLiveDateStr(8, 27) },
+  { name: 'DEL-N540X-SPARE', ip: '172.31.35.207', region: 'North', vendor: 'Cisco', model: 'NCS-540', reason: 'dupip', last: getLiveDateStr(8, 22) }
 ];
 
 /* ── geo: identified devices per state, split by class ─────── */
@@ -171,7 +195,7 @@ const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) =
       name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 88)}`,
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       region, vendor, model, reason,
-      last: `01 Sep 26, ${pad2(Math.max(0, h))}:${pad2(m)}`
+      last: getLiveDateStr(Math.max(0, h), m)
     });
   });
 })();
@@ -240,7 +264,7 @@ export function filterRegionDevices(f: DeviceFilter): RegionDevice[] {
         name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
         ip: `10.${20 + REGIONS.findIndex(r => r.region === region)}.${(i * 3) % 250}.${1 + (i * 11) % 253}`,
         region, state: st, vendor, model, status: 'Answered', reason: null, reasonKey: null,
-        last: `01 Sep 26, ${pad2(2 + i % 7)}:${pad2(i % 60)}`
+        last: getLiveDateStr(2 + (i * 3) % 10, (i * 11) % 60)
       });
     }
 

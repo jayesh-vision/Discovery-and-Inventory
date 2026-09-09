@@ -116,8 +116,8 @@ window.__nsLegacy = {
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
     if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; }
-    if (k === 'capex' && p.id)   { CAPEX_ID = p.id; }
-    if (k === 'opex'  && p.id)   { OPEX_ID = p.id; }
+    if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
+    if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
     if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
   },

@@ -4,6 +4,14 @@ const GEO = {"W":1000.0,"H":1091.4,"LON0":67.0,"K":32.46753,"Y0":0.70036454,"KY"
 const n   = v => v.toLocaleString('en-IN');
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
+const pad2 = v => String(v).padStart(2, '0');
+function getLiveDateSync(h = 9, m = 10) {
+  const d = new Date();
+  const day = pad2(d.getDate());
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  return `${day}-${month}-${d.getFullYear()} ${pad2(h)}:${pad2(m)}`;
+}
 const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;
@@ -1302,7 +1310,7 @@ REPORTS.push(
     TARGETS.push({
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
-      circle: circle.n, sync: `01-Sep-2026 0${2 + i % 7}:${pad2((i * 11) % 60)}`,
+      circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
       fresh: 1 + i % 18, job,
       ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
     });
@@ -1320,7 +1328,7 @@ REPORTS.push(
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
-      sync: `01-Sep-2026 0${1 + i % 8}:${pad2((i * 19) % 60)}`,
+      sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
       fresh: 1 + i % 12, job,
       ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
       out: 'Rogue', chip: 'pink', isNew: true
@@ -2677,8 +2685,7 @@ function viewTarget() {
       `<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
        <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${kpi('Last verified', '3 h ago', '01-Sep-2026 09:10 IST', 'sky')}
       ${kpi('Collectors passed', '7 of 7', 'Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
       ${kpi('Discovered objects', '49', '19 LLDP · 12 OSPF · 4 BGP · 14 L3VPN', 'purple')}
@@ -5820,8 +5827,10 @@ const VIEWS = {
   home:      { mod:'Inventory', crumb:'Home',                        render:viewHome },
   location:  { mod:'Inventory', crumb:'Location',                    render:viewLocation },
   site:      { mod:'Inventory', crumb:'Location · Site details',     render:viewSite },
-  capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewCapex },
-  opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewOpex },
+  capex:     { mod:'Inventory', crumb:'Location · Site details · Capex', render:viewSite },
+  opex:      { mod:'Inventory', crumb:'Location · Site details · Opex',  render:viewSite },
+  capexForm: { mod:'Inventory', crumb:'Location · Site details · Capex edit', render:viewCapex },
+  opexForm:  { mod:'Inventory', crumb:'Location · Site details · Opex edit',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
@@ -6062,9 +6071,9 @@ document.addEventListener('click', e => {
     return;
   }
   const cx = e.target.closest('[data-capex]');
-  if (cx) { CAPEX_ID = cx.dataset.capex; CAPEX_DRAFT = null; CAPEX_SAVED = false; go('capex'); return; }
+  if (cx) { CAPEX_ID = cx.dataset.capex; CAPEX_DRAFT = null; CAPEX_SAVED = false; go('capexForm'); return; }
   const ox = e.target.closest('[data-opex]');
-  if (ox) { OPEX_ID = ox.dataset.opex; OPEX_DRAFT = null; OPEX_SAVED = false; go('opex'); return; }
+  if (ox) { OPEX_ID = ox.dataset.opex; OPEX_DRAFT = null; OPEX_SAVED = false; go('opexForm'); return; }
   const oxa = e.target.closest('[data-oxadd]');
   if (oxa) {
     opexDraft().items.push({ d:'New recurring contract', c:'amc', v:'', ref:'—', f:'Monthly',
@@ -6079,7 +6088,7 @@ document.addEventListener('click', e => {
     OPEX[OPEX_ID] = { ...opexOf(OPEX_ID, 25), fy:d.fy, cc:d.cc, owner:d.owner,
       budget:Number(d.budget) || 0, items:d.items.map(x => ({ ...x })), trend:d.trend,
       updated:'01-Sep-2026 · Jayesh Verma' };
-    OPEX_SAVED = true; go('opex'); return;
+    OPEX_SAVED = true; SITE_SECTION = 'opex'; go('site'); return;
   }
   const cxa = e.target.closest('[data-cxadd]');
   if (cxa) {
@@ -6360,8 +6369,8 @@ window.__nsLegacy = {
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
     if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; }
-    if (k === 'capex' && p.id)   { CAPEX_ID = p.id; }
-    if (k === 'opex'  && p.id)   { OPEX_ID = p.id; }
+    if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
+    if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
     if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
   },

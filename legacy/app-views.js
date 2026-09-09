@@ -572,8 +572,7 @@ function viewTarget() {
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Reconciliation', 'Exact match', 'all governed attributes agree', 'emerald')}
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${kpi('Last verified', '3 h ago', '01-Sep-2026 09:10 IST', 'sky')}
       ${kpi('Collectors passed', '7 of 7', 'Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
       ${kpi('Discovered objects', '49', '19 LLDP · 12 OSPF · 4 BGP · 14 L3VPN', 'purple')}

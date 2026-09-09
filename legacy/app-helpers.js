@@ -2,6 +2,14 @@
 const n   = v => v.toLocaleString('en-IN');
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
+const pad2 = v => String(v).padStart(2, '0');
+function getLiveDateSync(h = 9, m = 10) {
+  const d = new Date();
+  const day = pad2(d.getDate());
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  return `${day}-${month}-${d.getFullYear()} ${pad2(h)}:${pad2(m)}`;
+}
 const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;

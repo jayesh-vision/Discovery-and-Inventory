@@ -1145,7 +1145,7 @@ REPORTS.push(
     TARGETS.push({
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
-      circle: circle.n, sync: `01-Sep-2026 0${2 + i % 7}:${pad2((i * 11) % 60)}`,
+      circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
       fresh: 1 + i % 18, job,
       ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
     });
@@ -1163,7 +1163,7 @@ REPORTS.push(
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
-      sync: `01-Sep-2026 0${1 + i % 8}:${pad2((i * 19) % 60)}`,
+      sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
       fresh: 1 + i % 12, job,
       ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
       out: 'Rogue', chip: 'pink', isNew: true
