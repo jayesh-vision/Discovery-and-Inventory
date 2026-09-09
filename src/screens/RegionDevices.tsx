@@ -4,7 +4,6 @@ import { Card, Chip, DrillBar, Mono, Sub, cv } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { REASONS, REGIONS, STATE_DEVICES, VENDORS, filterRegionDevices, type DeviceStatus, type Region, type RegionDevice } from '../data/discovery';
 
-const fmt = (v: number) => v.toLocaleString('en-IN');
 const isRegion = (v: string | null | undefined): v is Region => !!v && REGIONS.some(r => r.region === v);
 const isStatus = (v: string | null): v is DeviceStatus => v === 'Answered' || v === 'Failed';
 
@@ -54,8 +53,6 @@ export default function RegionDevices() {
     });
   }, [base, query, filters]);
 
-  const meta = region ? REGIONS.find(r => r.region === region)! : { total: base.length, fail: base.filter(d => d.status === 'Failed').length };
-  const failed = rows.filter(d => d.status === 'Failed').length;
   const reset = () => { setQuery(''); setFilters({}); };
   const title = region ? `${region} region` : 'All circles';
 
@@ -79,7 +76,6 @@ export default function RegionDevices() {
             { n: 'Model' },
             { n: 'Failure reason', o: REASONS.map(r => r.n), h: 'Answered devices have no failure reason.' }
           ]}
-          extra={<Chip tone={failed ? 'error' : 'success'}>{fmt(failed)} of {fmt(meta.total)} failed this cycle</Chip>}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters} onRefresh={() => setRefreshKey(k => k + 1)}
           renderRow={d => [
             <Chip tone={d.status === 'Failed' ? 'error' : 'success'}>{d.status}</Chip>,

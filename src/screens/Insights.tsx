@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, cv } from '../components/ui';
 import { Donut, LineChart, SplitBar } from '../components/charts';
@@ -19,8 +19,6 @@ export default function Insights() {
   const [sp, setSp] = useSearchParams();
   const scope: Scope = isScope(sp.get('region')) ? (sp.get('region') as Scope) : 'all';
   const setScope = (v: Scope) => { const n = new URLSearchParams(sp); if (v === 'all') n.delete('region'); else n.set('region', v); setSp(n, { replace: true }); };
-
-  const [vendorView, setVendorView] = useState<'bars' | 'cards'>('bars');
 
   const S = useMemo(() => scopeDiscovery(scope), [scope]);
   const last = S.daily[S.daily.length - 1], prev = S.daily[S.daily.length - 2];
@@ -147,32 +145,22 @@ export default function Insights() {
           <Card className="ins2-fill">
             <div className="row vw-justify-between">
               <span className="vw-card-title">Discovered devices by vendor</span>
-              <span className="seg"><button className={vendorView === 'bars' ? 'is-on' : ''} onClick={() => setVendorView('bars')}>Bars</button><button className={vendorView === 'cards' ? 'is-on' : ''} onClick={() => setVendorView('cards')}>Cards</button></span>
             </div>
-            {vendorView === 'bars' ? (
-              <table className="mtbl">
-                <thead><tr><th>Vendor</th><th className="vtbl-bar">Identified <span className="ch-dot" style={{ background: cv('emerald', 500), marginLeft: 6 }} /> · failed <span className="ch-dot" style={{ background: cv('red', 500) }} /></th><th className="t-right">Identified</th><th className="t-right">Share</th><th className="t-right">Failed</th></tr></thead>
-                <tbody>{S.vendors.map(v => (
-                  <tr key={v.n} className="is-click" onClick={() => toDiscovered({ vendor: v.n })}>
-                    <td className="vw-value">{v.n}</td>
-                    <td className="vtbl-bar"><SplitBar ok={v.ok} fail={v.fail} max={vendorMax} /></td>
-                    <td className="t-right num">{fmt(v.ok)}</td>
-                    <td className="t-right num">{S.identified ? pct(v.ok / S.identified, v.ok / S.identified < 0.01 ? 2 : 1) : '—'}</td>
-                    <td className="t-right num" style={{ color: cv('red', 600) }}>
-                      <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ color: cv('red', 600) }}
-                        onClick={e => { e.stopPropagation(); toDevices({ status: 'Failed', vendor: v.n }); }}>{v.fail}</button>
-                    </td>
-                  </tr>))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="vcards">{S.vendors.map(v => (
-                <button key={v.n} className="vcard" onClick={() => toDiscovered({ vendor: v.n })}>
-                  <span className="vw-value">{v.n}</span><span className="kpi3-v num">{fmt(v.ok)}</span>
-                  <span className="vw-card-description">{S.identified ? pct(v.ok / S.identified) : '—'} of fleet · <span role="button" tabIndex={0} style={{ color: cv('red', 600), textDecoration: 'underline', cursor: 'pointer' }}
-                    onClick={e => { e.stopPropagation(); toDevices({ status: 'Failed', vendor: v.n }); }}>{v.fail} failed</span></span>
-                </button>))}</div>
-            )}
+            <table className="mtbl">
+              <thead><tr><th>Vendor</th><th className="vtbl-bar">Identified <span className="ch-dot" style={{ background: cv('emerald', 500), marginLeft: 6 }} /> · failed <span className="ch-dot" style={{ background: cv('red', 500) }} /></th><th className="t-right">Identified</th><th className="t-right">Share</th><th className="t-right">Failed</th></tr></thead>
+              <tbody>{S.vendors.map(v => (
+                <tr key={v.n} className="is-click" onClick={() => toDiscovered({ vendor: v.n })}>
+                  <td className="vw-value">{v.n}</td>
+                  <td className="vtbl-bar"><SplitBar ok={v.ok} fail={v.fail} max={vendorMax} /></td>
+                  <td className="t-right num">{fmt(v.ok)}</td>
+                  <td className="t-right num">{S.identified ? pct(v.ok / S.identified, v.ok / S.identified < 0.01 ? 2 : 1) : '—'}</td>
+                  <td className="t-right num" style={{ color: cv('red', 600) }}>
+                    <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ color: cv('red', 600) }}
+                      onClick={e => { e.stopPropagation(); toDevices({ status: 'Failed', vendor: v.n }); }}>{v.fail}</button>
+                  </td>
+                </tr>))}
+              </tbody>
+            </table>
           </Card>
           <Card className="ins2-fill">
             <div className="row vw-justify-between"><span className="vw-card-title">Failure rate by model</span><span className="vw-card-description">models carrying the most failures</span></div>
@@ -211,9 +199,9 @@ export default function Insights() {
 
 
         <Card>
-          <div className="row vw-justify-between"><span className="vw-card-title">Discovered devices by state</span><span className="vw-card-description">identified devices · ring shows the class split</span></div>
+          <div className="row vw-justify-between"><span className="vw-card-title">Discovered devices by state</span><span className="vw-card-description">identified devices</span></div>
           <div className="ins2-row ins2-7-5" style={{ marginTop: "var(--vw-space-md)" }}>
-            <GeoMap legend={DISC_CLASSES.map(c => ({ n: c.n, hex: c.hex }))} region={scope === 'all' ? undefined : scope}
+            <GeoMap region={scope === 'all' ? undefined : scope}
               onStateOpen={st => toDiscovered({ state: st })}
               bubbles={S.states.map(s => ({ st: s.st, c: s.c, region: s.region, lat: s.lat, lon: s.lon,
                 parts: [{ n: 'Routers', c: s.router, hex: DISC_CLASSES[0].hex }, { n: 'Switches', c: s.switch, hex: DISC_CLASSES[1].hex }] }))} />

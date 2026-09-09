@@ -49,7 +49,7 @@ function Ring({ x, y, R, r, parts, label, cls, onClick, onEnter, onMove }: {
   );
 }
 
-export function GeoMap({ bubbles, legend, region, onStateOpen }: { bubbles: Bubble[]; legend: { n: string; hex: string }[]; region?: string; onStateOpen?: (st: string) => void }) {
+export function GeoMap({ bubbles, legend = [], region, onStateOpen }: { bubbles: Bubble[]; legend?: { n: string; hex: string }[]; region?: string; onStateOpen?: (st: string) => void }) {
   const nav = useNavigate();
   const sites = useMemo(() => region ? SITES.filter(s => s.region === region) : SITES, [region]);
   const wrap = useRef<HTMLDivElement>(null);
@@ -58,11 +58,10 @@ export function GeoMap({ bubbles, legend, region, onStateOpen }: { bubbles: Bubb
   const [sel, setSel] = useState<string | null>(null);           /* selected state */
   const [site, setSite] = useState<Site | null>(null);
   const [hov, setHov] = useState<{ kind: 'state' | 'site'; id: string; x: number; y: number } | null>(null);
-  const [q, setQ] = useState('');
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
 
   const byState = useMemo(() => Object.fromEntries(bubbles.map(b => [b.st, b])), [bubbles]);
-  const hexOf = (n: string) => legend.find(l => l.n === n)?.hex ?? 'currentColor';
+  const hexOf = (n: string) => legend?.find(l => l.n === n)?.hex ?? 'currentColor';
   const broken = view.k >= BREAK_AT;
 
   /* ── camera ──────────────────────────────────────────── */
@@ -117,15 +116,6 @@ export function GeoMap({ bubbles, legend, region, onStateOpen }: { bubbles: Bubb
     return () => el.removeEventListener('wheel', h);
   }, []);
 
-  /* search: a state name or a site name */
-  const go = (term: string) => {
-    const t = term.trim().toLowerCase(); if (!t) return;
-    const st = bubbles.find(b => b.st.toLowerCase().startsWith(t) || b.c.toLowerCase() === t);
-    if (st) { openState(st.st); return; }
-    const s = sites.find(x => x.name.toLowerCase().includes(t) || x.city.toLowerCase().startsWith(t) || x.id.toLowerCase() === t);
-    if (s) { setSel(s.st); setSite(s); setAnim(true); const k = 6; setView({ k, x: GEO.W / 2 - s.x * k, y: GEO.H / 2 - s.y * k }); }
-  };
-
   /* which sites to draw: only inside the viewport once clusters are broken */
   const visibleSites = useMemo(() => {
     if (!broken) return [];
@@ -141,21 +131,20 @@ export function GeoMap({ bubbles, legend, region, onStateOpen }: { bubbles: Bubb
 
   return (
     <div className={`geo${drag.current ? ' is-drag' : ''}`} ref={wrap} onMouseLeave={() => setHov(null)}>
-      <div className="geo-top">
-        <div className="geo-crumb">
-          <button className={`geo-cr${sel ? '' : ' is-on'}`} onClick={reset}>All India</button>
-          {sel && <><span className="geo-cr-sep">›</span><button className="geo-cr is-on" onClick={() => openState(sel)}>{sel}</button></>}
-          {site && <><span className="geo-cr-sep">›</span><span className="geo-cr is-on">{site.name}</span></>}
+      {(sel || site) && (
+        <div className="geo-top">
+          <div className="geo-crumb">
+            {sel && <button className="geo-cr is-on" onClick={() => openState(sel)}>{sel}</button>}
+            {site && <><span className="geo-cr-sep">›</span><span className="geo-cr is-on">{site.name}</span></>}
+          </div>
         </div>
-        <span className="nst-input-shell geo-search">
-          <input className="nst-input" placeholder="State or site…" value={q} onChange={e => setQ(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') go(q); }} aria-label="Search state or site" />
-        </span>
-      </div>
-      <div className="geo-legend">
-        {legend.map(l => <span key={l.n} className="ch-leg"><span className="ch-dot" style={{ background: l.hex }} />{l.n}</span>)}
-        <span className="geo-legend-hint">{broken ? 'sites · click one for details' : 'states · click to open'}</span>
-      </div>
+      )}
+      {legend && legend.length > 0 && (
+        <div className="geo-legend">
+          {legend.map(l => <span key={l.n} className="ch-leg"><span className="ch-dot" style={{ background: l.hex }} />{l.n}</span>)}
+          <span className="geo-legend-hint">{broken ? 'sites · click one for details' : 'states · click to open'}</span>
+        </div>
+      )}
       <div className="geo-zoom">
         <button className="icon-btn" onClick={() => { setAnim(true); zoomBy(1.4); }} aria-label="Zoom in">+</button>
         <span className="vw-card-description num">{view.k.toFixed(1)}×</span>

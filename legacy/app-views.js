@@ -73,7 +73,7 @@ function circleDetail() {
         ${dA({ v:'reconcile', l:`Open exceptions in ${c.n}`, q:`ne=Open&circle=${c.c}` })}>
         Open ${n(c.exc)} exceptions</button>
       <button class="nst-btn nst-btn--sm"
-        ${dA({ v:'targets', l:`Scan targets in ${c.n}`, q:'tgt=exceptions' })}>Scan targets</button>
+        ${dA({ v:'targets', l:`Scan targets in ${c.n}`, q:'tgt=All' })}>Scan targets</button>
     </div>
   </div>`;
 }
@@ -424,15 +424,74 @@ function freshChip(h) {
   return chip(`${Math.round(h / 720)} mo`, 'error');
 }
 
+function getScanTargetStatus(t) {
+  if (!t) return 'Unknown';
+  const rawStatus = String(t.status || t.outcome || '').trim();
+  const sUpper = rawStatus.toUpperCase();
+  if (sUpper === 'SUCCESS' || sUpper === 'EXACT MATCH' || sUpper === 'PASSED' || sUpper === 'CLEAN') {
+    return 'Success';
+  }
+  if (sUpper === 'PARTIAL') {
+    return 'Partial';
+  }
+  if (sUpper === 'FAILED' || sUpper === 'FAIL' || sUpper === 'MISSING') {
+    return 'Failed';
+  }
+
+  if (Array.isArray(t.ch) && t.ch.length > 0) {
+    const hasFail = t.ch.includes('fail');
+    const hasOk = t.ch.includes('ok');
+    if (hasFail && hasOk) return 'Partial';
+    if (hasFail && !hasOk) return 'Failed';
+    if (!hasFail && hasOk) return 'Success';
+  }
+
+  if (t.out === 'Exact match') return 'Success';
+  if (t.out === 'Missing' || t.out === 'No adapter' || (t.reason && (!t.ch || !t.ch.includes('ok')))) return 'Failed';
+  if (t.reason) return 'Partial';
+
+  return 'Success';
+}
+
+function getFailureReason(t) {
+  if (!t) return '';
+  if (Array.isArray(t.failure_reasons) && t.failure_reasons.length > 0) {
+    return t.failure_reasons.map(r => TGT_REASON[r] || r).join(', ');
+  }
+  if (Array.isArray(t.reasons) && t.reasons.length > 0) {
+    return t.reasons.map(r => TGT_REASON[r] || r).join(', ');
+  }
+  const rawReason = t.failure_reason || t.failureReason || t.reasonText || t.reason;
+  if (rawReason) {
+    if (Array.isArray(rawReason)) {
+      return rawReason.map(r => TGT_REASON[r] || r).join(', ');
+    }
+    return TGT_REASON[rawReason] || rawReason;
+  }
+  if (t.out && t.out !== 'Exact match' && t.out !== 'Drifted' && t.out !== 'Stale' && t.out !== 'Rogue' && t.out !== 'Unclaimed') {
+    return t.out;
+  }
+  return '';
+}
+
 let TGT_FILTER = 'All';
 const TGT_TESTS = {
   All:        () => true,
+  all:        () => true,
+  ALL:        () => true,
+  success:    t => getScanTargetStatus(t) === 'Success',
+  Success:    t => getScanTargetStatus(t) === 'Success',
+  SUCCESS:    t => getScanTargetStatus(t) === 'Success',
+  clean:      t => getScanTargetStatus(t) === 'Success',
+  partial:    t => getScanTargetStatus(t) === 'Partial',
+  Partial:    t => getScanTargetStatus(t) === 'Partial',
+  PARTIAL:    t => getScanTargetStatus(t) === 'Partial',
+  failed:     t => getScanTargetStatus(t) === 'Failed',
+  Failed:     t => getScanTargetStatus(t) === 'Failed',
+  FAILED:     t => getScanTargetStatus(t) === 'Failed',
+
   answered:   t => t.out !== 'Missing',
-  clean:      t => t.ch.every(c => c === 'ok' || c === 'na'),
-  partial:    t => t.ch.includes('fail') && t.ch.includes('ok'),
-  failed:     t => t.ch.includes('fail'),
   new:        t => !!t.isNew,
-  exceptions: t => t.out !== 'Exact match',
   stale:      t => t.fresh > 168,
   fresh24:    t => t.fresh <= 24,
   fresh7:     t => t.fresh > 24   && t.fresh <= 168,
@@ -442,16 +501,24 @@ const TGT_TESTS = {
 };
 const TGT_LABEL = { All:'All targets', answered:'Targets that answered', clean:'Runs where every step passed',
   partial:'Runs that partly failed', failed:'Runs with a failed collector', new: 'Seen for the first time this cycle',
-  exceptions:'Targets with an exception', stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
+  stale:'Past the freshness SLA', fresh24:'Verified in the last 24 hours' };
 const TGT_REASON = { unreach: 'Host unreachable', timeout: 'SNMP timeout', auth: 'Authentication failed',
   adapter: 'No adapter for model', parse: 'Response parse error', dupip: 'Duplicate management IP' };
 const TGT_REASON_CHIP = { unreach: 'purple', timeout: 'cyan', auth: 'pink', adapter: 'warning', parse: 'info', dupip: 'neutral' };
 
 let TGT_REASON_FILTER = null;
 function viewTargets() {
-  const test = TGT_TESTS[TGT_FILTER] || TGT_TESTS.All;
-  const rows = gridApply('targets', TARGETS.filter(test).filter(t => !TGT_REASON_FILTER || t.reason === TGT_REASON_FILTER));
-  const segs = [['All','All'],['exceptions','Exceptions'],['failed','Failed'],['stale','Stale']];
+  const normFilterKey = String(TGT_FILTER || 'All').trim();
+  const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
+  const filteredTargets = TARGETS.filter(test).filter(t => {
+    if (!TGT_REASON_FILTER) return true;
+    const r = getFailureReason(t);
+    return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
+  });
+  const rows = gridApply('targets', filteredTargets);
+  const segs = [['All','All'],['success','Success'],['partial','Partial'],['failed','Failed']];
+  const activeKey = normFilterKey.toLowerCase();
+
   return `<div class="page">
     ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
     ${drillBar()}
@@ -460,19 +527,28 @@ function viewTargets() {
         `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
-        [{ t: 'Outcome' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
+        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
-        rows.map(t => [
-          chip(t.out, t.chip),
-          `<span class="mono">${t.ip}</span>`,
-          `${t.host === '—' ? `<span style="color:${cv('gray',400)}">no sysName</span>` : `<span class="vw-value">${t.host}</span>`}
-           <br><span class="vw-card-metric-label-sub">${t.circle} · <span class="mono">${t.job}</span></span>`,
-          `<span class="vw-value">${t.oem}</span> <span class="vw-card-metric-label-sub mono">${t.model}</span>`,
-          `<span class="num">${t.sync}</span>`,
-          freshChip(t.fresh),
-          t.reason ? chip(TGT_REASON[t.reason], TGT_REASON_CHIP[t.reason]) : `<span style="color:${cv('gray',300)}">—</span>`,
-          chainOf(t.ch)
-        ]), '',
+        rows.map(t => {
+          const stStatus = getScanTargetStatus(t);
+          const stTone = stStatus === 'Success' ? 'success' : stStatus === 'Partial' ? 'warning' : 'error';
+          const reasonText = getFailureReason(t);
+          const displayReason = (stStatus === 'Failed' || stStatus === 'Partial') && reasonText
+            ? chip(reasonText, TGT_REASON_CHIP[t.reason] || (stStatus === 'Failed' ? 'error' : 'warning'))
+            : `<span style="color:${cv('gray',300)}">—</span>`;
+
+          return [
+            chip(stStatus, stTone),
+            `<span class="mono">${t.ip}</span>`,
+            `${t.host === '—' ? `<span style="color:${cv('gray',400)}">no sysName</span>` : `<span class="vw-value">${t.host}</span>`}
+             <br><span class="vw-card-metric-label-sub">${t.circle} · <span class="mono">${t.job}</span></span>`,
+            `<span class="vw-value">${t.oem}</span> <span class="vw-card-metric-label-sub mono">${t.model}</span>`,
+            `<span class="num">${t.sync}</span>`,
+            freshChip(t.fresh),
+            displayReason,
+            chainOf(t.ch)
+          ];
+        }), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
               A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
@@ -1479,7 +1555,7 @@ function viewPhysical() {
       ${gridBar(rows.length, PHY_OEM ? `${n(IL.ne)} across every class`
           : n(phyCount(t, PHY_STOCK)),
         'Name, IP address, serial', FS.physical,
-        meta.disc === 0 ? chip('No collector defined for this class', 'error')
+        meta.disc === 0 ? ''
           : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning'),
         [])}
       ${table(

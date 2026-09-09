@@ -72,7 +72,6 @@ export default function PhysicalResources() {
     return r;
   }, [cls, stock, oem, model, refreshKey]);
   const total = phyCount(cls, stock);
-  const notVerified = meta.c - meta.disc;
 
   /* every row on screen belongs to the active class tab, so cls alone decides
      whether Node view belongs in the menu — server has no node-level page */
@@ -122,7 +121,7 @@ export default function PhysicalResources() {
           tabs={tabs.map(x => ({
             k: x.k, n: x.n, count: phyCount(x.k, stock), dot: cv(x.disc ? 'emerald' : 'red', 400),
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
-              x.disc ? ` · ${fmt(x.disc)} discovered` : ' · no collector reaches this class'}`
+              x.disc ? ` · ${fmt(x.disc)} discovered` : ''}`
           }))}
           active={cls} onChange={selectTabClass} />
 
@@ -148,9 +147,6 @@ export default function PhysicalResources() {
           rows={rows} total={total} rowKey={r => r.name}
           resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS}
-          extra={meta.disc === 0
-            ? <Chip tone="error">No collector defined for this class</Chip>
-            : <Chip tone="warning">{fmt(notVerified)} of {fmt(meta.c)} not verified</Chip>}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={(r, i) => {
