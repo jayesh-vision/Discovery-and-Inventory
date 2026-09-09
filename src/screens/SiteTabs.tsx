@@ -14,8 +14,8 @@ export function SiteHeader({ l }: { l: Location }) {
       </div>
       <span className="grow" />
       <button className="nst-btn nst-btn--sm" onClick={() => nav('/inventory/location?view=list')}>Back to list</button>
-      <button className="nst-btn nst-btn--sm">Download report</button>
-      <button className="nst-btn nst-btn--filled nst-btn--sm">Edit site</button>
+      <button className="nst-btn nst-btn--sm" onClick={() => nav('/inventory/reports')}>Download report</button>
+      <button className="nst-btn nst-btn--filled nst-btn--sm" onClick={() => nav(`/inventory/location/site/${l.id}/details`)}>Edit site</button>
     </div>
   );
 }

@@ -142,7 +142,6 @@ function opexSection(l, neCount) {
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
       <div class="stack-x">
         <span class="vw-card-title">Opex</span>
-        <span class="vw-card-description">${ox.fy} · ${ox.cc} · owner ${ox.owner} · recurring run cost, not project spend</span>
       </div>
       <div class="row">
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-opex="${l.id}">Update opex</button>

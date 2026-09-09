@@ -556,6 +556,7 @@ export default function LocationCreate() {
               </button>
               <button
                 type="button"
+                onClick={() => { const input = document.querySelector('input') as HTMLInputElement; input?.focus(); }}
                 title="Search"
                 style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#ffffff', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
               >

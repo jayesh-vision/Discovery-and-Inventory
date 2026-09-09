@@ -314,12 +314,6 @@ function viewPassive() {
     ])}
 
     ${card(`
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap" style="padding:var(--vw-space-md);gap:var(--vw-space-md)">
-        <span class="vw-card-description">
-          <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
-          Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
-        </span>
-      </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
@@ -327,8 +321,7 @@ function viewPassive() {
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
-             <strong>${meta.n}</strong> holds ${n(meta.c)} records. Detailed columns are modelled for Fiber spans, ODF, Racks and Power first —
-             the recommendation is to model one passive domain end to end before generalising.</div>`}
+             <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
       ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
         <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>router</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>switch</span>

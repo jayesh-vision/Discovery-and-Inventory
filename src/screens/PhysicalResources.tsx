@@ -115,9 +115,7 @@ export default function PhysicalResources() {
         { k: 'Ports used', v: `${(EST.ports.used / EST.ports.total * 100).toFixed(0)}%`, s: `${fmt(EST.ports.free)} free of ${fmt(EST.ports.total)}`, t: 'emerald' },
         { k: 'Past end of sale', v: fmt(EST.eol.past), s: `${fmt(EST.eol.within12)} within 12 months`, t: 'red' },
         { k: 'Spares in store', v: fmt(EST.spares.instore), s: `${fmt(EST.spares.rma)} at RMA · ${fmt(EST.spares.intransit)} in transit`, t: 'purple',
-          onClick: () => { set('stock', 'instore'); } },
-        { k: 'Decommissioned', v: fmt(stockMeta('decomm').c), s: 'read-only · 2 still answering', t: 'slate',
-          onClick: () => nav('/inventory/inactive') }
+          onClick: () => { set('stock', 'instore'); } }
       ]} />
 
       <Card>
@@ -143,13 +141,6 @@ export default function PhysicalResources() {
               );
             })}
           </div>
-          <span className="grow" />
-          <div className="stock-presets row">
-            <button className="nst-btn nst-btn--xs" onClick={() => set('stock', null)}>Select all</button>
-            <button className="nst-btn nst-btn--xs" onClick={() => nav(`/inventory/inactive?cls=${cls}`)}>
-              Decommissioned →
-            </button>
-          </div>
         </div>
 
         <DataGrid<NeRow>
@@ -161,9 +152,6 @@ export default function PhysicalResources() {
           extra={meta.disc === 0
             ? <Chip tone="error">No collector defined for this class</Chip>
             : <Chip tone="warning">{fmt(notVerified)} of {fmt(meta.c)} not verified</Chip>}
-          gridActions={[
-            { l: 'View decommissioned', onClick: () => nav(`/inventory/inactive?cls=${cls}`) }
-          ]}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={(r, i) => {

@@ -2735,27 +2735,21 @@ const recSerial = r => (r.inv && r.inv.sn) || (r.net && r.net.sn) || '';
 function recOutcomes() {
   const B = REC_BANDS;
   const T = [
-    { k:'Agree',              c:B.both.parts[0].c, tone:'emerald', d:'Record and network agree on all four governed attributes.' },
-    { k:'Differ',             c:B.both.parts[1].c, tone:'amber',   d:'Matched to a device, but at least one attribute disagrees.' },
-    { k:'Stale',              c:B.both.parts[2].c, tone:'orange',  d:'Agrees, but last verified more than 30 days ago.' },
-    { k:'Only in inventory',  c:B.invOnly.c,       tone:'red',     d:'On record; did not answer the last three discovery runs.' },
-    { k:'Only on network',    c:B.netOnly.parts[0].c, tone:'fuchsia', d:'Answered and identified, but no inventory record holds it.' },
-    { k:'Unidentified',       c:B.netOnly.parts[1].c, tone:'purple',  d:'Answered, but no match rule could tie it to a record.' }
+    { k:'Agree',              c:B.both.parts[0].c, tone:'emerald' },
+    { k:'Differ',             c:B.both.parts[1].c, tone:'amber'   },
+    { k:'Stale',              c:B.both.parts[2].c, tone:'orange'  },
+    { k:'Only in inventory',  c:B.invOnly.c,       tone:'red'     },
+    { k:'Only on network',    c:B.netOnly.parts[0].c, tone:'fuchsia' },
+    { k:'Unidentified',       c:B.netOnly.parts[1].c, tone:'purple'  }
   ];
   const tile = t => `
     <button class="oc${NE_FILTER === t.k ? ' is-on' : ''}" data-ne-filter="${t.k}"
       style="--oc-a:${cv(t.tone,400)};--oc-b:${cv(t.tone,50)}">
       <span class="oc-v num" style="color:${cv(t.tone,700)}">${n(t.c)}</span>
       <span class="oc-k">${t.k}</span>
-      <span class="oc-d">${t.d}</span>
     </button>`;
   return `
-    <div class="oc-row">${T.map(tile).join('')}</div>
-    <div class="oc-nc">
-      <span class="oc-nc-v num">${n(B.notComparable.c)}</span>
-      <span class="oc-nc-k">Cannot be compared</span>
-      <span class="oc-nc-d">${B.notComparable.q}</span>
-    </div>`;
+    <div class="oc-row">${T.map(tile).join('')}</div>`;
 }
 
 function recTable() {
@@ -2791,7 +2785,7 @@ function recTable() {
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
                  ['Only in inventory','Only in inventory'],['Only on network','Only on network'],['Unidentified','Unidentified']];
   return card(`
-    ${headSm('Which elements reconciled', 'One row per network element. Where the two sides disagree the inventory value is struck through and the value the network reported is shown beneath it.')}
+    ${headSm('Which elements reconciled')}
     ${gridBar(rows.length, n(REC_BANDS.invOnly.c + REC_BANDS.both.c + REC_BANDS.netOnly.c), 'Element, IP, serial', FS.reconcile, '', [], 'reconcile')}
     <div class="stock-bar" style="border-bottom:0;padding-bottom:var(--vw-space-sm)">
       ${chips.map(([k,l]) => `<button class="stock-chip${NE_FILTER===k?' is-on':''}" data-ne-filter="${k}">${l}</button>`).join('')}
@@ -2818,8 +2812,7 @@ function viewReconcile() {
     ${drillBar()}
 
     ${card(`
-      ${headSm(PERIOD === 'today' ? 'How the cycle came out' : 'How the window came out',
-        `${n(DL.master)} inventory records were compared against ${n(DL.identified)} devices that answered discovery. Four attributes are governed: OEM, model, OS version and serial number. Select a result to filter the list below.`)}
+      ${headSm(PERIOD === 'today' ? 'How the cycle came out' : 'How the window came out')}
       <div style="margin-top:var(--vw-space-md)">${recOutcomes()}</div>`)}
 
     ${recTable()}
@@ -3387,7 +3380,6 @@ function capexSection(l, neCount) {
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
       <div class="stack-x">
         <span class="vw-card-title">Capex</span>
-        <span class="vw-card-description">${cx.fy} · ${cx.afe} · ${cx.cc} · owner ${cx.owner}</span>
       </div>
       <div class="row">
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
@@ -3597,9 +3589,7 @@ function viewPhysical() {
       { k:'Past end of sale', v:n(E.eol.past), s:`${n(E.eol.within12)} within 12 months`, t:'red',
         d:{ v:'physical', l:'Elements past end of sale' } },
       { k:'Spares in store',  v:n(E.spares.instore), s:`${n(E.spares.rma)} at RMA · ${n(E.spares.intransit)} in transit`, t:'purple',
-        d:{ v:'physical', l:'Spares in store', q:'stock=instore' } },
-      { k:'Decommissioned',   v:n(STOCK_OF.decomm.c), s:'read-only · 2 still answering', t:'slate',
-        d:{ v:'physical', l:'Decommissioned records', q:'stock=decomm' } }
+        d:{ v:'physical', l:'Spares in store', q:'stock=instore' } }
     ])}
 
     ${card(`
@@ -3618,12 +3608,6 @@ function viewPhysical() {
               title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
               <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
         </div>
-        <span class="grow"></span>
-        <div class="stock-presets row">
-          <button class="nst-btn nst-btn--xs" data-stockset="active">Select all</button>
-          <button class="nst-btn nst-btn--xs"${dA({ v:'inactive', l:`Decommissioned ${meta.n.toLowerCase()}s`, q:`cls=${t}` })}>
-            Decommissioned →</button>
-        </div>
       </div>
 
       ${gridBar(rows.length, PHY_OEM ? `${n(IL.ne)} across every class`
@@ -3631,7 +3615,7 @@ function viewPhysical() {
         'Name, IP address, serial', FS.physical,
         meta.disc === 0 ? chip('No collector defined for this class', 'error')
           : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning'),
-        [{ l:'View decommissioned', d:{ v:'inactive', q:'cls=' + t } }])}
+        [])}
       ${table(
         [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
          {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source · verified'}],
@@ -4406,12 +4390,6 @@ function viewPassive() {
     ])}
 
     ${card(`
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap" style="padding:var(--vw-space-md);gap:var(--vw-space-md)">
-        <span class="vw-card-description">
-          <strong>No collector reaches this class.</strong> Fiber needs OTDR traces, racks and power need field survey.
-          Every row carries <em>Last surveyed</em> in place of <em>Last verified</em> — ${n(P.surveyStale)} records have not been surveyed in over a year.
-        </span>
-      </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
@@ -4419,8 +4397,7 @@ function viewPassive() {
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
-             <strong>${meta.n}</strong> holds ${n(meta.c)} records. Detailed columns are modelled for Fiber spans, ODF, Racks and Power first —
-             the recommendation is to model one passive domain end to end before generalising.</div>`}
+             <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
       ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
         <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>router</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>switch</span>
@@ -4575,7 +4552,6 @@ function opexSection(l, neCount) {
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
       <div class="stack-x">
         <span class="vw-card-title">Opex</span>
-        <span class="vw-card-description">${ox.fy} · ${ox.cc} · owner ${ox.owner} · recurring run cost, not project spend</span>
       </div>
       <div class="row">
         <button class="nst-btn nst-btn--filled nst-btn--sm" data-opex="${l.id}">Update opex</button>
