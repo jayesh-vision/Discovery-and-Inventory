@@ -23,7 +23,7 @@ function resOverview() {
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
           :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
-        i => [CP('Copy value', PROV[i].v)])}
+        i => [])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position')}
@@ -62,7 +62,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}`);
+        i => [])}`);
 }
 
 function resIfaces() {
@@ -155,7 +155,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}`);
+        i => [])}`);
 }
 
 function resAlarms() {
@@ -182,7 +182,7 @@ function resConfig() {
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
             `<span class="mono" style="color:${cv('red',700)}">${d.got}</span>`,
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
-        i => [CP('Copy expected value', c.drift[i].want)])}
+        i => [])}
         </div>
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
@@ -315,7 +315,7 @@ function viewPassive() {
 
     ${card(`
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
-        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
+        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n} <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',

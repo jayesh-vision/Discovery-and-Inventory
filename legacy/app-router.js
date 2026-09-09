@@ -323,7 +323,10 @@ document.addEventListener('click', e => {
     try { localStorage.setItem('nst-sitemeta', SITE_META_OPEN ? '1' : '0'); } catch (err) {}
     go('site'); return; }
   const ssec = e.target.closest('[data-sitesection]');
-  if (ssec) { SITE_SECTION = ssec.dataset.sitesection; go('site'); return; }
+  if (ssec) {
+    if (ssec.dataset.sitesection === 'passive') { PASS_TAB = 'rack'; go('passive'); return; }
+    SITE_SECTION = ssec.dataset.sitesection; go('site'); return;
+  }
   const stab = e.target.closest('[data-sitetab]');
   if (stab) { SITE_TAB = stab.dataset.sitetab; go('site'); return; }
   const ml = e.target.closest('[data-maplayer]');

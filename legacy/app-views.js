@@ -474,8 +474,7 @@ function viewTargets() {
           chainOf(t.ch)
         ]), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
-              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' }),
-              CP('Copy gateway IP', rows[i].ip)])}
+              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -665,8 +664,7 @@ function recTable() {
           ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
           ? [A('Open element', { v:'resource', l:r.ne })]
-          : [A('Open element', { v:'resource', l:r.ne }),
-             ...(recSerial(r) ? [CP('Copy serial number', recSerial(r))] : [])], 'rec', ri)}
+          : [A('Open element', { v:'resource', l:r.ne })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -812,8 +810,7 @@ function viewHome() {
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}` }),
               A('Open element', { v:'resource', l:PHY.router[i].name }),
               A('Open site', { v:'site', l:PHY.router[i].loc }),
-              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' }),
-              CP('Copy serial number', PHY.router[i].sn)])}`)}
+              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' })])}`)}
   </div>`;
 }
 
@@ -1190,21 +1187,22 @@ function viewSite() {
     ])}
 
     <div class="section-tabs">
-      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements</button>
-      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex</button>
-      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
+      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements <span class="tab-n num">${tot}</span></button>
+      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex <span class="tab-n num">${inrShort(cxTotal)}</span></button>
+      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
+      <button class="stab" data-nav="sitedetails">Site details</button>
+      <button class="stab" data-nav="siteequipment">Site equipment</button>
     </div>
 
     ${SITE_SECTION === 'capex' ? capexSection(l, tot)
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
-      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
+      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n} <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
           ...(hasNodeView(rows[i].type) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
-          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-          ...(hasNodeView(rows[i].type) ? [] : (rows[i].sn ? [CP('Copy serial number', rows[i].sn)] : []))
+          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -1507,12 +1505,11 @@ function viewPhysical() {
           ];
         }), '',
         i => rows[i].stock === 'decomm'
-          ? [CP('Copy serial number', rows[i].sn)]
+          ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
-             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-             CP('Copy serial number', rows[i].sn)])}
+             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>
@@ -1814,8 +1811,7 @@ function viewLinks() {
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
         ]), '',
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
-              A('Open destination element', { v:'resource', l:rows[i].dne }),
-              CP('Copy link name', rows[i].name)])}
+              A('Open destination element', { v:'resource', l:rows[i].dne })])}
       <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
         <div class="row">
           <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
@@ -1851,8 +1847,7 @@ function viewServices() {
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
           `<span class="mono">${s.ifc}</span>`, ver(s.v)
         ]), '',
-        i => [A('Open attachment element', { v:'resource', l:rows[i].name }),
-              CP('Copy ERP number', rows[i].erp)])}`)}
+        i => [A('Open attachment element', { v:'resource', l:rows[i].name })])}`)}
   </div>`;
 }
 
@@ -1903,9 +1898,9 @@ function viewInactive() {
           `<span class="vw-card-description">${r.why}</span>`, r.by,
           r.zombie ? chip('Still answering', 'error') : chip('Silent', 'neutral')
         ]), '',
-        i => [CP('Copy serial number', rows[i].sn),
+        i => [
               ...(rows[i].zombie ? [A('Open reconciliation exception',
-                  { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
+                  { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : [])
               ])}`)}
   </div>`;
 }

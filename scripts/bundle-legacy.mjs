@@ -64,19 +64,7 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
     CURRENT === 'inactive' ? b.hasAttribute('data-inactive') : b.dataset.nav === active));`,
 `  void active; /* rail highlight is owned by the React sidebar */`, 'rail highlight');
 
-/* 2c. Site details / Site equipment open a separate React screen — they must
-   not look like the in-place section tabs beside them (same .stab class, same
-   row) or a click reads as "the tab switch navigated away/back" instead of an
-   intentional jump to another page. Kept as their own row, styled like the
-   plain data-nav links used elsewhere in the prototype (e.g. the transcript's
-   "Back to targets"). */
-patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
-    </div>`, `      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
-    </div>
-    <div class="row vw-gap-sm" style="margin-top:var(--vw-space-sm)">
-      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="sitedetails">Site details →</button>
-      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="siteequipment">Site equipment →</button>
-    </div>`, 'site details buttons');
+
 
 /* 2d. the transcript has no breadcrumb to go back by — give it a button */
 patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`,

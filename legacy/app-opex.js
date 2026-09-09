@@ -148,17 +148,6 @@ function opexSection(l, neCount) {
       </div>
     </div>
 
-    ${lapsed.length || overdue.length ? `
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap"
-        style="margin-top:var(--vw-space-lg);padding:var(--vw-space-md);gap:var(--vw-space-md);
-               border-left:3px solid ${cv('red',400)}">
-        <span class="vw-card-description">
-          ${lapsed.length ? `<strong style="color:${cv('red',700)}">${lapsed.length} contract${lapsed.length > 1 ? 's have' : ' has'} lapsed</strong>
-            — ${lapsed.map(r => `${r.v} (${r.ref}, ended ${r.end})`).join('; ')}. The service is still being consumed and billed.` : ''}
-          ${overdue.length ? ` ${overdue.length} payment${overdue.length > 1 ? 's are' : ' is'} overdue.` : ''}
-        </span>
-      </div>` : ''}
-
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>
 
     <div class="ox-trend">
@@ -181,8 +170,7 @@ function opexSection(l, neCount) {
             <span class="ox-col-m">${t.m}</span>
           </div>`).join('')}
       </div>
-      <div class="row vw-justify-between" style="margin-top:var(--vw-space-sm)">
-        <span class="vw-card-description">${ox.trend.filter(t => t.a > t.b).length} of 12 months ran over budget.</span>
+      <div class="row vw-justify-end" style="margin-top:var(--vw-space-sm)">
         <span class="vw-card-metric-label-sub num">12-month actual ${inrShort(ox.trend.reduce((a, t) => a + t.a, 0))}</span>
       </div>
     </div>
@@ -228,8 +216,7 @@ function opexSection(l, neCount) {
         ];
       }), '',
       () => [])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Last updated ${ox.updated}. Escalations apply on the contract anniversary.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="row vw-gap-xl">
         <span class="stack-x t-right"><span class="vw-label">Budget / month</span><span class="vw-value num">${inr(ox.budget)}</span></span>
         <span class="stack-x t-right"><span class="vw-label">Run rate / month</span><span class="vw-value num" style="font-weight:500">${inr(Math.round(run))}</span></span>

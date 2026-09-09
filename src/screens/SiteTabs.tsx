@@ -20,7 +20,7 @@ export function SiteHeader({ l }: { l: Location }) {
   );
 }
 
-export function SiteTabs({ l, active }: { l: Location; active: 'details' | 'equipment' }) {
+export function SiteTabs({ l, active }: { l: Location; active?: 'details' | 'equipment' }) {
   const nav = useNavigate();
   const base = `/inventory/location/site/${l.id}`;
   return (

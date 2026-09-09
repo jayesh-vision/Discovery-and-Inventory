@@ -2584,8 +2584,7 @@ function viewTargets() {
           chainOf(t.ch)
         ]), '',
         i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
-              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' }),
-              CP('Copy gateway IP', rows[i].ip)])}
+              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -2776,8 +2775,7 @@ function recTable() {
           ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
           ? [A('Open element', { v:'resource', l:r.ne })]
-          : [A('Open element', { v:'resource', l:r.ne }),
-             ...(recSerial(r) ? [CP('Copy serial number', recSerial(r))] : [])], 'rec', ri)}
+          : [A('Open element', { v:'resource', l:r.ne })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -2923,8 +2921,7 @@ function viewHome() {
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}` }),
               A('Open element', { v:'resource', l:PHY.router[i].name }),
               A('Open site', { v:'site', l:PHY.router[i].loc }),
-              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' }),
-              CP('Copy serial number', PHY.router[i].sn)])}`)}
+              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' })])}`)}
   </div>`;
 }
 
@@ -3301,25 +3298,22 @@ function viewSite() {
     ])}
 
     <div class="section-tabs">
-      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements</button>
-      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex</button>
-      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
-    </div>
-    <div class="row vw-gap-sm" style="margin-top:var(--vw-space-sm)">
-      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="sitedetails">Site details →</button>
-      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="siteequipment">Site equipment →</button>
+      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements <span class="tab-n num">${tot}</span></button>
+      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex <span class="tab-n num">${inrShort(cxTotal)}</span></button>
+      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
+      <button class="stab" data-nav="sitedetails">Site details</button>
+      <button class="stab" data-nav="siteequipment">Site equipment</button>
     </div>
 
     ${SITE_SECTION === 'capex' ? capexSection(l, tot)
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
-      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
+      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n} <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
           ...(hasNodeView(rows[i].type) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
-          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-          ...(hasNodeView(rows[i].type) ? [] : (rows[i].sn ? [CP('Copy serial number', rows[i].sn)] : []))
+          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -3622,12 +3616,11 @@ function viewPhysical() {
           ];
         }), '',
         i => rows[i].stock === 'decomm'
-          ? [CP('Copy serial number', rows[i].sn)]
+          ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
-             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' }),
-             CP('Copy serial number', rows[i].sn)])}
+             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>
@@ -3929,8 +3922,7 @@ function viewLinks() {
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
         ]), '',
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
-              A('Open destination element', { v:'resource', l:rows[i].dne }),
-              CP('Copy link name', rows[i].name)])}
+              A('Open destination element', { v:'resource', l:rows[i].dne })])}
       <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
         <div class="row">
           <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
@@ -3966,8 +3958,7 @@ function viewServices() {
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
           `<span class="mono">${s.ifc}</span>`, ver(s.v)
         ]), '',
-        i => [A('Open attachment element', { v:'resource', l:rows[i].name }),
-              CP('Copy ERP number', rows[i].erp)])}`)}
+        i => [A('Open attachment element', { v:'resource', l:rows[i].name })])}`)}
   </div>`;
 }
 
@@ -4018,9 +4009,9 @@ function viewInactive() {
           `<span class="vw-card-description">${r.why}</span>`, r.by,
           r.zombie ? chip('Still answering', 'error') : chip('Silent', 'neutral')
         ]), '',
-        i => [CP('Copy serial number', rows[i].sn),
+        i => [
               ...(rows[i].zombie ? [A('Open reconciliation exception',
-                  { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
+                  { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : [])
               ])}`)}
   </div>`;
 }
@@ -4079,7 +4070,7 @@ function resOverview() {
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
           :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
-        i => [CP('Copy value', PROV[i].v)])}
+        i => [])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position')}
@@ -4118,7 +4109,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}`);
+        i => [])}`);
 }
 
 function resIfaces() {
@@ -4211,7 +4202,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}`);
+        i => [])}`);
 }
 
 function resAlarms() {
@@ -4238,7 +4229,7 @@ function resConfig() {
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
             `<span class="mono" style="color:${cv('red',700)}">${d.got}</span>`,
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
-        i => [CP('Copy expected value', c.drift[i].want)])}
+        i => [])}
         </div>
       </div>
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
@@ -4371,7 +4362,7 @@ function viewPassive() {
 
     ${card(`
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
-        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
+        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n} <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
@@ -4537,17 +4528,6 @@ function opexSection(l, neCount) {
       </div>
     </div>
 
-    ${lapsed.length || overdue.length ? `
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap"
-        style="margin-top:var(--vw-space-lg);padding:var(--vw-space-md);gap:var(--vw-space-md);
-               border-left:3px solid ${cv('red',400)}">
-        <span class="vw-card-description">
-          ${lapsed.length ? `<strong style="color:${cv('red',700)}">${lapsed.length} contract${lapsed.length > 1 ? 's have' : ' has'} lapsed</strong>
-            — ${lapsed.map(r => `${r.v} (${r.ref}, ended ${r.end})`).join('; ')}. The service is still being consumed and billed.` : ''}
-          ${overdue.length ? ` ${overdue.length} payment${overdue.length > 1 ? 's are' : ' is'} overdue.` : ''}
-        </span>
-      </div>` : ''}
-
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>
 
     <div class="ox-trend">
@@ -4570,8 +4550,7 @@ function opexSection(l, neCount) {
             <span class="ox-col-m">${t.m}</span>
           </div>`).join('')}
       </div>
-      <div class="row vw-justify-between" style="margin-top:var(--vw-space-sm)">
-        <span class="vw-card-description">${ox.trend.filter(t => t.a > t.b).length} of 12 months ran over budget.</span>
+      <div class="row vw-justify-end" style="margin-top:var(--vw-space-sm)">
         <span class="vw-card-metric-label-sub num">12-month actual ${inrShort(ox.trend.reduce((a, t) => a + t.a, 0))}</span>
       </div>
     </div>
@@ -4617,8 +4596,7 @@ function opexSection(l, neCount) {
         ];
       }), '',
       () => [])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">Last updated ${ox.updated}. Escalations apply on the contract anniversary.</span>
+    <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="row vw-gap-xl">
         <span class="stack-x t-right"><span class="vw-label">Budget / month</span><span class="vw-value num">${inr(ox.budget)}</span></span>
         <span class="stack-x t-right"><span class="vw-label">Run rate / month</span><span class="vw-value num" style="font-weight:500">${inr(Math.round(run))}</span></span>
@@ -6078,7 +6056,10 @@ document.addEventListener('click', e => {
     try { localStorage.setItem('nst-sitemeta', SITE_META_OPEN ? '1' : '0'); } catch (err) {}
     go('site'); return; }
   const ssec = e.target.closest('[data-sitesection]');
-  if (ssec) { SITE_SECTION = ssec.dataset.sitesection; go('site'); return; }
+  if (ssec) {
+    if (ssec.dataset.sitesection === 'passive') { PASS_TAB = 'rack'; go('passive'); return; }
+    SITE_SECTION = ssec.dataset.sitesection; go('site'); return;
+  }
   const stab = e.target.closest('[data-sitetab]');
   if (stab) { SITE_TAB = stab.dataset.sitetab; go('site'); return; }
   const ml = e.target.closest('[data-maplayer]');
