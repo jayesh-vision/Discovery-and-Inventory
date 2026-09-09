@@ -3086,11 +3086,7 @@ function locList() {
               A('Open capex', { v:'capex', l:`Capex · ${locRows()[i].name}` }),
               A('Open opex', { v:'opex', l:`Opex · ${locRows()[i].name}` }),
               A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' }),
-              CP('Copy location ID', locRows()[i].id)])}
-      <div class="vw-card-footer-divider vw-card-description">
-        <strong>Coverage</strong> is discovered network elements over network elements on record. A planned site reads “—”
-        because nothing is expected there yet; an on-air site below 100% is a reconciliation exception.
-      </div>`)}`;
+              CP('Copy location ID', locRows()[i].id)])}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -3302,8 +3298,6 @@ function viewSite() {
           ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
         ${SITE_META_OPEN ? '' : `<span class="meta-summary">${l.type} · ${l.id} · ${l.city}, ${l.state}
           · <span class="mono">${l.lat ? `${l.lat}°N ${l.lon}°E` : '—'}</span></span>`}
-        <span class="grow"></span>
-        <button class="nst-btn nst-btn--xs" data-nav="reconcile">Reconciliation</button>
       </div>
       ${SITE_META_OPEN ? `<div class="site-meta">
         ${meta.map(([k,v])=>`<div class="meta-cell"><span class="vw-label">${k}</span><span class="vw-value">${v}</span></div>`).join('')}
@@ -3599,8 +3593,6 @@ function viewPhysical() {
         d:{ v:'physical', l:'All network elements' } },
       { k:'Ports used',   v:`${(E.ports.used/E.ports.total*100).toFixed(0)}%`, s:`${n(E.ports.free)} free of ${n(E.ports.total)}`, t:'emerald',
         d:{ v:'resource', l:'Interfaces and port utilisation' } },
-      { k:'Behind golden OS', v:n(E.compliance.behind), s:`${n(E.compliance.compliant)} current · ${n(E.compliance.unknown)} unknown`, t:'amber',
-        d:{ v:'physical', l:'Elements behind the golden OS' } },
       { k:'Past end of sale', v:n(E.eol.past), s:`${n(E.eol.within12)} within 12 months`, t:'red',
         d:{ v:'physical', l:'Elements past end of sale' } },
       { k:'Spares in store',  v:n(E.spares.instore), s:`${n(E.spares.rma)} at RMA · ${n(E.spares.intransit)} in transit`, t:'purple',
@@ -3656,7 +3648,7 @@ function viewPhysical() {
             chip(sk.n, sk.chip),
             `${nameCell}<span class="cell-sub mono">${r.ip}</span>`,
             `<span class="mono">${r.model}</span><span class="cell-sub">${r.oem}</span>`,
-            `<span class="mono">${r.os}</span><span class="cell-sub">${cmpChip(r.model)}</span>`,
+            `<span class="mono">${r.os}</span>`,
             tot && !ro ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
               <span class="hbar-fill" style="display:block;width:${(used/tot*100).toFixed(0)}%;background:${cv(used/tot>0.85?'red':used/tot>0.7?'amber':'emerald',400)}"></span></span>${used}/${tot}</span>` : '—',
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
@@ -3925,12 +3917,7 @@ function viewVirtual() {
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
         i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
-      <div class="vw-card-footer-divider vw-card-description">
-        <strong>The RAN split.</strong> A gNodeB is one logical node, but its radio unit sits under Physical Resources while its
-        CU-CP, CU-UP and vDU sit here. The <em>Parent RAN node</em> column rejoins them — without it the same node is two
-        unrelated records in two menus.
-      </div>`)}
+              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}`)}
   </div>`;
 }
 
@@ -4151,9 +4138,6 @@ function resOverview() {
             .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
               <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
               ${chip(s, t==='red'?'error':t==='amber'?'warning':'neutral')}</div>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider vw-card-description">
-          Past end of sale — no new units available. Refresh must be planned before Dec 2028.
         </div>`)}
       ${card(`${headSm('Impact if this element fails', 'Traversed from discovered adjacency')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
@@ -4165,9 +4149,6 @@ function resOverview() {
               <span class="vw-label">${k}</span>
               <span class="vw-value num" style="font-weight:500;color:${cv(t,700)}">${v}</span>
               <span class="vw-card-metric-label-sub t-right">${s}</span></div>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider row vw-justify-between">
-          <span class="vw-card-description">${svcDown} services already impaired.</span>
         </div>`)}
     </div>
   </div>`;
@@ -4186,10 +4167,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
-    </div>`);
+        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}`);
 }
 
 function resIfaces() {
@@ -4248,14 +4226,10 @@ function resIfaces() {
         i.sp, `<span class="mono">${i.ip !== '—' ? i.ip : 'VLAN ' + i.vlan}</span>`,
         i.util ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
           <span class="hbar-fill" style="display:block;width:${i.util}%;background:${cv(i.util>70?'amber':'emerald',400)}"></span></span>${i.util}%</span>` : '—',
-        i.rx === '—' ? '—' : `<span class="mono"${parseFloat(i.rx) < -9 || i.rx === 'no signal' ? ` style="color:${cv('red',700)}"` : ''}>${i.rx}${i.rx==='no signal'?'':' dBm'}</span>`,
+        i.rx === '—' ? '—' : `<span class="mono"${(parseFloat(i.rx) < -9 || i.rx === 'no signal') ? ' style="color:' + cv('red',700) + '"' : ''}>${i.rx}${i.rx==='no signal'?'':' dBm'}</span>`,
         i.nb === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="vw-card-metric-label-sub">${i.nb}</span>`,
         i.chg]))
-      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}
-    <div class="vw-card-footer-divider vw-card-description">
-      <strong>Free</strong> means administratively down and unreserved — the ports a planner can actually allocate.
-      <strong>Down</strong> means admin-up but not passing traffic, which is a fault.
-    </div>`)}`;
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}`)}`;
 }
 
 function resNbrs() {
@@ -4274,10 +4248,7 @@ function resNbrs() {
         `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
         `<span class="mono">${r.rip}</span>`, r.seen]))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}
-    ${rows.length ? `<div class="vw-card-footer-divider vw-card-description">
-      An adjacency that stops appearing is marked <strong>no longer seen</strong> and raised as an exception — never silently deleted.
-    </div>` : ''}`);
+           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`);
 }
 
 function resSvcs() {
@@ -4290,11 +4261,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}
-    <div class="vw-card-footer-divider vw-card-description">
-      Both down services attach to interfaces that are themselves down — <span class="mono">xe-0/0/2</span> and
-      <span class="mono">xe-0/0/5</span>. One fault, two service outages.
-    </div>`);
+        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}`);
 }
 
 function resAlarms() {
@@ -4307,27 +4274,15 @@ function resAlarms() {
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
         a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), '',
-        () => [])}
-    <div class="vw-card-footer-divider vw-card-description">
-      Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
-    </div>`);
+        () => [])}`);
 }
 
 function resConfig() {
   const c = RES_CONFIG;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Software compliance', 'Running version against the golden version for this model')}
-      <div class="stat-strip" style="margin-top:var(--vw-space-md)">
-        ${[['Running',c.running,'discovered 3 h ago','sky'],['Golden',c.golden,'MX960 · approved 04-Apr-2025','emerald'],
-           ['Status','Behind',c.behindBy,'red'],['Estate','807','elements behind golden','amber']]
-          .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-dot" style="background:${cv(t,400)}"></span>
-            <span class="stat-k">${k}</span><span class="stat-v num" style="font-size:1.125rem">${v}</span>
-            <span class="stat-s">${s}</span></div>`).join('')}
-      </div>
-      <div style="margin-top:var(--vw-space-lg)">
-        ${headSm('Configuration drift', 'Running configuration against the model template')}
-        <div style="margin-top:var(--vw-space-md)">
+    ${card(`${headSm('Configuration drift', 'Running configuration against the model template')}
+      <div style="margin-top:var(--vw-space-md)">
         ${table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
           c.drift.map(d => [`<span class="mono">${d.p}</span>`,
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
@@ -4377,10 +4332,8 @@ function viewResource() {
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
-        ${chip('Behind golden OS','warning')}${chip('Past end of sale','error')}</div>
+        ${chip('Past end of sale','error')}</div>
       <span class="meta-summary mono">${r.ip} · ${r.sn} · ${r.os} · rack ${r.rack || 'A · U42-43'}</span>
-      <span class="grow"></span>
-      <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Reconciliation' })}>Reconciliation</button>
     </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
@@ -4388,8 +4341,7 @@ function viewResource() {
       { k:'Components',      v:'51', s:'1 failed · 1 degrading', t:'amber' },
       { k:'Adjacencies',     v:'35', s:'LLDP 19 · OSPF 12 · BGP 4', t:'purple' },
       { k:'Services',        v:'16', s:'4 currently down', t:'emerald' },
-      { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' },
-      { k:'OS compliance',   v:'Behind', s:`${RES_CONFIG.running} vs ${RES_CONFIG.golden}`, t:'orange' }
+      { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' }
     ])}
 
     <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}
@@ -5329,7 +5281,6 @@ function nodeHeader(N) {
       </div>
       <div class="row" style="flex-shrink:0">
         <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}` })}>Node resources</button>
-        <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Reconcile</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
@@ -5838,7 +5789,6 @@ function viewNode() {
             platform knows. Everything below would be fabricated.
           </span>
           <div class="row vw-justify-center" style="margin-top:var(--vw-space-md)">
-            <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Open in reconciliation</button>
           </div>
         </div>`)}
     </div>`;
@@ -6017,8 +5967,23 @@ document.addEventListener('click', e => {
      is the honest way to prove the click did something. */
   if (gr) {
     const r = gr.getBoundingClientRect();
-    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT);
-    showCopyToast(r.left, r.top, 'Refreshed');
+    window.dispatchEvent(new CustomEvent('ns-refresh'));
+    const wrap = gr.closest('.grid-bar')?.nextElementSibling || document.querySelector('.tbl-wrap');
+    let overlay = null;
+    if (wrap && wrap.classList.contains('tbl-wrap') && !wrap.querySelector('.grid-loader-overlay')) {
+      overlay = document.createElement('div');
+      overlay.className = 'grid-loader-overlay';
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-label', 'Refreshing data');
+      overlay.innerHTML = '<div class="grid-spinner"></div><span class="grid-loader-text">Refreshing data…</span>';
+      wrap.appendChild(overlay);
+    }
+    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL;
+    setTimeout(() => {
+      if (overlay) overlay.remove();
+      go(CURRENT);
+      showCopyToast(r.left, r.top, 'Refreshed');
+    }, 450);
     return;
   }
   const vlcs = e.target.closest('[data-vnflcstage]');
@@ -6028,8 +5993,23 @@ document.addEventListener('click', e => {
   const vlcr = e.target.closest('[data-vnflcrefresh]');
   if (vlcr) {
     const r = vlcr.getBoundingClientRect();
-    DRILL_PENDING = DRILL; go(CURRENT);
-    showCopyToast(r.left, r.top, 'Refreshed');
+    window.dispatchEvent(new CustomEvent('ns-refresh'));
+    const cardEl = vlcr.closest('.vw-card') || document.querySelector('#view');
+    let overlay = null;
+    if (cardEl && !cardEl.querySelector('.grid-loader-overlay')) {
+      overlay = document.createElement('div');
+      overlay.className = 'grid-loader-overlay';
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-label', 'Refreshing data');
+      overlay.innerHTML = '<div class="grid-spinner"></div><span class="grid-loader-text">Refreshing data…</span>';
+      cardEl.appendChild(overlay);
+    }
+    DRILL_PENDING = DRILL;
+    setTimeout(() => {
+      if (overlay) overlay.remove();
+      go(CURRENT);
+      showCopyToast(r.left, r.top, 'Refreshed');
+    }, 450);
     return;
   }
   const vlce = e.target.closest('[data-vnflceye]');

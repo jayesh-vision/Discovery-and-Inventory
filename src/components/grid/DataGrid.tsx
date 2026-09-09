@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 
 /* ── types ──────────────────────────────────────────────── */
@@ -109,9 +109,9 @@ function exportTable(wrap: HTMLDivElement | null, kind: 'csv' | 'xlsx') {
 }
 
 /* The platform's grid menu: refresh lives here, not as a toolbar button. */
-function stdActions(wrap: HTMLDivElement | null, onRefresh?: () => void): Action[] {
+function stdActions(wrap: HTMLDivElement | null, onTriggerRefresh?: (r?: DOMRect) => void): Action[] {
   return [
-    { l: 'Refresh', onClick: () => onRefresh?.() },
+    { l: 'Refresh', onClick: () => onTriggerRefresh?.() },
     { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
     { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') }
   ];
@@ -135,22 +135,26 @@ function showRefreshToast(x: number, y: number) {
   }, 1000);
 }
 
-function MenuItem({ a, onDone }: { a: Action; onDone: () => void }) {
+function MenuItem({ a, onDone, onTriggerRefresh }: { a: Action; onDone: () => void; onTriggerRefresh?: (r?: DOMRect) => void }) {
   return (
     <button className={`kmenu-i${a.danger ? ' is-danger' : ''}${a.primary ? ' is-primary' : ''}`}
       onClick={e => {
         const r = e.currentTarget.getBoundingClientRect();
-        a.onClick?.(); onDone();
-        if (a.l === 'Refresh') showRefreshToast(r.left, r.top);
+        if (a.l === 'Refresh' && onTriggerRefresh) {
+          onTriggerRefresh(r);
+        } else {
+          a.onClick?.();
+        }
+        onDone();
       }}>
       <ActionIcon label={a.l} /><span>{a.l}</span>
     </button>
   );
 }
 
-function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onRefresh, onSearch, searchValue, onFilterChange, wrap }: {
+function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onTriggerRefresh, onSearch, searchValue, onFilterChange, wrap }: {
   showing: number; total: number; placeholder: string; filters?: FilterField[];
-  extra?: ReactNode; gridActions?: Action[]; onRefresh?: () => void; onSearch?: (q: string) => void;
+  extra?: ReactNode; gridActions?: Action[]; onTriggerRefresh: (r?: DOMRect) => void; onSearch?: (q: string) => void;
   searchValue?: string; onFilterChange?: (values: Record<string, string>) => void; wrap: React.RefObject<HTMLDivElement | null>;
 }) {
   const [menu, setMenu] = useState(false);
@@ -183,10 +187,10 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onR
           {menu && (
             <div className="kmenu kmenu-r">
               {gridActions?.length ? <>
-                {gridActions.map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
+                {gridActions.map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} onTriggerRefresh={onTriggerRefresh} />)}
                 <div className="kmenu-sep" />
               </> : null}
-              {stdActions(wrap.current, onRefresh).map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} />)}
+              {stdActions(wrap.current, onTriggerRefresh).map(a => <MenuItem key={a.l} a={a} onDone={closeMenu} onTriggerRefresh={onTriggerRefresh} />)}
             </div>
           )}
         </div>
@@ -310,16 +314,44 @@ function useInfinite<Row>(rows: Row[], resetKey: unknown) {
 /* ── the grid ───────────────────────────────────────────── */
 export function DataGrid<Row>(p: DataGridProps<Row>) {
   const [openRow, setOpenRow] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const span = p.columns.length + (p.rowActions ? 1 : 0);
   const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite(p.rows, p.resetKey ?? p.rows);
   const n = (v: number) => v.toLocaleString('en-IN');
+
+  const handleTriggerRefresh = useCallback((btnRect?: DOMRect) => {
+    setIsRefreshing(true);
+    p.onRefresh?.();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      if (btnRect) {
+        showRefreshToast(btnRect.left, btnRect.top);
+      } else if (wrap.current) {
+        const r = wrap.current.getBoundingClientRect();
+        showRefreshToast(r.left + 20, r.top + 20);
+      }
+    }, 450);
+  }, [p.onRefresh]);
+
+  useEffect(() => {
+    const h = () => handleTriggerRefresh();
+    window.addEventListener('ns-refresh', h);
+    return () => window.removeEventListener('ns-refresh', h);
+  }, [handleTriggerRefresh]);
+
   return (
     <>
       {/* the toolbar counts what is on screen, so the page size is visible without scrolling */}
       <Toolbar showing={Math.min(count, p.rows.length)} total={p.total} placeholder={p.searchPlaceholder}
-        filters={p.filters} extra={p.extra} gridActions={p.gridActions} onRefresh={p.onRefresh} onSearch={p.onSearch}
-        searchValue={p.searchValue} onFilterChange={p.onFilterChange} wrap={wrap} />
+        filters={p.filters} extra={p.extra} gridActions={p.gridActions} onTriggerRefresh={handleTriggerRefresh}
+        onSearch={p.onSearch} searchValue={p.searchValue} onFilterChange={p.onFilterChange} wrap={wrap} />
       <div className="tbl-wrap" ref={wrap}>
+        {isRefreshing && (
+          <div className="grid-loader-overlay" role="status" aria-label="Refreshing data">
+            <div className="grid-spinner" />
+            <span className="grid-loader-text">Refreshing data…</span>
+          </div>
+        )}
         <table className="nst-table">
           <thead>
             <tr>
@@ -361,3 +393,4 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
     </>
   );
 }
+

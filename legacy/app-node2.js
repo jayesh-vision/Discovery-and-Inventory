@@ -36,7 +36,6 @@ function nodeHeader(N) {
       </div>
       <div class="row" style="flex-shrink:0">
         <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}` })}>Node resources</button>
-        <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Reconcile</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
@@ -545,7 +544,6 @@ function viewNode() {
             platform knows. Everything below would be fabricated.
           </span>
           <div class="row vw-justify-center" style="margin-top:var(--vw-space-md)">
-            <button class="nst-btn nst-btn--sm"${dA({ v:'reconcile', l:`Reconciliation · ${N.name}`, q:'ne=All' })}>Open in reconciliation</button>
           </div>
         </div>`)}
     </div>`;

@@ -88,7 +88,6 @@ export default function InactiveInventory() {
           ]}
         />
         <div className="vw-card-footer-divider row vw-justify-between vw-wrap">
-          <span className="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
           <span className="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
         </div>
       </Card>

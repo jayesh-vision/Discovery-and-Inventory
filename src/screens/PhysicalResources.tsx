@@ -6,7 +6,7 @@ import {
   ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView,
   phyCount, stockCount, stockMeta, type NeClass, type StockState
 } from '../data/ledger';
-import { complianceOf, eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
+import { eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
 
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
@@ -20,11 +20,6 @@ const verCell = (h: number | null) =>
   : h < 24 ? <Chip tone="success">fresh</Chip>
   : h < 720 ? <Chip tone="warning">{Math.round(h / 24)} d</Chip>
   : <Chip tone="error">{Math.round(h / 720)} mo</Chip>;
-
-const cmpChip = (model: string) => {
-  const c = complianceOf(model);
-  return c === 'ok' ? <Chip tone="success">Current</Chip> : c === 'behind' ? <Chip tone="warning">Behind</Chip> : <Chip tone="neutral">Unknown</Chip>;
-};
 
 const eosCell = (model: string) => {
   const [d, band] = eosOf(model);
@@ -103,7 +98,6 @@ export default function PhysicalResources() {
       <StatStrip cells={[
         { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
         { k: 'Ports used', v: `${(EST.ports.used / EST.ports.total * 100).toFixed(0)}%`, s: `${fmt(EST.ports.free)} free of ${fmt(EST.ports.total)}`, t: 'emerald' },
-        { k: 'Behind golden OS', v: fmt(EST.compliance.behind), s: `${fmt(EST.compliance.compliant)} current · ${fmt(EST.compliance.unknown)} unknown`, t: 'amber' },
         { k: 'Past end of sale', v: fmt(EST.eol.past), s: `${fmt(EST.eol.within12)} within 12 months`, t: 'red' },
         { k: 'Spares in store', v: fmt(EST.spares.instore), s: `${fmt(EST.spares.rma)} at RMA · ${fmt(EST.spares.intransit)} in transit`, t: 'purple',
           onClick: () => { set('stock', 'instore'); } },
@@ -171,7 +165,7 @@ export default function PhysicalResources() {
                     onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}`)}>{r.name}</button>
                 : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
-              <><Mono>{r.os}</Mono><Sub>{cmpChip(r.model)}</Sub></>,
+              <Mono>{r.os}</Mono>,
               tot ? <span className="row vw-gap-sm vw-justify-end vw-nowrap">
                       <span className="hbar-track" style={{ width: '3rem', height: 7 }}>
                         <span className="hbar-fill" style={{ display: 'block', width: `${(used / tot * 100).toFixed(0)}%`,

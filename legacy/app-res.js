@@ -33,9 +33,6 @@ function resOverview() {
             .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
               <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
               ${chip(s, t==='red'?'error':t==='amber'?'warning':'neutral')}</div>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider vw-card-description">
-          Past end of sale — no new units available. Refresh must be planned before Dec 2028.
         </div>`)}
       ${card(`${headSm('Impact if this element fails', 'Traversed from discovered adjacency')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
@@ -47,9 +44,6 @@ function resOverview() {
               <span class="vw-label">${k}</span>
               <span class="vw-value num" style="font-weight:500;color:${cv(t,700)}">${v}</span>
               <span class="vw-card-metric-label-sub t-right">${s}</span></div>`).join('')}
-        </div>
-        <div class="vw-card-footer-divider row vw-justify-between">
-          <span class="vw-card-description">${svcDown} services already impaired.</span>
         </div>`)}
     </div>
   </div>`;
@@ -68,10 +62,7 @@ function resHardware() {
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), '',
-        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}
-    <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-      <span class="vw-card-description">FPC 2 is empty — one MPC7E would add 10×10G without a chassis change.</span>
-    </div>`);
+        i => [CP('Copy part number', HW_TREE[i].pid), CP('Copy serial number', HW_TREE[i].sn)])}`);
 }
 
 function resIfaces() {
@@ -130,14 +121,10 @@ function resIfaces() {
         i.sp, `<span class="mono">${i.ip !== '—' ? i.ip : 'VLAN ' + i.vlan}</span>`,
         i.util ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
           <span class="hbar-fill" style="display:block;width:${i.util}%;background:${cv(i.util>70?'amber':'emerald',400)}"></span></span>${i.util}%</span>` : '—',
-        i.rx === '—' ? '—' : `<span class="mono"${parseFloat(i.rx) < -9 || i.rx === 'no signal' ? ` style="color:${cv('red',700)}"` : ''}>${i.rx}${i.rx==='no signal'?'':' dBm'}</span>`,
+        i.rx === '—' ? '—' : `<span class="mono"${(parseFloat(i.rx) < -9 || i.rx === 'no signal') ? ' style="color:' + cv('red',700) + '"' : ''}>${i.rx}${i.rx==='no signal'?'':' dBm'}</span>`,
         i.nb === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="vw-card-metric-label-sub">${i.nb}</span>`,
         i.chg]))
-      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}
-    <div class="vw-card-footer-divider vw-card-description">
-      <strong>Free</strong> means administratively down and unreserved — the ports a planner can actually allocate.
-      <strong>Down</strong> means admin-up but not passing traffic, which is a fault.
-    </div>`)}`;
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}`)}`;
 }
 
 function resNbrs() {
@@ -156,10 +143,7 @@ function resNbrs() {
         `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
         `<span class="mono">${r.rip}</span>`, r.seen]))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}
-    ${rows.length ? `<div class="vw-card-footer-divider vw-card-description">
-      An adjacency that stops appearing is marked <strong>no longer seen</strong> and raised as an exception — never silently deleted.
-    </div>` : ''}`);
+           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`);
 }
 
 function resSvcs() {
@@ -172,11 +156,7 @@ function resSvcs() {
       RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
         `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
         `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}
-    <div class="vw-card-footer-divider vw-card-description">
-      Both down services attach to interfaces that are themselves down — <span class="mono">xe-0/0/2</span> and
-      <span class="mono">xe-0/0/5</span>. One fault, two service outages.
-    </div>`);
+        i => [CP('Copy ERP number', RES_SERVICES[i].erp)])}`);
 }
 
 function resAlarms() {
@@ -189,27 +169,15 @@ function resAlarms() {
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
         a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), '',
-        () => [])}
-    <div class="vw-card-footer-divider vw-card-description">
-      Every alarm resolves to a component in the Hardware tab, not just to the device — PEM 1 is a serialised part with its own RMA path.
-    </div>`);
+        () => [])}`);
 }
 
 function resConfig() {
   const c = RES_CONFIG;
   return `
   <div class="row-t" style="align-items:stretch">
-    ${card(`${headSm('Software compliance', 'Running version against the golden version for this model')}
-      <div class="stat-strip" style="margin-top:var(--vw-space-md)">
-        ${[['Running',c.running,'discovered 3 h ago','sky'],['Golden',c.golden,'MX960 · approved 04-Apr-2025','emerald'],
-           ['Status','Behind',c.behindBy,'red'],['Estate','807','elements behind golden','amber']]
-          .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-dot" style="background:${cv(t,400)}"></span>
-            <span class="stat-k">${k}</span><span class="stat-v num" style="font-size:1.125rem">${v}</span>
-            <span class="stat-s">${s}</span></div>`).join('')}
-      </div>
-      <div style="margin-top:var(--vw-space-lg)">
-        ${headSm('Configuration drift', 'Running configuration against the model template')}
-        <div style="margin-top:var(--vw-space-md)">
+    ${card(`${headSm('Configuration drift', 'Running configuration against the model template')}
+      <div style="margin-top:var(--vw-space-md)">
         ${table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
           c.drift.map(d => [`<span class="mono">${d.p}</span>`,
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
@@ -259,10 +227,8 @@ function viewResource() {
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
-        ${chip('Behind golden OS','warning')}${chip('Past end of sale','error')}</div>
+        ${chip('Past end of sale','error')}</div>
       <span class="meta-summary mono">${r.ip} · ${r.sn} · ${r.os} · rack ${r.rack || 'A · U42-43'}</span>
-      <span class="grow"></span>
-      <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Reconciliation' })}>Reconciliation</button>
     </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
@@ -270,8 +236,7 @@ function viewResource() {
       { k:'Components',      v:'51', s:'1 failed · 1 degrading', t:'amber' },
       { k:'Adjacencies',     v:'35', s:'LLDP 19 · OSPF 12 · BGP 4', t:'purple' },
       { k:'Services',        v:'16', s:'4 currently down', t:'emerald' },
-      { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' },
-      { k:'OS compliance',   v:'Behind', s:`${RES_CONFIG.running} vs ${RES_CONFIG.golden}`, t:'orange' }
+      { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' }
     ])}
 
     <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}

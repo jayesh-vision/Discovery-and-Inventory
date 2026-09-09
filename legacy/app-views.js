@@ -981,11 +981,7 @@ function locList() {
               A('Open capex', { v:'capex', l:`Capex · ${locRows()[i].name}` }),
               A('Open opex', { v:'opex', l:`Opex · ${locRows()[i].name}` }),
               A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' }),
-              CP('Copy location ID', locRows()[i].id)])}
-      <div class="vw-card-footer-divider vw-card-description">
-        <strong>Coverage</strong> is discovered network elements over network elements on record. A planned site reads “—”
-        because nothing is expected there yet; an on-air site below 100% is a reconciliation exception.
-      </div>`)}`;
+              CP('Copy location ID', locRows()[i].id)])}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -1197,8 +1193,6 @@ function viewSite() {
           ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
         ${SITE_META_OPEN ? '' : `<span class="meta-summary">${l.type} · ${l.id} · ${l.city}, ${l.state}
           · <span class="mono">${l.lat ? `${l.lat}°N ${l.lon}°E` : '—'}</span></span>`}
-        <span class="grow"></span>
-        <button class="nst-btn nst-btn--xs" data-nav="reconcile">Reconciliation</button>
       </div>
       ${SITE_META_OPEN ? `<div class="site-meta">
         ${meta.map(([k,v])=>`<div class="meta-cell"><span class="vw-label">${k}</span><span class="vw-value">${v}</span></div>`).join('')}
@@ -1492,8 +1486,6 @@ function viewPhysical() {
         d:{ v:'physical', l:'All network elements' } },
       { k:'Ports used',   v:`${(E.ports.used/E.ports.total*100).toFixed(0)}%`, s:`${n(E.ports.free)} free of ${n(E.ports.total)}`, t:'emerald',
         d:{ v:'resource', l:'Interfaces and port utilisation' } },
-      { k:'Behind golden OS', v:n(E.compliance.behind), s:`${n(E.compliance.compliant)} current · ${n(E.compliance.unknown)} unknown`, t:'amber',
-        d:{ v:'physical', l:'Elements behind the golden OS' } },
       { k:'Past end of sale', v:n(E.eol.past), s:`${n(E.eol.within12)} within 12 months`, t:'red',
         d:{ v:'physical', l:'Elements past end of sale' } },
       { k:'Spares in store',  v:n(E.spares.instore), s:`${n(E.spares.rma)} at RMA · ${n(E.spares.intransit)} in transit`, t:'purple',
@@ -1549,7 +1541,7 @@ function viewPhysical() {
             chip(sk.n, sk.chip),
             `${nameCell}<span class="cell-sub mono">${r.ip}</span>`,
             `<span class="mono">${r.model}</span><span class="cell-sub">${r.oem}</span>`,
-            `<span class="mono">${r.os}</span><span class="cell-sub">${cmpChip(r.model)}</span>`,
+            `<span class="mono">${r.os}</span>`,
             tot && !ro ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
               <span class="hbar-fill" style="display:block;width:${(used/tot*100).toFixed(0)}%;background:${cv(used/tot>0.85?'red':used/tot>0.7?'amber':'emerald',400)}"></span></span>${used}/${tot}</span>` : '—',
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
@@ -1818,12 +1810,7 @@ function viewVirtual() {
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
         i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}
-      <div class="vw-card-footer-divider vw-card-description">
-        <strong>The RAN split.</strong> A gNodeB is one logical node, but its radio unit sits under Physical Resources while its
-        CU-CP, CU-UP and vDU sit here. The <em>Parent RAN node</em> column rejoins them — without it the same node is two
-        unrelated records in two menus.
-      </div>`)}
+              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}`)}
   </div>`;
 }
 

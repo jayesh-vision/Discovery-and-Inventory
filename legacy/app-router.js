@@ -145,8 +145,23 @@ document.addEventListener('click', e => {
      is the honest way to prove the click did something. */
   if (gr) {
     const r = gr.getBoundingClientRect();
-    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL; go(CURRENT);
-    showCopyToast(r.left, r.top, 'Refreshed');
+    window.dispatchEvent(new CustomEvent('ns-refresh'));
+    const wrap = gr.closest('.grid-bar')?.nextElementSibling || document.querySelector('.tbl-wrap');
+    let overlay = null;
+    if (wrap && wrap.classList.contains('tbl-wrap') && !wrap.querySelector('.grid-loader-overlay')) {
+      overlay = document.createElement('div');
+      overlay.className = 'grid-loader-overlay';
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-label', 'Refreshing data');
+      overlay.innerHTML = '<div class="grid-spinner"></div><span class="grid-loader-text">Refreshing data…</span>';
+      wrap.appendChild(overlay);
+    }
+    KEBAB = null; GRIDMENU = false; DRILL_PENDING = DRILL;
+    setTimeout(() => {
+      if (overlay) overlay.remove();
+      go(CURRENT);
+      showCopyToast(r.left, r.top, 'Refreshed');
+    }, 450);
     return;
   }
   const vlcs = e.target.closest('[data-vnflcstage]');
@@ -156,8 +171,23 @@ document.addEventListener('click', e => {
   const vlcr = e.target.closest('[data-vnflcrefresh]');
   if (vlcr) {
     const r = vlcr.getBoundingClientRect();
-    DRILL_PENDING = DRILL; go(CURRENT);
-    showCopyToast(r.left, r.top, 'Refreshed');
+    window.dispatchEvent(new CustomEvent('ns-refresh'));
+    const cardEl = vlcr.closest('.vw-card') || document.querySelector('#view');
+    let overlay = null;
+    if (cardEl && !cardEl.querySelector('.grid-loader-overlay')) {
+      overlay = document.createElement('div');
+      overlay.className = 'grid-loader-overlay';
+      overlay.setAttribute('role', 'status');
+      overlay.setAttribute('aria-label', 'Refreshing data');
+      overlay.innerHTML = '<div class="grid-spinner"></div><span class="grid-loader-text">Refreshing data…</span>';
+      cardEl.appendChild(overlay);
+    }
+    DRILL_PENDING = DRILL;
+    setTimeout(() => {
+      if (overlay) overlay.remove();
+      go(CURRENT);
+      showCopyToast(r.left, r.top, 'Refreshed');
+    }, 450);
     return;
   }
   const vlce = e.target.closest('[data-vnflceye]');
