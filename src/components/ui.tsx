@@ -44,7 +44,6 @@ export function TabBar<K extends string>({ tabs, active, onChange }: { tabs: Tab
         <button key={t.k} className={`tab${t.k === active ? ' is-on' : ''}`} title={t.title} onClick={() => onChange(t.k)}>
           {t.dot && <span className="tab-dot" style={{ background: t.dot }} />}
           {t.n}
-          <span className="tab-n num">{t.count.toLocaleString('en-IN')}</span>
         </button>
       ))}
     </div>
@@ -52,14 +51,18 @@ export function TabBar<K extends string>({ tabs, active, onChange }: { tabs: Tab
 }
 
 /* the banner that names an active drill-down and lets the user clear it */
-export function DrillBar({ from, label, onBack, onClear }: { from: string; label: string; onBack: () => void; onClear: () => void }) {
+export function DrillBar({ from, label, onBack, onClear }: { from: string; label: string; onBack: () => void; onClear?: () => void }) {
   return (
     <div className="drill-bar">
       <span className="drill-back" role="link" tabIndex={0} onClick={onBack}>← {from}</span>
       <span className="drill-sep">/</span>
       <span className="drill-label">{label}</span>
-      <span className="grow" />
-      <button className="nst-btn nst-btn--xs" onClick={onClear}>Clear filter</button>
+      {onClear && (
+        <>
+          <span className="grow" />
+          <button className="nst-btn nst-btn--xs" onClick={onClear}>Clear filter</button>
+        </>
+      )}
     </div>
   );
 }

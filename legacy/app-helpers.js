@@ -74,8 +74,6 @@ function drillBar() {
     <span class="drill-back" data-nav="${DRILL.back}">&#8592; ${esc(DRILL.from)}</span>
     <span class="drill-sep">/</span>
     <span class="drill-label">${esc(DRILL.label)}</span>
-    <span class="grow"></span>
-    <button class="nst-btn nst-btn--xs" data-drillclear="1">Clear filter</button>
   </div>`;
 }
 

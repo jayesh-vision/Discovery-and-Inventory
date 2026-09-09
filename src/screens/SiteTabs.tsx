@@ -25,9 +25,9 @@ export function SiteTabs({ l, active }: { l: Location; active: 'details' | 'equi
   const base = `/inventory/location/site/${l.id}`;
   return (
     <div className="section-tabs">
-      <button className="stab" onClick={() => nav(base)}>Network elements<span className="tab-n num">{l.ne}</span></button>
-      <button className="stab" onClick={() => nav(base + '/capex')}>Capex<span className="tab-n num">₹4.85 Cr</span></button>
-      <button className="stab" onClick={() => nav(base + '/opex')}>Opex<span className="tab-n num">₹14.49 L/mo</span></button>
+      <button className="stab" onClick={() => nav(base)}>Network elements</button>
+      <button className="stab" onClick={() => nav(base + '/capex')}>Capex</button>
+      <button className="stab" onClick={() => nav(base + '/opex')}>Opex</button>
       <button className={`stab${active === 'details' ? ' is-on' : ''}`} onClick={() => nav(base + '/details')}>Site details</button>
       <button className={`stab${active === 'equipment' ? ' is-on' : ''}`} onClick={() => nav(base + '/equipment')}>Site equipment</button>
     </div>

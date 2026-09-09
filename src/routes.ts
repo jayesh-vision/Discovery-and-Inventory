@@ -58,13 +58,14 @@ export const isReactOwned = (k: string) => !!screenByKey(k)?.component;
 /* legacy drill queries → React search params. The prototype passes `q` as a
    query string ('cls=router', 'stock=instore'); React screens read the same
    names from the URL, so the mapping is the identity plus the drill label. */
-export function legacyPath(key: string, drill?: { label?: string; q?: string } | null, params: Record<string, string> = {}): string {
+export function legacyPath(key: string, drill?: { label?: string; q?: string; from?: string } | null, params: Record<string, string> = {}): string {
   const s = screenByKey(key);
   if (!s) return '/discovery/insights';
   let path = s.path;
   for (const [k, v] of Object.entries(params)) path = path.replace(':' + k, encodeURIComponent(v));
   const sp = new URLSearchParams(drill?.q ?? '');
   if (drill?.label) sp.set('drill', drill.label);
+  if (drill?.from) sp.set('from', drill.from);
   const qs = sp.toString();
   return qs ? `${path}?${qs}` : path;
 }

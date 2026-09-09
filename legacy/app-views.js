@@ -375,8 +375,7 @@ function viewJobs() {
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
         `<div class="seg">${segs.map(([k,l]) => {
           const c = JOBS.filter(JOB_TESTS[k]).length;
-          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
-            <span class="tab-n num">${n(c)}</span></button>`;
+          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
         }).join('')}</div>
          ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [], 'jobs')}
@@ -760,8 +759,7 @@ const STATE_REGION = {
 };
 
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
-  `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}
-    <span class="tab-n num">${n(t.c)}</span></button>`).join('')}</div>`;
+  `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}</button>`).join('')}</div>`;
 
 /* ── Home ─────────────────────────────────────────────── */
 function viewHome() {
@@ -1212,18 +1210,14 @@ function viewSite() {
     ])}
 
     <div class="section-tabs">
-      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements
-        <span class="tab-n num">${tot}</span></button>
-      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex
-        <span class="tab-n num">${inrShort(cxTotal)}</span></button>
-      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
-        <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
+      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements</button>
+      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex</button>
+      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
     </div>
 
     ${SITE_SECTION === 'capex' ? capexSection(l, tot)
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
-      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}
-        <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
+      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
@@ -1498,8 +1492,7 @@ function viewPhysical() {
         <button class="tab${x.k === t ? ' is-on' : ''}" data-tab="phy:${x.k}"
           title="${n(phyCount(x.k, PHY_STOCK))} of ${n(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
             x.disc ? ` · ${n(x.disc)} discovered` : ' · no collector reaches this class'}">
-          <span class="tab-dot" style="background:${cv(x.disc ? 'emerald' : 'red', 400)}"></span>${x.n}
-          <span class="tab-n num">${n(phyCount(x.k, PHY_STOCK))}</span></button>`).join('')}
+          <span class="tab-dot" style="background:${cv(x.disc ? 'emerald' : 'red', 400)}"></span>${x.n}</button>`).join('')}
       </div>
       <div class="stock-bar">
         <span class="eyebrow">Stock state</span>
@@ -1508,14 +1501,13 @@ function viewPhysical() {
             <button class="stock-chip${PHY_STOCK.has(sk.k) ? ' is-on' : ''}" data-stock="${sk.k}"
               style="${PHY_STOCK.has(sk.k) ? `border-color:${cv(sk.tone,400)};background:${cv(sk.tone,50)}` : ''}"
               title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
-              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}
-              <span class="tab-n num">${n(stockCount(t, sk.k))}</span></button>`).join('')}
+              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
         </div>
         <span class="grow"></span>
         <div class="stock-presets row">
           <button class="nst-btn nst-btn--xs" data-stockset="active">Select all</button>
           <button class="nst-btn nst-btn--xs"${dA({ v:'inactive', l:`Decommissioned ${meta.n.toLowerCase()}s`, q:`cls=${t}` })}>
-            ${n(stockCount(t, 'decomm'))} decommissioned →</button>
+            Decommissioned →</button>
         </div>
       </div>
 
@@ -1797,19 +1789,19 @@ function viewVirtual() {
 
     ${card(`
       ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
-        `${chip('Sourced from the EMS, not from discovery','purple')}`,
+        '',
         [], 'virtual')}
       ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
         rows.map((v, i) => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           v.type === 'Others'
             ? `<span style="color:${cv('gray',400)}">not RAN</span>`
-            : `<button class="nst-btn nst-btn--xs nst-btn--ghost" data-tab="phy:gnodeb" style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
+            : `<button class="nst-btn nst-btn--xs nst-btn--ghost"${dA({ v:'physical', l:'RAN detail view', q:'from=Virtual' })} style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
         i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}`)}
+              A('View parent RAN node', { v:'physical', l:'RAN detail view', q:'from=Virtual' })])}`)}
   </div>`;
 }
 
@@ -1910,36 +1902,28 @@ function viewInactive() {
     ${drillBar()}
 
     ${statStrip([
-      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from the active estate', t:'slate' },
-      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on the network', t:'red',
+      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from active estate', t:'slate' },
+      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red',
         d:{ v:'reconcile', l:'Decommissioned but still answering', q:'ne=Only on network' } },
       { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber',
         d:{ v:'links', l:'Retired adjacency' } },
       { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple',
         d:{ v:'services', l:'Retired services' } },
-      { k:'Oldest record', v:DECOMM_OLDEST, s:'retention policy 7 years', t:'cyan' },
-      { k:'Recovered to store', v:n(38), s:'restored in the last 12 months', t:'emerald' }
+      { k:'Oldest record', v:DECOMM_OLDEST, s:'archived record', t:'cyan' },
+      { k:'Recovered to store', v:n(38), s:'restored in last 12 months', t:'emerald' }
     ])}
 
     ${card(`
       <div class="tabbar">${PHY_TABS.map(x => `
         <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
           title="${n(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records">
-          <span class="tab-dot" style="background:${cv('slate',400)}"></span>${x.n}
-          <span class="tab-n num">${n(stockCount(x.k, 'decomm'))}</span></button>`).join('')}
+          <span class="tab-dot" style="background:${cv('slate',400)}"></span>${x.n}</button>`).join('')}
       </div>
 
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap"
-        style="margin-top:var(--vw-space-lg);padding:var(--vw-space-md);gap:var(--vw-space-md)">
-        <span class="vw-card-description">
-          <strong>Read-only archive.</strong> ${n(total)} of the ${n(STOCK_OF.decomm.c)} decommissioned records are
-          ${meta.n.toLowerCase()}s. They keep their serial, last IP and last location so a serial search finds a
-          written-off unit as easily as a live one.
-          ${zomb ? ` <strong style="color:${cv('red',700)}">${zomb} still answer discovery</strong> — raised as reconciliation exceptions, not filed away.` : ''}
-        </span>
-        ${zomb ? `<button class="nst-btn nst-btn--xs nst-btn--danger-subtle" style="flex-shrink:0"
-          ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions</button>` : ''}
-      </div>
+      ${zomb ? `<div class="row vw-justify-end" style="margin-top:var(--vw-space-md)">
+        <button class="nst-btn nst-btn--xs nst-btn--danger-subtle"
+          ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions (${zomb} still answering)</button>
+      </div>` : ''}
 
       ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
         chip('Archive · read-only', 'neutral'),
@@ -1958,11 +1942,7 @@ function viewInactive() {
         i => [CP('Copy serial number', rows[i].sn),
               ...(rows[i].zombie ? [A('Open reconciliation exception',
                   { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
-              ])}
-      <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-        <span class="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
-        <span class="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
-      </div>`)}
+              ])}`)}
   </div>`;
 }
 

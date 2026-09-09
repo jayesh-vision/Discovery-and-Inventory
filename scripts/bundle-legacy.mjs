@@ -26,9 +26,18 @@ let viewEl, crumbEl, modEl;`, 'lazy shell elements');
 patch(`function go(k) {
   const v = VIEWS[k] || VIEWS.insights;`,
 `function go(k) {
-  /* React owns some screens now: hand those over with the pending drill */
+  /* React owns some screens now: hand those over with the pending drill.
+     This is a real navigation away, same as the isNav branch below, so it
+     must clear the same transient UI state and move CURRENT off the old
+     legacy view — otherwise a stray click on the React screen (e.g. one
+     that lands outside where a now-gone kebab menu used to be) is still
+     seen by this document-level listener, which closes-the-menu by calling
+     go(CURRENT) against a view the reader already left, and that view's own
+     URL sync then shoves the browser back to it. */
   if (window.__nsBridge && window.__nsBridge.owns(k)) {
     const d = DRILL_PENDING; DRILL_PENDING = null;
+    KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0;
+    CURRENT = k;
     window.__nsBridge.navigate(k, d, __legacyParams(k));
     return;
   }
@@ -55,14 +64,19 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
     CURRENT === 'inactive' ? b.hasAttribute('data-inactive') : b.dataset.nav === active));`,
 `  void active; /* rail highlight is owned by the React sidebar */`, 'rail highlight');
 
-/* 2c. the Site details tab is a React screen */
-patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
-        <span class="tab-n num">\${inrShort(oxRun)}/mo</span></button>
-    </div>`, `      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
-        <span class="tab-n num">\${inrShort(oxRun)}/mo</span></button>
-      <button class="stab" data-nav="sitedetails">Site details</button>
-      <button class="stab" data-nav="siteequipment">Site equipment</button>
-    </div>`, 'site details tab');
+/* 2c. Site details / Site equipment open a separate React screen — they must
+   not look like the in-place section tabs beside them (same .stab class, same
+   row) or a click reads as "the tab switch navigated away/back" instead of an
+   intentional jump to another page. Kept as their own row, styled like the
+   plain data-nav links used elsewhere in the prototype (e.g. the transcript's
+   "Back to targets"). */
+patch(`      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
+    </div>`, `      <button class="stab\${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
+    </div>
+    <div class="row vw-gap-sm" style="margin-top:var(--vw-space-sm)">
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="sitedetails">Site details →</button>
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="siteequipment">Site equipment →</button>
+    </div>`, 'site details buttons');
 
 /* 2d. the transcript has no breadcrumb to go back by — give it a button */
 patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`,

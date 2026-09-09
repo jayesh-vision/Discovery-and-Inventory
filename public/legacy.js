@@ -76,8 +76,6 @@ function drillBar() {
     <span class="drill-back" data-nav="${DRILL.back}">&#8592; ${esc(DRILL.from)}</span>
     <span class="drill-sep">/</span>
     <span class="drill-label">${esc(DRILL.label)}</span>
-    <span class="grow"></span>
-    <button class="nst-btn nst-btn--xs" data-drillclear="1">Clear filter</button>
   </div>`;
 }
 
@@ -2487,8 +2485,7 @@ function viewJobs() {
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
         `<div class="seg">${segs.map(([k,l]) => {
           const c = JOBS.filter(JOB_TESTS[k]).length;
-          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}
-            <span class="tab-n num">${n(c)}</span></button>`;
+          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
         }).join('')}</div>
          ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
         [], 'jobs')}
@@ -2873,8 +2870,7 @@ const STATE_REGION = {
 };
 
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
-  `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}
-    <span class="tab-n num">${n(t.c)}</span></button>`).join('')}</div>`;
+  `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}</button>`).join('')}</div>`;
 
 /* ── Home ─────────────────────────────────────────────── */
 function viewHome() {
@@ -3325,20 +3321,18 @@ function viewSite() {
     ])}
 
     <div class="section-tabs">
-      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements
-        <span class="tab-n num">${tot}</span></button>
-      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex
-        <span class="tab-n num">${inrShort(cxTotal)}</span></button>
-      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex
-        <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
-      <button class="stab" data-nav="sitedetails">Site details</button>
-      <button class="stab" data-nav="siteequipment">Site equipment</button>
+      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements</button>
+      <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex</button>
+      <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex</button>
+    </div>
+    <div class="row vw-gap-sm" style="margin-top:var(--vw-space-sm)">
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="sitedetails">Site details →</button>
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-nav="siteequipment">Site equipment →</button>
     </div>
 
     ${SITE_SECTION === 'capex' ? capexSection(l, tot)
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
-      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}
-        <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
+      <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` }),
@@ -3613,8 +3607,7 @@ function viewPhysical() {
         <button class="tab${x.k === t ? ' is-on' : ''}" data-tab="phy:${x.k}"
           title="${n(phyCount(x.k, PHY_STOCK))} of ${n(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
             x.disc ? ` · ${n(x.disc)} discovered` : ' · no collector reaches this class'}">
-          <span class="tab-dot" style="background:${cv(x.disc ? 'emerald' : 'red', 400)}"></span>${x.n}
-          <span class="tab-n num">${n(phyCount(x.k, PHY_STOCK))}</span></button>`).join('')}
+          <span class="tab-dot" style="background:${cv(x.disc ? 'emerald' : 'red', 400)}"></span>${x.n}</button>`).join('')}
       </div>
       <div class="stock-bar">
         <span class="eyebrow">Stock state</span>
@@ -3623,14 +3616,13 @@ function viewPhysical() {
             <button class="stock-chip${PHY_STOCK.has(sk.k) ? ' is-on' : ''}" data-stock="${sk.k}"
               style="${PHY_STOCK.has(sk.k) ? `border-color:${cv(sk.tone,400)};background:${cv(sk.tone,50)}` : ''}"
               title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
-              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}
-              <span class="tab-n num">${n(stockCount(t, sk.k))}</span></button>`).join('')}
+              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
         </div>
         <span class="grow"></span>
         <div class="stock-presets row">
           <button class="nst-btn nst-btn--xs" data-stockset="active">Select all</button>
           <button class="nst-btn nst-btn--xs"${dA({ v:'inactive', l:`Decommissioned ${meta.n.toLowerCase()}s`, q:`cls=${t}` })}>
-            ${n(stockCount(t, 'decomm'))} decommissioned →</button>
+            Decommissioned →</button>
         </div>
       </div>
 
@@ -3912,19 +3904,19 @@ function viewVirtual() {
 
     ${card(`
       ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
-        `${chip('Sourced from the EMS, not from discovery','purple')}`,
+        '',
         [], 'virtual')}
       ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
         rows.map((v, i) => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           v.type === 'Others'
             ? `<span style="color:${cv('gray',400)}">not RAN</span>`
-            : `<button class="nst-btn nst-btn--xs nst-btn--ghost" data-tab="phy:gnodeb" style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
+            : `<button class="nst-btn nst-btn--xs nst-btn--ghost"${dA({ v:'physical', l:'RAN detail view', q:'from=Virtual' })} style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
         i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View parent RAN node', { v:'physical', l:'RAN nodes', q:'tab=gnodeb' })])}`)}
+              A('View parent RAN node', { v:'physical', l:'RAN detail view', q:'from=Virtual' })])}`)}
   </div>`;
 }
 
@@ -4025,36 +4017,28 @@ function viewInactive() {
     ${drillBar()}
 
     ${statStrip([
-      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from the active estate', t:'slate' },
-      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on the network', t:'red',
+      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from active estate', t:'slate' },
+      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red',
         d:{ v:'reconcile', l:'Decommissioned but still answering', q:'ne=Only on network' } },
       { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber',
         d:{ v:'links', l:'Retired adjacency' } },
       { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple',
         d:{ v:'services', l:'Retired services' } },
-      { k:'Oldest record', v:DECOMM_OLDEST, s:'retention policy 7 years', t:'cyan' },
-      { k:'Recovered to store', v:n(38), s:'restored in the last 12 months', t:'emerald' }
+      { k:'Oldest record', v:DECOMM_OLDEST, s:'archived record', t:'cyan' },
+      { k:'Recovered to store', v:n(38), s:'restored in last 12 months', t:'emerald' }
     ])}
 
     ${card(`
       <div class="tabbar">${PHY_TABS.map(x => `
         <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
           title="${n(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records">
-          <span class="tab-dot" style="background:${cv('slate',400)}"></span>${x.n}
-          <span class="tab-n num">${n(stockCount(x.k, 'decomm'))}</span></button>`).join('')}
+          <span class="tab-dot" style="background:${cv('slate',400)}"></span>${x.n}</button>`).join('')}
       </div>
 
-      <div class="vw-card-child-shaded row vw-justify-between vw-wrap"
-        style="margin-top:var(--vw-space-lg);padding:var(--vw-space-md);gap:var(--vw-space-md)">
-        <span class="vw-card-description">
-          <strong>Read-only archive.</strong> ${n(total)} of the ${n(STOCK_OF.decomm.c)} decommissioned records are
-          ${meta.n.toLowerCase()}s. They keep their serial, last IP and last location so a serial search finds a
-          written-off unit as easily as a live one.
-          ${zomb ? ` <strong style="color:${cv('red',700)}">${zomb} still answer discovery</strong> — raised as reconciliation exceptions, not filed away.` : ''}
-        </span>
-        ${zomb ? `<button class="nst-btn nst-btn--xs nst-btn--danger-subtle" style="flex-shrink:0"
-          ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions</button>` : ''}
-      </div>
+      ${zomb ? `<div class="row vw-justify-end" style="margin-top:var(--vw-space-md)">
+        <button class="nst-btn nst-btn--xs nst-btn--danger-subtle"
+          ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions (${zomb} still answering)</button>
+      </div>` : ''}
 
       ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
         chip('Archive · read-only', 'neutral'),
@@ -4073,11 +4057,7 @@ function viewInactive() {
         i => [CP('Copy serial number', rows[i].sn),
               ...(rows[i].zombie ? [A('Open reconciliation exception',
                   { v:'reconcile', l:`Still answering · ${rows[i].name}`, q:'ne=Only on network' })] : []),
-              ])}
-      <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-        <span class="vw-card-description">Archive is read-only. Restoring a unit to store reopens it in active inventory.</span>
-        <span class="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
-      </div>`)}
+              ])}`)}
   </div>`;
 }
 
@@ -4243,8 +4223,7 @@ function resNbrs() {
   const rows = NBRS[NBR_TAB] || [];
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
   return card(`
-    <div class="tabbar">${NBR_TABS.map(t=>`<button class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}
-      <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
+    <div class="tabbar">${NBR_TABS.map(t=>`<button class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
     <div class="nst-table-toolbar row vw-justify-between" style="margin:var(--vw-space-md) 0">
       <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
       <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
@@ -4310,7 +4289,7 @@ function resHistory() {
   const hist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('History', 'Every change to this record, who made it and from which source')}
+      ${headSm('History')}
       <div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
         `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
@@ -4322,10 +4301,7 @@ function resHistory() {
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
           :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), '',
-        () => [])}
-    <div class="vw-card-footer-divider vw-card-description">
-      A record with no history is a record nobody can audit. Retention 7 years, matching the asset register.
-    </div>`);
+        () => [])}`);
 }
 
 function viewResource() {
@@ -4351,8 +4327,7 @@ function viewResource() {
       { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' }
     ])}
 
-    <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}
-      ${t.c ? `<span class="tab-n num">${t.c()}</span>` : ''}</button>`).join('')}</div>
+    <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}</button>`).join('')}</div>
 
     ${body}
   </div>`;
@@ -4438,8 +4413,7 @@ function viewPassive() {
         </span>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
-        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
-          <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
+        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
@@ -5714,9 +5688,8 @@ function nodeAlerts(N) {
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
       ${headSm('Alerts & diagnostics', 'Active alerts and incident diagnostics')}
       <div class="tabbar" style="margin:0">
-        ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l, c]) =>
-          `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}
-            <span class="tab-n num">${c}</span></button>`).join('')}
+        ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l]) =>
+          `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}</button>`).join('')}
       </div>
     </div>
 
@@ -5871,7 +5844,8 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
-  DRILL_PENDING = { view, label, q, from: (VIEWS[CURRENT] || {}).crumb || '', back: CURRENT };
+  const fromName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
+  DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q);
   go(view);
 }
@@ -5882,7 +5856,9 @@ function applyDrillQuery(view, q) {
   if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
   if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
-    if (p.tab) TAB.phy = p.tab;
+    if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
+    else if (p.tab && PHY_TABS.some(x => x.k === p.tab)) TAB.phy = p.tab;
+    else if (!TAB.phy) TAB.phy = 'router';
     PHY_OEM = p.oem || null;
     PHY_SRC = p.src || null;
     PHY_VER = p.ver || null;
@@ -5911,9 +5887,18 @@ function clearDrill() {
 }
 
 function go(k) {
-  /* React owns some screens now: hand those over with the pending drill */
+  /* React owns some screens now: hand those over with the pending drill.
+     This is a real navigation away, same as the isNav branch below, so it
+     must clear the same transient UI state and move CURRENT off the old
+     legacy view — otherwise a stray click on the React screen (e.g. one
+     that lands outside where a now-gone kebab menu used to be) is still
+     seen by this document-level listener, which closes-the-menu by calling
+     go(CURRENT) against a view the reader already left, and that view's own
+     URL sync then shoves the browser back to it. */
   if (window.__nsBridge && window.__nsBridge.owns(k)) {
     const d = DRILL_PENDING; DRILL_PENDING = null;
+    KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0;
+    CURRENT = k;
     window.__nsBridge.navigate(k, d, __legacyParams(k));
     return;
   }
@@ -6173,7 +6158,28 @@ document.addEventListener('click', e => {
     return;
   }
   const tb = e.target.closest('[data-tab]');
-  if (tb) { const [g, k] = tb.dataset.tab.split(':'); TAB[g] = k; go(CURRENT); return; }
+  if (tb) {
+    const [g, k] = tb.dataset.tab.split(':');
+    TAB[g] = k;
+    if (g === 'phy') {
+      go('physical', { label: `${k} in inventory`, q: `cls=${k}` });
+      return;
+    }
+    if (g === 'link') {
+      go('links', { label: `${k} links`, q: `tab=${k}` });
+      return;
+    }
+    if (g === 'pas') {
+      go('passive', { label: `${k} passive`, q: `tab=${k}` });
+      return;
+    }
+    if (g === 'svc') {
+      go('services', { label: `${k} services`, q: `tab=${k}` });
+      return;
+    }
+    go(CURRENT);
+    return;
+  }
 
   const nef = e.target.closest('[data-ne-filter]');
   if (nef) { NE_FILTER = nef.dataset.neFilter; go('reconcile'); return; }

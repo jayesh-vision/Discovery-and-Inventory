@@ -131,8 +131,7 @@ function resNbrs() {
   const rows = NBRS[NBR_TAB] || [];
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
   return card(`
-    <div class="tabbar">${NBR_TABS.map(t=>`<button class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}
-      <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
+    <div class="tabbar">${NBR_TABS.map(t=>`<button class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
     <div class="nst-table-toolbar row vw-justify-between" style="margin:var(--vw-space-md) 0">
       <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
       <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
@@ -198,7 +197,7 @@ function resHistory() {
   const hist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('History', 'Every change to this record, who made it and from which source')}
+      ${headSm('History')}
       <div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
         `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
@@ -210,10 +209,7 @@ function resHistory() {
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
           :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), '',
-        () => [])}
-    <div class="vw-card-footer-divider vw-card-description">
-      A record with no history is a record nobody can audit. Retention 7 years, matching the asset register.
-    </div>`);
+        () => [])}`);
 }
 
 function viewResource() {
@@ -239,8 +235,7 @@ function viewResource() {
       { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' }
     ])}
 
-    <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}
-      ${t.c ? `<span class="tab-n num">${t.c()}</span>` : ''}</button>`).join('')}</div>
+    <div class="section-tabs">${RES_TABS.map(t=>`<button class="stab${t.k===RES_TAB?' is-on':''}" data-restab="${t.k}">${t.n}</button>`).join('')}</div>
 
     ${body}
   </div>`;
@@ -326,8 +321,7 @@ function viewPassive() {
         </span>
       </div>
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
-        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}
-          <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
+        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',

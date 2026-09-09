@@ -40,10 +40,9 @@ export default function PhysicalResources() {
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
   const discoveryScoped = !!(oem || model);
-  /* a model belongs to exactly one class — land on it instead of defaulting
-     to Router, or a switch model's drill would open to an empty grid */
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
-  const rawCls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : modelClass || 'router';
+  const urlClass = sp.get('cls') || sp.get('tab');
+  const rawCls: NeClass = isClass(urlClass) ? (urlClass as NeClass) : modelClass || PHY_TABS[0].k;
   const cls: NeClass = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
   const tabs = discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS;
   const stockParam = sp.get('stock');
@@ -85,15 +84,31 @@ export default function PhysicalResources() {
     { l: 'Copy serial number', onClick: () => { navigator.clipboard?.writeText(r.sn); } }
   ];
 
-  const clearDrill = () => {
+  const selectTabClass = (targetClass: NeClass) => {
     const next = new URLSearchParams(sp);
-    next.delete('drill'); next.delete('from'); next.delete('oem'); next.delete('model');
+    next.delete('tab');
+    next.delete('drill');
+    next.delete('from');
+    next.delete('oem');
+    next.delete('model');
+    next.set('cls', targetClass);
     setSp(next, { replace: true });
   };
 
+  const handleBack = () => {
+    const from = sp.get('from');
+    if (from?.toLowerCase() === 'virtual') {
+      nav('/inventory/virtual');
+    } else {
+      nav(-1);
+    }
+  };
+
+  const fromLabel = sp.get('from')?.toLowerCase().includes('virtual') ? 'Virtual' : (sp.get('from') ?? 'Inventory');
+
   return (
     <div className="page">
-      {drill && <DrillBar from={sp.get('from') ?? 'Inventory'} label={drill} onBack={() => nav(-1)} onClear={clearDrill} />}
+      {drill && <DrillBar from={fromLabel} label={drill} onBack={handleBack} />}
 
       <StatStrip cells={[
         { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
@@ -112,7 +127,7 @@ export default function PhysicalResources() {
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
               x.disc ? ` · ${fmt(x.disc)} discovered` : ' · no collector reaches this class'}`
           }))}
-          active={cls} onChange={k => set('cls', k)} />
+          active={cls} onChange={selectTabClass} />
 
         <div className="stock-bar">
           <span className="eyebrow">Stock state</span>
@@ -124,7 +139,6 @@ export default function PhysicalResources() {
                   style={on ? { borderColor: cv(s.tone, 400), background: cv(s.tone, 50) } : undefined}
                   title={`${fmt(stockCount(cls, s.k))} ${meta.n.toLowerCase()} records · ${fmt(s.c)} across the whole estate`}>
                   <span className="legend-sw" style={{ background: cv(s.tone, 400) }} />{s.n}
-                  <span className="tab-n num">{fmt(stockCount(cls, s.k))}</span>
                 </button>
               );
             })}
@@ -133,7 +147,7 @@ export default function PhysicalResources() {
           <div className="stock-presets row">
             <button className="nst-btn nst-btn--xs" onClick={() => set('stock', null)}>Select all</button>
             <button className="nst-btn nst-btn--xs" onClick={() => nav(`/inventory/inactive?cls=${cls}`)}>
-              {fmt(stockCount(cls, 'decomm'))} decommissioned →
+              Decommissioned →
             </button>
           </div>
         </div>

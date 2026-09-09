@@ -55,7 +55,8 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
-  DRILL_PENDING = { view, label, q, from: (VIEWS[CURRENT] || {}).crumb || '', back: CURRENT };
+  const fromName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
+  DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q);
   go(view);
 }
@@ -66,7 +67,9 @@ function applyDrillQuery(view, q) {
   if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
   if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
-    if (p.tab) TAB.phy = p.tab;
+    if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
+    else if (p.tab && PHY_TABS.some(x => x.k === p.tab)) TAB.phy = p.tab;
+    else if (!TAB.phy) TAB.phy = 'router';
     PHY_OEM = p.oem || null;
     PHY_SRC = p.src || null;
     PHY_VER = p.ver || null;
@@ -344,7 +347,28 @@ document.addEventListener('click', e => {
     return;
   }
   const tb = e.target.closest('[data-tab]');
-  if (tb) { const [g, k] = tb.dataset.tab.split(':'); TAB[g] = k; go(CURRENT); return; }
+  if (tb) {
+    const [g, k] = tb.dataset.tab.split(':');
+    TAB[g] = k;
+    if (g === 'phy') {
+      go('physical', { label: `${k} in inventory`, q: `cls=${k}` });
+      return;
+    }
+    if (g === 'link') {
+      go('links', { label: `${k} links`, q: `tab=${k}` });
+      return;
+    }
+    if (g === 'pas') {
+      go('passive', { label: `${k} passive`, q: `tab=${k}` });
+      return;
+    }
+    if (g === 'svc') {
+      go('services', { label: `${k} services`, q: `tab=${k}` });
+      return;
+    }
+    go(CURRENT);
+    return;
+  }
 
   const nef = e.target.closest('[data-ne-filter]');
   if (nef) { NE_FILTER = nef.dataset.neFilter; go('reconcile'); return; }

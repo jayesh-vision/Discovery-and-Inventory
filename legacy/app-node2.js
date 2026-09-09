@@ -462,9 +462,8 @@ function nodeAlerts(N) {
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
       ${headSm('Alerts & diagnostics', 'Active alerts and incident diagnostics')}
       <div class="tabbar" style="margin:0">
-        ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l, c]) =>
-          `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}
-            <span class="tab-n num">${c}</span></button>`).join('')}
+        ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l]) =>
+          `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}</button>`).join('')}
       </div>
     </div>
 

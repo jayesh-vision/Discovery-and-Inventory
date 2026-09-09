@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
-import { NE_CLASSES, PHY_TABS, classMeta, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
+import { NE_CLASSES, PHY_TABS, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 
 const FILTERS = [
@@ -13,14 +13,12 @@ const FILTERS = [
   { n: 'Discovery', o: ['Silent', 'Still answering'], h: 'A decommissioned unit that still answers is a reconciliation exception.' }
 ];
 
-const plural = (n: string) => n.toLowerCase() + (/(ch|sh|s|x|z)$/.test(n.toLowerCase()) ? 'es' : 's');
 const isClass = (v: string | null): v is NeClass => !!v && (NE_CLASSES as string[]).includes(v);
 
 export default function InactiveInventory() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
   const cls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : 'router';
-  const meta = classMeta(cls);
 
   /* Refresh has no server round-trip to make in this build (no backend), so
      "reload" means re-deriving rows from the archive's current in-memory
@@ -42,12 +40,12 @@ export default function InactiveInventory() {
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(stockMeta('decomm').c), s: 'removed from the active estate', t: 'slate' },
-        { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on the network', t: 'red', onClick: toExceptions },
+        { k: 'Decommissioned NE', v: fmt(stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red', onClick: toExceptions },
         { k: 'Retired links', v: fmt(1188), s: 'adjacency no longer seen', t: 'amber', onClick: () => nav('/inventory/links') },
         { k: 'Retired services', v: fmt(264), s: 'no longer provisioned', t: 'purple', onClick: () => nav('/inventory/services') },
-        { k: 'Oldest record', v: DECOMM_OLDEST, s: 'retention policy 7 years', t: 'cyan' },
-        { k: 'Recovered to store', v: fmt(38), s: 'restored in the last 12 months', t: 'emerald' }
+        { k: 'Oldest record', v: DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
+        { k: 'Recovered to store', v: fmt(38), s: 'restored in last 12 months', t: 'emerald' }
       ]} />
 
       <Card>
@@ -56,16 +54,11 @@ export default function InactiveInventory() {
             title: `${fmt(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records` }))}
           active={cls} onChange={setCls} />
 
-        <div className="vw-card-child-shaded row vw-justify-between vw-wrap"
-          style={{ marginTop: 'var(--vw-space-lg)', padding: 'var(--vw-space-md)', gap: 'var(--vw-space-md)' }}>
-          <span className="vw-card-description">
-            <strong>Read-only archive.</strong> {fmt(total)} of the {fmt(stockMeta('decomm').c)} decommissioned records are{' '}
-            {plural(meta.n)}. They keep their serial, last IP and last location so a serial search finds a
-            written-off unit as easily as a live one.
-            {zombies > 0 && <> <strong style={{ color: cv('red', 700) }}>{zombies} still answer discovery</strong> — raised as reconciliation exceptions, not filed away.</>}
-          </span>
-          {zombies > 0 && <button className="nst-btn nst-btn--xs nst-btn--danger-subtle" style={{ flexShrink: 0 }} onClick={toExceptions}>Open exceptions</button>}
-        </div>
+        {zombies > 0 && (
+          <div className="row vw-justify-end" style={{ marginTop: 'var(--vw-space-md)' }}>
+            <button className="nst-btn nst-btn--xs nst-btn--danger-subtle" onClick={toExceptions}>Open exceptions ({zombies} still answering)</button>
+          </div>
+        )}
 
         <DataGrid<ArchiveRow>
           columns={[{ t: 'Name' }, { t: 'Model / OEM' }, { t: 'Serial number' }, { t: 'Last IP / location' },
@@ -87,9 +80,6 @@ export default function InactiveInventory() {
             r.zombie ? <Chip tone="error">Still answering</Chip> : <Chip tone="neutral">Silent</Chip>
           ]}
         />
-        <div className="vw-card-footer-divider row vw-justify-between vw-wrap">
-          <span className="vw-card-metric-label-sub">Retention 7 years · purge requires a second approval</span>
-        </div>
       </Card>
     </div>
   );

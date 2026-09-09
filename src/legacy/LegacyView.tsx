@@ -50,7 +50,20 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
   useEffect(() => {
     window.__nsBridge = {
       owns: isReactOwned,
-      navigate: (k, drill, params) => nav(legacyPath(k, drill, params ?? {})),
+      navigate: (k, drill, params) => {
+        const target = legacyPath(k, drill, params ?? {});
+        /* once the reader is already on this React screen, a bare re-hand-off
+           (no new drill) carries no new information — skip it rather than
+           push/replace the URL down to its plain path, which would blow away
+           whatever tab/filter query the React screen has since set on its own */
+        if (!drill && target === window.location.pathname) return;
+        /* a drill tagged from=Virtual returns via Physical Resources' own
+           explicit back-link (not history back), so this hop can replace
+           instead of push — otherwise a stray back gesture right after
+           arriving lands one hop further than the click that got you here,
+           which reads as "clicking a tab went back to Virtual" */
+        nav(target, { replace: !!drill?.q?.toLowerCase().includes('from=virtual') });
+      },
       /* the prototype re-rendered itself (a tab, a drill, a row action): follow it */
       sync: (k, params) => {
         const target = legacyPath(k, null, params);
