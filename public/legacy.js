@@ -5452,12 +5452,9 @@ function viewInactive() {
 
     ${statStrip([
       { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from active estate', t:'slate' },
-      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red',
-        d:{ v:'reconcile', l:'Decommissioned but still answering', q:'ne=Only on network' } },
-      { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber',
-        d:{ v:'links', l:'Retired adjacency' } },
-      { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple',
-        d:{ v:'services', l:'Retired services' } },
+      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red' },
+      { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber' },
+      { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple' },
       { k:'Oldest record', v:DECOMM_OLDEST, s:'archived record', t:'cyan' },
       { k:'Recovered to store', v:n(38), s:'restored in last 12 months', t:'emerald' }
     ])}
