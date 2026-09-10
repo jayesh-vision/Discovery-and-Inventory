@@ -3144,7 +3144,7 @@ function viewInactive() {
       </div>
 
       ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
-        chip('Archive · read-only', 'neutral'), [])}
+        '', [])}
       ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [

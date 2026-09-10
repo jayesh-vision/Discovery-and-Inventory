@@ -56,7 +56,6 @@ export default function InactiveInventory() {
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}
           rows={rows} total={total} rowKey={r => r.sn} resetKey={cls}
           searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
-          extra={<Chip tone="neutral">Archive · read-only</Chip>}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={r => [
