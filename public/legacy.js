@@ -5479,7 +5479,7 @@ function viewInactive() {
       <div class="tabbar">${[
         { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
         { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
-        { k: 'l2vpn', n: 'L2VPN service' }, { k: 'l3vpn', n: 'L3VPN service' }
+        { k: 'l2vpn', n: 'L2VPN' }, { k: 'l3vpn', n: 'L3VPN' }
       ].map(x => `
         <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}">
           ${x.n}</button>`).join('')}
