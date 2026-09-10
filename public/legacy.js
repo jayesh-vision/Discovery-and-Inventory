@@ -1084,15 +1084,40 @@ const VNF_TYPES = [
   { n:'Others',c:5,  planned:0, prog:0, ready:4, failed:1, tone:'amber' }
 ];
 const VNFS = [
+  // vDU (9)
   { st:'Ready',       chip:'success', nf:'NTSON3435004',   type:'vDU',   svc:'NTSAB1400413', sub:'KA-BGLK-277-CL-04', tech:'5G',    host:'blr-cl-04-w02', s:'e' },
   { st:'Ready',       chip:'success', nf:'NetroundsTA1001', type:'vDU',   svc:'NTSAB1400413', sub:'CDC-SUB-1002',      tech:'4G+5G', host:'blr-cl-02-w01', s:'e' },
   { st:'Ready',       chip:'success', nf:'OTSLB1002750013',type:'vDU',   svc:'NTSAB1400431', sub:'INDR-275-SE-13-CL', tech:'5G',    host:'indr-se13-w01', s:'e' },
-  { st:'Ready',       chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413', sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
-  { st:'Ready',       chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
-  { st:'Failed',      chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'NTSON3435061',   type:'vDU',   svc:'NTSAB1400602', sub:'HYD-093-SE-11-CL',  tech:'5G',    host:'hyd-se11-w03', s:'e' },
   { st:'Planned',     chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' },
-  { st:'In progress', chip:'warning', nf:'NTSON3435044',   type:'CU-UP', svc:'NTSAB1400602', sub:'MAS-041-CL-03',     tech:'5G',    host:'mas-cl-03-w01', s:'e' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435090',   type:'vDU',   svc:'NTSAB1400711', sub:'JAI-058-SE-04-CL',  tech:'5G',    host:'—',            s:'p' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435091',   type:'vDU',   svc:'NTSAB1400712', sub:'LKO-217-SE-02-CL',  tech:'5G',    host:'—',            s:'p' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435092',   type:'vDU',   svc:'NTSAB1400713', sub:'AHM-131-SE-05-CL',  tech:'5G',    host:'—',            s:'p' },
+  { st:'Failed',      chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
+
+  // CU-CP (10)
+  { st:'Ready',       chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-BGLK-0101', type:'CU-CP', svc:'NTSLB400131', sub:'KA-BGLK-277-CL-01', tech:'5G',    host:'blr-cl-01-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-DEL-0202',  type:'CU-CP', svc:'NTSLB400132', sub:'DEL-279-CL-02',      tech:'5G',    host:'del-cl-02-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-MAS-0303',  type:'CU-CP', svc:'NTSLB400133', sub:'MAS-041-CL-01',     tech:'5G',    host:'mas-cl-01-w03', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-CHE-0404',  type:'CU-CP', svc:'NTSLB400134', sub:'CHE-118-CL-03',     tech:'5G',    host:'che-cl-03-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-PUN-0505',  type:'CU-CP', svc:'NTSLB400135', sub:'PUN-162-CL-01',     tech:'5G',    host:'pun-cl-01-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-HYD-0606',  type:'CU-CP', svc:'NTSLB400136', sub:'HYD-093-CL-02',     tech:'5G',    host:'hyd-cl-02-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-KOL-0707',  type:'CU-CP', svc:'NTSLB400137', sub:'KOL-204-CL-01',     tech:'5G',    host:'kol-cl-01-w04', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUCP-INDR-0808', type:'CU-CP', svc:'NTSLB400138', sub:'INDR-275-CL-02',    tech:'5G',    host:'indr-cl-02-w02', s:'e' },
   { st:'Planned',     chip:'info',    nf:'NTSON3435048',   type:'CU-CP', svc:'NTSAB1400602', sub:'CHE-118-CL-02',     tech:'5G',    host:'—',            s:'p' },
+
+  // CU-UP (4)
+  { st:'Ready',       chip:'success', nf:'NTSON3435052',   type:'CU-UP', svc:'NTSAB1400602', sub:'PUN-162-CL-02',     tech:'5G',    host:'pun-cl-02-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUUP-DEL-0102',  type:'CU-UP', svc:'NTSAB1400603', sub:'DEL-279-CL-01',      tech:'5G',    host:'del-cl-01-w03', s:'e' },
+  { st:'Ready',       chip:'success', nf:'CUUP-MAS-0203',  type:'CU-UP', svc:'NTSAB1400604', sub:'MAS-041-CL-02',     tech:'5G',    host:'mas-cl-02-w02', s:'e' },
+  { st:'In progress', chip:'warning', nf:'NTSON3435044',   type:'CU-UP', svc:'NTSAB1400602', sub:'MAS-041-CL-03',     tech:'5G',    host:'mas-cl-03-w01', s:'e' },
+
+  // Others (5)
+  { st:'Ready',       chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413', sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
+  { st:'Ready',       chip:'success', nf:'vEPC-CORE-0114', type:'Others',svc:'NTSAB1400118', sub:'CDC-SUB-1003',      tech:'4G',    host:'kol-cl-03-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'vDNS-SERVER-02', type:'Others',svc:'NTSAB1400119', sub:'DEL-CDC-01',         tech:'—',     host:'del-cdc-w01',   s:'e' },
+  { st:'Ready',       chip:'success', nf:'vAAA-RADIUS-04', type:'Others',svc:'NTSAB1400120', sub:'MAS-CDC-02',         tech:'—',     host:'mas-cdc-w02',   s:'e' },
   { st:'Failed',      chip:'error',   nf:'NTSON3435050',   type:'Others',svc:'NTSAB1400711', sub:'VJA-118-CL-01',     tech:'—',     host:'vja-cl-01-w02', s:'e' }
 ];
 
@@ -4815,11 +4840,21 @@ function viewVirtual() {
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${VNF_TYPES.map(v => {
-        const segs = [{n:'Ready',c:v.ready,tone:'emerald'},{n:'In progress',c:v.prog,tone:'amber'},
-                      {n:'Planned',c:v.planned,tone:'sky'},{n:'Failed',c:v.failed,tone:'red'}];
+        const typeRows = VNFS.filter(r => r.type === v.n);
+        const readyCount = typeRows.filter(r => r.st === 'Ready').length;
+        const progCount = typeRows.filter(r => r.st === 'In progress').length;
+        const plannedCount = typeRows.filter(r => r.st === 'Planned').length;
+        const failedCount = typeRows.filter(r => r.st === 'Failed').length;
+        const totalCount = typeRows.length;
+        const segs = [
+          { n: 'Ready', c: readyCount, tone: 'emerald' },
+          { n: 'In progress', c: progCount, tone: 'amber' },
+          { n: 'Planned', c: plannedCount, tone: 'sky' },
+          { n: 'Failed', c: failedCount, tone: 'red' }
+        ];
         return card(`
           <div class="row vw-justify-between vw-items-center">
-            <span class="vw-card-title-sm">${v.n}</span>${donut(segs, v.c, n(v.c), 'NFs', 76)}
+            <span class="vw-card-title-sm">${v.n}</span>${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
             ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"

@@ -2470,11 +2470,21 @@ function viewVirtual() {
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${VNF_TYPES.map(v => {
-        const segs = [{n:'Ready',c:v.ready,tone:'emerald'},{n:'In progress',c:v.prog,tone:'amber'},
-                      {n:'Planned',c:v.planned,tone:'sky'},{n:'Failed',c:v.failed,tone:'red'}];
+        const typeRows = VNFS.filter(r => r.type === v.n);
+        const readyCount = typeRows.filter(r => r.st === 'Ready').length;
+        const progCount = typeRows.filter(r => r.st === 'In progress').length;
+        const plannedCount = typeRows.filter(r => r.st === 'Planned').length;
+        const failedCount = typeRows.filter(r => r.st === 'Failed').length;
+        const totalCount = typeRows.length;
+        const segs = [
+          { n: 'Ready', c: readyCount, tone: 'emerald' },
+          { n: 'In progress', c: progCount, tone: 'amber' },
+          { n: 'Planned', c: plannedCount, tone: 'sky' },
+          { n: 'Failed', c: failedCount, tone: 'red' }
+        ];
         return card(`
           <div class="row vw-justify-between vw-items-center">
-            <span class="vw-card-title-sm">${v.n}</span>${donut(segs, v.c, n(v.c), 'NFs', 76)}
+            <span class="vw-card-title-sm">${v.n}</span>${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
             ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"
