@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, Chip, StatStrip } from '../components/ui';
 import type { ChipTone, ColorTone } from '../data/ledger';
 import { locationOf, type Location } from '../data/locations';
@@ -23,6 +23,22 @@ export interface SiteHead {
 
 const headOf = (id: string): SiteHead | null =>
   (window.__nsLegacy?.siteHead?.(id) as SiteHead | undefined) ?? null;
+
+/* Tab hops stay inside the same site, so the drill label and ?from= origin
+   the reader arrived with ride along — the breadcrumb keeps naming the path
+   that actually got them here (e.g. Resources > Physical Resources > …). */
+function useKeepContext() {
+  const { search } = useLocation();
+  return (path: string) => {
+    const sp = new URLSearchParams(search);
+    const out = new URLSearchParams();
+    const d = sp.get('drill'), f = sp.get('from');
+    if (d) out.set('drill', d);
+    if (f) out.set('from', f);
+    const qs = out.toString();
+    return qs ? `${path}?${qs}` : path;
+  };
+}
 
 export function useSiteHead(id: string): SiteHead | null {
   const [head, setHead] = useState<SiteHead | null>(() => headOf(id));
@@ -50,6 +66,7 @@ export function useSiteLocation(id: string): { l: Location; head: SiteHead | nul
 
 export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) {
   const nav = useNavigate();
+  const keep = useKeepContext();
   const base = `/inventory/location/site/${l.id}`;
   const [open, setOpen] = useState(false);
   return (
@@ -86,9 +103,9 @@ export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) 
           </Card>
           <StatStrip cells={head.cells.map(c => ({
             k: c.k, v: c.v, s: c.s, t: c.t,
-            onClick: c.section === 'ne' ? () => { window.__nsLegacy?.setSection?.('ne'); nav(base); }
-              : c.section ? () => nav(`${base}/${c.section}`)
-              : c.drill ? () => nav(legacyPath(c.drill!.v, { label: c.drill!.l, q: c.drill!.q }))
+            onClick: c.section === 'ne' ? () => { window.__nsLegacy?.setSection?.('ne'); nav(keep(base)); }
+              : c.section ? () => nav(keep(`${base}/${c.section}`))
+              : c.drill ? () => nav(legacyPath(c.drill!.v, { label: c.drill!.l, q: c.drill!.q, from: 'Location · Site details' }))
               : undefined
           }))} />
         </>
@@ -99,20 +116,21 @@ export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) 
 
 export function SiteTabs({ l, head, active }: { l: Location; head: SiteHead | null; active?: 'details' | 'equipment' }) {
   const nav = useNavigate();
+  const keep = useKeepContext();
   const base = `/inventory/location/site/${l.id}`;
-  const toNe = () => { window.__nsLegacy?.setSection?.('ne'); nav(base); };
+  const toNe = () => { window.__nsLegacy?.setSection?.('ne'); nav(keep(base)); };
   return (
     <div className="section-tabs">
-      <button className="stab" onClick={() => nav(base)}>
+      <button className="stab" onClick={() => nav(keep(base))}>
         Attention{head && <> <span className="tab-n num">{head.tabs.attn}</span></>}</button>
       <button className="stab" onClick={toNe}>
         Network elements{head && <> <span className="tab-n num">{head.tabs.ne}</span></>}</button>
-      <button className="stab" onClick={() => nav(base + '/capex')}>
+      <button className="stab" onClick={() => nav(keep(base + '/capex'))}>
         Capex{head && <> <span className="tab-n num">{head.tabs.capex}</span></>}</button>
-      <button className="stab" onClick={() => nav(base + '/opex')}>
+      <button className="stab" onClick={() => nav(keep(base + '/opex'))}>
         Opex{head && <> <span className="tab-n num">{head.tabs.opex}</span></>}</button>
-      <button className={`stab${active === 'details' ? ' is-on' : ''}`} onClick={() => nav(base + '/details')}>Site details</button>
-      <button className={`stab${active === 'equipment' ? ' is-on' : ''}`} onClick={() => nav(base + '/equipment')}>Site equipment</button>
+      <button className={`stab${active === 'details' ? ' is-on' : ''}`} onClick={() => nav(keep(base + '/details'))}>Site details</button>
+      <button className={`stab${active === 'equipment' ? ' is-on' : ''}`} onClick={() => nav(keep(base + '/equipment'))}>Site equipment</button>
     </div>
   );
 }

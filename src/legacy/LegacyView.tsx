@@ -15,6 +15,8 @@ declare global {
       /* site-header data + one-shot section override for the React site tabs */
       siteHead?: (id: string) => unknown;
       setSection?: (s: string) => void;
+      /* maps any location tag (sample city codes included) to the roster row */
+      resolveSite?: (ref: string) => { id: string; name: string } | null;
     };
     __nsBridge?: {
       owns: (k: string) => boolean;

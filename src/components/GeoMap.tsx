@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import geo from '../data/geo.json';
 import sitesJson from '../data/sites.json';
 import { Tip } from './charts';
+import { loadLegacy } from '../legacy/LegacyView';
+import { legacyPath } from '../routes';
 
 /* ── an interactive estate map ─────────────────────────────
    Two levels. Zoomed out, each state is one cluster bubble; click it (or
@@ -216,7 +218,14 @@ export function GeoMap({ bubbles, legend = [], region, onStateOpen }: { bubbles:
               <span><b className="num">{fmt(site.router + site.switch)}</b> identified</span>
             </div>
             <div className="row vw-gap-sm">
-              <button className="nst-btn nst-btn--xs nst-btn--filled" onClick={() => nav(`/inventory/location/site/${site.id}`)}>Open site</button>
+              <button className="nst-btn nst-btn--xs nst-btn--filled" onClick={() => {
+                /* the map's sample ids predate the roster — resolve first so
+                   the site page opens the site this card names */
+                void loadLegacy().then(() => {
+                  const s = window.__nsLegacy?.resolveSite?.(site.id) ?? null;
+                  nav(legacyPath('site', { label: s?.name ?? site.name, q: s ? `id=${s.id}` : '', from: 'Insights' }, { id: s?.id ?? site.id }));
+                });
+              }}>Open site</button>
               <button className="nst-btn nst-btn--xs" onClick={() => nav(`/inventory/physical?loc=${site.id}`)}>Elements at this site</button>
             </div>
           </> : selStats && <>

@@ -7,6 +7,8 @@ import {
   phyCount, stockCount, stockMeta, type NeClass, type StockState
 } from '../data/ledger';
 import { eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
+import { legacyPath } from '../routes';
+import { loadLegacy } from '../legacy/LegacyView';
 
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
@@ -73,11 +75,23 @@ export default function PhysicalResources() {
   const total = phyCount(cls, stock);
 
   /* every row on screen belongs to the active class tab, so cls alone decides
-     whether Node view belongs in the menu — server has no node-level page */
+     whether Node view belongs in the menu — server has no node-level page.
+     Node view and Open site leave this section, so they carry their origin —
+     the breadcrumb then reads Resources > Physical Resources > … instead of
+     jumping to the Location chain. */
+  const FROM = 'Resources · Physical Resources';
+  const openSite = (loc: string) => {
+    /* the row's location tag is a sample city code — resolve it to the real
+       roster site first, so the URL, breadcrumb and page all name one site */
+    void loadLegacy().then(() => {
+      const s = window.__nsLegacy?.resolveSite?.(loc) ?? null;
+      nav(legacyPath('site', { label: s?.name ?? loc, q: s ? `id=${s.id}` : '', from: FROM }, { id: s?.id ?? loc }));
+    });
+  };
   const rowActions = (r: NeRow): Action[] => [
-    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(`/inventory/node/${encodeURIComponent(r.name)}`) }] : []),
+    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: r.name, from: FROM }, { name: r.name })) }] : []),
     { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-    { l: 'Open site', onClick: () => nav(`/inventory/location/site/${encodeURIComponent(r.loc)}`) }
+    { l: 'Open site', onClick: () => openSite(r.loc) }
   ];
 
   const selectTabClass = (targetClass: NeClass) => {

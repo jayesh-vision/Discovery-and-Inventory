@@ -3268,7 +3268,7 @@ function viewHome() {
         ]), '',
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name }),
-              A('Open site', { v:'site', l:PHY.router[i].loc })])}`)}
+              siteA(PHY.router[i].loc)])}`)}
   </div>`;
 }
 
@@ -4020,7 +4020,7 @@ function locMap() {
 let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
 let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
-  const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
+  const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
   const rows = gridApply('site', ne[SITE_TAB] || []);
@@ -4197,7 +4197,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:rows[i].loc || l.name })
+          A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -4210,11 +4210,41 @@ function viewSite() {
   </div>`;
 }
 
+/* The NE sample rosters tag rows with city-coded locations (DEL-279,
+   BGLK-277) that predate the generated LOCATIONS roster. Every "Open site"
+   goes through here: an exact id/name wins, a known city code resolves
+   deterministically (by its number) to a real site in that city, and only
+   then does the first row remain as the last resort — so a site URL always
+   opens the site its label names. */
+const SITE_CODE_GEO = {
+  DEL: { state: 'Delhi' }, NDLS: { state: 'Delhi' }, NDD: { state: 'Delhi' },
+  BGLK: { city: 'Bagalkot' }, CHE: { city: 'Chennai' }, MAS: { city: 'Chennai' },
+  VJA: { city: 'Vijayawada' }, VZG: { city: 'Visakhapatnam' }, KOL: { city: 'Kolkata' },
+  PUN: { city: 'Pune' }, AHM: { city: 'Ahmedabad' }, MUM: { city: 'Mumbai' },
+  BLR: { city: 'Bengaluru' }, INDR: { city: 'Indore' }, DND: { city: 'Dindigul' }
+};
+function resolveSite(ref) {
+  if (!ref) return null;
+  const exact = LOCATIONS.find(x => x.id === ref || x.name === ref);
+  if (exact) return exact;
+  const m = String(ref).match(/^([A-Za-z]+)[-_]?(\d+)?/);
+  const g = m && SITE_CODE_GEO[m[1].toUpperCase()];
+  const pool = g ? LOCATIONS.filter(x => g.city ? x.city === g.city : x.state === g.state) : [];
+  const rows = pool.length ? pool : LOCATIONS;
+  return rows[(m && m[2] ? +m[2] : 0) % rows.length];
+}
+/* a row action that opens the resolved site — label and URL carry the real
+   id, so the breadcrumb, the header and the page can never disagree */
+function siteA(ref) {
+  const s = resolveSite(ref);
+  return A('Open site', { v: 'site', l: s.name, q: 'id=' + s.id });
+}
+
 /* Everything the site page's header shows, as plain data. The React-owned
    Site details / Site equipment tabs draw the same header from this, so the
    header never disappears or drifts from viewSite when those tabs are open. */
 function siteHeadData(id) {
-  const l = LOCATIONS.find(x => x.id === id) || LOCATIONS[0];
+  const l = resolveSite(id) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ n: t.n, c: (ne[t.k] || []).length }));
   const tot = counts.reduce((a, c) => a + c.c, 0);
@@ -4544,7 +4574,7 @@ function viewPhysical() {
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('View details', { v:'resource', l:rows[i].name }),
-             A('Open site', { v:'site', l:rows[i].loc })])}
+             siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>
@@ -4862,12 +4892,10 @@ function viewServices() {
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald', { v:'services', l:'L3VPN services', q:'tab=l3vpn' })}
-      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan', { v:'services', l:'L2VPN services', q:'tab=l2vpn' })}
-      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky',
-        { v:'resource', l:'Attachment interfaces' })}
-      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red',
-        { v:'reconcile', l:'Services found with no record', q:'ne=Only on network' })}
+      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald')}
+      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan')}
+      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky')}
+      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red')}
     </div>
 
     ${card(`
@@ -5276,7 +5304,7 @@ function viewPassive() {
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
-        i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
+        i => [siteA(rows[i].site || rows[i].n)])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
       ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
@@ -6867,7 +6895,12 @@ function go(k) {
      go(CURRENT) against a view the reader already left, and that view's own
      URL sync then shoves the browser back to it. */
   if (window.__nsBridge && window.__nsBridge.owns(k)) {
-    const d = DRILL_PENDING; DRILL_PENDING = null;
+    let d = DRILL_PENDING; DRILL_PENDING = null;
+    /* the site's React tabs stay inside the same site: hand the active drill
+       context (label + origin) over so the breadcrumb keeps naming the path
+       the reader actually took */
+    if (!d && DRILL && DRILL.view === CURRENT && (k === 'sitedetails' || k === 'siteequipment'))
+      d = { label: DRILL.label, q: '', from: DRILL.from };
     KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0;
     CURRENT = k;
     window.__nsBridge.navigate(k, d, __legacyParams(k));
@@ -7418,6 +7451,8 @@ window.__nsLegacy = {
      screens render the same header viewSite draws */
   siteHead: siteHeadData,
   setSection: s => { __siteSectionPending = s; },
+  /* map any location tag (sample city codes included) to the real roster row */
+  resolveSite: ref => { const r = resolveSite(ref); return r ? { id: r.id, name: r.name } : null; },
   /* URL-driven only (the LegacyView effect). A null here means the URL has
      no drill — the live DRILL must clear too, or go()'s refresh path keeps
      the stale one and sync() shoves the old drill URL back on top of a
