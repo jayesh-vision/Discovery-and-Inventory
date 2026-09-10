@@ -139,13 +139,8 @@ function opexSection(l, neCount) {
   </div>`;
 
   return card(`
-    <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      <div class="stack-x">
-        <span class="vw-card-title">Opex</span>
-      </div>
-      <div class="row">
-        <button class="nst-btn nst-btn--filled nst-btn--sm" data-opex="${l.id}">Update opex</button>
-      </div>
+    <div class="stack-x">
+      <span class="vw-card-title">Opex</span>
     </div>
 
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>

@@ -1812,9 +1812,8 @@ function viewSite() {
     <div style="margin-top:var(--vw-space-lg)">
       ${headSm('Recommended next steps', 'in the order a field team would take them')}
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
-        ${steps.map(([txt, d], i) => `<div class="vw-card-child row vw-justify-between vw-items-center" style="padding:var(--vw-space-sm) var(--vw-space-md)">
+        ${steps.map(([txt], i) => `<div class="vw-card-child row vw-items-center" style="padding:var(--vw-space-sm) var(--vw-space-md)">
           <span class="row vw-gap-sm vw-items-center" style="min-width:0"><span class="attn-step-n num">${i+1}</span><span class="vw-value" style="font-weight:400">${txt}</span></span>
-          ${d ? `<button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" title="Open in reconciliation"${dA(d)}>Open ↗</button>` : ''}
         </div>`).join('')}
       </div>
     </div>` : ''}`);
@@ -1885,6 +1884,52 @@ function viewSite() {
   </div>`;
 }
 
+/* Everything the site page's header shows, as plain data. The React-owned
+   Site details / Site equipment tabs draw the same header from this, so the
+   header never disappears or drifts from viewSite when those tabs are open. */
+function siteHeadData(id) {
+  const l = LOCATIONS.find(x => x.id === id) || LOCATIONS[0];
+  const ne = siteNE(l.id, l.ne, l.disc);
+  const counts = SITE_TABS.map(t => ({ n: t.n, c: (ne[t.k] || []).length }));
+  const tot = counts.reduce((a, c) => a + c.c, 0);
+  const flat = Object.values(ne).flat();
+  const drift = flat.filter(r => r.st === 'drift' || r.st === 'dup').length;
+  const notDisc = flat.filter(r => r.st === 'none').length;
+  const cxData = capexOf(l.id, l.ne), cxTotal = capexTotal(cxData.items), cxA = cxData.approved;
+  const oxRun = opexRun(opexOf(l.id, l.ne).items);
+  const attn = (l.issue ? 1 : 0) + (l.risk ? 1 : 0) + (notDisc ? 1 : 0) + (drift ? 1 : 0);
+  return {
+    id: l.id, name: l.name, type: l.type, city: l.city, state: l.state,
+    addr: l.addr, lat: l.lat, lon: l.lon, ne: tot, disc: l.disc,
+    sub: `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
+    coords: l.lat ? `${l.lat}°N ${l.lon}°E` : '—',
+    chips: [
+      { t: l.st, tone: l.chip, strong: true },
+      { t: l.cat, tone: l.ct === 'amber' ? 'warning' : l.ct === 'sky' ? 'info' : 'success' },
+      l.disc === l.ne ? { t: 'Fully reconciled', tone: 'success' }
+        : l.disc === 0 ? { t: 'Nothing discovered', tone: 'error' }
+        : { t: `${l.ne - l.disc} not discovered`, tone: 'warning' }
+    ],
+    meta: [['Name', l.name], ['Site type', l.type], ['Location ID', l.id], ['Address', l.addr],
+      ['Zone', l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'],
+      ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']],
+    cells: [
+      { k: 'Network elements', v: n(tot), s: counts.map(c => `${c.n} ${c.c}`).join(' · '), t: 'sky', section: 'ne' },
+      { k: 'Discovered', v: n(l.disc), s: `${((l.disc / Math.max(l.ne, 1)) * 100).toFixed(0)}% of record`, t: 'emerald',
+        drill: { v: 'reconcile', l: `Verified at ${l.name}`, q: 'ne=Agree' } },
+      { k: 'Drifted', v: n(drift), s: 'incl. duplicate serials', t: 'amber',
+        drill: { v: 'reconcile', l: `Drift at ${l.name}`, q: 'ne=Differ' } },
+      { k: 'Not discovered', v: n(notDisc), s: 'planned or no collector', t: 'red',
+        drill: { v: 'reconcile', l: `Not discovered at ${l.name}`, q: 'ne=Only in inventory' } },
+      { k: 'Links terminating', v: l.disc ? n(l.disc * 4 + 7) : '0', s: 'LLDP · OSPF · BGP', t: 'purple',
+        drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
+      { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
+      { k: 'Opex run rate', v: inrShort(oxRun) + ' / mo', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
+    ],
+    tabs: { attn, ne: n(tot), capex: inrShort(cxTotal), opex: inrShort(oxRun) + '/mo' }
+  };
+}
+
 /* ---- capex on the site screen ---- */
 const CX_TONE = { paid:['emerald',400], invoiced:['sky',400], po:['amber',400], planned:['slate',300] };
 const CAT_SHORT = { 'Installation & commissioning':'Installation', 'Fiber & transport':'Fiber & transport' };
@@ -1917,13 +1962,8 @@ function capexSection(l, neCount) {
   ];
 
   return card(`
-    <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      <div class="stack-x">
-        <span class="vw-card-title">Capex</span>
-      </div>
-      <div class="row">
-        <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
-      </div>
+    <div class="stack-x">
+      <span class="vw-card-title">Capex</span>
     </div>
 
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>

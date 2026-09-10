@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Chip } from '../components/ui';
-import { locationOf } from '../data/locations';
 import { facilityOf } from '../data/facility';
 import { siteInfoFor } from '../data/cableView';
-import { SiteHeader, SiteTabs } from './SiteTabs';
+import { SiteHeader, SiteTabs, useSiteLocation } from './SiteTabs';
 
 /* The Site equipment tab hosts the Fiberneo cable view unmodified in its own
    frame. The view expects its host to hand it a `siteInfo` facility payload;
@@ -17,7 +16,7 @@ const CABLE_VIEW = '/cable-view/index.html';
 export default function SiteEquipment() {
   const { id = 'BGLK-277' } = useParams();
   const [sp] = useSearchParams();
-  const l = locationOf(id);
+  const { l, head } = useSiteLocation(id);
   const token = sp.get('token') ?? '';
   const facility = sp.get('facility_id') ?? '';
   const live = token.length > 0;
@@ -40,8 +39,8 @@ export default function SiteEquipment() {
 
   return (
     <div className="page">
-      <SiteHeader l={l} />
-      <SiteTabs l={l} active="equipment" />
+      <SiteHeader l={l} head={head} />
+      <SiteTabs l={l} head={head} active="equipment" />
       <div className="cv-bar">
         <span className="vw-card-title">Cable view</span>
         <span className="vw-card-description">

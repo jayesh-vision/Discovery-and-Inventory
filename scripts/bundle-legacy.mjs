@@ -107,9 +107,16 @@ patch(/\ngo\('insights'\);\s*$/, '\n', 'boot call');
 /* 5. what the bridge needs */
 src += `
 /* ── bridge surface for the React shell ─────────────────── */
+/* one-shot: a React screen names which site section the next visit lands on
+   (e.g. its "Network elements" tab), instead of the default Attention */
+let __siteSectionPending = null;
 window.__nsLegacy = {
   go, drillTo, applyDrillQuery, VIEWS,
   current: () => CURRENT,
+  /* the site header, as data — the React Site details / Site equipment
+     screens render the same header viewSite draws */
+  siteHead: siteHeadData,
+  setSection: s => { __siteSectionPending = s; },
   /* URL-driven only (the LegacyView effect). A null here means the URL has
      no drill — the live DRILL must clear too, or go()'s refresh path keeps
      the stale one and sync() shoves the old drill URL back on top of a
@@ -117,7 +124,8 @@ window.__nsLegacy = {
   setDrill: d => { DRILL_PENDING = d; if (!d) DRILL = null; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
-    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; }
+    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router';
+      SITE_SECTION = __siteSectionPending || 'attention'; __siteSectionPending = null; }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
