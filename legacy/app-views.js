@@ -2547,11 +2547,11 @@ function viewVnfDetails() {
     ['BGLK-277', nf, '4096', 'NTSLB1436091-00-04096-00600-01-001-OMACC', '0']
   ];
 
-  const renderGrid = fields => `<div class="card" style="padding:var(--vw-space-lg)">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-md) var(--vw-space-xl)">
+  const renderGrid = fields => `<div class="card" style="padding:var(--vw-space-xl)">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
       ${fields.map(([k, v]) => `<div>
-        <div class="stat-k" style="font-size:0.6875rem;color:var(--vw-color-gray-500);margin-bottom:2px">${k}</div>
-        <div class="vw-value" style="font-size:0.875rem">${v}</div>
+        <div class="stat-k" style="font-size:0.8125rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:500">${k}</div>
+        <div class="vw-value" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-gray-900);word-break:break-word;font-family:var(--vw-font-mono)">${esc(v)}</div>
       </div>`).join('')}
     </div>
   </div>`;
@@ -2604,65 +2604,97 @@ function viewVnfDetails() {
 let CELL_4G_NAME = null;
 let CELL_5G_NAME = null;
 
+function renderSectionedGrid(sections) {
+  return sections.map((sec, secIdx) => `
+    <div class="card" style="padding:var(--vw-space-xl);${secIdx > 0 ? 'margin-top:var(--vw-space-md);' : ''}">
+      <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-gray-900);margin-bottom:var(--vw-space-lg);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-xs)">
+        <span style="width:4px;height:16px;background:var(--vw-color-primary-600, #2563eb);border-radius:2px;display:inline-block"></span>
+        ${sec.title}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
+        ${sec.fields.map(([k, v]) => `<div>
+          <div class="stat-k" style="font-size:0.8125rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:500">${k}</div>
+          <div class="vw-value" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-gray-900);word-break:break-word;font-family:var(--vw-font-mono)">${esc(v)}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
 function viewCell4gDetails() {
   const cellName = CELL_4G_NAME || 'LTSQC0102011-000-2100-1-000-OMACC';
-  const fields = [
-    ['hostSiteID', 'BGLK-277'],
-    ['coverageSiteId', 'NTSON3435004'],
-    ['neId', '1000829004'],
-    ['neName', 'NTSON1000829004'],
-
-    ['enodebId', '102011'],
-    ['enodebName', 'LTSQC0102011'],
-    ['neType', 'Macro'],
-    ['longitude', '-74.039527'],
-
-    ['latitude', '45.808083'],
-    ['height', '44'],
-    ['mcc1', '302'],
-    ['mnc1', '220'],
-
-    ['mcc2', '302'],
-    ['mnc2', '610'],
-    ['mcc3', '-'],
-    ['mnc3', '-'],
-
-    ['cduConfig', '-'],
-    ['sector', '1137'],
-    ['cellNumber', '1'],
-    ['cellName', cellName],
-
-    ['pci', '0'],
-    ['txrxMode', '4T4R'],
-    ['dlOnly', 'N'],
-    ['numberOfRfBranchesUL', 'n4-rx-antenna-count'],
-
-    ['earfcnDl', '2325'],
-    ['earfcnUl', '20325'],
-    ['bandName', '4'],
-    ['cellBandCarrier', '2100mhz_band4'],
-
-    ['bandwidth', '-'],
-    ['bandwidth2', '-'],
-    ['crs', 'n4'],
-    ['tac', '2D87'],
-
-    ['MaxTransmitPower(0.1)PerPort', '-'],
-    ['referenceSignalPower', '152'],
-    ['powerBoost3dB', 'N'],
-    ['PrachConfig(ZCZC)', '11'],
-
-    ['cellRadius', '12200'],
-    ['preambleFormat', '1'],
-    ['rsi', '0'],
-    ['hardwareConfig', 'Juniper CHR'],
-
-    ['ruModel', 'ORU6229'],
-    ['materialId', '2416683'],
-    ['vendorName', 'Samsung ORAN']
+  const sections = [
+    {
+      title: 'General & Site Information',
+      fields: [
+        ['hostSiteID', 'BGLK-277'],
+        ['coverageSiteId', 'NTSON3435004'],
+        ['neId', '1000829004'],
+        ['neName', 'NTSON1000829004'],
+        ['neType', 'Macro'],
+        ['latitude', '45.808083'],
+        ['longitude', '-74.039527'],
+        ['height', '44']
+      ]
+    },
+    {
+      title: 'Cell & eNodeB Identifiers',
+      fields: [
+        ['enodebId', '102011'],
+        ['enodebName', 'LTSQC0102011'],
+        ['cellNumber', '1'],
+        ['cellName', cellName],
+        ['sector', '1137'],
+        ['pci', '0'],
+        ['cduConfig', '-']
+      ]
+    },
+    {
+      title: 'Radio Frequency & Carrier Parameters',
+      fields: [
+        ['bandName', '4'],
+        ['cellBandCarrier', '2100mhz_band4'],
+        ['earfcnDl', '2325'],
+        ['earfcnUl', '20325'],
+        ['txrxMode', '4T4R'],
+        ['dlOnly', 'N'],
+        ['numberOfRfBranchesUL', 'n4-rx-antenna-count'],
+        ['bandwidth', '-'],
+        ['bandwidth2', '-'],
+        ['crs', 'n4']
+      ]
+    },
+    {
+      title: 'Power & Network Configuration',
+      fields: [
+        ['mcc1', '302'],
+        ['mnc1', '220'],
+        ['mcc2', '302'],
+        ['mnc2', '610'],
+        ['mcc3', '-'],
+        ['mnc3', '-'],
+        ['tac', '2D87'],
+        ['MaxTransmitPower(0.1)PerPort', '-'],
+        ['referenceSignalPower', '152'],
+        ['powerBoost3dB', 'N'],
+        ['PrachConfig(ZCZC)', '11'],
+        ['cellRadius', '12200'],
+        ['preambleFormat', '1'],
+        ['rsi', '0']
+      ]
+    },
+    {
+      title: 'Hardware & Vendor Equipment',
+      fields: [
+        ['hardwareConfig', 'Juniper CHR'],
+        ['ruModel', 'ORU6229'],
+        ['materialId', '2416683'],
+        ['vendorName', 'Samsung ORAN']
+      ]
+    }
   ];
 
-  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-lg)">
+  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
@@ -2677,87 +2709,94 @@ function viewCell4gDetails() {
       </div>
     </div>
 
-    <div class="card" style="padding:var(--vw-space-xl)">
-      <div style="margin-bottom:var(--vw-space-xl);border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-md)">
-        <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 4G details</h2>
-        <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
-        ${fields.map(([k, v]) => `<div>
-          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-500);margin-bottom:3px;font-weight:400">${k}</div>
-          <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
-        </div>`).join('')}
-      </div>
+    <div class="card" style="padding:var(--vw-space-lg) var(--vw-space-xl)">
+      <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 4G details</h2>
+      <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
     </div>
+
+    ${renderSectionedGrid(sections)}
   </div>`;
 }
 
 function viewCell5gDetails() {
   const cellName = CELL_5G_NAME || 'NTSLB1436091-OTSLB100275001-OMACC';
-  const fields = [
-    ['hostSite', 'BGLK-277'],
-    ['coverageSite', 'NTSON34350044'],
-    ['neId', '100275001'],
-    ['neName', 'OTSLB100275001'],
-
-    ['duld', '1436091'],
-    ['cellIdentity', '4096'],
-    ['cellNumber', '0'],
-    ['cellName', cellName],
-
-    ['nrPci', '191'],
-    ['nrEarfcnDl', '126400'],
-    ['nrEarfcnUl', '135600'],
-    ['nrBandName', '71'],
-
-    ['nrBandwidth', '10'],
-    ['numberOfRfBranchesDL', 'dl-antenna-count-4tx'],
-    ['numberOfRfBranchesUL', 'ul-antenna-count-4rx'],
-    ['numberOfRxPathsPerRU', '4'],
-
-    ['prachRsi', '191'],
-    ['prachZczc', '12'],
-    ['prachConfigurationIndex', '18'],
-    ['nrCellRadius', '10000'],
-
-    ['prachSsbPerRo', 'ssb-per-ro-one-choice'],
-    ['numberOfTxSsb', '1'],
-    ['dlMaxTxPower', '430'],
-    ['latitude', '43.77725'],
-
-    ['longitude', '-79.25134'],
-    ['HardwareConfig', '-'],
-    ['ruModel', '-'],
-    ['materialId', '-'],
-
-    ['vendorName', '-'],
-    ['materialDescription', '-'],
-    ['ruName', 'LB0009-RU-0001'],
-    ['ruld', '1'],
-
-    ['druElementId', '-'],
-    ['druElementAlias', '-'],
-    ['retModel', '-'],
-    ['antennaVendor', '-'],
-
-    ['antennaModel', '-'],
-    ['electricalTilt', '-'],
-    ['mechanicalTilt', '-'],
-    ['Azimuth', '-'],
-
-    ['retName', '-'],
-    ['tac1', '0091B7'],
-    ['tac2', '-'],
-    ['tac3', '-'],
-
-    ['ssbBlock', '1580'],
-    ['Period', '20ms'],
-    ['gscnOffset', '0'],
-    ['coreset0Index', '8']
+  const sections = [
+    {
+      title: 'General & Site Information',
+      fields: [
+        ['hostSite', 'BGLK-277'],
+        ['coverageSite', 'NTSON34350044'],
+        ['neId', '100275001'],
+        ['neName', 'OTSLB100275001'],
+        ['latitude', '43.77725'],
+        ['longitude', '-79.25134']
+      ]
+    },
+    {
+      title: '5G NR Cell & DU Identifiers',
+      fields: [
+        ['duld', '1436091'],
+        ['cellIdentity', '4096'],
+        ['cellNumber', '0'],
+        ['cellName', cellName]
+      ]
+    },
+    {
+      title: '5G Radio Frequency & Carrier Parameters',
+      fields: [
+        ['nrPci', '191'],
+        ['nrEarfcnDl', '126400'],
+        ['nrEarfcnUl', '135600'],
+        ['nrBandName', '71'],
+        ['nrBandwidth', '10'],
+        ['numberOfRfBranchesDL', 'dl-antenna-count-4tx'],
+        ['numberOfRfBranchesUL', 'ul-antenna-count-4rx'],
+        ['numberOfRxPathsPerRU', '4']
+      ]
+    },
+    {
+      title: 'PRACH & Network Configuration',
+      fields: [
+        ['prachRsi', '191'],
+        ['prachZczc', '12'],
+        ['prachConfigurationIndex', '18'],
+        ['nrCellRadius', '10000'],
+        ['prachSsbPerRo', 'ssb-per-ro-one-choice'],
+        ['numberOfTxSsb', '1'],
+        ['dlMaxTxPower', '430'],
+        ['ssbBlock', '1580'],
+        ['Period', '20ms'],
+        ['gscnOffset', '0'],
+        ['coreset0Index', '8'],
+        ['tac1', '0091B7'],
+        ['tac2', '-'],
+        ['tac3', '-']
+      ]
+    },
+    {
+      title: 'Hardware & Equipment Configuration',
+      fields: [
+        ['HardwareConfig', '-'],
+        ['ruModel', '-'],
+        ['materialId', '-'],
+        ['vendorName', '-'],
+        ['materialDescription', '-'],
+        ['ruName', 'LB0009-RU-0001'],
+        ['ruld', '1'],
+        ['druElementId', '-'],
+        ['druElementAlias', '-'],
+        ['retModel', '-'],
+        ['antennaVendor', '-'],
+        ['antennaModel', '-'],
+        ['electricalTilt', '-'],
+        ['mechanicalTilt', '-'],
+        ['Azimuth', '-'],
+        ['retName', '-']
+      ]
+    }
   ];
 
-  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-lg)">
+  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
@@ -2772,19 +2811,12 @@ function viewCell5gDetails() {
       </div>
     </div>
 
-    <div class="card" style="padding:var(--vw-space-xl)">
-      <div style="margin-bottom:var(--vw-space-xl);border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-md)">
-        <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 5G details</h2>
-        <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
-        ${fields.map(([k, v]) => `<div>
-          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-500);margin-bottom:3px;font-weight:400">${k}</div>
-          <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
-        </div>`).join('')}
-      </div>
+    <div class="card" style="padding:var(--vw-space-lg) var(--vw-space-xl)">
+      <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 5G details</h2>
+      <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
     </div>
+
+    ${renderSectionedGrid(sections)}
   </div>`;
 }
 
