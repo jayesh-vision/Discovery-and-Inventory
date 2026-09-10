@@ -1,13 +1,14 @@
-import { ACTIVE_STATES, type ActiveStock, type NeClass, type RecState, type Source, type StockState } from './ledger';
+import { ACTIVE_STATES, stockCount, type ActiveStock, type NeClass, type RecState, type Source, type StockState } from './ledger';
 
 export interface NeRow {
   st: RecState; name: string; ip: string; model: string; os: string; sn: string; oem: string;
   loc: string; s: Source; stock: StockState; v: number | null;
 }
 
-/* Hand-written seeds. The sample is grown to twelve rows per class below,
-   spread across the active stock states, so no class tab or stock chip ever
-   lands on a two-row list. Counts come from PHY_MATRIX, never from here. */
+/* Hand-written seeds. The sample is grown below to the real population of
+   each class × active stock state (PHY_MATRIX is still the source of truth
+   for every count shown on screen) — so a grid actually has enough rows to
+   scroll through instead of stopping after one page of generated filler. */
 export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
   router: [
     { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.33.100', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
@@ -49,23 +50,31 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
 
 const PAD_LOC = ['BGLK-277','DEL-279','INDR-275','VJA-118','CHE-118','MAS-041','PUN-162','HYD-093','KOL-204','AHM-131'];
 const PAD_ST: RecState[] = ['ok','ok','drift','ok','stale','ok','drift','ok','none','ok'];
-const PAD_STK: ActiveStock[] = ['deployed','deployed','deployed','instore','deployed','planned','deployed','faulty','planned','deployed'];
 
-function grow(cls: NeClass, seeds: NeRow[], target = 12): NeRow[] {
+/* one small deterministic generator so a rebuild never reshuffles the grid */
+const lcg = (seed: number) => { let x = seed; return () => (x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; };
+
+function grow(cls: NeClass, seeds: NeRow[]): NeRow[] {
   const out = seeds.slice();
-  for (let i = 0; out.length < target; i++) {
-    const base = seeds[i % seeds.length], k = out.length;
-    const stock = PAD_STK[k % PAD_STK.length], planned = stock === 'planned';
-    out.push({ ...base,
-      st: planned ? 'none' : PAD_ST[k % PAD_ST.length],
-      name: `${PAD_LOC[k % PAD_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${['P','PE','AGG','ACC','ER'][k % 5]}-${String(20 + k)}`,
-      ip: planned ? `192.168.${20 + k % 9}.${11 + k}` : `172.31.${64 + (k * 5) % 60}.${12 + (k * 23) % 240}`,
-      sn: base.sn.replace(/[0-9]{3}$/, String(200 + k * 7)) + String.fromCharCode(65 + k % 26),
-      loc: PAD_LOC[k % PAD_LOC.length],
-      stock,
-      v: planned ? null : [3, 6, 11, 640][k % 4] });
+  const r = lcg(cls.length * 7919 + seeds.length);
+  for (const stock of ACTIVE_STATES) {
+    const target = stockCount(cls, stock);
+    const planned = stock === 'planned';
+    let have = out.reduce((a, x) => a + (x.stock === stock ? 1 : 0), 0);
+    while (have < target) {
+      const k = out.length;
+      const base = seeds[Math.floor(r() * seeds.length)];
+      out.push({ ...base,
+        st: planned ? 'none' : PAD_ST[k % PAD_ST.length],
+        name: `${PAD_LOC[k % PAD_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${['P','PE','AGG','ACC','ER'][k % 5]}-${String(20 + k)}`,
+        ip: planned ? `192.168.${20 + k % 9}.${11 + k}` : `172.31.${64 + (k * 5) % 60}.${12 + (k * 23) % 240}`,
+        sn: base.sn.replace(/[0-9]{3}$/, String(200 + k * 7)) + String.fromCharCode(65 + k % 26),
+        loc: PAD_LOC[k % PAD_LOC.length],
+        stock,
+        v: planned ? null : [3, 6, 11, 640][k % 4] });
+      have++;
+    }
   }
-  void cls;
   return out;
 }
 
@@ -78,15 +87,19 @@ export const phyRows = (cls: NeClass, states: ReadonlySet<StockState>): NeRow[] 
 
 export const isActive = (s: string): s is ActiveStock => (ACTIVE_STATES as string[]).includes(s);
 
-/* per-row derived attributes the prototype computes rather than stores */
+/* per-row derived attributes the prototype computes rather than stores.
+   eNodeB/gNodeB ports are the radio's fronthaul/backhaul SFPs, not a
+   switching fabric — far fewer than a router or switch, but real counts
+   rather than the '—' a zeroed-out class reads as "not applicable". */
 export const portsOf = (cls: NeClass, i: number): [number, number] =>
-  cls === 'router' ? [36, 22 - (i % 5)] : cls === 'switch' ? [48, 30 + (i % 9)] : [0, 0];
+  cls === 'router' ? [36, 22 - (i % 5)] : cls === 'switch' ? [48, 30 + (i % 9)]
+  : cls === 'enodeb' ? [6, 4 + (i % 3)] : cls === 'gnodeb' ? [8, 5 + (i % 4)] : [0, 0];
 
 const COMPLIANCE: Record<string, 'ok' | 'behind' | 'unknown'> = {
   'MX960': 'behind', 'NCS-540': 'ok', 'ACX2200': 'ok', 'MX204': 'behind',
   'ASR920': 'behind', '7750': 'unknown', '7750 SR-7': 'unknown', 'EX4300-48P': 'ok',
   'ACX7024': 'ok', 'C9300-48UXM': 'ok', 'EX2200-24T': 'behind', 'L3-CORE-48P': 'ok',
-  'C9400-LC-48T': 'ok', 'L2-ACCESS-24P': 'ok'
+  'C9400-LC-48T': 'ok', 'L2-ACCESS-24P': 'ok', 'AirScale': 'ok', 'AirScale 5G': 'ok'
 };
 export const complianceOf = (model: string) => COMPLIANCE[model] ?? 'unknown';
 
@@ -96,6 +109,7 @@ const EOS: Record<string, [string, EosBand]> = {
   'EX2200-24T': ['31-Mar-2024', 'past'], 'EX4300-48P': ['31-Dec-2029', 'safe'], 'NCS-540': ['31-Dec-2030', 'safe'],
   'ACX2200': ['30-Jun-2030', 'safe'], 'ACX7024': ['31-Dec-2032', 'safe'], '7750': ['—', 'unknown'],
   '7750 SR-7': ['—', 'unknown'], 'C9300-48UXM': ['31-Oct-2029', 'safe'], 'C9400-LC-48T': ['30-Apr-2030', 'safe'],
-  'L3-CORE-48P': ['31-Dec-2028', 'safe'], 'L2-ACCESS-24P': ['31-Dec-2028', 'safe']
+  'L3-CORE-48P': ['31-Dec-2028', 'safe'], 'L2-ACCESS-24P': ['31-Dec-2028', 'safe'],
+  'AirScale': ['31-Dec-2031', 'safe'], 'AirScale 5G': ['31-Dec-2033', 'safe']
 };
 export const eosOf = (model: string): [string, EosBand] => EOS[model] ?? ['—', 'unknown'];
