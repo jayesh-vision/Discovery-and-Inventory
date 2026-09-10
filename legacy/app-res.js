@@ -310,7 +310,7 @@ function viewPassive() {
 
     ${card(`
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
-        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n} <span class="tab-n num">${n(x.c)}</span></button>`).join('')}</div>
+        <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
