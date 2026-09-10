@@ -84,6 +84,7 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'node')     { if (p.tab) NODE_TAB = p.tab; }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {
@@ -302,7 +303,9 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
+  const ntab = e.target.closest('[data-nodetab]');
+  if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
   if (npf) { NODE_PERF = npf.dataset.nperf; go('node'); return; }
   const nal = e.target.closest('[data-nalert]');

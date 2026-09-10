@@ -243,7 +243,6 @@ function nodeHardware(N) {
     </div>` : '';
 
   return `
-    ${card(`${headSm('Hardware & interfaces')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
     <div class="row-t nv-hw" style="align-items:stretch">
       ${perfCard}
       ${aiHw}
@@ -514,6 +513,8 @@ function nodeAlerts(N) {
     </div>`);
 }
 
+let NODE_TAB = 'overview';
+
 function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
@@ -536,17 +537,41 @@ function viewNode() {
         </div>`)}
     </div>`;
   }
+
+  const tabs = [
+    ['overview', 'Overview'],
+    ['hardware', 'Hardware & interfaces'],
+    ['links', 'Links'],
+    ['services', 'Network services'],
+    ['alerts', 'Alerts & diagnostics']
+  ];
+
+  const activeTab = (NODE_TAB || 'overview').toLowerCase();
+
+  let tabContent = '';
+  if (activeTab === 'hardware') {
+    tabContent = `${nodeHardware(N)}${nodeVlans(N)}`;
+  } else if (activeTab === 'links') {
+    tabContent = `${nodeLinks(N)}`;
+  } else if (activeTab === 'services') {
+    tabContent = `${nodeServices(N)}`;
+  } else if (activeTab === 'alerts') {
+    tabContent = `${nodeAlerts(N)}`;
+  } else {
+    /* overview default */
+    tabContent = `${nodeOverview(N)}${nodeAvailability(N)}`;
+  }
+
   return `<div class="page">
     ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
       `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
     ${drillBar()}
     ${nodeHeader(N)}
-    ${nodeOverview(N)}
-    ${nodeAvailability(N)}
-    ${nodeHardware(N)}
-    ${nodeVlans(N)}
-    ${nodeLinks(N)}
-    ${nodeServices(N)}
-    ${nodeAlerts(N)}
+
+    <div class="tabbar" style="margin-top:var(--vw-space-sm);margin-bottom:var(--vw-space-md)">
+      ${tabs.map(([k, l]) => `<button class="tab${activeTab === k ? ' is-on' : ''}" data-nodetab="${k}">${l}</button>`).join('')}
+    </div>
+
+    ${tabContent}
   </div>`;
 }

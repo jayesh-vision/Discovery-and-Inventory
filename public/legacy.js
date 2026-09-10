@@ -2527,8 +2527,7 @@ function viewJobs() {
         `<div class="seg">${segs.map(([k,l]) => {
           const c = JOBS.filter(JOB_TESTS[k]).length;
           return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
-        }).join('')}</div>
-         ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
+        }).join('')}</div>`,
         [], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
@@ -5576,7 +5575,6 @@ function nodeHardware(N) {
     </div>` : '';
 
   return `
-    ${card(`${headSm('Hardware & interfaces')}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
     <div class="row-t nv-hw" style="align-items:stretch">
       ${perfCard}
       ${aiHw}
@@ -5847,6 +5845,8 @@ function nodeAlerts(N) {
     </div>`);
 }
 
+let NODE_TAB = 'overview';
+
 function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
@@ -5869,18 +5869,42 @@ function viewNode() {
         </div>`)}
     </div>`;
   }
+
+  const tabs = [
+    ['overview', 'Overview'],
+    ['hardware', 'Hardware & interfaces'],
+    ['links', 'Links'],
+    ['services', 'Network services'],
+    ['alerts', 'Alerts & diagnostics']
+  ];
+
+  const activeTab = (NODE_TAB || 'overview').toLowerCase();
+
+  let tabContent = '';
+  if (activeTab === 'hardware') {
+    tabContent = `${nodeHardware(N)}${nodeVlans(N)}`;
+  } else if (activeTab === 'links') {
+    tabContent = `${nodeLinks(N)}`;
+  } else if (activeTab === 'services') {
+    tabContent = `${nodeServices(N)}`;
+  } else if (activeTab === 'alerts') {
+    tabContent = `${nodeAlerts(N)}`;
+  } else {
+    /* overview default */
+    tabContent = `${nodeOverview(N)}${nodeAvailability(N)}`;
+  }
+
   return `<div class="page">
     ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
       `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
     ${drillBar()}
     ${nodeHeader(N)}
-    ${nodeOverview(N)}
-    ${nodeAvailability(N)}
-    ${nodeHardware(N)}
-    ${nodeVlans(N)}
-    ${nodeLinks(N)}
-    ${nodeServices(N)}
-    ${nodeAlerts(N)}
+
+    <div class="tabbar" style="margin-top:var(--vw-space-sm);margin-bottom:var(--vw-space-md)">
+      ${tabs.map(([k, l]) => `<button class="tab${activeTab === k ? ' is-on' : ''}" data-nodetab="${k}">${l}</button>`).join('')}
+    </div>
+
+    ${tabContent}
   </div>`;
 }
 
@@ -5969,6 +5993,7 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'node')     { if (p.tab) NODE_TAB = p.tab; }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {
@@ -6209,7 +6234,9 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
+  const ntab = e.target.closest('[data-nodetab]');
+  if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
   if (npf) { NODE_PERF = npf.dataset.nperf; go('node'); return; }
   const nal = e.target.closest('[data-nalert]');

@@ -375,8 +375,7 @@ function viewJobs() {
         `<div class="seg">${segs.map(([k,l]) => {
           const c = JOBS.filter(JOB_TESTS[k]).length;
           return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
-        }).join('')}</div>
-         ${running ? chip(`${n(running)} running`,'info') : ''}${errors ? chip(`${n(errors)} with errors`,'warning') : ''}`,
+        }).join('')}</div>`,
         [], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
