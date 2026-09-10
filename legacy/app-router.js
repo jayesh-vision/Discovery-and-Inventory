@@ -106,6 +106,18 @@ function applyDrillQuery(view, q, label) {
   if (view === 'vnfdetails') { if (p.name) VNF_DETAIL_ID = decodeURIComponent(p.name); if (p.tab) VNF_DETAIL_TAB = p.tab; }
   if (view === 'cell4gdetails') { if (p.cell) CELL_4G_NAME = decodeURIComponent(p.cell); }
   if (view === 'cell5gdetails') { if (p.cell) CELL_5G_NAME = decodeURIComponent(p.cell); }
+  if (view === 'virtual') {
+    let type = p.type || null;
+    let st = p.st || p.status || null;
+    if (!type && !st && label && label.includes('·')) {
+      const parts = label.split('·').map(s => s.trim());
+      if (parts.length >= 2) { type = parts[0]; st = parts[1]; }
+    }
+    const filters = {};
+    if (st && st !== 'All') filters[0] = st;
+    if (type && type !== 'All' && type !== 'All virtual resources') filters[2] = type;
+    gridOf('virtual').filters = filters;
+  }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
@@ -116,6 +128,7 @@ function clearDrill() {
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
   if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; LOC_GROUP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
+  if (d.view === 'virtual')   { gridOf('virtual').filters = {}; gridOf('virtual').search = ''; }
   go(d.view);
 }
 

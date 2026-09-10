@@ -923,13 +923,16 @@ const VNF_TYPES = [
   { n:'Others',c:5,  planned:0, prog:0, ready:4, failed:1, tone:'amber' }
 ];
 const VNFS = [
-  { st:'Ready',  chip:'success', nf:'NTSON3435004', type:'vDU',   svc:'NTSAB1400413', sub:'KA-BGLK-277-CL-04', tech:'5G',    host:'blr-cl-04-w02', s:'e' },
-  { st:'Ready',  chip:'success', nf:'NetroundsTA1001', type:'vDU',svc:'NTSAB1400413', sub:'CDC-SUB-1002',      tech:'4G+5G', host:'blr-cl-02-w01', s:'e' },
-  { st:'Ready',  chip:'success', nf:'OTSLB1002750013',type:'vDU',  svc:'NTSAB1400431', sub:'INDR-275-SE-13-CL', tech:'5G',    host:'indr-se13-w01', s:'e' },
-  { st:'Ready',  chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413',sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
-  { st:'Ready',  chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
-  { st:'Failed', chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
-  { st:'Planned',chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' }
+  { st:'Ready',       chip:'success', nf:'NTSON3435004',   type:'vDU',   svc:'NTSAB1400413', sub:'KA-BGLK-277-CL-04', tech:'5G',    host:'blr-cl-04-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'NetroundsTA1001', type:'vDU',   svc:'NTSAB1400413', sub:'CDC-SUB-1002',      tech:'4G+5G', host:'blr-cl-02-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'OTSLB1002750013',type:'vDU',   svc:'NTSAB1400431', sub:'INDR-275-SE-13-CL', tech:'5G',    host:'indr-se13-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413', sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
+  { st:'Ready',       chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
+  { st:'Failed',      chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' },
+  { st:'In progress', chip:'warning', nf:'NTSON3435044',   type:'CU-UP', svc:'NTSAB1400602', sub:'MAS-041-CL-03',     tech:'5G',    host:'mas-cl-03-w01', s:'e' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435048',   type:'CU-CP', svc:'NTSAB1400602', sub:'CHE-118-CL-02',     tech:'5G',    host:'—',            s:'p' },
+  { st:'Failed',      chip:'error',   nf:'NTSON3435050',   type:'Others',svc:'NTSAB1400711', sub:'VJA-118-CL-01',     tech:'—',     host:'vja-cl-01-w02', s:'e' }
 ];
 
 /* ── VNF lifecycle (Day 0 / Grow / Events / GPL) ──────────

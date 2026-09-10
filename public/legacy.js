@@ -1084,13 +1084,16 @@ const VNF_TYPES = [
   { n:'Others',c:5,  planned:0, prog:0, ready:4, failed:1, tone:'amber' }
 ];
 const VNFS = [
-  { st:'Ready',  chip:'success', nf:'NTSON3435004', type:'vDU',   svc:'NTSAB1400413', sub:'KA-BGLK-277-CL-04', tech:'5G',    host:'blr-cl-04-w02', s:'e' },
-  { st:'Ready',  chip:'success', nf:'NetroundsTA1001', type:'vDU',svc:'NTSAB1400413', sub:'CDC-SUB-1002',      tech:'4G+5G', host:'blr-cl-02-w01', s:'e' },
-  { st:'Ready',  chip:'success', nf:'OTSLB1002750013',type:'vDU',  svc:'NTSAB1400431', sub:'INDR-275-SE-13-CL', tech:'5G',    host:'indr-se13-w01', s:'e' },
-  { st:'Ready',  chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413',sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
-  { st:'Ready',  chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
-  { st:'Failed', chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
-  { st:'Planned',chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566',sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' }
+  { st:'Ready',       chip:'success', nf:'NTSON3435004',   type:'vDU',   svc:'NTSAB1400413', sub:'KA-BGLK-277-CL-04', tech:'5G',    host:'blr-cl-04-w02', s:'e' },
+  { st:'Ready',       chip:'success', nf:'NetroundsTA1001', type:'vDU',   svc:'NTSAB1400413', sub:'CDC-SUB-1002',      tech:'4G+5G', host:'blr-cl-02-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'OTSLB1002750013',type:'vDU',   svc:'NTSAB1400431', sub:'INDR-275-SE-13-CL', tech:'5G',    host:'indr-se13-w01', s:'e' },
+  { st:'Ready',       chip:'success', nf:'F5 Firewall',    type:'Others',svc:'NTSAB1400413', sub:'CDC-SUB-1001',      tech:'—',     host:'blr-cl-01-w03', s:'e' },
+  { st:'Ready',       chip:'success', nf:'NTSLB400130',    type:'CU-CP', svc:'NTSLB400130', sub:'NTSLB400130',       tech:'5G',    host:'del-cl-01-w01', s:'e' },
+  { st:'Failed',      chip:'error',   nf:'NTSON3435037',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-37-CL',  tech:'5G',    host:'del-se37-w02', s:'e' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435040',   type:'vDU',   svc:'NTSAB1400566', sub:'DEL-279-SE-40-CL',  tech:'5G',    host:'—',            s:'p' },
+  { st:'In progress', chip:'warning', nf:'NTSON3435044',   type:'CU-UP', svc:'NTSAB1400602', sub:'MAS-041-CL-03',     tech:'5G',    host:'mas-cl-03-w01', s:'e' },
+  { st:'Planned',     chip:'info',    nf:'NTSON3435048',   type:'CU-CP', svc:'NTSAB1400602', sub:'CHE-118-CL-02',     tech:'5G',    host:'—',            s:'p' },
+  { st:'Failed',      chip:'error',   nf:'NTSON3435050',   type:'Others',svc:'NTSAB1400711', sub:'VJA-118-CL-01',     tech:'—',     host:'vja-cl-01-w02', s:'e' }
 ];
 
 /* ── VNF lifecycle (Day 0 / Grow / Events / GPL) ──────────
@@ -4820,7 +4823,7 @@ function viewVirtual() {
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
             ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"
-              ${dA({ v:'virtual', l:`${v.n} · ${s.n}` })}>
+              ${dA({ v:'virtual', l:`${v.n} · ${s.n}`, q:`type=${encodeURIComponent(v.n)}&st=${encodeURIComponent(s.n)}` })}>
               <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
               <span class="vw-value num">${s.c}</span></button>`).join('')}
           </div>`);
@@ -7426,6 +7429,18 @@ function applyDrillQuery(view, q, label) {
   if (view === 'vnfdetails') { if (p.name) VNF_DETAIL_ID = decodeURIComponent(p.name); if (p.tab) VNF_DETAIL_TAB = p.tab; }
   if (view === 'cell4gdetails') { if (p.cell) CELL_4G_NAME = decodeURIComponent(p.cell); }
   if (view === 'cell5gdetails') { if (p.cell) CELL_5G_NAME = decodeURIComponent(p.cell); }
+  if (view === 'virtual') {
+    let type = p.type || null;
+    let st = p.st || p.status || null;
+    if (!type && !st && label && label.includes('·')) {
+      const parts = label.split('·').map(s => s.trim());
+      if (parts.length >= 2) { type = parts[0]; st = parts[1]; }
+    }
+    const filters = {};
+    if (st && st !== 'All') filters[0] = st;
+    if (type && type !== 'All' && type !== 'All virtual resources') filters[2] = type;
+    gridOf('virtual').filters = filters;
+  }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
@@ -7436,6 +7451,7 @@ function clearDrill() {
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
   if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; LOC_GROUP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
+  if (d.view === 'virtual')   { gridOf('virtual').filters = {}; gridOf('virtual').search = ''; }
   go(d.view);
 }
 

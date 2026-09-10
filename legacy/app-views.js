@@ -2478,7 +2478,7 @@ function viewVirtual() {
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
             ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"
-              ${dA({ v:'virtual', l:`${v.n} · ${s.n}` })}>
+              ${dA({ v:'virtual', l:`${v.n} · ${s.n}`, q:`type=${encodeURIComponent(v.n)}&st=${encodeURIComponent(s.n)}` })}>
               <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
               <span class="vw-value num">${s.c}</span></button>`).join('')}
           </div>`);
