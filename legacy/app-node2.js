@@ -445,23 +445,53 @@ function nodeServices(N) {
 }
 
 function nodeAlerts(N) {
+  const alertTab = NODE_ALERT_TAB || 'alerts';
   const SEV = { Critical:'error', Major:'warning', Minor:'orange', Warning:'neutral' };
   return card(`
-    <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      ${headSm('Alerts & diagnostics')}
-      <div class="tabbar" style="margin:0">
-        ${[['alerts','Alerts',N.alarmsList.length],['incidents','Incidents',2]].map(([k, l]) =>
-          `<button class="tab${NODE_ALERT_TAB===k?' is-on':''}" data-nalert="${k}">${l}</button>`).join('')}
+    <div class="row vw-justify-between vw-items-center" style="margin-bottom:var(--vw-space-md)">
+      <div style="display:inline-flex;align-items:center;background:var(--vw-color-slate-100, #f1f5f9);padding:4px;border-radius:10px;gap:4px">
+        <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
+          style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer;transition:all 0.15s ease">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          Alerts
+        </button>
+        <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
+          style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer;transition:all 0.15s ease">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Incidents
+        </button>
       </div>
     </div>
 
-    <div class="nv-svc-split" style="margin-top:var(--vw-space-md)">
+    <div class="nv-svc-split">
       <div class="cx-panel grow">
-        <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">${NODE_ALERT_TAB === 'alerts' ? 'Active alerts and events' : 'Open incidents'}</span>
-          <span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--vw-color-slate-200,#e2e8f0);flex-wrap:nowrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:34px;height:34px;border-radius:8px;background:${cv('red',50)};color:${cv('red',600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-800,#1e293b);line-height:1.2">${alertTab === 'alerts' ? 'Active alerts & events' : 'Open incidents'}</div>
+              <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
+            </div>
+          </div>
+          ${alertTab === 'alerts' ? `
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                <option>All severity</option>
+                <option>Critical</option>
+                <option>Major</option>
+                <option>Minor</option>
+              </select>
+              <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                <option>All sources</option>
+                <option>Interface</option>
+                <option>CPU</option>
+                <option>Memory</option>
+              </select>
+            </div>` : ''}
         </div>
-        ${NODE_ALERT_TAB === 'alerts' ? `
+        ${alertTab === 'alerts' ? `
           <div class="stack-s">
             ${N.alarmsList.map(a => `
               <div class="nv-alarm" style="--nt:${cv(SEV[a.sev] === 'error' ? 'red' : SEV[a.sev] === 'warning' ? 'amber' : 'orange', 400)}">

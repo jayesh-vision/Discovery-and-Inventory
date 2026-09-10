@@ -184,9 +184,6 @@ function resConfig() {
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
         i => [])}
         </div>
-      </div>
-      <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
-        <span class="vw-card-description">Last backup ${c.lastBackup} · ${c.backupSize}.</span>
       </div>`, 'grow')}
   </div>`;
 }

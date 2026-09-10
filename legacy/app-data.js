@@ -838,7 +838,7 @@ const PHY_TABS = [
 /* Classes that have a Node view destination. Server has no node-level page —
    nothing to view — so it's the one class left out; every other class opens
    Node view, even where the page itself has no live assurance feed to show. */
-const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb', 'gnodeb'];
+const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb'];
 const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
 const PHY = {
   router: [

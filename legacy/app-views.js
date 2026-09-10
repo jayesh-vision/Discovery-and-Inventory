@@ -578,12 +578,23 @@ function txSteps() {
   return s;
 }
 
+function formatAsJsonString(val) {
+  if (val === undefined || val === null || val === '—') {
+    return JSON.stringify("Not sent");
+  }
+  if (typeof val === 'object') {
+    return JSON.stringify(val, null, 2);
+  }
+  try {
+    const parsed = JSON.parse(val);
+    return JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    return JSON.stringify(val, null, 2);
+  }
+}
+
 function txBody() {
   const steps = txSteps();
-  const maxMs = Math.max(...steps.map(s => s.ms), 1);
-  const passed = steps.filter(s => s.state === 'ok').length;
-  const bytes = steps.reduce((a, s) => a + s.bytes, 0);
-  const ms = steps.reduce((a, s) => a + s.ms, 0);
   const dot = st => st === 'ok'
     ? `<span class="step-dot" style="background:${cv('emerald',100)};color:${cv('emerald',700)}">✓</span>`
     : st === 'fail'
@@ -591,49 +602,67 @@ function txBody() {
       : `<span class="step-dot" style="background:${cv('amber',100)};color:${cv('amber',700)}">–</span>`;
 
   return `
-    <div class="row vw-justify-between vw-items-center vw-wrap" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg)">
-      <div class="row vw-gap-xl">
-        ${[['Run', `#${TXRUN}`], ['Steps', `${passed} of 7 passed`], ['Elapsed', `${(ms/1000).toFixed(2)} s`],
-           ['Payload', `${(bytes/1024).toFixed(1)} KB`], ['Collector', TRANSCRIPT.collector], ['Credential', TRANSCRIPT.cred]]
-          .map(([k, v]) => `<div class="stack-x"><span class="vw-label">${k}</span><span class="vw-value num mono">${v}</span></div>`).join('')}
-      </div>
-      <div class="row vw-gap-xxs" style="align-items:flex-end;height:38px;min-width:220px">
-        ${steps.map(s => `<div class="stack-x grow" style="gap:2px;align-items:center">
-          <div style="width:100%;height:${Math.max(3, s.ms / maxMs * 28).toFixed(0)}px;border-radius:2px 2px 0 0;background:${cv(s.state === 'ok' ? 'sky' : s.state === 'fail' ? 'red' : 'amber', 300)}"></div>
-          <span class="vw-card-metric-label-sub" style="font-size:.5rem">${s.n.slice(0, 3)}</span></div>`).join('')}
-      </div>
-    </div>
-    <div class="steps">
+    <div class="steps" style="display:flex;flex-direction:column;gap:12px">
       ${steps.map(s => `
-        <div class="step">
-          ${dot(s.state)}
-          <div class="stack-s">
-            <div class="tx-row">
-              <div class="tx-meta">
-                <div class="row" style="gap:var(--vw-space-xs)">
-                  <span class="vw-card-activity-label">${s.n}</span>${chip(s.proto, 'neutral')}
+        <details class="vw-tx-panel">
+          <summary class="vw-tx-panel-summary">
+            <div class="vw-tx-panel-summary-left">
+              ${dot(s.state)}
+              <span class="vw-card-activity-label" style="font-weight:600;font-size:0.95rem;color:var(--vw-color-slate-800)">${s.n}</span>
+              ${chip(s.proto, 'neutral')}
+            </div>
+            <div class="vw-tx-panel-summary-right">
+              <span class="vw-card-metric-label-sub num">${s.ms ? `${s.ms} ms · ${(s.bytes/1024).toFixed(1)} KB` : 'not attempted'}</span>
+              <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+          </summary>
+
+          <div class="vw-tx-panel-content">
+            ${s.reason ? `
+              <div class="stack-x" style="margin-bottom:var(--vw-space-md);padding:var(--vw-space-sm) var(--vw-space-md);background:${cv('red',50)};border:1px solid ${cv('red',200)};border-radius:var(--vw-radius-md)">
+                <span class="vw-label" style="color:${cv('red',800)}">Reason</span>
+                <span class="vw-value mono" style="color:${cv('red',700)}">${s.reason}</span>
+                <span class="vw-card-description" style="white-space:normal;margin-top:4px;color:${cv('red',900)}">${s.action}</span>
+              </div>`
+              : s.wrote ? `
+              <div class="vw-card-child-shaded" style="margin-bottom:var(--vw-space-md)">
+                <span class="eyebrow" style="color:${cv(s.wrote === 'nothing' || s.wrote.startsWith('nothing') ? 'gray' : 'emerald', 700)}">Wrote</span>
+                <div class="vw-card-description" style="white-space:normal">${s.wrote}</div>
+              </div>` : ''}
+
+            <div class="vw-tx-subpanels">
+              <details class="vw-tx-subpanel">
+                <summary class="vw-tx-subpanel-summary">
+                  <span class="vw-tx-subpanel-title">View Request</span>
+                  <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </summary>
+                <div class="vw-tx-subpanel-body">
+                  <div class="vw-tx-box-label">Request</div>
+                  <div class="vw-tx-json-box">
+                    <pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.req))}</code></pre>
+                  </div>
                 </div>
-                <span class="vw-card-metric-label-sub num">${s.ms ? `${s.ms} ms · ${(s.bytes/1024).toFixed(1)} KB` : 'not attempted'}</span>
-                ${s.reason ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
-                    <span class="vw-label">Reason</span>
-                    <span class="vw-value mono" style="color:${cv('red',700)}">${s.reason}</span>
-                    <span class="vw-card-description" style="white-space:normal;margin-top:4px">${s.action}</span>
-                  </div>`
-                  : `<div class="vw-card-child-shaded" style="margin-top:var(--vw-space-xs)">
-                      <span class="eyebrow" style="color:${cv(s.wrote === 'nothing' || s.wrote.startsWith('nothing') ? 'gray' : 'emerald', 700)}">Wrote</span>
-                      <div class="vw-card-description" style="white-space:normal">${s.wrote}</div></div>`}
-              </div>
-              ${s.req !== '—' ? `<div class="stack-x"><span class="eyebrow">Request</span>
-                <pre class="payload mono"><span class="k">${esc(s.req)}</span></pre></div>`
-                : `<div class="stack-x"><span class="eyebrow">Request</span>
-                <div class="vw-card-child-shaded vw-card-description">Not sent.</div></div>`}
-              <div class="stack-x"><span class="eyebrow">Response</span>
-                <pre class="payload mono"><span class="${s.state === 'fail' ? 'r' : s.state === 'skip' ? '' : 'g'}">${esc(s.res)}</span></pre></div>
+              </details>
+
+              <details class="vw-tx-subpanel">
+                <summary class="vw-tx-subpanel-summary">
+                  <span class="vw-tx-subpanel-title">View Response</span>
+                  <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </summary>
+                <div class="vw-tx-subpanel-body">
+                  <div class="vw-tx-box-label">Response</div>
+                  <div class="vw-tx-json-box">
+                    <pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.res))}</code></pre>
+                  </div>
+                </div>
+              </details>
             </div>
           </div>
-        </div>`).join('')}
+        </details>
+      `).join('')}
     </div>`;
 }
+
 
 function viewTarget() {
   const T = TRANSCRIPT;
@@ -652,12 +681,11 @@ function viewTarget() {
     <div class="row-t" style="align-items:stretch">
       ${card(`${headSm('Run history')}
         <div style="margin-top:var(--vw-space-md)">
-        ${table([{ t: 'Run' }, { t: 'Started' }, { t: 'Elapsed' }, { t: 'Steps' }, { t: 'Outcome' }, { t: 'What changed' }, { t: '' }],
+        ${table([{ t: 'Run' }, { t: 'Started' }, { t: 'Elapsed' }, { t: 'Steps' }, { t: 'Outcome' }, { t: 'What changed' }],
           RUN_HISTORY.map(r => [
             `<span class="mono">#${r.run}</span>`, `<span class="num">${r.at}</span>`, `<span class="num">${r.dur}</span>`,
             r.steps, chip(r.out, r.chip),
-            `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`,
-            `<button class="nst-btn nst-btn--xs${r.run === TXRUN ? ' nst-btn--filled' : ''}" data-run="${r.run}">${r.run === TXRUN ? 'Viewing' : 'View'}</button>`
+            `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
           ]))}
         </div>`, 'grow')}
 
@@ -676,12 +704,8 @@ function viewTarget() {
     </div>
 
     ${card(`
-      <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
+      <div style="margin-bottom:var(--vw-space-md)">
         ${head('Collector transcript')}
-        <div class="seg">
-          <button class="${TXRUN === 4412 ? 'is-on' : ''}" data-run="4412">Run #4412 · clean</button>
-          <button class="${TXRUN === 4364 ? 'is-on' : ''}" data-run="4364">Run #4364 · partial</button>
-        </div>
       </div>
       <div id="txbody">${txBody()}</div>`)}
   </div>`;
@@ -1335,7 +1359,7 @@ function locList() {
     </div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
-        `${chip('214 not reconciled','warning')}${chip('34 failed','error')}`,
+        '',
         [], 'location')}
 
       ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
@@ -1600,8 +1624,9 @@ function viewSite() {
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
-          ...(hasNodeView(rows[i].type) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
+          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
+          A('Open site', { v:'site', l:rows[i].loc || l.name }),
           A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
