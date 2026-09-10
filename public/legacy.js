@@ -4891,7 +4891,8 @@ function viewVnfDetails() {
         `<span class="mono">${r[2]}</span>`,
         `<span class="mono">${r[3]}</span>`,
         `<span class="num">${r[4]}</span>`
-      ]))}
+      ]), '',
+      i => [A('View details', { v: key === 'cell4g' ? 'cell4gdetails' : 'cell5gdetails', l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details`, q: `cell=${encodeURIComponent(rows[i][3])}` })])}
   `);
 
   return `<div class="page">
@@ -4915,6 +4916,160 @@ function viewVnfDetails() {
       : tab === 'cell4g' ? renderCellTable(cell4gRows, 'cell4g')
       : tab === 'vdu5g' ? renderGrid(vdu5gFields)
       : renderCellTable(cell5gRows, 'cell5g')}
+  </div>`;
+}
+
+/* ── Cell 4G & 5G Details Views ───────────────────────── */
+let CELL_4G_NAME = null;
+let CELL_5G_NAME = null;
+
+function viewCell4gDetails() {
+  const cellName = CELL_4G_NAME || 'LTSQC0102011-000-2100-1-000-OMACC';
+  const fields = [
+    ['hostSiteID', 'BGLK-277'],
+    ['coverageSiteId', 'NTSON3435004'],
+    ['neId', '1000829004'],
+    ['neName', 'NTSON1000829004'],
+
+    ['enodebId', '102011'],
+    ['enodebName', 'LTSQC0102011'],
+    ['neType', 'Macro'],
+    ['longitude', '-74.039527'],
+
+    ['latitude', '45.808083'],
+    ['height', '44'],
+    ['mcc1', '302'],
+    ['mnc1', '220'],
+
+    ['mcc2', '302'],
+    ['mnc2', '610'],
+    ['mcc3', '-'],
+    ['mnc3', '-'],
+
+    ['cduConfig', '-'],
+    ['sector', '1137'],
+    ['cellNumber', '1'],
+    ['cellName', cellName],
+
+    ['pci', '0'],
+    ['txrxMode', '4T4R'],
+    ['dlOnly', 'N'],
+    ['numberOfRfBranchesUL', 'n4-rx-antenna-count'],
+
+    ['earfcnDl', '2325'],
+    ['earfcnUl', '20325'],
+    ['bandName', '4'],
+    ['cellBandCarrier', '2100mhz_band4'],
+
+    ['bandwidth', '-'],
+    ['bandwidth2', '-'],
+    ['crs', 'n4'],
+    ['tac', '2D87'],
+
+    ['MaxTransmitPower(0.1)PerPort', '-'],
+    ['referenceSignalPower', '152'],
+    ['powerBoost3dB', 'N'],
+    ['PrachConfig(ZCZC)', '11'],
+
+    ['cellRadius', '12200'],
+    ['preambleFormat', '1'],
+    ['rsi', '0'],
+    ['hardwareConfig', 'Juniper CHR'],
+
+    ['ruModel', 'ORU6229'],
+    ['materialId', '2416683'],
+    ['vendorName', 'Samsung ORAN']
+  ];
+
+  return `<div class="page">
+    ${drillBar()}
+    <div class="card" style="padding:var(--vw-space-xl)">
+      <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:var(--vw-space-xl);color:var(--vw-color-gray-900)">Cell 4G details</h2>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
+        ${fields.map(([k, v]) => `<div>
+          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:400">${k}</div>
+          <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewCell5gDetails() {
+  const cellName = CELL_5G_NAME || 'NTSLB1436091-OTSLB100275001-OMACC';
+  const fields = [
+    ['hostSite', 'BGLK-277'],
+    ['coverageSite', 'NTSON34350044'],
+    ['neId', '100275001'],
+    ['neName', 'OTSLB100275001'],
+
+    ['duld', '1436091'],
+    ['cellIdentity', '4096'],
+    ['cellNumber', '0'],
+    ['cellName', cellName],
+
+    ['nrPci', '191'],
+    ['nrEarfcnDl', '126400'],
+    ['nrEarfcnUl', '135600'],
+    ['nrBandName', '71'],
+
+    ['nrBandwidth', '10'],
+    ['numberOfRfBranchesDL', 'dl-antenna-count-4tx'],
+    ['numberOfRfBranchesUL', 'ul-antenna-count-4rx'],
+    ['numberOfRxPathsPerRU', '4'],
+
+    ['prachRsi', '191'],
+    ['prachZczc', '12'],
+    ['prachConfigurationIndex', '18'],
+    ['nrCellRadius', '10000'],
+
+    ['prachSsbPerRo', 'ssb-per-ro-one-choice'],
+    ['numberOfTxSsb', '1'],
+    ['dlMaxTxPower', '430'],
+    ['latitude', '43.77725'],
+
+    ['longitude', '-79.25134'],
+    ['HardwareConfig', '-'],
+    ['ruModel', '-'],
+    ['materialId', '-'],
+
+    ['vendorName', '-'],
+    ['materialDescription', '-'],
+    ['ruName', 'LB0009-RU-0001'],
+    ['ruld', '1'],
+
+    ['druElementId', '-'],
+    ['druElementAlias', '-'],
+    ['retModel', '-'],
+    ['antennaVendor', '-'],
+
+    ['antennaModel', '-'],
+    ['electricalTilt', '-'],
+    ['mechanicalTilt', '-'],
+    ['Azimuth', '-'],
+
+    ['retName', '-'],
+    ['tac1', '0091B7'],
+    ['tac2', '-'],
+    ['tac3', '-'],
+
+    ['ssbBlock', '1580'],
+    ['Period', '20ms'],
+    ['gscnOffset', '0'],
+    ['coreset0Index', '8']
+  ];
+
+  return `<div class="page">
+    ${drillBar()}
+    <div class="card" style="padding:var(--vw-space-xl)">
+      <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:var(--vw-space-xl);color:var(--vw-color-gray-900)">Cell 5G details</h2>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
+        ${fields.map(([k, v]) => `<div>
+          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:400">${k}</div>
+          <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
+        </div>`).join('')}
+      </div>
+    </div>
   </div>`;
 }
 
@@ -6884,6 +7039,8 @@ const VIEWS = {
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
+  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 4G · View', render:viewCell4gDetails },
+  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 5G · View', render:viewCell5gDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -6894,7 +7051,8 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual',
+                  cell4gdetails: 'virtual', cell5gdetails: 'virtual' };
 
 const _el = id => document.getElementById(id) || document.createElement('div');
 let viewEl, crumbEl, modEl;
@@ -6967,6 +7125,8 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
   if (view === 'vnfdetails') { if (p.name) VNF_DETAIL_ID = decodeURIComponent(p.name); if (p.tab) VNF_DETAIL_TAB = p.tab; }
+  if (view === 'cell4gdetails') { if (p.cell) CELL_4G_NAME = decodeURIComponent(p.cell); }
+  if (view === 'cell5gdetails') { if (p.cell) CELL_5G_NAME = decodeURIComponent(p.cell); }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
@@ -7036,6 +7196,7 @@ function go(k) {
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
+    : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
@@ -7549,6 +7710,8 @@ window.__nsLegacy = {
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
     if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
+    if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
+    if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed

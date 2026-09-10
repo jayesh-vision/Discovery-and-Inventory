@@ -17,6 +17,8 @@ const VIEWS = {
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
+  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 4G · View', render:viewCell4gDetails },
+  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 5G · View', render:viewCell5gDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -27,7 +29,8 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual',
+                  cell4gdetails: 'virtual', cell5gdetails: 'virtual' };
 
 const viewEl = document.getElementById('view'),
       crumbEl = document.getElementById('crumb'),
@@ -101,6 +104,8 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
   if (view === 'vnfdetails') { if (p.name) VNF_DETAIL_ID = decodeURIComponent(p.name); if (p.tab) VNF_DETAIL_TAB = p.tab; }
+  if (view === 'cell4gdetails') { if (p.cell) CELL_4G_NAME = decodeURIComponent(p.cell); }
+  if (view === 'cell5gdetails') { if (p.cell) CELL_5G_NAME = decodeURIComponent(p.cell); }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;
