@@ -57,10 +57,10 @@ function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
   const fromName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
-  applyDrillQuery(view, q);
+  applyDrillQuery(view, q, label);
   go(view);
 }
-function applyDrillQuery(view, q) {
+function applyDrillQuery(view, q, label) {
   const p = {};
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
@@ -85,7 +85,16 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
-  if (view === 'node')     { if (p.tab) NODE_TAB = p.tab; }
+  if (view === 'node')     {
+    if (p.tab) NODE_TAB = p.tab;
+    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
+    if (targetNode) {
+      NODE_ID = decodeURIComponent(targetNode).trim();
+      NODE_PERF = '24h';
+      NODE_ALERT_TAB = 'alerts';
+      NODE_LINK_PROTO = 'LLDP';
+    }
+  }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {

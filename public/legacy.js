@@ -3235,7 +3235,7 @@ function viewHome() {
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
         ]), '',
-        i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}` }),
+        i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('Open element', { v:'resource', l:PHY.router[i].name }),
               A('Open site', { v:'site', l:PHY.router[i].loc }),
               A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' })])}`)}
@@ -3953,7 +3953,7 @@ function viewSite() {
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
+          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
           A('Open site', { v:'site', l:rows[i].loc || l.name }),
           A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
@@ -4265,7 +4265,7 @@ function viewPhysical() {
         }), '',
         i => rows[i].stock === 'decomm'
           ? []
-          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}` })] : []),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc }),
              A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })])}
@@ -5357,12 +5357,79 @@ const nint = (s, i, lo, hi) => Math.round(nrand(s, i, lo, hi));
 
 /* find the element wherever it lives in the estate */
 function nodeRecord(name) {
-  for (const k of Object.keys(PHY)) {
-    const r = (PHY[k] || []).find(x => x.name === name);
-    if (r) return { ...r, cls: k };
+  if (!name) name = NODE_ID;
+  const rawName = String(name);
+  const clean = decodeURIComponent(rawName).trim().toUpperCase();
+
+  if (typeof PHY !== 'undefined' && PHY) {
+    for (const k of Object.keys(PHY)) {
+      const found = (PHY[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+      if (found) return { ...found, cls: k };
+    }
   }
-  const r = PHY.router[0];
-  return { ...r, cls: 'router' };
+
+  if (typeof LOCATIONS !== 'undefined' && Array.isArray(LOCATIONS)) {
+    for (const loc of LOCATIONS) {
+      if (typeof siteNE === 'function') {
+        const neObj = siteNE(loc.id, loc.ne, loc.disc);
+        for (const k of Object.keys(neObj)) {
+          const found = (neObj[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+          if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id };
+        }
+      }
+    }
+  }
+
+  if (typeof REC_ROWS !== 'undefined' && Array.isArray(REC_ROWS)) {
+    const found = REC_ROWS.find(x => (x.name && String(x.name).trim().toUpperCase() === clean) ||
+      (x.inv && x.inv.name && String(x.inv.name).trim().toUpperCase() === clean) ||
+      (x.net && x.net.name && String(x.net.name).trim().toUpperCase() === clean));
+    if (found) {
+      const rec = found.inv || found.net || found;
+      return {
+        name: rec.name || rawName,
+        ip: rec.ip || '172.31.33.100',
+        oem: rec.oem || 'JUNIPER',
+        model: rec.model || 'MX960',
+        os: rec.os || '21.2R3-S8.5',
+        sn: rec.sn || 'JN1236F87AFB',
+        loc: rec.loc || 'DEL-279',
+        cls: (rec.cls || 'router').toLowerCase(),
+        st: rec.st || 'ok'
+      };
+    }
+  }
+
+  if (typeof TRANSCRIPT !== 'undefined' && TRANSCRIPT && TRANSCRIPT.host && String(TRANSCRIPT.host).trim().toUpperCase() === clean) {
+    return {
+      name: TRANSCRIPT.host,
+      ip: TRANSCRIPT.ip,
+      oem: 'JUNIPER',
+      model: 'MX960',
+      os: '21.2R3-S8.5',
+      sn: 'JN1236F87AFB',
+      loc: 'DEL-279',
+      cls: 'router',
+      st: 'ok'
+    };
+  }
+
+  const isSw = clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR');
+  const isDwdm = clean.includes('DWDM') || clean.includes('OPT');
+  const cls = isSw ? 'switch' : isDwdm ? 'dwdm' : 'router';
+  const oem = clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
+    : clean.startsWith('N') || clean.includes('NOKIA') || clean.includes('7750') ? 'NOKIA'
+    : clean.includes('HPE') || clean.includes('DELL') ? 'HPE'
+    : 'JUNIPER';
+  const model = oem === 'CISCO' ? (clean.includes('540') ? 'NCS-540' : 'ASR920')
+    : oem === 'NOKIA' ? '7750'
+    : clean.includes('204') ? 'MX204' : clean.includes('2200') ? 'ACX2200' : 'MX960';
+  const os = oem === 'CISCO' ? '17.9.4' : oem === 'NOKIA' ? 'TiMOS-C-22.10' : '21.2R3-S8.5';
+  const ip = `172.31.${nint(rawName, 1, 10, 99)}.${nint(rawName, 2, 10, 250)}`;
+  const sn = `${oem.slice(0,2)}${nint(rawName, 3, 100000, 999999)}AFB`;
+  const loc = `${clean.slice(0,3)}-${nint(rawName, 4, 100, 400)}`;
+
+  return { name: rawName, ip, oem, model, os, sn, loc, cls, st: 'ok', stock: 'deployed', v: 3 };
 }
 
 const NODE_CLASS = {
@@ -5819,11 +5886,19 @@ function nodeThumb(cls) {
 }
 function nodeHeader(N) {
   const r = N.r, sw = N.cls === 'switch';
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
+  const rackLoc = r.rack ? `Rack ${r.rack}` : sw ? `POP-${r.loc}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`;
+
   const cells = [
-    ['Vendor', r.oem], ['OS version', r.os], ['Serial number', r.sn],
-    [sw ? 'POP ID' : 'Rack location', sw ? `POP-${r.loc}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`],
-    ['Model', r.model], ['IP address', r.ip],
-    ['MAC address', `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`]
+    ['Vendor', r.oem || '—'],
+    ['OS version', r.os || '—'],
+    ['Serial number', r.sn || '—'],
+    [sw ? 'POP ID' : 'Rack location', rackLoc],
+    ['Model', r.model || '—'],
+    ['IP address', r.ip || '—'],
+    ['MAC address', macAddr]
   ];
   return card(`
     <div class="nv-head">
@@ -5833,7 +5908,7 @@ function nodeHeader(N) {
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm)">
           <span class="vw-card-title">${N.name}</span>
-          ${chip(N.ready, N.ready === 'Ready' ? 'success' : 'warning')}
+          ${chip(stLabel, stTone)}
           ${chip(N.meta.n, 'neutral')}
         </div>
         <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>
@@ -6468,10 +6543,10 @@ function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
   const fromName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
-  applyDrillQuery(view, q);
+  applyDrillQuery(view, q, label);
   go(view);
 }
-function applyDrillQuery(view, q) {
+function applyDrillQuery(view, q, label) {
   const p = {};
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
@@ -6496,7 +6571,16 @@ function applyDrillQuery(view, q) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
-  if (view === 'node')     { if (p.tab) NODE_TAB = p.tab; }
+  if (view === 'node')     {
+    if (p.tab) NODE_TAB = p.tab;
+    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
+    if (targetNode) {
+      NODE_ID = decodeURIComponent(targetNode).trim();
+      NODE_PERF = '24h';
+      NODE_ALERT_TAB = 'alerts';
+      NODE_LINK_PROTO = 'LLDP';
+    }
+  }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
 }
 function clearDrill() {

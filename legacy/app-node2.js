@@ -15,11 +15,19 @@ function nodeThumb(cls) {
 }
 function nodeHeader(N) {
   const r = N.r, sw = N.cls === 'switch';
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
+  const rackLoc = r.rack ? `Rack ${r.rack}` : sw ? `POP-${r.loc}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`;
+
   const cells = [
-    ['Vendor', r.oem], ['OS version', r.os], ['Serial number', r.sn],
-    [sw ? 'POP ID' : 'Rack location', sw ? `POP-${r.loc}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`],
-    ['Model', r.model], ['IP address', r.ip],
-    ['MAC address', `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`]
+    ['Vendor', r.oem || '—'],
+    ['OS version', r.os || '—'],
+    ['Serial number', r.sn || '—'],
+    [sw ? 'POP ID' : 'Rack location', rackLoc],
+    ['Model', r.model || '—'],
+    ['IP address', r.ip || '—'],
+    ['MAC address', macAddr]
   ];
   return card(`
     <div class="nv-head">
@@ -29,7 +37,7 @@ function nodeHeader(N) {
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm)">
           <span class="vw-card-title">${N.name}</span>
-          ${chip(N.ready, N.ready === 'Ready' ? 'success' : 'warning')}
+          ${chip(stLabel, stTone)}
           ${chip(N.meta.n, 'neutral')}
         </div>
         <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>

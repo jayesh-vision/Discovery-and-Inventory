@@ -21,12 +21,79 @@ const nint = (s, i, lo, hi) => Math.round(nrand(s, i, lo, hi));
 
 /* find the element wherever it lives in the estate */
 function nodeRecord(name) {
-  for (const k of Object.keys(PHY)) {
-    const r = (PHY[k] || []).find(x => x.name === name);
-    if (r) return { ...r, cls: k };
+  if (!name) name = NODE_ID;
+  const rawName = String(name);
+  const clean = decodeURIComponent(rawName).trim().toUpperCase();
+
+  if (typeof PHY !== 'undefined' && PHY) {
+    for (const k of Object.keys(PHY)) {
+      const found = (PHY[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+      if (found) return { ...found, cls: k };
+    }
   }
-  const r = PHY.router[0];
-  return { ...r, cls: 'router' };
+
+  if (typeof LOCATIONS !== 'undefined' && Array.isArray(LOCATIONS)) {
+    for (const loc of LOCATIONS) {
+      if (typeof siteNE === 'function') {
+        const neObj = siteNE(loc.id, loc.ne, loc.disc);
+        for (const k of Object.keys(neObj)) {
+          const found = (neObj[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+          if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id };
+        }
+      }
+    }
+  }
+
+  if (typeof REC_ROWS !== 'undefined' && Array.isArray(REC_ROWS)) {
+    const found = REC_ROWS.find(x => (x.name && String(x.name).trim().toUpperCase() === clean) ||
+      (x.inv && x.inv.name && String(x.inv.name).trim().toUpperCase() === clean) ||
+      (x.net && x.net.name && String(x.net.name).trim().toUpperCase() === clean));
+    if (found) {
+      const rec = found.inv || found.net || found;
+      return {
+        name: rec.name || rawName,
+        ip: rec.ip || '172.31.33.100',
+        oem: rec.oem || 'JUNIPER',
+        model: rec.model || 'MX960',
+        os: rec.os || '21.2R3-S8.5',
+        sn: rec.sn || 'JN1236F87AFB',
+        loc: rec.loc || 'DEL-279',
+        cls: (rec.cls || 'router').toLowerCase(),
+        st: rec.st || 'ok'
+      };
+    }
+  }
+
+  if (typeof TRANSCRIPT !== 'undefined' && TRANSCRIPT && TRANSCRIPT.host && String(TRANSCRIPT.host).trim().toUpperCase() === clean) {
+    return {
+      name: TRANSCRIPT.host,
+      ip: TRANSCRIPT.ip,
+      oem: 'JUNIPER',
+      model: 'MX960',
+      os: '21.2R3-S8.5',
+      sn: 'JN1236F87AFB',
+      loc: 'DEL-279',
+      cls: 'router',
+      st: 'ok'
+    };
+  }
+
+  const isSw = clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR');
+  const isDwdm = clean.includes('DWDM') || clean.includes('OPT');
+  const cls = isSw ? 'switch' : isDwdm ? 'dwdm' : 'router';
+  const oem = clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
+    : clean.startsWith('N') || clean.includes('NOKIA') || clean.includes('7750') ? 'NOKIA'
+    : clean.includes('HPE') || clean.includes('DELL') ? 'HPE'
+    : 'JUNIPER';
+  const model = oem === 'CISCO' ? (clean.includes('540') ? 'NCS-540' : 'ASR920')
+    : oem === 'NOKIA' ? '7750'
+    : clean.includes('204') ? 'MX204' : clean.includes('2200') ? 'ACX2200' : 'MX960';
+  const os = oem === 'CISCO' ? '17.9.4' : oem === 'NOKIA' ? 'TiMOS-C-22.10' : '21.2R3-S8.5';
+  const ip = `172.31.${nint(rawName, 1, 10, 99)}.${nint(rawName, 2, 10, 250)}`;
+  const sn = `${oem.slice(0,2)}${nint(rawName, 3, 100000, 999999)}AFB`;
+  const loc = `${clean.slice(0,3)}-${nint(rawName, 4, 100, 400)}`;
+
+  return { name: rawName, ip, oem, model, os, sn, loc, cls, st: 'ok', stock: 'deployed', v: 3 };
 }
 
 const NODE_CLASS = {
