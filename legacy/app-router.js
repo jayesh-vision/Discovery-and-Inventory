@@ -271,8 +271,6 @@ document.addEventListener('click', e => {
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
 
-  const bn = e.target.closest('[data-back-nav]');
-  if (bn) { go(bn.dataset.backNav); return; }
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');

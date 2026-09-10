@@ -428,6 +428,79 @@ path.st.has-c:hover { fill-opacity: .78; }
 .site-meta { display: grid; gap: var(--vw-space-md); grid-template-columns: repeat(4, minmax(0,1fr)); }
 @media (max-width: 1100px) { .site-meta { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 @media (max-width: 760px)  { .site-meta { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 480px)  { .site-meta { grid-template-columns: 1fr; } }
+
+/* ── resource-detail screens (Virtual element / Cell 4G / Cell 5G) ──────
+   A shared header, summary strip, grouped-section grid and pill tab bar —
+   see resourceHead()/resourceSummary()/detailSection() in app-views.js. */
+.resdetail-head { padding: var(--vw-space-lg) var(--vw-space-xl); border-radius: var(--vw-radius-lg); }
+.resdetail-kind { display: inline-block; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-sky-700);
+  background: var(--vw-color-sky-50); text-transform: uppercase; letter-spacing: .03em;
+  padding: 3px 8px; border-radius: var(--vw-radius-full); margin-bottom: 8px; }
+.resdetail-name { font-size: 1.375rem; font-weight: 600; color: var(--vw-color-gray-900); margin: 0; line-height: 1.25; }
+.resdetail-meta-row { display: flex; gap: var(--vw-space-xl); flex-wrap: wrap;
+  margin-top: var(--vw-space-md); padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-gray-100); }
+
+.resdetail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--vw-space-sm); }
+.resdetail-summary-item { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-md); padding: 0.625rem 0.875rem; min-width: 0; }
+.resdetail-summary-item .vw-label { display: block; margin-bottom: 2px; }
+.resdetail-summary-item .vw-value { font-size: 0.9375rem; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.status-badge { flex-shrink: 0; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* the section cards flow into a 2-up column set (see renderSectionedGrid in
+   app-views.js) so a wide page doesn't sit half-empty with one full-width
+   card per section; each card avoids splitting across the column break */
+.detail-sections-grid { columns: 2; column-gap: var(--vw-space-md); }
+@media (max-width: 900px) { .detail-sections-grid { columns: 1; } }
+.detail-sections-grid .detail-section { break-inside: avoid; margin-bottom: var(--vw-space-md); }
+
+.detail-section { padding: var(--vw-space-lg) var(--vw-space-xl); }
+.detail-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: var(--vw-space-md);
+  padding-bottom: var(--vw-space-sm); border-bottom: 1px solid var(--vw-color-gray-100); }
+.detail-section-accent { width: 4px; height: 14px; background: var(--vw-color-sky-500); border-radius: 2px;
+  display: inline-block; flex-shrink: 0; }
+.detail-section-count { margin-left: auto; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-gray-500);
+  background: var(--vw-color-slate-100); padding: 2px 8px; border-radius: var(--vw-radius-full); flex-shrink: 0; }
+.detail-section-empty { font-size: 0.8125rem; color: var(--vw-color-gray-400); padding: 2px 0 4px; }
+/* a section card is narrower once it's sharing the row with another, so its
+   own field grid adapts to however many columns actually fit rather than
+   forcing site-meta's page-width 4-column default */
+.detail-section .site-meta { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+.detail-field-vrow { align-items: center; gap: 4px; }
+.detail-field-vrow .vw-value { min-width: 0; }
+.detail-field-copy { flex-shrink: 0; border: 0; background: transparent; cursor: pointer; padding: 2px;
+  border-radius: 4px; display: inline-flex; color: var(--vw-color-gray-400); }
+.detail-field-copy:hover { color: var(--vw-color-gray-700); background: var(--vw-color-slate-100); }
+.vw-value.is-empty, .resdetail-summary-item .vw-value.is-empty { color: var(--vw-color-gray-400); font-weight: 400; }
+
+/* the disclosure for a section's unconfigured fields — collapsed by default */
+.detail-more { margin-top: var(--vw-space-sm); }
+.detail-more summary { cursor: pointer; font-size: 0.8125rem; color: var(--vw-color-gray-500); font-weight: 500;
+  list-style: none; padding: 6px 0; user-select: none; }
+.detail-more summary::-webkit-details-marker { display: none; }
+.detail-more summary::before { content: '\203a'; display: inline-block; margin-right: 6px; transition: transform .15s ease; }
+.detail-more[open] summary::before { transform: rotate(90deg); }
+.detail-more summary:hover { color: var(--vw-color-gray-800); }
+.detail-more .site-meta { margin-top: var(--vw-space-xs); padding-top: var(--vw-space-sm); border-top: 1px dashed var(--vw-color-gray-100); }
+
+/* a computed, data-driven signal (filled fields / total) rather than
+   another raw field — flags a thinly-populated record at a glance */
+.resdetail-completeness { margin-top: var(--vw-space-md); padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-gray-100); }
+.resdetail-completeness .hbar-track { height: 6px; margin-top: 4px; }
+
+/* a pill-style tab bar reserved for resource-detail screens — a modifier so
+   every other .tabbar in the app (Passive, Links, Site, Node, ...) is unaffected */
+.tabbar--detail { display: inline-flex; gap: 2px; border-bottom: 0; padding: 4px;
+  background: var(--vw-color-slate-100); border-radius: var(--vw-radius-lg); width: fit-content; max-width: 100%; }
+.tabbar--detail .tab { padding: 0.5rem 1rem; border-radius: var(--vw-radius-md); border-bottom: 0; font-weight: 500; }
+.tabbar--detail .tab:hover { color: var(--vw-color-gray-900); background: rgba(255,255,255,.6); }
+.tabbar--detail .tab.is-on { background: var(--vw-color-white); color: var(--vw-color-gray-900); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+.tabbar--detail .tab:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
+@media (max-width: 640px) { .resdetail-meta-row { gap: var(--vw-space-md); } }
 .pin { cursor: pointer; pointer-events: all; }
 .pin circle { pointer-events: all; }
 .pin:hover circle:last-of-type { stroke-width: 3; }

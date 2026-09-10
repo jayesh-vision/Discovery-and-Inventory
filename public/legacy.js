@@ -4828,6 +4828,168 @@ function viewVirtual() {
   </div>`;
 }
 
+/* ── shared resource-detail UI ────────────────────────────
+   Virtual element details, Cell 4G details and Cell 5G details are all the
+   same shape underneath — one resource, a status, and a pile of read-only
+   fields the raw prototype used to dump into a single flat grid with their
+   machine-case key as the label. This block gives all three a common,
+   properly-structured treatment: a real header with a dynamic status badge,
+   a compact summary of the fields that actually matter, fields grouped into
+   named sections, humanised labels, a technical/business type distinction,
+   an honest "Not available" for missing data, and truncation-with-tooltip
+   plus copy-to-clipboard for the identifiers a reader would want to grab. */
+
+const LABEL_ACRONYMS = new Set(['id','ip','mac','tac','pci','ne','du','ru','bts','dl','ul','rf',
+  'mcc','mnc','rsi','crs','ssb','gscn','ric','oss','nr','earfcn','vlan','sfp','cdu','prach','zczc']);
+function humanizeLabel(key) {
+  return String(key).split('/').map(seg => {
+    const words = seg
+      .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .split(/[\s_-]+/).filter(Boolean);
+    return words.map(w => LABEL_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }).join(' / ');
+}
+/* identifiers a reader would copy/paste rather than read as prose — these
+   get the monospace treatment and a copy button; everything else stays in
+   the page's normal proportional type, per "don't mono the whole page" */
+const TECH_FIELD_RE = /id|mac|serial|reference|material|host|enodeb|earfcn|pci|tac|imei|imsi|cell(name|identity|number)|^ne(name|id)$/i;
+
+function statusTone(s) {
+  const t = String(s || '').toLowerCase();
+  if (/fail|error|down|critical/.test(t)) return 'error';
+  if (/warn|degrad|drift/.test(t)) return 'warning';
+  if (/ready|active|running|verified|on-air|deployed|complete/.test(t)) return 'success';
+  if (/pending|progress|build|plan/.test(t)) return 'info';
+  return 'neutral';
+}
+const statusBadge = s => `<span class="vw-chip vw-chip--${statusTone(s)} status-badge"><span class="status-dot"></span>${esc(s || 'Unknown')}</span>`;
+
+/* a small, consistent colour per information category — lets the reader
+   spot "this is the Hardware block" or "this is Location" from the corner
+   of the eye while scrolling, instead of every section reading identically */
+function sectionTone(title) {
+  const t = title.toLowerCase();
+  if (/location|general|site/.test(t)) return 'sky';
+  if (/identity|identifier/.test(t)) return 'indigo';
+  if (/technology|coverage|radio|frequency|carrier|prach/.test(t)) return 'purple';
+  if (/hardware|equipment/.test(t)) return 'orange';
+  if (/vendor/.test(t)) return 'teal';
+  if (/network|interface|power/.test(t)) return 'cyan';
+  if (/configuration/.test(t)) return 'emerald';
+  return 'slate';
+}
+
+const detailField = ([k, v]) => {
+  const empty = v === '-' || v === '' || v == null;
+  const label = humanizeLabel(k);
+  const technical = TECH_FIELD_RE.test(k);
+  return `<div class="meta-cell detail-field">
+    <span class="vw-label">${esc(label)}</span>
+    <span class="row detail-field-vrow">
+      <span class="vw-value${technical && !empty ? ' mono' : ''}${empty ? ' is-empty' : ''}"${!empty ? ` title="${esc(v)}"` : ''}>${empty ? 'Not available' : esc(v)}</span>
+      ${!empty && technical ? `<button class="detail-field-copy" data-copy="${esc(v)}" aria-label="Copy ${esc(label)}" title="Copy ${esc(label)}">${kIcon('Copy')}</button>` : ''}
+    </span>
+  </div>`;
+};
+const detailFieldGrid = fields => `<div class="site-meta detail-field-grid">${fields.map(detailField).join('')}</div>`;
+const isFilled = ([, v]) => v !== '-' && v !== '' && v != null;
+
+/* a section leads with what's actually there; fields the record simply
+   doesn't carry sit behind a closed disclosure instead of padding the page
+   out with rows of "Not available" — the count badge is the section's own
+   completeness signal at a glance, and every field is still one click away,
+   never dropped */
+const detailSection = (title, fields) => {
+  const populated = fields.filter(isFilled);
+  const empty = fields.filter(f => !isFilled(f));
+  return `<div class="card detail-section" style="border-top:3px solid ${cv(sectionTone(title), 400)}">
+  <div class="detail-section-head">
+    <span class="detail-section-accent" style="background:${cv(sectionTone(title), 500)}"></span>
+    <span class="vw-card-title-sm">${esc(title)}</span>
+    ${fields.length ? `<span class="detail-section-count">${populated.length}/${fields.length}</span>` : ''}
+  </div>
+  ${populated.length ? detailFieldGrid(populated)
+    : `<div class="detail-section-empty">No configuration data available for this section yet.</div>`}
+  ${empty.length ? `<details class="detail-more">
+    <summary>+${empty.length} more field${empty.length === 1 ? '' : 's'} · not configured</summary>
+    ${detailFieldGrid(empty)}
+  </details>` : ''}
+</div>`;
+};
+/* flows the section cards into a responsive 2-up column set instead of one
+   full-width card per section — most sections here are short enough that a
+   single column just leaves the other half of a wide page empty */
+const renderSectionedGrid = sections => {
+  const cards = sections.filter(s => s.fields.length).map(sec => detailSection(sec.title, sec.fields)).join('');
+  return `<div class="detail-sections-grid">${cards}</div>`;
+};
+
+function completenessOf(fields) {
+  const total = fields.length;
+  const filled = fields.filter(isFilled).length;
+  return { total, filled, pct: total ? Math.round(filled / total * 100) : 0 };
+}
+
+/* fills each named section from the field list by key (case-insensitive);
+   a field the schema doesn't name still surfaces under "Other" instead of
+   silently vanishing if the data model ever grows past this list */
+function groupFieldsBySchema(fields, schema) {
+  const map = new Map(fields.map(([k, v]) => [k.toLowerCase(), [k, v]]));
+  const used = new Set();
+  const sections = schema.map(sec => ({
+    title: sec.title,
+    fields: sec.keys.map(k => { const hit = map.get(k.toLowerCase()); if (hit) used.add(hit[0].toLowerCase()); return hit; }).filter(Boolean)
+  }));
+  const leftover = fields.filter(([k]) => !used.has(k.toLowerCase()));
+  if (leftover.length) sections.push({ title: 'Other', fields: leftover });
+  return sections;
+}
+const pickFields = (fields, keys) => {
+  const map = new Map(fields.map(([k, v]) => [k.toLowerCase(), [k, v]]));
+  return keys.map(k => map.get(k.toLowerCase())).filter(Boolean);
+};
+
+/* one header for every resource-detail screen: the resource's own name and
+   kind, a dynamic status badge, and a compact meta row — replaces each
+   screen's own one-off "Status / Name / ..." row. Going back up the chain
+   is the topbar breadcrumb's job alone (Resources > Virtual Resources >
+   View > ...) — it already links every prefix that names a real screen, so
+   a second, redundant "Back to X" button here would just be two controls
+   doing the same thing. */
+function resourceHead({ kind, name, status, meta, completeness }) {
+  const bar = completeness ? `<div class="resdetail-completeness">
+      <div class="row vw-justify-between"><span class="vw-label">Configuration completeness</span>
+        <span class="vw-value" style="font-size:0.8125rem">${completeness.filled} of ${completeness.total} fields · ${completeness.pct}%</span></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${completeness.pct}%;background:${
+        cv(completeness.pct >= 70 ? 'emerald' : completeness.pct >= 40 ? 'amber' : 'red', 400)}"></div></div>
+    </div>` : '';
+  return `<div class="card resdetail-head" style="border-left:3px solid ${cv('sky', 400)}">
+      <div class="row vw-justify-between" style="align-items:flex-start;gap:var(--vw-space-lg);flex-wrap:wrap">
+        <div>
+          <span class="resdetail-kind">${esc(kind)}</span>
+          <h1 class="resdetail-name">${esc(name)}</h1>
+        </div>
+        ${statusBadge(status)}
+      </div>
+      <div class="resdetail-meta-row">
+        ${meta.map(([k, v]) => `<div class="meta-cell"><span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span></div>`).join('')}
+      </div>
+      ${bar}
+    </div>`;
+}
+/* the handful of fields worth seeing before scrolling to the grouped detail
+   below — never invented, always a subset of the screen's own field list */
+const SUMMARY_PALETTE = ['sky', 'purple', 'teal', 'orange', 'indigo', 'cyan'];
+const resourceSummary = fields => fields.length ? `<div class="resdetail-summary">
+    ${fields.map(([k, v], i) => {
+      const empty = v === '-' || v === '' || v == null;
+      return `<div class="resdetail-summary-item" style="border-top:2px solid ${cv(SUMMARY_PALETTE[i % SUMMARY_PALETTE.length], 400)}">
+        <span class="vw-label">${esc(humanizeLabel(k))}</span><span class="vw-value${empty ? ' is-empty' : ''}">${empty ? 'Not available' : esc(v)}</span></div>`;
+    }).join('')}
+  </div>` : '';
+
 /* ── Virtual Element Details (View) ─────────────────────── */
 let VNF_DETAIL_ID = null;
 let VNF_DETAIL_TAB = 'vdu4g';
@@ -4939,14 +5101,21 @@ function viewVnfDetails() {
     ['BGLK-277', nf, '4096', 'NTSLB1436091-00-04096-00600-01-001-OMACC', '0']
   ];
 
-  const renderGrid = fields => `<div class="card" style="padding:var(--vw-space-xl)">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
-      ${fields.map(([k, v]) => `<div>
-        <div class="stat-k" style="font-size:0.8125rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:500">${k}</div>
-        <div class="vw-value" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-gray-900);word-break:break-word;font-family:var(--vw-font-mono)">${esc(v)}</div>
-      </div>`).join('')}
-    </div>
-  </div>`;
+  /* the raw fields carry a machine-case key that already tells us which
+     group they belong to — analysing the actual vdu4g/vdu5g field set (both
+     share the same 32 keys) gives this grouping, not an arbitrary guess */
+  const VDU_SECTIONS = [
+    { title: 'Identity', keys: ['HostSiteId', 'HostSiteName', 'ReferenceId', 'NeName', 'DuElementId/UserLabel', 'DuElementId', 'DuElementAlias'] },
+    { title: 'Location', keys: ['Latitude', 'Longitude', 'Region', 'Province'] },
+    { title: 'Technology & Coverage', keys: ['Technology', 'CoverageType', 'WorkType', 'Strategy', 'PlanId', 'Toycell'] },
+    { title: 'Hardware', keys: ['HardwareConfig', 'BtsModel', 'MaterialId', 'MaterialDescription', 'SerialNumber'] },
+    { title: 'Vendor', keys: ['Vendor', 'VendorName'] },
+    { title: 'Network & Interface', keys: ['Interface1Type', 'Interface1Speed', 'Interface2Type', 'Interface2Speed', 'MacAddress1', 'MacAddress2', 'PassCode'] },
+    { title: 'Configuration', keys: ['Status', 'BuildStatus'] }
+  ];
+  const VDU_SUMMARY_KEYS = ['Technology', 'Vendor', 'Region', 'Province', 'CoverageType', 'Status'];
+  const renderVdu = fields => `${resourceSummary(pickFields(fields, VDU_SUMMARY_KEYS))}
+    ${renderSectionedGrid(groupFieldsBySchema(fields, VDU_SECTIONS))}`;
 
   const renderCellTable = (rows, key) => card(`
     ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
@@ -4958,36 +5127,38 @@ function viewVnfDetails() {
         `<span class="mono">${r[3]}</span>`,
         `<span class="num">${r[4]}</span>`
       ]), '',
-      i => [A('View details', { v: key === 'cell4g' ? 'cell4gdetails' : 'cell5gdetails', l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details`, q: `cell=${encodeURIComponent(rows[i][3])}` })])}
+      /* the drill label names the specific cell, not just the screen kind —
+         the crumb chain already ends in "Cell 4G/5G details", so echoing
+         that same text as the label duplicated the last breadcrumb segment */
+      i => [A('View details', { v: key === 'cell4g' ? 'cell4gdetails' : 'cell5gdetails',
+        l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details · ${rows[i][3]}`, q: `cell=${encodeURIComponent(rows[i][3])}` })])}
   `);
 
-  return `<div class="page">
+  /* the header describes the VNF as a whole; vDU-4G and vDU-5G are its two
+     separate deployment tracks and can genuinely carry different statuses
+     (e.g. 4G ready while 5G is still building), so the badge follows
+     whichever of those two the reader is actually looking at — the cell
+     tabs are a list of records, not a single status, so they keep the
+     vDU-4G status as the resource's baseline */
+  const statusFields = tab === 'vdu5g' ? vdu5gFields : vdu4gFields;
+  const status = (pickFields(statusFields, ['Status'])[0] || [])[1];
+
+  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--vw-space-md)">
-      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="virtual" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span>Back to Virtual Resources</span>
-      </button>
-    </div>
+    ${resourceHead({
+      kind: 'Virtual Resource · VDU', name: nf, status,
+      meta: [['Site type', 'VDU'], ['Created', '13-Feb-2024'], ['Last modified', '22-Feb-2026']],
+      completeness: completenessOf(statusFields)
+    })}
 
-    <div class="card" style="margin-bottom:var(--vw-space-md);padding:var(--vw-space-md) var(--vw-space-lg)">
-      <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-xl);flex-wrap:wrap">
-        <div><span class="stat-k" style="display:block">Status</span><span class="vw-value" style="font-size:0.9375rem">Ready</span></div>
-        <div><span class="stat-k" style="display:block">Name</span><span class="vw-value" style="font-size:0.9375rem">${esc(nf)}</span></div>
-        <div><span class="stat-k" style="display:block">Site type</span><span class="vw-value" style="font-size:0.9375rem">VDU</span></div>
-        <div><span class="stat-k" style="display:block">Created on</span><span class="vw-value" style="font-size:0.9375rem">13-Feb-2024</span></div>
-        <div><span class="stat-k" style="display:block">MODIFIED_ON</span><span class="vw-value" style="font-size:0.9375rem">22-Feb-2026</span></div>
-      </div>
-    </div>
-
-    <div class="tabbar" style="margin-bottom:var(--vw-space-md)">
+    <div class="tabbar tabbar--detail">
       ${tabs.map(t => `<button class="tab${tab === t.k ? ' is-on' : ''}" data-vnfdetailtab="${t.k}">${t.n}</button>`).join('')}
     </div>
 
-    ${tab === 'vdu4g' ? renderGrid(vdu4gFields)
+    ${tab === 'vdu4g' ? renderVdu(vdu4gFields)
       : tab === 'cell4g' ? renderCellTable(cell4gRows, 'cell4g')
-      : tab === 'vdu5g' ? renderGrid(vdu5gFields)
+      : tab === 'vdu5g' ? renderVdu(vdu5gFields)
       : renderCellTable(cell5gRows, 'cell5g')}
   </div>`;
 }
@@ -4995,23 +5166,6 @@ function viewVnfDetails() {
 /* ── Cell 4G & 5G Details Views ───────────────────────── */
 let CELL_4G_NAME = null;
 let CELL_5G_NAME = null;
-
-function renderSectionedGrid(sections) {
-  return sections.map((sec, secIdx) => `
-    <div class="card" style="padding:var(--vw-space-xl);${secIdx > 0 ? 'margin-top:var(--vw-space-md);' : ''}">
-      <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-gray-900);margin-bottom:var(--vw-space-lg);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-xs)">
-        <span style="width:4px;height:16px;background:var(--vw-color-primary-600, #2563eb);border-radius:2px;display:inline-block"></span>
-        ${sec.title}
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
-        ${sec.fields.map(([k, v]) => `<div>
-          <div class="stat-k" style="font-size:0.8125rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:500">${k}</div>
-          <div class="vw-value" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-gray-900);word-break:break-word;font-family:var(--vw-font-mono)">${esc(v)}</div>
-        </div>`).join('')}
-      </div>
-    </div>
-  `).join('');
-}
 
 function viewCell4gDetails() {
   const cellName = CELL_4G_NAME || 'LTSQC0102011-000-2100-1-000-OMACC';
@@ -5086,25 +5240,24 @@ function viewCell4gDetails() {
     }
   ];
 
+  /* this data model has no lifecycle-status field of its own (a carrier
+     record inherits readiness from its parent vDU rather than tracking
+     one) — the badge stays a stable "Ready" rather than fabricating a
+     derived status the schema doesn't actually carry; band/site context
+     goes into the summary instead, pulled from real fields below */
+  const flatFields = sections.flatMap(s => s.fields);
+
   return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
-      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="vnfdetails" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span>Back to Virtual element details</span>
-      </button>
-      <div style="display:flex;gap:var(--vw-space-xs)">
-        ${chip('Ready', 'emerald')}
-        ${chip('LTE 4G', 'sky')}
-        ${chip('Macro', 'neutral')}
-      </div>
-    </div>
+    ${resourceHead({
+      kind: 'LTE cell · 4G', name: cellName, status: 'Ready',
+      meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1] ?? 'Not available'],
+        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1] ?? 'Not available']],
+      completeness: completenessOf(flatFields)
+    })}
 
-    <div class="card" style="padding:var(--vw-space-lg) var(--vw-space-xl)">
-      <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 4G details</h2>
-      <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
-    </div>
+    ${resourceSummary(pickFields(flatFields, ['coverageSiteId', 'neType', 'cellBandCarrier', 'txrxMode']))}
 
     ${renderSectionedGrid(sections)}
   </div>`;
@@ -5188,25 +5341,22 @@ function viewCell5gDetails() {
     }
   ];
 
+  /* same reasoning as Cell 4G details: no per-cell status field in this
+     data model, so the badge stays a stable "Ready" and band/site context
+     moves into the summary, pulled from real fields */
+  const flatFields = sections.flatMap(s => s.fields);
+
   return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
-      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="vnfdetails" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span>Back to Virtual element details</span>
-      </button>
-      <div style="display:flex;gap:var(--vw-space-xs)">
-        ${chip('Ready', 'emerald')}
-        ${chip('5G NR', 'purple')}
-        ${chip('Band 71', 'cyan')}
-      </div>
-    </div>
+    ${resourceHead({
+      kind: '5G NR cell', name: cellName, status: 'Ready',
+      meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1] ?? 'Not available'],
+        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1] ?? 'Not available']],
+      completeness: completenessOf(flatFields)
+    })}
 
-    <div class="card" style="padding:var(--vw-space-lg) var(--vw-space-xl)">
-      <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 5G details</h2>
-      <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
-    </div>
+    ${resourceSummary(pickFields(flatFields, ['coverageSite', 'nrBandwidth', 'cellIdentity', 'numberOfRxPathsPerRU']))}
 
     ${renderSectionedGrid(sections)}
   </div>`;
@@ -7454,8 +7604,6 @@ document.addEventListener('click', e => {
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
 
-  const bn = e.target.closest('[data-back-nav]');
-  if (bn) { go(bn.dataset.backNav); return; }
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');
