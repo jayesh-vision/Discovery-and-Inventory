@@ -916,7 +916,13 @@ button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
    scrolls internally rather than stretching the card past it. */
 .hier-cov-row { align-items: stretch; }
 .hier-cov-row > .vw-card-section { height: 680px; overflow: hidden; }
-.cov-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.cov-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md); }
+/* .cov-scroll is the one scroll container for the coverage table — the inner
+   .tbl-wrap must not cap itself to the JS-measured --grid-h (sizeGrid stamps
+   that on every grid in the view), or the list stops short of the card's
+   height and leaves a dead gap below. Its frame moves to .cov-scroll above. */
+.cov-scroll .tbl-wrap { max-height: none; overflow: visible; border: 0; border-radius: 0; }
 
 /* ── Coverage by circle · expandable row (see covCircleDetail()) ──
    Chevron, status dot, icon and name live together in one flex cell —

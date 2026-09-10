@@ -1027,7 +1027,6 @@ function hierarchySvg() {
       <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',500)}"></span>Datacenters</span>
       <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>PoP locations, by circle</span>
       <span class="legend-i"><span class="legend-sw" style="background:${cv('teal',500)}"></span>Sites, by circle</span>
-      <span class="vw-card-metric-label-sub" style="margin-left:auto">node size = locations · hover for network elements · click to open</span>
     </div>
   </div>`;
 }
@@ -1275,6 +1274,18 @@ function locInsights() {
     const q = c.code === 'OTH' ? 'group=other' : `state=${c.n}`;
     const open = COV_EXPANDED === c.code;
     const detailId = `cov-detail-${c.code}`;
+    /* Failed = locations in this circle whose BUILD failed (status "Failed"),
+       across all three types — not an equipment fault count. The tooltip
+       carries the type split, because the expanded panel's Blocked figure
+       covers sites only and can legitimately read one or two lower. */
+    const fRows = (c.code === 'OTH' ? LOCATIONS.filter(l => !TOP8_STATES.has(l.state)) : LOCATIONS.filter(l => l.state === c.n))
+      .filter(l => l.st === 'Failed');
+    const fBits = [
+      [fRows.filter(l => l.type === 'Datacenter').length, 'DC'],
+      [fRows.filter(l => l.type === 'POP').length, 'PoP'],
+      [fRows.filter(l => l.type !== 'Datacenter' && l.type !== 'POP').length, 'sites']
+    ].filter(([v]) => v).map(([v, t]) => `${v} ${t}`).join(' · ');
+    const fTitle = c.failed ? `${n(c.failed)} failed builds — ${fBits}. Deployment did not complete; sites among them carry a named blocker.` : 'No failed builds in this circle';
     /* computed once per row (not just the open one) so a reader can see
        which circles need attention without expanding any of them */
     const ops = circleOps(c);
@@ -1308,7 +1319,7 @@ function locInsights() {
       <td><span class="row vw-gap-sm vw-items-center" style="min-width:6.5rem">
         <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${(c.live/c.tot*100).toFixed(0)}%;background:${cv('emerald',400)}"></span></span>
         <span class="num" style="color:${cv('gray',700)}">${(c.live/c.tot*100).toFixed(0)}%</span></span></td>
-      <td class="t-right num" style="color:${c.failed ? cv('red',700) : cv('gray',400)}">${n(c.failed)}</td>
+      <td class="t-right num" style="color:${c.failed ? cv('red',700) : cv('gray',400)}" title="${fTitle}">${n(c.failed)}</td>
       <td class="cov-td-action"><button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" title="Open ${c.n} in the Locations list"${dA({ v:'location', l:`Locations in ${c.n}`, q:`view=list&${q}` })}>↗</button></td>
     </tr>`;
     const detail = open ? `<tr class="cov-detail-row" id="${detailId}"><td colspan="8">${covCircleDetail(c, ops)}</td></tr>` : '';
@@ -1325,7 +1336,7 @@ function locInsights() {
     <thead><tr>
       <th style="width:34%">Circle</th>
       <th class="t-right" style="width:8%">DC</th><th class="t-right" style="width:8%">PoP</th><th class="t-right" style="width:9%">Sites</th>
-      <th class="t-right" style="width:9%">Total</th><th style="width:18%">On-air</th><th class="t-right" style="width:8%">Failed</th><th style="width:6%"></th>
+      <th class="t-right" style="width:9%">Total</th><th style="width:18%">On-air</th><th class="t-right" style="width:8%" title="Locations whose build failed — deployment blocked, not an equipment fault">Failed</th><th style="width:6%"></th>
     </tr></thead>
     <tbody>${covRows}</tbody>
   </table></div>`;
@@ -1482,7 +1493,7 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), '',
-        i => [A('View site details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })])}`)}`;
+        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })])}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
