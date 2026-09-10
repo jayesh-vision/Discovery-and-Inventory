@@ -571,13 +571,13 @@ const ADJACENCY = [
 /* ── field provenance for the sample record ─────────────── */
 const PROV = [
   { f: 'Management IP', v: '172.31.33.100',   src: 'Scope',                when: 'this run',   ok: true },
-  { f: 'Vendor',        v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3 h ago',   ok: true },
-  { f: 'Model',         v: 'MX960',           src: 'Device collector',     when: '3 h ago',    ok: true },
-  { f: 'Serial number', v: 'JN1236F87AFB',    src: 'Hardware collector',   when: '3 h ago',    ok: true },
-  { f: 'OS version',    v: '21.2R3-S8.5',     src: 'Device collector',     when: '3 h ago',    ok: true },
-  { f: 'Uptime',        v: '47 d 18 h',       src: 'Device collector',     when: '3 h ago',    ok: true },
-  { f: 'Adjacencies',   v: '19 LLDP · 12 OSPF · 4 BGP', src: 'LLDP · OSPF · BGP', when: '3 h ago', ok: true },
-  { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', when: '3 h ago',    ok: true },
+  { f: 'Vendor',        v: 'JUNIPER',         src: 'Derived · sysObjectID', when: '3h ago',    ok: true },
+  { f: 'Model',         v: 'MX960',           src: 'Device collector',     when: '3h ago',     ok: true },
+  { f: 'Serial number', v: 'JN1236F87AFB',    src: 'Hardware collector',   when: '3h ago',     ok: true },
+  { f: 'OS version',    v: '21.2R3-S8.5',     src: 'Device collector',     when: '3h ago',     ok: true },
+  { f: 'Uptime',        v: '47 d 18 h',       src: 'Device collector',     when: '3h ago',     ok: true },
+  { f: 'Adjacencies',   v: '19 LLDP · 12 OSPF · 4 BGP', src: 'LLDP · OSPF · BGP', when: '3h ago',  ok: true },
+  { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', when: '3h ago',     ok: true },
   { f: 'Circle · site', v: 'Delhi · DEL-279',  src: 'Manual',              when: '21-Jul-2026', ok: true },
   { f: 'Stock state',   v: 'Deployed',         src: 'Workorder WO-2291',   when: '02-Mar-2024', ok: true },
   { f: 'Warranty ends', v: 'Not linked',       src: 'ERP · not integrated', when: '—',         ok: false }
@@ -586,7 +586,7 @@ const PROV = [
 /* ── network elements: both sides of the comparison, row by row ─── */
 /* inv = what the inventory record says · net = what discovery found */
 const NE_RECON = [
-  { ne:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', circle:'Delhi', rule:'Serial', out:'Agree', chip:'success', ver:'3 h ago',
+  { ne:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', circle:'Delhi', rule:'Serial', out:'Agree', chip:'success', ver:'3h ago',
     inv:{oem:'JUNIPER', model:'MX960', os:'21.2R3-S8.5', sn:'JN1236F87AFB'},
     net:{oem:'JUNIPER', model:'MX960', os:'21.2R3-S8.5', sn:'JN1236F87AFB'}, diff:[] },
   { ne:'VZG-N540X-PE-T4-NR', ip:'172.31.53.186', circle:'Andhra Pradesh', rule:'Serial', out:'Agree', chip:'success', ver:'10 h ago',
@@ -595,16 +595,16 @@ const NE_RECON = [
   { ne:'DND-ART-98-PE-T4-NR', ip:'172.31.44.18', circle:'Tamil Nadu', rule:'Chassis MAC', out:'Agree', chip:'success', ver:'5 h ago',
     inv:{oem:'JUNIPER', model:'ACX7024', os:'23.2R1-S2.6', sn:'FL2423AN0050'},
     net:{oem:'JUNIPER', model:'ACX7024', os:'23.2R1-S2.6', sn:'FL2423AN0050'}, diff:[] },
-  { ne:'SP-CNOC-LAB-J204-PE-T3-NR1', ip:'172.31.86.61', circle:'Karnataka', rule:'Serial', out:'Differ', chip:'warning', ver:'3 h ago',
+  { ne:'SP-CNOC-LAB-J204-PE-T3-NR1', ip:'172.31.86.61', circle:'Karnataka', rule:'Serial', out:'Differ', chip:'warning', ver:'3h ago',
     inv:{oem:'QUANTA', model:'MX204', os:'21.4R3-S5.5', sn:'FW488AS342W'},
     net:{oem:'JUNIPER', model:'MX204', os:'21.4R3-S5.5', sn:'FW488AS342W'}, diff:['oem'] },
-  { ne:'CHE-J2.2K-PE-T4-ER', ip:'172.31.61.140', circle:'Tamil Nadu', rule:'Serial', out:'Differ', chip:'warning', ver:'3 h ago',
+  { ne:'CHE-J2.2K-PE-T4-ER', ip:'172.31.61.140', circle:'Tamil Nadu', rule:'Serial', out:'Differ', chip:'warning', ver:'3h ago',
     inv:{oem:'HP', model:'ACX2200', os:'21.2R3-S8.5', sn:'PJ0215230255'},
     net:{oem:'JUNIPER', model:'ACX2200', os:'21.4R3-S5.5', sn:'PJ0215230255'}, diff:['oem','os'] },
   { ne:'KA-BGLK-277-T-CHR-08', ip:'172.31.31.204', circle:'Karnataka', rule:'Chassis MAC', out:'Differ', chip:'warning', ver:'6 h ago',
     inv:{oem:'HP', model:'C9300-48UXM', os:'17.9.4', sn:'SW-CHR-CORE-4499'},
     net:{oem:'CISCO', model:'C9300-48UXM', os:'17.9.4', sn:'SW-CHR-CORE-4499'}, diff:['oem'] },
-  { ne:'ET-J960-P-T1-WR', ip:'172.31.31.97', circle:'Karnataka', rule:'Serial', out:'Differ', chip:'warning', ver:'3 h ago',
+  { ne:'ET-J960-P-T1-WR', ip:'172.31.31.97', circle:'Karnataka', rule:'Serial', out:'Differ', chip:'warning', ver:'3h ago',
     inv:{oem:'JUNIPER', model:'MX960', os:'21.2R3-S9.21', sn:'JN1234C25AFA'},
     net:{oem:'JUNIPER', model:'MX960', os:'21.4R3-S5.5', sn:'JN1234C25AFA'}, diff:['os'] },
   { ne:'NDD-J2.2K-PE-T4-SR', ip:'192.168.1.11', circle:'Karnataka', rule:'Serial', out:'Differ', chip:'warning', ver:'5 h ago',
@@ -3029,7 +3029,7 @@ function viewTarget() {
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
-      ${kpi('Last verified', '3 h ago', '01-Sep-2026 09:10 IST', 'sky')}
+      ${kpi('Last discovery', '3h ago', '01-Sep-2026 09:10 IST', 'sky')}
       ${kpi('Collectors passed', '7 of 7', 'Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
       ${kpi('Discovered objects', '49', '19 LLDP · 12 OSPF · 4 BGP · 14 L3VPN', 'purple')}
     </div>
@@ -3268,8 +3268,7 @@ function viewHome() {
         ]), '',
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('Open element', { v:'resource', l:PHY.router[i].name }),
-              A('Open site', { v:'site', l:PHY.router[i].loc }),
-              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' })])}`)}
+              A('Open site', { v:'site', l:PHY.router[i].loc })])}`)}
   </div>`;
 }
 
@@ -4188,8 +4187,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:rows[i].loc || l.name }),
-          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
+          A('Open site', { v:'site', l:rows[i].loc || l.name })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -4500,8 +4498,7 @@ function viewPhysical() {
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
-             A('Open site', { v:'site', l:rows[i].loc }),
-             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })])}
+             A('Open site', { v:'site', l:rows[i].loc })])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>

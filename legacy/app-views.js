@@ -703,7 +703,7 @@ function viewTarget() {
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
-      ${kpi('Last verified', '3 h ago', '01-Sep-2026 09:10 IST', 'sky')}
+      ${kpi('Last discovery', '3h ago', '01-Sep-2026 09:10 IST', 'sky')}
       ${kpi('Collectors passed', '7 of 7', 'Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
       ${kpi('Discovered objects', '49', '19 LLDP · 12 OSPF · 4 BGP · 14 L3VPN', 'purple')}
     </div>
@@ -942,8 +942,7 @@ function viewHome() {
         ]), '',
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('Open element', { v:'resource', l:PHY.router[i].name }),
-              A('Open site', { v:'site', l:PHY.router[i].loc }),
-              A('View in reconciliation', { v:'reconcile', l:PHY.router[i].name, q:'ne=All' })])}`)}
+              A('Open site', { v:'site', l:PHY.router[i].loc })])}`)}
   </div>`;
 }
 
@@ -1862,8 +1861,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('Open element', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:rows[i].loc || l.name }),
-          A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })
+          A('Open site', { v:'site', l:rows[i].loc || l.name })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -2174,8 +2172,7 @@ function viewPhysical() {
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('Open element', { v:'resource', l:rows[i].name }),
-             A('Open site', { v:'site', l:rows[i].loc }),
-             A('View in reconciliation', { v:'reconcile', l:rows[i].name, q:'ne=All' })])}
+             A('Open site', { v:'site', l:rows[i].loc })])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>

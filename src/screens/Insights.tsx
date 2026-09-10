@@ -4,7 +4,7 @@ import { Card, cv } from '../components/ui';
 import { Donut, LineChart, SplitBar } from '../components/charts';
 import { GeoMap } from '../components/GeoMap';
 import {
-  CYCLE, DISC_CLASSES, REGIONS, scopeDiscovery, successRate,
+  CYCLE, DISC_CLASSES, REGIONS, scopeDiscovery,
   type Region, type Scope
 } from '../data/discovery';
 
@@ -193,23 +193,7 @@ export default function Insights() {
           </Card>
         </div>
 
-        {/* row D: one tile per region — narrows to the selected circle when scoped */}
-        <div className="ins2-row ins2-3x4">
-          {S.regions.map(r => (
-            <div key={r.region} className="rtile" role="button" tabIndex={0} aria-label={`${r.region} region — ${fmt(r.total)} devices`}
-              onClick={() => toRegionDevices(r.region)}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toRegionDevices(r.region); } }}>
-              <span className="rtile-h"><span className="vw-card-title-sm">{r.region}</span><span className="vw-card-description">{fmt(r.total)} devices</span></span>
-              <span className="rtile-v num" style={{ color: cv('emerald', 700) }}>{pct(successRate(r))}</span>
-              <span className="rtile-bar"><span style={{ width: `${(successRate(r) * 100).toFixed(1)}%`, background: cv('emerald', 500) }} /></span>
-              <span className="rtile-f">
-                <button className="num" style={{ color: cv('red', 600), background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={e => { e.stopPropagation(); toRegionDevices(r.region, { status: 'Failed' }); }}>{r.fail} failed</button>
-                <span className="num" style={{ color: cv(r.trend >= 0 ? 'emerald' : 'red', 600) }}>{r.trend >= 0 ? '▲' : '▼'} {Math.abs(r.trend).toFixed(1)} pt vs last cycle</span>
-              </span>
-            </div>
-          ))}
-        </div>
+
 
 
         <Card>
