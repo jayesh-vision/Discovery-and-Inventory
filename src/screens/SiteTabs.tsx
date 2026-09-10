@@ -4,7 +4,6 @@ import { Card, Chip, StatStrip } from '../components/ui';
 import type { ChipTone, ColorTone } from '../data/ledger';
 import { locationOf, type Location } from '../data/locations';
 import { loadLegacy } from '../legacy/LegacyView';
-import { legacyPath } from '../routes';
 
 /* The site screen's header and section tabs. The first four sections render in
    the prototype, the last two are React — but the header (chips, stat strip,
@@ -65,9 +64,6 @@ export function useSiteLocation(id: string): { l: Location; head: SiteHead | nul
 }
 
 export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) {
-  const nav = useNavigate();
-  const keep = useKeepContext();
-  const base = `/inventory/location/site/${l.id}`;
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -101,13 +97,7 @@ export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) 
               </div>
             )}
           </Card>
-          <StatStrip cells={head.cells.map(c => ({
-            k: c.k, v: c.v, s: c.s, t: c.t,
-            onClick: c.section === 'ne' ? () => { window.__nsLegacy?.setSection?.('ne'); nav(keep(base)); }
-              : c.section ? () => nav(keep(`${base}/${c.section}`))
-              : c.drill ? () => nav(legacyPath(c.drill!.v, { label: c.drill!.l, q: c.drill!.q, from: 'Location · Site details' }))
-              : undefined
-          }))} />
+          <StatStrip cells={head.cells.map(c => ({ k: c.k, v: c.v, s: c.s, t: c.t }))} />
         </>
       )}
     </>
