@@ -3,10 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, cv } from '../components/ui';
 import { Donut, LineChart, SplitBar } from '../components/charts';
 import { GeoMap } from '../components/GeoMap';
-import { Against, KpiCard, Segments } from '../components/KpiCard';
-import { legacyPath } from '../routes';
 import {
-  CYCLE, CYCLE_SLA_H, DISC_CLASSES, REGIONS, scopeDiscovery, successRate,
+  CYCLE, DISC_CLASSES, REGIONS, scopeDiscovery, successRate,
   type Region, type Scope
 } from '../data/discovery';
 
@@ -16,22 +14,12 @@ const isScope = (v: string | null): v is Scope => v === 'all' || REGIONS.some(r 
 
 export default function Insights() {
   const nav = useNavigate();
-  const [sp, setSp] = useSearchParams();
+  const [sp] = useSearchParams();
   const scope: Scope = isScope(sp.get('region')) ? (sp.get('region') as Scope) : 'all';
-  const setScope = (v: Scope) => { const n = new URLSearchParams(sp); if (v === 'all') n.delete('region'); else n.set('region', v); setSp(n, { replace: true }); };
 
   const S = useMemo(() => scopeDiscovery(scope), [scope]);
-  const last = S.daily[S.daily.length - 1], prev = S.daily[S.daily.length - 2];
   const reasonTotal = S.reasons.reduce((a, r) => a + r.c, 0);
   const vendorMax = Math.max(...S.vendors.map(v => v.ok + v.fail));
-
-  /** hands off to the legacy Scan targets screen with the matching lower-case
-      filter key and a drill label, so it lands filtered and shows a way back */
-  const toTargets = (q = '', label?: string) => {
-    const sp = new URLSearchParams(q);
-    if (label) { sp.set('from', 'Insights'); sp.set('back', 'insights'); }
-    nav(legacyPath('targets', label ? { label, q: sp.toString() } : { q: sp.toString() }));
-  };
   /** A region tile counts devices, so it opens the devices — every target the
       region polled, the failed ones among them — not the sites they sit in. */
   const toRegionDevices = (region: Region, extra: Record<string, string> = {}) => {
@@ -60,53 +48,79 @@ export default function Insights() {
     nav(`/discovery/insights/discovered?${sp.toString()}`);
   };
 
+  const ZONE_CARDS = [
+    {
+      title: 'North zone',
+      color: 'var(--vw-color-blue-600, #2563eb)',
+      border: 'var(--vw-color-blue-500, #3b82f6)',
+      devices: 681,
+      successPct: '91.8%',
+      failed: 56,
+      trend: '▲ 7 new · 0.9 pt vs last cycle',
+      region: 'North' as const
+    },
+    {
+      title: 'South zone',
+      color: 'var(--vw-color-teal-600, #0d9488)',
+      border: 'var(--vw-color-teal-500, #14b8a6)',
+      devices: 694,
+      successPct: '92.9%',
+      failed: 49,
+      trend: '▲ 5 new · 2.4 pt vs last cycle',
+      region: 'South' as const
+    },
+    {
+      title: 'East zone',
+      color: 'var(--vw-color-amber-600, #d97706)',
+      border: 'var(--vw-color-amber-500, #f59e0b)',
+      devices: 609,
+      successPct: '92.2%',
+      failed: 48,
+      trend: '▲ 4 new · 1.8 pt vs last cycle',
+      region: 'East' as const
+    },
+    {
+      title: 'West zone',
+      color: 'var(--vw-color-purple-600, #7c3aed)',
+      border: 'var(--vw-color-purple-500, #8b5cf6)',
+      devices: 375,
+      successPct: '93.6%',
+      failed: 24,
+      trend: '▲ 3 new · 2.7 pt vs last cycle',
+      region: 'West' as const
+    }
+  ];
+
   return (
     <div className="page ins2">
       <div className="ins2-main">
         <div className="page-bar" style={{ justifyContent: 'flex-start' }}>
           <span className="vw-card-description">Last cycle closed <span className="num">{CYCLE.closed}</span></span>
-          <span className="grow" />
-          <span className="nst-select-shell">
-            <select className="nst-input" value={scope} aria-label="Scope" onChange={e => setScope(e.target.value as Scope)}>
-              <option value="all">All circles</option>
-              {REGIONS.map(r => <option key={r.region} value={r.region}>{r.region}</option>)}
-            </select>
-          </span>
         </div>
 
-        <div className="kpi2-row">
-          <KpiCard tone="blue"
-            title="Devices polled"
-            definition="Every gateway IP the discovery job tried to reach in this cycle. It grows when sites or seed ranges are added to scope."
-            value={fmt(last.polled)} unit="devices" of="in scope for this cycle"
-            delta={{ text: `${fmt(last.polled - prev.polled)} more than last cycle`, better: null }}
-            action={{ label: 'Open scan targets', onClick: () => toDevices({}) }} />
-
-          <KpiCard tone="emerald"
-            title="Devices that answered"
-            definition="Polled devices that responded to at least one collector. A full answer produced a complete record; a partial one produced a record with gaps; a failure produced no record; the failed count opens that list."
-            value={pct(S.rate)} of={`${fmt(last.answered)} of ${fmt(last.polled)} polled`}
-            visual={<Segments total={S.targets} parts={[
-              { n: 'Full', c: S.runFull, hex: cv('emerald', 500) },
-              { n: 'Partial', c: S.runPartial, hex: cv('amber', 400) },
-              { n: 'Failed', c: S.runFail, hex: cv('red', 500) }]} />}
-            delta={{ text: `${((last.answered / last.polled - prev.answered / prev.polled) * 100).toFixed(1)} pt better than last cycle`, better: true }}
-            action={{ label: `See the ${fmt(S.runFail)} that failed`, onClick: () => toDevices({ status: 'Failed' }) }} />
-
-          <KpiCard tone="purple"
-            title="Seen for the first time"
-            definition="Devices identified in this cycle that had no discovery record before. They are new to the network, newly reachable, or newly in scope — and are not yet in Inventory until reconciliation runs."
-            value={fmt(last.fresh)} unit="devices" of="not in Inventory yet"
-            delta={{ text: `${fmt(Math.abs(last.fresh - prev.fresh))} ${last.fresh >= prev.fresh ? 'more' : 'fewer'} than last cycle`, better: null }}
-            action={{ label: 'Review new devices', onClick: () => toTargets('tgt=new', `${fmt(last.fresh)} seen for the first time this cycle`) }} />
-
-          <KpiCard tone="amber"
-            title="Time the cycle took"
-            definition={`From the first poll to the last record written. The cycle must finish inside ${CYCLE_SLA_H} hours so reconciliation can run before the next one starts. Discovery runs as a single job across every circle at once, so this figure does not change with the circle filter above.`}
-            value={CYCLE.durationH.toFixed(1)} unit="hours" of={`closed ${CYCLE.closed}`}
-            visual={<Against value={CYCLE.durationH} limit={CYCLE_SLA_H} format={v => `${v} h`} hex={cv('amber', 400)} />}
-            delta={{ text: `${(S.daily[S.daily.length - 2].hours - S.daily[S.daily.length - 1].hours).toFixed(1)} h faster than last cycle`, better: S.daily[S.daily.length - 2].hours >= S.daily[S.daily.length - 1].hours }}
-            action={{ label: 'Open scan jobs', onClick: () => nav('/discovery/jobs') }} />
+        <div className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: 'var(--vw-space-lg)' }}>
+          {ZONE_CARDS.map(z => (
+            <div key={z.title} className="vw-card" style={{
+              borderLeft: `4px solid ${z.border}`,
+              borderRadius: 'var(--vw-radius-lg, 12px)',
+              padding: 'var(--vw-space-md) var(--vw-space-lg)',
+              background: 'var(--vw-color-white, #ffffff)',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+              cursor: 'pointer'
+            }} onClick={() => toRegionDevices(z.region)}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: z.color, marginBottom: '6px' }}>{z.title}</div>
+              <div className="row vw-items-baseline" style={{ gap: '8px', marginBottom: '4px' }}>
+                <span className="num" style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--vw-color-slate-900, #0f172a)', lineHeight: 1 }}>{z.devices}</span>
+                <span className="mono" style={{ fontSize: '0.875rem', color: 'var(--vw-color-slate-500, #64748b)' }}>devices</span>
+              </div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--vw-color-slate-400, #94a3b8)', marginBottom: '8px' }}>
+                {z.successPct} success · {z.failed} failed
+              </div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--vw-color-emerald-600, #16a34a)' }}>
+                {z.trend}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* row B: the trend beside the failure breakdown, equal height */}

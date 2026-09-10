@@ -2441,15 +2441,46 @@ function viewInsights() {
   return `<div class="page">
     ${pageBar(`<div class="seg">${PERIODS.map(p => `<button class="${PERIOD===p.k?'is-on':''}" data-period="${p.k}">${p.n}</button>`).join('')}</div>`)}
 
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Targets polled', n(DL.targets), `${n(DL.runFull)} clean · ${n(DL.runPartial)} partial · ${n(DL.runFail)} failed`, 'sky',
-        { v:'targets', l:'All targets polled this cycle', q:'tgt=All' })}
-      ${kpi('Devices discovered', n(DL.identified), `Router ${n(DL.discRouter)} · Switch ${n(DL.discSwitch)}`, 'emerald',
-        { v:'targets', l:'Targets that answered discovery', q:'tgt=answered' })}
-      ${kpi('Inventory records', n(DL.master), `${n(DL.matched)} verified against the network`, 'cyan',
-        { v:'physical', l:'All inventory records' })}
-      ${kpi('Open exceptions', n(DL.open), `${n(DL.rogue)} rogue · ${n(DL.missing)} missing · ${n(DL.drifted)} drifted`, 'red',
-        { v:'reconcile', l:'Open exceptions', q:'ne=Open' })}
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-lg)">
+      <div class="vw-card" style="border-left:4px solid var(--vw-color-blue-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
+        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-blue-600);margin-bottom:6px">North zone</div>
+        <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
+          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">681</span>
+          <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
+        </div>
+        <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">91.8% success · 56 failed</div>
+        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 7 new · 0.9 pt vs last cycle</div>
+      </div>
+
+      <div class="vw-card" style="border-left:4px solid var(--vw-color-teal-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
+        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-teal-600);margin-bottom:6px">South zone</div>
+        <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
+          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">694</span>
+          <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
+        </div>
+        <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.9% success · 49 failed</div>
+        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 5 new · 2.4 pt vs last cycle</div>
+      </div>
+
+      <div class="vw-card" style="border-left:4px solid var(--vw-color-amber-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
+        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-amber-600);margin-bottom:6px">East zone</div>
+        <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
+          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">609</span>
+          <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
+        </div>
+        <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.2% success · 48 failed</div>
+        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 4 new · 1.8 pt vs last cycle</div>
+      </div>
+
+      <div class="vw-card" style="border-left:4px solid var(--vw-color-purple-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
+        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-purple-600);margin-bottom:6px">West zone</div>
+        <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
+          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">375</span>
+          <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
+        </div>
+        <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">93.6% success · 24 failed</div>
+        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 3 new · 2.7 pt vs last cycle</div>
+      </div>
     </div>
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md ins-row">
@@ -2876,8 +2907,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` }),
-              A('View in reconciliation', { v:'reconcile', l:`Reconciliation · ${rows[i].host}`, q:'ne=All' })])}
+        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
