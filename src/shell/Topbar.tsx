@@ -21,15 +21,21 @@ function paramsOf(pattern: string, pathname: string): Record<string, string> {
    is a link back up; the last segment is plain text. An active drill-down
    ("All locations", "Routers in inventory") appends as one more segment, and
    the screen's own segment then links to its clean path — clicking it is how
-   the drill is cleared. No banners, no back buttons: this is the way back. */
+   the drill is cleared. No banners, no back buttons: this is the way back.
+
+   A cross-section jump ("Open site" on Physical Resources, "View details" on
+   a site's NE table) names its origin in ?from=<crumb>. The ancestors are
+   then the origin's chain — the reader came from there, not from this
+   screen's nominal parent — and this screen contributes only its leaf. */
 export default function Topbar() {
   const { pathname, search } = useLocation();
   const nav = useNavigate();
   const s = screenFor(pathname);
   if (!s) return null;
   const params = paramsOf(s.path, pathname);
-  const drill = new URLSearchParams(search).get('drill');
-  const parts = s.crumb.split(' · ');
+  const sp = new URLSearchParams(search);
+  const drill = sp.get('drill');
+  const from = sp.get('from');
 
   const targetFor = (prefix: string): string | null => {
     const t = SCREENS.find(x => x.crumb === prefix);
@@ -39,11 +45,15 @@ export default function Topbar() {
     return path.includes(':') ? null : path;
   };
 
-  const segs: { label: string; to: string | null }[] = parts.map((label, i) => {
-    const isLast = i === parts.length - 1;
-    const linkable = !isLast || !!drill;
-    return { label, to: linkable ? targetFor(parts.slice(0, i + 1).join(' · ')) : null };
-  });
+  const origin = from && from !== s.crumb ? SCREENS.find(x => x.crumb === from) : undefined;
+  const ownParts = s.crumb.split(' · ');
+  const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
+  const leaf = ownParts[ownParts.length - 1];
+
+  const segs: { label: string; to: string | null }[] = chain.map((label, i) => ({
+    label, to: targetFor(chain.slice(0, i + 1).join(' · '))
+  }));
+  segs.push({ label: leaf, to: drill ? targetFor(s.crumb) : null });
   if (drill) segs.push({ label: drill, to: null });
 
   return (

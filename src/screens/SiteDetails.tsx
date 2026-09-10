@@ -2,8 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { KpiCard, Segments } from '../components/KpiCard';
 import { Donut, LineChart } from '../components/charts';
-import { locationOf } from '../data/locations';
-import { SiteHeader, SiteTabs } from './SiteTabs';
+import { SiteHeader, SiteTabs, useSiteLocation } from './SiteTabs';
 import { facilityOf, portTotals, totalLoad, uTotals } from '../data/facility';
 
 const fmt = (v: number, d = 0) => v.toLocaleString('en-IN', { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -24,7 +23,7 @@ function Fill({ used, total, label }: { used: number; total: number; label?: str
 export default function SiteDetails() {
   const nav = useNavigate();
   const { id = 'BGLK-277' } = useParams();
-  const l = locationOf(id);
+  const { l, head } = useSiteLocation(id);
   const f = facilityOf(l.id, l.ne);
   const load = totalLoad(f), u = uTotals(f), p = portTotals(f);
   const ac = f.power.feeds.filter(x => x.kind === 'AC').reduce((a, x) => a + x.loadKw, 0);
@@ -33,8 +32,8 @@ export default function SiteDetails() {
 
   return (
     <div className="page">
-      <SiteHeader l={l} />
-      <SiteTabs l={l} active="details" />
+      <SiteHeader l={l} head={head} />
+      <SiteTabs l={l} head={head} active="details" />
 
       <div className="kpi2-row">
         <KpiCard tone="amber" title="Power in use" definition="Load on all feeds now, against the site's rated capacity. Peak is the highest 15-minute reading in the last 24 hours."

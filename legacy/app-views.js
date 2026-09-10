@@ -942,7 +942,7 @@ function viewHome() {
         ]), '',
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name }),
-              A('Open site', { v:'site', l:PHY.router[i].loc })])}`)}
+              siteA(PHY.router[i].loc)])}`)}
   </div>`;
 }
 
@@ -1694,7 +1694,7 @@ function locMap() {
 let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
 let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
-  const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
+  const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
   const rows = gridApply('site', ne[SITE_TAB] || []);
@@ -1812,9 +1812,8 @@ function viewSite() {
     <div style="margin-top:var(--vw-space-lg)">
       ${headSm('Recommended next steps', 'in the order a field team would take them')}
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
-        ${steps.map(([txt, d], i) => `<div class="vw-card-child row vw-justify-between vw-items-center" style="padding:var(--vw-space-sm) var(--vw-space-md)">
+        ${steps.map(([txt], i) => `<div class="vw-card-child row vw-items-center" style="padding:var(--vw-space-sm) var(--vw-space-md)">
           <span class="row vw-gap-sm vw-items-center" style="min-width:0"><span class="attn-step-n num">${i+1}</span><span class="vw-value" style="font-weight:400">${txt}</span></span>
-          ${d ? `<button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" title="Open in reconciliation"${dA(d)}>Open ↗</button>` : ''}
         </div>`).join('')}
       </div>
     </div>` : ''}`);
@@ -1841,17 +1840,13 @@ function viewSite() {
       </div>` : ''}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
-      { k:'Network elements', v:n(tot),  s:counts.map(c=>`${c.n} ${c.c}`).join(' · '), t:'sky', go:'ne' },
-      { k:'Discovered',       v:n(l.disc), s:`${((l.disc/Math.max(l.ne,1))*100).toFixed(0)}% of record`, t:'emerald',
-        d:{ v:'reconcile', l:`Verified at ${l.name}`, q:'ne=Agree' } },
-      { k:'Drifted',          v:n(drift), s:'incl. duplicate serials', t:'amber',
-        d:{ v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } },
-      { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red',
-        d:{ v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } },
-      { k:'Links terminating',v:l.disc ? n(l.disc*4+7) : '0', s:'LLDP · OSPF · BGP', t:'purple',
-        d:{ v:'links', l:`Links terminating at ${l.name}` } },
-      { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan', go:'capex' },
-      { k:'Opex run rate',    v:inrShort(oxRun) + ' / mo', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal', go:'opex' }
+      { k:'Network elements', v:n(tot),  s:counts.map(c=>`${c.n} ${c.c}`).join(' · '), t:'sky' },
+      { k:'Discovered',       v:n(l.disc), s:`${((l.disc/Math.max(l.ne,1))*100).toFixed(0)}% of record`, t:'emerald' },
+      { k:'Drifted',          v:n(drift), s:'incl. duplicate serials', t:'amber' },
+      { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
+      { k:'Links terminating',v:l.disc ? n(l.disc*4+7) : '0', s:'LLDP · OSPF · BGP', t:'purple' },
+      { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan' },
+      { k:'Opex run rate',    v:inrShort(oxRun) + ' / mo', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
     ])}
 
     <div class="section-tabs">
@@ -1872,7 +1867,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:rows[i].loc || l.name })
+          A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -1883,6 +1878,82 @@ function viewSite() {
         <span class="legend-i">${rst('none')} not discovered</span>
       </div>` : ''}`)}
   </div>`;
+}
+
+/* The NE sample rosters tag rows with city-coded locations (DEL-279,
+   BGLK-277) that predate the generated LOCATIONS roster. Every "Open site"
+   goes through here: an exact id/name wins, a known city code resolves
+   deterministically (by its number) to a real site in that city, and only
+   then does the first row remain as the last resort — so a site URL always
+   opens the site its label names. */
+const SITE_CODE_GEO = {
+  DEL: { state: 'Delhi' }, NDLS: { state: 'Delhi' }, NDD: { state: 'Delhi' },
+  BGLK: { city: 'Bagalkot' }, CHE: { city: 'Chennai' }, MAS: { city: 'Chennai' },
+  VJA: { city: 'Vijayawada' }, VZG: { city: 'Visakhapatnam' }, KOL: { city: 'Kolkata' },
+  PUN: { city: 'Pune' }, AHM: { city: 'Ahmedabad' }, MUM: { city: 'Mumbai' },
+  BLR: { city: 'Bengaluru' }, INDR: { city: 'Indore' }, DND: { city: 'Dindigul' }
+};
+function resolveSite(ref) {
+  if (!ref) return null;
+  const exact = LOCATIONS.find(x => x.id === ref || x.name === ref);
+  if (exact) return exact;
+  const m = String(ref).match(/^([A-Za-z]+)[-_]?(\d+)?/);
+  const g = m && SITE_CODE_GEO[m[1].toUpperCase()];
+  const pool = g ? LOCATIONS.filter(x => g.city ? x.city === g.city : x.state === g.state) : [];
+  const rows = pool.length ? pool : LOCATIONS;
+  return rows[(m && m[2] ? +m[2] : 0) % rows.length];
+}
+/* a row action that opens the resolved site — label and URL carry the real
+   id, so the breadcrumb, the header and the page can never disagree */
+function siteA(ref) {
+  const s = resolveSite(ref);
+  return A('Open site', { v: 'site', l: s.name, q: 'id=' + s.id });
+}
+
+/* Everything the site page's header shows, as plain data. The React-owned
+   Site details / Site equipment tabs draw the same header from this, so the
+   header never disappears or drifts from viewSite when those tabs are open. */
+function siteHeadData(id) {
+  const l = resolveSite(id) || LOCATIONS[0];
+  const ne = siteNE(l.id, l.ne, l.disc);
+  const counts = SITE_TABS.map(t => ({ n: t.n, c: (ne[t.k] || []).length }));
+  const tot = counts.reduce((a, c) => a + c.c, 0);
+  const flat = Object.values(ne).flat();
+  const drift = flat.filter(r => r.st === 'drift' || r.st === 'dup').length;
+  const notDisc = flat.filter(r => r.st === 'none').length;
+  const cxData = capexOf(l.id, l.ne), cxTotal = capexTotal(cxData.items), cxA = cxData.approved;
+  const oxRun = opexRun(opexOf(l.id, l.ne).items);
+  const attn = (l.issue ? 1 : 0) + (l.risk ? 1 : 0) + (notDisc ? 1 : 0) + (drift ? 1 : 0);
+  return {
+    id: l.id, name: l.name, type: l.type, city: l.city, state: l.state,
+    addr: l.addr, lat: l.lat, lon: l.lon, ne: tot, disc: l.disc,
+    sub: `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
+    coords: l.lat ? `${l.lat}°N ${l.lon}°E` : '—',
+    chips: [
+      { t: l.st, tone: l.chip, strong: true },
+      { t: l.cat, tone: l.ct === 'amber' ? 'warning' : l.ct === 'sky' ? 'info' : 'success' },
+      l.disc === l.ne ? { t: 'Fully reconciled', tone: 'success' }
+        : l.disc === 0 ? { t: 'Nothing discovered', tone: 'error' }
+        : { t: `${l.ne - l.disc} not discovered`, tone: 'warning' }
+    ],
+    meta: [['Name', l.name], ['Site type', l.type], ['Location ID', l.id], ['Address', l.addr],
+      ['Zone', l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'],
+      ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']],
+    cells: [
+      { k: 'Network elements', v: n(tot), s: counts.map(c => `${c.n} ${c.c}`).join(' · '), t: 'sky', section: 'ne' },
+      { k: 'Discovered', v: n(l.disc), s: `${((l.disc / Math.max(l.ne, 1)) * 100).toFixed(0)}% of record`, t: 'emerald',
+        drill: { v: 'reconcile', l: `Verified at ${l.name}`, q: 'ne=Agree' } },
+      { k: 'Drifted', v: n(drift), s: 'incl. duplicate serials', t: 'amber',
+        drill: { v: 'reconcile', l: `Drift at ${l.name}`, q: 'ne=Differ' } },
+      { k: 'Not discovered', v: n(notDisc), s: 'planned or no collector', t: 'red',
+        drill: { v: 'reconcile', l: `Not discovered at ${l.name}`, q: 'ne=Only in inventory' } },
+      { k: 'Links terminating', v: l.disc ? n(l.disc * 4 + 7) : '0', s: 'LLDP · OSPF · BGP', t: 'purple',
+        drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
+      { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
+      { k: 'Opex run rate', v: inrShort(oxRun) + ' / mo', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
+    ],
+    tabs: { attn, ne: n(tot), capex: inrShort(cxTotal), opex: inrShort(oxRun) + '/mo' }
+  };
 }
 
 /* ---- capex on the site screen ---- */
@@ -1917,13 +1988,8 @@ function capexSection(l, neCount) {
   ];
 
   return card(`
-    <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
-      <div class="stack-x">
-        <span class="vw-card-title">Capex</span>
-      </div>
-      <div class="row">
-        <button class="nst-btn nst-btn--filled nst-btn--sm" data-capex="${l.id}">Update capex</button>
-      </div>
+    <div class="stack-x">
+      <span class="vw-card-title">Capex</span>
     </div>
 
     <div style="margin-top:var(--vw-space-lg)">${statStrip(tiles)}</div>
@@ -2178,7 +2244,7 @@ function viewPhysical() {
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('View details', { v:'resource', l:rows[i].name }),
-             A('Open site', { v:'site', l:rows[i].loc })])}
+             siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
         <span class="legend-i">${rst('drift')} an attribute differs</span>
@@ -2880,12 +2946,10 @@ function viewServices() {
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald', { v:'services', l:'L3VPN services', q:'tab=l3vpn' })}
-      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan', { v:'services', l:'L2VPN services', q:'tab=l2vpn' })}
-      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky',
-        { v:'resource', l:'Attachment interfaces' })}
-      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red',
-        { v:'reconcile', l:'Services found with no record', q:'ne=Only on network' })}
+      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald')}
+      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan')}
+      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky')}
+      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red')}
     </div>
 
     ${card(`

@@ -314,7 +314,7 @@ function viewPassive() {
       ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), '',
-        i => [A('Open site', { v:'site', l:rows[i].site || rows[i].n })])
+        i => [siteA(rows[i].site || rows[i].n)])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
       ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
