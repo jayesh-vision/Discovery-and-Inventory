@@ -3134,9 +3134,12 @@ function viewInactive() {
     ])}
 
     ${card(`
-      <div class="tabbar">${PHY_TABS.map(x => `
-        <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
-          title="${n(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records">
+      <div class="tabbar">${[
+        { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
+        { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
+        { k: 'l2vpn', n: 'L2VPN service' }, { k: 'l3vpn', n: 'L3VPN service' }
+      ].map(x => `
+        <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}">
           ${x.n}</button>`).join('')}
       </div>
 

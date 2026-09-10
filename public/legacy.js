@@ -1284,6 +1284,18 @@ const DECOMM = {
       why:'Antenna re-siting',        on:'19-Feb-2026', by:'Amit Sharma',   wo:'WO-2026-3844', zombie:false },
     { name:'MAS-NORTH-GNB-008',   ip:'172.31.33.208', model:'AirScale',   sn:'GNB5GMA00008',  oem:'NOKIA',   loc:'MAS-041',
       why:'Site consolidation',       on:'07-Dec-2025', by:'Anjali Verma',  wo:'WO-2025-9288', zombie:false }
+  ],
+  l2vpn: [
+    { name:'L2VPN-MAS-DEL-E-LINE-01', ip:'172.31.31.240', model:'E-Line / VPWS', sn:'VC-L2-990412', oem:'JUNIPER', loc:'MAS-041', why:'Service decommissioned by customer request', on:'14-May-2026', by:'Anjali Verma', wo:'WO-2026-9412', zombie:false },
+    { name:'L2VPN-BLR-CHE-VPLS-04', ip:'172.31.41.118', model:'E-LAN / VPLS', sn:'VC-L2-884102', oem:'CISCO', loc:'BGLK-277', why:'Migrated to EVPN-VPWS', on:'22-Mar-2026', by:'Gaurav Shukla', wo:'WO-2026-8841', zombie:false },
+    { name:'L2VPN-INDR-DEL-PSEUDOWIRE-09', ip:'172.31.38.99', model:'PW-E1', sn:'VC-L2-771904', oem:'NOKIA', loc:'INDR-275', why:'Circuit retired', on:'11-Jan-2026', by:'Amit Sharma', wo:'WO-2026-7719', zombie:false },
+    { name:'L2VPN-PUN-HYD-EVPN-12', ip:'172.31.52.88', model:'EVPN-VPWS', sn:'VC-L2-663201', oem:'JUNIPER', loc:'PUN-162', why:'Capacity migration', on:'04-Dec-2025', by:'Sai Krishna', wo:'WO-2025-6632', zombie:false }
+  ],
+  l3vpn: [
+    { name:'L3VPN-ENT-CORP-DEL-01', ip:'172.31.35.101', model:'MPLS L3VPN / VRF', sn:'VRF-L3-550119', oem:'CISCO', loc:'DEL-279', why:'Contract expired, service terminated', on:'18-Jun-2026', by:'Harish Kumar', wo:'WO-2026-5501', zombie:false },
+    { name:'L3VPN-BANK-HQ-MAS-02', ip:'172.31.33.204', model:'IP-VPN / BGP-MPLS', sn:'VRF-L3-441028', oem:'JUNIPER', loc:'MAS-041', why:'Site migration', on:'04-Apr-2026', by:'Sai Krishna', wo:'WO-2026-4410', zombie:false },
+    { name:'L3VPN-GOVT-SECURE-BGLK-07', ip:'172.31.31.199', model:'MPLS L3VPN / VRF', sn:'VRF-L3-339104', oem:'NOKIA', loc:'BGLK-277', why:'Upgraded to SD-WAN overlay', on:'29-Nov-2025', by:'Anjali Verma', wo:'WO-2025-3391', zombie:false },
+    { name:'L3VPN-RETAIL-CHAIN-KOL-15', ip:'172.31.67.142', model:'BGP-MPLS L3VPN', sn:'VRF-L3-228109', oem:'CISCO', loc:'KOL-204', why:'Hardware refresh', on:'15-Aug-2025', by:'Amit Sharma', wo:'WO-2025-2281', zombie:false }
   ]
 };
 /* The seeds above are hand-written. The archive holds the full decommissioned
@@ -1303,7 +1315,8 @@ const DK_BY = ['Anjali Verma', 'Gaurav Shukla', 'Amit Sharma', 'Sai Krishna', 'H
 const DK_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DK_ROLE = { router:['P','PE','BNG','EDGE','AGG'], switch:['ACC','DIST','CORE','TOR'],
   server:['SRV','CDC','APP','DB'], dwdm:['OADM','ROADM','MUX','ILA'],
-  enodeb:['ENB'], gnodeb:['GNB'] };
+  enodeb:['ENB'], gnodeb:['GNB'],
+  l2vpn:['LINE', 'VPLS', 'PW'], l3vpn:['VRF', 'VPN', 'MPLS'] };
 
 /* one small deterministic generator so a rebuild never reshuffles the archive */
 function dkRand(seed) { let x = seed; return () => (x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; }
@@ -1335,7 +1348,10 @@ function dkExpand(cls, seeds, total) {
   const ord = s => { const [d, m, y] = s.split('-'); return Number(y) * 10000 + (DK_MON.indexOf(m) + 1) * 100 + Number(d); };
   return out.sort((a, b) => ord(b.on) - ord(a.on));
 }
-Object.keys(DECOMM).forEach(k => { DECOMM[k] = dkExpand(k, DECOMM[k], stockCount(k, 'decomm')); });
+Object.keys(DECOMM).forEach(k => {
+  const count = (typeof stockCount === 'function' && stockCount(k, 'decomm')) || 18;
+  DECOMM[k] = dkExpand(k, DECOMM[k], count);
+});
 
 const decommRows = cls => DECOMM[cls] || [];
 const DK_ORD = s => { const [d, m, y] = s.split('-'); return new Date(Number(y), DK_MON.indexOf(m), Number(d)); };
@@ -5460,9 +5476,12 @@ function viewInactive() {
     ])}
 
     ${card(`
-      <div class="tabbar">${PHY_TABS.map(x => `
-        <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
-          title="${n(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records">
+      <div class="tabbar">${[
+        { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
+        { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
+        { k: 'l2vpn', n: 'L2VPN service' }, { k: 'l3vpn', n: 'L3VPN service' }
+      ].map(x => `
+        <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}">
           ${x.n}</button>`).join('')}
       </div>
 

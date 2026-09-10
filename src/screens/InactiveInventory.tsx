@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
-import { NE_CLASSES, PHY_TABS, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
+import { INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 
 const FILTERS = [
@@ -13,12 +13,13 @@ const FILTERS = [
   { n: 'Discovery', o: ['Silent', 'Still answering'], h: 'A decommissioned unit that still answers is a reconciliation exception.' }
 ];
 
-const isClass = (v: string | null): v is NeClass => !!v && (NE_CLASSES as string[]).includes(v);
+const isTab = (v: string | null): v is InactiveTab => !!v && INACTIVE_TABS.some(t => t.k === v);
 
 export default function InactiveInventory() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
-  const cls: NeClass = isClass(sp.get('cls')) ? (sp.get('cls') as NeClass) : 'router';
+  const rawCls = sp.get('cls');
+  const cls: InactiveTab = isTab(rawCls) ? rawCls : 'router';
 
   /* Refresh has no server round-trip to make in this build (no backend), so
      "reload" means re-deriving rows from the archive's current in-memory
@@ -28,7 +29,7 @@ export default function InactiveInventory() {
   const rows = useMemo(() => decommRows(cls), [cls, refreshKey]);
   const total = rows.length;
 
-  const setCls = (k: NeClass) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
+  const setCls = (k: InactiveTab) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
 
   const rowActions = (r: ArchiveRow): Action[] =>
@@ -47,8 +48,7 @@ export default function InactiveInventory() {
 
       <Card>
         <TabBar
-          tabs={PHY_TABS.map(x => ({ k: x.k, n: x.n, count: stockCount(x.k, 'decomm'),
-            title: `${fmt(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records` }))}
+          tabs={INACTIVE_TABS.map(x => ({ k: x.k, n: x.n, count: 0, title: `Decommissioned ${x.n.toLowerCase()} records` }))}
           active={cls} onChange={setCls} />
 
         <DataGrid<ArchiveRow>

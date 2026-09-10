@@ -1,4 +1,4 @@
-import { NE_CLASSES, type NeClass, stockCount } from './ledger';
+import { NE_CLASSES, INACTIVE_TABS, type NeClass, type InactiveTab, stockCount } from './ledger';
 
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
@@ -6,9 +6,8 @@ export interface ArchiveRow {
 }
 
 /* The seeds are hand-written. The archive holds the full decommissioned
-   population (289/61/34/19/5/4 = 412), so it is expanded deterministically to
-   the counts the ledger declares — every page of every class tab has records. */
-const DECOMM_SEEDS: Record<NeClass, ArchiveRow[]> = {
+   population, expanded deterministically. */
+const DECOMM_SEEDS: Record<InactiveTab, ArchiveRow[]> = {
   router: [
     { name: 'MAS-J960-P-R2-T1-SR', ip: '172.31.31.140', model: 'MX960', sn: 'JN1231A55AFB', oem: 'JUNIPER', loc: 'MAS-041', why: 'Replaced under CR-8802', on: '14-Jun-2026', by: 'Anjali Verma', wo: 'WO-2026-4412', zombie: false },
     { name: 'DEL-N540X-SPARE', ip: '172.31.35.207', model: 'NCS-540', sn: 'CAT2077U1XX', oem: 'CISCO', loc: 'DEL-279', why: 'End of life', on: '02-May-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4188', zombie: true },
@@ -42,6 +41,18 @@ const DECOMM_SEEDS: Record<NeClass, ArchiveRow[]> = {
     { name: 'BLR-SOUTH-GNB-014', ip: '172.31.41.114', model: 'AirScale', sn: 'GNB5GBL00014', oem: 'NOKIA', loc: 'BGLK-277', why: 'Replaced under CR-9014', on: '02-Jun-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4318', zombie: false },
     { name: 'DEL-CENTRAL-GNB-003', ip: '172.31.35.203', model: 'AirScale', sn: 'GNB5GDL00003', oem: 'NOKIA', loc: 'DEL-279', why: 'Antenna re-siting', on: '19-Feb-2026', by: 'Amit Sharma', wo: 'WO-2026-3844', zombie: false },
     { name: 'MAS-NORTH-GNB-008', ip: '172.31.33.208', model: 'AirScale', sn: 'GNB5GMA00008', oem: 'NOKIA', loc: 'MAS-041', why: 'Site consolidation', on: '07-Dec-2025', by: 'Anjali Verma', wo: 'WO-2025-9288', zombie: false }
+  ],
+  l2vpn: [
+    { name: 'L2VPN-MAS-DEL-E-LINE-01', ip: '172.31.31.240', model: 'E-Line / VPWS', sn: 'VC-L2-990412', oem: 'JUNIPER', loc: 'MAS-041', why: 'Service decommissioned by customer request', on: '14-May-2026', by: 'Anjali Verma', wo: 'WO-2026-9412', zombie: false },
+    { name: 'L2VPN-BLR-CHE-VPLS-04', ip: '172.31.41.118', model: 'E-LAN / VPLS', sn: 'VC-L2-884102', oem: 'CISCO', loc: 'BGLK-277', why: 'Migrated to EVPN-VPWS', on: '22-Mar-2026', by: 'Gaurav Shukla', wo: 'WO-2026-8841', zombie: false },
+    { name: 'L2VPN-INDR-DEL-PSEUDOWIRE-09', ip: '172.31.38.99', model: 'PW-E1', sn: 'VC-L2-771904', oem: 'NOKIA', loc: 'INDR-275', why: 'Circuit retired', on: '11-Jan-2026', by: 'Amit Sharma', wo: 'WO-2026-7719', zombie: false },
+    { name: 'L2VPN-PUN-HYD-EVPN-12', ip: '172.31.52.88', model: 'EVPN-VPWS', sn: 'VC-L2-663201', oem: 'JUNIPER', loc: 'PUN-162', why: 'Capacity migration', on: '04-Dec-2025', by: 'Sai Krishna', wo: 'WO-2025-6632', zombie: false }
+  ],
+  l3vpn: [
+    { name: 'L3VPN-ENT-CORP-DEL-01', ip: '172.31.35.101', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-550119', oem: 'CISCO', loc: 'DEL-279', why: 'Contract expired, service terminated', on: '18-Jun-2026', by: 'Harish Kumar', wo: 'WO-2026-5501', zombie: false },
+    { name: 'L3VPN-BANK-HQ-MAS-02', ip: '172.31.33.204', model: 'IP-VPN / BGP-MPLS', sn: 'VRF-L3-441028', oem: 'JUNIPER', loc: 'MAS-041', why: 'Site migration', on: '04-Apr-2026', by: 'Sai Krishna', wo: 'WO-2026-4410', zombie: false },
+    { name: 'L3VPN-GOVT-SECURE-BGLK-07', ip: '172.31.31.199', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-339104', oem: 'NOKIA', loc: 'BGLK-277', why: 'Upgraded to SD-WAN overlay', on: '29-Nov-2025', by: 'Anjali Verma', wo: 'WO-2025-3391', zombie: false },
+    { name: 'L3VPN-RETAIL-CHAIN-KOL-15', ip: '172.31.67.142', model: 'BGP-MPLS L3VPN', sn: 'VRF-L3-228109', oem: 'CISCO', loc: 'KOL-204', why: 'Hardware refresh', on: '15-Aug-2025', by: 'Amit Sharma', wo: 'WO-2025-2281', zombie: false }
   ]
 };
 
@@ -57,8 +68,12 @@ const DK_WHY = ['Replaced under change request', 'End of life', 'End of support'
 const DK_BY = ['Anjali Verma', 'Gaurav Shukla', 'Amit Sharma', 'Sai Krishna', 'Harish Kumar',
   'Ronit Dulani', 'Meera Nair', 'Vikram Rao'];
 export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DK_ROLE: Record<NeClass, string[]> = { router: ['P','PE','BNG','EDGE','AGG'], switch: ['ACC','DIST','CORE','TOR'],
-  server: ['SRV','CDC','APP','DB'], dwdm: ['OADM','ROADM','MUX','ILA'], enodeb: ['ENB'], gnodeb: ['GNB'] };
+const DK_ROLE: Record<InactiveTab, string[]> = {
+  router: ['P','PE','BNG','EDGE','AGG'], switch: ['ACC','DIST','CORE','TOR'],
+  server: ['SRV','CDC','APP','DB'], dwdm: ['OADM','ROADM','MUX','ILA'],
+  enodeb: ['ENB'], gnodeb: ['GNB'],
+  l2vpn: ['LINE', 'VPLS', 'PW'], l3vpn: ['VRF', 'VPN', 'MPLS']
+};
 
 /* one small deterministic generator so a rebuild never reshuffles the archive */
 const lcg = (seed: number) => { let x = seed; return () => (x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; };
@@ -71,7 +86,7 @@ export const parseDmy = (s: string): Date => {
   return new Date(Number(y), MONTHS.indexOf(m), Number(d));
 };
 
-function expand(cls: NeClass, seeds: ArchiveRow[], total: number): ArchiveRow[] {
+function expand(cls: InactiveTab, seeds: ArchiveRow[], total: number): ArchiveRow[] {
   const out = seeds.slice(), r = lcg(cls.length * 7919 + total);
   const pick = <T,>(a: T[]): T => a[Math.floor(r() * a.length)];
   const roles = DK_ROLE[cls];
@@ -95,11 +110,15 @@ function expand(cls: NeClass, seeds: ArchiveRow[], total: number): ArchiveRow[] 
   return out.sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
 }
 
-export const DECOMM: Record<NeClass, ArchiveRow[]> = Object.fromEntries(
-  NE_CLASSES.map(k => [k, expand(k, DECOMM_SEEDS[k], stockCount(k, 'decomm'))])
-) as Record<NeClass, ArchiveRow[]>;
+export const DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
+  INACTIVE_TABS.map(t => {
+    const k = t.k;
+    const count = (NE_CLASSES as string[]).includes(k) ? stockCount(k as NeClass, 'decomm') : 18;
+    return [k, expand(k, DECOMM_SEEDS[k], count)];
+  })
+) as Record<InactiveTab, ArchiveRow[]>;
 
-export const decommRows = (cls: NeClass): ArchiveRow[] => DECOMM[cls];
+export const decommRows = (cls: InactiveTab): ArchiveRow[] => DECOMM[cls] || DECOMM.router;
 export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DECOMM[k]).filter(r => r.zombie).length;
 
 export const DECOMM_OLDEST = (() => {

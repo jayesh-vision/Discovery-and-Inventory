@@ -27,6 +27,12 @@ export const PHY_TABS: ClassMeta[] = [
   { k: 'server', n: 'Server', c: 96,  disc: 0 },     { k: 'dwdm',   n: 'DWDM',   c: 78,  disc: 0 },
   { k: 'enodeb', n: 'eNodeB', c: 18,  disc: 0 },     { k: 'gnodeb', n: 'gNodeB', c: 14,  disc: 0 }
 ];
+export type InactiveTab = NeClass | 'l2vpn' | 'l3vpn';
+export const INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
+  { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
+  { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
+  { k: 'l2vpn', n: 'L2VPN service' }, { k: 'l3vpn', n: 'L3VPN service' }
+];
 export const classMeta = (k: NeClass): ClassMeta => PHY_TABS.find(x => x.k === k)!;
 
 /* Classes that have a Node view destination. Server has no node-level page —
