@@ -110,7 +110,11 @@ src += `
 window.__nsLegacy = {
   go, drillTo, applyDrillQuery, VIEWS,
   current: () => CURRENT,
-  setDrill: d => { DRILL_PENDING = d; },
+  /* URL-driven only (the LegacyView effect). A null here means the URL has
+     no drill — the live DRILL must clear too, or go()'s refresh path keeps
+     the stale one and sync() shoves the old drill URL back on top of a
+     browser-back navigation, which reads as "back doesn't work". */
+  setDrill: d => { DRILL_PENDING = d; if (!d) DRILL = null; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
     if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; }
