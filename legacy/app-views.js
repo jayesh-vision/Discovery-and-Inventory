@@ -2484,7 +2484,14 @@ function viewVirtual() {
         ];
         return card(`
           <div class="row vw-justify-between vw-items-center">
-            <span class="vw-card-title-sm">${v.n}</span>${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
+            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
+              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+              <span class="vw-card-title-sm">${v.n}</span>
+            </button>
+            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0"
+              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+              ${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
+            </button>
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
             ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"

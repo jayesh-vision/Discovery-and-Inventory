@@ -109,9 +109,13 @@ function applyDrillQuery(view, q, label) {
   if (view === 'virtual') {
     let type = p.type || null;
     let st = p.st || p.status || null;
-    if (!type && !st && label && label.includes('·')) {
-      const parts = label.split('·').map(s => s.trim());
-      if (parts.length >= 2) { type = parts[0]; st = parts[1]; }
+    if (!type && !st && label) {
+      if (label.includes('·')) {
+        const parts = label.split('·').map(s => s.trim());
+        if (parts.length >= 2) { type = parts[0]; st = parts[1]; }
+      } else if (label !== 'All virtual resources' && label !== 'Virtual') {
+        type = label.trim();
+      }
     }
     const filters = {};
     if (st && st !== 'All') filters[0] = st;
