@@ -16,6 +16,7 @@ const VIEWS = {
   opexForm:  { mod:'Inventory', crumb:'Location · Site details · Opex edit',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
+  vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -26,7 +27,7 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical', vnflifecycle: 'virtual' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual' };
 
 const viewEl = document.getElementById('view'),
       crumbEl = document.getElementById('crumb'),
@@ -233,6 +234,8 @@ document.addEventListener('click', e => {
   }
   const vlcx = e.target.closest('[data-vnflcclose]');
   if (vlcx) { VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vdt = e.target.closest('[data-vnfdetailtab]');
+  if (vdt) { VNF_DETAIL_TAB = vdt.dataset.vnfdetailtab; go('vnfdetails'); return; }
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');

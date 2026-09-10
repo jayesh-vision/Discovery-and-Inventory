@@ -4758,7 +4758,163 @@ function viewVirtual() {
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
         i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View parent RAN node', { v:'physical', l:'RAN detail view', q:'from=Virtual' })])}`)}
+              A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })])}`)}
+  </div>`;
+}
+
+/* ── Virtual Element Details (View) ─────────────────────── */
+let VNF_DETAIL_ID = null;
+let VNF_DETAIL_TAB = 'vdu4g';
+
+function viewVnfDetails() {
+  const nf = VNF_DETAIL_ID || 'NTSON3435004';
+  const tab = VNF_DETAIL_TAB || 'vdu4g';
+
+  const tabs = [
+    { k: 'vdu4g', n: 'vDU-4G' },
+    { k: 'cell4g', n: 'Cell-4G' },
+    { k: 'vdu5g', n: 'vDU-5G' },
+    { k: 'cell5g', n: 'Cell-5G' }
+  ];
+
+  const vdu4gFields = [
+    ['HostSiteId', 'BGLK-277'],
+    ['HostSiteName', nf],
+    ['Latitude', '45.808083'],
+    ['Longitude', '-74.039527'],
+
+    ['PlanId', '2024'],
+    ['ReferenceId', '360298'],
+    ['WorkType', '-'],
+    ['Technology', 'LTE'],
+
+    ['Region', 'Eastern'],
+    ['Province', 'QC'],
+    ['CoverageType', 'Macro-O'],
+    ['Strategy', 'NEE-LTE-VU-ORAN-MACRO-23A...'],
+
+    ['Status', 'Ready For Configuration'],
+    ['Vendor', 'Samsung ORAN'],
+    ['Toycell', 'N'],
+    ['BuildStatus', '-'],
+
+    ['HardwareConfig', 'HPE ProLiant Standard'],
+    ['BtsModel', 'HPE-DL110 Gen11'],
+    ['MaterialId', '2419280'],
+    ['VendorName', 'Samsung ORAN'],
+
+    ['Interface1Type', 'FIBER'],
+    ['Interface1Speed', '25Gbps'],
+    ['Interface2Type', '-'],
+    ['Interface2Speed', '-'],
+
+    ['MaterialDescription', 'HPE DL110-Gen11 Multi-por...'],
+    ['NeName', 'NTSON3435016'],
+    ['DuElementId/UserLabel', 'O-BGLK-277-03'],
+    ['DuElementAlias', 'NTSON3435016'],
+
+    ['SerialNumber', '-'],
+    ['MacAddress1', '-'],
+    ['MacAddress2', '-'],
+    ['PassCode', '-']
+  ];
+
+  const vdu5gFields = [
+    ['HostSiteId', 'BGLK-277'],
+    ['HostSiteName', nf],
+    ['Latitude', '43.77725'],
+    ['Longitude', '-79.25134'],
+
+    ['PlanId', '-'],
+    ['ReferenceId', '-'],
+    ['WorkType', 'Build'],
+    ['Technology', '5G NR'],
+
+    ['Region', 'Central'],
+    ['Province', 'ON'],
+    ['CoverageType', 'Micro-CO'],
+    ['Strategy', '-'],
+
+    ['Status', 'Build'],
+    ['Vendor', 'Samsung ORAN'],
+    ['Toycell', 'N'],
+    ['BuildStatus', 'CIQ_Ready'],
+
+    ['HardwareConfig', 'vDU_LTE_NR'],
+    ['BtsModel', 'HPE1004'],
+    ['MaterialId', '100024'],
+    ['VendorName', 'HPE'],
+
+    ['Interface1Type', '-'],
+    ['Interface1Speed', '-'],
+    ['Interface2Type', '-'],
+    ['Interface2Speed', '-'],
+
+    ['MaterialDescription', 'vDU Server'],
+    ['NeName', 'OTSLB2000002002'],
+    ['DuElementId', 'O-LB0002-BTS-02'],
+    ['DuElementAlias', '-'],
+
+    ['SerialNumber', '-'],
+    ['MacAddress1', '-'],
+    ['MacAddress2', '-'],
+    ['PassCode', '-']
+  ];
+
+  const cell4gRows = [
+    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
+    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
+    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1']
+  ];
+
+  const cell5gRows = [
+    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
+    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
+    ['BGLK-277', nf, '4096', 'NTSLB1436091-00-04096-00600-01-001-OMACC', '0']
+  ];
+
+  const renderGrid = fields => `<div class="card" style="padding:var(--vw-space-lg)">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-md) var(--vw-space-xl)">
+      ${fields.map(([k, v]) => `<div>
+        <div class="stat-k" style="font-size:0.6875rem;color:var(--vw-color-gray-500);margin-bottom:2px">${k}</div>
+        <div class="vw-value" style="font-size:0.875rem">${v}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+
+  const renderCellTable = (rows, key) => card(`
+    ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
+    ${table([{t:'Host site'},{t:'Coverage site'},{t:'Cell identity'},{t:'Cell name'},{t:'Cell number'}],
+      rows.map(r => [
+        `<span class="vw-value">${r[0]}</span>`,
+        `<span class="vw-value">${r[1]}</span>`,
+        `<span class="mono">${r[2]}</span>`,
+        `<span class="mono">${r[3]}</span>`,
+        `<span class="num">${r[4]}</span>`
+      ]))}
+  `);
+
+  return `<div class="page">
+    ${drillBar()}
+
+    <div class="card" style="margin-bottom:var(--vw-space-md);padding:var(--vw-space-md) var(--vw-space-lg)">
+      <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-xl);flex-wrap:wrap">
+        <div><span class="stat-k" style="display:block">Status</span><span class="vw-value" style="font-size:0.9375rem">Ready</span></div>
+        <div><span class="stat-k" style="display:block">Name</span><span class="vw-value" style="font-size:0.9375rem">${esc(nf)}</span></div>
+        <div><span class="stat-k" style="display:block">Site type</span><span class="vw-value" style="font-size:0.9375rem">VDU</span></div>
+        <div><span class="stat-k" style="display:block">Created on</span><span class="vw-value" style="font-size:0.9375rem">13-Feb-2024</span></div>
+        <div><span class="stat-k" style="display:block">MODIFIED_ON</span><span class="vw-value" style="font-size:0.9375rem">22-Feb-2026</span></div>
+      </div>
+    </div>
+
+    <div class="tabbar" style="margin-bottom:var(--vw-space-md)">
+      ${tabs.map(t => `<button class="tab${tab === t.k ? ' is-on' : ''}" data-vnfdetailtab="${t.k}">${t.n}</button>`).join('')}
+    </div>
+
+    ${tab === 'vdu4g' ? renderGrid(vdu4gFields)
+      : tab === 'cell4g' ? renderCellTable(cell4gRows, 'cell4g')
+      : tab === 'vdu5g' ? renderGrid(vdu5gFields)
+      : renderCellTable(cell5gRows, 'cell5g')}
   </div>`;
 }
 
@@ -6727,6 +6883,7 @@ const VIEWS = {
   opexForm:  { mod:'Inventory', crumb:'Location · Site details · Opex edit',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
+  vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -6737,7 +6894,7 @@ const VIEWS = {
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
-                  node: 'location', resource: 'physical', vnflifecycle: 'virtual' };
+                  node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual' };
 
 const _el = id => document.getElementById(id) || document.createElement('div');
 let viewEl, crumbEl, modEl;
@@ -6877,7 +7034,7 @@ function go(k) {
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
-    : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID }
+    : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
@@ -6967,6 +7124,8 @@ document.addEventListener('click', e => {
   }
   const vlcx = e.target.closest('[data-vnflcclose]');
   if (vlcx) { VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const vdt = e.target.closest('[data-vnfdetailtab]');
+  if (vdt) { VNF_DETAIL_TAB = vdt.dataset.vnfdetailtab; go('vnfdetails'); return; }
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
@@ -7388,6 +7547,7 @@ window.__nsLegacy = {
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
     if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
+    if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed

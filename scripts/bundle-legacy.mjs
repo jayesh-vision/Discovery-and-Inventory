@@ -95,7 +95,7 @@ patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
-    : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID }
+    : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
@@ -122,6 +122,7 @@ window.__nsLegacy = {
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
     if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
+    if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed
