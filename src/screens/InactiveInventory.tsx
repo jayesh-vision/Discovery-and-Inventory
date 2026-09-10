@@ -31,10 +31,8 @@ export default function InactiveInventory() {
   const setCls = (k: NeClass) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
 
-  const rowActions = (r: ArchiveRow): Action[] => [
-    { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-    ...(r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : [])
-  ];
+  const rowActions = (r: ArchiveRow): Action[] =>
+    r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : [];
 
   return (
     <div className="page">

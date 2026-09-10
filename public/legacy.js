@@ -4839,8 +4839,7 @@ function viewServices() {
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
           `<span class="mono">${s.ifc}</span>`, ver(s.v)
-        ]), '',
-        i => [A('Open attachment element', { v:'resource', l:rows[i].name })])}`)}
+        ]))}`)}
   </div>`;
 }
 
