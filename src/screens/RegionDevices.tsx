@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Card, Chip, DrillBar, Mono, Sub, cv } from '../components/ui';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Card, Chip, Mono, Sub, cv } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { REASONS, REGIONS, STATE_DEVICES, VENDORS, filterRegionDevices, type DeviceStatus, type Region, type RegionDevice } from '../data/discovery';
 
@@ -16,7 +16,6 @@ const isStatus = (v: string | null): v is DeviceStatus => v === 'Answered' || v 
    answers. filterRegionDevices is the same predicate scopeDiscovery uses to
    build those counts. */
 export default function RegionDevices() {
-  const nav = useNavigate();
   const { region: regionParam } = useParams();
   const [sp] = useSearchParams();
   const region = isRegion(regionParam) ? regionParam : undefined;
@@ -53,15 +52,10 @@ export default function RegionDevices() {
     });
   }, [base, query, filters]);
 
-  const reset = () => { setQuery(''); setFilters({}); };
   const title = region ? `${region} region` : 'All circles';
-
 
   return (
     <div className="page">
-      <DrillBar from={sp.get('from') ?? 'Insights'} label={title}
-        onBack={() => nav('/discovery/insights')} onClear={reset} />
-
       <Card>
         <DataGrid<RegionDevice>
           columns={[{ t: 'Status' }, { t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'State' },

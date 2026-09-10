@@ -16,7 +16,7 @@ declare global {
     __nsBridge?: {
       owns: (k: string) => boolean;
       navigate: (k: string, drill: { label?: string; q?: string } | null, params?: Record<string, string>) => void;
-      sync: (k: string, params: Record<string, string>) => void;
+      sync: (k: string, params: Record<string, string>, drill?: { label?: string; q?: string; from?: string } | null) => void;
     };
   }
 }
@@ -64,10 +64,12 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
            which reads as "clicking a tab went back to Virtual" */
         nav(target, { replace: !!drill?.q?.toLowerCase().includes('from=virtual') });
       },
-      /* the prototype re-rendered itself (a tab, a drill, a row action): follow it */
-      sync: (k, params) => {
-        const target = legacyPath(k, null, params);
-        if (target !== window.location.pathname) { fromLegacy.current = true; nav(target); }
+      /* the prototype re-rendered itself (a tab, a drill, a row action): follow
+         it — carrying its active drill into the URL so the breadcrumb (the
+         only navigation) always names where the reader actually is */
+      sync: (k, params, drill) => {
+        const target = legacyPath(k, drill ?? null, params);
+        if (target !== window.location.pathname + window.location.search) { fromLegacy.current = true; nav(target); }
       }
     };
   }, [nav]);
@@ -85,7 +87,9 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     sp.delete('drill'); sp.delete('from'); sp.delete('back');
     const q = sp.toString();
     L.setParams(legacyKey, params as Record<string, string>);
-    if (q) L.applyDrillQuery(legacyKey, q);
+    /* always applied, empty query included — a plain URL means the screen's
+       clean default state, which is what a breadcrumb click navigates to */
+    L.applyDrillQuery(legacyKey, q);
     L.setDrill(label ? { view: legacyKey, label, q, from, back } : null);
     L.go(legacyKey);
   }, [ready, legacyKey, loc.search, params]);

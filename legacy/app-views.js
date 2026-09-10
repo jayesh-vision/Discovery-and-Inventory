@@ -1372,6 +1372,8 @@ function locInsights() {
         { v:'location', l:`${t.n} — filtered list`, q:`view=list&type=${t.k}` })).join('')}
     </div>
 
+    ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
+
     ${card(`
       <div style="margin-bottom:var(--vw-space-lg)">
         ${headSm('Inventory across the estate', 'everything this module tracks against these locations — active, logical and passive')}
@@ -1387,8 +1389,6 @@ function locInsights() {
           `Physical plant across ${n(PASSIVE_TABS.length)} categories`,
           passiveSegs, { v:'passive', l:'All passive infrastructure' })}
       </div>`)}
-
-    ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
 
     ${locMap()}`;
 }
@@ -1432,10 +1432,7 @@ function locList() {
       { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
       LOC_REGION === r);
   }).join('');
-  return `<div class="row" style="margin-bottom:var(--vw-space-xs)">
-      <button class="nst-btn nst-btn--sm nst-btn--ghost" data-locview="insights">← Back to dashboard</button>
-    </div>
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
+  return `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -1608,7 +1605,7 @@ function mapPanel() {
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
       ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
     </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
-    <button class="nst-btn nst-btn--sm nst-btn--filled" data-locview="list" style="align-self:flex-start">Open ${n(g.tot)} sites</button>
+    <button class="nst-btn nst-btn--sm nst-btn--filled is-drill" style="align-self:flex-start"${dA({ v:'location', l:`Sites in ${g.n}`, q:`view=list&state=${g.st}` })}>Open ${n(g.tot)} sites</button>
   </div>`;
 }
 
@@ -1654,7 +1651,7 @@ function locMap() {
 }
 
 /* ---- view 4 · site drill-down ---- */
-let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'ne';
+let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
 let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
   const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
@@ -1784,8 +1781,7 @@ function viewSite() {
   };
 
   return `<div class="page">
-    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
-      `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>`)}
+    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`)}
 
     ${card(`
       <div class="meta-bar">
@@ -2291,8 +2287,7 @@ function viewVnfLifecycle() {
      about what's actually happened on this NF */
   if (vnf.st === 'Planned') {
     return `<div class="page">
-      ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
-        `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+      ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`)}
       ${drillBar()}
       ${card(`
         <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-2xl);text-align:center">
@@ -2312,8 +2307,7 @@ function viewVnfLifecycle() {
     : s.steps.every(x => x.st === 'done') ? 'done'
     : s.steps.some(x => x.st === 'progress') ? 'progress' : 'pending';
   return `<div class="page">
-    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
-      `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`)}
     ${drillBar()}
     <div class="row-t" style="align-items:flex-start">
       <div class="stack-s" style="width:min(320px,100%);flex-shrink:0">

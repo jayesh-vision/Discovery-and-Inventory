@@ -66,11 +66,6 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
 
 
 
-/* 2d. the transcript has no breadcrumb to go back by — give it a button */
-patch(`      \`<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`,
-`      \`<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>\`)}`, 'transcript back button');
-
 /* 2e. scan targets: the quick filter sits in the grid bar, Run now in its kebab */
 patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>\`)}
     \${drillBar()}
@@ -94,7 +89,9 @@ patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
 `, `    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
-  if (window.__nsBridge && window.__nsBridge.sync) window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT));
+  if (window.__nsBridge && window.__nsBridge.sync)
+    window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT),
+      DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
@@ -116,7 +113,7 @@ window.__nsLegacy = {
   setDrill: d => { DRILL_PENDING = d; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
-    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; }
+    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }

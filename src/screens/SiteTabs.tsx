@@ -13,7 +13,6 @@ export function SiteHeader({ l }: { l: Location }) {
         <span className="vw-card-description">{l.type} · {l.id} · {l.city}, {l.state}</span>
       </div>
       <span className="grow" />
-      <button className="nst-btn nst-btn--sm" onClick={() => nav('/inventory/location?view=list')}>Back to list</button>
       <button className="nst-btn nst-btn--sm" onClick={() => nav('/inventory/reports')}>Download report</button>
       <button className="nst-btn nst-btn--filled nst-btn--sm" onClick={() => nav(`/inventory/location/site/${l.id}/details`)}>Edit site</button>
     </div>

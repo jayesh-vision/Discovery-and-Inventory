@@ -897,7 +897,7 @@ button.kpi-progress:focus-visible { outline: 2px solid var(--vw-color-blue-500);
    "this facet is applied" without inventing a new selected-state idiom */
 button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
   box-shadow: 0 0 0 1px var(--kpi-hover, currentColor), 0 1px 2px rgba(16, 24, 40, .04); }
-.kprog-label { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem;
+.kprog-label {font-size: 0.75rem;
   font-weight: 600; color: var(--vw-color-gray-500); letter-spacing: .01em; }
 /* the status legend under the bar must read as ONE line in every card
    built on this tile (KPI cards, region facet cards): compact type and
@@ -1099,13 +1099,15 @@ a.side-item.active:not(.is-active) { background: transparent; }
 /* top-left breadcrumb — see Topbar.tsx. Padded to line up with the page
    content's own side padding, not the page's own title (some screens
    have none), so it always sits flush above whatever renders below it. */
-.topbar { display: flex; align-items: center; gap: 6px;
+.topbar { display: flex; align-items: center; flex-wrap: wrap;
   padding: var(--vw-space-lg) var(--vw-space-xl) 0; font-size: var(--vw-font-label-md); }
+.topbar-seg { display: inline-flex; align-items: center; }
 .topbar-crumb-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; cursor: pointer;
   color: var(--vw-color-gray-400); }
-.topbar-crumb-link:hover { color: var(--vw-color-gray-600); text-decoration: underline; }
-.topbar-crumb-sep { color: var(--vw-color-gray-300); font-size: 0.8em; }
-.topbar-crumb-current { color: var(--vw-color-gray-600); font-weight: 500; }
+.topbar-crumb-link:hover { color: var(--vw-color-gray-700); text-decoration: underline; }
+.topbar-crumb-sep { color: var(--vw-color-gray-300); margin: 0 6px; }
+.topbar-crumb-text { color: var(--vw-color-gray-400); }
+.topbar-crumb-current { color: var(--vw-color-gray-700); font-weight: 500; }
 
 /* ══ Discovery Insights (React) ═════════════════════════ */
 .ins2 { display: flex; gap: var(--vw-space-lg); align-items: flex-start; }

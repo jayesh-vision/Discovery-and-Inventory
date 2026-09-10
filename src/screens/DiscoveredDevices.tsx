@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, DrillBar, Mono } from '../components/ui';
+import { useSearchParams } from 'react-router-dom';
+import { Card, Mono } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { REGIONS, STATE_DEVICES, VENDORS, filterIdentified, type IdentifiedDevice, type Region } from '../data/discovery';
 
@@ -13,7 +13,6 @@ const isRegion = (v: string | null): v is Region => !!v && REGIONS.some(r => r.r
    through filterIdentified, so "Maharashtra — 233" and this grid's row count
    are never two different numbers. */
 export default function DiscoveredDevices() {
-  const nav = useNavigate();
   const [sp] = useSearchParams();
   const urlState = sp.get('state') ?? undefined;
   const urlVendor = sp.get('vendor') ?? undefined;
@@ -46,15 +45,8 @@ export default function DiscoveredDevices() {
     });
   }, [base, query, filters]);
 
-  const title = [urlRegion, urlState, urlVendor, urlModel].filter(Boolean).join(' · ') || 'Discovered devices';
-  const reset = () => { setQuery(''); setFilters({}); };
-
-
   return (
     <div className="page">
-      <DrillBar from={sp.get('from') ?? 'Insights'} label={title}
-        onBack={() => nav('/discovery/insights')} onClear={reset} />
-
       <Card>
         <DataGrid<IdentifiedDevice>
           columns={[{ t: 'Device name' }, { t: 'IP address' }, { t: 'State' }, { t: 'Region' }, { t: 'Class' }, { t: 'Vendor' }, { t: 'Model' }]}

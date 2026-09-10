@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, DrillBar, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
+import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
   ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView,
@@ -50,7 +50,6 @@ export default function PhysicalResources() {
     const req = (stockParam ? stockParam.split(',') : []).filter(isActive);
     return new Set(req.length ? req : ACTIVE_STATES);
   }, [stockParam]);
-  const drill = sp.get('drill');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const set = (k: string, v: string | null) => {
@@ -93,21 +92,8 @@ export default function PhysicalResources() {
     setSp(next, { replace: true });
   };
 
-  const handleBack = () => {
-    const from = sp.get('from');
-    if (from?.toLowerCase() === 'virtual') {
-      nav('/inventory/virtual');
-    } else {
-      nav(-1);
-    }
-  };
-
-  const fromLabel = sp.get('from')?.toLowerCase().includes('virtual') ? 'Virtual' : (sp.get('from') ?? 'Inventory');
-
   return (
     <div className="page">
-      {drill && <DrillBar from={fromLabel} label={drill} onBack={handleBack} />}
-
       <StatStrip cells={[
         { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
         { k: 'Ports used', v: `${(EST.ports.used / EST.ports.total * 100).toFixed(0)}%`, s: `${fmt(EST.ports.free)} free of ${fmt(EST.ports.total)}`, t: 'emerald' },

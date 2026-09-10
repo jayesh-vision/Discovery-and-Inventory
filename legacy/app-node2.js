@@ -557,8 +557,7 @@ function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
     return `<div class="page">
-      ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`,
-        `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>`)}
+      ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
       ${nodeHeader(N)}
       ${card(`

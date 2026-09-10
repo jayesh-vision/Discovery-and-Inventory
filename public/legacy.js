@@ -70,13 +70,11 @@ let DRILL = null;                 /* { view, label, from } set by the router  */
 /* d = { v:targetView, l:'human label', q:'key=value&key=value' } */
 const dA = d => ` data-drill="${d.v}" data-dlabel="${esc(d.l)}"${d.q ? ` data-dq="${esc(d.q)}"` : ''}`;
 
+/* Navigation is the topbar breadcrumb alone now — the in-page drill banner
+   is retired. The function stays so every view's \${drillBar()} call keeps
+   working; DRILL itself still drives filters and the URL's drill label. */
 function drillBar() {
-  if (!DRILL || DRILL.view !== CURRENT) return '';
-  return `<div class="drill-bar">
-    <span class="drill-back" data-nav="${DRILL.back}">&#8592; ${esc(DRILL.from)}</span>
-    <span class="drill-sep">/</span>
-    <span class="drill-label">${esc(DRILL.label)}</span>
-  </div>`;
+  return '';
 }
 
 
@@ -2998,8 +2996,7 @@ function viewTarget() {
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · Delhi`,
-      `<button class="nst-btn nst-btn--sm" data-nav="targets">Back to targets</button>
-       <button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
+      `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${kpi('Last verified', '3 h ago', '01-Sep-2026 09:10 IST', 'sky')}
@@ -3701,6 +3698,8 @@ function locInsights() {
         { v:'location', l:`${t.n} — filtered list`, q:`view=list&type=${t.k}` })).join('')}
     </div>
 
+    ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
+
     ${card(`
       <div style="margin-bottom:var(--vw-space-lg)">
         ${headSm('Inventory across the estate', 'everything this module tracks against these locations — active, logical and passive')}
@@ -3716,8 +3715,6 @@ function locInsights() {
           `Physical plant across ${n(PASSIVE_TABS.length)} categories`,
           passiveSegs, { v:'passive', l:'All passive infrastructure' })}
       </div>`)}
-
-    ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
 
     ${locMap()}`;
 }
@@ -3761,10 +3758,7 @@ function locList() {
       { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
       LOC_REGION === r);
   }).join('');
-  return `<div class="row" style="margin-bottom:var(--vw-space-xs)">
-      <button class="nst-btn nst-btn--sm nst-btn--ghost" data-locview="insights">← Back to dashboard</button>
-    </div>
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
+  return `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -3937,7 +3931,7 @@ function mapPanel() {
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
       ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
     </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
-    <button class="nst-btn nst-btn--sm nst-btn--filled" data-locview="list" style="align-self:flex-start">Open ${n(g.tot)} sites</button>
+    <button class="nst-btn nst-btn--sm nst-btn--filled is-drill" style="align-self:flex-start"${dA({ v:'location', l:`Sites in ${g.n}`, q:`view=list&state=${g.st}` })}>Open ${n(g.tot)} sites</button>
   </div>`;
 }
 
@@ -3983,7 +3977,7 @@ function locMap() {
 }
 
 /* ---- view 4 · site drill-down ---- */
-let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'ne';
+let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
 let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
   const l = LOCATIONS.find(x => x.id === SITE_ID) || LOCATIONS[0];
@@ -4113,8 +4107,7 @@ function viewSite() {
   };
 
   return `<div class="page">
-    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
-      `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>`)}
+    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`)}
 
     ${card(`
       <div class="meta-bar">
@@ -4620,8 +4613,7 @@ function viewVnfLifecycle() {
      about what's actually happened on this NF */
   if (vnf.st === 'Planned') {
     return `<div class="page">
-      ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
-        `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+      ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`)}
       ${drillBar()}
       ${card(`
         <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-2xl);text-align:center">
@@ -4641,8 +4633,7 @@ function viewVnfLifecycle() {
     : s.steps.every(x => x.st === 'done') ? 'done'
     : s.steps.some(x => x.st === 'progress') ? 'progress' : 'pending';
   return `<div class="page">
-    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`,
-      `<button class="nst-btn nst-btn--sm" data-nav="virtual">Back to list</button>`)}
+    ${pageHead('Lifecycle operation', `RAN ZTP NEW 1 · ${nf}`)}
     ${drillBar()}
     <div class="row-t" style="align-items:flex-start">
       <div class="stack-s" style="width:min(320px,100%);flex-shrink:0">
@@ -5119,9 +5110,7 @@ function viewResource() {
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
   return `<div class="page">
-    ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`,
-      `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>
-       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>`)}
+    ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`)}
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
@@ -6638,8 +6627,7 @@ function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
     return `<div class="page">
-      ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`,
-        `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>`)}
+      ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
       ${nodeHeader(N)}
       ${card(`
@@ -6773,12 +6761,14 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'inactive') { if (p.cls) INACT_CLS = p.cls; }
   if (view === 'location') {
-    if (p.view) LOC_VIEW = p.view;
+    /* the URL is the source of truth: a plain /inventory/location is the
+       dashboard, so the breadcrumb's "Location" always lands there */
+    LOC_VIEW = p.view || 'insights';
     LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
-  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
+  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
@@ -6855,7 +6845,9 @@ function go(k) {
     if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
-  if (window.__nsBridge && window.__nsBridge.sync) window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT));
+  if (window.__nsBridge && window.__nsBridge.sync)
+    window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT),
+      DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
@@ -7043,7 +7035,7 @@ document.addEventListener('click', e => {
   if (cc) { PIN_GROUP = null; const p = document.getElementById('mappanel');
     if (p) p.innerHTML = mapPanel(); return; }
   const site = e.target.closest('[data-site]');
-  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'ne'; go('site'); return; }
+  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'attention'; go('site'); return; }
   const sc = e.target.closest('[data-stock]');
   if (sc) { const k = sc.dataset.stock;
     if (PHY_STOCK.has(k)) { if (PHY_STOCK.size > 1) PHY_STOCK.delete(k); } else PHY_STOCK.add(k);
@@ -7361,7 +7353,7 @@ window.__nsLegacy = {
   setDrill: d => { DRILL_PENDING = d; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
-    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; }
+    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }

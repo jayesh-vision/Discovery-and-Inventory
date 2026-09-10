@@ -68,13 +68,11 @@ let DRILL = null;                 /* { view, label, from } set by the router  */
 /* d = { v:targetView, l:'human label', q:'key=value&key=value' } */
 const dA = d => ` data-drill="${d.v}" data-dlabel="${esc(d.l)}"${d.q ? ` data-dq="${esc(d.q)}"` : ''}`;
 
+/* Navigation is the topbar breadcrumb alone now — the in-page drill banner
+   is retired. The function stays so every view's \${drillBar()} call keeps
+   working; DRILL itself still drives filters and the URL's drill label. */
 function drillBar() {
-  if (!DRILL || DRILL.view !== CURRENT) return '';
-  return `<div class="drill-bar">
-    <span class="drill-back" data-nav="${DRILL.back}">&#8592; ${esc(DRILL.from)}</span>
-    <span class="drill-sep">/</span>
-    <span class="drill-label">${esc(DRILL.label)}</span>
-  </div>`;
+  return '';
 }
 
 

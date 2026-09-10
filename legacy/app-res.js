@@ -214,9 +214,7 @@ function viewResource() {
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
   return `<div class="page">
-    ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`,
-      `<button class="nst-btn nst-btn--sm" data-nav="physical">Back to list</button>
-       <button class="nst-btn nst-btn--sm" data-site="BGLK-277">Site</button>`)}
+    ${pageHead(r.name, `Router · ${r.model} · ${r.oem} · ${r.loc}`)}
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}

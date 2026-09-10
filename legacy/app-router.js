@@ -77,12 +77,14 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'inactive') { if (p.cls) INACT_CLS = p.cls; }
   if (view === 'location') {
-    if (p.view) LOC_VIEW = p.view;
+    /* the URL is the source of truth: a plain /inventory/location is the
+       dashboard, so the breadcrumb's "Location" always lands there */
+    LOC_VIEW = p.view || 'insights';
     LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
-  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
+  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
@@ -325,7 +327,7 @@ document.addEventListener('click', e => {
   if (cc) { PIN_GROUP = null; const p = document.getElementById('mappanel');
     if (p) p.innerHTML = mapPanel(); return; }
   const site = e.target.closest('[data-site]');
-  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'ne'; go('site'); return; }
+  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'attention'; go('site'); return; }
   const sc = e.target.closest('[data-stock]');
   if (sc) { const k = sc.dataset.stock;
     if (PHY_STOCK.has(k)) { if (PHY_STOCK.size > 1) PHY_STOCK.delete(k); } else PHY_STOCK.add(k);
