@@ -82,6 +82,7 @@ function applyDrillQuery(view, q, label) {
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
+  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
@@ -306,8 +307,20 @@ document.addEventListener('click', e => {
     CAPEX_SAVED = true; go('capex'); return;
   }
   const cl = e.target.closest('[data-cluster]');
-  if (cl) { PIN_GROUP = cl.dataset.cluster.split(','); const p = document.getElementById('mappanel');
-    if (p) p.innerHTML = mapPanel(); return; }
+  if (cl) {
+    const ids = cl.dataset.cluster.split(',');
+    /* the cluster sits on top of its state's shape and usually wins the
+       hit-test, so a click here must keep the state selection (and its
+       highlighted outline) in sync — otherwise the panel is left showing
+       whichever state was selected last, not the one under the pointer */
+    const first = LOCATIONS.find(x => x.id === ids[0]);
+    const g = first && STATE_CIRCLE[first.state];
+    if (g) LOC_SEL = g.c;
+    syncMapSel();
+    PIN_GROUP = ids;
+    const p = document.getElementById('mappanel');
+    if (p) p.innerHTML = mapPanel(); return;
+  }
   const cc = e.target.closest('[data-clusterclear]');
   if (cc) { PIN_GROUP = null; const p = document.getElementById('mappanel');
     if (p) p.innerHTML = mapPanel(); return; }
@@ -380,18 +393,7 @@ document.addEventListener('click', e => {
   const mc = e.target.closest('[data-mapcolor]');
   if (mc) { MAP_COLOR = mc.dataset.mapcolor; go('location'); return; }
   const mb = e.target.closest('path.st[data-circle]');
-  if (mb) {
-    LOC_SEL = mb.dataset.circle; PIN_GROUP = null;
-    document.querySelectorAll('path.st').forEach(x => {
-      const on = x.dataset.circle === LOC_SEL;
-      x.classList.toggle('is-sel', on);
-      x.setAttribute('stroke', on ? 'var(--vw-color-gray-900)' : 'var(--vw-color-white)');
-      x.setAttribute('stroke-width', on ? 2.4 : 0.9);
-    });
-    const p = document.getElementById('mappanel');
-    if (p) p.innerHTML = mapPanel();
-    return;
-  }
+  if (mb) { selectMapState(mb.dataset.circle); return; }
   const tb = e.target.closest('[data-tab]');
   if (tb) {
     const [g, k] = tb.dataset.tab.split(':');
@@ -543,6 +545,9 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target.hasAttribute && e.target.hasAttribute('data-mapstate')) {
+    selectMapState(e.target.value); return;
+  }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
     gridOf(key).filters[field] = e.target.value;
@@ -552,6 +557,26 @@ document.addEventListener('change', e => {
   if (c && (c.contains('cx-in') || c.contains('cx-hd') || c.contains('ox-in') || c.contains('ox-hd')))
     e.target.dispatchEvent(new Event('input', { bubbles: true }));
 });
+
+/* ── map state selection ──────────────────────────────── */
+/* One path for every way a state can be chosen — boundary click, cluster
+   pin, dropdown — so the outline, the panel and the filter can't drift
+   apart. code = circle code, or null/'' for the all-India rollup. */
+function syncMapSel() {
+  document.querySelectorAll('path.st').forEach(x => {
+    const on = !!LOC_SEL && x.dataset.circle === LOC_SEL;
+    x.classList.toggle('is-sel', on);
+    x.setAttribute('stroke', on ? 'var(--vw-color-gray-900)' : 'var(--vw-color-white)');
+    x.setAttribute('stroke-width', on ? 2.4 : 0.9);
+  });
+}
+function selectMapState(code) {
+  LOC_SEL = code || null;
+  PIN_GROUP = null;
+  syncMapSel();
+  const p = document.getElementById('mappanel');
+  if (p) p.innerHTML = mapPanel();
+}
 
 /* ── map pan / zoom ───────────────────────────────────── */
 let MZ = { k: 1, x: 0, y: 0 };
@@ -587,9 +612,18 @@ function bindMap() {
   const svg = document.getElementById('mapsvg'); if (!svg || svg.dataset.bound) return;
   svg.dataset.bound = '1';
   let drag = null;
-  svg.addEventListener('pointerdown', e => { drag = { x:e.clientX, y:e.clientY, ox:MZ.x, oy:MZ.y }; svg.setPointerCapture(e.pointerId); });
+  /* Capture only once a real drag starts. Capturing already on pointerdown
+     makes the browser retarget pointerup to the svg, and the compatibility
+     click event then fires on the svg instead of the state path under the
+     pointer — which silently kills state selection. A small movement
+     threshold is what separates a click from a pan. */
+  svg.addEventListener('pointerdown', e => { drag = { x:e.clientX, y:e.clientY, ox:MZ.x, oy:MZ.y, id:e.pointerId, live:false }; });
   svg.addEventListener('pointermove', e => {
     if (!drag) return;
+    if (!drag.live) {
+      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 5) return;
+      drag.live = true; svg.setPointerCapture(drag.id);
+    }
     const r = svg.getBoundingClientRect(), s = GEO.W / r.width;
     MZ.x = drag.ox + (e.clientX - drag.x) * s; MZ.y = drag.oy + (e.clientY - drag.y) * s; clampMZ(); applyMZ();
   });

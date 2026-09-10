@@ -893,8 +893,18 @@ button.kpi-progress { cursor: pointer; -webkit-tap-highlight-color: transparent;
 button.kpi-progress:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, .1); border-color: var(--kpi-hover, currentColor); }
 button.kpi-progress:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(15, 23, 42, .08); }
 button.kpi-progress:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; border-color: var(--vw-color-blue-500); }
+/* a region card acting as the list's live filter — the doubled border says
+   "this facet is applied" without inventing a new selected-state idiom */
+button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
+  box-shadow: 0 0 0 1px var(--kpi-hover, currentColor), 0 1px 2px rgba(16, 24, 40, .04); }
 .kprog-label { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem;
   font-weight: 600; color: var(--vw-color-gray-500); letter-spacing: .01em; }
+/* the status legend under the bar must read as ONE line in every card
+   built on this tile (KPI cards, region facet cards): compact type and
+   gaps, items forbidden to wrap, and clip rather than break the row */
+.kpi-progress .legend { flex-wrap: nowrap; gap: 8px; overflow: hidden; }
+.kpi-progress .legend-i { white-space: nowrap; font-size: 0.65rem; gap: 4px; flex: 0 0 auto; }
+.kpi-progress .legend-sw { width: 9px; height: 9px; flex-shrink: 0; }
 
 /* ── Location · network hierarchy diagram ─────────────────
    Datacenters (hub) → PoPs (mid ring) → Sites (outer ring), one spoke per
@@ -985,6 +995,12 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 .cov-alert-n { font-size: 0.8125rem; color: var(--vw-color-gray-600); }
 .cov-alert-reason { font-size: var(--vw-font-label-sm); color: var(--vw-color-gray-500); margin-top: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Attention tab: full page width, so alert reasons wrap instead of
+   truncating, and next-step rows get a small numbered marker */
+.attn-alerts .cov-alert-reason { white-space: normal; }
+.attn-step-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--vw-color-slate-100); color: var(--vw-color-gray-600);
+  font-size: 11px; font-weight: 600; flex-shrink: 0; }
 .cov-clear { display: flex; align-items: center; gap: var(--vw-space-sm); margin-top: var(--vw-space-sm);
   padding: var(--vw-space-md); background: var(--vw-color-emerald-25); border: 1px solid var(--vw-color-emerald-100);
   border-radius: var(--vw-radius-sm); color: var(--vw-color-emerald-700); font-size: 0.8125rem; }
@@ -1004,6 +1020,9 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 .cov-chip { font-size: var(--vw-font-label-sm); color: var(--vw-color-gray-600); background: var(--vw-color-slate-50);
   border: 1px solid var(--vw-color-slate-200); border-radius: 999px; padding: 3px 10px; }
 .cov-chip b { color: var(--vw-color-gray-900); font-weight: 600; margin-left: 2px; }
+/* estate inventory cards: chips carry a colour swatch keyed to the meter */
+.inv-chip { display: inline-flex; align-items: center; gap: 5px; }
+.kpi-progress .cov-chip-row { margin-top: var(--vw-space-sm); }
 
 .cov-stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--vw-space-sm); margin-top: var(--vw-space-sm); }
 .cov-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--vw-space-sm);

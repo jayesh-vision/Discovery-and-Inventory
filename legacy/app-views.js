@@ -79,7 +79,7 @@ function circleDetail() {
 }
 
 const insHead = (t, d) =>
-  `<div class="ins-head"><div class="vw-card-title-sm">${t}</div><div class="vw-card-description">${d}</div></div>`;
+  `<div class="ins-head"><div class="vw-card-title-sm">${t}</div>${d ? `<div class="vw-card-description">${d}</div>` : ''}</div>`;
 
 function viewInsights() {
   const OUT_TO_REC = { exact:'Agree', drifted:'Differ', stale:'Stale',
@@ -844,17 +844,21 @@ const STATE_REGION = {
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
   `<button class="tab${t.k === cur ? ' is-on' : ''}" data-tab="${group}:${t.k}">${t.n}</button>`).join('')}</div>`;
 
+/* physical estate by device class — one source for Home's mix and the
+   Location dashboard's inventory breakdown; foots to IL.ne (2,703) */
+const ACTIVE_MIX = [
+  { n:'Routers',  c:2148, tone:'sky',     tab:'router' },
+  { n:'Switches', c:349,  tone:'emerald', tab:'switch' },
+  { n:'Servers',  c:96,   tone:'cyan',    tab:'server' },
+  { n:'DWDM',     c:78,   tone:'purple',  tab:'dwdm' },
+  { n:'eNodeB',   c:18,   tone:'amber',   tab:'enodeb' },
+  { n:'gNodeB',   c:14,   tone:'orange',  tab:'gnodeb' }
+];
+
 /* ── Home ─────────────────────────────────────────────── */
 function viewHome() {
   const clsD = (nm, tab) => ({ v:'physical', l:`${nm} in inventory`, q:`tab=${tab}` });
-  const mix = [
-    { n:'Routers',  c:2148, tone:'sky',     d:clsD('Routers','router') },
-    { n:'Switches', c:349,  tone:'emerald', d:clsD('Switches','switch') },
-    { n:'Servers',  c:96,   tone:'cyan',    d:clsD('Servers','server') },
-    { n:'DWDM',     c:78,   tone:'purple',  d:clsD('DWDM','dwdm') },
-    { n:'eNodeB',   c:18,   tone:'amber',   d:clsD('eNodeB','enodeb') },
-    { n:'gNodeB',   c:14,   tone:'orange',  d:clsD('gNodeB','gnodeb') }
-  ];
+  const mix = ACTIVE_MIX.map(x => ({ ...x, d: clsD(x.n, x.tab) }));
   const srcD = (nm, k) => ({ v:'physical', l:`Source · ${nm}`, q:`src=${k}` });
   const srcSegs = [
     { n:'Discovered', c:2379, tone:'emerald', d:srcD('Discovered','d') },
@@ -925,7 +929,7 @@ const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
 }).join('')}</div>`;
 
 /* ── Location ─────────────────────────────────────────── */
-let LOC_VIEW = 'insights', LOC_SEL = 'MP', MAP_COLOR = 'onair', HIER_EXPANDED = false, COV_EXPANDED = null;
+let LOC_VIEW = 'insights', LOC_SEL = null, MAP_COLOR = 'onair', HIER_EXPANDED = false, COV_EXPANDED = null;
 
 /* ---- shared bits ---- */
 const locStats = () => {
@@ -1007,7 +1011,7 @@ function hierarchySvg() {
    the Total tile splits by location type, the three type tiles split by
    build status; both pass the same {c,hex,n} segment shape. */
 /* The whole tile is the control — no separate "open list" link. */
-const kpiProgress = (label, value, sub, segs, tone, d) => {
+const kpiProgress = (label, value, sub, segs, tone, d, on) => {
   const total = segs.reduce((a,s) => a + s.c, 0) || 1;
   const bar = segs.map(s => `<span style="width:${(s.c/total*100).toFixed(2)}%;background:${s.hex}" title="${s.n}: ${n(s.c)}"></span>`).join('');
   const legend = segs.map(s => `<span class="legend-i"><span class="legend-sw" style="background:${s.hex}"></span>${n(s.c)} ${s.n}</span>`).join('');
@@ -1021,7 +1025,7 @@ const kpiProgress = (label, value, sub, segs, tone, d) => {
     <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>`;
   const style = `border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}`;
   return d
-    ? `<button class="kpi-progress" style="${style}" aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
+    ? `<button class="kpi-progress${on ? ' is-on' : ''}" style="${style}"${on === undefined ? '' : ` aria-pressed="${on}"`} aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
     : `<div class="kpi-progress" style="${style}">${inner}</div>`;
 };
 
@@ -1054,6 +1058,17 @@ const RISK_CAT = {
   'Battery backup below threshold': 'Power',
   'Temporary fiber diversion in use': 'Fiber Connectivity',
   'High utilization requiring capacity expansion': 'Civil / Infrastructure'
+};
+/* the concrete follow-up a field team would actually take per blocker
+   category — feeds the "Recommended next steps" list on the site page */
+const NEXT_STEP = {
+  'Lease / Property': 'Engage the landlord and legal team on lease renewal and site access',
+  'Power': 'Escalate power restoration with the utility and verify DG / battery availability',
+  'Fiber Connectivity': 'Expedite OFC splicing and backhaul provisioning with the transport team',
+  'Civil / Infrastructure': 'Chase the civil contractor for completion and clearance certificate',
+  'Regulatory': 'Follow up with the authority on the pending clearance',
+  'Supply Chain': 'Re-confirm delivery dates and stage the equipment with the vendor',
+  'Commissioning': 'Schedule the ATP visit and close the acceptance punch points'
 };
 const INV_ICON = {
   active: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="1.6"/><rect x="4" y="14" width="16" height="6" rx="1.6"/><circle cx="8" cy="7" r="1"/><circle cx="8" cy="17" r="1"/></svg>`,
@@ -1315,6 +1330,39 @@ function locInsights() {
 
   const passiveTotal = PASSIVE_TABS.reduce((a,t) => a + t.c, 0);
 
+  /* the three estate cards, broken down by type the way the rest of the
+     dashboard does it: icon + headline, a share meter, then one chip per
+     class. The whole card is still the drill — chips are labels, and the
+     per-class drills live on the target screen's own tabs. */
+  const invCard = (title, icon, tone, total, sub, segs, d) => {
+    const tSum = segs.reduce((a,s) => a + s.c, 0) || 1;
+    return `<button class="kpi-progress" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}"
+      aria-label="${esc(title)}: ${esc(total)}, ${esc(sub)}"${dA(d)}>
+      <div class="row vw-gap-sm vw-items-center">
+        <span class="cov-alert-icon" style="background:${cv(tone,50)};color:${cv(tone,600)}">${icon}</span>
+        <div class="stack-x" style="gap:0">
+          <span class="vw-card-metric-label">${title}</span>
+          <span class="vw-card-metric-xl num">${total}</span>
+        </div>
+      </div>
+      <div class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-xs)">${sub}</div>
+      <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">
+        ${segs.map(s => `<span style="width:${(s.c/tSum*100).toFixed(2)}%;background:${cv(s.tone,500)}" title="${s.n}: ${n(s.c)}"></span>`).join('')}</div>
+      <div class="cov-chip-row">${segs.map(s =>
+        `<span class="cov-chip inv-chip"><span class="legend-sw" style="background:${cv(s.tone,500)}"></span>${s.n} <b class="num">${n(s.c)}</b></span>`).join('')}</div>
+    </button>`;
+  };
+  const logicalSegs = [
+    { n:'LLDP links', c: Math.round(IL.links*0.45), tone:'purple' },
+    { n:'OSPF', c: Math.round(IL.links*0.25), tone:'sky' },
+    { n:'BGP', c: Math.round(IL.links*0.15), tone:'cyan' },
+    { n:'ISIS', c: IL.links - Math.round(IL.links*0.45) - Math.round(IL.links*0.25) - Math.round(IL.links*0.15), tone:'slate' },
+    { n:'L3VPN', c: Math.round(IL.services*0.74), tone:'teal' },
+    { n:'L2VPN', c: IL.services - Math.round(IL.services*0.74), tone:'emerald' }
+  ];
+  const PASSIVE_TONE = { fiber:'cyan', odf:'sky', rack:'slate', power:'amber', splice:'purple', cord:'teal', duct:'orange' };
+  const passiveSegs = PASSIVE_TABS.map(t => ({ n: t.n, c: t.c, tone: PASSIVE_TONE[t.k] || 'slate' }));
+
   return `
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpiProgress('Total locations', n(totalLoc), `${n(live)} on-air`, totalSegs, 'slate',
@@ -1329,12 +1377,15 @@ function locInsights() {
         ${headSm('Inventory across the estate', 'everything this module tracks against these locations — active, logical and passive')}
       </div>
       <div class="vw-grid vw-grid-cols-3 vw-gap-md">
-        ${kpi('Active inventory', n(IL.ne), `Physical elements · ${n(IL.discovered)} verified on the network`, 'sky',
-          { v:'physical', l:'All network elements' })}
-        ${kpi('Logical inventory', n(IL.vnf), `Virtual resources · ${n(IL.services)} services provisioned (L3VPN + L2VPN)`, 'purple',
-          { v:'virtual', l:'All virtual resources' })}
-        ${kpi('Passive inventory', n(passiveTotal), `Fiber, ODF, racks, power and ducts across ${n(PASSIVE_TABS.length)} categories`, 'orange',
-          { v:'passive', l:'All passive infrastructure' })}
+        ${invCard('Active inventory', INV_ICON.active, 'sky', n(IL.ne),
+          `Physical elements across the estate · ${n(IL.discovered)} verified on the network`,
+          ACTIVE_MIX, { v:'physical', l:'All network elements' })}
+        ${invCard('Logical inventory', INV_ICON.logical, 'purple', n(IL.links + IL.services),
+          `${n(IL.links)} links and ${n(IL.services)} provisioned services · plus ${n(IL.vnf)} VNFs`,
+          logicalSegs, { v:'virtual', l:'All virtual resources' })}
+        ${invCard('Passive inventory', INV_ICON.passive, 'orange', n(passiveTotal),
+          `Physical plant across ${n(PASSIVE_TABS.length)} categories`,
+          passiveSegs, { v:'passive', l:'All passive infrastructure' })}
       </div>`)}
 
     ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
@@ -1354,9 +1405,37 @@ function locRows() {
 }
 function locList() {
   const shown = locRows();
+  /* Four region facet cards above the list. Their population is the list's
+     current drill filters minus the region facet itself, so all four stay
+     side by side and comparable — the standard facet pattern. Clicking one
+     narrows the table to that region while keeping every other filter. */
+  const base = LOCATIONS
+    .filter(l => !LOC_ST || l.st === LOC_ST)
+    .filter(l => !LOC_CAT || l.cat === LOC_CAT)
+    .filter(l => !LOC_STATE || l.state === LOC_STATE)
+    .filter(l => !LOC_TYPEGRP || typeGroupOf(l.type) === LOC_TYPEGRP)
+    .filter(l => LOC_GROUP !== 'other' || !TOP8_STATES.has(l.state));
+  const carry = [
+    LOC_TYPEGRP ? `type=${LOC_TYPEGRP}` : '', LOC_ST ? `st=${LOC_ST}` : '',
+    LOC_CAT ? `cat=${LOC_CAT}` : '', LOC_STATE ? `state=${LOC_STATE}` : '',
+    LOC_GROUP ? `group=${LOC_GROUP}` : ''
+  ].filter(Boolean).join('&');
+  const REGION_TONE = { North:'sky', East:'purple', West:'orange', South:'teal' };
+  const regionCards = ['North','East','West','South'].map(r => {
+    const rows = base.filter(l => STATE_REGION[l.state] === r);
+    const c = k => rows.filter(l => l.st === k).length;
+    const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
+    const tot = rows.length, live = c('On-air'), failed = c('Failed');
+    return kpiProgress(`${r} region`, n(tot),
+      tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here',
+      segs, REGION_TONE[r],
+      { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
+      LOC_REGION === r);
+  }).join('');
   return `<div class="row" style="margin-bottom:var(--vw-space-xs)">
       <button class="nst-btn nst-btn--sm nst-btn--ghost" data-locview="insights">← Back to dashboard</button>
     </div>
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -1378,9 +1457,7 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), '',
-        i => [A('View site details', { v:'site', l:locRows()[i].name }),
-              A('Show on map', { v:'location', l:`${locRows()[i].name} on the map`, q:'view=map' }),
-              A('Reconcile this site', { v:'reconcile', l:`Reconciliation · ${locRows()[i].name}`, q:'ne=Open' })])}`)}`;
+        i => [A('View site details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })])}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -1451,9 +1528,17 @@ function mapSvg() {
 
 let PIN_GROUP = null;
 function mapPanel() {
+  /* the same filter the map's boundary click drives — pick a state here or
+     on the map, either way the panel, the outline and this control agree */
+  const picker = `<span class="nst-input-shell"><select class="nst-input" data-mapstate aria-label="Filter panel by state">
+    <option value=""${LOC_SEL ? '' : ' selected'}>All India — every circle</option>
+    ${[...LOC_GEO].sort((a,b) => a.n.localeCompare(b.n)).map(x =>
+      `<option value="${x.c}"${x.c === LOC_SEL ? ' selected' : ''}>${x.n}</option>`).join('')}
+  </select></span>`;
   if (PIN_GROUP) {
     const items = PIN_GROUP.map(id => LOCATIONS.find(l => l.id === id)).filter(Boolean);
     return `<div class="stack">
+      ${picker}
       <div class="row vw-justify-between vw-items-start">
         <div class="stack-x"><span class="vw-card-title-sm">${items.length} sites at this point</span>
           <span class="vw-card-description">${items[0].city}, ${items[0].state}</span></div>
@@ -1464,11 +1549,40 @@ function mapPanel() {
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
     </div>`;
   }
+  if (!LOC_SEL) {
+    const tot = LOC_GEO.reduce((a,x) => a + x.tot, 0), live = LOC_GEO.reduce((a,x) => a + x.live, 0),
+          build = LOC_GEO.reduce((a,x) => a + x.build, 0), fail = LOC_GEO.reduce((a,x) => a + x.fail, 0);
+    const plan = tot - live - build - fail;
+    const rows = [['On-air',live,'emerald'],['In progress',build,'amber'],['Planned',plan,'sky'],['Failed',fail,'red']];
+    return `<div class="stack">
+      ${picker}
+      <div class="stack-x">
+        <div class="row vw-justify-between vw-items-baseline">
+          <span class="vw-card-title-sm">All India</span>
+          <span class="vw-card-metric-label-sub">${LOC_GEO.length} circles</span>
+        </div>
+        <div class="row vw-items-baseline" style="gap:var(--vw-space-sm)">
+          <span class="vw-card-metric-lg num">${n(tot)}</span>
+          <span class="vw-card-metric-label-sub">sites · ${(live/tot*100).toFixed(0)}% on-air</span>
+        </div>
+      </div>
+      <div class="meter" style="height:18px;border-radius:var(--vw-radius-xs)">
+        ${rows.map(([,v,t])=>`<span style="width:${(v/tot*100).toFixed(2)}%;background:${cv(t,400)}"></span>`).join('')}
+      </div>
+      <div class="vw-grid vw-grid-cols-2 vw-gap-sm">
+        ${rows.map(([k,v,t])=>`<div class="vw-card-child row vw-justify-between" style="padding:var(--vw-space-sm)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(t,400)}"></span>${k}</span>
+          <span class="vw-value num">${n(v)}</span></div>`).join('')}
+      </div>
+      <div class="vw-card-child-shaded vw-card-description">Click a state on the map — or pick one above — to see its detail.</div>
+    </div>`;
+  }
   const g = LOC_GEO.find(x => x.c === LOC_SEL) || LOC_GEO[0];
   const plan = g.tot - g.live - g.build - g.fail;
   const rows = [['On-air',g.live,'emerald'],['In progress',g.build,'amber'],['Planned',plan,'sky'],['Failed',g.fail,'red']];
   const sites = LOCATIONS.filter(l => l.state === g.st);
   return `<div class="stack">
+    ${picker}
     <div class="stack-x">
       <div class="row vw-justify-between vw-items-baseline">
         <span class="vw-card-title-sm">${g.n}</span>
@@ -1575,6 +1689,100 @@ function viewSite() {
        `<span class="mono"${r.st==='dup'?` style="color:${cv('red',700)}"`:''}>${r.sn}</span>`, r.oem,
        `<span class="mono">${r.rack}</span>`, `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`];
 
+  /* ---- Attention: this site's alert summary, same card idiom as the
+     Coverage-by-circle detail — rollout blocker and risk flag straight
+     off the site record, reconciliation gaps off the live NE roster ---- */
+  const GAP_ICON = {
+    notdisc: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8.5 11h5"/></svg>`,
+    drift: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7v10a4 4 0 0 0 4 4h2"/><circle cx="7" cy="5" r="2"/><circle cx="17" cy="19" r="2"/><path d="M13 5h8"/><path d="m18 2 3 3-3 3"/></svg>`
+  };
+  const attn = [];
+  if (l.issue) attn.push({ icon: ALERT_ICON[l.issue.cat], sev: l.st === 'Failed' ? 'blocked' : 'delayed',
+    label: ALERT_LABEL[l.issue.cat], reason: l.issue.reason, impact: SITE_BLOCKER_IMPACT[l.issue.cat] });
+  if (l.risk) attn.push({ icon: ALERT_ICON[RISK_CAT[l.risk] || 'Power'], sev: 'risk',
+    label: ALERT_LABEL[RISK_CAT[l.risk] || 'Power'], reason: l.risk,
+    impact: 'Potential service interruption if not resolved before it lapses' });
+  if (notDisc) attn.push({ icon: GAP_ICON.notdisc, sev: l.disc === 0 ? 'blocked' : 'delayed',
+    label: 'Not discovered', reason: `${n(notDisc)} NE on record never seen by discovery`,
+    impact: 'Planned or no collector — reconcile to close the record gap',
+    d: { v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } });
+  if (drift) attn.push({ icon: GAP_ICON.drift, sev: 'delayed',
+    label: 'Configuration drift', reason: `${n(drift)} NE differ from the inventory record`,
+    impact: 'Includes duplicate serials — verify and update the record',
+    d: { v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } });
+  const attnBits = [
+    l.issue ? 'a rollout blocker' : '', l.risk ? 'an operational risk flag' : '',
+    notDisc ? `${n(notDisc)} NE not discovered` : '', drift ? `${n(drift)} NE drifted` : ''
+  ].filter(Boolean);
+  const attentionSection = () => {
+    const rec = [
+      { n:'Verified', c: Object.values(ne).flat().filter(r => r.st === 'ok').length, tone:'emerald',
+        d:{ v:'reconcile', l:`Verified at ${l.name}`, q:'ne=Agree' } },
+      { n:'Drifted', c: drift, tone:'amber', d:{ v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } },
+      { n:'Not discovered', c: notDisc, tone:'red', d:{ v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } }
+    ];
+    const steps = [
+      ...(l.issue ? [[NEXT_STEP[l.issue.cat], null]] : []),
+      ...(l.risk ? [['Plan mitigation before the risk flag becomes an incident', null]] : []),
+      ...(notDisc ? [['Run discovery or assign a collector, then reconcile the record',
+        { v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' }]] : []),
+      ...(drift ? [['Verify the drifted attributes and update the inventory record',
+        { v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' }]] : [])
+    ];
+    const cxPct = cxA ? Math.min(100, cxTotal / cxA * 100) : 0;
+    const exposureNote = l.st === 'Failed'
+      ? `${inrShort(cxTotal)} is committed while the build is blocked — each idle month adds ${inrShort(oxRun)} in recurring cost with no traffic carried.`
+      : l.st === 'In progress' && l.issue
+      ? `${inrShort(cxTotal)} is committed against a delayed build — the longer the slip, the longer this capital sits idle.`
+      : '';
+    return card(`
+    ${headSm('Alert Summary', 'rollout blockers, risk flags and reconciliation gaps at this site')}
+    ${attn.length ? `
+      <div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-sm)">
+        ${l.type} · <b>${l.st}</b>${l.stage ? ` at stage <b>${l.stage}</b>` : ''} — ${attnBits.join(', ')}.</div>
+      <div class="cov-alert-grid attn-alerts">${attn.map(a => `
+        <div class="cov-alert-card cov-alert-card--${a.sev}"${a.d ? ` role="button" tabindex="0" style="cursor:pointer" aria-label="${esc(a.label)}: open reconciliation"${dA(a.d)}` : ''}>
+          <span class="cov-alert-icon cov-alert-icon--${a.sev}">${a.icon}</span>
+          <div class="cov-alert-body">
+            <div class="cov-alert-label">${a.label}</div>
+            <div class="cov-alert-reason">${a.reason}</div>
+            <div class="cov-crit-impact">${a.impact}</div>
+          </div>
+        </div>`).join('')}</div>`
+      : `<div class="cov-clear"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${cv('emerald',600)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>Nothing needs attention — the build is clean and the record reconciled.</div>`}
+
+    <div class="vw-grid vw-grid-cols-2 vw-gap-md" style="margin-top:var(--vw-space-lg)">
+      <div class="vw-card-child" style="padding:var(--vw-space-md)">
+        ${headSm('Record vs network', 'where each NE on record stands against discovery')}
+        <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-sm)">
+          ${donut(rec, tot || 1, n(tot), 'NE', 108)}${legendRows(rec)}
+        </div>
+      </div>
+      <div class="vw-card-child" style="padding:var(--vw-space-md)">
+        ${headSm('Financial exposure', 'money committed against this build')}
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          <div class="row vw-justify-between vw-items-baseline"><span class="vw-label">Capex committed</span>
+            <span class="vw-value num">${inrShort(cxTotal)} <span class="vw-card-metric-label-sub">of ${inrShort(cxA)} approved</span></span></div>
+          <div class="meter" style="height:8px"><span style="width:${cxPct.toFixed(0)}%;background:${cv('cyan',400)}"></span></div>
+          <div class="row vw-justify-between vw-items-baseline"><span class="vw-label">Opex run rate</span>
+            <span class="vw-value num">${inrShort(oxRun)} / mo <span class="vw-card-metric-label-sub">· ${inrShort(oxRun*12)} a year</span></span></div>
+          ${exposureNote ? `<div class="vw-card-child-shaded vw-card-description">${exposureNote}</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${steps.length ? `
+    <div style="margin-top:var(--vw-space-lg)">
+      ${headSm('Recommended next steps', 'in the order a field team would take them')}
+      <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+        ${steps.map(([txt, d], i) => `<div class="vw-card-child row vw-justify-between vw-items-center" style="padding:var(--vw-space-sm) var(--vw-space-md)">
+          <span class="row vw-gap-sm vw-items-center" style="min-width:0"><span class="attn-step-n num">${i+1}</span><span class="vw-value" style="font-weight:400">${txt}</span></span>
+          ${d ? `<button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" title="Open in reconciliation"${dA(d)}>Open ↗</button>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>` : ''}`);
+  };
+
   return `<div class="page">
     ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
       `<button class="nst-btn nst-btn--sm" data-locview="list" data-nav="location">Back to list</button>`)}
@@ -1611,6 +1819,7 @@ function viewSite() {
     ])}
 
     <div class="section-tabs">
+      <button class="stab${SITE_SECTION==='attention'?' is-on':''}" data-sitesection="attention">Attention <span class="tab-n num">${attn.length}</span></button>
       <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements <span class="tab-n num">${tot}</span></button>
       <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex <span class="tab-n num">${inrShort(cxTotal)}</span></button>
       <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
@@ -1618,7 +1827,8 @@ function viewSite() {
       <button class="stab" data-nav="siteequipment">Site equipment</button>
     </div>
 
-    ${SITE_SECTION === 'capex' ? capexSection(l, tot)
+    ${SITE_SECTION === 'attention' ? attentionSection()
+      : SITE_SECTION === 'capex' ? capexSection(l, tot)
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n} <span class="tab-n num">${t.c}</span></button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
