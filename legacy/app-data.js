@@ -1181,7 +1181,7 @@ const DK_ORD = s => { const [d, m, y] = s.split('-'); return new Date(Number(y),
 const DECOMM_OLDEST = (() => {
   const dates = Object.values(DECOMM).flat().map(r => DK_ORD(r.on)).sort((a, b) => a - b);
   const mo = Math.round((new Date(2026, 8, 3) - dates[0]) / 2629800000);
-  return `${Math.floor(mo / 12)} y ${mo % 12} mo`;
+  return `${Math.floor(mo / 12)}y ${mo % 12}mo`;
 })();
 const DECOMM_ZOMBIES = Object.values(DECOMM).flat().filter(r => r.zombie).length;
 const INACTIVE = DECOMM.router;

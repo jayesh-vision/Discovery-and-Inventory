@@ -105,5 +105,5 @@ export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DECOMM[k]).filter(r => r.z
 export const DECOMM_OLDEST = (() => {
   const dates = NE_CLASSES.flatMap(k => DECOMM[k]).map(r => parseDmy(r.on)).sort((a, b) => a.getTime() - b.getTime());
   const mo = Math.round((TODAY.getTime() - dates[0].getTime()) / 2629800000);
-  return `${Math.floor(mo / 12)} y ${mo % 12} mo`;
+  return `${Math.floor(mo / 12)}y ${mo % 12}mo`;
 })();
