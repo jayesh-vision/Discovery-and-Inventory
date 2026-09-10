@@ -6768,57 +6768,115 @@ function nodeHeader(N) {
   const r = N.r, sw = N.cls === 'switch';
   const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
   const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
-  const macAddr = r.mac || `A4:5E:60:12:8F:9C`;
-  const popId = sw ? (r.pop || 'POP-1030620') : (r.rack ? `Rack ${r.rack}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`);
-  const vendor = r.oem || (sw ? 'CIENA' : 'JUNIPER');
-  const osVer = r.os || (sw ? 'IOS XE 17.9.4' : '21.2R3-S8.5');
-  const sn = r.sn || (sw ? 'HPE-SW-CH-2026-001' : 'JN1236F87AFB');
-  const model = r.model || (sw ? 'ASR 1006-X' : 'MX960');
-  const ip = r.ip || (sw ? '192.168.1.1' : '172.31.33.100');
-  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
 
+  if (sw) {
+    const popId = r.pop || 'POP-1030620';
+    const vendor = r.oem || 'CIENA';
+    const osVer = r.os || 'IOS XE 17.9.4';
+    const sn = r.sn || 'HPE-SW-CH-2026-001';
+    const model = r.model || 'ASR 1006-X';
+    const ip = r.ip || '192.168.1.1';
+    const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+
+    const cells = [
+      ['Vendor', vendor],
+      ['OS Version', osVer],
+      ['Serial Number', sn],
+      ['POP ID', popId],
+      ['Model', model],
+      ['IP address', ip],
+      ['MAC address', macAddr]
+    ];
+    return card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-slate-100,#f1f5f9);border-radius:10px;padding:6px">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vw-color-slate-700)">
+            <rect x="3" y="6" width="18" height="12" rx="2"/><line x1="7" y1="10" x2="7.01" y2="10"/><line x1="11" y1="10" x2="11.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="7" y1="14" x2="7.01" y2="14"/><line x1="11" y1="14" x2="11.01" y2="14"/><line x1="15" y1="14" x2="15.01" y2="14"/>
+          </svg>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:700">${N.name}</span>
+            ${chip(stLabel, stTone)}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${r.loc || N.name}(${coords})
+          </span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)');
+  }
+
+  const rackLoc = r.rack ? `Rack ${r.rack}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`;
   const cells = [
-    ['Vendor', vendor],
-    ['OS Version', osVer],
-    ['Serial Number', sn],
-    [sw ? 'POP ID' : 'Rack location', popId],
-    ['Model', model],
-    ['IP address', ip],
+    ['Vendor', r.oem || '—'],
+    ['OS version', r.os || '—'],
+    ['Serial number', r.sn || '—'],
+    ['Rack location', rackLoc],
+    ['Model', r.model || '—'],
+    ['IP address', r.ip || '—'],
     ['MAC address', macAddr]
   ];
   return card(`
     <div class="nv-head">
-      <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-slate-100,#f1f5f9);border-radius:10px;padding:6px">
-        ${sw ? `<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vw-color-slate-700)">
-          <rect x="3" y="6" width="18" height="12" rx="2"/><line x1="7" y1="10" x2="7.01" y2="10"/><line x1="11" y1="10" x2="11.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="7" y1="14" x2="7.01" y2="14"/><line x1="11" y1="14" x2="11.01" y2="14"/><line x1="15" y1="14" x2="15.01" y2="14"/>
-        </svg>` : nodeThumb(N.cls)}
+      <div class="nv-thumb" aria-hidden="true">
+        ${nodeThumb(N.cls)}
       </div>
       <div class="stack-x grow" style="min-width:0">
-        <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:700">${N.name}</span>
+        <div class="row" style="gap:var(--vw-space-sm)">
+          <span class="vw-card-title">${N.name}</span>
           ${chip(stLabel, stTone)}
+          ${chip(N.meta.n, 'neutral')}
         </div>
-        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${r.loc || N.name}(${coords})
-        </span>
+        <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>
+      </div>
+      <div class="row" style="flex-shrink:0">
+        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}` })}>Node resources</button>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+    <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
 function nodeOverview(N) {
   const sw = N.cls === 'switch';
-  const tiles = sw ? [
-    nvTile('Device Health', '95.55%', 'CPU 5% · Mem 7% · Temp 17°C', 'emerald'),
-    nvTile('Protocol Links', '168', 'LLDP 54', 'amber'),
-    nvTile('VLANs', '58', '52 Active · 6 Reserved', 'amber'),
-    nvTile('Interface Status', '372/384', '372 up · 12 down', 'sky'),
-    nvTile('Active Alerts', '7', '1 critical · 2 major · 4 minor · 0 warning', 'red'),
-    nvTile('System Uptime', '287 Days', 'Last reboot: Feb 12, 2026 05:30:00', 'purple')
-  ] : [
+
+  if (sw) {
+    const tiles = [
+      nvTile('Device Health', '95.55%', 'CPU 5% · Mem 7% · Temp 17°C', 'emerald'),
+      nvTile('Protocol Links', '168', 'LLDP 54', 'amber'),
+      nvTile('VLANs', '58', '52 Active · 6 Reserved', 'amber'),
+      nvTile('Interface Status', '372/384', '372 up · 12 down', 'sky'),
+      nvTile('Active Alerts', '7', '1 critical · 2 major · 4 minor · 0 warning', 'red'),
+      nvTile('System Uptime', '287 Days', 'Last reboot: Feb 12, 2026 05:30:00', 'purple')
+    ];
+    return card(`
+      <div class="nv-tiles">${tiles.join('')}</div>
+
+      <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
+        ${nvHealthCard('ICMP Health', 'Network Reachability',
+          ['Healthy', 'success'],
+          [['Packet Loss', '0.02%', '1200 sent'],
+           ['Latency Avg', '7.62 ms', 'Min: 4.18'], ['Jitter', '1.24 ms', 'Max: 12.44'],
+           ['Availability', '99.98%', 'Successful probes']],
+          `Last Sync: Jun 30, 2026 14:26:00 · Probe Interval: 1 hr`)}
+        ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
+          [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
+           ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
+          `Last Sync: Jun 30, 2026 14:10:00`)}
+        ${nvHealthCard('RADIUS Auth', 'AAA Authentication',
+          ['Healthy', 'success'],
+          [['Primary DNS', '10.20.20.5 • Reachable'], ['Secondary DNS', '10.20.20.6 • Reachable']],
+          `Last Sync: Jun 30, 2026 14:05:00`)}
+      </div>`);
+  }
+
+  const tiles = [
     nvTile('Device health', `${N.ov.health}%`, `CPU ${N.perf.cpu}% · Mem ${N.perf.mem}% · ${N.perf.temp}°C`, 'emerald'),
     nvTile('Physical links', n(N.ov.proto), `LLDP · OSPF · BGP · ISIS`, 'sky'),
     nvTile('Interface status', `${n(N.ov.ifUp)}/${n(N.ov.ifTotal)}`, `${n(N.ov.ifTotal - N.ov.ifUp)} down or reserved`, 'amber'),
@@ -6826,23 +6884,25 @@ function nodeOverview(N) {
     nvTile('System uptime', N.ov.uptime, `last reboot ${N.ov.since}`, 'purple')
   ];
   return card(`
-    <div class="nv-tiles">${tiles.join('')}</div>
+    ${headSm('Overview')}
+    <div class="nv-tiles" style="margin-top:var(--vw-space-md)">${tiles.join('')}</div>
 
-    <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
-      ${nvHealthCard('ICMP Health', 'Network Reachability',
-        ['Healthy', 'success'],
-        [['Packet Loss', '0.02%', '1200 sent'],
-         ['Latency Avg', '7.62 ms', 'Min: 4.18'], ['Jitter', '1.24 ms', 'Max: 12.44'],
-         ['Availability', '99.98%', 'Successful probes']],
-        `Last Sync: Jun 30, 2026 14:26:00 · Probe Interval: 1 hr`)}
-      ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
-        [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
-         ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
-        `Last Sync: Jun 30, 2026 14:10:00`)}
-      ${nvHealthCard('RADIUS Auth', 'AAA Authentication',
-        ['Healthy', 'success'],
-        [['Primary DNS', '10.20.20.5 • Reachable'], ['Secondary DNS', '10.20.20.6 • Reachable']],
-        `Last Sync: Jun 30, 2026 14:05:00`)}
+    <div class="nv-health-row">
+      ${nvHealthCard('ICMP health', 'Network reachability',
+        [N.icmp.loss < 0.3 ? 'Healthy' : 'Degraded', N.icmp.loss < 0.3 ? 'success' : 'warning'],
+        [['Packet loss', `${N.icmp.loss}%`, N.icmp.loss > 0.3 ? 'red' : null],
+         ['Latency avg', `${N.icmp.lat} ms`], ['Jitter', `${N.icmp.jit} ms`],
+         ['Availability', `${N.icmp.avail}%`, 'emerald']],
+        `Last checked ${N.icmp.checked} · probe interval ${N.icmp.probe}`)}
+      ${nvHealthCard('NTP sync', 'Time synchronisation', ['Synchronised', 'success'],
+        [['Offset', `${N.ntp.off} ms`], ['Delay', `${N.ntp.delay} ms`], ['Jitter', `${N.ntp.jit} ms`],
+         ['Stratum', N.ntp.stratum]],
+        `Primary <span class="mono">${N.ntp.primary}</span> · secondary <span class="mono">${N.ntp.secondary}</span> · last sync ${N.ntp.sync}`)}
+      ${nvHealthCard('RADIUS auth', 'AAA authentication',
+        [N.rad.fails > 3 ? 'Degraded' : 'Healthy', N.rad.fails > 3 ? 'warning' : 'success'],
+        [['Success rate', `${N.rad.ok}%`, 'emerald'], ['Failures 24 h', N.rad.fails, N.rad.fails ? 'amber' : null],
+         ['Primary', 'Reachable', 'emerald'], ['Secondary', 'Reachable', 'emerald']],
+        `Primary <span class="mono">${N.rad.primary}</span> · secondary <span class="mono">${N.rad.secondary}</span> · last auth ${N.rad.last}`)}
     </div>`);
 }
 
