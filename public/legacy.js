@@ -3114,12 +3114,12 @@ function recTable() {
       <td><span class="vw-card-metric-label-sub num">${r.ver}</span></td>
       ${kebabCell(
         r.inv && r.net && r.diff.length
-          ? [A('Open element', { v:'resource', l:r.ne })]
+          ? [A('View details', { v:'resource', l:r.ne })]
         : !r.inv
           ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
-          ? [A('Open element', { v:'resource', l:r.ne })]
-          : [A('Open element', { v:'resource', l:r.ne })], 'rec', ri)}
+          ? [A('View details', { v:'resource', l:r.ne })]
+          : [A('View details', { v:'resource', l:r.ne })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -3267,15 +3267,14 @@ function viewHome() {
           `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
         ]), '',
         i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
-              A('Open element', { v:'resource', l:PHY.router[i].name }),
+              A('View details', { v:'resource', l:PHY.router[i].name }),
               A('Open site', { v:'site', l:PHY.router[i].loc })])}`)}
   </div>`;
 }
 
 /* compact stat strip — six figures in the height of one card */
 const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
-  const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
-    <span class="stat-k">${c.k}</span>
+  const inner = `<span class="stat-k">${c.k}</span>
     <span class="stat-v num">${c.v}</span>
     <span class="stat-s">${c.s}</span>`;
   return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
@@ -4186,7 +4185,7 @@ function viewSite() {
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-          A('Open element', { v:'resource', l:rows[i].name }),
+          A('View details', { v:'resource', l:rows[i].name }),
           A('Open site', { v:'site', l:rows[i].loc || l.name })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
@@ -4453,7 +4452,7 @@ function viewPhysical() {
         <button class="tab${x.k === t ? ' is-on' : ''}" data-tab="phy:${x.k}"
           title="${n(phyCount(x.k, PHY_STOCK))} of ${n(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
             x.disc ? ` · ${n(x.disc)} discovered` : ' · no collector reaches this class'}">
-          <span class="tab-dot" style="background:${cv(x.disc ? 'emerald' : 'red', 400)}"></span>${x.n}</button>`).join('')}
+          ${x.n}</button>`).join('')}
       </div>
       <div class="stock-bar">
         <span class="eyebrow">Stock state</span>
@@ -4497,7 +4496,7 @@ function viewPhysical() {
         i => rows[i].stock === 'decomm'
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-             A('Open element', { v:'resource', l:rows[i].name }),
+             A('View details', { v:'resource', l:rows[i].name }),
              A('Open site', { v:'site', l:rows[i].loc })])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
@@ -4847,33 +4846,15 @@ function viewInactive() {
 
     ${drillBar()}
 
-    ${statStrip([
-      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from active estate', t:'slate' },
-      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red',
-        d:{ v:'reconcile', l:'Decommissioned but still answering', q:'ne=Only on network' } },
-      { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber',
-        d:{ v:'links', l:'Retired adjacency' } },
-      { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple',
-        d:{ v:'services', l:'Retired services' } },
-      { k:'Oldest record', v:DECOMM_OLDEST, s:'archived record', t:'cyan' },
-      { k:'Recovered to store', v:n(38), s:'restored in last 12 months', t:'emerald' }
-    ])}
-
     ${card(`
       <div class="tabbar">${PHY_TABS.map(x => `
         <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
           title="${n(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records">
-          <span class="tab-dot" style="background:${cv('slate',400)}"></span>${x.n}</button>`).join('')}
+          ${x.n}</button>`).join('')}
       </div>
 
-      ${zomb ? `<div class="row vw-justify-end" style="margin-top:var(--vw-space-md)">
-        <button class="nst-btn nst-btn--xs nst-btn--danger-subtle"
-          ${dA({ v:'reconcile', l:`Still answering · ${meta.n}`, q:'ne=Only on network' })}>Open exceptions (${zomb} still answering)</button>
-      </div>` : ''}
-
       ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
-        chip('Archive · read-only', 'neutral'),
-        [{ l:'Go to active inventory', nav:'physical', primary:true }])}
+        chip('Archive · read-only', 'neutral'), [])}
       ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [
@@ -5020,8 +5001,7 @@ function resIfaces() {
       ${[['Optical ports','16','9 used · 7 free','cyan'],['10G free','5','across FPC 0 and 1','emerald'],
          ['40G free','2','PIC 0/1','sky'],['Slot headroom','1','FPC 2 empty · +10 ports','purple'],
          ['Exhaustion','4 mo','at current fill rate','amber']]
-        .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-dot" style="background:${cv(t,400)}"></span>
-          <span class="stat-k">${k}</span><span class="stat-v num">${v}</span><span class="stat-s">${s}</span></div>`).join('')}
+        .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-k">${k}</span><span class="stat-v num">${v}</span><span class="stat-s">${s}</span></div>`).join('')}
     </div>`)}
 
   ${card(`

@@ -22,7 +22,6 @@ export function StatStrip({ cells }: { cells: StatCell[] }) {
       {cells.map(c => {
         const inner = (
           <>
-            <span className="stat-dot" style={{ background: cv(c.t, 400) }} />
             <span className="stat-k">{c.k}</span>
             <span className="stat-v num">{c.v}</span>
             <span className="stat-s">{c.s}</span>
@@ -42,7 +41,6 @@ export function TabBar<K extends string>({ tabs, active, onChange }: { tabs: Tab
     <div className="tabbar">
       {tabs.map(t => (
         <button key={t.k} className={`tab${t.k === active ? ' is-on' : ''}`} title={t.title} onClick={() => onChange(t.k)}>
-          {t.dot && <span className="tab-dot" style={{ background: t.dot }} />}
           {t.n}
         </button>
       ))}

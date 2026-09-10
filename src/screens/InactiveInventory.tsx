@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
+import { Card, Chip, Mono, Num, Sub, TabBar } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
-import { NE_CLASSES, PHY_TABS, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
-import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
+import { NE_CLASSES, PHY_TABS, fmt, stockCount, type NeClass } from '../data/ledger';
+import { decommRows, type ArchiveRow } from '../data/archive';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
@@ -27,38 +27,22 @@ export default function InactiveInventory() {
   const [refreshKey, setRefreshKey] = useState(0);
   const rows = useMemo(() => decommRows(cls), [cls, refreshKey]);
   const total = rows.length;
-  const zombies = rows.filter(r => r.zombie).length;
 
   const setCls = (k: NeClass) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
 
   const rowActions = (r: ArchiveRow): Action[] => [
-    { l: 'View element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
+    { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
     ...(r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : [])
   ];
 
   return (
     <div className="page">
-      <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
-        { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red', onClick: toExceptions },
-        { k: 'Retired links', v: fmt(1188), s: 'adjacency no longer seen', t: 'amber', onClick: () => nav('/inventory/links') },
-        { k: 'Retired services', v: fmt(264), s: 'no longer provisioned', t: 'purple', onClick: () => nav('/inventory/services') },
-        { k: 'Oldest record', v: DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
-        { k: 'Recovered to store', v: fmt(38), s: 'restored in last 12 months', t: 'emerald' }
-      ]} />
-
       <Card>
         <TabBar
-          tabs={PHY_TABS.map(x => ({ k: x.k, n: x.n, count: stockCount(x.k, 'decomm'), dot: cv('slate', 400),
+          tabs={PHY_TABS.map(x => ({ k: x.k, n: x.n, count: stockCount(x.k, 'decomm'),
             title: `${fmt(stockCount(x.k, 'decomm'))} decommissioned ${x.n.toLowerCase()} records` }))}
           active={cls} onChange={setCls} />
-
-        {zombies > 0 && (
-          <div className="row vw-justify-end" style={{ marginTop: 'var(--vw-space-md)' }}>
-            <button className="nst-btn nst-btn--xs nst-btn--danger-subtle" onClick={toExceptions}>Open exceptions ({zombies} still answering)</button>
-          </div>
-        )}
 
         <DataGrid<ArchiveRow>
           columns={[{ t: 'Name' }, { t: 'Model / OEM' }, { t: 'Serial number' }, { t: 'Last IP / location' },
@@ -66,7 +50,6 @@ export default function InactiveInventory() {
           rows={rows} total={total} rowKey={r => r.sn} resetKey={cls}
           searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
           extra={<Chip tone="neutral">Archive · read-only</Chip>}
-          gridActions={[{ l: 'Go to active inventory', primary: true, onClick: () => nav('/inventory/physical') }]}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={r => [

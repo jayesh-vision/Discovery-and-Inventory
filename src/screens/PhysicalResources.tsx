@@ -76,7 +76,7 @@ export default function PhysicalResources() {
      whether Node view belongs in the menu — server has no node-level page */
   const rowActions = (r: NeRow): Action[] => [
     ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(`/inventory/node/${encodeURIComponent(r.name)}`) }] : []),
-    { l: 'Open element', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
+    { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
     { l: 'Open site', onClick: () => nav(`/inventory/location/site/${encodeURIComponent(r.loc)}`) }
   ];
 
@@ -104,7 +104,7 @@ export default function PhysicalResources() {
       <Card>
         <TabBar
           tabs={tabs.map(x => ({
-            k: x.k, n: x.n, count: phyCount(x.k, stock), dot: cv(x.disc ? 'emerald' : 'red', 400),
+            k: x.k, n: x.n, count: phyCount(x.k, stock),
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
               x.disc ? ` · ${fmt(x.disc)} discovered` : ''}`
           }))}
