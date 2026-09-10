@@ -22,6 +22,7 @@ export function StatStrip({ cells }: { cells: StatCell[] }) {
       {cells.map(c => {
         const inner = (
           <>
+            <span className="stat-dot" style={{ background: cv(c.t, 400) }} />
             <span className="stat-k">{c.k}</span>
             <span className="stat-v num">{c.v}</span>
             <span className="stat-s">{c.s}</span>

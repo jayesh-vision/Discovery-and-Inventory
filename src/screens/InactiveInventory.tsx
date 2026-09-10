@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, Num, Sub, TabBar } from '../components/ui';
+import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
-import { NE_CLASSES, PHY_TABS, fmt, stockCount, type NeClass } from '../data/ledger';
-import { decommRows, type ArchiveRow } from '../data/archive';
+import { NE_CLASSES, PHY_TABS, fmt, stockCount, stockMeta, type NeClass } from '../data/ledger';
+import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
@@ -38,6 +38,15 @@ export default function InactiveInventory() {
 
   return (
     <div className="page">
+      <StatStrip cells={[
+        { k: 'Decommissioned NE', v: fmt(stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red', onClick: toExceptions },
+        { k: 'Retired links', v: fmt(1188), s: 'adjacency no longer seen', t: 'amber', onClick: () => nav('/inventory/links') },
+        { k: 'Retired services', v: fmt(264), s: 'no longer provisioned', t: 'purple', onClick: () => nav('/inventory/services') },
+        { k: 'Oldest record', v: DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
+        { k: 'Recovered to store', v: fmt(38), s: 'restored in last 12 months', t: 'emerald' }
+      ]} />
+
       <Card>
         <TabBar
           tabs={PHY_TABS.map(x => ({ k: x.k, n: x.n, count: stockCount(x.k, 'decomm'),

@@ -110,28 +110,26 @@ export default function PhysicalResources() {
           }))}
           active={cls} onChange={selectTabClass} />
 
-        <div className="stock-bar">
-          <span className="eyebrow">Stock state</span>
-          <div className="stock-chips">
-            {STOCK_ST.filter(s => s.k !== 'decomm').map(s => {
-              const on = stock.has(s.k);
-              return (
-                <button key={s.k} className={`stock-chip${on ? ' is-on' : ''}`} onClick={() => toggleStock(s.k)}
-                  style={on ? { borderColor: cv(s.tone, 400), background: cv(s.tone, 50) } : undefined}
-                  title={`${fmt(stockCount(cls, s.k))} ${meta.n.toLowerCase()} records · ${fmt(s.c)} across the whole estate`}>
-                  <span className="legend-sw" style={{ background: cv(s.tone, 400) }} />{s.n}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <DataGrid<NeRow>
           columns={[{ t: 'Status' }, { t: 'Stock state' }, { t: 'Name / IP' }, { t: 'Model / OEM' }, { t: 'OS version' },
             { t: 'Ports', r: true }, { t: 'End of sale' }, { t: 'Location' }, { t: 'Source · verified' }]}
           rows={rows} total={total} rowKey={r => r.name}
           resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS}
+          extra={
+            <div className="stock-chips">
+              {STOCK_ST.filter(s => s.k !== 'decomm').map(s => {
+                const on = stock.has(s.k);
+                return (
+                  <button key={s.k} className={`stock-chip${on ? ' is-on' : ''}`} onClick={() => toggleStock(s.k)}
+                    style={on ? { borderColor: cv(s.tone, 400), background: cv(s.tone, 50) } : undefined}
+                    title={`${fmt(stockCount(cls, s.k))} ${meta.n.toLowerCase()} records · ${fmt(s.c)} across the whole estate`}>
+                    <span className="legend-sw" style={{ background: cv(s.tone, 400) }} />{s.n}
+                  </button>
+                );
+              })}
+            </div>
+          }
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={(r, i) => {

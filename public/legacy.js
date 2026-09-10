@@ -3274,7 +3274,8 @@ function viewHome() {
 
 /* compact stat strip — six figures in the height of one card */
 const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
-  const inner = `<span class="stat-k">${c.k}</span>
+  const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
+    <span class="stat-k">${c.k}</span>
     <span class="stat-v num">${c.v}</span>
     <span class="stat-s">${c.s}</span>`;
   return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
@@ -4465,22 +4466,17 @@ function viewPhysical() {
             x.disc ? ` · ${n(x.disc)} discovered` : ' · no collector reaches this class'}">
           ${x.n}</button>`).join('')}
       </div>
-      <div class="stock-bar">
-        <span class="eyebrow">Stock state</span>
-        <div class="stock-chips">
+
+      ${gridBar(total, PHY_OEM ? `${n(IL.ne)} across every class`
+          : n(phyCount(t, PHY_STOCK)),
+        'Name, IP address, serial', FS.physical,
+        `<div class="stock-chips">
           ${STOCK_ST.filter(sk => sk.k !== 'decomm').map(sk => `
             <button class="stock-chip${PHY_STOCK.has(sk.k) ? ' is-on' : ''}" data-stock="${sk.k}"
               style="${PHY_STOCK.has(sk.k) ? `border-color:${cv(sk.tone,400)};background:${cv(sk.tone,50)}` : ''}"
               title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
               <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
-        </div>
-      </div>
-
-      ${gridBar(rows.length, PHY_OEM ? `${n(IL.ne)} across every class`
-          : n(phyCount(t, PHY_STOCK)),
-        'Name, IP address, serial', FS.physical,
-        meta.disc === 0 ? ''
-          : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning'),
+        </div>${meta.disc === 0 ? '' : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning')}`,
         [])}
       ${table(
         [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
@@ -4857,6 +4853,18 @@ function viewInactive() {
 
     ${drillBar()}
 
+    ${statStrip([
+      { k:'Decommissioned NE', v:n(STOCK_OF.decomm.c), s:'removed from active estate', t:'slate' },
+      { k:'Still answering discovery', v:String(DECOMM_ZOMBIES), s:'written off, yet on network', t:'red',
+        d:{ v:'reconcile', l:'Decommissioned but still answering', q:'ne=Only on network' } },
+      { k:'Retired links', v:n(1188), s:'adjacency no longer seen', t:'amber',
+        d:{ v:'links', l:'Retired adjacency' } },
+      { k:'Retired services', v:n(264), s:'no longer provisioned', t:'purple',
+        d:{ v:'services', l:'Retired services' } },
+      { k:'Oldest record', v:DECOMM_OLDEST, s:'archived record', t:'cyan' },
+      { k:'Recovered to store', v:n(38), s:'restored in last 12 months', t:'emerald' }
+    ])}
+
     ${card(`
       <div class="tabbar">${PHY_TABS.map(x => `
         <button class="tab${x.k === t ? ' is-on' : ''}" data-inactcls="${x.k}"
@@ -5012,7 +5020,8 @@ function resIfaces() {
       ${[['Optical ports','16','9 used · 7 free','cyan'],['10G free','5','across FPC 0 and 1','emerald'],
          ['40G free','2','PIC 0/1','sky'],['Slot headroom','1','FPC 2 empty · +10 ports','purple'],
          ['Exhaustion','4 mo','at current fill rate','amber']]
-        .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-k">${k}</span><span class="stat-v num">${v}</span><span class="stat-s">${s}</span></div>`).join('')}
+        .map(([k,v,s,t])=>`<div class="stat-cell"><span class="stat-dot" style="background:${cv(t,400)}"></span>
+          <span class="stat-k">${k}</span><span class="stat-v num">${v}</span><span class="stat-s">${s}</span></div>`).join('')}
     </div>`)}
 
   ${card(`
