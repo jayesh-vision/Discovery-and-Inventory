@@ -45,6 +45,8 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
   const host = useRef<HTMLDivElement>(null);
   /* set when the prototype itself moved the URL; the screen is already drawn */
   const fromLegacy = useRef(false);
+  /* set while React Router URL change is actively updating the legacy screen state */
+  const isUpdatingFromUrl = useRef(false);
 
   /* legacy → React: the prototype's go() hands React-owned screens to us */
   useEffect(() => {
@@ -68,11 +70,17 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
          it — carrying its active drill into the URL so the breadcrumb (the
          only navigation) always names where the reader actually is */
       sync: (k, params, drill) => {
+        if (isUpdatingFromUrl.current) return;
         const target = legacyPath(k, drill ?? null, params);
-        if (target !== window.location.pathname + window.location.search) { fromLegacy.current = true; nav(target); }
+        const currentUrl = window.location.pathname + window.location.search;
+        if (target !== currentUrl) {
+          fromLegacy.current = true;
+          const isSameScreen = k === legacyKey;
+          nav(target, { replace: isSameScreen });
+        }
       }
     };
-  }, [nav]);
+  }, [nav, legacyKey]);
 
   useEffect(() => { loadLegacy().then(() => setReady(true)); }, []);
 
@@ -86,12 +94,23 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     const back = sp.get('back') ?? 'physical';
     sp.delete('drill'); sp.delete('from'); sp.delete('back');
     const q = sp.toString();
-    L.setParams(legacyKey, params as Record<string, string>);
-    /* always applied, empty query included — a plain URL means the screen's
-       clean default state, which is what a breadcrumb click navigates to */
-    L.applyDrillQuery(legacyKey, q);
-    L.setDrill(label ? { view: legacyKey, label, q, from, back } : null);
-    L.go(legacyKey);
+
+    const combinedParams: Record<string, string> = {
+      ...Object.fromEntries(new URLSearchParams(loc.search).entries()),
+      ...(params as Record<string, string>)
+    };
+
+    isUpdatingFromUrl.current = true;
+    try {
+      L.setParams(legacyKey, combinedParams);
+      /* always applied, empty query included — a plain URL means the screen's
+         clean default state, which is what a breadcrumb click navigates to */
+      L.applyDrillQuery(legacyKey, q);
+      L.setDrill(label ? { view: legacyKey, label, q, from, back } : null);
+      L.go(legacyKey);
+    } finally {
+      isUpdatingFromUrl.current = false;
+    }
   }, [ready, legacyKey, loc.search, params]);
 
   return (

@@ -100,6 +100,7 @@ function applyDrillQuery(view, q, label) {
     }
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
+  if (view === 'vnfdetails') { if (p.name) VNF_DETAIL_ID = decodeURIComponent(p.name); if (p.tab) VNF_DETAIL_TAB = p.tab; }
 }
 function clearDrill() {
   const d = DRILL; DRILL = null;

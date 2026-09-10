@@ -63,8 +63,15 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
   const s = screenByKey(key);
   if (!s) return '/discovery/insights';
   let path = s.path;
-  for (const [k, v] of Object.entries(params)) path = path.replace(':' + k, encodeURIComponent(v));
   const sp = new URLSearchParams(drill?.q ?? '');
+  for (const [k, v] of Object.entries(params)) {
+    if (!v) continue;
+    if (path.includes(':' + k)) {
+      path = path.replace(':' + k, encodeURIComponent(v));
+    } else if (!sp.has(k)) {
+      sp.set(k, v);
+    }
+  }
   if (drill?.label) sp.set('drill', drill.label);
   if (drill?.from) sp.set('from', drill.from);
   const qs = sp.toString();
