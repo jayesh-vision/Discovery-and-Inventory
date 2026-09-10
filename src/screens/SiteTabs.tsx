@@ -64,7 +64,18 @@ export function useSiteLocation(id: string): { l: Location; head: SiteHead | nul
 }
 
 export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; }
+  });
+
+  const toggleOpen = () => {
+    setOpen(prev => {
+      const next = !prev;
+      try { localStorage.setItem('nst-sitemeta', next ? '1' : '0'); } catch (e) {}
+      return next;
+    });
+  };
+
   return (
     <>
       <div className="page-bar" style={{ justifyContent: 'flex-start' }}>
@@ -77,7 +88,7 @@ export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) 
         <>
           <Card style={{ padding: 'var(--vw-space-md) var(--vw-space-lg)' }}>
             <div className="meta-bar">
-              <button className="meta-toggle" aria-expanded={open} onClick={() => setOpen(v => !v)}
+              <button className="meta-toggle" aria-expanded={open} onClick={toggleOpen}
                 aria-label={`${open ? 'Hide' : 'Show'} site details`}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   strokeLinecap="round" strokeLinejoin="round"

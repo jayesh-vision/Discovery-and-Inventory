@@ -1694,6 +1694,7 @@ function locMap() {
 let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
 let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
+  try { SITE_META_OPEN = localStorage.getItem('nst-sitemeta') === '1'; } catch (e) {}
   const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
