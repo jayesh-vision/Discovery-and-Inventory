@@ -80,6 +80,7 @@ function applyDrillQuery(view, q) {
     if (p.view) LOC_VIEW = p.view;
     LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
     LOC_TYPEGRP = p.type || null;
+    LOC_GROUP = p.group || null;
   }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
@@ -94,7 +95,7 @@ function clearDrill() {
   if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
   if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
-  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; }
+  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; LOC_GROUP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
   go(d.view);
 }
@@ -134,6 +135,19 @@ function go(k) {
   });
   lazyGrids();
 }
+
+/* keyboard activation for custom [role="button"] controls (the coverage
+   row's expand trigger, the hierarchy diagram's nodes) — real <button>s
+   get this for free, these don't, so Enter/Space is wired to replay the
+   same click the pointer path already handles rather than duplicating
+   the expand/drill logic here. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const t = e.target.closest('[role="button"]');
+  if (!t) return;
+  e.preventDefault();
+  t.click();
+});
 
 document.addEventListener('click', e => {
   const kbBtn = e.target.closest('[data-kebab]');
@@ -339,6 +353,21 @@ document.addEventListener('click', e => {
   if (zb) { mapZoom(zb.dataset.zoom); return; }
   const lv = e.target.closest('[data-locview]');
   if (lv) { LOC_VIEW = lv.dataset.locview; go('location'); return; }
+  const hx = e.target.closest('[data-hierexpand]');
+  if (hx) { HIER_EXPANDED = !HIER_EXPANDED; go('location'); return; }
+  const covx = e.target.closest('[data-covexpand]');
+  if (covx) {
+    const k = covx.dataset.covexpand;
+    COV_EXPANDED = COV_EXPANDED === k ? null : k;
+    go('location');
+    /* go() just rebuilt the table, so the row the reader clicked is a
+       brand-new element at the same position — bring it back into view
+       inside its own scroll box rather than leaving it wherever the
+       (now taller, or shorter) table happens to have scrolled to */
+    const row = document.getElementById('cov-row-' + k);
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    return;
+  }
   const mc = e.target.closest('[data-mapcolor]');
   if (mc) { MAP_COLOR = mc.dataset.mapcolor; go('location'); return; }
   const mb = e.target.closest('path.st[data-circle]');

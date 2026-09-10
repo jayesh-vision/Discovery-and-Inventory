@@ -548,14 +548,6 @@ const LOC_CIRCLES_OLD = [
   { n:'Gujarat',     c:152, live:104 }, { n:'Andhra Pradesh',c:143, live:96 },
   { n:'Other circles',c:255,live:170 }
 ];
-const LOC_FAILED = [
-  { n:'Madhya Pradesh', c:8, why:'Power handover pending at 5 macro sites' },
-  { n:'Andhra Pradesh', c:6, why:'Fiber not spliced to the ODF' },
-  { n:'Maharashtra',    c:4, why:'Landlord access withdrawn' },
-  { n:'Uttar Pradesh',  c:4, why:'ZTP template mismatch on the CSR' },
-  { n:'Odisha',         c:3, why:'Transport ring incomplete' },
-  { n:'Other circles',  c:9, why:'Mixed — see the exception queue' }
-];
 const LOC_AGING = [
   { n:'Under 30 days', c:96,  tone:'emerald' }, { n:'30 – 90 days', c:79, tone:'amber' },
   { n:'90 – 180 days', c:41,  tone:'orange' },  { n:'Over 180 days', c:20, tone:'red' }
@@ -593,33 +585,218 @@ const LOC_HIER = (() => {
   return top;
 })();
 
-const LOCATIONS = [
-  { st:'On-air',      chip:'success', name:'KA-BGLK-277', cat:'Central',  ct:'amber',   type:'POP',      id:'BGLK-277',   addr:'277, Bagalkot',        city:'Bagalkot',    state:'Karnataka',      ne:25, disc:17, lat:16.181, lon:75.696 },
-  { st:'On-air',      chip:'success', name:'DEL-279',     cat:'Edge',     ct:'emerald', type:'Cell Site',id:'DEL-279',    addr:'279, Delhi',           city:'Delhi',       state:'Delhi',          ne:14, disc:14, lat:28.644, lon:77.216 },
-  { st:'On-air',      chip:'success', name:'MP-INDR-275', cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'INDR-275',   addr:'275, Indore',          city:'Indore',      state:'Madhya Pradesh', ne:11, disc:10, lat:22.719, lon:75.857 },
-  { st:'In progress', chip:'warning', name:'MP-RG-411',   cat:'Regional', ct:'sky',     type:'Micro-CO', id:'INDR-401',   addr:'Indore',               city:'Indore',      state:'Madhya Pradesh', ne:8,  disc:6, lat:22.75, lon:75.9 },
-  { st:'Planned',     chip:'info',    name:'BGLK_075',    cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'BGLK_075',   addr:'200 Consilium Pl',     city:'Bagalkot',    state:'Karnataka',      ne:4,  disc:0, lat:16.203, lon:75.723 },
-  { st:'Planned',     chip:'info',    name:'MT702',       cat:'Central',  ct:'amber',   type:'Micro-CO', id:'MT702',      addr:'Subdega',              city:'Subdega',     state:'Odisha',         ne:6,  disc:0, lat:21.95, lon:84.05 },
-  { st:'On-air',      chip:'success', name:'Vijayawada',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'VJA-118',    addr:'Vijayawada',           city:'Vijayawada',  state:'Andhra Pradesh', ne:9,  disc:8, lat:16.506, lon:80.648 },
-  { st:'In progress', chip:'warning', name:'MP-INDR-397', cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'MP-INDR-510',addr:'Scheme 78-Part-ii',    city:'Indore',      state:'Madhya Pradesh', ne:5,  disc:3, lat:22.681, lon:75.803 },
-  { st:'Failed',      chip:'error',   name:'TL-JSAT-3S',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'TL-JSAT-3S', addr:'Indore AICTSL',        city:'Indore',      state:'Madhya Pradesh', ne:3,  disc:0, lat:22.702, lon:75.951 },
-  { st:'On-air',      chip:'success', name:'DND-ART-98',  cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'DND-ART-98', addr:'Govt girls school',    city:'Dindigul',    state:'Tamil Nadu',     ne:7,  disc:7, lat:10.365, lon:77.975 },
-  { st:'On-air',      chip:'success', name:'Mumbai Core DC-01', cat:'Central', ct:'amber', type:'Datacenter', id:'MUM-DC01', addr:'Bandra Kurla Complex', city:'Mumbai',    state:'Maharashtra',    ne:186,disc:181,lat:19.062, lon:72.868 },
-  { st:'In progress', chip:'warning', name:'Bengaluru DC-02',   cat:'Central', ct:'amber', type:'Datacenter', id:'BLR-DC02',  addr:'Electronic City Phase 2', city:'Bengaluru', state:'Karnataka', ne:64, disc:38, lat:12.845, lon:77.660 },
-
-  /* one PoP + one site per top circle, so every Network hierarchy node
-     opens a Locations list that actually has rows in it, not zero. */
-  { st:'On-air',      chip:'success', name:'MH-MUM-POP-04', cat:'Central',  ct:'amber',   type:'POP',      id:'MUM-POP04',  addr:'BKC Annexe',           city:'Mumbai',      state:'Maharashtra',    ne:19, disc:16, lat:19.076, lon:72.878 },
-  { st:'On-air',      chip:'success', name:'MH-NGP-118',   cat:'Edge',     ct:'emerald', type:'Cell Site',id:'NGP-118',    addr:'Wardha Road',          city:'Nagpur',      state:'Maharashtra',    ne:6,  disc:6,  lat:21.146, lon:79.088 },
-  { st:'On-air',      chip:'success', name:'UP-LKO-POP-11', cat:'Central',  ct:'amber',   type:'POP',      id:'LKO-POP11',  addr:'Gomti Nagar',          city:'Lucknow',     state:'Uttar Pradesh',  ne:15, disc:13, lat:26.847, lon:80.994 },
-  { st:'In progress', chip:'warning', name:'UP-KNP-330',   cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'KNP-330',    addr:'Kalyanpur',            city:'Kanpur',      state:'Uttar Pradesh',  ne:5,  disc:2,  lat:26.466, lon:80.312 },
-  { st:'On-air',      chip:'success', name:'MP-BPL-POP-07', cat:'Central',  ct:'amber',   type:'POP',      id:'BPL-POP07',  addr:'Arera Colony',         city:'Bhopal',      state:'Madhya Pradesh', ne:12, disc:11, lat:23.234, lon:77.435 },
-  { st:'On-air',      chip:'success', name:'DL-CP-POP-02',  cat:'Central',  ct:'amber',   type:'POP',      id:'CP-POP02',   addr:'Connaught Place',      city:'New Delhi',   state:'Delhi',          ne:22, disc:21, lat:28.632, lon:77.219 },
-  { st:'On-air',      chip:'success', name:'TN-CHN-POP-05', cat:'Central',  ct:'amber',   type:'POP',      id:'CHN-POP05',  addr:'Guindy',                city:'Chennai',     state:'Tamil Nadu',     ne:17, disc:16, lat:13.010, lon:80.218 },
-  { st:'On-air',      chip:'success', name:'GJ-AMD-POP-06', cat:'Central',  ct:'amber',   type:'POP',      id:'AMD-POP06',  addr:'SG Highway',           city:'Ahmedabad',   state:'Gujarat',        ne:14, disc:12, lat:23.026, lon:72.508 },
-  { st:'Planned',     chip:'info',    name:'GJ-SUR-221',   cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'SUR-221',    addr:'Adajan',               city:'Surat',       state:'Gujarat',        ne:3,  disc:0,  lat:21.196, lon:72.789 },
-  { st:'On-air',      chip:'success', name:'AP-VZG-POP-03', cat:'Regional', ct:'sky',     type:'POP',      id:'VZG-POP03',  addr:'Dwaraka Nagar',        city:'Visakhapatnam',state:'Andhra Pradesh',ne:10, disc:9,  lat:17.687, lon:83.219 }
+const LOC_STATES = [
+  { k:'live', n:'On-air', tone:'emerald' }, { k:'building', n:'In progress', tone:'amber' },
+  { k:'planned', n:'Planned', tone:'sky' }, { k:'failed', n:'Failed', tone:'red' }
 ];
+
+/* Sites split into the same three build classes the estate is actually
+   built from; counts foot to LOC_TYPES' site total (1,520). */
+const SITE_SUBTYPES = [
+  { n:'Macro-O', c:641 }, { n:'Micro-CO', c:512 }, { n:'Cell Site', c:367 }
+];
+
+/* the eight named circles the hierarchy widget and the coverage table
+   draw individually; everything else rolls into "Other circles" */
+const TOP8_STATES = new Set(LOC_HIER.filter(r => r.code !== 'OTH').map(r => r.n));
+
+const LOC_CITIES = {
+  'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad','Kolhapur','Thane','Solapur'],
+  'Uttar Pradesh': ['Lucknow','Kanpur','Varanasi','Agra','Noida','Gorakhpur','Meerut','Prayagraj'],
+  'Karnataka': ['Bengaluru','Mysuru','Hubballi','Mangaluru','Belagavi','Bagalkot','Davangere'],
+  'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior','Ujjain','Sagar'],
+  'Delhi': ['Connaught Place','Dwarka','Rohini','Okhla','Janakpuri','Saket'],
+  'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Dindigul'],
+  'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Gandhinagar'],
+  'Andhra Pradesh': ['Vijayawada','Visakhapatnam','Guntur','Tirupati','Nellore'],
+  'Rajasthan': ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer'],
+  'West Bengal': ['Kolkata','Siliguri','Durgapur','Asansol'],
+  'Odisha': ['Bhubaneswar','Cuttack','Rourkela','Sambalpur'],
+  'Punjab': ['Ludhiana','Amritsar','Jalandhar','Mohali'],
+  'Kerala': ['Kochi','Thiruvananthapuram','Kozhikode','Thrissur'],
+  'Telangana': ['Hyderabad','Warangal','Nizamabad','Karimnagar'],
+  'Haryana': ['Gurugram','Faridabad','Panipat','Ambala'],
+  'Chhattisgarh': ['Raipur','Bhilai','Bilaspur'],
+  'Bihar': ['Patna','Gaya','Muzaffarpur'],
+  'Assam': ['Guwahati','Dibrugarh','Silchar'],
+  'Jharkhand': ['Ranchi','Jamshedpur','Dhanbad'],
+  'Uttarakhand': ['Dehradun','Haridwar','Haldwani']
+};
+
+/* ── the full location roster ────────────────────────────────
+   Generated, not hand-typed: every KPI, hierarchy node and coverage row
+   on Insights reads a count out of LOC_HIER / LOC_TYPES, so the roster a
+   drill-down lands on has to foot to those same numbers exactly, circle
+   by circle and status by status — a hand-picked sample of ten can't do
+   that. Deterministic (fixed seed), so the roster is stable across
+   reloads rather than reshuffling. */
+/* ── site rollout blockers ───────────────────────────────────
+   Every category a real rollout program actually tracks, each with the
+   specific reasons a NOC/deployment lead would recognise — not "mixed,
+   see exception queue". A Blocked (Failed) site always carries one of
+   these; a Delayed (In progress, stuck) site sometimes does too. */
+const SITE_BLOCKERS = [
+  { cat:'Lease / Property', reasons:[
+    'Lease agreement expired', 'Lease renewal pending approval', 'Landlord denied site access',
+    'Building management denied access', 'Site ownership dispute', 'Legal clearance pending' ] },
+  { cat:'Power', reasons:[
+    'Commercial power connection unavailable', 'Power handover pending from utility provider',
+    'DG backup installation pending', 'Battery bank not commissioned', 'Power panel installation incomplete',
+    'Electrical safety audit failed', 'Frequent power outages affecting commissioning' ] },
+  { cat:'Fiber Connectivity', reasons:[
+    'Fiber route not handed over', 'Fiber cut on feeder route', 'Fiber splicing pending',
+    'ROW approval pending', 'ODF installation incomplete', 'Backhaul connectivity unavailable' ] },
+  { cat:'Civil / Infrastructure', reasons:[
+    'Tower foundation construction delayed', 'Equipment shelter installation pending', 'Civil work not completed',
+    'Rack installation pending', 'HVAC installation pending', 'Structural audit failed', 'Site access road unavailable' ] },
+  { cat:'Regulatory', reasons:[
+    'Municipal approval pending', 'Tower installation permit expired', 'Environmental clearance pending',
+    'Local authority approval pending' ] },
+  { cat:'Supply Chain', reasons:[
+    'Equipment delivery delayed', 'Material shortage at site', 'Vendor deployment delayed',
+    'Acceptance testing pending vendor sign-off' ] },
+  { cat:'Commissioning', reasons:[
+    'ATP pending', 'ATP failed due to power instability', 'Site integration pending NOC approval',
+    'Site acceptance testing incomplete', 'Commissioning engineer visit pending' ] }
+];
+/* one business-impact line per category — reused across every reason in
+   that category, since the operational consequence is the same shape */
+const SITE_BLOCKER_IMPACT = {
+  'Lease / Property': 'Site inaccessible for deployment and maintenance activities',
+  'Power': 'Equipment commissioning cannot begin without stable power',
+  'Fiber Connectivity': 'Backhaul unavailable — site cannot carry live traffic',
+  'Civil / Infrastructure': 'Equipment installation blocked until civil work clears',
+  'Regulatory': 'Tower and equipment installation cannot proceed without clearance',
+  'Supply Chain': 'Commissioning delayed pending equipment and vendor readiness',
+  'Commissioning': 'Site held at final acceptance — traffic cutover is blocked'
+};
+/* operational risk flags for sites that are on-air but not clean —
+   distinct from a blocker: nothing is down, but something needs attention
+   before it becomes an incident */
+const SITE_RISKS = [
+  'Lease expires within 30 days', 'Frequent power outages reported', 'Temporary fiber diversion in use',
+  'Repeated landlord access restrictions', 'Battery backup below threshold',
+  'High utilization requiring capacity expansion'
+];
+
+const LOCATIONS = (() => {
+  let seed = 42;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const blockerPool = SITE_BLOCKERS.flatMap(b => b.reasons.map(reason => ({ cat: b.cat, reason })));
+  const pickBlocker = () => pick(blockerPool);
+
+  /* Commissioned/Blocked read straight off the existing status; the
+     rollout sub-stages only apply to sites still in flight. */
+  const stageFor = (k) => k === 'live' ? 'Commissioned' : k === 'failed' ? 'Blocked'
+    : k === 'planned' ? 'Under Deployment' : pick(['Under Deployment', 'ATP Pending', 'Integration Pending']);
+
+  /* one shuffled status per row of a type, sized exactly to LOC_TYPES —
+     however the rows get diced up by circle afterward, the type totals
+     still foot exactly */
+  const poolFor = t => shuffle(LOC_STATES.flatMap(st => Array(t[st.k]).fill(st)));
+  const pools = {
+    Datacenter: poolFor(LOC_TYPES.find(t => t.k === 'dc')),
+    POP: poolFor(LOC_TYPES.find(t => t.k === 'pop')),
+    site: poolFor(LOC_TYPES.find(t => t.k === 'site'))
+  };
+  const siteTypes = shuffle(SITE_SUBTYPES.flatMap(s => Array(s.c).fill(s.n)));
+  let dcN = 0, popN = 0, siteN = 0;
+
+  const catFor = type => type === 'Datacenter' ? 'Central'
+    : type === 'POP' ? (rnd() < .45 ? 'Central' : 'Regional')
+    : (rnd() < .15 ? 'Regional' : 'Edge');
+  const chipFor = k => ({ live:'success', building:'warning', planned:'info', failed:'error' }[k]);
+  const ctFor = cat => cat === 'Central' ? 'amber' : cat === 'Regional' ? 'sky' : 'emerald';
+  const abbrFor = type => type === 'Datacenter' ? 'DC' : type === 'POP' ? 'POP' : type === 'Macro-O' ? 'MAC' : type === 'Micro-CO' ? 'MIC' : 'CEL';
+
+  const row = (code, stateName, city, lat, lon, type) => {
+    const status = type === 'Datacenter' ? pools.Datacenter[dcN++] : type === 'POP' ? pools.POP[popN++] : pools.site[siteN++];
+    const cat = catFor(type), abbr = abbrFor(type);
+    const idx = type === 'Datacenter' ? dcN : type === 'POP' ? popN : siteN;
+    const id = `${code}-${abbr}-${String(idx).padStart(3, '0')}`;
+    const ne = type === 'Datacenter' ? 40 + Math.floor(rnd() * 180) : type === 'POP' ? 10 + Math.floor(rnd() * 25) : 2 + Math.floor(rnd() * 14);
+    const disc = status.k === 'live' ? ne : status.k === 'building' ? Math.round(ne * (0.3 + rnd() * 0.5)) : 0;
+
+    /* rollout stage, blocker and risk only apply to sites — a datacenter
+       or PoP going down is an inventory event, not a site rollout one,
+       and this dashboard's site-ops sections stay scoped to sites only */
+    const isSite = type !== 'Datacenter' && type !== 'POP';
+    const stage = isSite ? stageFor(status.k) : null;
+    let issue = null, risk = null;
+    if (isSite) {
+      if (status.k === 'failed') issue = pickBlocker();
+      else if (status.k === 'building' && rnd() < 0.4) issue = pickBlocker();
+      else if (status.k === 'live' && rnd() < 0.08) risk = pick(SITE_RISKS);
+    }
+
+    return { st: status.n, chip: chipFor(status.k), name: id, cat, ct: ctFor(cat), type, id,
+      addr: `${city} ${type === 'Datacenter' ? 'Data Park' : type === 'POP' ? 'PoP' : 'Site'}`,
+      city, state: stateName, ne, disc, stage, issue, risk,
+      lat: +(lat + (rnd() - 0.5) * 1.2).toFixed(3), lon: +(lon + (rnd() - 0.5) * 1.2).toFixed(3) };
+  };
+
+  const out = [];
+  const restStates = LOC_GEO.slice(8), restW = restStates.reduce((a, g) => a + g.tot, 0);
+  /* split a total across weighted buckets so the parts always sum back to it */
+  const split = (total, weights, sumW) => {
+    const parts = weights.map(w => Math.floor(total * w / sumW));
+    let left = total - parts.reduce((a, b) => a + b, 0);
+    for (let i = 0; left > 0; i = (i + 1) % parts.length, left--) parts[i]++;
+    return parts;
+  };
+
+  LOC_HIER.forEach(r => {
+    if (r.code === 'OTH') {
+      /* "Other circles" isn't one place — its dc/pop/site totals ride on
+         the twelve states LOC_HIER folded into it, weighted by size */
+      const w = restStates.map(g => g.tot);
+      const dcParts = split(r.dc, w, restW), popParts = split(r.pop, w, restW), siteParts = split(r.site, w, restW);
+      restStates.forEach((g, gi) => {
+        const cities = LOC_CITIES[g.st] || [g.st];
+        for (let i = 0; i < dcParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, 'Datacenter'));
+        for (let i = 0; i < popParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, 'POP'));
+        for (let i = 0; i < siteParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, siteTypes[siteN]));
+      });
+      return;
+    }
+    const g = LOC_GEO.find(x => x.c === r.code), cities = LOC_CITIES[r.n] || [r.n];
+    for (let i = 0; i < r.dc; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, 'Datacenter'));
+    for (let i = 0; i < r.pop; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, 'POP'));
+    for (let i = 0; i < r.site; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, siteTypes[siteN]));
+  });
+  return out;
+})();
+
+/* fold real network-element and failed-build counts back onto LOC_HIER,
+   read straight off the roster that was just built from it — the
+   hierarchy widget and the coverage table both read these, so a reader
+   who hovers a node and then checks the table sees the same number. */
+LOC_HIER.forEach(r => {
+  const rows = r.code === 'OTH' ? LOCATIONS.filter(l => !TOP8_STATES.has(l.state)) : LOCATIONS.filter(l => l.state === r.n);
+  r.neDc = rows.filter(l => l.type === 'Datacenter').reduce((a,l) => a + l.ne, 0);
+  r.nePop = rows.filter(l => l.type === 'POP').reduce((a,l) => a + l.ne, 0);
+  r.ne = rows.reduce((a,l) => a + l.ne, 0);
+  r.neSite = r.ne - r.neDc - r.nePop;
+  r.failed = rows.filter(l => l.st === 'Failed').length;
+});
+
+/* LOC_GEO's live/build/fail were hand-typed narrative numbers, disconnected
+   from the roster once LOCATIONS became real generated data — the Map
+   tab's right-hand panel (state build-status, "on-air" colouring) read
+   those stale numbers, so selecting a different state could show figures
+   that didn't match Coverage by circle or the hierarchy widget for the
+   same place. Recompute all three from the same LOCATIONS rows every
+   other widget uses, so every state selected on the map is live, not a
+   fixed sample. */
+LOC_GEO.forEach(g => {
+  const rows = LOCATIONS.filter(l => l.state === g.st);
+  g.tot = rows.length;
+  g.live = rows.filter(l => l.st === 'On-air').length;
+  g.build = rows.filter(l => l.st === 'In progress').length;
+  g.fail = rows.filter(l => l.st === 'Failed').length;
+});
 
 const STOCK_ST = [
   { k:'planned',  n:'Planned',        c:92,   chip:'info',    tone:'sky' },

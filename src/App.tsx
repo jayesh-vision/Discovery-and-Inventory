@@ -1,5 +1,6 @@
 import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import RouteTitle from './shell/RouteTitle';
+import Topbar from './shell/Topbar';
 import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
 
@@ -16,6 +17,7 @@ export default function App() {
       <div className="app is-embedded">
         <main className="grow">
           <RouteTitle />
+          <Topbar />
           <Routes>
             <Route path="/" element={<Navigate to="/discovery/insights" replace />} />
             {SCREENS.map(s => (

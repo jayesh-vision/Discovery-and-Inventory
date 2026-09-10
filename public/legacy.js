@@ -711,14 +711,6 @@ const LOC_CIRCLES_OLD = [
   { n:'Gujarat',     c:152, live:104 }, { n:'Andhra Pradesh',c:143, live:96 },
   { n:'Other circles',c:255,live:170 }
 ];
-const LOC_FAILED = [
-  { n:'Madhya Pradesh', c:8, why:'Power handover pending at 5 macro sites' },
-  { n:'Andhra Pradesh', c:6, why:'Fiber not spliced to the ODF' },
-  { n:'Maharashtra',    c:4, why:'Landlord access withdrawn' },
-  { n:'Uttar Pradesh',  c:4, why:'ZTP template mismatch on the CSR' },
-  { n:'Odisha',         c:3, why:'Transport ring incomplete' },
-  { n:'Other circles',  c:9, why:'Mixed — see the exception queue' }
-];
 const LOC_AGING = [
   { n:'Under 30 days', c:96,  tone:'emerald' }, { n:'30 – 90 days', c:79, tone:'amber' },
   { n:'90 – 180 days', c:41,  tone:'orange' },  { n:'Over 180 days', c:20, tone:'red' }
@@ -756,33 +748,218 @@ const LOC_HIER = (() => {
   return top;
 })();
 
-const LOCATIONS = [
-  { st:'On-air',      chip:'success', name:'KA-BGLK-277', cat:'Central',  ct:'amber',   type:'POP',      id:'BGLK-277',   addr:'277, Bagalkot',        city:'Bagalkot',    state:'Karnataka',      ne:25, disc:17, lat:16.181, lon:75.696 },
-  { st:'On-air',      chip:'success', name:'DEL-279',     cat:'Edge',     ct:'emerald', type:'Cell Site',id:'DEL-279',    addr:'279, Delhi',           city:'Delhi',       state:'Delhi',          ne:14, disc:14, lat:28.644, lon:77.216 },
-  { st:'On-air',      chip:'success', name:'MP-INDR-275', cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'INDR-275',   addr:'275, Indore',          city:'Indore',      state:'Madhya Pradesh', ne:11, disc:10, lat:22.719, lon:75.857 },
-  { st:'In progress', chip:'warning', name:'MP-RG-411',   cat:'Regional', ct:'sky',     type:'Micro-CO', id:'INDR-401',   addr:'Indore',               city:'Indore',      state:'Madhya Pradesh', ne:8,  disc:6, lat:22.75, lon:75.9 },
-  { st:'Planned',     chip:'info',    name:'BGLK_075',    cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'BGLK_075',   addr:'200 Consilium Pl',     city:'Bagalkot',    state:'Karnataka',      ne:4,  disc:0, lat:16.203, lon:75.723 },
-  { st:'Planned',     chip:'info',    name:'MT702',       cat:'Central',  ct:'amber',   type:'Micro-CO', id:'MT702',      addr:'Subdega',              city:'Subdega',     state:'Odisha',         ne:6,  disc:0, lat:21.95, lon:84.05 },
-  { st:'On-air',      chip:'success', name:'Vijayawada',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'VJA-118',    addr:'Vijayawada',           city:'Vijayawada',  state:'Andhra Pradesh', ne:9,  disc:8, lat:16.506, lon:80.648 },
-  { st:'In progress', chip:'warning', name:'MP-INDR-397', cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'MP-INDR-510',addr:'Scheme 78-Part-ii',    city:'Indore',      state:'Madhya Pradesh', ne:5,  disc:3, lat:22.681, lon:75.803 },
-  { st:'Failed',      chip:'error',   name:'TL-JSAT-3S',  cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'TL-JSAT-3S', addr:'Indore AICTSL',        city:'Indore',      state:'Madhya Pradesh', ne:3,  disc:0, lat:22.702, lon:75.951 },
-  { st:'On-air',      chip:'success', name:'DND-ART-98',  cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'DND-ART-98', addr:'Govt girls school',    city:'Dindigul',    state:'Tamil Nadu',     ne:7,  disc:7, lat:10.365, lon:77.975 },
-  { st:'On-air',      chip:'success', name:'Mumbai Core DC-01', cat:'Central', ct:'amber', type:'Datacenter', id:'MUM-DC01', addr:'Bandra Kurla Complex', city:'Mumbai',    state:'Maharashtra',    ne:186,disc:181,lat:19.062, lon:72.868 },
-  { st:'In progress', chip:'warning', name:'Bengaluru DC-02',   cat:'Central', ct:'amber', type:'Datacenter', id:'BLR-DC02',  addr:'Electronic City Phase 2', city:'Bengaluru', state:'Karnataka', ne:64, disc:38, lat:12.845, lon:77.660 },
-
-  /* one PoP + one site per top circle, so every Network hierarchy node
-     opens a Locations list that actually has rows in it, not zero. */
-  { st:'On-air',      chip:'success', name:'MH-MUM-POP-04', cat:'Central',  ct:'amber',   type:'POP',      id:'MUM-POP04',  addr:'BKC Annexe',           city:'Mumbai',      state:'Maharashtra',    ne:19, disc:16, lat:19.076, lon:72.878 },
-  { st:'On-air',      chip:'success', name:'MH-NGP-118',   cat:'Edge',     ct:'emerald', type:'Cell Site',id:'NGP-118',    addr:'Wardha Road',          city:'Nagpur',      state:'Maharashtra',    ne:6,  disc:6,  lat:21.146, lon:79.088 },
-  { st:'On-air',      chip:'success', name:'UP-LKO-POP-11', cat:'Central',  ct:'amber',   type:'POP',      id:'LKO-POP11',  addr:'Gomti Nagar',          city:'Lucknow',     state:'Uttar Pradesh',  ne:15, disc:13, lat:26.847, lon:80.994 },
-  { st:'In progress', chip:'warning', name:'UP-KNP-330',   cat:'Edge',     ct:'emerald', type:'Macro-O',  id:'KNP-330',    addr:'Kalyanpur',            city:'Kanpur',      state:'Uttar Pradesh',  ne:5,  disc:2,  lat:26.466, lon:80.312 },
-  { st:'On-air',      chip:'success', name:'MP-BPL-POP-07', cat:'Central',  ct:'amber',   type:'POP',      id:'BPL-POP07',  addr:'Arera Colony',         city:'Bhopal',      state:'Madhya Pradesh', ne:12, disc:11, lat:23.234, lon:77.435 },
-  { st:'On-air',      chip:'success', name:'DL-CP-POP-02',  cat:'Central',  ct:'amber',   type:'POP',      id:'CP-POP02',   addr:'Connaught Place',      city:'New Delhi',   state:'Delhi',          ne:22, disc:21, lat:28.632, lon:77.219 },
-  { st:'On-air',      chip:'success', name:'TN-CHN-POP-05', cat:'Central',  ct:'amber',   type:'POP',      id:'CHN-POP05',  addr:'Guindy',                city:'Chennai',     state:'Tamil Nadu',     ne:17, disc:16, lat:13.010, lon:80.218 },
-  { st:'On-air',      chip:'success', name:'GJ-AMD-POP-06', cat:'Central',  ct:'amber',   type:'POP',      id:'AMD-POP06',  addr:'SG Highway',           city:'Ahmedabad',   state:'Gujarat',        ne:14, disc:12, lat:23.026, lon:72.508 },
-  { st:'Planned',     chip:'info',    name:'GJ-SUR-221',   cat:'Edge',     ct:'emerald', type:'Micro-CO', id:'SUR-221',    addr:'Adajan',               city:'Surat',       state:'Gujarat',        ne:3,  disc:0,  lat:21.196, lon:72.789 },
-  { st:'On-air',      chip:'success', name:'AP-VZG-POP-03', cat:'Regional', ct:'sky',     type:'POP',      id:'VZG-POP03',  addr:'Dwaraka Nagar',        city:'Visakhapatnam',state:'Andhra Pradesh',ne:10, disc:9,  lat:17.687, lon:83.219 }
+const LOC_STATES = [
+  { k:'live', n:'On-air', tone:'emerald' }, { k:'building', n:'In progress', tone:'amber' },
+  { k:'planned', n:'Planned', tone:'sky' }, { k:'failed', n:'Failed', tone:'red' }
 ];
+
+/* Sites split into the same three build classes the estate is actually
+   built from; counts foot to LOC_TYPES' site total (1,520). */
+const SITE_SUBTYPES = [
+  { n:'Macro-O', c:641 }, { n:'Micro-CO', c:512 }, { n:'Cell Site', c:367 }
+];
+
+/* the eight named circles the hierarchy widget and the coverage table
+   draw individually; everything else rolls into "Other circles" */
+const TOP8_STATES = new Set(LOC_HIER.filter(r => r.code !== 'OTH').map(r => r.n));
+
+const LOC_CITIES = {
+  'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad','Kolhapur','Thane','Solapur'],
+  'Uttar Pradesh': ['Lucknow','Kanpur','Varanasi','Agra','Noida','Gorakhpur','Meerut','Prayagraj'],
+  'Karnataka': ['Bengaluru','Mysuru','Hubballi','Mangaluru','Belagavi','Bagalkot','Davangere'],
+  'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior','Ujjain','Sagar'],
+  'Delhi': ['Connaught Place','Dwarka','Rohini','Okhla','Janakpuri','Saket'],
+  'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Dindigul'],
+  'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Gandhinagar'],
+  'Andhra Pradesh': ['Vijayawada','Visakhapatnam','Guntur','Tirupati','Nellore'],
+  'Rajasthan': ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer'],
+  'West Bengal': ['Kolkata','Siliguri','Durgapur','Asansol'],
+  'Odisha': ['Bhubaneswar','Cuttack','Rourkela','Sambalpur'],
+  'Punjab': ['Ludhiana','Amritsar','Jalandhar','Mohali'],
+  'Kerala': ['Kochi','Thiruvananthapuram','Kozhikode','Thrissur'],
+  'Telangana': ['Hyderabad','Warangal','Nizamabad','Karimnagar'],
+  'Haryana': ['Gurugram','Faridabad','Panipat','Ambala'],
+  'Chhattisgarh': ['Raipur','Bhilai','Bilaspur'],
+  'Bihar': ['Patna','Gaya','Muzaffarpur'],
+  'Assam': ['Guwahati','Dibrugarh','Silchar'],
+  'Jharkhand': ['Ranchi','Jamshedpur','Dhanbad'],
+  'Uttarakhand': ['Dehradun','Haridwar','Haldwani']
+};
+
+/* ── the full location roster ────────────────────────────────
+   Generated, not hand-typed: every KPI, hierarchy node and coverage row
+   on Insights reads a count out of LOC_HIER / LOC_TYPES, so the roster a
+   drill-down lands on has to foot to those same numbers exactly, circle
+   by circle and status by status — a hand-picked sample of ten can't do
+   that. Deterministic (fixed seed), so the roster is stable across
+   reloads rather than reshuffling. */
+/* ── site rollout blockers ───────────────────────────────────
+   Every category a real rollout program actually tracks, each with the
+   specific reasons a NOC/deployment lead would recognise — not "mixed,
+   see exception queue". A Blocked (Failed) site always carries one of
+   these; a Delayed (In progress, stuck) site sometimes does too. */
+const SITE_BLOCKERS = [
+  { cat:'Lease / Property', reasons:[
+    'Lease agreement expired', 'Lease renewal pending approval', 'Landlord denied site access',
+    'Building management denied access', 'Site ownership dispute', 'Legal clearance pending' ] },
+  { cat:'Power', reasons:[
+    'Commercial power connection unavailable', 'Power handover pending from utility provider',
+    'DG backup installation pending', 'Battery bank not commissioned', 'Power panel installation incomplete',
+    'Electrical safety audit failed', 'Frequent power outages affecting commissioning' ] },
+  { cat:'Fiber Connectivity', reasons:[
+    'Fiber route not handed over', 'Fiber cut on feeder route', 'Fiber splicing pending',
+    'ROW approval pending', 'ODF installation incomplete', 'Backhaul connectivity unavailable' ] },
+  { cat:'Civil / Infrastructure', reasons:[
+    'Tower foundation construction delayed', 'Equipment shelter installation pending', 'Civil work not completed',
+    'Rack installation pending', 'HVAC installation pending', 'Structural audit failed', 'Site access road unavailable' ] },
+  { cat:'Regulatory', reasons:[
+    'Municipal approval pending', 'Tower installation permit expired', 'Environmental clearance pending',
+    'Local authority approval pending' ] },
+  { cat:'Supply Chain', reasons:[
+    'Equipment delivery delayed', 'Material shortage at site', 'Vendor deployment delayed',
+    'Acceptance testing pending vendor sign-off' ] },
+  { cat:'Commissioning', reasons:[
+    'ATP pending', 'ATP failed due to power instability', 'Site integration pending NOC approval',
+    'Site acceptance testing incomplete', 'Commissioning engineer visit pending' ] }
+];
+/* one business-impact line per category — reused across every reason in
+   that category, since the operational consequence is the same shape */
+const SITE_BLOCKER_IMPACT = {
+  'Lease / Property': 'Site inaccessible for deployment and maintenance activities',
+  'Power': 'Equipment commissioning cannot begin without stable power',
+  'Fiber Connectivity': 'Backhaul unavailable — site cannot carry live traffic',
+  'Civil / Infrastructure': 'Equipment installation blocked until civil work clears',
+  'Regulatory': 'Tower and equipment installation cannot proceed without clearance',
+  'Supply Chain': 'Commissioning delayed pending equipment and vendor readiness',
+  'Commissioning': 'Site held at final acceptance — traffic cutover is blocked'
+};
+/* operational risk flags for sites that are on-air but not clean —
+   distinct from a blocker: nothing is down, but something needs attention
+   before it becomes an incident */
+const SITE_RISKS = [
+  'Lease expires within 30 days', 'Frequent power outages reported', 'Temporary fiber diversion in use',
+  'Repeated landlord access restrictions', 'Battery backup below threshold',
+  'High utilization requiring capacity expansion'
+];
+
+const LOCATIONS = (() => {
+  let seed = 42;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const blockerPool = SITE_BLOCKERS.flatMap(b => b.reasons.map(reason => ({ cat: b.cat, reason })));
+  const pickBlocker = () => pick(blockerPool);
+
+  /* Commissioned/Blocked read straight off the existing status; the
+     rollout sub-stages only apply to sites still in flight. */
+  const stageFor = (k) => k === 'live' ? 'Commissioned' : k === 'failed' ? 'Blocked'
+    : k === 'planned' ? 'Under Deployment' : pick(['Under Deployment', 'ATP Pending', 'Integration Pending']);
+
+  /* one shuffled status per row of a type, sized exactly to LOC_TYPES —
+     however the rows get diced up by circle afterward, the type totals
+     still foot exactly */
+  const poolFor = t => shuffle(LOC_STATES.flatMap(st => Array(t[st.k]).fill(st)));
+  const pools = {
+    Datacenter: poolFor(LOC_TYPES.find(t => t.k === 'dc')),
+    POP: poolFor(LOC_TYPES.find(t => t.k === 'pop')),
+    site: poolFor(LOC_TYPES.find(t => t.k === 'site'))
+  };
+  const siteTypes = shuffle(SITE_SUBTYPES.flatMap(s => Array(s.c).fill(s.n)));
+  let dcN = 0, popN = 0, siteN = 0;
+
+  const catFor = type => type === 'Datacenter' ? 'Central'
+    : type === 'POP' ? (rnd() < .45 ? 'Central' : 'Regional')
+    : (rnd() < .15 ? 'Regional' : 'Edge');
+  const chipFor = k => ({ live:'success', building:'warning', planned:'info', failed:'error' }[k]);
+  const ctFor = cat => cat === 'Central' ? 'amber' : cat === 'Regional' ? 'sky' : 'emerald';
+  const abbrFor = type => type === 'Datacenter' ? 'DC' : type === 'POP' ? 'POP' : type === 'Macro-O' ? 'MAC' : type === 'Micro-CO' ? 'MIC' : 'CEL';
+
+  const row = (code, stateName, city, lat, lon, type) => {
+    const status = type === 'Datacenter' ? pools.Datacenter[dcN++] : type === 'POP' ? pools.POP[popN++] : pools.site[siteN++];
+    const cat = catFor(type), abbr = abbrFor(type);
+    const idx = type === 'Datacenter' ? dcN : type === 'POP' ? popN : siteN;
+    const id = `${code}-${abbr}-${String(idx).padStart(3, '0')}`;
+    const ne = type === 'Datacenter' ? 40 + Math.floor(rnd() * 180) : type === 'POP' ? 10 + Math.floor(rnd() * 25) : 2 + Math.floor(rnd() * 14);
+    const disc = status.k === 'live' ? ne : status.k === 'building' ? Math.round(ne * (0.3 + rnd() * 0.5)) : 0;
+
+    /* rollout stage, blocker and risk only apply to sites — a datacenter
+       or PoP going down is an inventory event, not a site rollout one,
+       and this dashboard's site-ops sections stay scoped to sites only */
+    const isSite = type !== 'Datacenter' && type !== 'POP';
+    const stage = isSite ? stageFor(status.k) : null;
+    let issue = null, risk = null;
+    if (isSite) {
+      if (status.k === 'failed') issue = pickBlocker();
+      else if (status.k === 'building' && rnd() < 0.4) issue = pickBlocker();
+      else if (status.k === 'live' && rnd() < 0.08) risk = pick(SITE_RISKS);
+    }
+
+    return { st: status.n, chip: chipFor(status.k), name: id, cat, ct: ctFor(cat), type, id,
+      addr: `${city} ${type === 'Datacenter' ? 'Data Park' : type === 'POP' ? 'PoP' : 'Site'}`,
+      city, state: stateName, ne, disc, stage, issue, risk,
+      lat: +(lat + (rnd() - 0.5) * 1.2).toFixed(3), lon: +(lon + (rnd() - 0.5) * 1.2).toFixed(3) };
+  };
+
+  const out = [];
+  const restStates = LOC_GEO.slice(8), restW = restStates.reduce((a, g) => a + g.tot, 0);
+  /* split a total across weighted buckets so the parts always sum back to it */
+  const split = (total, weights, sumW) => {
+    const parts = weights.map(w => Math.floor(total * w / sumW));
+    let left = total - parts.reduce((a, b) => a + b, 0);
+    for (let i = 0; left > 0; i = (i + 1) % parts.length, left--) parts[i]++;
+    return parts;
+  };
+
+  LOC_HIER.forEach(r => {
+    if (r.code === 'OTH') {
+      /* "Other circles" isn't one place — its dc/pop/site totals ride on
+         the twelve states LOC_HIER folded into it, weighted by size */
+      const w = restStates.map(g => g.tot);
+      const dcParts = split(r.dc, w, restW), popParts = split(r.pop, w, restW), siteParts = split(r.site, w, restW);
+      restStates.forEach((g, gi) => {
+        const cities = LOC_CITIES[g.st] || [g.st];
+        for (let i = 0; i < dcParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, 'Datacenter'));
+        for (let i = 0; i < popParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, 'POP'));
+        for (let i = 0; i < siteParts[gi]; i++) out.push(row(g.c, g.st, pick(cities), g.lat, g.lon, siteTypes[siteN]));
+      });
+      return;
+    }
+    const g = LOC_GEO.find(x => x.c === r.code), cities = LOC_CITIES[r.n] || [r.n];
+    for (let i = 0; i < r.dc; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, 'Datacenter'));
+    for (let i = 0; i < r.pop; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, 'POP'));
+    for (let i = 0; i < r.site; i++) out.push(row(r.code, r.n, pick(cities), g.lat, g.lon, siteTypes[siteN]));
+  });
+  return out;
+})();
+
+/* fold real network-element and failed-build counts back onto LOC_HIER,
+   read straight off the roster that was just built from it — the
+   hierarchy widget and the coverage table both read these, so a reader
+   who hovers a node and then checks the table sees the same number. */
+LOC_HIER.forEach(r => {
+  const rows = r.code === 'OTH' ? LOCATIONS.filter(l => !TOP8_STATES.has(l.state)) : LOCATIONS.filter(l => l.state === r.n);
+  r.neDc = rows.filter(l => l.type === 'Datacenter').reduce((a,l) => a + l.ne, 0);
+  r.nePop = rows.filter(l => l.type === 'POP').reduce((a,l) => a + l.ne, 0);
+  r.ne = rows.reduce((a,l) => a + l.ne, 0);
+  r.neSite = r.ne - r.neDc - r.nePop;
+  r.failed = rows.filter(l => l.st === 'Failed').length;
+});
+
+/* LOC_GEO's live/build/fail were hand-typed narrative numbers, disconnected
+   from the roster once LOCATIONS became real generated data — the Map
+   tab's right-hand panel (state build-status, "on-air" colouring) read
+   those stale numbers, so selecting a different state could show figures
+   that didn't match Coverage by circle or the hierarchy widget for the
+   same place. Recompute all three from the same LOCATIONS rows every
+   other widget uses, so every state selected on the map is live, not a
+   fixed sample. */
+LOC_GEO.forEach(g => {
+  const rows = LOCATIONS.filter(l => l.state === g.st);
+  g.tot = rows.length;
+  g.live = rows.filter(l => l.st === 'On-air').length;
+  g.build = rows.filter(l => l.st === 'In progress').length;
+  g.fail = rows.filter(l => l.st === 'Failed').length;
+});
 
 const STOCK_ST = [
   { k:'planned',  n:'Planned',        c:92,   chip:'info',    tone:'sky' },
@@ -2958,7 +3135,7 @@ let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
-let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null, LOC_TYPEGRP = null;
+let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null, LOC_TYPEGRP = null, LOC_GROUP = null;
 /* state → operating region, the same grouping Insights uses */
 const STATE_REGION = {
   'Maharashtra': 'West', 'Uttar Pradesh': 'North', 'Karnataka': 'South', 'Madhya Pradesh': 'East',
@@ -3053,11 +3230,7 @@ const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
 }).join('')}</div>`;
 
 /* ── Location ─────────────────────────────────────────── */
-let LOC_VIEW = 'insights', LOC_SEL = 'MP', MAP_COLOR = 'onair';
-
-const locTabs = () => `<div class="seg">
-  ${[['insights','Insights'],['list','Locations'],['map','Map']].map(([k,l]) =>
-    `<button class="${LOC_VIEW===k?'is-on':''}" data-locview="${k}">${l}</button>`).join('')}</div>`;
+let LOC_VIEW = 'insights', LOC_SEL = 'MP', MAP_COLOR = 'onair', HIER_EXPANDED = false, COV_EXPANDED = null;
 
 /* ---- shared bits ---- */
 const locStats = () => {
@@ -3065,11 +3238,6 @@ const locStats = () => {
   return { live:t.reduce((a,x)=>a+x.live,0), build:t.reduce((a,x)=>a+x.building,0),
            plan:t.reduce((a,x)=>a+x.planned,0), fail:t.reduce((a,x)=>a+x.failed,0) };
 };
-const LOC_STATES = [
-  { k:'live', n:'On-air', tone:'emerald' }, { k:'building', n:'In progress', tone:'amber' },
-  { k:'planned', n:'Planned', tone:'sky' }, { k:'failed', n:'Failed', tone:'red' }
-];
-
 /* ---- view 1 · Insights ---- */
 /* Datacenters → PoPs → Sites, radial: one hub at the centre, a PoP node
    per circle on a middle ring, that circle's sites one ring further out —
@@ -3084,6 +3252,7 @@ function hierarchySvg() {
   const rows = LOC_HIER, N = rows.length;
   const popMax = Math.max(...rows.map(r => r.pop)), siteMax = Math.max(...rows.map(r => r.site));
   const dc = LOC_TYPES.find(t => t.k === 'dc');
+  const dcNe = LOC_HIER.reduce((a,r) => a + r.neDc, 0);
 
   const links = [], pops = [], sites = [];
   rows.forEach((r, i) => {
@@ -3097,33 +3266,33 @@ function hierarchySvg() {
     links.push(`<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" class="hier-link"/>`);
     links.push(`<line x1="${px}" y1="${py}" x2="${sx}" y2="${sy}" class="hier-link"/>`);
 
-    /* "Other circles" is a rollup, not a real state — a state filter on it
-       would never match a row, so it opens the type unfiltered by circle
-       instead of a guaranteed-empty list. */
-    const stateQ = r.code === 'OTH' ? '' : `&state=${encodeURIComponent(r.n)}`;
+    /* "Other circles" is a rollup of the twelve states outside the top 8,
+       not one state itself — group=other opens everything outside the
+       named circles, rather than a state filter that could never match. */
+    const stateQ = r.code === 'OTH' ? '&group=other' : `&state=${r.n}`;
 
     pops.push(`<g class="hier-node" tabindex="0" role="button"${dA({ v:'location', l:`${r.n} — PoP locations`, q:`view=list&type=pop${stateQ}` })}>
-      <title>${r.n} · ${n(r.pop)} PoP locations · ${onair}% on-air</title>
+      <title>${r.n} · ${n(r.pop)} PoP locations · ${n(r.nePop)} network elements · ${onair}% on-air</title>
       <circle cx="${px}" cy="${py}" r="${popRad}" fill="${cv('sky',50)}" stroke="${cv('sky',500)}" stroke-width="2"/>
       <text x="${px}" y="${(+py+3).toFixed(1)}" text-anchor="middle" class="hier-n">${r.pop}</text>
       <text x="${px}" y="${(+py-popRad-7).toFixed(1)}" text-anchor="middle" class="hier-lab">${r.code}</text>
     </g>`);
 
     sites.push(`<g class="hier-node" tabindex="0" role="button"${dA({ v:'location', l:`${r.n} — Sites`, q:`view=list&type=site${stateQ}` })}>
-      <title>${r.n} · ${n(r.site)} sites · ${onair}% on-air</title>
+      <title>${r.n} · ${n(r.site)} sites · ${n(r.neSite)} network elements · ${onair}% on-air</title>
       <circle cx="${sx}" cy="${sy}" r="${siteRad}" fill="${cv('teal',50)}" stroke="${cv('teal',500)}" stroke-width="2"/>
       <text x="${sx}" y="${(+sy+3).toFixed(1)}" text-anchor="middle" class="hier-n">${r.site}</text>
     </g>`);
   });
 
   const hub = `<g class="hier-node hier-hub" tabindex="0" role="button"${dA({ v:'location', l:'Datacenters — filtered list', q:'view=list&type=dc' })}>
-    <title>Datacenters · ${n(dc.total)} locations · ${(dc.live/dc.total*100).toFixed(0)}% on-air</title>
+    <title>Datacenters · ${n(dc.total)} locations · ${n(dcNe)} network elements · ${(dc.live/dc.total*100).toFixed(0)}% on-air</title>
     <circle cx="${cx}" cy="${cy}" r="52" fill="${cv('purple',50)}" stroke="${cv('purple',500)}" stroke-width="3"/>
     <text x="${cx}" y="${cy-3}" text-anchor="middle" class="hier-n" style="fill:${cv('purple',700)}">${dc.total}</text>
     <text x="${cx}" y="${cy+13}" text-anchor="middle" class="hier-lab" style="fill:${cv('purple',600)}">Datacenters</text>
   </g>`;
 
-  return `<div class="hier-wrap">
+  return `<div class="hier-wrap${HIER_EXPANDED ? ' is-expanded' : ''}">
     <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: datacenters, PoP locations and sites, by top circles">
       ${links.join('')}${hub}${pops.join('')}${sites.join('')}
     </svg>
@@ -3131,7 +3300,7 @@ function hierarchySvg() {
       <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',500)}"></span>Datacenters</span>
       <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>PoP locations, by circle</span>
       <span class="legend-i"><span class="legend-sw" style="background:${cv('teal',500)}"></span>Sites, by circle</span>
-      <span class="vw-card-metric-label-sub" style="margin-left:auto">node size = location count · hover for numbers · click to open</span>
+      <span class="vw-card-metric-label-sub" style="margin-left:auto">node size = locations · hover for network elements · click to open</span>
     </div>
   </div>`;
 }
@@ -3142,6 +3311,7 @@ function hierarchySvg() {
    thing new is the container, not the typography. Two shapes share it:
    the Total tile splits by location type, the three type tiles split by
    build status; both pass the same {c,hex,n} segment shape. */
+/* The whole tile is the control — no separate "open list" link. */
 const kpiProgress = (label, value, sub, segs, tone, d) => {
   const total = segs.reduce((a,s) => a + s.c, 0) || 1;
   const bar = segs.map(s => `<span style="width:${(s.c/total*100).toFixed(2)}%;background:${s.hex}" title="${s.n}: ${n(s.c)}"></span>`).join('');
@@ -3153,19 +3323,302 @@ const kpiProgress = (label, value, sub, segs, tone, d) => {
     </div>
     <div class="vw-card-metric-label-sub" style="margin-top:2px">${sub}</div>
     <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">${bar}</div>
-    <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>
-    ${d ? `<span class="kprog-link">Open filtered list →</span>` : ''}`;
-  const style = `border-color:${cv(tone,200)}`;
+    <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>`;
+  const style = `border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}`;
   return d
-    ? `<button class="kpi-progress" style="${style}"${dA(d)}>${inner}</button>`
+    ? `<button class="kpi-progress" style="${style}" aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
     : `<div class="kpi-progress" style="${style}">${inner}</div>`;
 };
 
+/* the location-pin used in the Coverage row's icon column — same
+   hand-drawn stroke style as the sidebar rail (see sideIcons.ts). */
+const COV_CIRCLE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>`;
+
+/* ── alert icons — one per blocker category, hand-drawn in the same
+   stroke style. A risk flag (a site that's on-air but has something
+   worth watching) maps onto the same category set, so one icon set
+   covers both. */
+const ALERT_ICON = {
+  'Lease / Property': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 15.5h6M9 8.5h3"/></svg>`,
+  'Power': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>`,
+  'Fiber Connectivity': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.8 4.7a4 4 0 0 1 5.6 5.6L16.6 12"/><path d="M13 17.5l-1.8 1.8a4 4 0 0 1-5.6-5.6L7.4 12"/></svg>`,
+  'Civil / Infrastructure': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V6"/><path d="M7 10 12 5l5 5"/><path d="M4 21h16"/><path d="M9 21v-5M15 21v-5"/></svg>`,
+  'Regulatory': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v6c0 5-3 7.8-7 8.5-4-.7-7-3.5-7-8.5V6Z"/><path d="m9.5 12 1.8 1.8 3.2-3.6"/></svg>`,
+  'Supply Chain': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="11" height="9" rx="1"/><path d="M13.5 10h3.5l3 3v3h-6.5"/><circle cx="7" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg>`,
+  'Commissioning': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="m9 13 2 2 4-4.5"/></svg>`
+};
+const ALERT_LABEL = { 'Lease / Property':'Lease issue', 'Power':'Power issue', 'Fiber Connectivity':'Fiber issue',
+  'Civil / Infrastructure':'Civil work issue', 'Regulatory':'Regulatory hold', 'Supply Chain':'Supply delay', 'Commissioning':'Commissioning hold' };
+/* a risk flag on an on-air site isn't one of the seven blocker
+   categories itself, but it clearly belongs to one — folding it in
+   means one Alert Summary covers both "down" and "not down yet". */
+const RISK_CAT = {
+  'Lease expires within 30 days': 'Lease / Property',
+  'Repeated landlord access restrictions': 'Lease / Property',
+  'Frequent power outages reported': 'Power',
+  'Battery backup below threshold': 'Power',
+  'Temporary fiber diversion in use': 'Fiber Connectivity',
+  'High utilization requiring capacity expansion': 'Civil / Infrastructure'
+};
+const INV_ICON = {
+  active: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="1.6"/><rect x="4" y="14" width="16" height="6" rx="1.6"/><circle cx="8" cy="7" r="1"/><circle cx="8" cy="17" r="1"/></svg>`,
+  logical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M8 6h8M7.3 8 11 16M16.7 8 13 16"/></svg>`,
+  passive: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6c4 0 4 4 8 4s4-4 8-4M3 18c4 0 4-4 8-4s4 4 8 4"/></svg>`
+};
+
+/* ── Coverage by circle · site-ops detail ──────────────────
+   Everything a circle row shows — the collapsed row's alert badge and
+   the expanded panel both read this, computed once per row straight off
+   the real LOCATIONS roster. Datacenters and PoPs are excluded
+   throughout: this widget is about site rollout, not inventory. */
+function circleOps(c) {
+  const inCircle = l => c.code === 'OTH' ? !TOP8_STATES.has(l.state) : l.state === c.n;
+  const sites = LOCATIONS.filter(l => inCircle(l) && l.type !== 'Datacenter' && l.type !== 'POP');
+
+  const onAir = sites.filter(l => l.st === 'On-air');
+  const atRisk = onAir.filter(l => l.risk);
+  const blocked = sites.filter(l => l.st === 'Failed');
+  const delayed = sites.filter(l => l.st === 'In progress' && l.issue);
+  const pending = sites.filter(l => l.st === 'In progress' || l.st === 'Planned');
+
+  const overview = { total: sites.length, onAir: onAir.length - atRisk.length, pending: pending.length, blocked: blocked.length, atRisk: atRisk.length };
+
+  const stages = ['Commissioned', 'Under Deployment', 'ATP Pending', 'Integration Pending', 'Blocked']
+    .map(k => ({ k, c: sites.filter(l => l.stage === k).length }));
+
+  /* one alert bucket per category, folding blocked + delayed (issue) and
+     at-risk (risk) sites together — severity is the worst thing in the
+     bucket, so a category with even one Blocked site reads as red. */
+  const bucket = {};
+  const bump = (cat, reasonText, sev) => {
+    const b = bucket[cat] || (bucket[cat] = { cat, count: 0, sev: 'risk', reasons: {} });
+    b.count++; b.reasons[reasonText] = (b.reasons[reasonText] || 0) + 1;
+    if (sev === 'blocked' || (sev === 'delayed' && b.sev === 'risk')) b.sev = sev;
+  };
+  blocked.forEach(l => bump(l.issue.cat, l.issue.reason, 'blocked'));
+  delayed.forEach(l => bump(l.issue.cat, l.issue.reason, 'delayed'));
+  atRisk.forEach(l => bump(RISK_CAT[l.risk] || 'Power', l.risk, 'risk'));
+  const alerts = Object.values(bucket).map(b => ({
+    cat: b.cat, count: b.count, sev: b.sev,
+    topReason: Object.entries(b.reasons).sort((x,y) => y[1] - x[1])[0][0]
+  })).sort((a,b) => (b.sev === 'blocked') - (a.sev === 'blocked') || b.count - a.count);
+  const alertSeverity = alerts.some(a => a.sev === 'blocked') ? 'blocked' : alerts.some(a => a.sev === 'delayed') ? 'delayed' : alerts.length ? 'risk' : null;
+
+  const critical = [
+    ...blocked.map(l => ({ l, status:'Blocked', tone:'red' })),
+    ...delayed.map(l => ({ l, status:'Delayed', tone:'amber' })),
+    ...atRisk.map(l => ({ l, status:'At Risk', tone:'sky' }))
+  ].slice(0, 3).map(x => ({
+    id: x.l.id, status: x.status, tone: x.tone,
+    cat: x.l.issue ? x.l.issue.cat : (RISK_CAT[x.l.risk] || 'Power'),
+    reason: x.l.issue ? x.l.issue.reason : x.l.risk,
+    impact: x.l.issue ? SITE_BLOCKER_IMPACT[x.l.issue.cat] : 'Potential service interruption if not resolved before it lapses'
+  }));
+
+  /* summary-only, proportional to this circle's real share of the
+     module-wide totals (LOC_HIER.ne, IL.links/services, PASSIVE_TABS) —
+     scaled, not fabricated independently, so a reader who checks the
+     Inventory-across-the-estate card against nine of these finds them
+     footing back to the same totals. */
+  const neR = Math.round(c.ne * 0.55), neS = Math.round(c.ne * 0.14), neO = Math.round(c.ne * 0.08), neC = Math.round(c.ne * 0.11);
+  const neA = Math.max(0, c.ne - neR - neS - neO - neC);
+  const linkShare = c.ne / (IL.ne || 1), siteShare = sites.length / (LOC_TYPES.find(t => t.k === 'site').total || 1);
+  const circleLinks = Math.round(IL.links * linkShare);
+  const lldp = Math.round(circleLinks * 0.45), ospf = Math.round(circleLinks * 0.25), bgp = Math.round(circleLinks * 0.15);
+  const isis = Math.max(0, circleLinks - lldp - ospf - bgp);
+  const circleSvc = Math.round(IL.services * linkShare), l3vpn = Math.round(circleSvc * 0.74), l2vpn = Math.max(0, circleSvc - l3vpn);
+  const passiveC = k => PASSIVE_TABS.find(t => t.k === k).c;
+  const passive = [
+    ['Fiber routes', Math.round(passiveC('fiber') * siteShare)],
+    ['Fiber segments', Math.round(passiveC('fiber') * 3 * siteShare)],
+    ['ODF ports', Math.round(passiveC('odf') * 8 * siteShare)],
+    ['Patch panels', Math.round(passiveC('cord') * siteShare)],
+    ['Splice closures', Math.round(passiveC('splice') * siteShare)]
+  ];
+
+  return {
+    sites, overview, stages, alerts, alertSeverity, critical,
+    inventory: {
+      active: neR + neS + neO + neC + neA,
+      logicalTotal: lldp + ospf + bgp + isis + l3vpn + l2vpn,
+      passiveTotal: passive.reduce((a,[,v]) => a + v, 0),
+      ne: [['Routers', neR], ['Switches', neS], ['OLT', neO], ['Core devices', neC], ['Access devices', neA]],
+      logical: [['LLDP', lldp], ['OSPF', ospf], ['BGP', bgp], ['ISIS', isis], ['L3VPN', l3vpn], ['L2VPN', l2vpn]],
+      passive
+    }
+  };
+}
+
+const COV_STAGE_TONE = { 'Commissioned':'emerald', 'Under Deployment':'sky', 'ATP Pending':'cyan', 'Integration Pending':'amber', 'Blocked':'red' };
+
+function covCircleDetail(c, ops) {
+  const o = ops.overview;
+  const overviewSegs = [
+    { n:'On-air', c:o.onAir, tone:'emerald' }, { n:'Pending', c:o.pending, tone:'sky' },
+    { n:'Blocked', c:o.blocked, tone:'red' }, { n:'At-risk', c:o.atRisk, tone:'amber' }
+  ];
+  const stTotal = ops.stages.reduce((a,s) => a + s.c, 0) || 1;
+  const chipRow = pairs => `<div class="cov-chip-row">${pairs.map(([k,v]) => `<span class="cov-chip">${k} <b class="num">${n(v)}</b></span>`).join('')}</div>`;
+
+  return `<div class="cov-detail">
+    <div class="cov-sec cov-sec--wide">
+      ${headSm('Alert Summary', ops.alerts.length ? 'across blocked, delayed and at-risk sites in this circle' : undefined)}
+      ${ops.alerts.length ? `<div class="cov-alert-grid">${ops.alerts.map(a => `
+          <div class="cov-alert-card cov-alert-card--${a.sev}">
+            <span class="cov-alert-icon cov-alert-icon--${a.sev}">${ALERT_ICON[a.cat]}</span>
+            <div class="cov-alert-body">
+              <div class="row vw-justify-between vw-items-baseline"><span class="cov-alert-label">${ALERT_LABEL[a.cat]}</span><span class="cov-alert-n num">${n(a.count)}</span></div>
+              <div class="cov-alert-reason">${a.topReason}</div>
+            </div>
+          </div>`).join('')}</div>`
+        : `<div class="cov-clear"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${cv('emerald',600)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>No active alerts — every site in this circle is clean.</div>`}
+    </div>
+
+    <div class="cov-sec cov-sec--wide">
+      ${headSm('Aggregated Inventory', 'total across every site, PoP and datacenter in this circle · summary only')}
+      <div class="cov-inv-row">
+        <div class="cov-inv-tile cov-inv-tile--sky"><span class="cov-inv-icon">${INV_ICON.active}</span><span class="cov-inv-v num">${n(ops.inventory.active)}</span><span class="cov-inv-l">Active devices</span></div>
+        <div class="cov-inv-tile cov-inv-tile--purple"><span class="cov-inv-icon">${INV_ICON.logical}</span><span class="cov-inv-v num">${n(ops.inventory.logicalTotal)}</span><span class="cov-inv-l">Logical — links &amp; services</span></div>
+        <div class="cov-inv-tile cov-inv-tile--orange"><span class="cov-inv-icon">${INV_ICON.passive}</span><span class="cov-inv-v num">${n(ops.inventory.passiveTotal)}</span><span class="cov-inv-l">Passive infrastructure</span></div>
+      </div>
+      ${chipRow(ops.inventory.ne)}
+      ${chipRow(ops.inventory.logical)}
+      ${chipRow(ops.inventory.passive)}
+    </div>
+
+    <div class="cov-sec">
+      ${headSm('Site Overview')}
+      <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-sm)">
+        ${donut(overviewSegs, o.total, n(o.total), 'sites', 108)}${legendRows(overviewSegs)}
+      </div>
+    </div>
+
+    <div class="cov-sec">
+      ${headSm('Deployment Progress')}
+      <div class="meter" style="height:10px;margin-top:var(--vw-space-sm)">${ops.stages.map(s => `<span style="width:${(s.c/stTotal*100).toFixed(2)}%;background:${cv(COV_STAGE_TONE[s.k],400)}" title="${s.k}: ${n(s.c)}"></span>`).join('')}</div>
+      <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+        ${ops.stages.map(s => `<div class="row vw-justify-between">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(COV_STAGE_TONE[s.k],400)}"></span>${s.k}</span>
+          <span class="num vw-value">${n(s.c)} <span class="vw-card-metric-label-sub">· ${(s.c/stTotal*100).toFixed(0)}%</span></span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="cov-sec cov-sec--wide">
+      ${headSm('Critical Sites', 'highest-impact sites needing attention')}
+      ${ops.critical.length ? `<div class="cov-crit-grid">${ops.critical.map(x => {
+          const sev = x.tone === 'red' ? 'blocked' : x.tone === 'amber' ? 'delayed' : 'risk';
+          return `<div class="cov-crit-card" role="button" tabindex="0" data-site="${x.id}" aria-label="Open ${x.id}">
+            <div class="row vw-justify-between vw-items-center">
+              <span class="row vw-gap-sm vw-items-center" style="min-width:0">
+                <span class="cov-alert-icon cov-alert-icon--${sev}" style="width:26px;height:26px;flex-shrink:0">${ALERT_ICON[x.cat]}</span>
+                <span class="mono vw-value">${x.id}</span>
+              </span>
+              <span class="vw-chip vw-chip--${x.tone === 'red' ? 'error' : x.tone === 'amber' ? 'warning' : 'info'}">${x.status}</span>
+            </div>
+            <div class="cov-crit-reason">${x.reason}</div>
+            <div class="cov-crit-impact">${x.impact}</div>
+          </div>`;
+        }).join('')}</div>`
+        : `<div class="vw-card-description">No critical sites flagged in this circle.</div>`}
+    </div>
+  </div>`;
+}
+
 function locInsights() {
-  const { live, fail } = locStats();
+  const { live } = locStats();
   const totalLoc = LOC_TYPES.reduce((a,t) => a + t.total, 0);
   const totalSegs = LOC_TYPES.map(t => ({ c: t.total, hex: cv(t.tone,500), n: t.n.toLowerCase() }));
   const statusSegs = t => LOC_STATES.map(st => ({ c: t[st.k], hex: cv(st.tone,500), n: st.n.toLowerCase() }));
+  /* hand-built, not table(): an expanded circle needs an extra <tr> of
+     its own right after that circle's row, which table()'s flat
+     rows-array shape has no room for. */
+  const covRows = [...LOC_HIER].sort((a,b) => b.tot - a.tot).map(c => {
+    const q = c.code === 'OTH' ? 'group=other' : `state=${c.n}`;
+    const open = COV_EXPANDED === c.code;
+    const detailId = `cov-detail-${c.code}`;
+    /* computed once per row (not just the open one) so a reader can see
+       which circles need attention without expanding any of them */
+    const ops = circleOps(c);
+    const dotSev = ops.alertSeverity || 'clean';
+    const dotTitle = ops.alertSeverity
+      ? `${n(ops.alerts.reduce((a,x) => a + x.count, 0))} sites flagged across ${ops.alerts.length} alert ${ops.alerts.length === 1 ? 'category' : 'categories'}`
+      : 'No active site alerts';
+    /* the whole row is the expand trigger — data-covexpand on the <tr>
+       itself, not just one cell, so a click anywhere on it (a count, the
+       dot, empty space) expands. The one exception is the ↗ button
+       below: [data-drill] is matched earlier in the click chain than
+       [data-covexpand], so it keeps its own action. */
+    /* chevron + dot + icon + name live in ONE cell as a flex row, sized
+       by their own fixed pixel boxes — not four separate percentage
+       table columns. Splitting them into their own <th> columns was
+       what made every one of them too narrow to hold even one glyph,
+       which is why they were rendering as truncated "…". */
+    const row = `<tr class="${open ? 'is-open' : ''}" id="cov-row-${c.code}" data-covexpand="${c.code}">
+      <td class="cov-td-identity">
+        <span class="cov-identity-inner">
+          <span class="cov-chevron-btn" role="button" tabindex="0" aria-expanded="${open}" aria-controls="${detailId}" aria-label="${open ? 'Collapse' : 'Expand'} ${c.n}"><span class="cov-chevron">${open ? '▾' : '▸'}</span></span>
+          <span class="cov-dot cov-dot--${dotSev}" title="${dotTitle}"></span>
+          <span class="cov-row-icon">${COV_CIRCLE_ICON}</span>
+          <span class="cov-td-name">${c.n}</span>
+        </span>
+      </td>
+      <td class="t-right num">${n(c.dc)}</td>
+      <td class="t-right num">${n(c.pop)}</td>
+      <td class="t-right num">${n(c.site)}</td>
+      <td class="t-right num">${n(c.tot)}</td>
+      <td><span class="row vw-gap-sm vw-items-center" style="min-width:6.5rem">
+        <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${(c.live/c.tot*100).toFixed(0)}%;background:${cv('emerald',400)}"></span></span>
+        <span class="num" style="color:${cv('gray',700)}">${(c.live/c.tot*100).toFixed(0)}%</span></span></td>
+      <td class="t-right num" style="color:${c.failed ? cv('red',700) : cv('gray',400)}">${n(c.failed)}</td>
+      <td class="cov-td-action"><button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" title="Open ${c.n} in the Locations list"${dA({ v:'location', l:`Locations in ${c.n}`, q:`view=list&${q}` })}>↗</button></td>
+    </tr>`;
+    const detail = open ? `<tr class="cov-detail-row" id="${detailId}"><td colspan="8">${covCircleDetail(c, ops)}</td></tr>` : '';
+    return row + detail;
+  }).join('');
+
+  /* table-layout:fixed pins the column widths to the header row and
+     never lets the (much wider) expanded detail content stretch the
+     table itself — without it, the browser sizes columns from every
+     row's content, including the colspan detail row, and the whole
+     table grows past the card, forcing the horizontal scroll this is
+     built specifically to avoid. */
+  const coverageTable = `<div class="tbl-wrap"><table class="nst-table cov-table">
+    <thead><tr>
+      <th style="width:34%">Circle</th>
+      <th class="t-right" style="width:8%">DC</th><th class="t-right" style="width:8%">PoP</th><th class="t-right" style="width:9%">Sites</th>
+      <th class="t-right" style="width:9%">Total</th><th style="width:18%">On-air</th><th class="t-right" style="width:8%">Failed</th><th style="width:6%"></th>
+    </tr></thead>
+    <tbody>${covRows}</tbody>
+  </table></div>`;
+
+  /* Network hierarchy and Coverage by circle stay side by side always —
+     opening a circle row must not itself change that layout (it did,
+     briefly; that was wrong). Only the hierarchy's own explicit Expand
+     button switches to the full-width stack; a row's detail panel gets
+     its room a different way, by scrolling within itself — see
+     .cov-detail's own max-height in shell.css, not this layout.
+     'grow' only means something inside that row-t flex row — as a
+     direct child of .page (a column flex) it would stretch the card to
+     fill the page's height instead, so the stacked layout must not
+     carry it. */
+  const expanded = HIER_EXPANDED;
+  const rowCls = expanded ? '' : 'grow';
+
+  const hierCard = card(`
+    <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
+      ${headSm('Network hierarchy')}
+      <button class="nst-btn nst-btn--xs" data-hierexpand="1">${HIER_EXPANDED ? '⤡ Collapse' : '⤢ Expand'}</button>
+    </div>
+    ${hierarchySvg()}`, rowCls, 'display:flex;flex-direction:column');
+
+  const coverageCard = card(`
+    <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
+      ${headSm('Coverage by circle', 'ranked by total · click a circle for rollout detail')}
+    </div>
+    <div class="cov-scroll">${coverageTable}</div>`, rowCls, 'display:flex;flex-direction:column');
+
+  const passiveTotal = PASSIVE_TABS.reduce((a,t) => a + t.c, 0);
 
   return `
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -3176,35 +3629,22 @@ function locInsights() {
         { v:'location', l:`${t.n} — filtered list`, q:`view=list&type=${t.k}` })).join('')}
     </div>
 
-    <div class="row-t" style="align-items:stretch">
-      ${card(`
-        <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Network hierarchy', 'Datacenters → PoPs → Sites, by top circles · node size = location count')}
-        </div>
-        ${hierarchySvg()}`, 'grow')}
-
-      ${card(`
-        <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-lg)">
-          ${headSm('Coverage by circle', 'datacenters · PoPs · sites, ranked by total')}
-        </div>
-        ${table([{t:'Circle'},{t:'DC',r:true},{t:'PoP',r:true},{t:'Sites',r:true},{t:'Total',r:true},{t:'On-air'}],
-          [...LOC_HIER].sort((a,b)=>b.tot-a.tot).map(c => [
-            `<button class="nst-btn nst-btn--xs nst-btn--ghost is-drill" style="padding:0;font-weight:500"${dA({ v:'location', l:`Locations in ${c.n}`, q:`view=list&state=${encodeURIComponent(c.n)}` })}>${c.n}</button>`,
-            n(c.dc), n(c.pop), n(c.site), n(c.tot),
-            `<span class="row vw-gap-sm vw-items-center" style="min-width:6.5rem">
-              <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${(c.live/c.tot*100).toFixed(0)}%;background:${cv('emerald',400)}"></span></span>
-              <span class="num" style="color:${cv('gray',700)}">${(c.live/c.tot*100).toFixed(0)}%</span></span>`
-          ]))}`, 'grow')}
-    </div>
-
     ${card(`
-      <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-        ${headSm('Blocked builds', `${n(fail)} locations · blocking reason`)}
+      <div style="margin-bottom:var(--vw-space-lg)">
+        ${headSm('Inventory across the estate', 'everything this module tracks against these locations — active, logical and passive')}
       </div>
-      ${table([{t:'Circle'},{t:'Locations',r:true},{t:'Blocking reason'}],
-        LOC_FAILED.map(f=>[`<span class="vw-value">${f.n}</span>`,
-          `<span style="color:${cv('red',700)};font-weight:500">${f.c}</span>`,
-          `<span class="vw-card-description" style="white-space:normal">${f.why}</span>`]))}`)}`;
+      <div class="vw-grid vw-grid-cols-3 vw-gap-md">
+        ${kpi('Active inventory', n(IL.ne), `Physical elements · ${n(IL.discovered)} verified on the network`, 'sky',
+          { v:'physical', l:'All network elements' })}
+        ${kpi('Logical inventory', n(IL.vnf), `Virtual resources · ${n(IL.services)} services provisioned (L3VPN + L2VPN)`, 'purple',
+          { v:'virtual', l:'All virtual resources' })}
+        ${kpi('Passive inventory', n(passiveTotal), `Fiber, ODF, racks, power and ducts across ${n(PASSIVE_TABS.length)} categories`, 'orange',
+          { v:'passive', l:'All passive infrastructure' })}
+      </div>`)}
+
+    ${expanded ? `${hierCard}${coverageCard}` : `<div class="row-t hier-cov-row">${hierCard}${coverageCard}</div>`}
+
+    ${locMap()}`;
 }
 
 /* ---- view 2 · Locations list ---- */
@@ -3214,11 +3654,15 @@ function locRows() {
     .filter(l => !LOC_CAT || l.cat === LOC_CAT)
     .filter(l => !LOC_STATE || l.state === LOC_STATE)
     .filter(l => !LOC_REGION || STATE_REGION[l.state] === LOC_REGION)
-    .filter(l => !LOC_TYPEGRP || typeGroupOf(l.type) === LOC_TYPEGRP));
+    .filter(l => !LOC_TYPEGRP || typeGroupOf(l.type) === LOC_TYPEGRP)
+    .filter(l => LOC_GROUP !== 'other' || !TOP8_STATES.has(l.state)));
 }
 function locList() {
   const shown = locRows();
-  return `${card(`
+  return `<div class="row" style="margin-bottom:var(--vw-space-xs)">
+      <button class="nst-btn nst-btn--sm nst-btn--ghost" data-locview="insights">← Back to dashboard</button>
+    </div>
+    ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         `${chip('214 not reconciled','warning')}${chip('34 failed','error')}`,
         [], 'location')}
@@ -3350,9 +3794,10 @@ function mapPanel() {
     </div>
     ${sites.length ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
       <span class="eyebrow">Sites on record here</span>
-      ${sites.map(l=>`<button class="site-row" data-site="${l.id}">
+      ${sites.slice(0, 8).map(l=>`<button class="site-row" data-site="${l.id}">
         <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
         <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+      ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
     </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
     <button class="nst-btn nst-btn--sm nst-btn--filled" data-locview="list" style="align-self:flex-start">Open ${n(g.tot)} sites</button>
   </div>`;
@@ -3688,10 +4133,15 @@ function viewCapex() {
   </div>`;
 }
 
+/* Insights is the landing page; Locations is reached only by drilling
+   into it (a KPI tile, a hierarchy node, a coverage row) — there is no
+   tab to switch views by hand any more, so LOC_VIEW only ever flips to
+   'list' via a real dA() drill, and back via the explicit control in
+   locList()'s own toolbar. Map is not a separate view at all now — it's
+   the last section of the dashboard, see locInsights(). */
 function viewLocation() {
-  const body = LOC_VIEW === 'list' ? locList() : LOC_VIEW === 'map' ? locMap() : locInsights();
+  const body = LOC_VIEW === 'list' ? locList() : locInsights();
   return `<div class="page">
-    ${pageBar(locTabs())}
     ${drillBar()}
     ${body}
   </div>`;
@@ -5989,6 +6439,7 @@ function applyDrillQuery(view, q) {
     if (p.view) LOC_VIEW = p.view;
     LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
     LOC_TYPEGRP = p.type || null;
+    LOC_GROUP = p.group || null;
   }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
@@ -6003,7 +6454,7 @@ function clearDrill() {
   if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
   if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
-  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; }
+  if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; LOC_GROUP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
   go(d.view);
 }
@@ -6065,6 +6516,19 @@ function __legacyParams(k) {
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
 }
+
+/* keyboard activation for custom [role="button"] controls (the coverage
+   row's expand trigger, the hierarchy diagram's nodes) — real <button>s
+   get this for free, these don't, so Enter/Space is wired to replay the
+   same click the pointer path already handles rather than duplicating
+   the expand/drill logic here. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const t = e.target.closest('[role="button"]');
+  if (!t) return;
+  e.preventDefault();
+  t.click();
+});
 
 document.addEventListener('click', e => {
   const kbBtn = e.target.closest('[data-kebab]');
@@ -6270,6 +6734,21 @@ document.addEventListener('click', e => {
   if (zb) { mapZoom(zb.dataset.zoom); return; }
   const lv = e.target.closest('[data-locview]');
   if (lv) { LOC_VIEW = lv.dataset.locview; go('location'); return; }
+  const hx = e.target.closest('[data-hierexpand]');
+  if (hx) { HIER_EXPANDED = !HIER_EXPANDED; go('location'); return; }
+  const covx = e.target.closest('[data-covexpand]');
+  if (covx) {
+    const k = covx.dataset.covexpand;
+    COV_EXPANDED = COV_EXPANDED === k ? null : k;
+    go('location');
+    /* go() just rebuilt the table, so the row the reader clicked is a
+       brand-new element at the same position — bring it back into view
+       inside its own scroll box rather than leaving it wherever the
+       (now taller, or shorter) table happens to have scrolled to */
+    const row = document.getElementById('cov-row-' + k);
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    return;
+  }
   const mc = e.target.closest('[data-mapcolor]');
   if (mc) { MAP_COLOR = mc.dataset.mapcolor; go('location'); return; }
   const mb = e.target.closest('path.st[data-circle]');
