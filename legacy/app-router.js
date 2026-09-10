@@ -17,8 +17,8 @@ const VIEWS = {
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
   vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
-  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 4G · View', render:viewCell4gDetails },
-  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 5G · View', render:viewCell5gDetails },
+  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View · Cell 4G details', render:viewCell4gDetails },
+  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View · Cell 5G details', render:viewCell5gDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -271,6 +271,8 @@ document.addEventListener('click', e => {
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
 
+  const bn = e.target.closest('[data-back-nav]');
+  if (bn) { go(bn.dataset.backNav); return; }
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');

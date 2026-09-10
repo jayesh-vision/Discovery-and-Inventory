@@ -2572,6 +2572,13 @@ function viewVnfDetails() {
   return `<div class="page">
     ${drillBar()}
 
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--vw-space-md)">
+      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="virtual" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Virtual Resources</span>
+      </button>
+    </div>
+
     <div class="card" style="margin-bottom:var(--vw-space-md);padding:var(--vw-space-md) var(--vw-space-lg)">
       <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-xl);flex-wrap:wrap">
         <div><span class="stat-k" style="display:block">Status</span><span class="vw-value" style="font-size:0.9375rem">Ready</span></div>
@@ -2655,13 +2662,30 @@ function viewCell4gDetails() {
     ['vendorName', 'Samsung ORAN']
   ];
 
-  return `<div class="page">
+  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-lg)">
     ${drillBar()}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
+      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="vnfdetails" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Virtual element details</span>
+      </button>
+      <div style="display:flex;gap:var(--vw-space-xs)">
+        ${chip('Ready', 'emerald')}
+        ${chip('LTE 4G', 'sky')}
+        ${chip('Macro', 'neutral')}
+      </div>
+    </div>
+
     <div class="card" style="padding:var(--vw-space-xl)">
-      <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:var(--vw-space-xl);color:var(--vw-color-gray-900)">Cell 4G details</h2>
+      <div style="margin-bottom:var(--vw-space-xl);border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-md)">
+        <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 4G details</h2>
+        <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
+      </div>
+
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
         ${fields.map(([k, v]) => `<div>
-          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:400">${k}</div>
+          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-500);margin-bottom:3px;font-weight:400">${k}</div>
           <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
         </div>`).join('')}
       </div>
@@ -2733,13 +2757,30 @@ function viewCell5gDetails() {
     ['coreset0Index', '8']
   ];
 
-  return `<div class="page">
+  return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-lg)">
     ${drillBar()}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--vw-space-md);flex-wrap:wrap">
+      <button class="nst-btn nst-btn--ghost row vw-items-center" data-back-nav="vnfdetails" style="gap:6px;padding:6px 12px;font-size:0.875rem;font-weight:500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Virtual element details</span>
+      </button>
+      <div style="display:flex;gap:var(--vw-space-xs)">
+        ${chip('Ready', 'emerald')}
+        ${chip('5G NR', 'purple')}
+        ${chip('Band 71', 'cyan')}
+      </div>
+    </div>
+
     <div class="card" style="padding:var(--vw-space-xl)">
-      <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:var(--vw-space-xl);color:var(--vw-color-gray-900)">Cell 5G details</h2>
+      <div style="margin-bottom:var(--vw-space-xl);border-bottom:1px solid var(--vw-color-gray-100);padding-bottom:var(--vw-space-md)">
+        <h2 style="font-size:1.25rem;font-weight:600;color:var(--vw-color-gray-900);margin:0 0 4px 0">Cell 5G details</h2>
+        <div style="font-family:var(--vw-font-mono);font-size:0.8125rem;color:var(--vw-color-gray-500)">${esc(cellName)}</div>
+      </div>
+
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--vw-space-lg) var(--vw-space-xl)">
         ${fields.map(([k, v]) => `<div>
-          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-600);margin-bottom:4px;font-weight:400">${k}</div>
+          <div class="stat-k" style="font-size:0.75rem;color:var(--vw-color-gray-500);margin-bottom:3px;font-weight:400">${k}</div>
           <div class="vw-value" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-gray-900);word-break:break-word">${esc(v)}</div>
         </div>`).join('')}
       </div>
