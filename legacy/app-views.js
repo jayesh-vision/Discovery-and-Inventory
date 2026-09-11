@@ -1856,7 +1856,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
+          A('Site info', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -1870,7 +1870,7 @@ function viewSite() {
 }
 
 /* The NE sample rosters tag rows with city-coded locations (DEL-279,
-   BGLK-277) that predate the generated LOCATIONS roster. Every "Open site"
+   BGLK-277) that predate the generated LOCATIONS roster. Every "Site info"
    goes through here: an exact id/name wins, a known city code resolves
    deterministically (by its number) to a real site in that city, and only
    then does the first row remain as the last resort — so a site URL always
@@ -1896,7 +1896,7 @@ function resolveSite(ref) {
    id, so the breadcrumb, the header and the page can never disagree */
 function siteA(ref) {
   const s = resolveSite(ref);
-  return A('Open site', { v: 'site', l: s.name, q: 'id=' + s.id });
+  return A('Site info', { v: 'site', l: s.name, q: 'id=' + s.id });
 }
 
 /* Everything the site page's header shows, as plain data. The React-owned

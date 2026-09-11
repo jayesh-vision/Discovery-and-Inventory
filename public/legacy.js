@@ -39,9 +39,21 @@ const table = (cols, rows, cls = '', acts = null) => {
   return `<div class="tbl-wrap"><table class="nst-table ${cls}">
     <thead><tr>${cols.map(c=>`<th${c.r?' class="t-right"':''}>${c.t}</th>`).join('')}${menu?'<th class="kb-th"></th>':''}</tr></thead>
     <tbody>${rows.length
-      ? rows.map((r,ri)=>`<tr>${r.map((c,i)=>{
-          const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
-          return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(menu(ri)||[],gid,ri):''}</tr>`).join('')
+      ? rows.map((r,ri)=>{
+          const items = menu ? (menu(ri) || []) : [];
+          /* the row opens whatever its own first action would — its "view
+             info" destination — only when that action truly goes somewhere;
+             a first action that's a copy or has no destination leaves the
+             row inert rather than guessing at one. Clicking the kebab button
+             or one of its own items still resolves to that item's own
+             data-drill first (closest() finds it before ever reaching the
+             row), so this never fights with the row's own menu. */
+          const first = items[0];
+          const rowClick = first && first.d ? ` class="is-click"${dA(first.d)}` : '';
+          return `<tr${rowClick}>${r.map((c,i)=>{
+            const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
+            return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
+        }).join('')
       : `<tr><td colspan="${span}" class="tbl-empty">No records match the current filter.</td></tr>`}</tbody>
   </table></div>`;
 };

@@ -225,7 +225,7 @@ export function GeoMap({ bubbles, legend = [], region, onStateOpen }: { bubbles:
                   const s = window.__nsLegacy?.resolveSite?.(site.id) ?? null;
                   nav(legacyPath('site', { label: s?.name ?? site.name, q: s ? `id=${s.id}` : '', from: 'Insights' }, { id: s?.id ?? site.id }));
                 });
-              }}>Open site</button>
+              }}>Site info</button>
               <button className="nst-btn nst-btn--xs" onClick={() => nav(`/inventory/physical?loc=${site.id}`)}>Elements at this site</button>
             </div>
           </> : selStats && <>

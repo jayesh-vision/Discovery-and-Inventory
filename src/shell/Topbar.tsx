@@ -23,7 +23,7 @@ function paramsOf(pattern: string, pathname: string): Record<string, string> {
    the screen's own segment then links to its clean path — clicking it is how
    the drill is cleared. No banners, no back buttons: this is the way back.
 
-   A cross-section jump ("Open site" on Physical Resources, "View details" on
+   A cross-section jump ("Site info" on Physical Resources, "View details" on
    a site's NE table) names its origin in ?from=<crumb>. The ancestors are
    then the origin's chain — the reader came from there, not from this
    screen's nominal parent — and this screen contributes only its leaf. */

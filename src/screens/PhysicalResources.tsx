@@ -76,7 +76,7 @@ export default function PhysicalResources() {
 
   /* every row on screen belongs to the active class tab, so cls alone decides
      whether Node view belongs in the menu — server has no node-level page.
-     Node view and Open site leave this section, so they carry their origin —
+     Node view and Site info leave this section, so they carry their origin —
      the breadcrumb then reads Resources > Physical Resources > … instead of
      jumping to the Location chain. */
   const FROM = 'Resources · Physical Resources';
@@ -91,7 +91,7 @@ export default function PhysicalResources() {
   const rowActions = (r: NeRow): Action[] => [
     ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name })) }] : []),
     { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
-    { l: 'Open site', onClick: () => openSite(r.loc) }
+    { l: 'Site info', onClick: () => openSite(r.loc) }
   ];
 
   const selectTabClass = (targetClass: NeClass) => {

@@ -1290,6 +1290,10 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .mtbl td { padding: 11px var(--vw-space-sm); border-top: 1px solid var(--vw-color-slate-100); font-size: var(--vw-font-size-sm); white-space: nowrap; }
 .mtbl th.vtbl-bar, .mtbl td.vtbl-bar { width: 38%; }
 .mtbl tr.is-click { cursor: pointer; } .mtbl tr.is-click:hover td { background: var(--vw-color-slate-50); }
+/* a grid row that opens its own detail view on click — legacy's table()
+   and the React DataGrid share this one rule, since both render .nst-table */
+.nst-table tbody tr.is-click { cursor: pointer; }
+.nst-table tbody tr.is-click:hover td { background: var(--vw-color-slate-50); }
 
 /* geo map */
 .geo { position: relative; margin-top: var(--vw-space-md); background: var(--vw-color-slate-50);

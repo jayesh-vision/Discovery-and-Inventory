@@ -34,6 +34,11 @@ export interface DataGridProps<Row> {
       new array identity (a Refresh does that on every call). Defaults to `rows`
       for callers that don't pass one, matching the previous behaviour. */
   resetKey?: unknown;
+  /** what the row itself opens on click. When omitted but rowActions exists,
+      the row click matches the first row action's own destination — a row
+      never opens somewhere its own menu doesn't already offer. Pass this
+      explicitly for a grid with no per-row menu at all. */
+  onRowClick?: (row: Row, i: number) => void;
 }
 
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
@@ -230,7 +235,7 @@ function RowMenu({ actions, open, onToggle, onClose }: { actions: Action[]; open
   /* a row with nothing to offer gets no menu button rather than an empty one */
   if (!actions.length) return <td className="kb-td" />;
   return (
-    <td className="kb-td">
+    <td className="kb-td" onClick={e => e.stopPropagation()}>
       <div ref={ref} style={{ display: 'contents' }}>
         <button ref={btn} className={`kb${open ? ' is-on' : ''}`} onClick={onToggle} aria-label="Row actions" aria-haspopup="menu" aria-expanded={open}>
           <IcKebab />
@@ -363,15 +368,17 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
             {visible.length ? visible.map((row, ri) => {
               const key = p.rowKey(row, ri);
               const cells = p.renderRow(row, ri);
+              const actions = p.rowActions ? p.rowActions(row, ri) : [];
+              const openInfo = p.onRowClick ? () => p.onRowClick!(row, ri) : actions[0]?.onClick;
               return (
-                <tr key={key}>
+                <tr key={key} className={openInfo ? 'is-click' : undefined} onClick={openInfo ? () => openInfo() : undefined}>
                   {cells.map((c, i) => {
                     const cls = [p.columns[i]?.r ? 't-right num' : '', i === 0 && STATUS_COL.test(p.columns[0].t) ? 'st-td' : '']
                       .filter(Boolean).join(' ');
                     return <td key={i} className={cls || undefined}>{c}</td>;
                   })}
                   {p.rowActions && (
-                    <RowMenu actions={p.rowActions(row, ri)} open={openRow === key}
+                    <RowMenu actions={actions} open={openRow === key}
                       onToggle={() => setOpenRow(v => v === key ? null : key)} onClose={() => setOpenRow(null)} />
                   )}
                 </tr>
