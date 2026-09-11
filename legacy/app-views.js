@@ -940,7 +940,7 @@ function viewHome() {
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
         ]), '',
-        i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
+        i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name }),
               siteA(PHY.router[i].loc)])}`)}
   </div>`;
@@ -1854,7 +1854,7 @@ function viewSite() {
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
+          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
           A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
         ])
@@ -2231,7 +2231,7 @@ function viewPhysical() {
         }), '',
         i => rows[i].stock === 'decomm'
           ? []
-          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('View details', { v:'resource', l:rows[i].name }),
              siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">

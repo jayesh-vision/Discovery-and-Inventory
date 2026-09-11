@@ -31,7 +31,11 @@ export function loadLegacy(): Promise<void> {
   if (window.__nsLegacy) return Promise.resolve();
   if (!loading) loading = new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = '/legacy.js';
+    /* a plain '/legacy.js' can serve a browser tab a stale cached copy after
+       a rebuild — this script tag is only ever created once per page load,
+       so busting the cache here costs nothing and guarantees the tab is
+       always running what was just built, not whatever it last fetched */
+    s.src = `/legacy.js?t=${Date.now()}`;
     s.onload = () => res();
     s.onerror = () => rej(new Error('legacy.js failed to load'));
     document.head.appendChild(s);

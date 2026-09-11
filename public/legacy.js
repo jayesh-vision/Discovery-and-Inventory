@@ -1001,6 +1001,17 @@ const PHY_TABS = [
    Node view, even where the page itself has no live assurance feed to show. */
 const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb'];
 const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
+
+/* Node view is a genuinely different screen per class (see app-node2.js —
+   separate header/overview/hardware per class, not one template branching
+   on cls). The breadcrumb and page title should say which one a reader is
+   actually looking at, instead of the same generic "Node view" for all four. */
+const NODE_VIEW_LABEL = { router: 'Router node view', switch: 'Switch node view', dwdm: 'DWDM node view', enodeb: 'eNodeB node view' };
+const nodeViewLabel = k => NODE_VIEW_LABEL[k] || 'Node view';
+/* the short form, for spots (like the breadcrumb's drill segment) that sit
+   right after something that already said "Node view" once */
+const NODE_CLASS_NAME = { router: 'Router', switch: 'Switch', dwdm: 'DWDM', enodeb: 'eNodeB' };
+const nodeClassName = k => NODE_CLASS_NAME[k] || 'Node';
 const PHY = {
   router: [
     { st:'ok',   name:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', model:'MX960',   os:'21.2R3-S8.5', sn:'JN1236F87AFB', oem:'JUNIPER', loc:'DEL-279',  s:'d', stock:'deployed', v:3 },
@@ -3310,7 +3321,7 @@ function viewHome() {
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
         ]), '',
-        i => [A('Node view', { v:'node', l:`Node view · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
+        i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name }),
               siteA(PHY.router[i].loc)])}`)}
   </div>`;
@@ -4224,7 +4235,7 @@ function viewSite() {
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
+          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
           A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
         ])
@@ -4601,7 +4612,7 @@ function viewPhysical() {
         }), '',
         i => rows[i].stock === 'decomm'
           ? []
-          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`Node view · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
              A('View details', { v:'resource', l:rows[i].name }),
              siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
@@ -6228,6 +6239,7 @@ let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
+let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -6384,7 +6396,8 @@ function nodeOf(name) {
     { k:'LLDP', n:'Protocol Links', a:nint(s, 7, 4, 24), d:nint(s, 8, 0, 3), i:nint(s, 9, 0, 2), tone:'sky' },
     { k:'BGP',  n:'Protocol Links', a:nint(s, 10, 1, 8), d:nint(s, 11, 0, 2), i:nint(s, 12, 0, 1), tone:'purple' },
     { k:'OSPF', n:'Protocol Links', a:nint(s, 13, 2, 14), d:nint(s, 14, 0, 2), i:nint(s, 15, 0, 2), tone:'emerald' },
-    { k:'ISIS', n:'Protocol Links', a:nint(s, 16, 0, 6), d:nint(s, 17, 0, 1), i:0, tone:'amber' }
+    { k:'ISIS', n:'Protocol Links', a:nint(s, 16, 0, 6), d:nint(s, 17, 0, 1), i:0, tone:'amber' },
+    { k:'LSP',  n:'Protocol Links', a:nint(s, 18, 1, 10), d:nint(s, 19, 0, 2), i:nint(s, 20, 0, 1), tone:'rose' }
   ];
 
   const capRows = Array.from({ length: 5 }, (_, i) => {
@@ -6402,7 +6415,7 @@ function nodeOf(name) {
   /* one capacity trend per protocol card — same deterministic-seed technique
      as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
      each get their own stable, plausible curve instead of sharing one */
-  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600 };
+  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600, LSP: 800 };
   const capTrendFor = proto => {
     const off = PROTO_SEED_OFF[proto] || 0;
     return Array.from({ length: 7 }, (_, i) => ({
@@ -6411,8 +6424,36 @@ function nodeOf(name) {
       f: Math.round(nrand(s, 1100 + off + i, 44, 62) + i * 5.5)
     }));
   };
-  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS') };
+  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS'), LSP: capTrendFor('LSP') };
   const capTrend = capTrendByProto.LLDP;
+
+  /* a specific link's own 7-point capacity trend, derived from the two real
+     numbers its row already shows (current utilisation and monthly growth
+     rate) rather than a fresh unrelated seed — "Mar" (index 3) is pinned to
+     the link's actual displayed utilisation, months before it are backed
+     out by the same growth rate and months after project forward with it,
+     so the curve is a real extrapolation of that link's own stated trend */
+  const linkTrend = row => {
+    const g = 1 + row.growth / 100;
+    const vals = [0, 0, 0, row.util, 0, 0, 0];
+    for (let i = 2; i >= 0; i--) vals[i] = +(vals[i + 1] / g).toFixed(1);
+    for (let i = 4; i <= 6; i++) vals[i] = +(vals[i - 1] * g).toFixed(1);
+    const months = ['Dec','Jan','Feb','Mar','Apr','May','Jun'];
+    return vals.map((v, i) => ({ m: months[i], a: i <= 3 ? v : null, f: i >= 3 ? v : null }));
+  };
+
+  /* the switch Links panel plots a week of inbound vs outbound utilisation
+     for one link, not an actual/forecast split — both series run the full
+     week, each seeded off the link's own name + its real utilisation so a
+     link showing 91% util plots a visibly busier week than one at 46% */
+  const linkTrendDaily = row => {
+    const days = ['23 Jun','24 Jun','25 Jun','26 Jun','27 Jun','28 Jun','29 Jun'];
+    return days.map((d, i) => ({
+      m: d,
+      a: Math.max(4, Math.min(100, Math.round(row.util + nrand(row.n, 2000 + i, -24, 24)))),
+      f: Math.max(4, Math.min(100, Math.round(row.util + nrand(row.n, 2100 + i, -24, 24))))
+    }));
+  };
 
   const svcTypes = [
     { n:'IRV',         c:nint(s, 20, 1, 4),  a:nint(s, 21, 1, 3), deg:0, dn:0, sla:99.9 },
@@ -6473,7 +6514,7 @@ function nodeOf(name) {
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend, capTrendByProto,
+    sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),
@@ -6816,7 +6857,7 @@ function nodeHeaderSwitch(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:700">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
           ${chip(stLabel, stTone)}
         </div>
         <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
@@ -6826,7 +6867,7 @@ function nodeHeaderSwitch(N) {
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
@@ -6981,30 +7022,6 @@ function nodeHardwareSwitch(N) {
 }
 
 function nodeLinksSwitch(N) {
-  const linksList = [
-    { src: 'RTR-DEL-01', dstPort: 'TenGigE0/0/0/2', sip: '10.10.0.1', dip: '10.10.0.2', util: 74, status: 'Active' },
-    { src: 'RTR-DEL-02', dstPort: 'TenGigE0/0/0/3', sip: '10.10.0.2', dip: '10.10.0.3', util: 62, status: 'Active' },
-    { src: 'RTR-MUM-01', dstPort: 'HundredGigE0/0/0/2', sip: '10.20.0.1', dip: '10.20.0.2', util: 88, status: 'High Load' },
-    { src: 'RTR-MUM-02', dstPort: 'HundredGigE0/0/0/3', sip: '10.20.0.2', dip: '10.20.0.3', util: 45, status: 'Active' },
-    { src: 'RTR-BLR-01', dstPort: 'TenGigE0/0/0/6', sip: '10.30.0.1', dip: '10.30.0.2', util: 59, status: 'Active' },
-    { src: 'RTR-BLR-02', dstPort: 'TenGigE0/0/0/7', sip: '10.30.0.2', dip: '10.30.0.3', util: 66, status: 'Active' },
-    { src: 'RTR-HYD-01', dstPort: 'FortyGigE0/0/1', sip: '10.40.0.1', dip: '10.40.0.2', util: 82, status: 'Active' },
-    { src: 'RTR-HYD-02', dstPort: 'FortyGigE0/0/2', sip: '10.40.0.2', dip: '10.40.0.3', util: 38, status: 'Active' },
-    { src: 'RTR-MAA-01', dstPort: 'TenGigE0/0/1/0', sip: '10.50.0.1', dip: '10.50.0.2', util: 51, status: 'Active' },
-    { src: 'RTR-CCU-01', dstPort: 'TenGigE0/0/1/2', sip: '10.60.0.1', dip: '10.60.0.2', util: 29, status: 'Active' }
-  ];
-
-  /* 7 day trend points matching screenshot curve */
-  const trendData = [
-    { m: '23 Jun', a: 82, f: 53 },
-    { m: '24 Jun', a: 78, f: 73 },
-    { m: '25 Jun', a: 33, f: 23 },
-    { m: '26 Jun', a: 57, f: 54 },
-    { m: '27 Jun', a: 29, f: 21 },
-    { m: '28 Jun', a: 47, f: 77 },
-    { m: '29 Jun', a: 63, f: 76 }
-  ];
-
   return card(`
     <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg);padding-bottom:var(--vw-space-md);border-bottom:1px solid var(--vw-color-slate-200)">
       <div style="display:flex;align-items:center;gap:14px">
@@ -7015,7 +7032,7 @@ function nodeLinksSwitch(N) {
           </svg>
         </div>
         <div>
-          <div style="font-size:1.1875rem;font-weight:700;color:var(--vw-color-slate-900);letter-spacing:-0.01em">Link capacity dashboard</div>
+          <div style="font-size:1.1875rem;font-weight:600;color:var(--vw-color-slate-900);letter-spacing:-0.01em">Link capacity dashboard</div>
           <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px;display:flex;align-items:center;gap:8px">
             <span>LLDP Protocol capacity analysis</span>
             <span style="display:inline-flex;align-items:center;gap:4px;color:#059669;font-weight:500;font-size:0.75rem">
@@ -7035,45 +7052,52 @@ function nodeLinksSwitch(N) {
     <div style="display:grid;grid-template-columns:330px 1fr;gap:var(--vw-space-xl);align-items:start">
       <div class="cx-panel" style="padding:16px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
         <div class="row vw-justify-between vw-items-center" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--vw-color-slate-100)">
-          <span style="font-size:0.75rem;font-weight:700;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">10 Links in countdown - LLDP</span>
-          <span style="font-size:0.6875rem;font-weight:700;padding:2px 8px;border-radius:10px;background:#e0f2fe;color:#0369a1">10 Active</span>
+          <span style="font-size:0.75rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · LLDP</span>
+          <span style="font-size:0.6875rem;font-weight:600;padding:2px 8px;border-radius:10px;background:#e0f2fe;color:#0369a1">${N.capRows.length} Active</span>
         </div>
         <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:4px">
-          ${linksList.map((lk, idx) => `
-            <div class="is-drill" style="padding:12px 14px;border-radius:10px;border:1.5px solid ${idx === 0 ? '#0284c7' : 'var(--vw-color-slate-200)'};background:${idx === 0 ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};border-left:${idx === 0 ? '4px solid #0284c7' : '3px solid transparent'};box-shadow:${idx === 0 ? '0 4px 12px rgba(2,132,199,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1)">
+          ${N.capRows.map((lk, idx) => `
+            <button data-nlinksel="${idx}" aria-pressed="${idx === NODE_LINK_SEL}" style="width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1.5px solid ${idx === NODE_LINK_SEL ? '#0284c7' : 'var(--vw-color-slate-200)'};background:${idx === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};border-left:${idx === NODE_LINK_SEL ? '4px solid #0284c7' : '3px solid transparent'};box-shadow:${idx === NODE_LINK_SEL ? '0 4px 12px rgba(2,132,199,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);margin-bottom:8px">
               <div class="row vw-justify-between vw-items-center" style="margin-bottom:6px">
-                <span class="mono" style="font-size:0.875rem;font-weight:700;color:${idx === 0 ? '#0369a1' : '#0284c7'}">${lk.src}</span>
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${idx === 0 ? '#bae6fd' : '#f1f5f9'};color:${idx === 0 ? '#0284c7' : '#94a3b8'};font-size:0.75rem">→</span>
-                <span class="mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800)">${lk.dstPort}</span>
+                <span class="mono" style="font-size:0.875rem;font-weight:600;color:${idx === NODE_LINK_SEL ? '#0369a1' : '#0284c7'}">${lk.n}</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${idx === NODE_LINK_SEL ? '#bae6fd' : '#f1f5f9'};color:${idx === NODE_LINK_SEL ? '#0284c7' : '#94a3b8'};font-size:0.75rem">→</span>
+                <span class="mono" style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-800)">${lk.peer}</span>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.75rem">
-                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Source IP</span><br><span class="mono" style="font-weight:600;color:${idx === 0 ? '#0369a1' : '#334155'}">${lk.sip}</span></div>
+                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Source IP</span><br><span class="mono" style="font-weight:600;color:${idx === NODE_LINK_SEL ? '#0369a1' : '#334155'}">${lk.sip}</span></div>
                 <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Destination IP</span><br><span class="mono" style="font-weight:600;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
               </div>
-            </div>`).join('')}
+            </button>`).join('')}
         </div>
       </div>
 
+      ${(() => {
+        const sel = N.capRows[NODE_LINK_SEL] || N.capRows[0];
+        const trendData = N.linkTrendDaily(sel);
+        const peak = Math.max(...trendData.map(t => Math.max(t.a, t.f)));
+        const growth = +(((trendData[6].a + trendData[6].f) / 2 - (trendData[0].a + trendData[0].f) / 2) / 6).toFixed(1);
+        return `
       <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
         <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--vw-color-slate-100)">
-          <div style="font-size:0.9375rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity trend</div>
+          <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity trend · ${esc(sel.n)}</div>
           <div style="display:flex;align-items:center;gap:12px;font-size:0.75rem">
-            <span style="padding:3px 10px;border-radius:12px;background:#f0f9ff;color:#0369a1;font-weight:600">Peak: 82%</span>
-            <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:600">Forecast: +4.2%</span>
+            <span style="padding:3px 10px;border-radius:12px;background:#f0f9ff;color:#0369a1;font-weight:600">Peak: ${peak}%</span>
+            <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:600">${growth >= 0 ? '+' : ''}${growth}%/day</span>
           </div>
         </div>
         ${nvTrend(trendData, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
         <div class="row vw-justify-center" style="gap:24px;margin-top:20px;font-size:0.75rem">
           <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#f0f9ff;border:1px solid #e0f2fe;border-radius:16px">
             <span style="width:8px;height:8px;border-radius:50%;background:#0ea5e9;box-shadow:0 0 6px rgba(14,165,233,0.5)"></span>
-            <span style="font-weight:600;color:#0369a1">Delhi-Core-Link - Inbound Utilization</span>
+            <span style="font-weight:600;color:#0369a1">${esc(sel.n)} - Inbound Utilization</span>
           </span>
           <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#fff7ed;border:1px solid #ffedd5;border-radius:16px">
             <span style="width:8px;height:8px;border-radius:50%;background:#f97316;box-shadow:0 0 6px rgba(249,115,22,0.5)"></span>
-            <span style="font-weight:600;color:#c2410c">Delhi-Core-Link - Outbound Utilization</span>
+            <span style="font-weight:600;color:#c2410c">${esc(sel.n)} - Outbound Utilization</span>
           </span>
         </div>
-      </div>
+      </div>`;
+      })()}
     </div>`);
 }
 
@@ -7119,10 +7143,10 @@ function nodeServicesSwitch(N) {
     <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:12px;padding:20px;background:#ffffff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div>
-          <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-900,#0f172a)">${svcType} Service instances</div>
+          <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${svcType} Service instances</div>
           <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">${rows.length} Services Of type ${svcType}</div>
         </div>
-        <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+        <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
           <option>All status</option>
           <option>Active</option>
           <option>Disable</option>
@@ -7215,11 +7239,11 @@ function nodeAlertsSwitch(N) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <div>
-            <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-900,#0f172a)">Active alerts & events</div>
+            <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">Active alerts & events</div>
             <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
           </div>
         </div>
-        <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+        <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
           <option>All severity</option>
           <option>Critical</option>
           <option>Major</option>
@@ -7234,28 +7258,28 @@ function nodeAlertsSwitch(N) {
               <div>
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
                   ${chip(a.sev, a.tone === 'red' ? 'error' : a.tone === 'orange' ? 'warning' : 'neutral')}
-                  <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-weight:600">Open</span>
-                  <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:#f1f5f9;color:#475569;font-weight:600">${a.badge}</span>
+                  <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-weight:500">Open</span>
+                  <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:#f1f5f9;color:#475569;font-weight:500">${a.badge}</span>
                 </div>
-                <div style="font-size:0.9375rem;font-weight:700;color:var(--vw-color-slate-900);margin-top:4px">${a.t}</div>
+                <div class="vw-card-activity-label" style="margin-top:4px">${a.t}</div>
                 <div style="font-size:0.8125rem;color:var(--vw-color-slate-600);margin-top:2px">${a.d}</div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);font-size:0.75rem">
-              <div><span style="color:var(--vw-color-slate-500)">Source</span><br><span style="font-weight:600;color:var(--vw-color-slate-800)">${a.src}</span></div>
-              <div><span style="color:var(--vw-color-slate-500)">Alert type</span><br><span style="font-weight:600;color:var(--vw-color-slate-800)">${a.at}</span></div>
-              <div><span style="color:var(--vw-color-slate-500)">Event start time</span><br><span style="font-weight:600;color:var(--vw-color-slate-800);font-family:monospace">${a.when}</span></div>
-              <div><span style="color:var(--vw-color-slate-500)">Alert code</span><br><span style="font-weight:600;color:var(--vw-color-slate-800);font-family:monospace">${a.code}</span></div>
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+              <div><span class="nv-hk">Source</span><br><span class="vw-value">${a.src}</span></div>
+              <div><span class="nv-hk">Alert type</span><br><span class="vw-value">${a.at}</span></div>
+              <div><span class="nv-hk">Event start time</span><br><span class="vw-value num">${a.when}</span></div>
+              <div><span class="nv-hk">Alert code</span><br><span class="vw-value mono">${a.code}</span></div>
             </div>
           </div>`).join('')}
       </div>
 
       <div style="display:flex;align-items:center;gap:16px;margin-top:20px;padding-top:12px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0);font-size:0.8125rem;color:var(--vw-color-slate-600)">
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><strong>1</strong> Critical</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-amber-500,#f59e0b)"></span><strong>2</strong> Major</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-yellow-500,#eab308)"></span><strong>1</strong> Minor</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-slate-400,#94a3b8)"></span><strong>0</strong> Warning</span>
-        <span style="margin-left:auto;font-weight:600;color:var(--vw-color-slate-800)">4 Total</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><span style="font-weight:600">1</span> Critical</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-amber-500,#f59e0b)"></span><span style="font-weight:600">2</span> Major</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-yellow-500,#eab308)"></span><span style="font-weight:600">1</span> Minor</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-slate-400,#94a3b8)"></span><span style="font-weight:600">0</span> Warning</span>
+        <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">4 Total</span>
       </div>
     </div>`);
 }
@@ -7520,210 +7544,170 @@ function nodeHardwareRouter(N) {
         () => [])}`)}`;
 }
 
+/* one link's own capacity trend (see nodeOf()'s linkTrend — derived from
+   that link's real utilisation + growth rate, not a shared protocol
+   sample) plotted against the two operational thresholds every capacity
+   chart in this app already uses (85% warning, 95% critical), with both
+   series labelled directly on their own line instead of a legend row */
+function renderLinkCapacityChart(row, linkTrendFn, protoLabel) {
+  const trend = linkTrendFn(row);
+  const W = 900, H = 260, PADL = 44, PADB = 28, PADT = 20, PADR = 60;
+  const months = trend.map(t => t.m);
+  const lo = Math.min(row.util, ...trend.map(t => t.a ?? Infinity), ...trend.map(t => t.f ?? Infinity));
+  const hi = Math.max(98, row.util, ...trend.map(t => t.a ?? -Infinity), ...trend.map(t => t.f ?? -Infinity));
+  const floor = Math.max(0, Math.floor((lo - 8) / 5) * 5);
+  const ceil = Math.min(100, Math.ceil((hi + 4) / 5) * 5);
+
+  const x = i => PADL + (i / (months.length - 1)) * (W - PADL - PADR);
+  const y = v => PADT + (1 - (v - floor) / (ceil - floor)) * (H - PADT - PADB);
+
+  const line = (key, tone) => {
+    const pts = trend.map((t, i) => t[key] == null ? null : `${x(i).toFixed(1)},${y(t[key]).toFixed(1)}`).filter(Boolean);
+    return pts.length > 1 ? `<path d="M ${pts.join(' L ')}" fill="none" stroke="${tone}" stroke-width="2.4"
+      stroke-linejoin="round" stroke-linecap="round"${key === 'f' ? ' stroke-dasharray="7 5"' : ''}/>` : '';
+  };
+  const dots = (key, tone) => trend.map((t, i) => t[key] == null ? '' :
+    `<circle cx="${x(i)}" cy="${y(t[key])}" r="4" fill="${tone}" stroke="#ffffff" stroke-width="1.5" style="cursor:pointer"><title>${t.m} · ${key === 'a' ? 'Actual' : 'Forecast'} ${t[key]}%</title></circle>`).join('');
+  /* last actual point and first forecast point share index 3 — label each
+     series near its own midpoint so "actual"/"forecast" never overlap */
+  const aMidI = 1, fMidI = 5;
+
+  return `
+    <div class="row vw-justify-between vw-items-center" style="margin-bottom:14px">
+      <span style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity forecast – ${esc(row.n)}</span>
+      ${chip(`${protoLabel} Protocol`, 'info')}
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
+      ${[0, 0.25, 0.5, 0.75, 1].map(f => Math.round(floor + (ceil - floor) * f)).map(v => `
+        <line x1="${PADL}" x2="${W - PADR}" y1="${y(v)}" y2="${y(v)}" stroke="#f1f5f9" stroke-width="1.2"/>
+        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="system-ui">${v}%</text>
+      `).join('')}
+
+      ${ceil >= 85 && floor <= 85 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(85)}" y2="${y(85)}" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4"/>
+        <text x="${W - PADR + 6}" y="${y(85) + 4}" font-size="10" font-weight="600" fill="#b45309" font-family="system-ui">Warning 85%</text>` : ''}
+      ${ceil >= 95 && floor <= 95 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(95)}" y2="${y(95)}" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="6 4"/>
+        <text x="${W - PADR + 6}" y="${y(95) + 4}" font-size="10" font-weight="600" fill="#b91c1c" font-family="system-ui">Critical 95%</text>` : ''}
+
+      ${line('a', '#2563eb')}${dots('a', '#2563eb')}
+      ${line('f', '#f59e0b')}${dots('f', '#f59e0b')}
+
+      <text x="${x(aMidI)}" y="${y(trend[aMidI].a) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8"
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="system-ui">Bandwidth (actual)</text>
+      <text x="${x(fMidI)}" y="${y(trend[fMidI].f) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309"
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="system-ui">Bandwidth (forecast)</text>
+
+      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="system-ui">${m}</text>`).join('')}
+    </svg>`;
+}
+
 function nodeLinksRouter(N) {
   const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
 
-  const protoCardsConfig = [
-    { k: 'LLDP', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='LLDP')?.a || 24, change: '↑ +3 vs. last 7 days', tone: 'sky',
-      bg: '#f0f7ff', border: '#dbeafe', iconBg: '#e0f2fe', iconCol: '#0284c7', textCol: '#0369a1',
-      bars: [40, 70, 100],
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-      </svg>` },
-    { k: 'BGP', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='BGP')?.a || 1, change: '→ No change', tone: 'purple',
-      bg: '#faf5ff', border: '#f3e8ff', iconBg: '#f3e8ff', iconCol: '#9333ea', textCol: '#7e22ce',
-      bars: [50, 50, 50],
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-        <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-      </svg>` },
-    { k: 'OSPF', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='OSPF')?.a || 4, change: '↑ +1 vs. last 7 days', tone: 'emerald',
-      bg: '#f0fdf4', border: '#dcfce7', iconBg: '#dcfce7', iconCol: '#16a34a', textCol: '#15803d',
-      bars: [30, 60, 90],
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="18" r="3"></circle>
-        <line x1="12" y1="9" x2="6" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line>
-      </svg>` },
-    { k: 'ISIS', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='ISIS')?.a || 1, change: '→ No change', tone: 'amber',
-      bg: '#fffbe6', border: '#fef3c7', iconBg: '#fef3c7', iconCol: '#d97706', textCol: '#b45309',
-      bars: [40, 40, 40],
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 2 22 22 22 12 2"></polygon>
-      </svg>` }
-  ];
-
-  /* SVG Chart generator for Router Link Capacity Forecast matching screenshot */
-  const renderRouterLinkChart = () => {
-    const W = 900, H = 220, PADL = 40, PADB = 28, PADT = 20, PADR = 20;
-    const months = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const actualVals = [20, 35, 52, 43, 56, 70, 60];
-    const forecastVals = [40, 43, 61, 71, 65, 78, 71];
-
-    const x = i => PADL + (i / (months.length - 1)) * (W - PADL - PADR);
-    const y = v => PADT + (1 - v / 95) * (H - PADT - PADB);
-
-    const actualPts = actualVals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L ');
-    const forecastPts = forecastVals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L ');
-    const areaD = `M ${x(0).toFixed(1)},${y(0)} L ${actualPts} L ${x(months.length - 1).toFixed(1)},${y(0)} Z`;
-
-    const mayX = x(5).toFixed(1);
-
-    return `
-    <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
-      <defs>
-        <linearGradient id="rtr-blue-area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
-          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
-        </linearGradient>
-      </defs>
-
-      <!-- Y Grid ticks: 0, 24, 48, 72, 95 -->
-      ${[0, 24, 48, 72, 95].map(v => `
-        <line x1="${PADL}" x2="${W - PADR}" y1="${y(v)}" y2="${y(v)}" stroke="#f1f5f9" stroke-width="1.2"/>
-        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="system-ui">${v}</text>
-      `).join('')}
-
-      <!-- Gradient Area below Actual line -->
-      <path d="${areaD}" fill="url(#rtr-blue-area)"/>
-
-      <!-- Dashed reference line on May point -->
-      <line x1="${mayX}" x2="${mayX}" y1="${PADT}" y2="${H - PADB}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"/>
-
-      <!-- Forecast Line (Dashed Amber) -->
-      <path d="M ${forecastPts}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
-      ${forecastVals.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>`).join('')}
-
-      <!-- Actual Line (Solid Blue) -->
-      <path d="M ${actualPts}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
-      ${actualVals.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>`).join('')}
-
-      <!-- May Tooltip Popover Box -->
-      <g transform="translate(680, 25)">
-        <rect width="94" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.08))"/>
-        <text x="12" y="16" font-size="10" font-weight="700" fill="#64748b" font-family="system-ui">May</text>
-        <circle cx="16" cy="28" r="3" fill="#2563eb"/>
-        <text x="24" y="31" font-size="10" font-weight="500" fill="#475569" font-family="system-ui">Actual</text>
-        <text x="82" y="31" font-size="10" font-weight="700" fill="#0f172a" font-family="system-ui" text-anchor="end">78</text>
-        <circle cx="16" cy="41" r="3" fill="#f59e0b"/>
-        <text x="24" y="44" font-size="10" font-weight="500" fill="#475569" font-family="system-ui">Forecast</text>
-        <text x="82" y="44" font-size="10" font-weight="700" fill="#0f172a" font-family="system-ui" text-anchor="end">85</text>
-      </g>
-
-      <!-- X Axis Labels -->
-      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#64748b" font-family="system-ui">${m}</text>`).join('')}
-    </svg>`;
+  /* each protocol has its own vocabulary for what the same three counters
+     (protoRows' a/d/i) mean — an OSPF link isn't "up", it's "Active"; an
+     LSP isn't "down", it's "Down LSP". Labelling them generically as
+     Active/Down/Init the way the cards used to is technically true but
+     reads as a template that was never finished for anything but LLDP. */
+  const PROTO_META = {
+    OSPF: { labels: ['Active Links', 'Down Links', 'Init State'], tone: 'emerald', iconCol: '#16a34a', iconBg: '#dcfce7',
+      icon: `<circle cx="12" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="18" r="3"></circle><line x1="12" y1="9" x2="6" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line>` },
+    BGP:  { labels: ['Established', 'Idle', 'Active'], tone: 'purple', iconCol: '#9333ea', iconBg: '#f3e8ff',
+      icon: `<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>` },
+    LLDP: { labels: ['Neighbors Up', 'Neighbors Down', 'Unknown'], tone: 'sky', iconCol: '#0284c7', iconBg: '#e0f2fe',
+      icon: `<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>` },
+    LSP:  { labels: ['Active LSP', 'Standby LSP', 'Down LSP'], tone: 'rose', iconCol: '#e11d48', iconBg: '#ffe4e6',
+      icon: `<path d="M4 12h4l2-6 4 12 2-6h4"></path>` },
+    ISIS: { labels: ['Up Links', 'Down Links', 'Init State'], tone: 'amber', iconCol: '#d97706', iconBg: '#fef3c7',
+      icon: `<polygon points="12 2 2 22 22 22 12 2"></polygon>` }
   };
+  const protoCardsConfig = ['OSPF', 'BGP', 'LLDP', 'LSP', 'ISIS'].map(k => {
+    const row = N.protoRows.find(p => p.k === k) || { a: 0, d: 0, i: 0 };
+    const m = PROTO_META[k];
+    return { k, labels: m.labels, vals: [row.a, row.d, row.i], iconCol: m.iconCol, iconBg: m.iconBg,
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg>` };
+  });
 
   return card(`
     ${headSm('Links')}
     
-    <!-- Top 4 Protocol Cards matching screenshot -->
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md);margin-bottom:var(--vw-space-xl)">
+    <!-- Protocol cards: each protocol's own three-state breakdown, not a
+         single generic count — see PROTO_META above -->
+    <div class="vw-grid vw-grid-cols-5 vw-gap-md" style="margin-top:var(--vw-space-md);margin-bottom:var(--vw-space-xl)">
       ${protoCardsConfig.map(p => `
         <button class="vw-card-section vw-card--clickable${p.k === sel.k ? ' is-on' : ''}"
           data-nlink="${p.k}" aria-pressed="${p.k === sel.k}"
-          style="padding:16px;border-radius:14px;background:${p.bg};border:1.5px solid ${p.k === sel.k ? p.iconCol : p.border};box-shadow:${p.k === sel.k ? '0 4px 14px rgba(2,132,199,0.12)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:12px;transition:all 0.2s ease">
-          <div class="row vw-justify-between vw-items-center">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:34px;height:34px;border-radius:50%;background:${p.iconBg};color:${p.iconCol};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                ${p.icon}
-              </div>
-              <div>
-                <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-900)">${p.k}</div>
-                <div style="font-size:0.75rem;color:var(--vw-color-slate-500)">${p.n}</div>
-              </div>
+          style="padding:14px;border-radius:14px;background:#ffffff;border:1.5px solid ${p.k === sel.k ? p.iconCol : 'var(--vw-color-slate-200)'};box-shadow:${p.k === sel.k ? '0 4px 14px rgba(2,132,199,0.12)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:10px;transition:all 0.2s ease">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:50%;background:${p.iconBg};color:${p.iconCol};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              ${p.icon}
+            </div>
+            <div>
+              <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">${p.k}</div>
+              <div style="font-size:0.6875rem;color:var(--vw-color-slate-500)">Protocol links</div>
             </div>
           </div>
-
-          <div class="row vw-justify-between vw-items-end">
-            <span style="font-size:1.875rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">${p.count}</span>
-            <div style="display:flex;align-items:flex-end;gap:3px;height:22px">
-              ${p.bars.map(h => `<span style="width:5px;height:${h}%;background:${p.iconCol};border-radius:2px;opacity:0.7"></span>`).join('')}
-            </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            ${p.labels.map((label, li) => `<div class="row vw-justify-between vw-items-center" style="font-size:0.75rem">
+              <span style="color:var(--vw-color-slate-500)">${label}</span>
+              <span class="num" style="font-weight:600;color:${li === 0 ? p.iconCol : p.vals[li] > 0 ? 'var(--vw-color-red-600)' : 'var(--vw-color-slate-400)'}">${p.vals[li]}</span>
+            </div>`).join('')}
           </div>
-
-          <div style="font-size:0.75rem;font-weight:600;color:${p.textCol}">${p.change}</div>
         </button>`).join('')}
     </div>
 
-    <!-- Main Chart Panel matching screenshot -->
-    <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03);margin-bottom:var(--vw-space-xl)">
-      <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--vw-color-slate-100)">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:38px;height:38px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Link capacity forecasting dashboard: a link list (left) driving a
+         chart of that one link's own trend (right) — clicking a link in the
+         list re-renders the chart from its own util/growth, not a
+         protocol-wide sample shared by every link -->
+    ${card(`
+      <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg);padding-bottom:var(--vw-space-md);border-bottom:1px solid var(--vw-color-slate-200)">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);border:1px solid #7dd3fc;display:flex;align-items:center;justify-content:center;color:#0284c7;flex-shrink:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>
             </svg>
           </div>
           <div>
-            <div style="font-size:1.0625rem;font-weight:700;color:var(--vw-color-slate-900)">Link Capacity Forecast – ${sel.k}</div>
-            <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px">Projected link capacity trend based on protocol data</div>
+            <div style="font-size:1.0625rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity forecasting dashboard</div>
+            <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px">${sel.k} protocol capacity analysis</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="display:inline-flex;padding:3px;background:#f1f5f9;border-radius:20px">
-            <button style="padding:4px 16px;border-radius:16px;background:#2563eb;color:#ffffff;font-size:0.75rem;font-weight:600;border:0;cursor:pointer">Actual</button>
-            <button style="padding:4px 16px;border-radius:16px;background:transparent;color:#64748b;font-size:0.75rem;font-weight:600;border:0;cursor:pointer">Forecast</button>
+        ${chip(`${sel.k} Protocol`, 'info')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--vw-space-xl);align-items:start">
+        <div class="cx-panel" style="padding:14px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
+          <div class="row vw-justify-between vw-items-center" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--vw-color-slate-100)">
+            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · ${sel.k}</span>
           </div>
-          <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;font-size:0.75rem;font-weight:600;color:#334155">
-            Last 6 months <span style="font-size:0.7rem;color:#94a3b8">▼</span>
+          <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:2px">
+            ${N.capRows.map((r, i) => `
+              <button data-nlinksel="${i}" aria-pressed="${i === NODE_LINK_SEL}" style="width:100%;text-align:left;padding:10px 12px;border-radius:10px;
+                border:1.5px solid ${i === NODE_LINK_SEL ? '#0284c7' : 'var(--vw-color-slate-200)'};
+                background:${i === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};
+                margin-bottom:6px;cursor:pointer;transition:all .15s ease">
+                <div class="row vw-justify-between vw-items-baseline" style="margin-bottom:4px">
+                  <span class="mono" style="font-size:0.8125rem;font-weight:600;color:${i === NODE_LINK_SEL ? '#0369a1' : 'var(--vw-color-slate-800)'}">${r.n}</span>
+                  ${chip(r.util > 85 ? 'Backhaul' : 'Healthy', r.util > 85 ? 'error' : 'success')}
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:0.6875rem">
+                  <span style="color:var(--vw-color-slate-500)">Bandwidth utilisation</span>
+                  <span class="mono" style="text-align:right;font-weight:600;color:${cv(r.tone,700)}">${r.util}%</span>
+                  <span style="color:var(--vw-color-slate-500)">Active sessions</span>
+                  <span class="mono num" style="text-align:right">${n(r.sess)}</span>
+                  <span style="color:var(--vw-color-slate-500)">Forecast date</span>
+                  <span class="mono" style="text-align:right">${r.fc}</span>
+                  <span style="color:var(--vw-color-slate-500)">Growth rate</span>
+                  <span class="mono num" style="text-align:right">+${r.growth}%/mo</span>
+                </div>
+              </button>`).join('')}
           </div>
         </div>
-      </div>
 
-      ${renderRouterLinkChart()}
-
-      <div class="row vw-justify-between vw-items-center" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100)">
-        <div class="row vw-items-center" style="gap:20px;font-size:0.75rem">
-          <span style="display:inline-flex;align-items:center;gap:8px">
-            <span style="width:10px;height:10px;border-radius:50%;background:#2563eb"></span>
-            <span style="font-weight:600;color:#475569">Actual</span>
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:8px">
-            <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b"></span>
-            <span style="font-weight:600;color:#475569">Forecast</span>
-          </span>
+        <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
+          ${renderLinkCapacityChart(N.capRows[NODE_LINK_SEL] || N.capRows[0], N.linkTrend, sel.k)}
         </div>
-
-        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:#e0f2fe;color:#0369a1;border-radius:20px;font-size:0.75rem;font-weight:600">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-          </svg>
-          ${sel.a} active · ${sel.d} down · ${sel.i} init
-        </span>
-      </div>
-    </div>
-
-    <!-- Bottom Link Capacity Dashboard Grid -->
-    <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
-      <div class="row vw-justify-between vw-items-baseline cx-panel-head" style="margin-bottom:16px;padding-bottom:12px">
-        <span class="eyebrow" style="font-size:0.9375rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity dashboard</span>
-        <div style="display:flex;align-items:center;gap:12px">
-          ${chip(`${sel.k} protocol`, 'info')}
-          <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
-        </div>
-      </div>
-      <div class="nv-linkgrid">
-        ${N.capRows.map(r => `
-          <button class="nv-link is-drill"${dA({ v:'links', l:`${r.n} capacity`, q:'tab=lldp' })}>
-            <div class="row vw-justify-between vw-items-baseline">
-              <span class="vw-value">${r.n}</span>
-              ${chip(r.util > 85 ? 'Backhaul' : 'Healthy', r.util > 85 ? 'error' : 'success')}
-            </div>
-            <div class="nv-link-g">
-              <span class="nv-hk">Source IP</span><span class="mono">${r.sip}</span>
-              <span class="nv-hk">Destination IP</span><span class="mono">${r.dip}</span>
-              <span class="nv-hk">Bandwidth utilisation</span>
-              <span class="num" style="color:${cv(r.tone,700)};font-weight:500">${r.util}%</span>
-              <span class="nv-hk">Active sessions</span><span class="num">${n(r.sess)}</span>
-              <span class="nv-hk">Forecast date</span><span class="num">${r.fc}</span>
-              <span class="nv-hk">Growth rate</span><span class="num">+${r.growth}% / mo</span>
-            </div>
-          </button>`).join('')}
-      </div>
-    </div>`);
+      </div>`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
 }
 
 function nodeServicesRouter(N) {
@@ -7820,19 +7804,19 @@ function nodeAlertsRouter(N) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
-              <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-800,#1e293b);line-height:1.2">${alertTab === 'alerts' ? 'Active alerts & events' : 'Open incidents'}</div>
+              <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-800,#1e293b);line-height:1.2">${alertTab === 'alerts' ? 'Active alerts & events' : 'Open incidents'}</div>
               <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
             </div>
           </div>
           ${alertTab === 'alerts' ? `
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
                 <option>All severity</option>
                 <option>Critical</option>
                 <option>Major</option>
                 <option>Minor</option>
               </select>
-              <select class="nst-input nst-input--sm" style="height:34px;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
                 <option>All sources</option>
                 <option>Interface</option>
                 <option>CPU</option>
@@ -7934,42 +7918,203 @@ function nodeAvailability(N) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DISPATCHERS (Delegates to Switch or Router implementation)
+   DWDM — optical transport. This class's inventory record is the same
+   generic NE shape as router/switch (name/ip/model/os/sn/oem/loc), so the
+   header re-uses that shared metadata grid; what makes it DWDM-specific is
+   the overview and hardware tabs, built around the one genuinely optical
+   dataset already computed for every node — N.sfp (transceiver port/type/
+   TX·RX power/temperature) — read as the node's live wavelength channels
+   instead of as router/switch "interfaces". A channel's ITU-T C-band
+   wavelength is derived from its 100GHz-spaced position in the grid
+   (1550.12nm reference, 0.8nm step) — a real DWDM channel-plan convention,
+   not a fabricated number.
    ═══════════════════════════════════════════════════════════ */
-
-function nodeHeader(N) {
-  return N.cls === 'switch' ? nodeHeaderSwitch(N) : nodeHeaderRouter(N);
+function nodeHeaderDwdm(N) {
+  const r = N.r;
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
+  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const cells = [
+    ['Vendor', r.oem || 'ADVA'], ['OS Version', r.os || 'ONMSi 21.1'], ['Serial Number', r.sn || '—'],
+    ['Model', r.model || 'FSP 3000'], ['IP address', r.ip || '—'], ['MAC address', macAddr]
+  ];
+  return card(`
+    <div class="nv-head">
+      <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-violet-50,#f5f3ff);border-radius:10px;padding:6px">
+        <span style="color:var(--vw-color-violet-600,#7c3aed)">${nodeThumb('dwdm')}</span>
+      </div>
+      <div class="stack-x grow" style="min-width:0">
+        <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
+          ${chip(stLabel, stTone)}${chip('DWDM', 'purple')}
+        </div>
+        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${r.loc || N.name}(${coords})
+        </span>
+      </div>
+    </div>
+    <div class="nv-meta" style="grid-template-columns:repeat(6, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+    '', 'padding:var(--vw-space-lg)');
 }
 
-function nodeOverview(N) {
-  return N.cls === 'switch' ? nodeOverviewSwitch(N) : nodeOverviewRouter(N);
+function nodeOverviewDwdm(N) {
+  const O = N.optical;
+  const live = O.chans.filter(c => !c.spare);
+  const avgOsnr = (live.reduce((a, c) => a + c.osnr, 0) / live.length).toFixed(1);
+  const ampsUp = O.amps.filter(a => a.st === 'Active').length;
+  const worstSpan = O.spans.reduce((w, s) => s.loss > w.loss ? s : w, O.spans[0]);
+  const tiles = [
+    nvTile('Wavelengths In Use', `${O.used}/${O.chans.length}`, `${O.chans.length - O.used} unequipped`, 'purple'),
+    nvTile('Avg OSNR', `${avgOsnr} dB`, avgOsnr < 18 ? 'Approaching floor' : 'Healthy margin', avgOsnr < 18 ? 'amber' : 'emerald'),
+    nvTile('Amplifiers', `${ampsUp}/${O.amps.length}`, 'Pre-amp · Booster · Raman', ampsUp === O.amps.length ? 'emerald' : 'amber'),
+    nvTile('Worst Span Loss', `${worstSpan.loss} dB`, worstSpan.n, worstSpan.loss > worstSpan.budget * 0.85 ? 'red' : 'sky'),
+    nvTile('Active Alerts', String(N.ov.alarms), 'Across this element', N.ov.alarms > 5 ? 'red' : 'amber'),
+    nvTile('System Uptime', N.ov.uptime, `Last reboot tracked`, 'slate')
+  ];
+  return card(`
+    <div class="nv-tiles">${tiles.join('')}</div>
+    <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
+      ${nvHealthCard('Optical line health', 'Amplifier & span reachability', [N.ov.health >= 96 ? 'Healthy' : N.ov.health >= 88 ? 'Degraded' : 'Critical', N.ov.health >= 96 ? 'success' : N.ov.health >= 88 ? 'warning' : 'error'],
+        [['Line health', `${N.ov.health}%`], ['Wavelengths active', `${O.used}/${O.chans.length}`], ['Avg OSNR', `${avgOsnr} dB`], ['Amplifiers up', `${ampsUp}/${O.amps.length}`]],
+        `Last sync: Jun 30, 2026 14:25:00`)}
+      ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
+        [['Offset', `${N.ntp.off} ms`], ['Primary NTP', N.ntp.primary], ['Secondary NTP', N.ntp.secondary], ['Stratum', String(N.ntp.stratum)]],
+        `Last Sync: ${N.ntp.sync}`)}
+    </div>`);
 }
 
-function nodeHardware(N) {
-  return N.cls === 'switch' ? nodeHardwareSwitch(N) : nodeHardwareRouter(N);
+function nodeHardwareDwdm(N) {
+  const O = N.optical;
+  return `${card(`
+    <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+      <span class="eyebrow">Wavelength channels</span>
+      <span class="vw-card-metric-label-sub">${O.used} of ${O.chans.length} equipped · ITU-T 100GHz grid</span>
+    </div>
+    ${table([{t:'Channel'},{t:'Wavelength'},{t:'Service'},{t:'Status'},{t:'TX power',r:true},{t:'RX power',r:true},{t:'OSNR',r:true},{t:'BER',r:true},{t:'Rate'}],
+      O.chans.map(c => [
+        `<span class="mono">${c.ch}</span>`,
+        `<span class="mono">${c.lambda} nm</span>`,
+        c.spare ? `<span style="color:${cv('gray',400)}">—</span>` : c.svc,
+        chip(c.st, c.st === 'Active' ? 'success' : c.st === 'Warning' ? 'warning' : c.st === 'Degraded' ? 'error' : 'neutral'),
+        c.tx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.tx} dBm</span>`,
+        c.rx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.rx} dBm</span>`,
+        c.osnr == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
+        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
+        c.rate || `<span style="color:${cv('gray',400)}">—</span>`
+      ]), '', () => [])}`)}
+    <div class="vw-grid vw-grid-cols-2 vw-gap-md" style="margin-top:var(--vw-space-md)">
+      ${card(`
+        <div class="cx-panel-head"><span class="eyebrow">Amplifiers</span></div>
+        ${table([{t:'Stage'},{t:'Gain',r:true},{t:'Tilt',r:true},{t:'Status'}],
+          O.amps.map(a => [a.n, `<span class="mono">${a.gain} dB</span>`, `<span class="mono">${a.tilt} dB</span>`,
+            chip(a.st, a.st === 'Active' ? 'success' : 'warning')]), '', () => [])}`)}
+      ${card(`
+        <div class="cx-panel-head"><span class="eyebrow">Fiber spans</span></div>
+        ${table([{t:'Span'},{t:'Distance',r:true},{t:'Loss',r:true},{t:'Budget',r:true},{t:'PMD',r:true}],
+          O.spans.map(sp => [sp.n, `<span class="mono">${sp.km} km</span>`,
+            `<span class="mono"${sp.loss > sp.budget * 0.85 ? ` style="color:${cv('red',700)}"` : ''}>${sp.loss} dB</span>`,
+            `<span class="mono">${sp.budget} dB</span>`, `<span class="mono">${sp.pmd} ps</span>`]), '', () => [])}`)}
+    </div>`;
 }
 
-function nodeLinks(N) {
-  return N.cls === 'switch' ? nodeLinksSwitch(N) : nodeLinksRouter(N);
+/* ═══════════════════════════════════════════════════════════
+   eNodeB — this class has no assurance feed (NODE_CLASS.enodeb.live is
+   false: no collector polls it for CPU/interface/alarm data), so unlike
+   Router/Switch/DWDM there is no live dashboard to build honestly. What
+   IS real is the inventory record itself; this renders that as grouped
+   identity/location/hardware fields — reusing the same detailField/
+   detailSection helpers the Virtual Resources screens use — rather than
+   the bare paragraph the generic fallback showed before.
+   ═══════════════════════════════════════════════════════════ */
+function nodeHeaderEnodeb(N) {
+  const r = N.r;
+  /* the reconciliation status (RSTATE) is the one real status this record
+     carries — N.ready would read as "Ready"/"Degraded" from the seeded
+     health score computed for the live-assurance dashboard, which is
+     exactly the fabricated data this class's page says it won't show */
+  const [stLabel, stTone] = RSTATE[r.st] || RSTATE.none;
+  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '';
+  return card(`
+    <div class="nv-head">
+      <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-emerald-50,#ecfdf5);border-radius:10px;padding:6px">
+        <span style="color:var(--vw-color-emerald-600,#059669)">${nodeThumb('enodeb')}</span>
+      </div>
+      <div class="stack-x grow" style="min-width:0">
+        <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
+          ${chip(stLabel, stTone)}${chip('eNodeB', 'success')}
+        </div>
+        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${r.loc || N.name}${coords ? `(${coords})` : ''}
+        </span>
+      </div>
+    </div>`,
+    '', 'padding:var(--vw-space-lg)');
+}
+function nodeInventoryEnodeb(N) {
+  const r = N.r;
+  const sections = [
+    { title: 'Identity', fields: [['Name', N.name], ['Status', (RSTATE[r.st] || RSTATE.none)[0]], ['Stock state', r.stock || '-']] },
+    { title: 'Location', fields: [['Site', r.loc || '-'], ['Latitude', r.lat || '-'], ['Longitude', r.lon || '-']] },
+    { title: 'Hardware', fields: [['Vendor', r.oem || '-'], ['Model', r.model || '-'], ['OS version', r.os || '-'], ['Serial number', r.sn || '-'], ['IP address', r.ip || '-']] }
+  ];
+  return renderSectionedGrid(sections.map(s => ({ title: s.title, fields: s.fields })));
 }
 
-function nodeServices(N) {
-  return N.cls === 'switch' ? nodeServicesSwitch(N) : nodeServicesRouter(N);
-}
+/* ═══════════════════════════════════════════════════════════
+   DISPATCHERS — one lookup keyed by the node's real class (N.cls, sourced
+   from which PHY[] bucket the record was found in — see nodeRecord() —
+   never guessed from the node's name), not a chain of per-call ternaries.
+   DWDM has its own header/overview/hardware; Links/Services/Alerts are
+   already class-agnostic (their data — protoRows, service instances,
+   alarms — is computed the same way for every class in nodeOf()), so DWDM
+   reuses the Router versions rather than duplicating them for no reason.
+   eNodeB never reaches these — see the !N.live branch in viewNode(). Any
+   class this map doesn't name falls back to Router's view instead of
+   breaking the page.
+   ═══════════════════════════════════════════════════════════ */
+const NODE_VIEW = {
+  router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
+  switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
+  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   links: nodeLinksRouter, services: null,              alerts: nodeAlertsRouter }
+};
+const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
-function nodeAlerts(N) {
-  return N.cls === 'switch' ? nodeAlertsSwitch(N) : nodeAlertsRouter(N);
-}
+function nodeHeader(N)   { return nodeViewFor(N.cls).header(N); }
+function nodeOverview(N) { return nodeViewFor(N.cls).overview(N); }
+function nodeHardware(N) { return nodeViewFor(N.cls).hardware(N); }
+function nodeLinks(N)    { return nodeViewFor(N.cls).links(N); }
+function nodeServices(N) { return nodeViewFor(N.cls).services ? nodeViewFor(N.cls).services(N) : nodeServicesRouter(N); }
+function nodeAlerts(N)   { return nodeViewFor(N.cls).alerts(N); }
 
 let NODE_TAB = 'overview';
+
+/* per-class tab list — DWDM has no network-services concept (L2VPN/L3VPN
+   provisioning doesn't apply to optical transport), so it gets 4 tabs
+   instead of 5 rather than a tab with nothing meaningful behind it */
+const NODE_TABS = {
+  router: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
+  switch: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
+  dwdm:   [['overview','Overview'],['hardware','Optical'],['links','Links'],['alerts','Alerts & diagnostics']]
+};
 
 function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
+    /* the only NODE_VIEW_CLASSES member with no assurance feed today is
+       eNodeB — this stays honest about that (nothing below is fabricated
+       to fill a dashboard the platform has no data for) while still
+       showing everything the inventory record actually has, grouped
+       instead of dumped flat */
     return `<div class="page">
-      ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
+      ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
-      ${nodeHeader(N)}
+      ${N.cls === 'enodeb' ? nodeHeaderEnodeb(N) : nodeHeader(N)}
+      ${N.cls === 'enodeb' ? nodeInventoryEnodeb(N) : ''}
       ${card(`
         <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-xl);text-align:center">
           <span class="vw-card-title">No live feed for this class</span>
@@ -7985,19 +8130,14 @@ function viewNode() {
     </div>`;
   }
 
-  const tabs = [
-    ['overview', 'Overview'],
-    ['hardware', 'Hardware & interfaces'],
-    ['links', 'Links'],
-    ['services', 'Network services'],
-    ['alerts', 'Alerts & diagnostics']
-  ];
-
-  const activeTab = (NODE_TAB || 'overview').toLowerCase();
+  const tabs = NODE_TABS[N.cls] || NODE_TABS.router;
+  const activeTab = tabs.some(([k]) => k === (NODE_TAB || '').toLowerCase()) ? NODE_TAB.toLowerCase() : 'overview';
 
   let tabContent = '';
   if (activeTab === 'hardware') {
-    tabContent = N.cls === 'switch' ? `${nodeHardware(N)}${nodeVlans(N)}` : `${nodeHardware(N)}${nodeVlans(N)}`;
+    /* nodeVlans() self-guards on N.vlans, so it only ever renders for a
+       class the sample data actually gives VLANs to (switch) */
+    tabContent = `${nodeHardware(N)}${nodeVlans(N)}`;
   } else if (activeTab === 'links') {
     tabContent = `${nodeLinks(N)}`;
   } else if (activeTab === 'services') {
@@ -8010,7 +8150,7 @@ function viewNode() {
   }
 
   return `<div class="page">
-    ${pageHead(`Node view · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
+    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
       `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
     ${drillBar()}
     ${nodeHeader(N)}
@@ -8118,13 +8258,18 @@ function applyDrillQuery(view, q, label) {
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
   if (view === 'node')     {
-    if (p.tab) NODE_TAB = p.tab;
+    /* a fresh arrival at Node view (the normal "Node view" row action never
+       carries its own ?tab=) must land on Overview, not whatever tab was
+       last open on a previous node — only an explicit ?tab= in the URL
+       should pick a different starting tab */
+    NODE_TAB = p.tab || 'overview';
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_LINK_PROTO = 'LLDP';
+      NODE_LINK_SEL = 0;
     }
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
@@ -8422,7 +8567,7 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
@@ -8434,7 +8579,9 @@ document.addEventListener('click', e => {
   const nswsvc = e.target.closest('[data-nswsvctab]');
   if (nswsvc) { NODE_SW_SVC_TAB = nswsvc.dataset.nswsvctab; go('node'); return; }
   const nlk = e.target.closest('[data-nlink]');
-  if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; go('node'); return; }
+  if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; NODE_LINK_SEL = 0; go('node'); return; }
+  const nls = e.target.closest('[data-nlinksel]');
+  if (nls) { NODE_LINK_SEL = Number(nls.dataset.nlinksel); go('node'); return; }
   const rtab = e.target.closest('[data-restab]');
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');
@@ -8744,7 +8891,7 @@ window.__nsLegacy = {
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
+    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
-  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView,
+  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView, nodeClassName,
   phyCount, stockCount, stockMeta, type NeClass, type StockState
 } from '../data/ledger';
 import { eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
@@ -89,7 +89,7 @@ export default function PhysicalResources() {
     });
   };
   const rowActions = (r: NeRow): Action[] => [
-    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: r.name, from: FROM }, { name: r.name })) }] : []),
+    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name })) }] : []),
     { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
     { l: 'Open site', onClick: () => openSite(r.loc) }
   ];

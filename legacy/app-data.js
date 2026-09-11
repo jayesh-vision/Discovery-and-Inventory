@@ -840,6 +840,17 @@ const PHY_TABS = [
    Node view, even where the page itself has no live assurance feed to show. */
 const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb'];
 const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
+
+/* Node view is a genuinely different screen per class (see app-node2.js —
+   separate header/overview/hardware per class, not one template branching
+   on cls). The breadcrumb and page title should say which one a reader is
+   actually looking at, instead of the same generic "Node view" for all four. */
+const NODE_VIEW_LABEL = { router: 'Router node view', switch: 'Switch node view', dwdm: 'DWDM node view', enodeb: 'eNodeB node view' };
+const nodeViewLabel = k => NODE_VIEW_LABEL[k] || 'Node view';
+/* the short form, for spots (like the breadcrumb's drill segment) that sit
+   right after something that already said "Node view" once */
+const NODE_CLASS_NAME = { router: 'Router', switch: 'Switch', dwdm: 'DWDM', enodeb: 'eNodeB' };
+const nodeClassName = k => NODE_CLASS_NAME[k] || 'Node';
 const PHY = {
   router: [
     { st:'ok',   name:'NDLS-J960-P_R1-T1-NR', ip:'172.31.33.100', model:'MX960',   os:'21.2R3-S8.5', sn:'JN1236F87AFB', oem:'JUNIPER', loc:'DEL-279',  s:'d', stock:'deployed', v:3 },

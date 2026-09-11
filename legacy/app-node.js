@@ -13,6 +13,7 @@ let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
+let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -169,7 +170,8 @@ function nodeOf(name) {
     { k:'LLDP', n:'Protocol Links', a:nint(s, 7, 4, 24), d:nint(s, 8, 0, 3), i:nint(s, 9, 0, 2), tone:'sky' },
     { k:'BGP',  n:'Protocol Links', a:nint(s, 10, 1, 8), d:nint(s, 11, 0, 2), i:nint(s, 12, 0, 1), tone:'purple' },
     { k:'OSPF', n:'Protocol Links', a:nint(s, 13, 2, 14), d:nint(s, 14, 0, 2), i:nint(s, 15, 0, 2), tone:'emerald' },
-    { k:'ISIS', n:'Protocol Links', a:nint(s, 16, 0, 6), d:nint(s, 17, 0, 1), i:0, tone:'amber' }
+    { k:'ISIS', n:'Protocol Links', a:nint(s, 16, 0, 6), d:nint(s, 17, 0, 1), i:0, tone:'amber' },
+    { k:'LSP',  n:'Protocol Links', a:nint(s, 18, 1, 10), d:nint(s, 19, 0, 2), i:nint(s, 20, 0, 1), tone:'rose' }
   ];
 
   const capRows = Array.from({ length: 5 }, (_, i) => {
@@ -187,7 +189,7 @@ function nodeOf(name) {
   /* one capacity trend per protocol card — same deterministic-seed technique
      as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
      each get their own stable, plausible curve instead of sharing one */
-  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600 };
+  const PROTO_SEED_OFF = { LLDP: 0, BGP: 200, OSPF: 400, ISIS: 600, LSP: 800 };
   const capTrendFor = proto => {
     const off = PROTO_SEED_OFF[proto] || 0;
     return Array.from({ length: 7 }, (_, i) => ({
@@ -196,8 +198,36 @@ function nodeOf(name) {
       f: Math.round(nrand(s, 1100 + off + i, 44, 62) + i * 5.5)
     }));
   };
-  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS') };
+  const capTrendByProto = { LLDP: capTrendFor('LLDP'), BGP: capTrendFor('BGP'), OSPF: capTrendFor('OSPF'), ISIS: capTrendFor('ISIS'), LSP: capTrendFor('LSP') };
   const capTrend = capTrendByProto.LLDP;
+
+  /* a specific link's own 7-point capacity trend, derived from the two real
+     numbers its row already shows (current utilisation and monthly growth
+     rate) rather than a fresh unrelated seed — "Mar" (index 3) is pinned to
+     the link's actual displayed utilisation, months before it are backed
+     out by the same growth rate and months after project forward with it,
+     so the curve is a real extrapolation of that link's own stated trend */
+  const linkTrend = row => {
+    const g = 1 + row.growth / 100;
+    const vals = [0, 0, 0, row.util, 0, 0, 0];
+    for (let i = 2; i >= 0; i--) vals[i] = +(vals[i + 1] / g).toFixed(1);
+    for (let i = 4; i <= 6; i++) vals[i] = +(vals[i - 1] * g).toFixed(1);
+    const months = ['Dec','Jan','Feb','Mar','Apr','May','Jun'];
+    return vals.map((v, i) => ({ m: months[i], a: i <= 3 ? v : null, f: i >= 3 ? v : null }));
+  };
+
+  /* the switch Links panel plots a week of inbound vs outbound utilisation
+     for one link, not an actual/forecast split — both series run the full
+     week, each seeded off the link's own name + its real utilisation so a
+     link showing 91% util plots a visibly busier week than one at 46% */
+  const linkTrendDaily = row => {
+    const days = ['23 Jun','24 Jun','25 Jun','26 Jun','27 Jun','28 Jun','29 Jun'];
+    return days.map((d, i) => ({
+      m: d,
+      a: Math.max(4, Math.min(100, Math.round(row.util + nrand(row.n, 2000 + i, -24, 24)))),
+      f: Math.max(4, Math.min(100, Math.round(row.util + nrand(row.n, 2100 + i, -24, 24))))
+    }));
+  };
 
   const svcTypes = [
     { n:'IRV',         c:nint(s, 20, 1, 4),  a:nint(s, 21, 1, 3), deg:0, dn:0, sla:99.9 },
@@ -258,7 +288,7 @@ function nodeOf(name) {
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend, capTrendByProto,
+    sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),

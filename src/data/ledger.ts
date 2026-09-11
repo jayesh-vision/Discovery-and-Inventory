@@ -41,6 +41,19 @@ export const classMeta = (k: NeClass): ClassMeta => PHY_TABS.find(x => x.k === k
 export const NODE_VIEW_CLASSES: NeClass[] = ['router', 'switch', 'dwdm', 'enodeb'];
 export const hasNodeView = (k: NeClass): boolean => NODE_VIEW_CLASSES.includes(k);
 
+/* Node view is a genuinely different screen per class (see legacy/app-node2.js
+   — separate header/overview/hardware per class, not one template branching
+   on cls). The breadcrumb and page title should say which one a reader is
+   actually looking at, instead of the same generic "Node view" for all four. */
+const NODE_VIEW_LABEL: Partial<Record<NeClass, string>> = {
+  router: 'Router node view', switch: 'Switch node view', dwdm: 'DWDM node view', enodeb: 'eNodeB node view'
+};
+export const nodeViewLabel = (k: NeClass): string => NODE_VIEW_LABEL[k] || 'Node view';
+/* the short form, for spots (like the breadcrumb's drill segment) that sit
+   right after something that already said "Node view" once */
+const NODE_CLASS_NAME: Partial<Record<NeClass, string>> = { router: 'Router', switch: 'Switch', dwdm: 'DWDM', enodeb: 'eNodeB' };
+export const nodeClassName = (k: NeClass): string => NODE_CLASS_NAME[k] || 'Node';
+
 export type ChipTone = 'success' | 'info' | 'warning' | 'error' | 'neutral' | 'purple' | 'cyan' | 'orange' | 'pink';
 export type ColorTone = 'sky' | 'cyan' | 'emerald' | 'amber' | 'slate' | 'red' | 'purple' | 'orange' | 'fuchsia' | 'gray';
 
