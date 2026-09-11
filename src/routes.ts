@@ -66,7 +66,14 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
   if (!s) return '/discovery/insights';
   let path = s.path;
   const sp = new URLSearchParams(drill?.q ?? '');
-  for (const [k, v] of Object.entries(params)) {
+  const mergedParams: Record<string, string> = { ...params };
+  if (!mergedParams.name && (sp.get('name') || sp.get('node') || sp.get('ne'))) {
+    mergedParams.name = sp.get('name') || sp.get('node') || sp.get('ne')!;
+  }
+  if (!mergedParams.id && (sp.get('id') || sp.get('site'))) {
+    mergedParams.id = sp.get('id') || sp.get('site')!;
+  }
+  for (const [k, v] of Object.entries(mergedParams)) {
     if (!v) continue;
     if (path.includes(':' + k)) {
       path = path.replace(':' + k, encodeURIComponent(v));
