@@ -383,8 +383,6 @@ function viewJobs() {
     .sort((a, b) => a.h - b.h)[0];
   const load = collectorLoad();
 
-  const segs = [['All','All'], ['attention','Needs attention'], ['errors','With errors'],
-                ['held','Held'], ['overdue','Overdue']];
   return `<div class="page">
 
     ${drillBar()}
@@ -402,12 +400,7 @@ function viewJobs() {
     </div>
 
     ${card(`
-      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `<div class="seg">${segs.map(([k,l]) => {
-          const c = JOBS.filter(JOB_TESTS[k]).length;
-          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
-        }).join('')}</div>`,
-        [], 'jobs')}
+      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs, '', [], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
@@ -791,12 +784,12 @@ function recTable() {
       <td><span class="vw-card-metric-label-sub num">${r.ver}</span></td>
       ${kebabCell(
         r.inv && r.net && r.diff.length
-          ? [A('View details', { v:'resource', l:r.ne })]
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
         : !r.inv
           ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
-          ? [A('View details', { v:'resource', l:r.ne })]
-          : [A('View details', { v:'resource', l:r.ne })], 'rec', ri)}
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
+          : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -938,13 +931,13 @@ function viewHome() {
         ${headSm('Recently discovered')}
         <button class="nst-btn nst-btn--sm" data-nav="physical">Open Physical Resources</button>
       </div>
-      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OEM'},{t:'Location'},{t:'Source'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'OEM'},{t:'Location'},{t:'Source'}],
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
-          `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
+          `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
         ]), '',
         i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
-              A('View details', { v:'resource', l:PHY.router[i].name }),
+              A('View details', { v:'resource', l:PHY.router[i].name, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               siteA(PHY.router[i].loc)])}`)}
   </div>`;
 }
@@ -1711,23 +1704,22 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source · verified'}]
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Shelf · slot'},{t:'Source · verified'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source · verified'}];
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
        `<span class="mono">${r.model}</span>`, `<span class="mono">${r.mac}</span>`, `<span class="mono">${r.sn}</span>`,
-       `<span class="mono">${r.tmpl}</span>`, r.oem, `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`]
+       `<span class="mono">${r.tmpl}</span>`, r.oem, src(r.s)]
     : SITE_TAB === 'dwdm'
     ? [rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`, chip(r.type,'info'),
-       r.oem, `<span class="mono">${r.sw}</span>`, `<span class="mono">${r.shelf}</span>`,
-       `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`]
+       r.oem, `<span class="mono">${r.sw}</span>`, `<span class="mono">${r.sn}</span>`, `<span class="mono">${r.shelf}</span>`, src(r.s)]
     : [r.st === 'dup' ? chip('Duplicate serial','error') : rst(r.st), `<span class="vw-value">${r.name}</span>`,
        `<span class="mono">${r.ip}</span>`, `<span class="mono">${r.model}</span>`, `<span class="mono">${r.os}</span>`,
        `<span class="mono"${r.st==='dup'?` style="color:${cv('red',700)}"`:''}>${r.sn}</span>`, r.oem,
-       `<span class="mono">${r.rack}</span>`, `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`];
+       `<span class="mono">${r.rack}</span>`, src(r.s)];
 
   /* ---- Attention: this site's alert summary, same card idiom as the
      Coverage-by-circle detail — rollout blocker and risk flag straight
@@ -1859,7 +1851,7 @@ function viewSite() {
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name }),
+          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
           A('Site info', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
@@ -2201,18 +2193,11 @@ function viewPhysical() {
 
       ${gridBar(total, PHY_OEM ? `${n(IL.ne)} across every class`
           : n(phyCount(t, PHY_STOCK)),
-        'Name, IP address, serial', FS.physical,
-        `<div class="stock-chips">
-          ${STOCK_ST.filter(sk => sk.k !== 'decomm').map(sk => `
-            <button class="stock-chip${PHY_STOCK.has(sk.k) ? ' is-on' : ''}" data-stock="${sk.k}"
-              style="${PHY_STOCK.has(sk.k) ? `border-color:${cv(sk.tone,400)};background:${cv(sk.tone,50)}` : ''}"
-              title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
-              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
-        </div>${meta.disc === 0 ? '' : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning')}`,
+        'Name, IP address, serial', FS.physical, '',
         [])}
       ${table(
         [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
-         {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source · verified'}],
+         {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source'}],
         rows.map((r, i) => {
           const sk = STOCK_OF[r.stock || 'deployed'];
           const ro = false;
@@ -2229,13 +2214,13 @@ function viewPhysical() {
             tot && !ro ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
               <span class="hbar-fill" style="display:block;width:${(used/tot*100).toFixed(0)}%;background:${cv(used/tot>0.85?'red':used/tot>0.7?'amber':'emerald',400)}"></span></span>${used}/${tot}</span>` : '—',
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
-            `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`
+            src(r.s)
           ];
         }), '',
         i => rows[i].stock === 'decomm'
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-             A('View details', { v:'resource', l:rows[i].name }),
+             A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
              siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
@@ -3215,11 +3200,11 @@ function viewServices() {
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
-      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-          `<span class="mono">${s.ifc}</span>`, ver(s.v)
+          `<span class="mono">${s.ifc}</span>`
         ]))}`)}
   </div>`;
 }

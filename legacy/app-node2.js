@@ -1105,26 +1105,24 @@ function nodeAvailability(N) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DWDM — optical transport. This class's inventory record is the same
-   generic NE shape as router/switch (name/ip/model/os/sn/oem/loc), so the
-   header re-uses that shared metadata grid; what makes it DWDM-specific is
-   the overview and hardware tabs, built around the one genuinely optical
-   dataset already computed for every node — N.sfp (transceiver port/type/
-   TX·RX power/temperature) — read as the node's live wavelength channels
-   instead of as router/switch "interfaces". A channel's ITU-T C-band
-   wavelength is derived from its 100GHz-spaced position in the grid
-   (1550.12nm reference, 0.8nm step) — a real DWDM channel-plan convention,
-   not a fabricated number.
+   DWDM — optical transport, six tabs: Overview, Hardware & shelves,
+   Topology & degrees, Optical channels, Amplifiers, Alerts & diagnostics.
+   The whole thing is built from N.optical (see buildOptical() in
+   app-node.js) — shelves, optics inventory, ring topology, monitored
+   channels, amplifiers and alarms are cross-linked there (an alarm names
+   the exact channel/optic/amp flagged on its own tab), so "Fix" on an
+   alarm is a real jump to that entity's tab, not a decorative button.
    ═══════════════════════════════════════════════════════════ */
 function nodeHeaderDwdm(N) {
-  const r = N.r;
+  const r = N.r, O = N.optical;
   const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
   const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
-  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
-  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const site = resolveSite(r.loc);
+  const zone = site ? (site.state === 'Karnataka' || site.state === 'Tamil Nadu' || site.state === 'Andhra Pradesh' ? 'South'
+    : site.state === 'Delhi' ? 'North' : 'West') : 'West';
   const cells = [
-    ['Vendor', r.oem || 'ADVA'], ['OS Version', r.os || 'ONMSi 21.1'], ['Serial Number', r.sn || '—'],
-    ['Model', r.model || 'FSP 3000'], ['IP address', r.ip || '—'], ['MAC address', macAddr]
+    ['MGMT IP', r.ip || '—'], ['NEMI software', r.os || 'ONMSi 21.1'], ['Region', `${zone} Region`],
+    ['Shelves', `${O.shelves.length} (Shelf-1 to Shelf-${O.shelves.length})`], ['Commissioned', O.commissioned]
   ];
   return card(`
     <div class="nv-head">
@@ -1133,97 +1131,211 @@ function nodeHeaderDwdm(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
           ${chip(stLabel, stTone)}${chip('DWDM', 'purple')}
         </div>
         <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${r.loc || N.name}(${coords})
+          MGMT IP ${r.ip || '—'}
         </span>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(6, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
 function nodeOverviewDwdm(N) {
-  const O = N.optical;
-  const live = O.chans.filter(c => !c.spare);
-  const avgOsnr = (live.reduce((a, c) => a + c.osnr, 0) / live.length).toFixed(1);
-  const ampsUp = O.amps.filter(a => a.st === 'Active').length;
-  const worstSpan = O.spans.reduce((w, s) => s.loss > w.loss ? s : w, O.spans[0]);
+  const O = N.optical, r = N.r;
+  const scoreTone = O.healthScore >= 90 ? 'emerald' : O.healthScore >= 75 ? 'amber' : 'red';
+  const availPct = +(N.avail.icmp.reduce((a, b) => a + b, 0) / N.avail.icmp.length).toFixed(2);
   const tiles = [
-    nvTile('Wavelengths In Use', `${O.used}/${O.chans.length}`, `${O.chans.length - O.used} unequipped`, 'purple'),
-    nvTile('Avg OSNR', `${avgOsnr} dB`, avgOsnr < 18 ? 'Approaching floor' : 'Healthy margin', avgOsnr < 18 ? 'amber' : 'emerald'),
-    nvTile('Amplifiers', `${ampsUp}/${O.amps.length}`, 'Pre-amp · Booster · Raman', ampsUp === O.amps.length ? 'emerald' : 'amber'),
-    nvTile('Worst Span Loss', `${worstSpan.loss} dB`, worstSpan.n, worstSpan.loss > worstSpan.budget * 0.85 ? 'red' : 'sky'),
-    nvTile('Active Alerts', String(N.ov.alarms), 'Across this element', N.ov.alarms > 5 ? 'red' : 'amber'),
-    nvTile('System Uptime', N.ov.uptime, `Last reboot tracked`, 'slate')
+    nvTile('Health score', `${O.healthScore}%`, '', scoreTone,
+      `<div class="meter" style="margin-top:8px"><span style="width:${O.healthScore}%;background:${cv(scoreTone, 400)}"></span></div>`),
+    nvTile('System availability', `${availPct}%`, availPct >= 100 ? 'no unplanned downtime, 24h' : 'partial downtime, 24h', 'sky'),
+    nvTile('Worst signal margin', `${O.worst.margin} dB`, `${O.worst.ch} · ${O.worst.shelf}`, O.worst.margin < 12 ? 'red' : 'amber'),
+    nvTile('Monitored / grid', `${O.channels.length}/${O.GRID_CHANNELS}ch`, `C-band, ${O.GRID_CHANNELS}-channel`, 'purple'),
+    nvTile('Shelves', `${O.shelves.length}/${O.shelves.length}`, 'all reporting', 'slate')
   ];
+  const degreeRow = (label, tone, peer, note) => `<div class="stack-x">
+    <span class="nv-hk">${label}${tone ? ` (${tone})` : ''}</span>
+    <span class="nv-mv mono">→ ${esc(peer)}${note ? ` ${note}` : ''}</span></div>`;
   return card(`
-    <div class="nv-tiles">${tiles.join('')}</div>
-    <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
-      ${nvHealthCard('Optical line health', 'Amplifier & span reachability', [N.ov.health >= 96 ? 'Healthy' : N.ov.health >= 88 ? 'Degraded' : 'Critical', N.ov.health >= 96 ? 'success' : N.ov.health >= 88 ? 'warning' : 'error'],
-        [['Line health', `${N.ov.health}%`], ['Wavelengths active', `${O.used}/${O.chans.length}`], ['Avg OSNR', `${avgOsnr} dB`], ['Amplifiers up', `${ampsUp}/${O.amps.length}`]],
-        `Last sync: Jun 30, 2026 14:25:00`)}
-      ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
-        [['Offset', `${N.ntp.off} ms`], ['Primary NTP', N.ntp.primary], ['Secondary NTP', N.ntp.secondary], ['Stratum', String(N.ntp.stratum)]],
-        `Last Sync: ${N.ntp.sync}`)}
+    <div class="nv-tiles" style="grid-template-columns:repeat(5, 1fr)">${tiles.join('')}</div>
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md" style="margin-top:var(--vw-space-md)">
+      ${card(`
+        <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+          <span class="eyebrow">Node identity</span>${chip('Inventory sheet', 'neutral')}
+        </div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          <div class="stack-x"><span class="nv-hk">NE name</span><span class="nv-mv mono">${esc(N.name)}</span></div>
+          <div class="stack-x"><span class="nv-hk">Product type</span><span class="nv-mv mono">${esc(r.model || '—')}</span></div>
+          <div class="stack-x"><span class="nv-hk">NEMI SW</span><span class="nv-mv mono">${esc(r.os || '—')}</span></div>
+          <div class="stack-x"><span class="nv-hk">Subnet</span><span class="nv-mv mono">${esc(N.ntp.primary)}</span></div>
+          <div class="stack-x"><span class="nv-hk">Oldest module</span><span class="nv-mv mono">${O.commissioned}</span></div>
+        </div>`)}
+      ${card(`
+        <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+          <span class="eyebrow">Degree summary</span>${chip('topology sheet + aliases', 'neutral')}
+        </div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          ${degreeRow('Degree 1', 'active', O.westPeer)}
+          ${degreeRow('Degree 2', 'active', O.eastPeer)}
+          ${degreeRow('Degree 3', 'new build', O.buildPeer, '⚠')}
+          <div class="stack-x"><span class="nv-hk">Spare — ${esc(O.sparePeer)}</span><span class="nv-mv mono">FCU Free</span></div>
+        </div>`)}
+      ${card(`
+        <div class="cx-panel-head"><span class="eyebrow">Active alarms</span></div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          ${O.alarms.map(a => `<div class="row vw-justify-between vw-items-center">
+            <span class="vw-value mono">${esc(a.entity)}</span>
+            ${chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral')}</div>`).join('')}
+        </div>`)}
     </div>`);
 }
 
 function nodeHardwareDwdm(N) {
   const O = N.optical;
-  return `${card(`
-    <div class="cx-panel-head row vw-justify-between vw-items-baseline">
-      <span class="eyebrow">Wavelength channels</span>
-      <span class="vw-card-metric-label-sub">${O.used} of ${O.chans.length} equipped · ITU-T 100GHz grid</span>
-    </div>
-    ${table([{t:'Channel'},{t:'Wavelength'},{t:'Service'},{t:'Status'},{t:'TX power',r:true},{t:'RX power',r:true},{t:'OSNR',r:true},{t:'BER',r:true},{t:'Rate'}],
-      O.chans.map(c => [
-        `<span class="mono">${c.ch}</span>`,
-        `<span class="mono">${c.lambda} nm</span>`,
-        c.spare ? `<span style="color:${cv('gray',400)}">—</span>` : c.svc,
-        chip(c.st, c.st === 'Active' ? 'success' : c.st === 'Warning' ? 'warning' : c.st === 'Degraded' ? 'error' : 'neutral'),
-        c.tx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.tx} dBm</span>`,
-        c.rx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.rx} dBm</span>`,
-        c.osnr == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
-        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
-        c.rate || `<span style="color:${cv('gray',400)}">—</span>`
-      ]), '', () => [])}`)}
-    <div class="vw-grid vw-grid-cols-2 vw-gap-md" style="margin-top:var(--vw-space-md)">
-      ${card(`
-        <div class="cx-panel-head"><span class="eyebrow">Amplifiers</span></div>
-        ${table([{t:'Stage'},{t:'Gain',r:true},{t:'Tilt',r:true},{t:'Status'}],
-          O.amps.map(a => [a.n, `<span class="mono">${a.gain} dB</span>`, `<span class="mono">${a.tilt} dB</span>`,
-            chip(a.st, a.st === 'Active' ? 'success' : 'warning')]), '', () => [])}`)}
-      ${card(`
-        <div class="cx-panel-head"><span class="eyebrow">Fiber spans</span></div>
-        ${table([{t:'Span'},{t:'Distance',r:true},{t:'Loss',r:true},{t:'Budget',r:true},{t:'PMD',r:true}],
-          O.spans.map(sp => [sp.n, `<span class="mono">${sp.km} km</span>`,
-            `<span class="mono"${sp.loss > sp.budget * 0.85 ? ` style="color:${cv('red',700)}"` : ''}>${sp.loss} dB</span>`,
-            `<span class="mono">${sp.budget} dB</span>`, `<span class="mono">${sp.pmd} ps</span>`]), '', () => [])}`)}
+  const shelfCard = sh => card(`
+    <div class="cx-panel-head"><span class="eyebrow">Shelf-${sh.id} — ${esc(sh.title)}</span></div>
+    <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+      ${sh.modules.map(m => `<div class="row vw-justify-between vw-items-center vw-wrap" style="gap:var(--vw-space-xs)">
+        <span class="vw-value mono">${esc(m.slot)}</span>
+        <span class="row" style="gap:var(--vw-space-xs)">
+          <span class="vw-card-metric-label-sub">${esc(m.desc)}</span>
+          ${m.flag ? chip(m.flag, m.tone) : ''}
+        </span></div>`).join('')}
+    </div>`);
+  const flagged = O.opticsInventory.filter(o => o.status !== 'Normal').length;
+  return `
+    <div class="vw-grid vw-grid-cols-2 vw-gap-md">${O.shelves.map(shelfCard).join('')}</div>
+    ${card(`
+      <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+        <span class="eyebrow">Optics inventory — pluggables &amp; wavelengths</span>
+      </div>
+      ${table([{t:'Port'},{t:'Optic type'},{t:'Wavelength'},{t:'Serial'},{t:'Installed'},{t:'Status'}],
+        O.opticsInventory.map(o => [
+          `<span class="mono">${o.port}</span>`, o.type, o.wl, o.serial, o.installed,
+          chip(o.status, o.status === 'Normal' ? 'success' : 'error')
+        ]), '', () => [])}
+    `, '', 'margin-top:var(--vw-space-md)')}
+    <div class="vw-card-footer-divider row vw-wrap" style="gap:var(--vw-space-lg);margin-top:var(--vw-space-md);padding:var(--vw-space-md) 0;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">
+      <span class="vw-value">Power supplies <span class="mono">${N.env.psu[0]}/${N.env.psu[1]} Healthy</span></span>
+      <span class="vw-value">Fans <span class="mono">${N.env.fans[0]}/${N.env.fans[0]} Healthy</span></span>
+      <span class="vw-value">Temperature <span class="mono">${N.env.tin < N.env.tmax - 4 ? 'Normal' : 'Elevated'}</span></span>
+      <span class="vw-value">Optics tracked <span class="mono">${O.opticsInventory.length} ports</span></span>
+      <span class="vw-value">Optics flagged <span class="mono"${flagged ? ` style="color:${cv('red',700)}"` : ''}>${flagged}</span></span>
+      <span class="vw-value">Oldest module <span class="mono">${O.commissioned}</span></span>
     </div>`;
 }
 
+function nodeTopologyDwdm(N) {
+  const O = N.optical;
+  return card(`
+    <div class="cx-panel-head"><span class="eyebrow">Ring topology</span></div>
+    ${table([{t:'Node A'},{t:'Port A'},{t:'Node Z'},{t:'Port Z'},{t:'Status'}],
+      O.ringTopology.map(t => [
+        `<span class="vw-value">${esc(t.a)}</span>`, `<span class="mono">${t.portA}</span>`,
+        `<span class="vw-value">${esc(t.z)}</span>`, `<span class="mono">${t.portZ}</span>`,
+        chip(t.status, t.tone)
+      ]), '', () => [])}`);
+}
+
+function nodeChannelsDwdm(N) {
+  const O = N.optical;
+  return card(`
+    <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+      <span class="eyebrow">Monitored line wavelengths</span>
+      <span class="vw-card-metric-label-sub">${O.channels.length} of ${O.GRID_CHANNELS} channels monitored · ITU-T 100GHz grid</span>
+    </div>
+    ${table([{t:'Entity'},{t:'Shelf/slot'},{t:'Signal margin',r:true},{t:'BER pre-FEC',r:true},{t:'Corrected errors',r:true},{t:'UBE',r:true},{t:'Status'}],
+      O.channels.map(c => [
+        `<span class="mono">${c.ch}</span>`, c.shelf,
+        c.margin == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.margin < 12 ? ` style="color:${cv('red',700)}"` : ''}>${c.margin} dB</span>`,
+        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
+        c.corrected == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.corrected}</span>`,
+        c.ube == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ube}</span>`,
+        chip(c.st, c.tone)
+      ]), '', () => [])}`);
+}
+
+function nodeAmplifiersDwdm(N) {
+  const O = N.optical;
+  const ampCard = a => card(`
+    <div class="row vw-justify-between vw-items-baseline">
+      <span class="vw-card-title-sm">${a.n} <span class="vw-card-metric-label-sub">(${a.model})</span></span>
+    </div>
+    <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+      ${a.standalone ? '' : `
+        <div class="row vw-justify-between"><span class="nv-hk">Gain</span><span class="vw-value mono">${a.gain} dB</span></div>
+        <div class="row vw-justify-between"><span class="nv-hk">Output power</span><span class="vw-value mono">+${a.out} dBm</span></div>
+        <div class="row vw-justify-between"><span class="nv-hk">Pump current</span><span class="vw-value mono">${a.pump} mA</span></div>`}
+      <div class="row vw-justify-between"><span class="nv-hk">Status</span>${a.standalone ? `<span class="vw-value">${a.st}</span>` : chip(a.st, 'success')}</div>
+    </div>`);
+  return `<div class="vw-grid vw-grid-cols-2 vw-gap-md">${O.amplifiers.map(ampCard).join('')}</div>`;
+}
+
+function nodeAlertsDwdm(N) {
+  const O = N.optical;
+  const alertTab = NODE_ALERT_TAB || 'alerts';
+  const summary = [
+    ['Active alarms', String(O.alarms.length), 'Total active', 'sky'],
+    ['Critical', String(O.critical), 'Immediate action', 'red'],
+    ['Major', String(O.major), 'Requires attention', 'amber'],
+    ['Minor', String(O.minor), 'Monitor', 'slate'],
+    ['Open', String(O.openAlarms), 'Unacknowledged', 'purple'],
+    ['Acknowledged', String(O.ackAlarms), 'In progress', 'emerald']
+  ];
+  return card(`
+    <div class="row vw-justify-between vw-items-center" style="margin-bottom:var(--vw-space-md)">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+        <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
+          style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alarms</button>
+        <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
+          style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
+      </div>
+      ${chip('Real entity names', 'success')}
+    </div>
+    <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
+    ${alertTab === 'alerts' ? `
+      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alarms — ${O.openAlarms} open</span></div>
+      ${table([{t:'Sev'},{t:'Entity'},{t:'Evidence'},{t:'Action'}],
+        O.alarms.map(a => [
+          chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral'),
+          `<span class="mono">${esc(a.entity)}</span>`,
+          `<span class="vw-card-description">${esc(a.evidence)}</span>`,
+          `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
+        ]), '', () => [])}`
+      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`}
+  `);
+}
+
 /* ═══════════════════════════════════════════════════════════
-   eNodeB — this class has no assurance feed (NODE_CLASS.enodeb.live is
-   false: no collector polls it for CPU/interface/alarm data), so unlike
-   Router/Switch/DWDM there is no live dashboard to build honestly. What
-   IS real is the inventory record itself; this renders that as grouped
-   identity/location/hardware fields — reusing the same detailField/
-   detailSection helpers the Virtual Resources screens use — rather than
-   the bare paragraph the generic fallback showed before.
+   eNodeB — a cell site, not a router-shaped box. Five tabs: Site health,
+   Hardware & components, Network links, Configurations, Alarms &
+   incidents. Built from N.enb (see buildEnodebSite() in app-node.js) —
+   hardware, links, config and alarms are cross-linked there (an AI insight
+   names the actual hottest/busiest hardware item, not a canned example),
+   the same technique DWDM's tabs use.
    ═══════════════════════════════════════════════════════════ */
+const AI_BULB = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A6 6 0 1 0 6 11.5c.6.6 1.17 1.19 1.41 2A3 3 0 0 1 9 18h6a3 3 0 0 1 .09-4Z"/></svg>';
+const aiBanner = (title, text) => `<div class="cx-panel" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;margin-top:var(--vw-space-sm);background:var(--vw-color-violet-50,#f5f3ff);border:1px solid var(--vw-color-violet-200,#ddd6fe);border-radius:10px">
+    <span style="color:var(--vw-color-violet-600,#7c3aed);flex-shrink:0">${AI_BULB}</span>
+    <div class="stack-x"><span class="vw-card-activity-label">${title}</span><span class="vw-card-description">${text}</span></div>
+  </div>`;
+
 function nodeHeaderEnodeb(N) {
-  const r = N.r;
-  /* the reconciliation status (RSTATE) is the one real status this record
-     carries — N.ready would read as "Ready"/"Degraded" from the seeded
-     health score computed for the live-assurance dashboard, which is
-     exactly the fabricated data this class's page says it won't show */
-  const [stLabel, stTone] = RSTATE[r.st] || RSTATE.none;
-  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '';
+  const r = N.r, E = N.enb;
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const now = new Date();
+  const updated = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+  const cells = [
+    ['Site ID', E.siteId], ['Vendor', r.oem || '—'], ['Site type', E.siteType], ['Morphology', E.morphology], ['Tower type', E.towerType],
+    ['Total no. of sectors', String(E.sectors)], ['Total no. of cells', String(E.cells)], ['Software version', E.swVersion], ['On-air date', E.onAir], ['Uptime', E.uptimeStr]
+  ];
   return card(`
     <div class="nv-head">
       <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-emerald-50,#ecfdf5);border-radius:10px;padding:6px">
@@ -1231,25 +1343,193 @@ function nodeHeaderEnodeb(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
-          ${chip(stLabel, stTone)}${chip('eNodeB', 'success')}
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+          ${chip(stLabel, stTone)}
         </div>
         <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${r.loc || N.name}${coords ? `(${coords})` : ''}
+          ${r.loc || N.name} · ${coords}
+        </span>
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;margin-top:2px">
+          <span style="width:6px;height:6px;border-radius:50%;background:${cv('emerald', 500)}"></span>Live · Updated ${updated}
         </span>
       </div>
-    </div>`,
+    </div>
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
-function nodeInventoryEnodeb(N) {
-  const r = N.r;
-  const sections = [
-    { title: 'Identity', fields: [['Name', N.name], ['Status', (RSTATE[r.st] || RSTATE.none)[0]], ['Stock state', r.stock || '-']] },
-    { title: 'Location', fields: [['Site', r.loc || '-'], ['Latitude', r.lat || '-'], ['Longitude', r.lon || '-']] },
-    { title: 'Hardware', fields: [['Vendor', r.oem || '-'], ['Model', r.model || '-'], ['OS version', r.os || '-'], ['Serial number', r.sn || '-'], ['IP address', r.ip || '-']] }
+
+function nodeSiteHealthEnodeb(N) {
+  const E = N.enb;
+  const kpis = [
+    nvTile('Site health score', `${E.healthScore}%`, `${E.healthTrend >= 0 ? '↑' : '↓'} ${Math.abs(E.healthTrend)}%`, E.healthScore >= 90 ? 'emerald' : E.healthScore >= 80 ? 'amber' : 'red'),
+    nvTile('Active cells / total', `${E.cellsActive}/${E.cells}`, `${E.cellsDegraded} degraded · ${E.cellsDown} down`, E.cellsDown ? 'red' : 'sky'),
+    nvTile('Connected users (UEs)', n(E.connectedUsers), `Peak: ${n(E.peakUsers)} users`, 'purple'),
+    nvTile('Configuration compliance', `${E.configCompliance}%`, `${E.nonCompliantCount} drifted params`, E.configCompliance >= 97 ? 'emerald' : 'amber'),
+    nvTile('Active alarms', String(E.alarms.length), `${E.critical} critical · ${E.major} major · ${E.minor} minor`, E.critical ? 'red' : E.major ? 'amber' : 'slate'),
+    nvTile('Site availability', `${E.availability}%`, 'Last 24 hours', 'emerald')
   ];
-  return renderSectionedGrid(sections.map(s => ({ title: s.title, fields: s.fields })));
+  const metrics = [
+    nvTile('RRC accessibility', `${E.rrc}%`, E.rrc >= 98 ? 'Excellent' : 'Good', 'emerald'),
+    nvTile('Drop call rate', `${E.dropCall}%`, E.dropCall <= 1 ? 'Good' : 'Elevated', E.dropCall <= 1 ? 'sky' : 'amber'),
+    nvTile('Handover success', `${E.handover}%`, E.handover >= 96 ? 'Excellent' : 'Good', 'purple'),
+    nvTile('Radio latency', `${E.latency} ms`, E.latency <= 15 ? 'Low' : 'Moderate', 'amber')
+  ];
+  return card(`
+    ${headSm('Key performance indicators')}
+    <div class="nv-tiles" style="grid-template-columns:repeat(6, 1fr);margin-top:var(--vw-space-md)">${kpis.join('')}</div>
+    <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">Detailed metrics (click for cell details)</span></div>
+    <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-sm)">${metrics.join('')}</div>`);
+}
+
+function nodeHardwareEnodeb(N) {
+  const E = N.enb;
+  const sel = E.hardware.find(h => h.id === NODE_HW_SEL) || E.hardware[0];
+  const list = E.hardware.map(h => `<button data-nodehwsel="${h.id}" style="display:block;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid ${h.id === sel.id ? 'var(--vw-color-accent-500)' : 'var(--vw-color-slate-200)'};background:${h.id === sel.id ? 'var(--vw-color-accent-50,#eff6ff)' : '#fff'};margin-bottom:8px;cursor:pointer">
+      <span class="vw-value" style="font-weight:500">${h.label}</span><br>
+      <span class="row" style="gap:4px;align-items:center;margin-top:2px"><span style="width:6px;height:6px;border-radius:50%;background:${cv(h.health >= 95 ? 'emerald' : 'amber', 500)}"></span><span class="vw-card-metric-label-sub">Health ${h.health}%</span></span>
+    </button>`).join('');
+  const tiles = [
+    nvTile('Health', `${sel.health}%`, '', sel.health >= 95 ? 'emerald' : 'amber'),
+    nvTile('CPU Usage', `${sel.cpu}%`, '', 'sky'),
+    nvTile('Memory', `${sel.mem}%`, '', 'purple'),
+    nvTile('Temperature', `${sel.temp}°C`, '', sel.temp > 42 ? 'red' : 'slate')
+  ];
+  return `
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
+      ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
+      ${card(`
+        <div class="row vw-justify-between vw-items-baseline">
+          <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
+          ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
+        </div>
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
+        <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
+          <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
+        </div>
+        <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
+        ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
+        <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
+        </div>`)}
+    </div>
+    ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
+    ${aiBanner('Smart maintenance recommendation', E.hwRecommendation)}`;
+}
+
+function nodeLinksEnodeb(N) {
+  const E = N.enb;
+  const tabKey = NODE_ENB_LINK_TAB || 'backhaul';
+  const TABS = [['backhaul', 'Backhaul Links'], ['x2', 'X2 Interface'], ['s1', 'S1 Interface']];
+  const rows = E.links[tabKey] || E.links.backhaul;
+  const k = E.linkKpi(rows);
+  const tiles = [
+    nvTile('Total links', String(k.total), 'All operational', 'sky'),
+    nvTile('Avg. utilization', `${k.avgUtil}%`, k.avgUtil > 80 ? 'Elevated' : 'Within normal range', k.avgUtil > 80 ? 'amber' : 'emerald'),
+    nvTile('Avg latency', `${k.avgLatency} ms`, k.avgLatency < 10 ? 'Excellent performance' : 'Normal', 'purple'),
+    nvTile('Packet loss', `${k.packetLoss}%`, 'Very low', 'emerald')
+  ];
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:var(--vw-space-md);background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+      ${TABS.map(([tk, tl]) => `<button class="nst-btn${tabKey === tk ? ' is-on' : ''}" data-nenblink="${tk}"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${tabKey === tk ? '600' : '500'};color:${tabKey === tk ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${tabKey === tk ? '#ffffff' : 'transparent'};box-shadow:${tabKey === tk ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">${tl}</button>`).join('')}
+    </div>
+    ${card(`
+      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+      <div style="margin-top:var(--vw-space-md)">
+        ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+          rows.map(x => [
+            `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
+            `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
+            n(x.users), x.growth, x.created, x.modified
+          ]), '', () => [])}
+      </div>`)}
+    ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    ${aiBanner('Mobility robustness classification — Cell-007 boundary',
+      '18 of the last 24 handover failures at Cell-007 are classified as "too-late handover," coinciding with the RRH-3 thermal alert. Recommendation: hold off remaining A3 offset or TTT for this cell until the RRH-3 hardware condition is resolved.')}`;
+}
+
+function nodeConfigEnodeb(N) {
+  const E = N.enb;
+  const tiles = [
+    nvTile('Total parameters', String(E.totalParams), 'Monitored', 'sky'),
+    nvTile('Compliant', String(E.compliantCount), 'Within baseline', 'emerald'),
+    nvTile('Non-compliant', String(E.config.length - E.compliantCount), 'Requires review', 'red'),
+    nvTile('Compliance score', `${E.configCompliance}%`, 'Overall health', 'purple')
+  ];
+  return `
+    ${card(`
+      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+      <div style="margin-top:var(--vw-space-md)">
+        ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
+          E.config.map(c => [
+            chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
+            c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
+            '12-May-2026', '12-May-2026'
+          ]), '', () => [])}
+      </div>`)}
+    ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    ${aiBanner('Auto-remediation available', E.cfgRemediation)}`;
+}
+
+function nodeAlertsEnodeb(N) {
+  const E = N.enb;
+  const alertTab = NODE_ALERT_TAB || 'alerts';
+  const summary = [
+    ['Active alarms', String(E.alarms.length), 'Total active', 'sky'],
+    ['Critical', String(E.critical), 'Immediate action', 'red'],
+    ['Major', String(E.major), 'Requires attention', 'amber'],
+    ['Minor', String(E.minor), 'Monitor', 'slate'],
+    ['Open', String(E.openAlarms), 'Unacknowledged', 'purple'],
+    ['Acknowledged', String(E.ackAlarms), 'In progress', 'emerald']
+  ];
+  return card(`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+      <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alerts</button>
+      <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
+    </div>
+    <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
+    ${alertTab === 'alerts' ? `
+      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
+      <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+        ${E.alarms.map(a => `
+          <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:8px;padding:16px;background:${a.sev === 'Critical' ? '#fff5f5' : a.sev === 'Major' ? '#fffaf0' : '#fffff0'}">
+            <div class="row vw-justify-between vw-items-start">
+              <div>
+                <div class="row" style="gap:6px;align-items:center">${chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral')}<span class="vw-card-activity-label">${esc(a.t)}</span></div>
+                <div class="vw-card-description" style="margin-top:4px">${esc(a.d)}</div>
+              </div>
+              ${chip(a.open ? 'Active' : 'Acknowledged', a.open ? 'error' : 'neutral')}
+            </div>
+            <div class="row vw-wrap" style="gap:var(--vw-space-lg);margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+              <div><span class="nv-hk">Source</span><br><span class="vw-value">${esc(a.srcDetail)}</span></div>
+              <div><span class="nv-hk">Alert type</span><br><span class="vw-value">${a.src}</span></div>
+              <div><span class="nv-hk">Timestamp</span><br><span class="vw-value mono">${a.when}</span></div>
+              <div><span class="nv-hk">Impact</span><br><span class="vw-value">${a.impact}</span></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="vw-card-footer-divider row vw-wrap" style="gap:var(--vw-space-lg);margin-top:var(--vw-space-md);align-items:center">
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('rose', 500)}"></span>${E.critical} Critical</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('amber', 500)}"></span>${E.major} Major</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('yellow', 500)}"></span>${E.minor} Minor</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('slate', 400)}"></span>0 Info</span>
+        <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">${E.alarms.length} Total</span>
+      </div>`
+      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`}
+    ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
+      { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
+      { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
+      { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
+    ])}
+  `);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1267,7 +1547,8 @@ function nodeInventoryEnodeb(N) {
 const NODE_VIEW = {
   router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
   switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
-  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   links: nodeLinksRouter, services: null,              alerts: nodeAlertsRouter }
+  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   alerts: nodeAlertsDwdm },
+  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
 };
 const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
@@ -1280,28 +1561,29 @@ function nodeAlerts(N)   { return nodeViewFor(N.cls).alerts(N); }
 
 let NODE_TAB = 'overview';
 
-/* per-class tab list — DWDM has no network-services concept (L2VPN/L3VPN
-   provisioning doesn't apply to optical transport), so it gets 4 tabs
-   instead of 5 rather than a tab with nothing meaningful behind it */
+/* per-class tab list — DWDM has no network-services or link-protocol concept
+   (L2VPN/L3VPN and LLDP/OSPF/BGP don't apply to optical transport); instead
+   it gets the tabs an optical element actually has: shelves/hardware, ring
+   topology, the monitored wavelength plan and the amplifier chain */
 const NODE_TABS = {
   router: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
   switch: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  dwdm:   [['overview','Overview'],['hardware','Optical'],['links','Links'],['alerts','Alerts & diagnostics']]
+  dwdm:   [['overview','Overview'],['hardware','Hardware & shelves'],['topology','Topology & degrees'],['channels','Optical channels'],['amplifiers','Amplifiers'],['alerts','Alerts & diagnostics']],
+  enodeb: [['overview','Site health'],['hardware','Hardware & components'],['links','Network links'],['config','Configurations'],['alerts','Alarms & incidents']]
 };
 
 function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
-    /* the only NODE_VIEW_CLASSES member with no assurance feed today is
-       eNodeB — this stays honest about that (nothing below is fabricated
-       to fill a dashboard the platform has no data for) while still
-       showing everything the inventory record actually has, grouped
-       instead of dumped flat */
+    /* no NODE_VIEW_CLASSES member is live:false today (eNodeB joined
+       Router/Switch/DWDM once it got its own seeded assurance model — see
+       buildEnodebSite()), so this branch is a defensive fallback for
+       whatever class picks up Node View next without a feed of its own:
+       stay honest about that instead of fabricating a dashboard */
     return `<div class="page">
       ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
-      ${N.cls === 'enodeb' ? nodeHeaderEnodeb(N) : nodeHeader(N)}
-      ${N.cls === 'enodeb' ? nodeInventoryEnodeb(N) : ''}
+      ${nodeHeader(N)}
       ${card(`
         <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-xl);text-align:center">
           <span class="vw-card-title">No live feed for this class</span>
@@ -1329,11 +1611,21 @@ function viewNode() {
     tabContent = `${nodeLinks(N)}`;
   } else if (activeTab === 'services') {
     tabContent = `${nodeServices(N)}`;
+  } else if (activeTab === 'topology') {
+    tabContent = `${nodeTopologyDwdm(N)}`;
+  } else if (activeTab === 'channels') {
+    tabContent = `${nodeChannelsDwdm(N)}`;
+  } else if (activeTab === 'amplifiers') {
+    tabContent = `${nodeAmplifiersDwdm(N)}`;
+  } else if (activeTab === 'config') {
+    tabContent = `${nodeConfigEnodeb(N)}`;
   } else if (activeTab === 'alerts') {
     tabContent = `${nodeAlerts(N)}`;
   } else {
-    /* overview default */
-    tabContent = `${nodeOverview(N)}${nodeAvailability(N)}`;
+    /* overview default — eNodeB's Site health tab already covers 24h
+       availability in its own KPI tile, so it skips the generic ICMP/NTP
+       strip card the other three classes append here */
+    tabContent = `${nodeOverview(N)}${N.cls === 'enodeb' ? '' : nodeAvailability(N)}`;
   }
 
   return `<div class="page">

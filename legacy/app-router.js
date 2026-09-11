@@ -103,6 +103,23 @@ function applyDrillQuery(view, q, label) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'resource') {
+    /* "View details" row actions elsewhere in the legacy renderer (Site
+       details' Network elements table, Reconciliation's exception table)
+       drill here the same way "Node view" drills to 'node' — but unlike
+       that path, this one had no case here at all, so RES_ID was never
+       actually updated: the page rendered whatever resource was last
+       viewed instead of the row that was clicked. p.name is the normal
+       carrier; the label is a fallback for a call site with no query. */
+    const targetRes = p.name || (label ? label.trim() : null);
+    if (targetRes) {
+      RES_ID = decodeURIComponent(targetRes).trim();
+      RES_TAB = 'overview';
+      RES_ENB_TAB = 'cell';
+      RES_SW_TAB = 'hardware';
+      RES_DW_TAB = 'hardware';
+    }
+  }
   if (view === 'node')     {
     /* a fresh arrival at Node view (the normal "Node view" row action never
        carries its own ?tab=) must land on Overview, not whatever tab was
@@ -116,6 +133,8 @@ function applyDrillQuery(view, q, label) {
       NODE_ALERT_TAB = 'alerts';
       NODE_LINK_PROTO = 'LLDP';
       NODE_LINK_SEL = 0;
+      NODE_HW_SEL = 'bbu';
+      NODE_ENB_LINK_TAB = 'backhaul';
     }
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
@@ -426,9 +445,9 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
@@ -443,8 +462,18 @@ document.addEventListener('click', e => {
   if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; NODE_LINK_SEL = 0; go('node'); return; }
   const nls = e.target.closest('[data-nlinksel]');
   if (nls) { NODE_LINK_SEL = Number(nls.dataset.nlinksel); go('node'); return; }
+  const nhw = e.target.closest('[data-nodehwsel]');
+  if (nhw) { NODE_HW_SEL = nhw.dataset.nodehwsel; go('node'); return; }
+  const nenb = e.target.closest('[data-nenblink]');
+  if (nenb) { NODE_ENB_LINK_TAB = nenb.dataset.nenblink; go('node'); return; }
   const rtab = e.target.closest('[data-restab]');
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
+  const renb = e.target.closest('[data-resenbtab]');
+  if (renb) { RES_ENB_TAB = renb.dataset.resenbtab; go('resource'); return; }
+  const ressw = e.target.closest('[data-ressw]');
+  if (ressw) { RES_SW_TAB = ressw.dataset.ressw; go('resource'); return; }
+  const resdw = e.target.closest('[data-resdw]');
+  if (resdw) { RES_DW_TAB = resdw.dataset.resdw; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');
   if (iff) { IF_FILTER = iff.dataset.iffilter; go('resource'); return; }
   const hf = e.target.closest('[data-histfilter]');

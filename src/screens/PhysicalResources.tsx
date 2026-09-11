@@ -1,34 +1,27 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar, cv } from '../components/ui';
+import { Card, Chip, Mono, StatStrip, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
-  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, SRC, STOCK_ST, classMeta, fmt, hasNodeView, nodeClassName,
-  phyCount, stockCount, stockMeta, type NeClass, type StockState
+  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
+  phyCount, stockCount, type NeClass, type StockState
 } from '../data/ledger';
-import { eosOf, isActive, PHY, phyRows, portsOf, type NeRow } from '../data/physical';
+import { isActive, PHY, phyRows, portsOf, regionOf, sysDescrOf, type NeRow } from '../data/physical';
+import type { Region } from '../data/discovery';
 import { legacyPath } from '../routes';
 import { loadLegacy } from '../legacy/LegacyView';
 
+/* region and sysDescr are derived, not stored on the ledger row — the grid's
+   search/filter only ever looks at literal row properties, so both are baked
+   onto each row (see `rows` below) rather than computed inline in renderRow,
+   or they'd display but never be findable. */
+type Row = NeRow & { region: Region; sysDescr: string };
+
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
-  { n: 'Stock state', o: STOCK_ST.filter(s => s.k !== 'decomm').map(s => s.n) },
-  { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'OEM', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ADVA', 'HPE', 'DELL', 'CIENA'] },
-  { n: 'OS version' }, { n: 'Location' }, { n: 'Source', o: ['Discovered', 'Planned · CIQ', 'Manual', 'EMS'] }
+  { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'OEM', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ERICSSON', 'HUAWEI', 'ADVA', 'CIENA', 'HPE'] },
+  { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: ['North', 'East', 'West', 'South'] }
 ];
-
-const verCell = (h: number | null) =>
-  h === null ? <span style={{ color: cv('gray', 400) }}>never</span>
-  : h < 24 ? <Chip tone="success">fresh</Chip>
-  : h < 720 ? <Chip tone="warning">{Math.round(h / 24)} d</Chip>
-  : <Chip tone="error">{Math.round(h / 720)} mo</Chip>;
-
-const eosCell = (model: string) => {
-  const [d, band] = eosOf(model);
-  return band === 'past' ? <span style={{ color: cv('red', 700) }}>{d}</span>
-    : band === 'soon' ? <span style={{ color: cv('amber', 700) }}>{d}</span>
-    : band === 'safe' ? <Num>{d}</Num> : <span style={{ color: cv('gray', 400) }}>—</span>;
-};
 
 const isClass = (v: string | null): v is NeClass => !!v && (NE_CLASSES as string[]).includes(v);
 
@@ -46,7 +39,12 @@ export default function PhysicalResources() {
   const urlClass = sp.get('cls') || sp.get('tab');
   const rawCls: NeClass = isClass(urlClass) ? (urlClass as NeClass) : modelClass || PHY_TABS[0].k;
   const cls: NeClass = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
-  const tabs = discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS;
+  /* Server has no meaningful drill-down here (no Node view, and its "View
+     details" is already dropped below for showing the wrong element) — its
+     records still exist in the ledger for the Network elements KPI, just
+     not as a tab a reader can land on from this screen. */
+  const tabs = (discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS)
+    .filter(t => t.k !== 'server');
   const stockParam = sp.get('stock');
   const stock = useMemo<Set<StockState>>(() => {
     const req = (stockParam ? stockParam.split(',') : []).filter(isActive);
@@ -59,18 +57,12 @@ export default function PhysicalResources() {
     if (v === null) next.delete(k); else next.set(k, v);
     setSp(next, { replace: true });
   };
-  const toggleStock = (k: StockState) => {
-    const next = new Set(stock);
-    if (next.has(k)) { if (next.size > 1) next.delete(k); } else next.add(k);
-    set('stock', [...next].join(','));
-  };
 
-  const meta = classMeta(cls);
-  const rows: NeRow[] = useMemo(() => {
+  const rows: Row[] = useMemo(() => {
     let r = phyRows(cls, stock);
     if (oem) r = r.filter(x => x.oem.toUpperCase() === oem.toUpperCase());
     if (model) r = r.filter(x => x.model === model);
-    return r;
+    return r.map(x => ({ ...x, region: regionOf(x.loc), sysDescr: sysDescrOf(x) }));
   }, [cls, stock, oem, model, refreshKey]);
   const total = phyCount(cls, stock);
 
@@ -88,9 +80,15 @@ export default function PhysicalResources() {
       nav(legacyPath('site', { label: s?.name ?? loc, q: s ? `id=${s.id}` : '', from: FROM }, { id: s?.id ?? loc }));
     });
   };
-  const rowActions = (r: NeRow): Action[] => [
+  /* View details' legacy page (see viewResource() in app-res.js) only knows
+     how to render Router/Switch/DWDM/eNodeB — a Server row falls through
+     to its router-only default and shows an unrelated router's record, not
+     the server that was clicked. Server keeps Site info (that one resolves
+     the row's own location correctly for every class) but not a link that
+     opens the wrong element. */
+  const rowActions = (r: Row): Action[] => [
     ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name })) }] : []),
-    { l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) },
+    ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) }]),
     { l: 'Site info', onClick: () => openSite(r.loc) }
   ];
 
@@ -110,7 +108,6 @@ export default function PhysicalResources() {
       <StatStrip cells={[
         { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
         { k: 'Ports used', v: `${(EST.ports.used / EST.ports.total * 100).toFixed(0)}%`, s: `${fmt(EST.ports.free)} free of ${fmt(EST.ports.total)}`, t: 'emerald' },
-        { k: 'Past end of sale', v: fmt(EST.eol.past), s: `${fmt(EST.eol.within12)} within 12 months`, t: 'red' },
         { k: 'Spares in store', v: fmt(EST.spares.instore), s: `${fmt(EST.spares.rma)} at RMA · ${fmt(EST.spares.intransit)} in transit`, t: 'purple',
           onClick: () => { set('stock', 'instore'); } }
       ]} />
@@ -124,52 +121,53 @@ export default function PhysicalResources() {
           }))}
           active={cls} onChange={selectTabClass} />
 
-        <DataGrid<NeRow>
-          columns={[{ t: 'Status' }, { t: 'Stock state' }, { t: 'Name / IP' }, { t: 'Model / OEM' }, { t: 'OS version' },
-            { t: 'Ports', r: true }, { t: 'End of sale' }, { t: 'Location' }, { t: 'Source · verified' }]}
+        {/* Ports is right-aligned (numeric), so any width beyond its own content
+            collects as empty space before it, not after — a wide column here
+            reads as a gap before Ports, not real spacing next to Location.
+            Sized close to its actual content (bar + "NN/NN") keeps that gap
+            from swallowing the boundary with Location. System description is
+            a real SNMP sysDescr-length banner (see sysDescrOf) — capped to a
+            fixed width and ellipsis-truncated (full text on hover) so it
+            can't force the whole table to scroll horizontally. */}
+        <DataGrid<Row>
+          columns={[{ t: 'Status', w: '9%' }, { t: 'Name / IP', w: '16%' }, { t: 'Model / OEM', w: '12%' }, { t: 'OS version', w: '8%' },
+            { t: 'Serial number', w: '10%' }, { t: 'Region', w: '6%' }, { t: 'Ports', r: true, w: '7%' }, { t: 'Location', w: '11%' },
+            { t: 'System description', w: '20%' }]}
           rows={rows} total={total} rowKey={r => r.name}
           resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS}
-          extra={
-            <div className="stock-chips">
-              {STOCK_ST.filter(s => s.k !== 'decomm').map(s => {
-                const on = stock.has(s.k);
-                return (
-                  <button key={s.k} className={`vw-chip stock-chip vw-chip--${on ? s.chip : 'neutral'}${on ? ' is-on' : ''}`}
-                    onClick={() => toggleStock(s.k)}
-                    title={`${fmt(stockCount(cls, s.k))} ${meta.n.toLowerCase()} records · ${fmt(s.c)} across the whole estate`}>
-                    {s.n}
-                  </button>
-                );
-              })}
-            </div>
-          }
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={(r, i) => {
-            const sk = stockMeta(r.stock);
             const [tot, used] = portsOf(cls, i);
             const [label, tone] = RSTATE[r.st];
-            const [srcLabel, srcTone] = SRC[r.s];
             return [
               <Chip tone={tone}>{label}</Chip>,
-              <Chip tone={sk.chip}>{sk.n}</Chip>,
               <>{cls === 'router'
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
                     onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}`)}>{r.name}</button>
                 : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
               <Mono>{r.os}</Mono>,
+              <Mono>{r.sn}</Mono>,
+              r.region,
               tot ? <span className="row vw-gap-sm vw-justify-end vw-nowrap">
                       <span className="hbar-track" style={{ width: '3rem', height: 7 }}>
                         <span className="hbar-fill" style={{ display: 'block', width: `${(used / tot * 100).toFixed(0)}%`,
                           background: cv(used / tot > 0.85 ? 'red' : used / tot > 0.7 ? 'amber' : 'emerald', 400) }} />
                       </span>{used}/{tot}</span> : '—',
-              eosCell(r.model),
               <Mono>{r.loc}</Mono>,
-              <span className="row vw-nowrap" style={{ gap: 'var(--vw-space-xxs)' }}>
-                <Chip tone={srcTone}>{srcLabel}</Chip>{verCell(r.v)}
-              </span>
+              <Sub mono>
+                {/* a percentage column width only caps this cell while the
+                    table's own layout stays within the viewport — other
+                    nowrap cells (e.g. long device names) can still force
+                    table-layout:auto to grow the whole table, and this
+                    column with it. A pixel maxWidth on the text itself is
+                    the only thing that reliably truncates regardless. */}
+                <span style={{ display: 'block', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.sysDescr}>
+                  {r.sysDescr}
+                </span>
+              </Sub>
             ];
           }}
         />

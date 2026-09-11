@@ -14,6 +14,8 @@ let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
+let NODE_HW_SEL = 'bbu'; /* which hardware hierarchy item is selected on eNodeB's Hardware & components tab */
+let NODE_ENB_LINK_TAB = 'backhaul'; /* which sub-tab is selected on eNodeB's Network links tab */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -116,7 +118,7 @@ const NODE_CLASS = {
   switch: { n:'Switch', live:true,  hw:'env' },
   dwdm:   { n:'DWDM',   live:true,  hw:'optical' },
   server: { n:'Server', live:false },
-  enodeb: { n:'eNodeB', live:false }, gnodeb: { n:'gNodeB', live:false }
+  enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:false }
 };
 
 function nodeOf(name) {
@@ -286,6 +288,7 @@ function nodeOf(name) {
             fCpu: fc.cpu.vals[6], fMem: fc.mem.vals[6], fTemp: fc.temp.vals[6] },
     chassis: buildChassis(s, r, cls),
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
+    enb: cls === 'enodeb' ? buildEnodebSite(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
     sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
@@ -332,38 +335,299 @@ function buildChassis(s, r, cls) {
   };
 }
 
-/* ── DWDM optical model ────────────────────────────────── */
+/* ── DWDM optical model ────────────────────────────────────
+   Real-world OADM/ROADM conventions the shape below draws on: 100GHz
+   ITU-T C-band grid (96 channels), OL-/MOD-/PL- port and slot naming,
+   Pre-amp/Booster EDFA + Raman gain stages, pre-FEC BER and uncorrectable
+   error counters. Every number is the deterministic nrand/nint sample
+   convention used everywhere else in this file — stable per node name,
+   plausible, never a live measurement. The degree peers, shelves, channels,
+   amplifiers and alarms below are cross-linked (an alarm names the exact
+   channel/optic/amp shown flagged on its own tab), not four independent
+   random tables. */
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+const sup = n => String(n).split('').map(c => SUP[c] || c).join('');
+const sci = (mantissa, exp) => `${mantissa.toFixed(2)}×10${sup(exp)}`;
+
 function buildOptical(s, r) {
-  /* A spare wavelength carries no service, so it has no launch power, no
-     OSNR and no BER. Showing it as "Active" with live optics would be
-     fabricated data — the row reads "unequipped" instead. */
-  const SVC = ['Core NDLS–BLR','Core NDLS–MUM','Metro ring A','Metro ring B',
-               'Enterprise wave','Spare','Core NDLS–CHE','Spare'];
-  const chans = Array.from({ length: 8 }, (_, i) => {
-    const spare = SVC[i] === 'Spare';
-    const osnr = spare ? null : +(nrand(s, 4000 + i, 13.4, 24.8)).toFixed(1);
+  const DEGREES = ['Jalgaon-100G','Bhusawal-100G','Nashik-100G','Surat-100G','Vadodara-100G','Indore-100G','Nagpur-100G','Solapur-100G'];
+  const d0 = nint(s, 5000, 0, DEGREES.length - 1);
+  const westPeer = DEGREES[d0];
+  const eastPeer = DEGREES[(d0 + 3) % DEGREES.length];
+  const buildPeer = DEGREES[(d0 + 5) % DEGREES.length];
+  const sparePeer = DEGREES[(d0 + 7) % DEGREES.length];
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const commYear = nint(s, 5800, 2012, 2021);
+  const commissioned = `${nint(s, 5801, 1, 28)} ${MONTHS[nint(s, 5802, 0, 11)]} ${commYear}`;
+
+  const shelves = [
+    { id: 1, title: `West Degree (${westPeer})`, modules: [
+        { slot: `MOD-1-${nint(s, 5400, 3, 6)}`, desc: '8ROADM-C80/0/OPM' },
+        { slot: `MOD-1-${nint(s, 5401, 7, 8)}/${nint(s, 5402, 9, 10)}`, desc: 'EDFA-C-D20-VLGC-DM' },
+        { slot: 'MOD-1-3', desc: 'OSCM-PN — supervisory, 1510nm' }
+      ] },
+    { id: 2, title: `East Degree (${eastPeer})`, modules: [
+        { slot: 'MOD-2-3/4', desc: `2PM/SM — client circuit A` },
+        { slot: 'MOD-2-15', desc: `2PM/SM — client circuit B` },
+        { slot: 'MOD-2-16', desc: 'EDFA-C-D20-VGC-DM' },
+        { slot: 'PL-2-9-C10', desc: 'SFP — client pluggable', flag: 'Outage', tone: 'error' }
+      ] },
+    { id: 3, title: 'Legacy OTU2 Clients', modules: [
+        { slot: 'MOD-3-8', desc: '4TCC OTU2 — client circuit', flag: 'down', tone: 'error' },
+        { slot: 'MOD-3-18', desc: 'EDFA-C-D20-VGC-DM' }
+      ] },
+    { id: 4, title: `New 100G Build (${buildPeer})`, modules: [
+        { slot: 'MOD-4-7', desc: `8ROADM — towards ${buildPeer}` },
+        { slot: 'MOD-4-17', desc: 'WCC-PCN-100GB', flag: 'watch', tone: 'warning' }
+      ] }
+  ];
+
+  const opticsInventory = [
+    { port: 'PL-1-3-NE/NW', type: 'SFP/FE/C1510V/SM/LC', wl: '1510nm (OSC)',
+      serial: `FA${nint(s, 5500, 70000000, 79999999)}`, installed: String(commYear), status: 'Normal' },
+    { port: 'PL-1-10-C1..C10', type: 'SFP+/11GU/1310S/SM/LC', wl: '1310nm grey',
+      serial: 'multiple', installed: `${commYear}–${commYear + 7}`, status: 'Normal' },
+    { port: 'PL-2-9-C10', type: 'SFP', wl: '—', serial: 'N/A — no serial', installed: '—', status: 'Outage' },
+    { port: 'PL-4-3-C', type: 'CFP/112G/LR4/SM/LC', wl: '1310nm (LR4 grey)',
+      serial: `FA${nint(s, 5501, 100000, 999999)}`, installed: '2024', status: 'Normal' },
+    { port: 'PL-4-10-N', type: 'CFP/112G/#DCTC/SM/LC', wl: 'Tunable DWDM line',
+      serial: `FA${nint(s, 5502, 100000, 999999)}`, installed: '2024', status: 'Normal' },
+    { port: 'PL-4-17-N', type: 'CFP/112G/#DCTCA/SM/LC', wl: 'Tunable DWDM line',
+      serial: `FA${nint(s, 5503, 100000, 999999)}`, installed: '2024', status: 'CH-4-17-N watch' }
+  ];
+
+  const ringTopology = [
+    { a: r.name || s, portA: 'OL-2', z: westPeer, portZ: 'OL-1', status: 'Active — West degree', tone: 'success' },
+    { a: eastPeer, portA: 'OL-1', z: r.name || s, portZ: 'OL-2', status: 'Active — East degree', tone: 'success' },
+    { a: r.name || s, portA: 'MOD-4-7', z: `${buildPeer} — separate node/platform`, portZ: '—', status: 'New build — watch channel', tone: 'warning' },
+    { a: 'Spare', portA: '—', z: sparePeer, portZ: '—', status: 'FCU free', tone: 'neutral' }
+  ];
+
+  /* GRID_CHANNELS: the real ITU-T C-band 100GHz grid width (96 channels);
+     these 6 are the ones actually being monitored on this element. */
+  const GRID_CHANNELS = 96;
+  const CH_DEF = [
+    { ch: 'CH-1-10-N', shelf: 'Shelf-1/10' }, { ch: 'CH-2-9-N', shelf: 'Shelf-2/9' },
+    { ch: 'CH-3-8-N', shelf: 'Shelf-3/8', down: true }, { ch: 'CH-4-3-N', shelf: 'Shelf-4/3' },
+    { ch: 'CH-4-12-N', shelf: 'Shelf-4/12' }, { ch: 'CH-4-17-N', shelf: 'Shelf-4/17', watch: true }
+  ];
+  const channels = CH_DEF.map((c, i) => {
+    if (c.down) return { ...c, margin: null, ber: null, corrected: null, ube: null, st: 'DOWN', tone: 'error' };
+    const margin = +(nrand(s, 5100 + i, c.watch ? 10.8 : 12.4, c.watch ? 12.6 : 16.2)).toFixed(1);
+    const exp = margin < 12 ? -5 : margin < 14 ? -6 : -7;
+    const ber = sci(+(nrand(s, 5200 + i, 1.2, 9.8)).toFixed(2), exp);
+    const showCorrected = nint(s, 5300 + i, 0, 1) === 1;
+    const corrected = showCorrected ? sci(+(nrand(s, 5310 + i, 1.1, 9.8)).toFixed(2), margin < 12 ? 9 : 8) : null;
+    const st = margin < 12 ? 'Watch' : margin < 14 ? 'Monitor' : 'Healthy';
+    return { ...c, margin, ber, corrected, ube: 0, st, tone: st === 'Watch' ? 'error' : st === 'Monitor' ? 'warning' : 'success' };
+  });
+  const liveChannels = channels.filter(c => !c.down);
+  const worst = liveChannels.reduce((w, c) => c.margin < w.margin ? c : w, liveChannels[0]);
+
+  const amplifiers = [
+    { n: 'West Pre-Amp', model: 'EDFA-C-D20-VLGC-DM', gain: +(nrand(s, 5600, 16, 20)).toFixed(1),
+      out: +(nrand(s, 5601, 14, 18)).toFixed(1), pump: nint(s, 5602, 120, 160), st: 'Healthy' },
+    { n: 'West Booster', model: 'EDFA-C-S20-GCB-DM', gain: +(nrand(s, 5610, 19, 23)).toFixed(1),
+      out: +(nrand(s, 5611, 16, 20)).toFixed(1), pump: nint(s, 5612, 170, 210), st: 'Healthy' },
+    { n: 'East Pre-Amp', model: 'EDFA-C-D20-VGC-DM', gain: +(nrand(s, 5620, 16, 19)).toFixed(1),
+      out: +(nrand(s, 5621, 14, 17)).toFixed(1), pump: nint(s, 5622, 120, 150), st: 'Healthy' },
+    { n: 'Shelf-3 Inline', model: 'EDFA-C-D20-VGC-DM', standalone: true,
+      st: 'Stable — not implicated in CH-3-8-N outage' }
+  ];
+
+  const tilt = +(nrand(s, 5710, 0.3, 0.9)).toFixed(1);
+  const alarms = [
+    { sev: 'Major', entity: 'CH-3-8-N', evidence: `UAS=${nint(s, 5700, 600, 1200)}s, 3 consecutive bins`, tab: 'channels', open: true },
+    { sev: 'Major', entity: 'PL-2-9-C10', evidence: 'OperState=Outage, no serial', tab: 'hardware', open: true },
+    { sev: 'Minor', entity: 'CH-4-17-N', evidence: `Margin ${worst.margin} dB, lowest of ${liveChannels.length}`, tab: 'channels', open: false },
+    { sev: 'Critical', entity: 'Amp-1-NW', evidence: `Gain tilt +${tilt} dB over 24h`, tab: 'amplifiers', open: false }
+  ];
+
+  const openAlarms = alarms.filter(a => a.open).length;
+  const healthScore = Math.max(60, Math.min(96, 96 - openAlarms * 6
+    - (alarms.some(a => a.sev === 'Critical') ? 8 : 0) - (worst.margin < 12 ? 8 : worst.margin < 14 ? 4 : 0)));
+
+  return {
+    westPeer, eastPeer, buildPeer, sparePeer, commissioned, commYear,
+    shelves, opticsInventory, ringTopology, channels, worst, GRID_CHANNELS,
+    amplifiers, alarms, healthScore,
+    critical: alarms.filter(a => a.sev === 'Critical').length,
+    major: alarms.filter(a => a.sev === 'Major').length,
+    minor: alarms.filter(a => a.sev === 'Minor').length,
+    openAlarms, ackAlarms: alarms.length - openAlarms
+  };
+}
+
+/* ── eNodeB radio site model ──────────────────────────────
+   Real LTE/4G conventions this draws on: sector/carrier cell counts, RRC
+   accessibility / drop call rate / handover success / radio latency as the
+   standard radio KPI set, S1 (eNodeB↔EPC) and X2 (eNodeB↔eNodeB) as the
+   real 3GPP interface names, BBU/RRH/sector as the real site hardware
+   roles. Every number is the same deterministic nrand/nint sample
+   convention used everywhere else in this file — stable per node name,
+   plausible, never a live measurement. Alarms, hardware and links are
+   cross-linked (an AI insight names the actual hottest/busiest hardware
+   item, not a canned example). */
+function buildEnodebSite(s, r) {
+  const MORPH = ['Dense urban', 'Urban', 'Suburban', 'Rural'];
+  const TOWER = ['Rooftop', 'Monopole', 'Lattice', 'Stealth'];
+  const SITE_TYPE = ['Cell Site', 'Rooftop Site', 'Indoor Site', 'Small Cell'];
+  const morphology = MORPH[nint(s, 6000, 0, MORPH.length - 1)];
+  const towerType = TOWER[nint(s, 6001, 0, TOWER.length - 1)];
+  const siteType = SITE_TYPE[nint(s, 6002, 0, SITE_TYPE.length - 1)];
+  const sectors = nint(s, 6003, 2, 2) + 1;
+  const carriersPerSector = nint(s, 6004, 2, 3);
+  const cells = sectors * carriersPerSector;
+  const cellsDown = nint(s, 6005, 0, 1);
+  const cellsDegraded = nint(s, 6006, 0, 2);
+  const cellsActive = cells - cellsDown;
+  const siteId = `${(r.loc || 'SITE').split('-')[0]}-CP-${String(nint(s, 6007, 1, 999)).padStart(3, '0')}`;
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const onAir = `${nint(s, 6009, 1, 28)} ${MONTHS[nint(s, 6010, 0, 11)]} ${nint(s, 6008, 2018, 2026)}`;
+  const uptimeStr = `${nint(s, 6011, 5, 400)}d ${nint(s, 6012, 0, 23)}h ${nint(s, 6013, 0, 59)}m`;
+  const swVersion = `LTE_R15_v${nint(s, 6014, 1, 9)}.${nint(s, 6015, 0, 9)}.${nint(s, 6016, 0, 9)}`;
+
+  const healthScore = nint(s, 6020, 78, 97);
+  const healthTrend = +(nrand(s, 6021, -1.5, 3.5)).toFixed(1);
+  const connectedUsers = nint(s, 6022, 400, 1800);
+  const peakUsers = connectedUsers + nint(s, 6023, 200, 900);
+  const totalParams = nint(s, 6024, 150, 220);
+  const nonCompliantCount = nint(s, 6025, 2, 6);
+  const configCompliance = +((totalParams - nonCompliantCount) / totalParams * 100).toFixed(2);
+  const availability = +(nrand(s, 6026, 99.4, 99.99)).toFixed(2);
+  const rrc = +(nrand(s, 6030, 96.5, 99.4)).toFixed(2);
+  const dropCall = +(nrand(s, 6031, 0.2, 1.4)).toFixed(2);
+  const handover = +(nrand(s, 6032, 93, 98.9)).toFixed(2);
+  const latency = nint(s, 6033, 8, 22);
+
+  const freqBands = [1800, 2100, 2300];
+  const ALARM_DEF = [
+    { sev: 'Major', t: 'High PRB utilization', d: 'Physical resource block utilization exceeds 85% threshold',
+      src: 'Cell', srcDetail: `Cell-${nint(s, 6040, 0, sectors - 1)}-FDD-${freqBands[nint(s, 6041, 0, 2)]}`, impact: 'Medium', open: true },
+    { sev: 'Minor', t: 'RRH temperature warning', d: 'RRH temperature trending above normal operating range',
+      src: 'Hardware', srcDetail: `RRH Unit ${nint(s, 6042, 1, 3)} (Sector ${String.fromCharCode(65 + nint(s, 6043, 0, sectors - 1))})`, impact: 'Low', open: false },
+    { sev: 'Major', t: 'Handover failure rate high', d: 'Handover failure rate exceeded 5% threshold',
+      src: 'Cell', srcDetail: `Cell-${nint(s, 6044, 0, sectors - 1)}-FDD-${freqBands[nint(s, 6045, 0, 2)]}`, impact: 'Medium', open: true },
+    { sev: 'Minor', t: 'Backhaul link quality variation', d: 'Microwave backhaul signal quality showing variations',
+      src: 'Link', srcDetail: 'Primary backhaul (BH-MW-001)', impact: 'Low', open: false }
+  ];
+  const alarms = ALARM_DEF.map((a, i) => ({ ...a, when: `${nint(s, 6050 + i, 20, 240)}m ago` }));
+
+  const HW_DEF = [
+    { id: 'bbu', label: 'BBU (Baseband unit)', model: 'Ericsson RBS 6601' },
+    { id: 'power', label: 'Power systems', model: 'Eltek Flatpack2 HE' },
+    ...Array.from({ length: sectors }, (_, i) => ({ id: `sector${String.fromCharCode(65 + i)}`, label: `Sector ${String.fromCharCode(65 + i)}`, model: 'CommScope NNVV-65C-R2B' })),
+    { id: 'infra', label: 'Infrastructure', model: 'Site infrastructure' }
+  ];
+  const HOURS = Array.from({ length: 24 }, (_, i) => `${String((19 + i) % 24).padStart(2, '0')}:00`);
+  const hardware = HW_DEF.map((h, i) => {
+    const health = nint(s, 6100 + i, 90, 100);
+    const cpuBase = nint(s, 6110 + i, 18, 52), memBase = nint(s, 6120 + i, 28, 58), tempBase = nint(s, 6130 + i, 30, 46);
+    const trend = HOURS.map((m, k) => ({
+      m,
+      cpu: Math.max(4, Math.min(100, Math.round(cpuBase + nrand(s, 6200 + i * 30 + k, -8, 8)))),
+      mem: Math.max(4, Math.min(100, Math.round(memBase + nrand(s, 6300 + i * 30 + k, -6, 6)))),
+      temp: Math.max(4, Math.min(100, Math.round(tempBase + nrand(s, 6400 + i * 30 + k, -3, 3))))
+    }));
+    const last = trend[23];
+    return { ...h, health, cpu: last.cpu, mem: last.mem, temp: last.temp, trend,
+      firmware: `L${nint(s, 6140 + i, 18, 22)}B v${nint(s, 6141 + i, 1, 9)}.${nint(s, 6142 + i, 0, 9)}.${nint(s, 6143 + i, 0, 9)}`,
+      uptime: uptimeStr, status: health >= 97 ? 'Active' : health >= 90 ? 'Degraded' : 'Warning' };
+  });
+  const hottest = hardware.reduce((w, h) => h.temp > w.temp ? h : w, hardware[0]);
+  const busiest = hardware.reduce((w, h) => h.cpu > w.cpu ? h : w, hardware[0]);
+  const avgHwHealth = +(hardware.reduce((a, h) => a + h.health, 0) / hardware.length).toFixed(1);
+  const hwInsights = [
+    { t: 'Capacity trend alert', s: 'Thermal trend', d: `${hottest.label} temperature trending upward (${hottest.temp}°C). AI predicts potential thermal issue in ${nint(s, 6500, 5, 10)}-${nint(s, 6501, 10, 14)} days.`, chip: ['Action required', 'warning'] },
+    { t: 'Performance optimization', s: 'CPU utilization', d: `${busiest.label} CPU peaks detected during 9-11 AM (avg ${busiest.cpu}%). AI suggests load balancing or capacity upgrade.`, chip: ['Recommended', 'info'] },
+    { t: 'Overall health excellent', s: 'Antenna systems', d: 'All antenna systems operating at peak efficiency. VSWR values optimal (<1.5:1). No action required.', chip: [`Health: ${avgHwHealth}%`, 'success'] }
+  ];
+  const hwRecommendation = `Based on 90-day performance analysis, AI recommends scheduling preventive maintenance for BBU and RRH systems within the next 2 weeks. Historical data shows optimal uptime when maintenance occurs during current weather conditions. Estimated downtime: ${nint(s, 6510, 2, 4)}-${nint(s, 6511, 5, 8)} hours.`;
+
+  const siteCode = r.loc || 'BGLK-277';
+  const peerSites = ['BGLK-277', 'DEL-279', 'INDR-275', 'VJA-118', 'CHE-118', 'MAS-041', 'PUN-162', 'HYD-093'].filter(x => x !== siteCode);
+  const GROWTH = ['100 Mbps', '500 Mbps', '1 Gbps', '2 Gbps', '5 Gbps', '10 Gbps'];
+  const mkLink = (n, proto, i, off) => ({
+    n, proto, util: nint(s, off + i, 6, 92), users: nint(s, off + 100 + i, 2000, 15000),
+    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026', modified: '12-May-2026'
+  });
+  const links = {
+    backhaul: [
+      mkLink(`BH-${siteCode}-P1`, 'Fiber GPON', 0, 6600),
+      mkLink(`BH-${siteCode}-B1`, 'Microwave 256QAM', 1, 6600),
+      mkLink(`OAM-${siteCode}`, 'Fiber (shared VLAN 413)', 2, 6600)
+    ],
+    x2: peerSites.slice(0, 3).map((p, i) => mkLink(`X2-${p}`, 'X2AP/SCTP', i, 6700)),
+    s1: [mkLink('S1-MME-Primary', 'S1AP/SCTP', 0, 6800), mkLink('S1-U-SGW-Primary', 'GTP-U', 1, 6800)]
+  };
+  const linkKpi = rows => ({
+    total: rows.length,
+    avgUtil: rows.length ? Math.round(rows.reduce((a, x) => a + x.util, 0) / rows.length) : 0,
+    avgLatency: +(nrand(s, 6900, 4, 12)).toFixed(2),
+    packetLoss: +(nrand(s, 6901, 0.001, 0.08)).toFixed(2)
+  });
+  const primaryBh = links.backhaul[0];
+  const linkInsights = [
+    { t: 'Capacity trend alert', s: 'Backhaul growth', d: `${primaryBh.n} utilization has climbed to ${primaryBh.util}% over 7 days. At this growth rate the 80% planning threshold is reached in about ${nint(s, 6910, 5, 14)}-${nint(s, 6911, 14, 20)} days.`, chip: ['Recommended', 'info'] },
+    { t: 'Root cause identified', s: 'X2 handover', d: 'X2 handover success to a peer site dropped over 48h. Correlation engine links this to a transmission alarm on the peer node.', chip: ['All clear', 'success'] },
+    { t: 'Ping-pong handover pattern', s: 'Mobility', d: `${nint(s, 6920, 4, 12)}% of handovers between adjacent cells reverse within 5 seconds. AI suggests raising the A3 offset from 3dB to 6dB on this pair.`, chip: ['Monitor', 'warning'] }
+  ];
+
+  const CFG_DEF = [
+    { cat: 'Handover', p: 'Handover Margin', exp: 3, tol: 0 },
+    { cat: 'Handover', p: 'Time-to-Trigger (TTT)', exp: 320, tol: 0 },
+    { cat: 'Admission Control', p: 'PRB Threshold', exp: 85, tol: 8 },
+    { cat: 'Power Control', p: 'Tx Power', exp: 46, tol: 4 },
+    { cat: 'Admission Control', p: 'Max UEs per Cell', exp: 250, tol: 0 },
+    { cat: 'Power Control', p: 'RSRP Target', exp: 100, tol: 0 },
+    { cat: 'Scheduling', p: 'PRB Utilization Target', exp: 80, tol: 6 },
+    { cat: 'Scheduling', p: 'MCS Adaptation', exp: 'Enabled', tol: 0 },
+    { cat: 'Handover', p: 'Hysteresis', exp: 2, tol: 0 },
+    { cat: 'Admission Control', p: 'RACH Preamble Power', exp: 52, tol: 0 }
+  ];
+  const config = CFG_DEF.map((c, i) => {
+    if (typeof c.exp === 'string') return { ...c, act: c.exp, dev: 0, compliant: true };
+    const drift = c.tol && nint(s, 6950 + i, 0, 2) === 0 ? +(nrand(s, 6960 + i, c.tol * 0.6, c.tol * 1.3)).toFixed(1) : 0;
+    const act = c.exp + (nint(s, 6970 + i, 0, 1) ? drift : -drift);
+    return { ...c, act, dev: Math.abs(+(act - c.exp).toFixed(1)), compliant: Math.abs(act - c.exp) <= c.tol };
+  });
+  const compliantCount = config.filter(c => c.compliant).length;
+  const cfgInsights = [
+    { t: 'Configuration drift detected', s: 'Reference design', d: 'Key parameters have drifted from the approved reference design. Antenna tilt and PCI assignment show the largest delta.', chip: ['Action required', 'warning'] },
+    { t: 'Parameter optimization', s: 'Handover tuning', d: 'AI suggests tuning A3 offset and TTT in dense urban cells to improve handover success without increasing drops.', chip: ['Recommended', 'info'] },
+    { t: 'Compliance verified', s: 'Security baseline', d: 'Security profile, encryption policy, and golden baseline are aligned. No unauthorized change events detected recently.', chip: ['Compliant', 'success'] }
+  ];
+  const cfgRemediation = 'A validated remediation template is ready to realign drifted parameters across affected cells, with an automatic rollback if KPIs regress beyond the safety envelope.';
+
+  /* per-cell radio detail — one row per cell (sectors × carriers), the
+     granularity a field engineer actually works at, distinct from the
+     per-hardware-item view on the Hardware & components tab */
+  const BANDS = [2100, 1800, 900, 700, 2300, 850];
+  const cellDetails = Array.from({ length: cells }, (_, i) => {
+    const down = i < cellsDown;
+    const health = down ? 0 : nint(s, 7000 + i, 72, 98);
     return {
-      ch: `C${21 + i * 3}`, lambda: (1558.98 - i * 0.8).toFixed(2), spare, svc: SVC[i],
-      tx: spare ? null : +(nrand(s, 4100 + i, -3.2, 1.4)).toFixed(1),
-      rx: spare ? null : +(nrand(s, 4200 + i, -22, -8)).toFixed(1),
-      osnr, ber: spare ? null : osnr < 15 ? '1e-6' : osnr < 18 ? '1e-9' : '<1e-12',
-      st: spare ? 'Unequipped' : osnr < 15 ? 'Degraded' : osnr < 18 ? 'Warning' : 'Active',
-      rate: spare ? null : ['100G','100G','200G','100G','400G',null,'100G',null][i]
+      status: down ? 'Down' : health < 82 ? 'Degraded' : 'Good',
+      band: BANDS[nint(s, 7010 + i, 0, BANDS.length - 1)],
+      health, alarms: down ? 0 : nint(s, 7020 + i, 0, 3),
+      users: down ? 0 : nint(s, 7030 + i, 80, 160),
+      prb: down ? 0 : nint(s, 7040 + i, 40, 90),
+      bw: ['10 MHz', '20 MHz'][nint(s, 7050 + i, 0, 1)],
+      sinr: down ? 0 : nint(s, 7060 + i, 128, 168)
     };
   });
+
   return {
-    chans,
-    used: chans.filter(c => c.svc !== 'Spare').length,
-    amps: [
-      { n:'Pre-amp EDFA', gain:+(nrand(s, 4300, 16, 23)).toFixed(1), tilt:+(nrand(s, 4301, -1.2, 1.2)).toFixed(1), st:'Active' },
-      { n:'Booster EDFA', gain:+(nrand(s, 4302, 12, 19)).toFixed(1), tilt:+(nrand(s, 4303, -1.2, 1.2)).toFixed(1), st:'Active' },
-      { n:'Raman', gain:+(nrand(s, 4304, 8, 14)).toFixed(1), tilt:0, st: nint(s, 4305, 0, 10) > 7 ? 'Standby' : 'Active' }
-    ],
-    spans: Array.from({ length: 3 }, (_, i) => ({
-      n: ['NDLS → Gurugram','Gurugram → Rewari','Rewari → Jaipur'][i],
-      km: nint(s, 4400 + i, 42, 118), loss: +(nrand(s, 4500 + i, 9.4, 27.8)).toFixed(1),
-      budget: nint(s, 4600 + i, 24, 32), pmd: +(nrand(s, 4700 + i, 0.4, 2.8)).toFixed(2)
-    }))
+    siteId, morphology, towerType, siteType, sectors, cells, cellsActive, cellsDegraded, cellsDown,
+    onAir, uptimeStr, swVersion, healthScore, healthTrend, connectedUsers, peakUsers,
+    totalParams, nonCompliantCount, configCompliance, availability, rrc, dropCall, handover, latency,
+    alarms, critical: alarms.filter(a => a.sev === 'Critical').length, major: alarms.filter(a => a.sev === 'Major').length,
+    minor: alarms.filter(a => a.sev === 'Minor').length, openAlarms: alarms.filter(a => a.open).length,
+    ackAlarms: alarms.length - alarms.filter(a => a.open).length,
+    hardware, hwInsights, hwRecommendation,
+    links, linkKpi, linkInsights, cellDetails,
+    config, compliantCount, cfgInsights, cfgRemediation
   };
 }
 

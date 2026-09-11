@@ -1,5 +1,8 @@
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
+let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
+let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
 const RES_TABS = [
   { k:'overview',  n:'Overview' },   { k:'hardware', n:'Hardware',  c:()=>HW_TREE.length },
   { k:'ifaces',    n:'Interfaces', c:()=>IF_CAP.total },
@@ -17,12 +20,12 @@ function resOverview() {
   <div class="row-t" style="align-items:stretch">
     ${card(`${headSm('Identity and provenance')}
       <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Field'},{t:'Value'},{t:'Source'},{t:'Verified'}], PROV.map(p => [
+      ${table([{t:'Field'},{t:'Value'},{t:'Source'}], PROV.map(p => [
         `<span class="vw-label">${p.f}</span>`,
         `<span class="vw-value mono"${p.ok?'':` style="color:${cv('gray',400)}"`}>${p.v}</span>`,
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
-          :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
+          :p.src.startsWith('Scope')?'info':'error')]), '',
         i => [])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
@@ -209,7 +212,329 @@ function resHistory() {
         () => [])}`);
 }
 
+/* ═══ eNodeB — View details ═══
+   A radio site isn't chassis/FPC/PIC-shaped, so it doesn't belong on the
+   router-only page below (that page ignores RES_ID entirely and always
+   shows a router — see the fallback branch — so eNodeB needs its own).
+   Reuses N.enb (see buildEnodebSite() in app-node.js), the same data the
+   live Node View dashboard is built from, just read at inventory-page
+   granularity: one row per cell instead of a live dashboard. */
+function viewEnodebResource(N) {
+  const r = N.r, E = N.enb;
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['cell', 'Cell'], ['links', 'Network links'], ['config', 'Configuration']];
+  const tab = TABS.some(([k]) => k === RES_ENB_TAB) ? RES_ENB_TAB : 'cell';
+
+  const allLinks = [
+    ...E.links.backhaul.map(x => ({ ...x, type: 'Backhaul' })),
+    ...E.links.x2.map(x => ({ ...x, type: 'X2 interface' })),
+    ...E.links.s1.map(x => ({ ...x, type: 'S1 interface' }))
+  ];
+  const linkTone = t => t === 'Backhaul' ? 'warning' : t === 'X2 interface' ? 'info' : 'purple';
+
+  const body = tab === 'links'
+    ? card(table([{ t: 'Link types' }, { t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+        allLinks.map(x => [chip(x.type, linkTone(x.type)), `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto, `${x.util}%`, n(x.users), x.growth, x.created, x.modified]),
+        '', () => []))
+    : tab === 'config'
+    ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
+        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), '12-May-2026', '12-May-2026']),
+        '', () => []))
+    : card(table([{ t: 'Status' }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
+        E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
+          `B${c.band}`, String(c.health), String(c.alarms), String(c.users), `${c.prb}%`, c.bw, String(c.sinr)]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `eNodeB · ${r.loc} · ${E.siteType}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-emerald-50,#ecfdf5);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-emerald-600,#059669)">${nodeThumb('enodeb')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'eNodeB', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            eNodeB · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:32ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${E.siteType} · ${r.loc || N.name} · ${E.sectors} sectors, ${E.cells} cells</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', E.swVersion],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-resenbtab="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
+/* ═══ Switch — View details ═══
+   Real EX4650-style component/interface conventions: CPU/PSU/FAN/
+   Backplane/Chassis/FPC-PIC modules, GE-numbered physical interfaces, and
+   an LLDP table to one MLAG peer (several parallel GE links to the same
+   neighbour — a real leaf/MLAG topology, not a coincidence). Same
+   deterministic nrand/nint sample convention as everything else. */
+function buildSwitchResourceDetail(s, r) {
+  const oemTag = (r.oem || 'JNPR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+  const hardware = [
+    { n: 'RE0', t: 'CPU', model: 'RE-EX4650' },
+    { n: 'PSU0', t: 'Power supply', model: 'JPSU-650W-AC' },
+    { n: 'PSU1', t: 'Power supply', model: 'JPSU-650W-AC' },
+    { n: 'FAN0', t: 'Fan', model: 'FAN-EX4650' },
+    { n: 'FAN1', t: 'Fan', model: 'FAN-EX4650' },
+    { n: 'Backplane', t: 'Backplane', model: 'EX4650-BP' },
+    { n: 'Chassis', t: 'Chassis', model: r.model || 'EX4650-48Y' },
+    { n: 'FPC0', t: 'Module', model: 'EX4650-FPC' },
+    { n: 'PIC0', t: 'Module', model: 'EX4650-PIC' }
+  ].map((h, i) => ({ ...h, sn: `${oemTag}-${h.n.replace(/[^A-Za-z0-9]/g, '').toUpperCase()}-${nint(s, 7200 + i, 10, 99)}`, mfr: `${r.oem || 'Juniper'} Networks` }));
+
+  const slug = String(r.name || s).toLowerCase();
+  const IF_COUNT = 10;
+  const interfaces = Array.from({ length: IF_COUNT }, (_, i) => {
+    const down = nint(s, 7300 + i, 0, 4) === 0;
+    const SPEEDS = ['1 Gbps', '10 Gbps', '100 Gbps'];
+    const speed = SPEEDS[nint(s, 7310 + i, 0, SPEEDS.length - 1)];
+    return {
+      name: `GE0/1/${i}`, down,
+      admin: down ? 'down(2)' : 'up(1)',
+      oper: down ? (nint(s, 7320 + i, 0, 1) ? 'down(2)' : 'lowerLayerDown(7)') : 'up(1)',
+      bw: speed, cap: speed, ifalias: `${slug}-ge0-1-${i}`
+    };
+  });
+
+  /* the MLAG peer's name/IP — the same switch identity one step along its
+     own numbering, not an unrelated random name */
+  const bump = (numStr, off) => String(((parseInt(numStr, 10) - 1 + off) % 99) + 1).padStart(numStr.length, '0');
+  const nameM = String(r.name || '').match(/^(.*?)(\d+)$/);
+  const peerName = nameM ? `${nameM[1]}${bump(nameM[2], nint(s, 7400, 1, 8))}` : `${r.name}-PEER`;
+  const ipM = String(r.ip || '').match(/^(\d+\.\d+\.\d+\.)(\d+)$/);
+  const peerIp = ipM ? `${ipM[1]}${((parseInt(ipM[2], 10) - 1 + nint(s, 7410, 1, 8)) % 254) + 1}` : '192.168.1.4';
+  const lldp = interfaces.map((iface, i) => ({
+    srcNe: r.name, srcIp: r.ip || '192.168.1.1', srcIf: iface.name,
+    dstIp: peerIp, dstNe: peerName, dstIf: iface.name,
+    link: `BB:T4 ${r.name}-${peerName}`, ifalias: iface.ifalias
+  }));
+
+  return {
+    hardware, interfaces, lldp,
+    description: `${r.name} ${r.model || ''} leaf — ${r.loc || ''} MLAG peer-A`.replace(/\s+/g, ' ').trim()
+  };
+}
+
+function viewSwitchResource(N) {
+  const r = N.r;
+  const D = buildSwitchResourceDetail(N.name, r);
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['hardware', 'Hardware details'], ['ifall', 'Interface all'], ['ifdown', 'Interface down'], ['lldp', 'LLDP']];
+  const tab = TABS.some(([k]) => k === RES_SW_TAB) ? RES_SW_TAB : 'hardware';
+  const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
+  const downIf = D.interfaces.filter(i => i.down);
+
+  const body = tab === 'ifall'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, `<span class="mono">${i.ifalias}</span>`]),
+        '', () => []))
+    : tab === 'ifdown'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, `<span class="mono">${i.ifalias}</span>`, i.bw]),
+        '', () => []))
+    : tab === 'lldp'
+    ? card(table([{ t: 'Source NE' }, { t: 'Source IP address' }, { t: 'Source interface' }, { t: 'Destination IP address' }, { t: 'Destination NE' }, { t: 'Destination interface' }, { t: 'Link name' }, { t: 'Ifalias' }],
+        D.lldp.map(l => [l.srcNe, `<span class="mono">${l.srcIp}</span>`, l.srcIf, `<span class="mono">${l.dstIp}</span>`, l.dstNe, l.dstIf, l.link, `<span class="mono">${l.ifalias}</span>`]),
+        '', () => []))
+    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `Switch · ${r.loc || '—'} · ${r.model || ''}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-sky-50,#f0f9ff);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-sky-600,#0284c7)">${nodeThumb('switch')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'Switch', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Switch · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:36ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${esc(D.description)}</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-ressw="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
+/* ═══ DWDM — View details ═══
+   An optical shelf's slot inventory and physical port count are both a
+   different shape and a different scale from a switch's: a ROADM chassis
+   carries many more physical ports (line + client optics across several
+   shelves) than a leaf switch's handful of GE ports, and it doesn't run
+   LLDP the way a switch does — so this gets its own 3 tabs (no LLDP)
+   instead of reusing Switch's 4. Same deterministic nrand/nint sample
+   convention as everything else; module naming follows the same DWDM
+   part-number vocabulary the Node View's Hardware & shelves tab already
+   uses (EDFA-C-D20, OSCM-PN, WCC-PCN, …). */
+function buildDwdmResourceDetail(s, r) {
+  const hardware = [
+    { n: 'MOD-1-1_PSU/7HU-DC-HP', t: 'Module', model: 'N13A' },
+    { n: 'MOD-1-3_OSCM-PN', t: 'Control Board Slot', model: 'N14A' },
+    { n: 'MOD-1-4_OSFM-10G', t: 'PEM Slot', model: 'N15A' },
+    { n: 'MOD-1-5_EDFA-C-S20', t: 'FPC Slot', model: 'N16A' },
+    { n: 'MOD-1-6_EDFA-C-D20-VGC', t: 'Chassis Frame', model: 'N17A' },
+    { n: 'MOD-1-10_4WCC-PCN-10G', t: 'Backplane', model: 'N18A' },
+    { n: 'MOD-1-16_EDFA-C-D20', t: 'Chassis', model: 'N19A' },
+    { n: 'MOD-1-17_EDFA-C-S20-GCB', t: 'Port', model: 'N20A' },
+    { n: 'MOD-1-18_OSFM-4TG', t: 'Container', model: 'N21A' },
+    { n: 'MOD-1-19_WCC-PCN-100G', t: 'Module', model: 'N22A' },
+    { n: 'MOD-1-20_EDFA-C-S20-VLGC', t: 'FPC Slot', model: 'N23A' },
+    { n: 'MOD-1-21_OSCM-PN', t: 'Control Board Slot', model: 'N24A' }
+  ].map((h, i) => ({ ...h, sn: `FA${nint(s, 7500 + i, 700000000, 799999999)}`, mfr: 'OEM' }));
+
+  const IFALIAS_POOL = [
+    'BB:Bundle link for ae10 SRR-PGT Link-1',
+    'BB:MAQ-SRR 100G MAQ-J7024(4-15-C) to SRR',
+    'BB:ED-SRR 100G ED-J480-RRR-T2-SR(DWDM)',
+    'BB:Bundle link for ae1 SRR-4-6-C to CLT-2-6-C',
+    'BB:Bundle link for ae45 100G SRR MX-480 To CLT',
+    'BB:SRR-MX480 to SRR-MX204 100G',
+    'BB: FPC 2 is Faulty,Pls do not configure',
+    'Railwire Service for SRR-CLT Ring',
+    null, null
+  ];
+  const slug = String(r.name || s).toLowerCase();
+  /* a ROADM shelf carries far more physical ports than a leaf switch —
+     line + client optics across several shelves, not a handful of GE
+     ports — so this runs to ~100 rather than ~10 */
+  const IF_COUNT = 105;
+  const interfaces = Array.from({ length: IF_COUNT }, (_, i) => {
+    const kind = ['et', 'xe'][nint(s, 7600 + i, 0, 1)];
+    /* shelf/slot/port is a function of the port's own index, not a fresh
+       random draw each time — a real chassis has one fixed physical port
+       layout, so two ports on the same device never collide on a name */
+    const shelf = 1 + (Math.floor(i / 24) % 5), slot = Math.floor(i / 6) % 4, port = i % 6;
+    const down = nint(s, 7640 + i, 0, 3) === 0;
+    const capacity = kind === 'et' ? [0.1, 9.77, 97.66][nint(s, 7650 + i, 0, 2)] : [0.01, 0.1, 9.77][nint(s, 7650 + i, 0, 2)];
+    const bw = down ? 0 : +(nrand(s, 7660 + i, 0, capacity)).toFixed(2);
+    const alias = IFALIAS_POOL[nint(s, 7670 + i, 0, IFALIAS_POOL.length - 1)];
+    return {
+      name: `${kind}-${shelf}/${slot}/${port}`, down,
+      admin: 'up(1)',
+      oper: down ? (nint(s, 7680 + i, 0, 1) ? 'down(2)' : 'lowerLayerDown(7)') : 'up(1)',
+      bw: `${bw} Gbps`, cap: `${capacity} Gbps`,
+      ifalias: alias ? `${alias.slice(0, 44)}${alias.length > 44 ? '…' : ''}` : '-',
+      ifhigh: `${[9.77, 39.06, 97.66][nint(s, 7690 + i, 0, 2)]} Gbps`
+    };
+  });
+
+  return {
+    hardware, interfaces,
+    description: `Hardware Model:${r.model || '—'}, Software version: ${r.os || '—'}`
+  };
+}
+
+function viewDwdmResource(N) {
+  const r = N.r;
+  const D = buildDwdmResourceDetail(N.name, r);
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['hardware', 'Hardware details'], ['ifall', 'Interface all'], ['ifdown', 'Interface down']];
+  const tab = TABS.some(([k]) => k === RES_DW_TAB) ? RES_DW_TAB : 'hardware';
+  const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
+  const downIf = D.interfaces.filter(i => i.down);
+
+  const body = tab === 'ifall'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`]),
+        '', () => []))
+    : tab === 'ifdown'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`, i.ifhigh]),
+        '', () => []))
+    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-violet-50,#f5f3ff);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-violet-600,#7c3aed)">${nodeThumb('dwdm')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'DWDM', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            DWDM · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:36ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${esc(D.description)}</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-resdw="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
 function viewResource() {
+  /* eNodeB, Switch and DWDM aren't router-chassis-shaped — resolve RES_ID's
+     real class first and hand it to its own page rather than falling into
+     the router-only rendering below (which never actually reads RES_ID at
+     all: every other class still falls back to a random router's data,
+     unchanged here — only these three classes get a page that reads their
+     own record) */
+  const resCls = nodeRecord(RES_ID).cls;
+  if (resCls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
+  if (resCls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
+  if (resCls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+
   const r = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();

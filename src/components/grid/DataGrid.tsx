@@ -2,7 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 
 /* ── types ──────────────────────────────────────────────── */
-export interface Column { t: string; r?: boolean }
+/** w: optional column width (e.g. '18%') — a grid with few, short columns
+    otherwise lets table-layout:auto's 100%-width surplus land unevenly
+    across whichever columns the browser judges most "flexible", which
+    reads as inconsistent gaps rather than even spacing. Omit it and a
+    column behaves exactly as before (content-sized, auto-distributed). */
+export interface Column { t: string; r?: boolean; w?: string }
 export interface Action { l: string; onClick?: () => void; danger?: boolean; primary?: boolean }
 export interface FilterField { n: string; o?: string[]; h?: string }
 
@@ -429,6 +434,12 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
           </div>
         )}
         <table className="nst-table">
+          {p.columns.some(c => c.w) && (
+            <colgroup>
+              {p.columns.map(c => <col key={c.t} style={c.w ? { width: c.w } : undefined} />)}
+              {p.rowActions && <col style={{ width: '48px' }} />}
+            </colgroup>
+          )}
           <thead>
             <tr>
               {p.columns.map(c => <th key={c.t} className={c.r ? 't-right' : undefined}>{c.t}</th>)}

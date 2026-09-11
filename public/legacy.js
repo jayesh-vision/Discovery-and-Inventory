@@ -673,12 +673,9 @@ const REC_BANDS = {
     q:'Server, DWDM, eNodeB and gNodeB — no collector reaches these classes, so they are excluded from the comparison rather than counted as missing.' }
 };
 
-/* ── source + verification, the bridge from Discovery ───── */
+/* ── source, the bridge from Discovery ───────────────────── */
 const SRC = { d: ['Discovered','success'], p: ['Planned · CIQ','info'], m: ['Manual','neutral'], e: ['EMS','purple'] };
 const src = k => chip(SRC[k][0], SRC[k][1]);
-const ver = h => h === null ? `<span style="color:${cv('gray',400)}">never</span>`
-  : h < 24 ? chip('fresh','success') : h < 720 ? chip(`${Math.round(h/24)} d`,'warning')
-  : chip(`${Math.round(h/720)} mo`,'error');
 const RSTATE = { ok:['Verified','success'], drift:['Drifted','warning'], stale:['Stale','orange'],
                  miss:['Missing','error'], none:['Not discovered','neutral'] };
 const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
@@ -1474,12 +1471,12 @@ const SITE_NE = {
       { st:'ok',   name:'KA-BGLK-277-T-CHR-09', ip:'172.31.31.209', model:'C9400-LC-48T', mac:'A4:B1:C2:D3:E4:F5', sn:'CHRSW-909090',       tmpl:'24A-NE-ZTP - 1.0', oem:'CISCO',   s:'d', v:6 }
     ],
     dwdm: [
-      { st:'none', name:'BGLK-KA-OADM-100',     ip:'172.31.31.148', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-1 · slot 4', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-101',      ip:'100.64.32.27',  type:'ILA',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-1 · slot 6', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-GNE-202',      ip:'172.31.41.202', type:'GNE',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-2 · slot 1', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-OADM-201',     ip:'172.31.41.201', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-2 · slot 3', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-203',      ip:'192.168.1.1',   type:'ILA',  oem:'JUNIPER', sw:'16.3.2', shelf:'OT-2 · slot 5', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-204',      ip:'172.16.0.5',    type:'ILA',  oem:'JUNIPER', sw:'21.1.1', shelf:'OT-2 · slot 7', s:'m', v:null }
+      { st:'none', name:'BGLK-KA-OADM-100',     ip:'172.31.31.148', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-1 · slot 4', sn:'ADV277100', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-101',      ip:'100.64.32.27',  type:'ILA',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-1 · slot 6', sn:'ADV277101', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-GNE-202',      ip:'172.31.41.202', type:'GNE',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-2 · slot 1', sn:'ADV277202', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-OADM-201',     ip:'172.31.41.201', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-2 · slot 3', sn:'ADV277201', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-203',      ip:'192.168.1.1',   type:'ILA',  oem:'JUNIPER', sw:'16.3.2', shelf:'OT-2 · slot 5', sn:'ADV277203', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-204',      ip:'172.16.0.5',    type:'ILA',  oem:'JUNIPER', sw:'21.1.1', shelf:'OT-2 · slot 7', sn:'ADV277204', s:'m', v:null }
     ]
   }
 };
@@ -1504,7 +1501,23 @@ function siteNE(id, ne, disc) {
       sn: `SW-${id}-${4400 + i*11}`, tmpl: '24A-NE-ZTP - 1.0', oem: m[1],
       s: (nR + i) < seen ? 'd' : 'p', v: (nR + i) < seen ? 4 + i : null };
   };
-  return { router: Array.from({length:nR}, (_,i)=>mk(i)), switch: Array.from({length:nS}, (_,i)=>mkS(i)), dwdm: [] };
+  /* DWDM optical transport isn't at every site — realistically it's the
+     larger aggregation/core/datacenter sites that carry it, not a small
+     edge site with a couple of access routers. Same 'none'/manual-source
+     convention the hand-authored BGLK-277 dwdm rows above already use
+     (this class isn't reconciled through the router/switch discovery
+     feed in this sample), not a fresh invented status split. */
+  const DWDM_TYPES = ['OADM', 'ILA', 'GNE'];
+  const mkD = (i) => ({
+    st: 'none', name: `${id}-OADM-${String(100 + i * 20)}`,
+    ip: `172.31.${90 + (i % 9)}.${20 + i * 7}`,
+    type: DWDM_TYPES[i % DWDM_TYPES.length], oem: i % 2 ? 'ADVA' : 'JUNIPER', sw: '21.5.1',
+    shelf: `OT-${i + 1} · slot ${3 + i * 2}`, sn: `ADV${id.replace(/[^0-9]/g, '').padStart(3, '0')}${100 + i * 20}`,
+    s: 'm', v: null
+  });
+  const nD = ne >= 20 ? 2 : ne >= 6 ? 1 : 0;
+  return { router: Array.from({length:nR}, (_,i)=>mk(i)), switch: Array.from({length:nS}, (_,i)=>mkS(i)),
+    dwdm: Array.from({length:nD}, (_,i)=>mkD(i)) };
 }
 
 /* ── capex ──────────────────────────────────────────────── */
@@ -2951,8 +2964,6 @@ function viewJobs() {
     .sort((a, b) => a.h - b.h)[0];
   const load = collectorLoad();
 
-  const segs = [['All','All'], ['attention','Needs attention'], ['errors','With errors'],
-                ['held','Held'], ['overdue','Overdue']];
   return `<div class="page">
 
     ${drillBar()}
@@ -2970,12 +2981,7 @@ function viewJobs() {
     </div>
 
     ${card(`
-      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs,
-        `<div class="seg">${segs.map(([k,l]) => {
-          const c = JOBS.filter(JOB_TESTS[k]).length;
-          return `<button class="${JOB_FILTER===k?'is-on':''}" data-job-filter="${k}">${l}</button>`;
-        }).join('')}</div>`,
-        [], 'jobs')}
+      ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs, '', [], 'jobs')}
       ${table(
         [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
@@ -3120,9 +3126,7 @@ function viewTargets() {
   return `<div class="page">
     ${drillBar()}
     ${card(`
-      ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        `<div class="seg">${segs.map(([k,l]) => `<button class="${activeKey === k.toLowerCase()?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`,
-        [], 'targets')}
+      ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
       ${table(
         [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
@@ -3358,12 +3362,12 @@ function recTable() {
       <td><span class="vw-card-metric-label-sub num">${r.ver}</span></td>
       ${kebabCell(
         r.inv && r.net && r.diff.length
-          ? [A('View details', { v:'resource', l:r.ne })]
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
         : !r.inv
           ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
         : !r.net
-          ? [A('View details', { v:'resource', l:r.ne })]
-          : [A('View details', { v:'resource', l:r.ne })], 'rec', ri)}
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
+          : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -3505,13 +3509,13 @@ function viewHome() {
         ${headSm('Recently discovered')}
         <button class="nst-btn nst-btn--sm" data-nav="physical">Open Physical Resources</button>
       </div>
-      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OEM'},{t:'Location'},{t:'Source'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'OEM'},{t:'Location'},{t:'Source'}],
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
-          `<span class="mono">${r.model}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s), ver(r.v)
+          `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
         ]), '',
         i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
-              A('View details', { v:'resource', l:PHY.router[i].name }),
+              A('View details', { v:'resource', l:PHY.router[i].name, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               siteA(PHY.router[i].loc)])}`)}
   </div>`;
 }
@@ -4278,23 +4282,22 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source · verified'}]
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Shelf · slot'},{t:'Source · verified'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source · verified'}];
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
        `<span class="mono">${r.model}</span>`, `<span class="mono">${r.mac}</span>`, `<span class="mono">${r.sn}</span>`,
-       `<span class="mono">${r.tmpl}</span>`, r.oem, `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`]
+       `<span class="mono">${r.tmpl}</span>`, r.oem, src(r.s)]
     : SITE_TAB === 'dwdm'
     ? [rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`, chip(r.type,'info'),
-       r.oem, `<span class="mono">${r.sw}</span>`, `<span class="mono">${r.shelf}</span>`,
-       `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`]
+       r.oem, `<span class="mono">${r.sw}</span>`, `<span class="mono">${r.sn}</span>`, `<span class="mono">${r.shelf}</span>`, src(r.s)]
     : [r.st === 'dup' ? chip('Duplicate serial','error') : rst(r.st), `<span class="vw-value">${r.name}</span>`,
        `<span class="mono">${r.ip}</span>`, `<span class="mono">${r.model}</span>`, `<span class="mono">${r.os}</span>`,
        `<span class="mono"${r.st==='dup'?` style="color:${cv('red',700)}"`:''}>${r.sn}</span>`, r.oem,
-       `<span class="mono">${r.rack}</span>`, `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`];
+       `<span class="mono">${r.rack}</span>`, src(r.s)];
 
   /* ---- Attention: this site's alert summary, same card idiom as the
      Coverage-by-circle detail — rollout blocker and risk flag straight
@@ -4426,7 +4429,7 @@ function viewSite() {
       ${rows.length ? table(cols, rows.map(cell), '',
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name }),
+          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
           A('Site info', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
@@ -4768,18 +4771,11 @@ function viewPhysical() {
 
       ${gridBar(total, PHY_OEM ? `${n(IL.ne)} across every class`
           : n(phyCount(t, PHY_STOCK)),
-        'Name, IP address, serial', FS.physical,
-        `<div class="stock-chips">
-          ${STOCK_ST.filter(sk => sk.k !== 'decomm').map(sk => `
-            <button class="stock-chip${PHY_STOCK.has(sk.k) ? ' is-on' : ''}" data-stock="${sk.k}"
-              style="${PHY_STOCK.has(sk.k) ? `border-color:${cv(sk.tone,400)};background:${cv(sk.tone,50)}` : ''}"
-              title="${n(stockCount(t, sk.k))} ${meta.n.toLowerCase()} records · ${n(sk.c)} across the whole estate">
-              <span class="legend-sw" style="background:${cv(sk.tone,400)}"></span>${sk.n}</button>`).join('')}
-        </div>${meta.disc === 0 ? '' : chip(`${n(meta.c - meta.disc)} of ${n(meta.c)} not verified`, 'warning')}`,
+        'Name, IP address, serial', FS.physical, '',
         [])}
       ${table(
         [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
-         {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source · verified'}],
+         {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source'}],
         rows.map((r, i) => {
           const sk = STOCK_OF[r.stock || 'deployed'];
           const ro = false;
@@ -4796,13 +4792,13 @@ function viewPhysical() {
             tot && !ro ? `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3rem;height:7px">
               <span class="hbar-fill" style="display:block;width:${(used/tot*100).toFixed(0)}%;background:${cv(used/tot>0.85?'red':used/tot>0.7?'amber':'emerald',400)}"></span></span>${used}/${tot}</span>` : '—',
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
-            `<span class="row vw-nowrap" style="gap:var(--vw-space-xxs)">${src(r.s)}${ver(r.v)}</span>`
+            src(r.s)
           ];
         }), '',
         i => rows[i].stock === 'decomm'
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-             A('View details', { v:'resource', l:rows[i].name }),
+             A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
              siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
@@ -5782,11 +5778,11 @@ function viewServices() {
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
-      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-          `<span class="mono">${s.ifc}</span>`, ver(s.v)
+          `<span class="mono">${s.ifc}</span>`
         ]))}`)}
   </div>`;
 }
@@ -5870,6 +5866,9 @@ function viewReports() {
 
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
+let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
+let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
 const RES_TABS = [
   { k:'overview',  n:'Overview' },   { k:'hardware', n:'Hardware',  c:()=>HW_TREE.length },
   { k:'ifaces',    n:'Interfaces', c:()=>IF_CAP.total },
@@ -5887,12 +5886,12 @@ function resOverview() {
   <div class="row-t" style="align-items:stretch">
     ${card(`${headSm('Identity and provenance')}
       <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Field'},{t:'Value'},{t:'Source'},{t:'Verified'}], PROV.map(p => [
+      ${table([{t:'Field'},{t:'Value'},{t:'Source'}], PROV.map(p => [
         `<span class="vw-label">${p.f}</span>`,
         `<span class="vw-value mono"${p.ok?'':` style="color:${cv('gray',400)}"`}>${p.v}</span>`,
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
-          :p.src.startsWith('Scope')?'info':'error'), p.when]), '',
+          :p.src.startsWith('Scope')?'info':'error')]), '',
         i => [])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
@@ -6079,7 +6078,329 @@ function resHistory() {
         () => [])}`);
 }
 
+/* ═══ eNodeB — View details ═══
+   A radio site isn't chassis/FPC/PIC-shaped, so it doesn't belong on the
+   router-only page below (that page ignores RES_ID entirely and always
+   shows a router — see the fallback branch — so eNodeB needs its own).
+   Reuses N.enb (see buildEnodebSite() in app-node.js), the same data the
+   live Node View dashboard is built from, just read at inventory-page
+   granularity: one row per cell instead of a live dashboard. */
+function viewEnodebResource(N) {
+  const r = N.r, E = N.enb;
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['cell', 'Cell'], ['links', 'Network links'], ['config', 'Configuration']];
+  const tab = TABS.some(([k]) => k === RES_ENB_TAB) ? RES_ENB_TAB : 'cell';
+
+  const allLinks = [
+    ...E.links.backhaul.map(x => ({ ...x, type: 'Backhaul' })),
+    ...E.links.x2.map(x => ({ ...x, type: 'X2 interface' })),
+    ...E.links.s1.map(x => ({ ...x, type: 'S1 interface' }))
+  ];
+  const linkTone = t => t === 'Backhaul' ? 'warning' : t === 'X2 interface' ? 'info' : 'purple';
+
+  const body = tab === 'links'
+    ? card(table([{ t: 'Link types' }, { t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+        allLinks.map(x => [chip(x.type, linkTone(x.type)), `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto, `${x.util}%`, n(x.users), x.growth, x.created, x.modified]),
+        '', () => []))
+    : tab === 'config'
+    ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
+        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), '12-May-2026', '12-May-2026']),
+        '', () => []))
+    : card(table([{ t: 'Status' }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
+        E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
+          `B${c.band}`, String(c.health), String(c.alarms), String(c.users), `${c.prb}%`, c.bw, String(c.sinr)]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `eNodeB · ${r.loc} · ${E.siteType}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-emerald-50,#ecfdf5);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-emerald-600,#059669)">${nodeThumb('enodeb')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'eNodeB', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            eNodeB · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:32ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${E.siteType} · ${r.loc || N.name} · ${E.sectors} sectors, ${E.cells} cells</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', E.swVersion],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-resenbtab="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
+/* ═══ Switch — View details ═══
+   Real EX4650-style component/interface conventions: CPU/PSU/FAN/
+   Backplane/Chassis/FPC-PIC modules, GE-numbered physical interfaces, and
+   an LLDP table to one MLAG peer (several parallel GE links to the same
+   neighbour — a real leaf/MLAG topology, not a coincidence). Same
+   deterministic nrand/nint sample convention as everything else. */
+function buildSwitchResourceDetail(s, r) {
+  const oemTag = (r.oem || 'JNPR').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+  const hardware = [
+    { n: 'RE0', t: 'CPU', model: 'RE-EX4650' },
+    { n: 'PSU0', t: 'Power supply', model: 'JPSU-650W-AC' },
+    { n: 'PSU1', t: 'Power supply', model: 'JPSU-650W-AC' },
+    { n: 'FAN0', t: 'Fan', model: 'FAN-EX4650' },
+    { n: 'FAN1', t: 'Fan', model: 'FAN-EX4650' },
+    { n: 'Backplane', t: 'Backplane', model: 'EX4650-BP' },
+    { n: 'Chassis', t: 'Chassis', model: r.model || 'EX4650-48Y' },
+    { n: 'FPC0', t: 'Module', model: 'EX4650-FPC' },
+    { n: 'PIC0', t: 'Module', model: 'EX4650-PIC' }
+  ].map((h, i) => ({ ...h, sn: `${oemTag}-${h.n.replace(/[^A-Za-z0-9]/g, '').toUpperCase()}-${nint(s, 7200 + i, 10, 99)}`, mfr: `${r.oem || 'Juniper'} Networks` }));
+
+  const slug = String(r.name || s).toLowerCase();
+  const IF_COUNT = 10;
+  const interfaces = Array.from({ length: IF_COUNT }, (_, i) => {
+    const down = nint(s, 7300 + i, 0, 4) === 0;
+    const SPEEDS = ['1 Gbps', '10 Gbps', '100 Gbps'];
+    const speed = SPEEDS[nint(s, 7310 + i, 0, SPEEDS.length - 1)];
+    return {
+      name: `GE0/1/${i}`, down,
+      admin: down ? 'down(2)' : 'up(1)',
+      oper: down ? (nint(s, 7320 + i, 0, 1) ? 'down(2)' : 'lowerLayerDown(7)') : 'up(1)',
+      bw: speed, cap: speed, ifalias: `${slug}-ge0-1-${i}`
+    };
+  });
+
+  /* the MLAG peer's name/IP — the same switch identity one step along its
+     own numbering, not an unrelated random name */
+  const bump = (numStr, off) => String(((parseInt(numStr, 10) - 1 + off) % 99) + 1).padStart(numStr.length, '0');
+  const nameM = String(r.name || '').match(/^(.*?)(\d+)$/);
+  const peerName = nameM ? `${nameM[1]}${bump(nameM[2], nint(s, 7400, 1, 8))}` : `${r.name}-PEER`;
+  const ipM = String(r.ip || '').match(/^(\d+\.\d+\.\d+\.)(\d+)$/);
+  const peerIp = ipM ? `${ipM[1]}${((parseInt(ipM[2], 10) - 1 + nint(s, 7410, 1, 8)) % 254) + 1}` : '192.168.1.4';
+  const lldp = interfaces.map((iface, i) => ({
+    srcNe: r.name, srcIp: r.ip || '192.168.1.1', srcIf: iface.name,
+    dstIp: peerIp, dstNe: peerName, dstIf: iface.name,
+    link: `BB:T4 ${r.name}-${peerName}`, ifalias: iface.ifalias
+  }));
+
+  return {
+    hardware, interfaces, lldp,
+    description: `${r.name} ${r.model || ''} leaf — ${r.loc || ''} MLAG peer-A`.replace(/\s+/g, ' ').trim()
+  };
+}
+
+function viewSwitchResource(N) {
+  const r = N.r;
+  const D = buildSwitchResourceDetail(N.name, r);
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['hardware', 'Hardware details'], ['ifall', 'Interface all'], ['ifdown', 'Interface down'], ['lldp', 'LLDP']];
+  const tab = TABS.some(([k]) => k === RES_SW_TAB) ? RES_SW_TAB : 'hardware';
+  const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
+  const downIf = D.interfaces.filter(i => i.down);
+
+  const body = tab === 'ifall'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, `<span class="mono">${i.ifalias}</span>`]),
+        '', () => []))
+    : tab === 'ifdown'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, `<span class="mono">${i.ifalias}</span>`, i.bw]),
+        '', () => []))
+    : tab === 'lldp'
+    ? card(table([{ t: 'Source NE' }, { t: 'Source IP address' }, { t: 'Source interface' }, { t: 'Destination IP address' }, { t: 'Destination NE' }, { t: 'Destination interface' }, { t: 'Link name' }, { t: 'Ifalias' }],
+        D.lldp.map(l => [l.srcNe, `<span class="mono">${l.srcIp}</span>`, l.srcIf, `<span class="mono">${l.dstIp}</span>`, l.dstNe, l.dstIf, l.link, `<span class="mono">${l.ifalias}</span>`]),
+        '', () => []))
+    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `Switch · ${r.loc || '—'} · ${r.model || ''}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-sky-50,#f0f9ff);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-sky-600,#0284c7)">${nodeThumb('switch')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'Switch', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Switch · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:36ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${esc(D.description)}</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-ressw="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
+/* ═══ DWDM — View details ═══
+   An optical shelf's slot inventory and physical port count are both a
+   different shape and a different scale from a switch's: a ROADM chassis
+   carries many more physical ports (line + client optics across several
+   shelves) than a leaf switch's handful of GE ports, and it doesn't run
+   LLDP the way a switch does — so this gets its own 3 tabs (no LLDP)
+   instead of reusing Switch's 4. Same deterministic nrand/nint sample
+   convention as everything else; module naming follows the same DWDM
+   part-number vocabulary the Node View's Hardware & shelves tab already
+   uses (EDFA-C-D20, OSCM-PN, WCC-PCN, …). */
+function buildDwdmResourceDetail(s, r) {
+  const hardware = [
+    { n: 'MOD-1-1_PSU/7HU-DC-HP', t: 'Module', model: 'N13A' },
+    { n: 'MOD-1-3_OSCM-PN', t: 'Control Board Slot', model: 'N14A' },
+    { n: 'MOD-1-4_OSFM-10G', t: 'PEM Slot', model: 'N15A' },
+    { n: 'MOD-1-5_EDFA-C-S20', t: 'FPC Slot', model: 'N16A' },
+    { n: 'MOD-1-6_EDFA-C-D20-VGC', t: 'Chassis Frame', model: 'N17A' },
+    { n: 'MOD-1-10_4WCC-PCN-10G', t: 'Backplane', model: 'N18A' },
+    { n: 'MOD-1-16_EDFA-C-D20', t: 'Chassis', model: 'N19A' },
+    { n: 'MOD-1-17_EDFA-C-S20-GCB', t: 'Port', model: 'N20A' },
+    { n: 'MOD-1-18_OSFM-4TG', t: 'Container', model: 'N21A' },
+    { n: 'MOD-1-19_WCC-PCN-100G', t: 'Module', model: 'N22A' },
+    { n: 'MOD-1-20_EDFA-C-S20-VLGC', t: 'FPC Slot', model: 'N23A' },
+    { n: 'MOD-1-21_OSCM-PN', t: 'Control Board Slot', model: 'N24A' }
+  ].map((h, i) => ({ ...h, sn: `FA${nint(s, 7500 + i, 700000000, 799999999)}`, mfr: 'OEM' }));
+
+  const IFALIAS_POOL = [
+    'BB:Bundle link for ae10 SRR-PGT Link-1',
+    'BB:MAQ-SRR 100G MAQ-J7024(4-15-C) to SRR',
+    'BB:ED-SRR 100G ED-J480-RRR-T2-SR(DWDM)',
+    'BB:Bundle link for ae1 SRR-4-6-C to CLT-2-6-C',
+    'BB:Bundle link for ae45 100G SRR MX-480 To CLT',
+    'BB:SRR-MX480 to SRR-MX204 100G',
+    'BB: FPC 2 is Faulty,Pls do not configure',
+    'Railwire Service for SRR-CLT Ring',
+    null, null
+  ];
+  const slug = String(r.name || s).toLowerCase();
+  /* a ROADM shelf carries far more physical ports than a leaf switch —
+     line + client optics across several shelves, not a handful of GE
+     ports — so this runs to ~100 rather than ~10 */
+  const IF_COUNT = 105;
+  const interfaces = Array.from({ length: IF_COUNT }, (_, i) => {
+    const kind = ['et', 'xe'][nint(s, 7600 + i, 0, 1)];
+    /* shelf/slot/port is a function of the port's own index, not a fresh
+       random draw each time — a real chassis has one fixed physical port
+       layout, so two ports on the same device never collide on a name */
+    const shelf = 1 + (Math.floor(i / 24) % 5), slot = Math.floor(i / 6) % 4, port = i % 6;
+    const down = nint(s, 7640 + i, 0, 3) === 0;
+    const capacity = kind === 'et' ? [0.1, 9.77, 97.66][nint(s, 7650 + i, 0, 2)] : [0.01, 0.1, 9.77][nint(s, 7650 + i, 0, 2)];
+    const bw = down ? 0 : +(nrand(s, 7660 + i, 0, capacity)).toFixed(2);
+    const alias = IFALIAS_POOL[nint(s, 7670 + i, 0, IFALIAS_POOL.length - 1)];
+    return {
+      name: `${kind}-${shelf}/${slot}/${port}`, down,
+      admin: 'up(1)',
+      oper: down ? (nint(s, 7680 + i, 0, 1) ? 'down(2)' : 'lowerLayerDown(7)') : 'up(1)',
+      bw: `${bw} Gbps`, cap: `${capacity} Gbps`,
+      ifalias: alias ? `${alias.slice(0, 44)}${alias.length > 44 ? '…' : ''}` : '-',
+      ifhigh: `${[9.77, 39.06, 97.66][nint(s, 7690 + i, 0, 2)]} Gbps`
+    };
+  });
+
+  return {
+    hardware, interfaces,
+    description: `Hardware Model:${r.model || '—'}, Software version: ${r.os || '—'}`
+  };
+}
+
+function viewDwdmResource(N) {
+  const r = N.r;
+  const D = buildDwdmResourceDetail(N.name, r);
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const TABS = [['hardware', 'Hardware details'], ['ifall', 'Interface all'], ['ifdown', 'Interface down']];
+  const tab = TABS.some(([k]) => k === RES_DW_TAB) ? RES_DW_TAB : 'hardware';
+  const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
+  const downIf = D.interfaces.filter(i => i.down);
+
+  const body = tab === 'ifall'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`]),
+        '', () => []))
+    : tab === 'ifdown'
+    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`, i.ifhigh]),
+        '', () => []))
+    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+        '', () => []));
+
+  return `<div class="page">
+    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}
+
+    ${card(`
+      <div class="nv-head">
+        <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-violet-50,#f5f3ff);border-radius:10px;padding:6px">
+          <span style="color:var(--vw-color-violet-600,#7c3aed)">${nodeThumb('dwdm')}</span>
+        </div>
+        <div class="stack-x grow" style="min-width:0">
+          <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+            <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+            ${chip(stLabel, stTone)}${chip(r.oem || 'DWDM', 'info')}
+          </div>
+          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            DWDM · ${r.loc || N.name}
+          </span>
+        </div>
+        <div class="stack-x" style="text-align:right;flex-shrink:0;max-width:36ch">
+          <span class="nv-hk">Description</span>
+          <span class="vw-value">${esc(D.description)}</span>
+        </div>
+      </div>
+      <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${[
+        ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
+        ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
+      ].map(([k, v]) => `<div class="stack-x">
+        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      '', 'padding:var(--vw-space-lg)')}
+
+    <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-resdw="${k}">${l}</button>`).join('')}</div>
+
+    ${body}
+  </div>`;
+}
+
 function viewResource() {
+  /* eNodeB, Switch and DWDM aren't router-chassis-shaped — resolve RES_ID's
+     real class first and hand it to its own page rather than falling into
+     the router-only rendering below (which never actually reads RES_ID at
+     all: every other class still falls back to a random router's data,
+     unchanged here — only these three classes get a page that reads their
+     own record) */
+  const resCls = nodeRecord(RES_ID).cls;
+  if (resCls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
+  if (resCls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
+  if (resCls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+
   const r = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
@@ -6516,6 +6837,8 @@ let NODE_ALERT_TAB = 'alerts';
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
+let NODE_HW_SEL = 'bbu'; /* which hardware hierarchy item is selected on eNodeB's Hardware & components tab */
+let NODE_ENB_LINK_TAB = 'backhaul'; /* which sub-tab is selected on eNodeB's Network links tab */
 
 /* deterministic pseudo-random so every element gets a stable, plausible node */
 const nseed = s => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -6618,7 +6941,7 @@ const NODE_CLASS = {
   switch: { n:'Switch', live:true,  hw:'env' },
   dwdm:   { n:'DWDM',   live:true,  hw:'optical' },
   server: { n:'Server', live:false },
-  enodeb: { n:'eNodeB', live:false }, gnodeb: { n:'gNodeB', live:false }
+  enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:false }
 };
 
 function nodeOf(name) {
@@ -6788,6 +7111,7 @@ function nodeOf(name) {
             fCpu: fc.cpu.vals[6], fMem: fc.mem.vals[6], fTemp: fc.temp.vals[6] },
     chassis: buildChassis(s, r, cls),
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
+    enb: cls === 'enodeb' ? buildEnodebSite(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
     sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
@@ -6834,38 +7158,299 @@ function buildChassis(s, r, cls) {
   };
 }
 
-/* ── DWDM optical model ────────────────────────────────── */
+/* ── DWDM optical model ────────────────────────────────────
+   Real-world OADM/ROADM conventions the shape below draws on: 100GHz
+   ITU-T C-band grid (96 channels), OL-/MOD-/PL- port and slot naming,
+   Pre-amp/Booster EDFA + Raman gain stages, pre-FEC BER and uncorrectable
+   error counters. Every number is the deterministic nrand/nint sample
+   convention used everywhere else in this file — stable per node name,
+   plausible, never a live measurement. The degree peers, shelves, channels,
+   amplifiers and alarms below are cross-linked (an alarm names the exact
+   channel/optic/amp shown flagged on its own tab), not four independent
+   random tables. */
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+const sup = n => String(n).split('').map(c => SUP[c] || c).join('');
+const sci = (mantissa, exp) => `${mantissa.toFixed(2)}×10${sup(exp)}`;
+
 function buildOptical(s, r) {
-  /* A spare wavelength carries no service, so it has no launch power, no
-     OSNR and no BER. Showing it as "Active" with live optics would be
-     fabricated data — the row reads "unequipped" instead. */
-  const SVC = ['Core NDLS–BLR','Core NDLS–MUM','Metro ring A','Metro ring B',
-               'Enterprise wave','Spare','Core NDLS–CHE','Spare'];
-  const chans = Array.from({ length: 8 }, (_, i) => {
-    const spare = SVC[i] === 'Spare';
-    const osnr = spare ? null : +(nrand(s, 4000 + i, 13.4, 24.8)).toFixed(1);
+  const DEGREES = ['Jalgaon-100G','Bhusawal-100G','Nashik-100G','Surat-100G','Vadodara-100G','Indore-100G','Nagpur-100G','Solapur-100G'];
+  const d0 = nint(s, 5000, 0, DEGREES.length - 1);
+  const westPeer = DEGREES[d0];
+  const eastPeer = DEGREES[(d0 + 3) % DEGREES.length];
+  const buildPeer = DEGREES[(d0 + 5) % DEGREES.length];
+  const sparePeer = DEGREES[(d0 + 7) % DEGREES.length];
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const commYear = nint(s, 5800, 2012, 2021);
+  const commissioned = `${nint(s, 5801, 1, 28)} ${MONTHS[nint(s, 5802, 0, 11)]} ${commYear}`;
+
+  const shelves = [
+    { id: 1, title: `West Degree (${westPeer})`, modules: [
+        { slot: `MOD-1-${nint(s, 5400, 3, 6)}`, desc: '8ROADM-C80/0/OPM' },
+        { slot: `MOD-1-${nint(s, 5401, 7, 8)}/${nint(s, 5402, 9, 10)}`, desc: 'EDFA-C-D20-VLGC-DM' },
+        { slot: 'MOD-1-3', desc: 'OSCM-PN — supervisory, 1510nm' }
+      ] },
+    { id: 2, title: `East Degree (${eastPeer})`, modules: [
+        { slot: 'MOD-2-3/4', desc: `2PM/SM — client circuit A` },
+        { slot: 'MOD-2-15', desc: `2PM/SM — client circuit B` },
+        { slot: 'MOD-2-16', desc: 'EDFA-C-D20-VGC-DM' },
+        { slot: 'PL-2-9-C10', desc: 'SFP — client pluggable', flag: 'Outage', tone: 'error' }
+      ] },
+    { id: 3, title: 'Legacy OTU2 Clients', modules: [
+        { slot: 'MOD-3-8', desc: '4TCC OTU2 — client circuit', flag: 'down', tone: 'error' },
+        { slot: 'MOD-3-18', desc: 'EDFA-C-D20-VGC-DM' }
+      ] },
+    { id: 4, title: `New 100G Build (${buildPeer})`, modules: [
+        { slot: 'MOD-4-7', desc: `8ROADM — towards ${buildPeer}` },
+        { slot: 'MOD-4-17', desc: 'WCC-PCN-100GB', flag: 'watch', tone: 'warning' }
+      ] }
+  ];
+
+  const opticsInventory = [
+    { port: 'PL-1-3-NE/NW', type: 'SFP/FE/C1510V/SM/LC', wl: '1510nm (OSC)',
+      serial: `FA${nint(s, 5500, 70000000, 79999999)}`, installed: String(commYear), status: 'Normal' },
+    { port: 'PL-1-10-C1..C10', type: 'SFP+/11GU/1310S/SM/LC', wl: '1310nm grey',
+      serial: 'multiple', installed: `${commYear}–${commYear + 7}`, status: 'Normal' },
+    { port: 'PL-2-9-C10', type: 'SFP', wl: '—', serial: 'N/A — no serial', installed: '—', status: 'Outage' },
+    { port: 'PL-4-3-C', type: 'CFP/112G/LR4/SM/LC', wl: '1310nm (LR4 grey)',
+      serial: `FA${nint(s, 5501, 100000, 999999)}`, installed: '2024', status: 'Normal' },
+    { port: 'PL-4-10-N', type: 'CFP/112G/#DCTC/SM/LC', wl: 'Tunable DWDM line',
+      serial: `FA${nint(s, 5502, 100000, 999999)}`, installed: '2024', status: 'Normal' },
+    { port: 'PL-4-17-N', type: 'CFP/112G/#DCTCA/SM/LC', wl: 'Tunable DWDM line',
+      serial: `FA${nint(s, 5503, 100000, 999999)}`, installed: '2024', status: 'CH-4-17-N watch' }
+  ];
+
+  const ringTopology = [
+    { a: r.name || s, portA: 'OL-2', z: westPeer, portZ: 'OL-1', status: 'Active — West degree', tone: 'success' },
+    { a: eastPeer, portA: 'OL-1', z: r.name || s, portZ: 'OL-2', status: 'Active — East degree', tone: 'success' },
+    { a: r.name || s, portA: 'MOD-4-7', z: `${buildPeer} — separate node/platform`, portZ: '—', status: 'New build — watch channel', tone: 'warning' },
+    { a: 'Spare', portA: '—', z: sparePeer, portZ: '—', status: 'FCU free', tone: 'neutral' }
+  ];
+
+  /* GRID_CHANNELS: the real ITU-T C-band 100GHz grid width (96 channels);
+     these 6 are the ones actually being monitored on this element. */
+  const GRID_CHANNELS = 96;
+  const CH_DEF = [
+    { ch: 'CH-1-10-N', shelf: 'Shelf-1/10' }, { ch: 'CH-2-9-N', shelf: 'Shelf-2/9' },
+    { ch: 'CH-3-8-N', shelf: 'Shelf-3/8', down: true }, { ch: 'CH-4-3-N', shelf: 'Shelf-4/3' },
+    { ch: 'CH-4-12-N', shelf: 'Shelf-4/12' }, { ch: 'CH-4-17-N', shelf: 'Shelf-4/17', watch: true }
+  ];
+  const channels = CH_DEF.map((c, i) => {
+    if (c.down) return { ...c, margin: null, ber: null, corrected: null, ube: null, st: 'DOWN', tone: 'error' };
+    const margin = +(nrand(s, 5100 + i, c.watch ? 10.8 : 12.4, c.watch ? 12.6 : 16.2)).toFixed(1);
+    const exp = margin < 12 ? -5 : margin < 14 ? -6 : -7;
+    const ber = sci(+(nrand(s, 5200 + i, 1.2, 9.8)).toFixed(2), exp);
+    const showCorrected = nint(s, 5300 + i, 0, 1) === 1;
+    const corrected = showCorrected ? sci(+(nrand(s, 5310 + i, 1.1, 9.8)).toFixed(2), margin < 12 ? 9 : 8) : null;
+    const st = margin < 12 ? 'Watch' : margin < 14 ? 'Monitor' : 'Healthy';
+    return { ...c, margin, ber, corrected, ube: 0, st, tone: st === 'Watch' ? 'error' : st === 'Monitor' ? 'warning' : 'success' };
+  });
+  const liveChannels = channels.filter(c => !c.down);
+  const worst = liveChannels.reduce((w, c) => c.margin < w.margin ? c : w, liveChannels[0]);
+
+  const amplifiers = [
+    { n: 'West Pre-Amp', model: 'EDFA-C-D20-VLGC-DM', gain: +(nrand(s, 5600, 16, 20)).toFixed(1),
+      out: +(nrand(s, 5601, 14, 18)).toFixed(1), pump: nint(s, 5602, 120, 160), st: 'Healthy' },
+    { n: 'West Booster', model: 'EDFA-C-S20-GCB-DM', gain: +(nrand(s, 5610, 19, 23)).toFixed(1),
+      out: +(nrand(s, 5611, 16, 20)).toFixed(1), pump: nint(s, 5612, 170, 210), st: 'Healthy' },
+    { n: 'East Pre-Amp', model: 'EDFA-C-D20-VGC-DM', gain: +(nrand(s, 5620, 16, 19)).toFixed(1),
+      out: +(nrand(s, 5621, 14, 17)).toFixed(1), pump: nint(s, 5622, 120, 150), st: 'Healthy' },
+    { n: 'Shelf-3 Inline', model: 'EDFA-C-D20-VGC-DM', standalone: true,
+      st: 'Stable — not implicated in CH-3-8-N outage' }
+  ];
+
+  const tilt = +(nrand(s, 5710, 0.3, 0.9)).toFixed(1);
+  const alarms = [
+    { sev: 'Major', entity: 'CH-3-8-N', evidence: `UAS=${nint(s, 5700, 600, 1200)}s, 3 consecutive bins`, tab: 'channels', open: true },
+    { sev: 'Major', entity: 'PL-2-9-C10', evidence: 'OperState=Outage, no serial', tab: 'hardware', open: true },
+    { sev: 'Minor', entity: 'CH-4-17-N', evidence: `Margin ${worst.margin} dB, lowest of ${liveChannels.length}`, tab: 'channels', open: false },
+    { sev: 'Critical', entity: 'Amp-1-NW', evidence: `Gain tilt +${tilt} dB over 24h`, tab: 'amplifiers', open: false }
+  ];
+
+  const openAlarms = alarms.filter(a => a.open).length;
+  const healthScore = Math.max(60, Math.min(96, 96 - openAlarms * 6
+    - (alarms.some(a => a.sev === 'Critical') ? 8 : 0) - (worst.margin < 12 ? 8 : worst.margin < 14 ? 4 : 0)));
+
+  return {
+    westPeer, eastPeer, buildPeer, sparePeer, commissioned, commYear,
+    shelves, opticsInventory, ringTopology, channels, worst, GRID_CHANNELS,
+    amplifiers, alarms, healthScore,
+    critical: alarms.filter(a => a.sev === 'Critical').length,
+    major: alarms.filter(a => a.sev === 'Major').length,
+    minor: alarms.filter(a => a.sev === 'Minor').length,
+    openAlarms, ackAlarms: alarms.length - openAlarms
+  };
+}
+
+/* ── eNodeB radio site model ──────────────────────────────
+   Real LTE/4G conventions this draws on: sector/carrier cell counts, RRC
+   accessibility / drop call rate / handover success / radio latency as the
+   standard radio KPI set, S1 (eNodeB↔EPC) and X2 (eNodeB↔eNodeB) as the
+   real 3GPP interface names, BBU/RRH/sector as the real site hardware
+   roles. Every number is the same deterministic nrand/nint sample
+   convention used everywhere else in this file — stable per node name,
+   plausible, never a live measurement. Alarms, hardware and links are
+   cross-linked (an AI insight names the actual hottest/busiest hardware
+   item, not a canned example). */
+function buildEnodebSite(s, r) {
+  const MORPH = ['Dense urban', 'Urban', 'Suburban', 'Rural'];
+  const TOWER = ['Rooftop', 'Monopole', 'Lattice', 'Stealth'];
+  const SITE_TYPE = ['Cell Site', 'Rooftop Site', 'Indoor Site', 'Small Cell'];
+  const morphology = MORPH[nint(s, 6000, 0, MORPH.length - 1)];
+  const towerType = TOWER[nint(s, 6001, 0, TOWER.length - 1)];
+  const siteType = SITE_TYPE[nint(s, 6002, 0, SITE_TYPE.length - 1)];
+  const sectors = nint(s, 6003, 2, 2) + 1;
+  const carriersPerSector = nint(s, 6004, 2, 3);
+  const cells = sectors * carriersPerSector;
+  const cellsDown = nint(s, 6005, 0, 1);
+  const cellsDegraded = nint(s, 6006, 0, 2);
+  const cellsActive = cells - cellsDown;
+  const siteId = `${(r.loc || 'SITE').split('-')[0]}-CP-${String(nint(s, 6007, 1, 999)).padStart(3, '0')}`;
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const onAir = `${nint(s, 6009, 1, 28)} ${MONTHS[nint(s, 6010, 0, 11)]} ${nint(s, 6008, 2018, 2026)}`;
+  const uptimeStr = `${nint(s, 6011, 5, 400)}d ${nint(s, 6012, 0, 23)}h ${nint(s, 6013, 0, 59)}m`;
+  const swVersion = `LTE_R15_v${nint(s, 6014, 1, 9)}.${nint(s, 6015, 0, 9)}.${nint(s, 6016, 0, 9)}`;
+
+  const healthScore = nint(s, 6020, 78, 97);
+  const healthTrend = +(nrand(s, 6021, -1.5, 3.5)).toFixed(1);
+  const connectedUsers = nint(s, 6022, 400, 1800);
+  const peakUsers = connectedUsers + nint(s, 6023, 200, 900);
+  const totalParams = nint(s, 6024, 150, 220);
+  const nonCompliantCount = nint(s, 6025, 2, 6);
+  const configCompliance = +((totalParams - nonCompliantCount) / totalParams * 100).toFixed(2);
+  const availability = +(nrand(s, 6026, 99.4, 99.99)).toFixed(2);
+  const rrc = +(nrand(s, 6030, 96.5, 99.4)).toFixed(2);
+  const dropCall = +(nrand(s, 6031, 0.2, 1.4)).toFixed(2);
+  const handover = +(nrand(s, 6032, 93, 98.9)).toFixed(2);
+  const latency = nint(s, 6033, 8, 22);
+
+  const freqBands = [1800, 2100, 2300];
+  const ALARM_DEF = [
+    { sev: 'Major', t: 'High PRB utilization', d: 'Physical resource block utilization exceeds 85% threshold',
+      src: 'Cell', srcDetail: `Cell-${nint(s, 6040, 0, sectors - 1)}-FDD-${freqBands[nint(s, 6041, 0, 2)]}`, impact: 'Medium', open: true },
+    { sev: 'Minor', t: 'RRH temperature warning', d: 'RRH temperature trending above normal operating range',
+      src: 'Hardware', srcDetail: `RRH Unit ${nint(s, 6042, 1, 3)} (Sector ${String.fromCharCode(65 + nint(s, 6043, 0, sectors - 1))})`, impact: 'Low', open: false },
+    { sev: 'Major', t: 'Handover failure rate high', d: 'Handover failure rate exceeded 5% threshold',
+      src: 'Cell', srcDetail: `Cell-${nint(s, 6044, 0, sectors - 1)}-FDD-${freqBands[nint(s, 6045, 0, 2)]}`, impact: 'Medium', open: true },
+    { sev: 'Minor', t: 'Backhaul link quality variation', d: 'Microwave backhaul signal quality showing variations',
+      src: 'Link', srcDetail: 'Primary backhaul (BH-MW-001)', impact: 'Low', open: false }
+  ];
+  const alarms = ALARM_DEF.map((a, i) => ({ ...a, when: `${nint(s, 6050 + i, 20, 240)}m ago` }));
+
+  const HW_DEF = [
+    { id: 'bbu', label: 'BBU (Baseband unit)', model: 'Ericsson RBS 6601' },
+    { id: 'power', label: 'Power systems', model: 'Eltek Flatpack2 HE' },
+    ...Array.from({ length: sectors }, (_, i) => ({ id: `sector${String.fromCharCode(65 + i)}`, label: `Sector ${String.fromCharCode(65 + i)}`, model: 'CommScope NNVV-65C-R2B' })),
+    { id: 'infra', label: 'Infrastructure', model: 'Site infrastructure' }
+  ];
+  const HOURS = Array.from({ length: 24 }, (_, i) => `${String((19 + i) % 24).padStart(2, '0')}:00`);
+  const hardware = HW_DEF.map((h, i) => {
+    const health = nint(s, 6100 + i, 90, 100);
+    const cpuBase = nint(s, 6110 + i, 18, 52), memBase = nint(s, 6120 + i, 28, 58), tempBase = nint(s, 6130 + i, 30, 46);
+    const trend = HOURS.map((m, k) => ({
+      m,
+      cpu: Math.max(4, Math.min(100, Math.round(cpuBase + nrand(s, 6200 + i * 30 + k, -8, 8)))),
+      mem: Math.max(4, Math.min(100, Math.round(memBase + nrand(s, 6300 + i * 30 + k, -6, 6)))),
+      temp: Math.max(4, Math.min(100, Math.round(tempBase + nrand(s, 6400 + i * 30 + k, -3, 3))))
+    }));
+    const last = trend[23];
+    return { ...h, health, cpu: last.cpu, mem: last.mem, temp: last.temp, trend,
+      firmware: `L${nint(s, 6140 + i, 18, 22)}B v${nint(s, 6141 + i, 1, 9)}.${nint(s, 6142 + i, 0, 9)}.${nint(s, 6143 + i, 0, 9)}`,
+      uptime: uptimeStr, status: health >= 97 ? 'Active' : health >= 90 ? 'Degraded' : 'Warning' };
+  });
+  const hottest = hardware.reduce((w, h) => h.temp > w.temp ? h : w, hardware[0]);
+  const busiest = hardware.reduce((w, h) => h.cpu > w.cpu ? h : w, hardware[0]);
+  const avgHwHealth = +(hardware.reduce((a, h) => a + h.health, 0) / hardware.length).toFixed(1);
+  const hwInsights = [
+    { t: 'Capacity trend alert', s: 'Thermal trend', d: `${hottest.label} temperature trending upward (${hottest.temp}°C). AI predicts potential thermal issue in ${nint(s, 6500, 5, 10)}-${nint(s, 6501, 10, 14)} days.`, chip: ['Action required', 'warning'] },
+    { t: 'Performance optimization', s: 'CPU utilization', d: `${busiest.label} CPU peaks detected during 9-11 AM (avg ${busiest.cpu}%). AI suggests load balancing or capacity upgrade.`, chip: ['Recommended', 'info'] },
+    { t: 'Overall health excellent', s: 'Antenna systems', d: 'All antenna systems operating at peak efficiency. VSWR values optimal (<1.5:1). No action required.', chip: [`Health: ${avgHwHealth}%`, 'success'] }
+  ];
+  const hwRecommendation = `Based on 90-day performance analysis, AI recommends scheduling preventive maintenance for BBU and RRH systems within the next 2 weeks. Historical data shows optimal uptime when maintenance occurs during current weather conditions. Estimated downtime: ${nint(s, 6510, 2, 4)}-${nint(s, 6511, 5, 8)} hours.`;
+
+  const siteCode = r.loc || 'BGLK-277';
+  const peerSites = ['BGLK-277', 'DEL-279', 'INDR-275', 'VJA-118', 'CHE-118', 'MAS-041', 'PUN-162', 'HYD-093'].filter(x => x !== siteCode);
+  const GROWTH = ['100 Mbps', '500 Mbps', '1 Gbps', '2 Gbps', '5 Gbps', '10 Gbps'];
+  const mkLink = (n, proto, i, off) => ({
+    n, proto, util: nint(s, off + i, 6, 92), users: nint(s, off + 100 + i, 2000, 15000),
+    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026', modified: '12-May-2026'
+  });
+  const links = {
+    backhaul: [
+      mkLink(`BH-${siteCode}-P1`, 'Fiber GPON', 0, 6600),
+      mkLink(`BH-${siteCode}-B1`, 'Microwave 256QAM', 1, 6600),
+      mkLink(`OAM-${siteCode}`, 'Fiber (shared VLAN 413)', 2, 6600)
+    ],
+    x2: peerSites.slice(0, 3).map((p, i) => mkLink(`X2-${p}`, 'X2AP/SCTP', i, 6700)),
+    s1: [mkLink('S1-MME-Primary', 'S1AP/SCTP', 0, 6800), mkLink('S1-U-SGW-Primary', 'GTP-U', 1, 6800)]
+  };
+  const linkKpi = rows => ({
+    total: rows.length,
+    avgUtil: rows.length ? Math.round(rows.reduce((a, x) => a + x.util, 0) / rows.length) : 0,
+    avgLatency: +(nrand(s, 6900, 4, 12)).toFixed(2),
+    packetLoss: +(nrand(s, 6901, 0.001, 0.08)).toFixed(2)
+  });
+  const primaryBh = links.backhaul[0];
+  const linkInsights = [
+    { t: 'Capacity trend alert', s: 'Backhaul growth', d: `${primaryBh.n} utilization has climbed to ${primaryBh.util}% over 7 days. At this growth rate the 80% planning threshold is reached in about ${nint(s, 6910, 5, 14)}-${nint(s, 6911, 14, 20)} days.`, chip: ['Recommended', 'info'] },
+    { t: 'Root cause identified', s: 'X2 handover', d: 'X2 handover success to a peer site dropped over 48h. Correlation engine links this to a transmission alarm on the peer node.', chip: ['All clear', 'success'] },
+    { t: 'Ping-pong handover pattern', s: 'Mobility', d: `${nint(s, 6920, 4, 12)}% of handovers between adjacent cells reverse within 5 seconds. AI suggests raising the A3 offset from 3dB to 6dB on this pair.`, chip: ['Monitor', 'warning'] }
+  ];
+
+  const CFG_DEF = [
+    { cat: 'Handover', p: 'Handover Margin', exp: 3, tol: 0 },
+    { cat: 'Handover', p: 'Time-to-Trigger (TTT)', exp: 320, tol: 0 },
+    { cat: 'Admission Control', p: 'PRB Threshold', exp: 85, tol: 8 },
+    { cat: 'Power Control', p: 'Tx Power', exp: 46, tol: 4 },
+    { cat: 'Admission Control', p: 'Max UEs per Cell', exp: 250, tol: 0 },
+    { cat: 'Power Control', p: 'RSRP Target', exp: 100, tol: 0 },
+    { cat: 'Scheduling', p: 'PRB Utilization Target', exp: 80, tol: 6 },
+    { cat: 'Scheduling', p: 'MCS Adaptation', exp: 'Enabled', tol: 0 },
+    { cat: 'Handover', p: 'Hysteresis', exp: 2, tol: 0 },
+    { cat: 'Admission Control', p: 'RACH Preamble Power', exp: 52, tol: 0 }
+  ];
+  const config = CFG_DEF.map((c, i) => {
+    if (typeof c.exp === 'string') return { ...c, act: c.exp, dev: 0, compliant: true };
+    const drift = c.tol && nint(s, 6950 + i, 0, 2) === 0 ? +(nrand(s, 6960 + i, c.tol * 0.6, c.tol * 1.3)).toFixed(1) : 0;
+    const act = c.exp + (nint(s, 6970 + i, 0, 1) ? drift : -drift);
+    return { ...c, act, dev: Math.abs(+(act - c.exp).toFixed(1)), compliant: Math.abs(act - c.exp) <= c.tol };
+  });
+  const compliantCount = config.filter(c => c.compliant).length;
+  const cfgInsights = [
+    { t: 'Configuration drift detected', s: 'Reference design', d: 'Key parameters have drifted from the approved reference design. Antenna tilt and PCI assignment show the largest delta.', chip: ['Action required', 'warning'] },
+    { t: 'Parameter optimization', s: 'Handover tuning', d: 'AI suggests tuning A3 offset and TTT in dense urban cells to improve handover success without increasing drops.', chip: ['Recommended', 'info'] },
+    { t: 'Compliance verified', s: 'Security baseline', d: 'Security profile, encryption policy, and golden baseline are aligned. No unauthorized change events detected recently.', chip: ['Compliant', 'success'] }
+  ];
+  const cfgRemediation = 'A validated remediation template is ready to realign drifted parameters across affected cells, with an automatic rollback if KPIs regress beyond the safety envelope.';
+
+  /* per-cell radio detail — one row per cell (sectors × carriers), the
+     granularity a field engineer actually works at, distinct from the
+     per-hardware-item view on the Hardware & components tab */
+  const BANDS = [2100, 1800, 900, 700, 2300, 850];
+  const cellDetails = Array.from({ length: cells }, (_, i) => {
+    const down = i < cellsDown;
+    const health = down ? 0 : nint(s, 7000 + i, 72, 98);
     return {
-      ch: `C${21 + i * 3}`, lambda: (1558.98 - i * 0.8).toFixed(2), spare, svc: SVC[i],
-      tx: spare ? null : +(nrand(s, 4100 + i, -3.2, 1.4)).toFixed(1),
-      rx: spare ? null : +(nrand(s, 4200 + i, -22, -8)).toFixed(1),
-      osnr, ber: spare ? null : osnr < 15 ? '1e-6' : osnr < 18 ? '1e-9' : '<1e-12',
-      st: spare ? 'Unequipped' : osnr < 15 ? 'Degraded' : osnr < 18 ? 'Warning' : 'Active',
-      rate: spare ? null : ['100G','100G','200G','100G','400G',null,'100G',null][i]
+      status: down ? 'Down' : health < 82 ? 'Degraded' : 'Good',
+      band: BANDS[nint(s, 7010 + i, 0, BANDS.length - 1)],
+      health, alarms: down ? 0 : nint(s, 7020 + i, 0, 3),
+      users: down ? 0 : nint(s, 7030 + i, 80, 160),
+      prb: down ? 0 : nint(s, 7040 + i, 40, 90),
+      bw: ['10 MHz', '20 MHz'][nint(s, 7050 + i, 0, 1)],
+      sinr: down ? 0 : nint(s, 7060 + i, 128, 168)
     };
   });
+
   return {
-    chans,
-    used: chans.filter(c => c.svc !== 'Spare').length,
-    amps: [
-      { n:'Pre-amp EDFA', gain:+(nrand(s, 4300, 16, 23)).toFixed(1), tilt:+(nrand(s, 4301, -1.2, 1.2)).toFixed(1), st:'Active' },
-      { n:'Booster EDFA', gain:+(nrand(s, 4302, 12, 19)).toFixed(1), tilt:+(nrand(s, 4303, -1.2, 1.2)).toFixed(1), st:'Active' },
-      { n:'Raman', gain:+(nrand(s, 4304, 8, 14)).toFixed(1), tilt:0, st: nint(s, 4305, 0, 10) > 7 ? 'Standby' : 'Active' }
-    ],
-    spans: Array.from({ length: 3 }, (_, i) => ({
-      n: ['NDLS → Gurugram','Gurugram → Rewari','Rewari → Jaipur'][i],
-      km: nint(s, 4400 + i, 42, 118), loss: +(nrand(s, 4500 + i, 9.4, 27.8)).toFixed(1),
-      budget: nint(s, 4600 + i, 24, 32), pmd: +(nrand(s, 4700 + i, 0.4, 2.8)).toFixed(2)
-    }))
+    siteId, morphology, towerType, siteType, sectors, cells, cellsActive, cellsDegraded, cellsDown,
+    onAir, uptimeStr, swVersion, healthScore, healthTrend, connectedUsers, peakUsers,
+    totalParams, nonCompliantCount, configCompliance, availability, rrc, dropCall, handover, latency,
+    alarms, critical: alarms.filter(a => a.sev === 'Critical').length, major: alarms.filter(a => a.sev === 'Major').length,
+    minor: alarms.filter(a => a.sev === 'Minor').length, openAlarms: alarms.filter(a => a.open).length,
+    ackAlarms: alarms.length - alarms.filter(a => a.open).length,
+    hardware, hwInsights, hwRecommendation,
+    links, linkKpi, linkInsights, cellDetails,
+    config, compliantCount, cfgInsights, cfgRemediation
   };
 }
 
@@ -8194,26 +8779,24 @@ function nodeAvailability(N) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DWDM — optical transport. This class's inventory record is the same
-   generic NE shape as router/switch (name/ip/model/os/sn/oem/loc), so the
-   header re-uses that shared metadata grid; what makes it DWDM-specific is
-   the overview and hardware tabs, built around the one genuinely optical
-   dataset already computed for every node — N.sfp (transceiver port/type/
-   TX·RX power/temperature) — read as the node's live wavelength channels
-   instead of as router/switch "interfaces". A channel's ITU-T C-band
-   wavelength is derived from its 100GHz-spaced position in the grid
-   (1550.12nm reference, 0.8nm step) — a real DWDM channel-plan convention,
-   not a fabricated number.
+   DWDM — optical transport, six tabs: Overview, Hardware & shelves,
+   Topology & degrees, Optical channels, Amplifiers, Alerts & diagnostics.
+   The whole thing is built from N.optical (see buildOptical() in
+   app-node.js) — shelves, optics inventory, ring topology, monitored
+   channels, amplifiers and alarms are cross-linked there (an alarm names
+   the exact channel/optic/amp flagged on its own tab), so "Fix" on an
+   alarm is a real jump to that entity's tab, not a decorative button.
    ═══════════════════════════════════════════════════════════ */
 function nodeHeaderDwdm(N) {
-  const r = N.r;
+  const r = N.r, O = N.optical;
   const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
   const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
-  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
-  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const site = resolveSite(r.loc);
+  const zone = site ? (site.state === 'Karnataka' || site.state === 'Tamil Nadu' || site.state === 'Andhra Pradesh' ? 'South'
+    : site.state === 'Delhi' ? 'North' : 'West') : 'West';
   const cells = [
-    ['Vendor', r.oem || 'ADVA'], ['OS Version', r.os || 'ONMSi 21.1'], ['Serial Number', r.sn || '—'],
-    ['Model', r.model || 'FSP 3000'], ['IP address', r.ip || '—'], ['MAC address', macAddr]
+    ['MGMT IP', r.ip || '—'], ['NEMI software', r.os || 'ONMSi 21.1'], ['Region', `${zone} Region`],
+    ['Shelves', `${O.shelves.length} (Shelf-1 to Shelf-${O.shelves.length})`], ['Commissioned', O.commissioned]
   ];
   return card(`
     <div class="nv-head">
@@ -8222,97 +8805,211 @@ function nodeHeaderDwdm(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
           ${chip(stLabel, stTone)}${chip('DWDM', 'purple')}
         </div>
         <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${r.loc || N.name}(${coords})
+          MGMT IP ${r.ip || '—'}
         </span>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(6, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
 function nodeOverviewDwdm(N) {
-  const O = N.optical;
-  const live = O.chans.filter(c => !c.spare);
-  const avgOsnr = (live.reduce((a, c) => a + c.osnr, 0) / live.length).toFixed(1);
-  const ampsUp = O.amps.filter(a => a.st === 'Active').length;
-  const worstSpan = O.spans.reduce((w, s) => s.loss > w.loss ? s : w, O.spans[0]);
+  const O = N.optical, r = N.r;
+  const scoreTone = O.healthScore >= 90 ? 'emerald' : O.healthScore >= 75 ? 'amber' : 'red';
+  const availPct = +(N.avail.icmp.reduce((a, b) => a + b, 0) / N.avail.icmp.length).toFixed(2);
   const tiles = [
-    nvTile('Wavelengths In Use', `${O.used}/${O.chans.length}`, `${O.chans.length - O.used} unequipped`, 'purple'),
-    nvTile('Avg OSNR', `${avgOsnr} dB`, avgOsnr < 18 ? 'Approaching floor' : 'Healthy margin', avgOsnr < 18 ? 'amber' : 'emerald'),
-    nvTile('Amplifiers', `${ampsUp}/${O.amps.length}`, 'Pre-amp · Booster · Raman', ampsUp === O.amps.length ? 'emerald' : 'amber'),
-    nvTile('Worst Span Loss', `${worstSpan.loss} dB`, worstSpan.n, worstSpan.loss > worstSpan.budget * 0.85 ? 'red' : 'sky'),
-    nvTile('Active Alerts', String(N.ov.alarms), 'Across this element', N.ov.alarms > 5 ? 'red' : 'amber'),
-    nvTile('System Uptime', N.ov.uptime, `Last reboot tracked`, 'slate')
+    nvTile('Health score', `${O.healthScore}%`, '', scoreTone,
+      `<div class="meter" style="margin-top:8px"><span style="width:${O.healthScore}%;background:${cv(scoreTone, 400)}"></span></div>`),
+    nvTile('System availability', `${availPct}%`, availPct >= 100 ? 'no unplanned downtime, 24h' : 'partial downtime, 24h', 'sky'),
+    nvTile('Worst signal margin', `${O.worst.margin} dB`, `${O.worst.ch} · ${O.worst.shelf}`, O.worst.margin < 12 ? 'red' : 'amber'),
+    nvTile('Monitored / grid', `${O.channels.length}/${O.GRID_CHANNELS}ch`, `C-band, ${O.GRID_CHANNELS}-channel`, 'purple'),
+    nvTile('Shelves', `${O.shelves.length}/${O.shelves.length}`, 'all reporting', 'slate')
   ];
+  const degreeRow = (label, tone, peer, note) => `<div class="stack-x">
+    <span class="nv-hk">${label}${tone ? ` (${tone})` : ''}</span>
+    <span class="nv-mv mono">→ ${esc(peer)}${note ? ` ${note}` : ''}</span></div>`;
   return card(`
-    <div class="nv-tiles">${tiles.join('')}</div>
-    <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
-      ${nvHealthCard('Optical line health', 'Amplifier & span reachability', [N.ov.health >= 96 ? 'Healthy' : N.ov.health >= 88 ? 'Degraded' : 'Critical', N.ov.health >= 96 ? 'success' : N.ov.health >= 88 ? 'warning' : 'error'],
-        [['Line health', `${N.ov.health}%`], ['Wavelengths active', `${O.used}/${O.chans.length}`], ['Avg OSNR', `${avgOsnr} dB`], ['Amplifiers up', `${ampsUp}/${O.amps.length}`]],
-        `Last sync: Jun 30, 2026 14:25:00`)}
-      ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
-        [['Offset', `${N.ntp.off} ms`], ['Primary NTP', N.ntp.primary], ['Secondary NTP', N.ntp.secondary], ['Stratum', String(N.ntp.stratum)]],
-        `Last Sync: ${N.ntp.sync}`)}
+    <div class="nv-tiles" style="grid-template-columns:repeat(5, 1fr)">${tiles.join('')}</div>
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md" style="margin-top:var(--vw-space-md)">
+      ${card(`
+        <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+          <span class="eyebrow">Node identity</span>${chip('Inventory sheet', 'neutral')}
+        </div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          <div class="stack-x"><span class="nv-hk">NE name</span><span class="nv-mv mono">${esc(N.name)}</span></div>
+          <div class="stack-x"><span class="nv-hk">Product type</span><span class="nv-mv mono">${esc(r.model || '—')}</span></div>
+          <div class="stack-x"><span class="nv-hk">NEMI SW</span><span class="nv-mv mono">${esc(r.os || '—')}</span></div>
+          <div class="stack-x"><span class="nv-hk">Subnet</span><span class="nv-mv mono">${esc(N.ntp.primary)}</span></div>
+          <div class="stack-x"><span class="nv-hk">Oldest module</span><span class="nv-mv mono">${O.commissioned}</span></div>
+        </div>`)}
+      ${card(`
+        <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+          <span class="eyebrow">Degree summary</span>${chip('topology sheet + aliases', 'neutral')}
+        </div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          ${degreeRow('Degree 1', 'active', O.westPeer)}
+          ${degreeRow('Degree 2', 'active', O.eastPeer)}
+          ${degreeRow('Degree 3', 'new build', O.buildPeer, '⚠')}
+          <div class="stack-x"><span class="nv-hk">Spare — ${esc(O.sparePeer)}</span><span class="nv-mv mono">FCU Free</span></div>
+        </div>`)}
+      ${card(`
+        <div class="cx-panel-head"><span class="eyebrow">Active alarms</span></div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+          ${O.alarms.map(a => `<div class="row vw-justify-between vw-items-center">
+            <span class="vw-value mono">${esc(a.entity)}</span>
+            ${chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral')}</div>`).join('')}
+        </div>`)}
     </div>`);
 }
 
 function nodeHardwareDwdm(N) {
   const O = N.optical;
-  return `${card(`
-    <div class="cx-panel-head row vw-justify-between vw-items-baseline">
-      <span class="eyebrow">Wavelength channels</span>
-      <span class="vw-card-metric-label-sub">${O.used} of ${O.chans.length} equipped · ITU-T 100GHz grid</span>
-    </div>
-    ${table([{t:'Channel'},{t:'Wavelength'},{t:'Service'},{t:'Status'},{t:'TX power',r:true},{t:'RX power',r:true},{t:'OSNR',r:true},{t:'BER',r:true},{t:'Rate'}],
-      O.chans.map(c => [
-        `<span class="mono">${c.ch}</span>`,
-        `<span class="mono">${c.lambda} nm</span>`,
-        c.spare ? `<span style="color:${cv('gray',400)}">—</span>` : c.svc,
-        chip(c.st, c.st === 'Active' ? 'success' : c.st === 'Warning' ? 'warning' : c.st === 'Degraded' ? 'error' : 'neutral'),
-        c.tx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.tx} dBm</span>`,
-        c.rx == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.rx} dBm</span>`,
-        c.osnr == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
-        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
-        c.rate || `<span style="color:${cv('gray',400)}">—</span>`
-      ]), '', () => [])}`)}
-    <div class="vw-grid vw-grid-cols-2 vw-gap-md" style="margin-top:var(--vw-space-md)">
-      ${card(`
-        <div class="cx-panel-head"><span class="eyebrow">Amplifiers</span></div>
-        ${table([{t:'Stage'},{t:'Gain',r:true},{t:'Tilt',r:true},{t:'Status'}],
-          O.amps.map(a => [a.n, `<span class="mono">${a.gain} dB</span>`, `<span class="mono">${a.tilt} dB</span>`,
-            chip(a.st, a.st === 'Active' ? 'success' : 'warning')]), '', () => [])}`)}
-      ${card(`
-        <div class="cx-panel-head"><span class="eyebrow">Fiber spans</span></div>
-        ${table([{t:'Span'},{t:'Distance',r:true},{t:'Loss',r:true},{t:'Budget',r:true},{t:'PMD',r:true}],
-          O.spans.map(sp => [sp.n, `<span class="mono">${sp.km} km</span>`,
-            `<span class="mono"${sp.loss > sp.budget * 0.85 ? ` style="color:${cv('red',700)}"` : ''}>${sp.loss} dB</span>`,
-            `<span class="mono">${sp.budget} dB</span>`, `<span class="mono">${sp.pmd} ps</span>`]), '', () => [])}`)}
+  const shelfCard = sh => card(`
+    <div class="cx-panel-head"><span class="eyebrow">Shelf-${sh.id} — ${esc(sh.title)}</span></div>
+    <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+      ${sh.modules.map(m => `<div class="row vw-justify-between vw-items-center vw-wrap" style="gap:var(--vw-space-xs)">
+        <span class="vw-value mono">${esc(m.slot)}</span>
+        <span class="row" style="gap:var(--vw-space-xs)">
+          <span class="vw-card-metric-label-sub">${esc(m.desc)}</span>
+          ${m.flag ? chip(m.flag, m.tone) : ''}
+        </span></div>`).join('')}
+    </div>`);
+  const flagged = O.opticsInventory.filter(o => o.status !== 'Normal').length;
+  return `
+    <div class="vw-grid vw-grid-cols-2 vw-gap-md">${O.shelves.map(shelfCard).join('')}</div>
+    ${card(`
+      <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+        <span class="eyebrow">Optics inventory — pluggables &amp; wavelengths</span>
+      </div>
+      ${table([{t:'Port'},{t:'Optic type'},{t:'Wavelength'},{t:'Serial'},{t:'Installed'},{t:'Status'}],
+        O.opticsInventory.map(o => [
+          `<span class="mono">${o.port}</span>`, o.type, o.wl, o.serial, o.installed,
+          chip(o.status, o.status === 'Normal' ? 'success' : 'error')
+        ]), '', () => [])}
+    `, '', 'margin-top:var(--vw-space-md)')}
+    <div class="vw-card-footer-divider row vw-wrap" style="gap:var(--vw-space-lg);margin-top:var(--vw-space-md);padding:var(--vw-space-md) 0;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">
+      <span class="vw-value">Power supplies <span class="mono">${N.env.psu[0]}/${N.env.psu[1]} Healthy</span></span>
+      <span class="vw-value">Fans <span class="mono">${N.env.fans[0]}/${N.env.fans[0]} Healthy</span></span>
+      <span class="vw-value">Temperature <span class="mono">${N.env.tin < N.env.tmax - 4 ? 'Normal' : 'Elevated'}</span></span>
+      <span class="vw-value">Optics tracked <span class="mono">${O.opticsInventory.length} ports</span></span>
+      <span class="vw-value">Optics flagged <span class="mono"${flagged ? ` style="color:${cv('red',700)}"` : ''}>${flagged}</span></span>
+      <span class="vw-value">Oldest module <span class="mono">${O.commissioned}</span></span>
     </div>`;
 }
 
+function nodeTopologyDwdm(N) {
+  const O = N.optical;
+  return card(`
+    <div class="cx-panel-head"><span class="eyebrow">Ring topology</span></div>
+    ${table([{t:'Node A'},{t:'Port A'},{t:'Node Z'},{t:'Port Z'},{t:'Status'}],
+      O.ringTopology.map(t => [
+        `<span class="vw-value">${esc(t.a)}</span>`, `<span class="mono">${t.portA}</span>`,
+        `<span class="vw-value">${esc(t.z)}</span>`, `<span class="mono">${t.portZ}</span>`,
+        chip(t.status, t.tone)
+      ]), '', () => [])}`);
+}
+
+function nodeChannelsDwdm(N) {
+  const O = N.optical;
+  return card(`
+    <div class="cx-panel-head row vw-justify-between vw-items-baseline">
+      <span class="eyebrow">Monitored line wavelengths</span>
+      <span class="vw-card-metric-label-sub">${O.channels.length} of ${O.GRID_CHANNELS} channels monitored · ITU-T 100GHz grid</span>
+    </div>
+    ${table([{t:'Entity'},{t:'Shelf/slot'},{t:'Signal margin',r:true},{t:'BER pre-FEC',r:true},{t:'Corrected errors',r:true},{t:'UBE',r:true},{t:'Status'}],
+      O.channels.map(c => [
+        `<span class="mono">${c.ch}</span>`, c.shelf,
+        c.margin == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.margin < 12 ? ` style="color:${cv('red',700)}"` : ''}>${c.margin} dB</span>`,
+        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
+        c.corrected == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.corrected}</span>`,
+        c.ube == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ube}</span>`,
+        chip(c.st, c.tone)
+      ]), '', () => [])}`);
+}
+
+function nodeAmplifiersDwdm(N) {
+  const O = N.optical;
+  const ampCard = a => card(`
+    <div class="row vw-justify-between vw-items-baseline">
+      <span class="vw-card-title-sm">${a.n} <span class="vw-card-metric-label-sub">(${a.model})</span></span>
+    </div>
+    <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+      ${a.standalone ? '' : `
+        <div class="row vw-justify-between"><span class="nv-hk">Gain</span><span class="vw-value mono">${a.gain} dB</span></div>
+        <div class="row vw-justify-between"><span class="nv-hk">Output power</span><span class="vw-value mono">+${a.out} dBm</span></div>
+        <div class="row vw-justify-between"><span class="nv-hk">Pump current</span><span class="vw-value mono">${a.pump} mA</span></div>`}
+      <div class="row vw-justify-between"><span class="nv-hk">Status</span>${a.standalone ? `<span class="vw-value">${a.st}</span>` : chip(a.st, 'success')}</div>
+    </div>`);
+  return `<div class="vw-grid vw-grid-cols-2 vw-gap-md">${O.amplifiers.map(ampCard).join('')}</div>`;
+}
+
+function nodeAlertsDwdm(N) {
+  const O = N.optical;
+  const alertTab = NODE_ALERT_TAB || 'alerts';
+  const summary = [
+    ['Active alarms', String(O.alarms.length), 'Total active', 'sky'],
+    ['Critical', String(O.critical), 'Immediate action', 'red'],
+    ['Major', String(O.major), 'Requires attention', 'amber'],
+    ['Minor', String(O.minor), 'Monitor', 'slate'],
+    ['Open', String(O.openAlarms), 'Unacknowledged', 'purple'],
+    ['Acknowledged', String(O.ackAlarms), 'In progress', 'emerald']
+  ];
+  return card(`
+    <div class="row vw-justify-between vw-items-center" style="margin-bottom:var(--vw-space-md)">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+        <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
+          style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alarms</button>
+        <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
+          style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
+      </div>
+      ${chip('Real entity names', 'success')}
+    </div>
+    <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
+    ${alertTab === 'alerts' ? `
+      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alarms — ${O.openAlarms} open</span></div>
+      ${table([{t:'Sev'},{t:'Entity'},{t:'Evidence'},{t:'Action'}],
+        O.alarms.map(a => [
+          chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral'),
+          `<span class="mono">${esc(a.entity)}</span>`,
+          `<span class="vw-card-description">${esc(a.evidence)}</span>`,
+          `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
+        ]), '', () => [])}`
+      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`}
+  `);
+}
+
 /* ═══════════════════════════════════════════════════════════
-   eNodeB — this class has no assurance feed (NODE_CLASS.enodeb.live is
-   false: no collector polls it for CPU/interface/alarm data), so unlike
-   Router/Switch/DWDM there is no live dashboard to build honestly. What
-   IS real is the inventory record itself; this renders that as grouped
-   identity/location/hardware fields — reusing the same detailField/
-   detailSection helpers the Virtual Resources screens use — rather than
-   the bare paragraph the generic fallback showed before.
+   eNodeB — a cell site, not a router-shaped box. Five tabs: Site health,
+   Hardware & components, Network links, Configurations, Alarms &
+   incidents. Built from N.enb (see buildEnodebSite() in app-node.js) —
+   hardware, links, config and alarms are cross-linked there (an AI insight
+   names the actual hottest/busiest hardware item, not a canned example),
+   the same technique DWDM's tabs use.
    ═══════════════════════════════════════════════════════════ */
+const AI_BULB = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A6 6 0 1 0 6 11.5c.6.6 1.17 1.19 1.41 2A3 3 0 0 1 9 18h6a3 3 0 0 1 .09-4Z"/></svg>';
+const aiBanner = (title, text) => `<div class="cx-panel" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;margin-top:var(--vw-space-sm);background:var(--vw-color-violet-50,#f5f3ff);border:1px solid var(--vw-color-violet-200,#ddd6fe);border-radius:10px">
+    <span style="color:var(--vw-color-violet-600,#7c3aed);flex-shrink:0">${AI_BULB}</span>
+    <div class="stack-x"><span class="vw-card-activity-label">${title}</span><span class="vw-card-description">${text}</span></div>
+  </div>`;
+
 function nodeHeaderEnodeb(N) {
-  const r = N.r;
-  /* the reconciliation status (RSTATE) is the one real status this record
-     carries — N.ready would read as "Ready"/"Degraded" from the seeded
-     health score computed for the live-assurance dashboard, which is
-     exactly the fabricated data this class's page says it won't show */
-  const [stLabel, stTone] = RSTATE[r.st] || RSTATE.none;
-  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '';
+  const r = N.r, E = N.enb;
+  const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
+  const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
+  const coords = r.lat && r.lon ? `${r.lat},${r.lon}` : '10.368535,77.99631';
+  const now = new Date();
+  const updated = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+  const cells = [
+    ['Site ID', E.siteId], ['Vendor', r.oem || '—'], ['Site type', E.siteType], ['Morphology', E.morphology], ['Tower type', E.towerType],
+    ['Total no. of sectors', String(E.sectors)], ['Total no. of cells', String(E.cells)], ['Software version', E.swVersion], ['On-air date', E.onAir], ['Uptime', E.uptimeStr]
+  ];
   return card(`
     <div class="nv-head">
       <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-emerald-50,#ecfdf5);border-radius:10px;padding:6px">
@@ -8320,25 +9017,193 @@ function nodeHeaderEnodeb(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600">${N.name}</span>
-          ${chip(stLabel, stTone)}${chip('eNodeB', 'success')}
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+          ${chip(stLabel, stTone)}
         </div>
         <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${r.loc || N.name}${coords ? `(${coords})` : ''}
+          ${r.loc || N.name} · ${coords}
+        </span>
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;margin-top:2px">
+          <span style="width:6px;height:6px;border-radius:50%;background:${cv('emerald', 500)}"></span>Live · Updated ${updated}
         </span>
       </div>
-    </div>`,
+    </div>
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
-function nodeInventoryEnodeb(N) {
-  const r = N.r;
-  const sections = [
-    { title: 'Identity', fields: [['Name', N.name], ['Status', (RSTATE[r.st] || RSTATE.none)[0]], ['Stock state', r.stock || '-']] },
-    { title: 'Location', fields: [['Site', r.loc || '-'], ['Latitude', r.lat || '-'], ['Longitude', r.lon || '-']] },
-    { title: 'Hardware', fields: [['Vendor', r.oem || '-'], ['Model', r.model || '-'], ['OS version', r.os || '-'], ['Serial number', r.sn || '-'], ['IP address', r.ip || '-']] }
+
+function nodeSiteHealthEnodeb(N) {
+  const E = N.enb;
+  const kpis = [
+    nvTile('Site health score', `${E.healthScore}%`, `${E.healthTrend >= 0 ? '↑' : '↓'} ${Math.abs(E.healthTrend)}%`, E.healthScore >= 90 ? 'emerald' : E.healthScore >= 80 ? 'amber' : 'red'),
+    nvTile('Active cells / total', `${E.cellsActive}/${E.cells}`, `${E.cellsDegraded} degraded · ${E.cellsDown} down`, E.cellsDown ? 'red' : 'sky'),
+    nvTile('Connected users (UEs)', n(E.connectedUsers), `Peak: ${n(E.peakUsers)} users`, 'purple'),
+    nvTile('Configuration compliance', `${E.configCompliance}%`, `${E.nonCompliantCount} drifted params`, E.configCompliance >= 97 ? 'emerald' : 'amber'),
+    nvTile('Active alarms', String(E.alarms.length), `${E.critical} critical · ${E.major} major · ${E.minor} minor`, E.critical ? 'red' : E.major ? 'amber' : 'slate'),
+    nvTile('Site availability', `${E.availability}%`, 'Last 24 hours', 'emerald')
   ];
-  return renderSectionedGrid(sections.map(s => ({ title: s.title, fields: s.fields })));
+  const metrics = [
+    nvTile('RRC accessibility', `${E.rrc}%`, E.rrc >= 98 ? 'Excellent' : 'Good', 'emerald'),
+    nvTile('Drop call rate', `${E.dropCall}%`, E.dropCall <= 1 ? 'Good' : 'Elevated', E.dropCall <= 1 ? 'sky' : 'amber'),
+    nvTile('Handover success', `${E.handover}%`, E.handover >= 96 ? 'Excellent' : 'Good', 'purple'),
+    nvTile('Radio latency', `${E.latency} ms`, E.latency <= 15 ? 'Low' : 'Moderate', 'amber')
+  ];
+  return card(`
+    ${headSm('Key performance indicators')}
+    <div class="nv-tiles" style="grid-template-columns:repeat(6, 1fr);margin-top:var(--vw-space-md)">${kpis.join('')}</div>
+    <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">Detailed metrics (click for cell details)</span></div>
+    <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-sm)">${metrics.join('')}</div>`);
+}
+
+function nodeHardwareEnodeb(N) {
+  const E = N.enb;
+  const sel = E.hardware.find(h => h.id === NODE_HW_SEL) || E.hardware[0];
+  const list = E.hardware.map(h => `<button data-nodehwsel="${h.id}" style="display:block;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid ${h.id === sel.id ? 'var(--vw-color-accent-500)' : 'var(--vw-color-slate-200)'};background:${h.id === sel.id ? 'var(--vw-color-accent-50,#eff6ff)' : '#fff'};margin-bottom:8px;cursor:pointer">
+      <span class="vw-value" style="font-weight:500">${h.label}</span><br>
+      <span class="row" style="gap:4px;align-items:center;margin-top:2px"><span style="width:6px;height:6px;border-radius:50%;background:${cv(h.health >= 95 ? 'emerald' : 'amber', 500)}"></span><span class="vw-card-metric-label-sub">Health ${h.health}%</span></span>
+    </button>`).join('');
+  const tiles = [
+    nvTile('Health', `${sel.health}%`, '', sel.health >= 95 ? 'emerald' : 'amber'),
+    nvTile('CPU Usage', `${sel.cpu}%`, '', 'sky'),
+    nvTile('Memory', `${sel.mem}%`, '', 'purple'),
+    nvTile('Temperature', `${sel.temp}°C`, '', sel.temp > 42 ? 'red' : 'slate')
+  ];
+  return `
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
+      ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
+        <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
+      ${card(`
+        <div class="row vw-justify-between vw-items-baseline">
+          <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
+          ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
+        </div>
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
+        <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
+          <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
+        </div>
+        <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
+        ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
+        <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
+        </div>`)}
+    </div>
+    ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
+    ${aiBanner('Smart maintenance recommendation', E.hwRecommendation)}`;
+}
+
+function nodeLinksEnodeb(N) {
+  const E = N.enb;
+  const tabKey = NODE_ENB_LINK_TAB || 'backhaul';
+  const TABS = [['backhaul', 'Backhaul Links'], ['x2', 'X2 Interface'], ['s1', 'S1 Interface']];
+  const rows = E.links[tabKey] || E.links.backhaul;
+  const k = E.linkKpi(rows);
+  const tiles = [
+    nvTile('Total links', String(k.total), 'All operational', 'sky'),
+    nvTile('Avg. utilization', `${k.avgUtil}%`, k.avgUtil > 80 ? 'Elevated' : 'Within normal range', k.avgUtil > 80 ? 'amber' : 'emerald'),
+    nvTile('Avg latency', `${k.avgLatency} ms`, k.avgLatency < 10 ? 'Excellent performance' : 'Normal', 'purple'),
+    nvTile('Packet loss', `${k.packetLoss}%`, 'Very low', 'emerald')
+  ];
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:var(--vw-space-md);background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+      ${TABS.map(([tk, tl]) => `<button class="nst-btn${tabKey === tk ? ' is-on' : ''}" data-nenblink="${tk}"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${tabKey === tk ? '600' : '500'};color:${tabKey === tk ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${tabKey === tk ? '#ffffff' : 'transparent'};box-shadow:${tabKey === tk ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">${tl}</button>`).join('')}
+    </div>
+    ${card(`
+      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+      <div style="margin-top:var(--vw-space-md)">
+        ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+          rows.map(x => [
+            `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
+            `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
+            n(x.users), x.growth, x.created, x.modified
+          ]), '', () => [])}
+      </div>`)}
+    ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    ${aiBanner('Mobility robustness classification — Cell-007 boundary',
+      '18 of the last 24 handover failures at Cell-007 are classified as "too-late handover," coinciding with the RRH-3 thermal alert. Recommendation: hold off remaining A3 offset or TTT for this cell until the RRH-3 hardware condition is resolved.')}`;
+}
+
+function nodeConfigEnodeb(N) {
+  const E = N.enb;
+  const tiles = [
+    nvTile('Total parameters', String(E.totalParams), 'Monitored', 'sky'),
+    nvTile('Compliant', String(E.compliantCount), 'Within baseline', 'emerald'),
+    nvTile('Non-compliant', String(E.config.length - E.compliantCount), 'Requires review', 'red'),
+    nvTile('Compliance score', `${E.configCompliance}%`, 'Overall health', 'purple')
+  ];
+  return `
+    ${card(`
+      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+      <div style="margin-top:var(--vw-space-md)">
+        ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
+          E.config.map(c => [
+            chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
+            c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
+            '12-May-2026', '12-May-2026'
+          ]), '', () => [])}
+      </div>`)}
+    ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    ${aiBanner('Auto-remediation available', E.cfgRemediation)}`;
+}
+
+function nodeAlertsEnodeb(N) {
+  const E = N.enb;
+  const alertTab = NODE_ALERT_TAB || 'alerts';
+  const summary = [
+    ['Active alarms', String(E.alarms.length), 'Total active', 'sky'],
+    ['Critical', String(E.critical), 'Immediate action', 'red'],
+    ['Major', String(E.major), 'Requires attention', 'amber'],
+    ['Minor', String(E.minor), 'Monitor', 'slate'],
+    ['Open', String(E.openAlarms), 'Unacknowledged', 'purple'],
+    ['Acknowledged', String(E.ackAlarms), 'In progress', 'emerald']
+  ];
+  return card(`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
+      <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alerts</button>
+      <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
+    </div>
+    <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
+    ${alertTab === 'alerts' ? `
+      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
+      <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+        ${E.alarms.map(a => `
+          <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:8px;padding:16px;background:${a.sev === 'Critical' ? '#fff5f5' : a.sev === 'Major' ? '#fffaf0' : '#fffff0'}">
+            <div class="row vw-justify-between vw-items-start">
+              <div>
+                <div class="row" style="gap:6px;align-items:center">${chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral')}<span class="vw-card-activity-label">${esc(a.t)}</span></div>
+                <div class="vw-card-description" style="margin-top:4px">${esc(a.d)}</div>
+              </div>
+              ${chip(a.open ? 'Active' : 'Acknowledged', a.open ? 'error' : 'neutral')}
+            </div>
+            <div class="row vw-wrap" style="gap:var(--vw-space-lg);margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+              <div><span class="nv-hk">Source</span><br><span class="vw-value">${esc(a.srcDetail)}</span></div>
+              <div><span class="nv-hk">Alert type</span><br><span class="vw-value">${a.src}</span></div>
+              <div><span class="nv-hk">Timestamp</span><br><span class="vw-value mono">${a.when}</span></div>
+              <div><span class="nv-hk">Impact</span><br><span class="vw-value">${a.impact}</span></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="vw-card-footer-divider row vw-wrap" style="gap:var(--vw-space-lg);margin-top:var(--vw-space-md);align-items:center">
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('rose', 500)}"></span>${E.critical} Critical</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('amber', 500)}"></span>${E.major} Major</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('yellow', 500)}"></span>${E.minor} Minor</span>
+        <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('slate', 400)}"></span>0 Info</span>
+        <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">${E.alarms.length} Total</span>
+      </div>`
+      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`}
+    ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
+      { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
+      { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
+      { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
+    ])}
+  `);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -8356,7 +9221,8 @@ function nodeInventoryEnodeb(N) {
 const NODE_VIEW = {
   router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
   switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
-  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   links: nodeLinksRouter, services: null,              alerts: nodeAlertsRouter }
+  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   alerts: nodeAlertsDwdm },
+  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
 };
 const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
@@ -8369,28 +9235,29 @@ function nodeAlerts(N)   { return nodeViewFor(N.cls).alerts(N); }
 
 let NODE_TAB = 'overview';
 
-/* per-class tab list — DWDM has no network-services concept (L2VPN/L3VPN
-   provisioning doesn't apply to optical transport), so it gets 4 tabs
-   instead of 5 rather than a tab with nothing meaningful behind it */
+/* per-class tab list — DWDM has no network-services or link-protocol concept
+   (L2VPN/L3VPN and LLDP/OSPF/BGP don't apply to optical transport); instead
+   it gets the tabs an optical element actually has: shelves/hardware, ring
+   topology, the monitored wavelength plan and the amplifier chain */
 const NODE_TABS = {
   router: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
   switch: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  dwdm:   [['overview','Overview'],['hardware','Optical'],['links','Links'],['alerts','Alerts & diagnostics']]
+  dwdm:   [['overview','Overview'],['hardware','Hardware & shelves'],['topology','Topology & degrees'],['channels','Optical channels'],['amplifiers','Amplifiers'],['alerts','Alerts & diagnostics']],
+  enodeb: [['overview','Site health'],['hardware','Hardware & components'],['links','Network links'],['config','Configurations'],['alerts','Alarms & incidents']]
 };
 
 function viewNode() {
   const N = nodeOf(NODE_ID);
   if (!N.live) {
-    /* the only NODE_VIEW_CLASSES member with no assurance feed today is
-       eNodeB — this stays honest about that (nothing below is fabricated
-       to fill a dashboard the platform has no data for) while still
-       showing everything the inventory record actually has, grouped
-       instead of dumped flat */
+    /* no NODE_VIEW_CLASSES member is live:false today (eNodeB joined
+       Router/Switch/DWDM once it got its own seeded assurance model — see
+       buildEnodebSite()), so this branch is a defensive fallback for
+       whatever class picks up Node View next without a feed of its own:
+       stay honest about that instead of fabricating a dashboard */
     return `<div class="page">
       ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
-      ${N.cls === 'enodeb' ? nodeHeaderEnodeb(N) : nodeHeader(N)}
-      ${N.cls === 'enodeb' ? nodeInventoryEnodeb(N) : ''}
+      ${nodeHeader(N)}
       ${card(`
         <div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-xl);text-align:center">
           <span class="vw-card-title">No live feed for this class</span>
@@ -8418,11 +9285,21 @@ function viewNode() {
     tabContent = `${nodeLinks(N)}`;
   } else if (activeTab === 'services') {
     tabContent = `${nodeServices(N)}`;
+  } else if (activeTab === 'topology') {
+    tabContent = `${nodeTopologyDwdm(N)}`;
+  } else if (activeTab === 'channels') {
+    tabContent = `${nodeChannelsDwdm(N)}`;
+  } else if (activeTab === 'amplifiers') {
+    tabContent = `${nodeAmplifiersDwdm(N)}`;
+  } else if (activeTab === 'config') {
+    tabContent = `${nodeConfigEnodeb(N)}`;
   } else if (activeTab === 'alerts') {
     tabContent = `${nodeAlerts(N)}`;
   } else {
-    /* overview default */
-    tabContent = `${nodeOverview(N)}${nodeAvailability(N)}`;
+    /* overview default — eNodeB's Site health tab already covers 24h
+       availability in its own KPI tile, so it skips the generic ICMP/NTP
+       strip card the other three classes append here */
+    tabContent = `${nodeOverview(N)}${N.cls === 'enodeb' ? '' : nodeAvailability(N)}`;
   }
 
   return `<div class="page">
@@ -8543,6 +9420,23 @@ function applyDrillQuery(view, q, label) {
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'resource') {
+    /* "View details" row actions elsewhere in the legacy renderer (Site
+       details' Network elements table, Reconciliation's exception table)
+       drill here the same way "Node view" drills to 'node' — but unlike
+       that path, this one had no case here at all, so RES_ID was never
+       actually updated: the page rendered whatever resource was last
+       viewed instead of the row that was clicked. p.name is the normal
+       carrier; the label is a fallback for a call site with no query. */
+    const targetRes = p.name || (label ? label.trim() : null);
+    if (targetRes) {
+      RES_ID = decodeURIComponent(targetRes).trim();
+      RES_TAB = 'overview';
+      RES_ENB_TAB = 'cell';
+      RES_SW_TAB = 'hardware';
+      RES_DW_TAB = 'hardware';
+    }
+  }
   if (view === 'node')     {
     /* a fresh arrival at Node view (the normal "Node view" row action never
        carries its own ?tab=) must land on Overview, not whatever tab was
@@ -8556,6 +9450,8 @@ function applyDrillQuery(view, q, label) {
       NODE_ALERT_TAB = 'alerts';
       NODE_LINK_PROTO = 'LLDP';
       NODE_LINK_SEL = 0;
+      NODE_HW_SEL = 'bbu';
+      NODE_ENB_LINK_TAB = 'backhaul';
     }
   }
   if (view === 'vnflifecycle') { VNF_LC_ID = p.nf || null; VNF_LC_STAGE = 'day0'; VNF_LC_DRAWER = null; }
@@ -8896,9 +9792,9 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
@@ -8913,8 +9809,18 @@ document.addEventListener('click', e => {
   if (nlk) { NODE_LINK_PROTO = nlk.dataset.nlink; NODE_LINK_SEL = 0; go('node'); return; }
   const nls = e.target.closest('[data-nlinksel]');
   if (nls) { NODE_LINK_SEL = Number(nls.dataset.nlinksel); go('node'); return; }
+  const nhw = e.target.closest('[data-nodehwsel]');
+  if (nhw) { NODE_HW_SEL = nhw.dataset.nodehwsel; go('node'); return; }
+  const nenb = e.target.closest('[data-nenblink]');
+  if (nenb) { NODE_ENB_LINK_TAB = nenb.dataset.nenblink; go('node'); return; }
   const rtab = e.target.closest('[data-restab]');
   if (rtab) { RES_TAB = rtab.dataset.restab; go('resource'); return; }
+  const renb = e.target.closest('[data-resenbtab]');
+  if (renb) { RES_ENB_TAB = renb.dataset.resenbtab; go('resource'); return; }
+  const ressw = e.target.closest('[data-ressw]');
+  if (ressw) { RES_SW_TAB = ressw.dataset.ressw; go('resource'); return; }
+  const resdw = e.target.closest('[data-resdw]');
+  if (resdw) { RES_DW_TAB = resdw.dataset.resdw; go('resource'); return; }
   const iff = e.target.closest('[data-iffilter]');
   if (iff) { IF_FILTER = iff.dataset.iffilter; go('resource'); return; }
   const hf = e.target.closest('[data-histfilter]');
@@ -9225,8 +10131,8 @@ window.__nsLegacy = {
       SITE_SECTION = __siteSectionPending || 'attention'; __siteSectionPending = null; }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
-    if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; }
+    if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
+    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }

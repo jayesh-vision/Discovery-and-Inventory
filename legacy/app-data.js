@@ -481,12 +481,9 @@ const REC_BANDS = {
     q:'Server, DWDM, eNodeB and gNodeB — no collector reaches these classes, so they are excluded from the comparison rather than counted as missing.' }
 };
 
-/* ── source + verification, the bridge from Discovery ───── */
+/* ── source, the bridge from Discovery ───────────────────── */
 const SRC = { d: ['Discovered','success'], p: ['Planned · CIQ','info'], m: ['Manual','neutral'], e: ['EMS','purple'] };
 const src = k => chip(SRC[k][0], SRC[k][1]);
-const ver = h => h === null ? `<span style="color:${cv('gray',400)}">never</span>`
-  : h < 24 ? chip('fresh','success') : h < 720 ? chip(`${Math.round(h/24)} d`,'warning')
-  : chip(`${Math.round(h/720)} mo`,'error');
 const RSTATE = { ok:['Verified','success'], drift:['Drifted','warning'], stale:['Stale','orange'],
                  miss:['Missing','error'], none:['Not discovered','neutral'] };
 const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
@@ -1282,12 +1279,12 @@ const SITE_NE = {
       { st:'ok',   name:'KA-BGLK-277-T-CHR-09', ip:'172.31.31.209', model:'C9400-LC-48T', mac:'A4:B1:C2:D3:E4:F5', sn:'CHRSW-909090',       tmpl:'24A-NE-ZTP - 1.0', oem:'CISCO',   s:'d', v:6 }
     ],
     dwdm: [
-      { st:'none', name:'BGLK-KA-OADM-100',     ip:'172.31.31.148', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-1 · slot 4', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-101',      ip:'100.64.32.27',  type:'ILA',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-1 · slot 6', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-GNE-202',      ip:'172.31.41.202', type:'GNE',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-2 · slot 1', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-OADM-201',     ip:'172.31.41.201', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-2 · slot 3', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-203',      ip:'192.168.1.1',   type:'ILA',  oem:'JUNIPER', sw:'16.3.2', shelf:'OT-2 · slot 5', s:'m', v:null },
-      { st:'none', name:'BGLK-KA-ILA-204',      ip:'172.16.0.5',    type:'ILA',  oem:'JUNIPER', sw:'21.1.1', shelf:'OT-2 · slot 7', s:'m', v:null }
+      { st:'none', name:'BGLK-KA-OADM-100',     ip:'172.31.31.148', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-1 · slot 4', sn:'ADV277100', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-101',      ip:'100.64.32.27',  type:'ILA',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-1 · slot 6', sn:'ADV277101', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-GNE-202',      ip:'172.31.41.202', type:'GNE',  oem:'ADVA',    sw:'21.5.1', shelf:'OT-2 · slot 1', sn:'ADV277202', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-OADM-201',     ip:'172.31.41.201', type:'OADM', oem:'JUNIPER', sw:'21.5.1', shelf:'OT-2 · slot 3', sn:'ADV277201', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-203',      ip:'192.168.1.1',   type:'ILA',  oem:'JUNIPER', sw:'16.3.2', shelf:'OT-2 · slot 5', sn:'ADV277203', s:'m', v:null },
+      { st:'none', name:'BGLK-KA-ILA-204',      ip:'172.16.0.5',    type:'ILA',  oem:'JUNIPER', sw:'21.1.1', shelf:'OT-2 · slot 7', sn:'ADV277204', s:'m', v:null }
     ]
   }
 };
@@ -1312,7 +1309,23 @@ function siteNE(id, ne, disc) {
       sn: `SW-${id}-${4400 + i*11}`, tmpl: '24A-NE-ZTP - 1.0', oem: m[1],
       s: (nR + i) < seen ? 'd' : 'p', v: (nR + i) < seen ? 4 + i : null };
   };
-  return { router: Array.from({length:nR}, (_,i)=>mk(i)), switch: Array.from({length:nS}, (_,i)=>mkS(i)), dwdm: [] };
+  /* DWDM optical transport isn't at every site — realistically it's the
+     larger aggregation/core/datacenter sites that carry it, not a small
+     edge site with a couple of access routers. Same 'none'/manual-source
+     convention the hand-authored BGLK-277 dwdm rows above already use
+     (this class isn't reconciled through the router/switch discovery
+     feed in this sample), not a fresh invented status split. */
+  const DWDM_TYPES = ['OADM', 'ILA', 'GNE'];
+  const mkD = (i) => ({
+    st: 'none', name: `${id}-OADM-${String(100 + i * 20)}`,
+    ip: `172.31.${90 + (i % 9)}.${20 + i * 7}`,
+    type: DWDM_TYPES[i % DWDM_TYPES.length], oem: i % 2 ? 'ADVA' : 'JUNIPER', sw: '21.5.1',
+    shelf: `OT-${i + 1} · slot ${3 + i * 2}`, sn: `ADV${id.replace(/[^0-9]/g, '').padStart(3, '0')}${100 + i * 20}`,
+    s: 'm', v: null
+  });
+  const nD = ne >= 20 ? 2 : ne >= 6 ? 1 : 0;
+  return { router: Array.from({length:nR}, (_,i)=>mk(i)), switch: Array.from({length:nS}, (_,i)=>mkS(i)),
+    dwdm: Array.from({length:nD}, (_,i)=>mkD(i)) };
 }
 
 /* ── capex ──────────────────────────────────────────────── */
