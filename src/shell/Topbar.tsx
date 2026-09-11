@@ -40,6 +40,12 @@ export default function Topbar() {
   if (s.key === 'location' && !drill && !from) {
     return null;
   }
+  /* the Discovery landing page names itself in its own page-head ("Discovery");
+     a breadcrumb repeating that as "Insights" above it is redundant, and there's
+     nowhere shallower to drill back to from here. */
+  if (s.key === 'insights') {
+    return null;
+  }
 
   const targetFor = (prefix: string): string | null => {
     const t = SCREENS.find(x => x.crumb === prefix);

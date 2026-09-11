@@ -16,7 +16,14 @@ export function StackedBars({ days, series, values, height = 240 }: {
   const W = 1000, H = height, padL = 44, padB = 34, padT = 12;
   const totals = values.map(v => v.reduce((a, b) => a + b, 0));
   const max = Math.max(...totals);
-  const step = max > 2000 ? 1000 : max > 500 ? 500 : 100;
+  /* a "nice" step sized to roughly 4 ticks over the actual max, rather than
+     a fixed 100/500/1000 ladder — a small-count series (single digits to
+     tens) got stuck against a 100-unit step, so its bars sat in a sliver at
+     the bottom of the chart with the rest of the height empty */
+  const rawStep = Math.max(1, max / 4);
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
   const top = Math.ceil(max / step) * step;
   const y = (v: number) => padT + (H - padT - padB) * (1 - v / top);
   const slot = (W - padL) / days.length, bw = Math.min(40, slot * 0.34);

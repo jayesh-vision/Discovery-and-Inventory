@@ -1032,9 +1032,9 @@ const SERVICES = {
     { st:'Up',   chip:'success', name:'SC-DU',               ip:'172.31.53.24',  rd:'24186:1016064', rt:'24186:901',                  erp:'1105', ifc:'BD6',                   ne:'BGLK-MX204-AGG-02', v:10 }
   ],
   l2vpn: [
-    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', ne:'INDR-ASR920-PE-T3', v:3 },
-    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   ne:'BGLK-NCS540-PE-T3', v:3 },
-    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', ne:'CHE-J2.2K-PE-T4-ER', v:30 }
+    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', ne:'INDR-ASR920-PE-T3', dstIp:'172.31.31.17', dstNe:'BGLK-NCS540-PE-T3', dstIfc:'ge-0/0/1.100', v:3 },
+    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   ne:'BGLK-NCS540-PE-T3', dstIp:'172.31.53.17', dstNe:'BGLK-ASR9010-PE-T1', dstIfc:'TenGigE0/0/0/2.200', v:3 },
+    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', ne:'CHE-J2.2K-PE-T4-ER', dstIp:'172.31.61.17', dstNe:'CHE-J2.2K-PE-T4-WR', dstIfc:'xe-0/1/0.200', v:30 }
   ]
 };
 
@@ -1096,7 +1096,9 @@ SERVICES.l2vpn = padList(SERVICES.l2vpn, 10, (r, i) => ({ ...r,
   name: `${i % 2 ? 'VPWS' : 'VPLS'}-${['BGLK', 'DEL', 'CHE', 'PUN', 'HYD', 'KOL'][i % 6]}-${String(5 + i).padStart(2, '0')}`,
   ip: PAD_IP(i + 2), rd: `24186:20${1210 + i * 3}`, rt: `24186:7001${20 + i}`,
   erp: String(2050 + i), ifc: `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`,
-  ne: PAD_NE[(i + 3) % PAD_NE.length], v: [3, 7, 30][i % 3] }));
+  ne: PAD_NE[(i + 3) % PAD_NE.length],
+  dstIp: PAD_IP(i + 9), dstNe: PAD_NE[(i + 7) % PAD_NE.length], dstIfc: `${i % 2 ? 'ge' : 'xe'}-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`,
+  v: [3, 7, 30][i % 3] }));
 
 
 const INACT_TABS = [

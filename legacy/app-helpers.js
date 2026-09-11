@@ -32,7 +32,10 @@ const pageHead = (t, d, right = '') =>
      <p class="vw-page-description" style="margin:0">${d}</p></div><div class="row">${right}</div></div>`;
 
 /* A first column called Status or State gets the platform's full-width state
-   pill rather than a chip that hugs its text. */
+   pill rather than a chip that hugs its text — unless that column is marked
+   { t:'Status', plain:true }, for a table that sits its own status chip next
+   to same-sized ones elsewhere in the row (e.g. per-endpoint admin/
+   operational status) and needs all of them to read as one consistent size. */
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab.
@@ -68,7 +71,7 @@ const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = nul
             : inferredD ? ` class="is-click"${dA(inferredD)}` : '';
           const combined = [attrStr, rowClick].filter(Boolean).join(' ');
           return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
-            const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
+            const kls = [cols[i].r ? 't-right num' : '', i === 0 && !cols[i].plain && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
             return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
         }).join('')
       : `<tr><td colspan="${span}" class="tbl-empty">No records match the current filter.</td></tr>`}</tbody>

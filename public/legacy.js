@@ -34,7 +34,10 @@ const pageHead = (t, d, right = '') =>
      <p class="vw-page-description" style="margin:0">${d}</p></div><div class="row">${right}</div></div>`;
 
 /* A first column called Status or State gets the platform's full-width state
-   pill rather than a chip that hugs its text. */
+   pill rather than a chip that hugs its text — unless that column is marked
+   { t:'Status', plain:true }, for a table that sits its own status chip next
+   to same-sized ones elsewhere in the row (e.g. per-endpoint admin/
+   operational status) and needs all of them to read as one consistent size. */
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab.
@@ -70,7 +73,7 @@ const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = nul
             : inferredD ? ` class="is-click"${dA(inferredD)}` : '';
           const combined = [attrStr, rowClick].filter(Boolean).join(' ');
           return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
-            const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
+            const kls = [cols[i].r ? 't-right num' : '', i === 0 && !cols[i].plain && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
             return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
         }).join('')
       : `<tr><td colspan="${span}" class="tbl-empty">No records match the current filter.</td></tr>`}</tbody>
@@ -1224,9 +1227,9 @@ const SERVICES = {
     { st:'Up',   chip:'success', name:'SC-DU',               ip:'172.31.53.24',  rd:'24186:1016064', rt:'24186:901',                  erp:'1105', ifc:'BD6',                   ne:'BGLK-MX204-AGG-02', v:10 }
   ],
   l2vpn: [
-    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', ne:'INDR-ASR920-PE-T3', v:3 },
-    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   ne:'BGLK-NCS540-PE-T3', v:3 },
-    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', ne:'CHE-J2.2K-PE-T4-ER', v:30 }
+    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', ne:'INDR-ASR920-PE-T3', dstIp:'172.31.31.17', dstNe:'BGLK-NCS540-PE-T3', dstIfc:'ge-0/0/1.100', v:3 },
+    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   ne:'BGLK-NCS540-PE-T3', dstIp:'172.31.53.17', dstNe:'BGLK-ASR9010-PE-T1', dstIfc:'TenGigE0/0/0/2.200', v:3 },
+    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', ne:'CHE-J2.2K-PE-T4-ER', dstIp:'172.31.61.17', dstNe:'CHE-J2.2K-PE-T4-WR', dstIfc:'xe-0/1/0.200', v:30 }
   ]
 };
 
@@ -1288,7 +1291,9 @@ SERVICES.l2vpn = padList(SERVICES.l2vpn, 10, (r, i) => ({ ...r,
   name: `${i % 2 ? 'VPWS' : 'VPLS'}-${['BGLK', 'DEL', 'CHE', 'PUN', 'HYD', 'KOL'][i % 6]}-${String(5 + i).padStart(2, '0')}`,
   ip: PAD_IP(i + 2), rd: `24186:20${1210 + i * 3}`, rt: `24186:7001${20 + i}`,
   erp: String(2050 + i), ifc: `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`,
-  ne: PAD_NE[(i + 3) % PAD_NE.length], v: [3, 7, 30][i % 3] }));
+  ne: PAD_NE[(i + 3) % PAD_NE.length],
+  dstIp: PAD_IP(i + 9), dstNe: PAD_NE[(i + 7) % PAD_NE.length], dstIfc: `${i % 2 ? 'ge' : 'xe'}-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`,
+  v: [3, 7, 30][i % 3] }));
 
 
 const INACT_TABS = [
@@ -5832,13 +5837,30 @@ function viewServices() {
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
-      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
-        rows.map(s => [
-          chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
-          `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-          `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-        ]), '',
-        i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
+      ${t === 'l2vpn'
+        ? table([{t:'Status', plain:true},{t:'Name'},{t:'VC ID'},{t:'Source IP address'},{t:'Source NE'},{t:'Source interface'},
+                 {t:'Source admin status'},{t:'Source operational status'},{t:'Destination IP address'},{t:'Destination NE'},
+                 {t:'Destination interface'},{t:'Destination admin status'},{t:'Destination operational status'},{t:'Link ID'}],
+            rows.map(s => {
+              const adminChip = chip('Up', 'success');
+              const operChip = chip(s.st, s.chip);
+              return [
+                chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, s.erp,
+                `<span class="mono">${s.ip}</span>`, `<span class="mono">${s.ne}</span>`, `<span class="mono">${s.ifc}</span>`,
+                adminChip, operChip,
+                `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIfc}</span>`,
+                adminChip, operChip,
+                `<span class="mono">L2:${s.erp}</span>`
+              ];
+            }), '',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])
+        : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+            rows.map(s => [
+              chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
+              `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
+              `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
+            ]), '',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
     ${svcViewDialog()}
   </div>`;
 }

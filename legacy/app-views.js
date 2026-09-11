@@ -3252,13 +3252,30 @@ function viewServices() {
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
-      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
-        rows.map(s => [
-          chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
-          `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-          `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-        ]), '',
-        i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
+      ${t === 'l2vpn'
+        ? table([{t:'Status', plain:true},{t:'Name'},{t:'VC ID'},{t:'Source IP address'},{t:'Source NE'},{t:'Source interface'},
+                 {t:'Source admin status'},{t:'Source operational status'},{t:'Destination IP address'},{t:'Destination NE'},
+                 {t:'Destination interface'},{t:'Destination admin status'},{t:'Destination operational status'},{t:'Link ID'}],
+            rows.map(s => {
+              const adminChip = chip('Up', 'success');
+              const operChip = chip(s.st, s.chip);
+              return [
+                chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, s.erp,
+                `<span class="mono">${s.ip}</span>`, `<span class="mono">${s.ne}</span>`, `<span class="mono">${s.ifc}</span>`,
+                adminChip, operChip,
+                `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIfc}</span>`,
+                adminChip, operChip,
+                `<span class="mono">L2:${s.erp}</span>`
+              ];
+            }), '',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])
+        : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+            rows.map(s => [
+              chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
+              `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
+              `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
+            ]), '',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
     ${svcViewDialog()}
   </div>`;
 }
