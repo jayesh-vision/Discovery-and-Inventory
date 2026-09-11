@@ -6294,9 +6294,23 @@ function nodeRecord(name) {
     };
   }
 
-  const isSw = clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR');
-  const isDwdm = clean.includes('DWDM') || clean.includes('OPT');
-  const cls = isSw ? 'switch' : isDwdm ? 'dwdm' : 'router';
+  let urlCls = null;
+  try {
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      const sp = new URLSearchParams(window.location.search);
+      const q = sp.get('q') || '';
+      const mCls = q.match(/cls=([^&]+)/) || q.match(/tab=([^&]+)/);
+      urlCls = sp.get('cls') || sp.get('type') || sp.get('tab') || (mCls ? mCls[1] : null);
+      if (urlCls) urlCls = urlCls.toLowerCase();
+    }
+  } catch (err) {}
+
+  const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR') || clean.includes('ACC') || clean.includes('DIST');
+  const isServer = urlCls === 'server' || clean.includes('SERVER') || clean.includes('SRV') || clean.includes('HOST');
+  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT');
+  const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540');
+  const cls = isSw ? 'switch' : isServer ? 'server' : isDwdm ? 'dwdm' : isRouter ? 'router' : (urlCls || 'router');
+
   const oem = clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
     : clean.startsWith('N') || clean.includes('NOKIA') || clean.includes('7750') ? 'NOKIA'
     : clean.includes('HPE') || clean.includes('DELL') ? 'HPE'

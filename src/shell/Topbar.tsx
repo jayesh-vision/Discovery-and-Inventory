@@ -41,7 +41,12 @@ export default function Topbar() {
     const t = SCREENS.find(x => x.crumb === prefix);
     if (!t) return null;
     let path = t.path;
-    for (const [k, v] of Object.entries(params)) path = path.replace(':' + k, v);
+    const mergedParams: Record<string, string> = { ...params };
+    if (!mergedParams.id && (params.name || sp.get('site') || sp.get('id'))) {
+      const siteRef = sp.get('site') || sp.get('id') || (window as any).__nsLegacy?.resolveSite?.(params.name)?.id;
+      if (siteRef) mergedParams.id = siteRef;
+    }
+    for (const [k, v] of Object.entries(mergedParams)) path = path.replace(':' + k, v);
     return path.includes(':') ? null : path;
   };
 
