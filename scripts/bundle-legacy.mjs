@@ -103,7 +103,7 @@ function __legacyParams(k) {
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
-    : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
+    : k === 'target' ? { host: TARGET_ID } : {};
 }
 `, 'sync after render');
 
@@ -141,6 +141,10 @@ window.__nsLegacy = {
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
+    if (k === 'target' && p.host) {
+      const decoded = decodeURIComponent(p.host);
+      if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }
+    }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed

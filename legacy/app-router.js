@@ -4,7 +4,7 @@ const VIEWS = {
   insights:  { mod:'Discovery and reconciliation', crumb:'Insights',      render:viewInsights },
   jobs:      { mod:'Discovery and reconciliation', crumb:'Scan jobs',     render:viewJobs },
   targets:   { mod:'Discovery and reconciliation', crumb:'Scan targets',  render:viewTargets },
-  target:    { mod:'Discovery and reconciliation', crumb:'Scan targets · NDLS-J960-P_R1-T1-NR', render:viewTarget },
+  target:    { mod:'Discovery and reconciliation', crumb:'Scan targets · Target', render:viewTarget },
   reconcile: { mod:'Discovery and reconciliation', crumb:'Reconciliation',render:viewReconcile },
   /* Inventory */
   home:      { mod:'Inventory', crumb:'Home',                        render:viewHome },
@@ -69,6 +69,17 @@ function applyDrillQuery(view, q, label) {
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
   if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
+  if (view === 'target') {
+    /* the row action carries ?host=; a bare label (e.g. a direct URL arrival
+       whose q was dropped) still names the target as "Transcript · <host>" */
+    const targetHost = p.host || (label ? label.replace(/^Transcript\s*·?\s*/i, '').trim() : null);
+    if (targetHost) {
+      const decoded = decodeURIComponent(targetHost).trim();
+      /* a genuinely different target starts its own run at step 0 — TXRUN/
+         TXSTEP belong to the one demo device's run history, not this row */
+      if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }
+    }
+  }
   if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;

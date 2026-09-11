@@ -579,7 +579,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` })])}
+        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -593,7 +593,15 @@ function viewTargets() {
 }
 
 /* ══ 4 · TARGET DETAIL ════════════════════════════════════ */
+/* which row of TARGETS the transcript screen is showing — set by the row
+   click (via applyDrillQuery) or a direct URL (via the bridge's setParams),
+   the same way NODE_ID/RES_ID track their own detail screens */
+let TARGET_ID = TRANSCRIPT.host;
 let TXRUN = 4412, TXSTEP = 0;
+
+function targetOf(id) {
+  return TARGETS.find(t => t.host === id) || null;
+}
 
 function txSteps() {
   const s = TRANSCRIPT.steps.map(x => ({ ...x }));
@@ -685,11 +693,16 @@ function txBody() {
 }
 
 function viewTarget() {
-  const T = TRANSCRIPT;
+  /* the 12-row sample carries real per-target identity for the rows it has;
+     any target outside that sample (most of the ~2,296) falls back to the
+     one illustrative demo record — the step-level collector data below is
+     shared example content either way, only the header identity changes */
+  const rec = targetOf(TARGET_ID);
+  const T = rec ? { host: rec.host, ip: rec.ip, job: rec.job, circle: rec.circle } : TRANSCRIPT;
   const aMax = Math.max(...ADJACENCY.map(a => a.c));
   return `<div class="page">
     ${pageHead(`${T.host}`,
-      `Gateway ${T.ip} · job ${T.job} · Delhi`,
+      `Gateway ${T.ip} · job ${T.job} · ${T.circle || 'Delhi'}`,
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">

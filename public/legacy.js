@@ -3043,7 +3043,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}` })])}
+        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -3057,7 +3057,15 @@ function viewTargets() {
 }
 
 /* ══ 4 · TARGET DETAIL ════════════════════════════════════ */
+/* which row of TARGETS the transcript screen is showing — set by the row
+   click (via applyDrillQuery) or a direct URL (via the bridge's setParams),
+   the same way NODE_ID/RES_ID track their own detail screens */
+let TARGET_ID = TRANSCRIPT.host;
 let TXRUN = 4412, TXSTEP = 0;
+
+function targetOf(id) {
+  return TARGETS.find(t => t.host === id) || null;
+}
 
 function txSteps() {
   const s = TRANSCRIPT.steps.map(x => ({ ...x }));
@@ -3149,11 +3157,16 @@ function txBody() {
 }
 
 function viewTarget() {
-  const T = TRANSCRIPT;
+  /* the 12-row sample carries real per-target identity for the rows it has;
+     any target outside that sample (most of the ~2,296) falls back to the
+     one illustrative demo record — the step-level collector data below is
+     shared example content either way, only the header identity changes */
+  const rec = targetOf(TARGET_ID);
+  const T = rec ? { host: rec.host, ip: rec.ip, job: rec.job, circle: rec.circle } : TRANSCRIPT;
   const aMax = Math.max(...ADJACENCY.map(a => a.c));
   return `<div class="page">
     ${pageHead(`${T.host}`,
-      `Gateway ${T.ip} · job ${T.job} · Delhi`,
+      `Gateway ${T.ip} · job ${T.job} · ${T.circle || 'Delhi'}`,
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
@@ -8298,7 +8311,7 @@ const VIEWS = {
   insights:  { mod:'Discovery and reconciliation', crumb:'Insights',      render:viewInsights },
   jobs:      { mod:'Discovery and reconciliation', crumb:'Scan jobs',     render:viewJobs },
   targets:   { mod:'Discovery and reconciliation', crumb:'Scan targets',  render:viewTargets },
-  target:    { mod:'Discovery and reconciliation', crumb:'Scan targets · NDLS-J960-P_R1-T1-NR', render:viewTarget },
+  target:    { mod:'Discovery and reconciliation', crumb:'Scan targets · Target', render:viewTarget },
   reconcile: { mod:'Discovery and reconciliation', crumb:'Reconciliation',render:viewReconcile },
   /* Inventory */
   home:      { mod:'Inventory', crumb:'Home',                        render:viewHome },
@@ -8362,6 +8375,17 @@ function applyDrillQuery(view, q, label) {
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
   if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
+  if (view === 'target') {
+    /* the row action carries ?host=; a bare label (e.g. a direct URL arrival
+       whose q was dropped) still names the target as "Transcript · <host>" */
+    const targetHost = p.host || (label ? label.replace(/^Transcript\s*·?\s*/i, '').trim() : null);
+    if (targetHost) {
+      const decoded = decodeURIComponent(targetHost).trim();
+      /* a genuinely different target starts its own run at step 0 — TXRUN/
+         TXSTEP belong to the one demo device's run history, not this row */
+      if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }
+    }
+  }
   if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
@@ -8497,7 +8521,7 @@ function __legacyParams(k) {
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
-    : k === 'target' ? { host: 'NDLS-J960-P_R1-T1-NR' } : {};
+    : k === 'target' ? { host: TARGET_ID } : {};
 }
 
 /* keyboard activation for custom [role="button"] controls (the coverage
@@ -9036,6 +9060,10 @@ window.__nsLegacy = {
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
+    if (k === 'target' && p.host) {
+      const decoded = decodeURIComponent(p.host);
+      if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }
+    }
   },
   /* React's sidebar collapse drives the same class the prototype's CSS keys on */
   setCollapsed
