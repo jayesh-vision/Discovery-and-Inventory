@@ -1186,23 +1186,23 @@ const LINK_TABS = [
 ];
 const LINKS = {
   lldp: [
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
-    { st:'new',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/10',       name:'—',              v:3 },
-    { st:'ok', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
-    { st:'gone',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dif:'TenGigE0/0/0/18',name:'—',             v:168 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
+    { st:'up',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/10',       name:'—',              v:3 },
+    { st:'up', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
+    { st:'down',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dif:'TenGigE0/0/0/18',name:'—',             v:168 }
   ],
   ospf: [
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'gone',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'down',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
   ],
   bgp: [
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
-    { st:'ok', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
   ],
   isis: [
-    { st:'ok', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
+    { st:'up', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
   ]
 };
 
@@ -1249,20 +1249,23 @@ const VNF_PAD = [
 ];
 VNFS.push(...VNF_PAD);
 
-LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({ ...r, st: i % 5 === 4 ? 'new' : 'ok',
+LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({ ...r, st: i % 5 === 4 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
   dne: PAD_NE[(i + 5) % PAD_NE.length], dif: PAD_IF[(i + 3) % PAD_IF.length],
   name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
   v: [3, 5, 8, 26][i % 4] }));
-LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'gone' : 'ok',
+LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
   dne: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
   name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3] }));
-LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => ({ ...r, st: i % 7 === 6 ? 'gone' : 'ok',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `AS ${24186 + (i % 2 ? 0 : 9498)}`,
-  dne: PAD_IP(i + 11), dif: i % 7 === 6 ? 'idle(1)' : 'established(6)',
-  name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3] }));
-LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({ ...r, st: 'ok',
+LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
+  const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
+  return { ...r, st,
+    sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `AS ${24186 + (i % 2 ? 0 : 9498)}`,
+    dne: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
+    name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3] };
+});
+LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: i % 3 ? 'L2' : 'L1L2',
   dne: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3] }));
 
@@ -2080,7 +2083,7 @@ const FS = {
              { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
   virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
              { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
-  links:    [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Source NE' },
+  links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
              { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
              { n:'ERP number' }, { n:'Source IP' }],
@@ -5508,6 +5511,14 @@ function viewCell5gDetails() {
 /* ── Links ────────────────────────────────────────────── */
 let LINK_NE_FILTER = null;
 let LINK_VIEW = null; /* { proto, i } of the row shown in the node-linking dialog, or null */
+/* lldp/ospf/isis report simple link state; bgp reports session state — the
+   two vocabularies never collide, so one flat table serves every protocol */
+const LINK_ST = {
+  up: ['Up', 'success'], down: ['Down', 'error'],
+  established: ['Established', 'success'], idle: ['Idle', 'error'],
+  active: ['Active', 'warning'], connect: ['Connect', 'info']
+};
+const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 'down'], bgp: ['established', 'idle', 'active', 'connect'] };
 
 /* Source and destination as two nodes on a wire, the way a topology tool
    draws one link — replaces the old "Open source element / Open destination
@@ -5536,10 +5547,8 @@ function linkViewDialog() {
   const rows = LINKS[LINK_VIEW.proto] || [];
   const r = rows[LINK_VIEW.i];
   if (!r) return '';
-  const lst = { ok: ['Confirmed', 'success'], new: ['New this cycle', 'info'], gone: ['No longer seen', 'error'] };
-  const [stLabel, stTone] = lst[r.st];
+  const [stLabel, stTone] = LINK_ST[r.st];
   const protoLabel = (LINK_TABS.find(x => x.k === LINK_VIEW.proto) || {}).n || LINK_VIEW.proto.toUpperCase();
-  const isLldp = LINK_VIEW.proto === 'lldp';
 
   return `
     <div class="drawer-overlay" data-linkclose="1"></div>
@@ -5554,10 +5563,9 @@ function linkViewDialog() {
         </div>
         ${linkDiagram(r)}
         ${detailFieldGrid([
-          ['State', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
-          ['Source NE', r.sne], ['Source IP', r.sip], [isLldp ? 'Source interface' : 'Local', r.sif],
-          ['Destination NE', r.dne], [isLldp ? 'Destination interface' : 'Session', r.dif],
-          ['Verified cycles', String(r.v)]
+          ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
+          ['Source NE', r.sne], ['Source IP', r.sip],
+          ['Destination NE', r.dne]
         ])}
       </div>
     </div>`;
@@ -5566,7 +5574,10 @@ function linkViewDialog() {
 function viewLinks() {
   const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
   const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
-  const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
+  /* the Filters panel's Status field only ever offers the values this
+     protocol actually reports — lldp/ospf/isis never see Established, bgp
+     never sees Up */
+  const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
   return `<div class="page">
 
     ${drillBar()}
@@ -5591,24 +5602,17 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', FS.links,
-        `${chip('44 new this cycle','info')}${chip('18 no longer seen','error')}`,
+      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', linkFS, '',
         [], 'links')}
-      ${table([{t:'State'},{t:'Source NE'},{t:'Source IP'},{t:t==='lldp'?'Source interface':'Local'},
-               {t:'Destination NE'},{t:t==='lldp'?'Destination interface':'Session'},{t:'Link name'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
+               {t:'Destination NE'},{t:'Link name'}],
         rows.map(r => [
-          chip(lst[r.st][0], lst[r.st][1]),
-          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`, `<span class="mono">${r.sif}</span>`,
-          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dif}</span>`,
-          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
+          chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
+          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
+          `<span class="vw-value">${r.dne}</span>`,
+          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
         ]), '',
-        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}
-      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
-        <div class="row">
-          <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
-          <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
-        </div>
-      </div>`)}
+        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}`)}
     ${linkViewDialog()}
   </div>`;
 }

@@ -3047,6 +3047,14 @@ function viewCell5gDetails() {
 /* ── Links ────────────────────────────────────────────── */
 let LINK_NE_FILTER = null;
 let LINK_VIEW = null; /* { proto, i } of the row shown in the node-linking dialog, or null */
+/* lldp/ospf/isis report simple link state; bgp reports session state — the
+   two vocabularies never collide, so one flat table serves every protocol */
+const LINK_ST = {
+  up: ['Up', 'success'], down: ['Down', 'error'],
+  established: ['Established', 'success'], idle: ['Idle', 'error'],
+  active: ['Active', 'warning'], connect: ['Connect', 'info']
+};
+const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 'down'], bgp: ['established', 'idle', 'active', 'connect'] };
 
 /* Source and destination as two nodes on a wire, the way a topology tool
    draws one link — replaces the old "Open source element / Open destination
@@ -3075,10 +3083,8 @@ function linkViewDialog() {
   const rows = LINKS[LINK_VIEW.proto] || [];
   const r = rows[LINK_VIEW.i];
   if (!r) return '';
-  const lst = { ok: ['Confirmed', 'success'], new: ['New this cycle', 'info'], gone: ['No longer seen', 'error'] };
-  const [stLabel, stTone] = lst[r.st];
+  const [stLabel, stTone] = LINK_ST[r.st];
   const protoLabel = (LINK_TABS.find(x => x.k === LINK_VIEW.proto) || {}).n || LINK_VIEW.proto.toUpperCase();
-  const isLldp = LINK_VIEW.proto === 'lldp';
 
   return `
     <div class="drawer-overlay" data-linkclose="1"></div>
@@ -3093,10 +3099,9 @@ function linkViewDialog() {
         </div>
         ${linkDiagram(r)}
         ${detailFieldGrid([
-          ['State', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
-          ['Source NE', r.sne], ['Source IP', r.sip], [isLldp ? 'Source interface' : 'Local', r.sif],
-          ['Destination NE', r.dne], [isLldp ? 'Destination interface' : 'Session', r.dif],
-          ['Verified cycles', String(r.v)]
+          ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
+          ['Source NE', r.sne], ['Source IP', r.sip],
+          ['Destination NE', r.dne]
         ])}
       </div>
     </div>`;
@@ -3105,7 +3110,10 @@ function linkViewDialog() {
 function viewLinks() {
   const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
   const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
-  const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
+  /* the Filters panel's Status field only ever offers the values this
+     protocol actually reports — lldp/ospf/isis never see Established, bgp
+     never sees Up */
+  const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
   return `<div class="page">
 
     ${drillBar()}
@@ -3130,24 +3138,17 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', FS.links,
-        `${chip('44 new this cycle','info')}${chip('18 no longer seen','error')}`,
+      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', linkFS, '',
         [], 'links')}
-      ${table([{t:'State'},{t:'Source NE'},{t:'Source IP'},{t:t==='lldp'?'Source interface':'Local'},
-               {t:'Destination NE'},{t:t==='lldp'?'Destination interface':'Session'},{t:'Link name'},{t:'Verified'}],
+      ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
+               {t:'Destination NE'},{t:'Link name'}],
         rows.map(r => [
-          chip(lst[r.st][0], lst[r.st][1]),
-          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`, `<span class="mono">${r.sif}</span>`,
-          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dif}</span>`,
-          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
+          chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
+          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
+          `<span class="vw-value">${r.dne}</span>`,
+          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
         ]), '',
-        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}
-      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
-        <div class="row">
-          <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
-          <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
-        </div>
-      </div>`)}
+        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}`)}
     ${linkViewDialog()}
   </div>`;
 }

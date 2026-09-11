@@ -239,7 +239,7 @@ const FS = {
              { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
   virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
              { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
-  links:    [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Source NE' },
+  links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
              { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
              { n:'ERP number' }, { n:'Source IP' }],
