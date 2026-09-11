@@ -429,22 +429,38 @@ path.st.has-c:hover { fill-opacity: .78; }
 @media (max-width: 480px)  { .site-meta { grid-template-columns: 1fr; } }
 
 /* ── resource-detail screens (Virtual element / Cell 4G / Cell 5G) ──────
-   A shared header, summary strip, grouped-section grid and pill tab bar —
-   see resourceHead()/resourceSummary()/detailSection() in app-views.js. */
-.resdetail-head { padding: var(--vw-space-lg) var(--vw-space-xl); border-radius: var(--vw-radius-lg); }
+   A shared header, summary strip, insights card, grouped-section grid and
+   pill tab bar — see resourceHead()/resourceSummary()/insightsCard()/
+   detailSection() in app-views.js. Every block is a real .vw-card-section
+   (bordered, radius-lg, white) so the screen reads as one family of cards
+   instead of loosely-bordered fragments floating on the page. */
+.resdetail-head { padding: calc(var(--vw-space-lg) + 3px) var(--vw-space-xl) var(--vw-space-lg); }
 .resdetail-kind { display: inline-block; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-sky-700);
   background: var(--vw-color-sky-50); text-transform: uppercase; letter-spacing: .03em;
   padding: 3px 8px; border-radius: var(--vw-radius-full); margin-bottom: 8px; }
 .resdetail-name { font-size: 1.375rem; font-weight: 600; color: var(--vw-color-gray-900); margin: 0; line-height: 1.25; }
 .resdetail-meta-row { display: flex; gap: var(--vw-space-xl); flex-wrap: wrap;
   margin-top: var(--vw-space-md); padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-gray-100); }
+@media (max-width: 640px) { .resdetail-meta-row { gap: var(--vw-space-md); } }
 
-.resdetail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--vw-space-sm); }
-.resdetail-summary-item { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-md); padding: 0.625rem 0.875rem; min-width: 0; }
-.resdetail-summary-item .vw-label { display: block; margin-bottom: 2px; }
+/* one bordered strip of key facts (same visual language as .stat-strip)
+   instead of several separate boxes — a row of labelled values reads as
+   one cohesive unit rather than competing for attention with six colours */
+.resdetail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg); overflow: hidden; }
+.resdetail-summary-item { padding: 0.625rem 0.875rem; border-left: 1px solid var(--vw-color-slate-200); min-width: 0; }
+.resdetail-summary-item:first-child { border-left: 0; }
+.resdetail-summary-item .vw-label { display: block; margin-bottom: 4px; }
 .resdetail-summary-item .vw-value { font-size: 0.9375rem; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resdetail-summary-item .vw-chip { font-size: 0.8125rem; }
+@media (max-width: 900px) { .resdetail-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .resdetail-summary-item { border-top: 1px solid var(--vw-color-slate-200); }
+  .resdetail-summary-item:nth-child(-n+2) { border-top: 0; } .resdetail-summary-item:nth-child(odd) { border-left: 0; } }
+@media (max-width: 480px) { .resdetail-summary { grid-template-columns: 1fr; }
+  .resdetail-summary-item { border-left: 0; border-top: 1px solid var(--vw-color-slate-200); }
+  .resdetail-summary-item:first-child { border-top: 0; } }
 
 .status-badge { flex-shrink: 0; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
@@ -456,7 +472,7 @@ path.st.has-c:hover { fill-opacity: .78; }
 @media (max-width: 900px) { .detail-sections-grid { columns: 1; } }
 .detail-sections-grid .detail-section { break-inside: avoid; margin-bottom: var(--vw-space-md); }
 
-.detail-section { padding: var(--vw-space-lg) var(--vw-space-xl); }
+.detail-section { padding: calc(var(--vw-space-lg) + 3px) var(--vw-space-xl) var(--vw-space-lg); }
 .detail-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: var(--vw-space-md);
   padding-bottom: var(--vw-space-sm); border-bottom: 1px solid var(--vw-color-gray-100); }
 .detail-section-accent { width: 4px; height: 14px; background: var(--vw-color-sky-500); border-radius: 2px;
@@ -498,7 +514,6 @@ path.st.has-c:hover { fill-opacity: .78; }
 .tabbar--detail .tab:hover { color: var(--vw-color-gray-900); background: rgba(255,255,255,.6); }
 .tabbar--detail .tab.is-on { background: var(--vw-color-white); color: var(--vw-color-gray-900); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 .tabbar--detail .tab:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
-@media (max-width: 640px) { .resdetail-meta-row { gap: var(--vw-space-md); } }
 .pin { cursor: pointer; pointer-events: all; }
 .pin circle { pointer-events: all; }
 .pin:hover circle:last-of-type { stroke-width: 3; }

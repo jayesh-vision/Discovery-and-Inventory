@@ -2588,19 +2588,35 @@ const detailField = ([k, v]) => {
 const detailFieldGrid = fields => `<div class="site-meta detail-field-grid">${fields.map(detailField).join('')}</div>`;
 const isFilled = ([, v]) => v !== '-' && v !== '' && v != null;
 
+/* two labels for the same value, side by side in one card, read as noise
+   rather than information (Vendor/VendorName legitimately differ on some
+   records — radio vendor vs hardware vendor — but coincide on others), so
+   a section only ever shows a given non-empty value once */
+const dedupeByValue = fields => {
+  const seen = new Set();
+  return fields.filter(([, v]) => {
+    const key = v == null ? '' : String(v).trim().toLowerCase();
+    if (!key || key === '-') return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 /* a section leads with what's actually there; fields the record simply
    doesn't carry sit behind a closed disclosure instead of padding the page
    out with rows of "Not available" — the count badge is the section's own
    completeness signal at a glance, and every field is still one click away,
    never dropped */
 const detailSection = (title, fields) => {
-  const populated = fields.filter(isFilled);
-  const empty = fields.filter(f => !isFilled(f));
-  return `<div class="card detail-section" style="border-top:3px solid ${cv(sectionTone(title), 400)}">
+  const deduped = dedupeByValue(fields);
+  const populated = deduped.filter(isFilled);
+  const empty = deduped.filter(f => !isFilled(f));
+  return `<div class="vw-card-section vw-card--accent detail-section">
+  <div class="vw-card-accent" style="background:${cv(sectionTone(title), 400)}"></div>
   <div class="detail-section-head">
     <span class="detail-section-accent" style="background:${cv(sectionTone(title), 500)}"></span>
     <span class="vw-card-title-sm">${esc(title)}</span>
-    ${fields.length ? `<span class="detail-section-count">${populated.length}/${fields.length}</span>` : ''}
+    ${deduped.length ? `<span class="detail-section-count">${populated.length}/${deduped.length}</span>` : ''}
   </div>
   ${populated.length ? detailFieldGrid(populated)
     : `<div class="detail-section-empty">No configuration data available for this section yet.</div>`}
@@ -2657,7 +2673,8 @@ function resourceHead({ kind, name, status, meta, completeness }) {
       <div class="hbar-track"><div class="hbar-fill" style="width:${completeness.pct}%;background:${
         cv(completeness.pct >= 70 ? 'emerald' : completeness.pct >= 40 ? 'amber' : 'red', 400)}"></div></div>
     </div>` : '';
-  return `<div class="card resdetail-head" style="border-left:3px solid ${cv('sky', 400)}">
+  return `<div class="vw-card-section vw-card--accent resdetail-head">
+      <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
       <div class="row vw-justify-between" style="align-items:flex-start;gap:var(--vw-space-lg);flex-wrap:wrap">
         <div>
           <span class="resdetail-kind">${esc(kind)}</span>
@@ -2672,13 +2689,20 @@ function resourceHead({ kind, name, status, meta, completeness }) {
     </div>`;
 }
 /* the handful of fields worth seeing before scrolling to the grouped detail
-   below — never invented, always a subset of the screen's own field list */
-const SUMMARY_PALETTE = ['sky', 'purple', 'teal', 'orange', 'indigo', 'cyan'];
+   below — never invented, always a subset of the screen's own field list.
+   One bordered strip (the .stat-strip language, not a colour per item) so
+   it reads as a single row of facts rather than six unrelated boxes; the
+   Status field alone gets colour, because it is the one value here that
+   actually carries a state rather than just naming an attribute. */
 const resourceSummary = fields => fields.length ? `<div class="resdetail-summary">
-    ${fields.map(([k, v], i) => {
+    ${fields.map(([k, v]) => {
       const empty = v === '-' || v === '' || v == null;
-      return `<div class="resdetail-summary-item" style="border-top:2px solid ${cv(SUMMARY_PALETTE[i % SUMMARY_PALETTE.length], 400)}">
-        <span class="vw-label">${esc(humanizeLabel(k))}</span><span class="vw-value${empty ? ' is-empty' : ''}">${empty ? 'Not available' : esc(v)}</span></div>`;
+      const label = humanizeLabel(k);
+      const isStatus = k.toLowerCase() === 'status';
+      return `<div class="resdetail-summary-item">
+        <span class="vw-label">${esc(label)}</span>${
+          isStatus && !empty ? statusBadge(v)
+          : `<span class="vw-value${empty ? ' is-empty' : ''}">${empty ? 'Not available' : esc(v)}</span>`}</div>`;
     }).join('')}
   </div>` : '';
 
@@ -2806,8 +2830,10 @@ function viewVnfDetails() {
     { title: 'Configuration', keys: ['Status', 'BuildStatus'] }
   ];
   const VDU_SUMMARY_KEYS = ['Technology', 'Vendor', 'Region', 'Province', 'CoverageType', 'Status'];
-  const renderVdu = fields => `${resourceSummary(pickFields(fields, VDU_SUMMARY_KEYS))}
-    ${renderSectionedGrid(groupFieldsBySchema(fields, VDU_SECTIONS))}`;
+  const renderVdu = (fields, sections) => `${resourceSummary(pickFields(fields, VDU_SUMMARY_KEYS))}
+    ${renderSectionedGrid(sections)}`;
+  const vdu4gSections = groupFieldsBySchema(vdu4gFields, VDU_SECTIONS);
+  const vdu5gSections = groupFieldsBySchema(vdu5gFields, VDU_SECTIONS);
 
   const renderCellTable = (rows, key) => card(`
     ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
@@ -2848,9 +2874,9 @@ function viewVnfDetails() {
       ${tabs.map(t => `<button class="tab${tab === t.k ? ' is-on' : ''}" data-vnfdetailtab="${t.k}">${t.n}</button>`).join('')}
     </div>
 
-    ${tab === 'vdu4g' ? renderVdu(vdu4gFields)
+    ${tab === 'vdu4g' ? renderVdu(vdu4gFields, vdu4gSections)
       : tab === 'cell4g' ? renderCellTable(cell4gRows, 'cell4g')
-      : tab === 'vdu5g' ? renderVdu(vdu5gFields)
+      : tab === 'vdu5g' ? renderVdu(vdu5gFields, vdu5gSections)
       : renderCellTable(cell5gRows, 'cell5g')}
   </div>`;
 }
