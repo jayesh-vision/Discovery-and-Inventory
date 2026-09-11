@@ -609,14 +609,13 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stock-bar > .eyebrow, .stock-bar-inline > .eyebrow { flex-shrink: 0; }
 .stock-chips { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; min-width: 0; }
 .stock-presets { flex-shrink: 0; }
-.stock-chip { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
-  border: 1px solid var(--vw-color-slate-200); background: var(--vw-color-white);
-  border-radius: var(--vw-radius-full); padding: 0.375rem 0.875rem;
-  font-size: 0.8125rem; color: var(--vw-color-gray-600); line-height: 1.4; }
-.stock-chip .tab-n { margin-left: 2px; }
-.stock-chip:hover { border-color: var(--vw-color-slate-400); }
-.stock-chip.is-on { color: var(--vw-color-gray-900); font-weight: 500; }
-.stock-chip:not(.is-on) .legend-sw { opacity: .3; }
+/* same pill as the grid's own status chips (.vw-chip) — pair with a
+   vw-chip--{tone} class when a state is on, vw-chip--neutral when it's
+   off, rather than the bordered swatch-led pill this used to be */
+.stock-chip { border: 0; cursor: pointer; font: inherit; line-height: 1.2; }
+.stock-chip:hover { filter: brightness(0.97); }
+.stock-chip:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
+.stock-chip.is-on { font-weight: 500; }
 .ro-lock { font-size: 0.6875rem; opacity: .55; }
 
 /* ── reconciliation: outcome tiles + comparison table ── */

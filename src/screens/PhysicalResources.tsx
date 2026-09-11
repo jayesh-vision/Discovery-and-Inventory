@@ -135,10 +135,10 @@ export default function PhysicalResources() {
               {STOCK_ST.filter(s => s.k !== 'decomm').map(s => {
                 const on = stock.has(s.k);
                 return (
-                  <button key={s.k} className={`stock-chip${on ? ' is-on' : ''}`} onClick={() => toggleStock(s.k)}
-                    style={on ? { borderColor: cv(s.tone, 400), background: cv(s.tone, 50) } : undefined}
+                  <button key={s.k} className={`vw-chip stock-chip vw-chip--${on ? s.chip : 'neutral'}${on ? ' is-on' : ''}`}
+                    onClick={() => toggleStock(s.k)}
                     title={`${fmt(stockCount(cls, s.k))} ${meta.n.toLowerCase()} records · ${fmt(s.c)} across the whole estate`}>
-                    <span className="legend-sw" style={{ background: cv(s.tone, 400) }} />{s.n}
+                    {s.n}
                   </button>
                 );
               })}
