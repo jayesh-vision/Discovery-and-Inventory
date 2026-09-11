@@ -90,10 +90,12 @@ patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
+  layoutStockChips();
 }
 `, `    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
+  layoutStockChips();
   if (window.__nsBridge && window.__nsBridge.sync)
     window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT),
       DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);

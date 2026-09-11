@@ -195,6 +195,7 @@
 .nst-table tbody tr:hover td { background: var(--vw-color-slate-50); }
 .nst-table tbody tr[data-site] { cursor: pointer; }
 .nst-table tbody tr[hidden] { display: none; }
+.nst-table tbody tr.is-row-link { cursor: pointer; }
 .nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
 .nst-table td select.nst-input { min-width: 9rem; }
 .tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }

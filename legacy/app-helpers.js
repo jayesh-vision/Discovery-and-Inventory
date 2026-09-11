@@ -35,27 +35,37 @@ const pageHead = (t, d, right = '') =>
    pill rather than a chip that hugs its text. */
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
-/* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
-const table = (cols, rows, cls = '', acts = null, rowAttr = null) => {
+/* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab.
+   rowAttr: a function (rowIndex) => {attr: value} of extra <tr> attributes, or the row's
+   own _attr, or null.
+   rowDrill: a function (rowIndex) => {v,l,q} to make the whole row clickable to that drill
+   target (or an array of the same) — wins over the auto-detected first kebab action below;
+   leave null to fall back to that auto-detection, or to leave the row inert. */
+const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = null) => {
   const gid = 'g' + (GRID_N++);
   const menu = acts ? (typeof acts === 'function' ? acts : i => acts[i]) : null;
+  const rowD = rowDrill ? (typeof rowDrill === 'function' ? rowDrill : i => rowDrill[i]) : null;
   const span = cols.length + (menu ? 1 : 0);
   return `<div class="tbl-wrap"><table class="nst-table ${cls}">
     <thead><tr>${cols.map(c=>`<th${c.r?' class="t-right"':''}>${c.t}</th>`).join('')}${menu?'<th class="kb-th"></th>':''}</tr></thead>
     <tbody>${rows.length
       ? rows.map((r,ri)=>{
           const items = menu ? (menu(ri) || []) : [];
-          /* the row opens whatever its own first action would — its "view
-             info" destination — only when that action truly goes somewhere;
-             a first action that's a copy or has no destination leaves the
+          /* an explicit rowDrill wins outright; otherwise the row opens
+             whatever its own first kebab action would — its "view info"
+             destination — only when that action truly goes somewhere; a
+             first action that's a copy or has no destination leaves the
              row inert rather than guessing at one. Clicking the kebab button
              or one of its own items still resolves to that item's own
              data-drill first (closest() finds it before ever reaching the
              row), so this never fights with the row's own menu. */
+          const explicitD = rowD ? rowD(ri) : null;
           const first = items[0];
+          const inferredD = !explicitD && first && first.d ? first.d : null;
           const attrObj = typeof rowAttr === 'function' ? rowAttr(ri) : (r._attr || null);
           const attrStr = attrObj ? Object.entries(attrObj).map(([k,v])=>`${k}="${esc(v)}"`).join(' ') : '';
-          const rowClick = first && first.d ? ` class="is-click"${dA(first.d)}` : '';
+          const rowClick = explicitD ? ` class="is-row-link"${dA(explicitD)}`
+            : inferredD ? ` class="is-click"${dA(inferredD)}` : '';
           const combined = [attrStr, rowClick].filter(Boolean).join(' ');
           return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
             const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');

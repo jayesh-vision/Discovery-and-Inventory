@@ -683,16 +683,65 @@ path.st.has-c:hover { fill-opacity: .78; }
   border-bottom: 1px solid var(--vw-color-slate-200); }
 .stock-bar-inline { display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap; }
 .stock-bar > .eyebrow, .stock-bar-inline > .eyebrow { flex-shrink: 0; }
-.stock-chips { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; min-width: 0; }
+/* single line, always — once it runs out of room, layoutStockChips() (app-grid.js)
+   hides the trailing chips behind a "+N More" chip rather than wrapping the
+   toolbar onto a third line; that chip opens chipsModal() (.chips-modal below)
+   instead of reflowing the row in place */
+.stock-chips { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: nowrap; overflow: hidden; min-width: 0; }
+/* not scoped to .stock-chip — the active-filter chips it also collapses
+   (NF name/Subcloud/Host/…) are plain .active-filter-chip spans */
+.stock-chips .is-chip-hidden { display: none; }
+.stock-chip-more { flex-shrink: 0; font-weight: 500; }
 .stock-presets { flex-shrink: 0; }
 /* same pill as the grid's own status chips (.vw-chip) — pair with a
    vw-chip--{tone} class when a state is on, vw-chip--neutral when it's
    off, rather than the bordered swatch-led pill this used to be */
-.stock-chip { border: 0; cursor: pointer; font: inherit; line-height: 1.2; }
+.stock-chip { border: 0; cursor: pointer; font: inherit; line-height: 1.2; flex-shrink: 0; }
 .stock-chip:hover { filter: brightness(0.97); }
 .stock-chip:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
 .stock-chip.is-on { font-weight: 500; }
 .ro-lock { font-size: 0.6875rem; opacity: .55; }
+/* an active filter contributed from outside the chip row (e.g. a status
+   picked from a summary card) — same pill family, plus its own remove control */
+.active-filter-chip { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.active-filter-chip-x { all: unset; cursor: pointer; display: inline-flex; align-items: center; opacity: .7; }
+.active-filter-chip-x:hover { opacity: 1; }
+.active-filter-chip-x svg { width: 11px; height: 11px; }
+
+/* "selected filters" popup — opened from the chip row's "+N More" chip
+   (chipsModal() in app-grid.js). A centered dialog, not an anchored
+   dropdown, since it's meant to be read as the full list rather than a
+   quick toggle; .drawer-overlay (shared with the lifecycle drawer) gives it
+   the same dismiss-by-backdrop behavior. */
+.chips-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 92;
+  width: min(30rem, 92vw); max-height: 80vh; overflow-y: auto;
+  background: var(--vw-color-white); border-radius: var(--vw-radius-lg);
+  box-shadow: 0 20px 50px rgba(15,23,42,.22); padding: var(--vw-space-lg);
+}
+.chips-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--vw-space-md); }
+.chips-modal-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: var(--vw-space-sm); margin-bottom: var(--vw-space-md);
+  border-bottom: 1px solid var(--vw-color-slate-100); font-size: 0.875rem; color: var(--vw-color-gray-700);
+}
+.chips-modal-clear { all: unset; cursor: pointer; font-weight: 500; font-size: 0.875rem; color: var(--vw-color-gray-900); }
+.chips-modal-clear:hover { text-decoration: underline; }
+.chips-modal-list { display: flex; flex-wrap: wrap; gap: var(--vw-space-sm); }
+.chips-modal-empty { font-size: 0.875rem; color: var(--vw-color-gray-500); }
+
+/* Virtual Resources summary cards: the type name/donut and each status row
+   are filter toggles on the grid below, not navigation — same look as the
+   platform's other drill rows, minus the chevron affordance, plus a quiet
+   highlight for whichever one is the grid's current filter. */
+.vnf-type-title { position: relative; cursor: pointer; border-radius: var(--vw-radius-sm); }
+.vnf-type-title:hover { background: var(--vw-color-slate-50); }
+.vnf-type-title.is-on .vw-card-title-sm { color: var(--vw-color-gray-900); font-weight: 700; }
+.vnf-legend-row { background: none; border: 0; border-radius: var(--vw-radius-sm);
+  width: calc(100% + 8px); margin: 0 -4px; padding: 2px 4px; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+.vnf-legend-row:hover { background: var(--vw-color-slate-50); }
+.vnf-legend-row.is-on { background: var(--vw-color-slate-100); }
+.vnf-legend-row.is-on .legend-i, .vnf-legend-row.is-on .vw-value.num { font-weight: 600; }
 
 /* ── reconciliation: outcome tiles + comparison table ── */
 .oc-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--vw-space-sm); }

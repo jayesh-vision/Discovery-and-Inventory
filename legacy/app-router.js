@@ -186,6 +186,7 @@ function go(k) {
     if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
+  layoutStockChips();
 }
 
 /* keyboard activation for custom [role="button"] controls (the coverage
@@ -204,9 +205,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const kbBtn = e.target.closest('[data-kebab]');
   if (kbBtn) { const k = kbBtn.dataset.kebab; KEBAB = (KEBAB === k) ? null : k;
-    GRIDMENU = false; FILTER_OPEN = false; go(CURRENT); return; }
+    GRIDMENU = false; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const gm = e.target.closest('[data-gridmenu]');
-  if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; go(CURRENT); return; }
+  if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const gr = e.target.closest('[data-gridrefresh]');
   /* Refresh re-derives every grid's rows from the underlying data arrays —
      go() always rebuilds the view fresh, never from a cached render — while
@@ -287,15 +288,50 @@ document.addEventListener('click', e => {
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
   const fr = e.target.closest('[data-filterreset]');
-  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; go(CURRENT); return; }
+  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const fa = e.target.closest('[data-filterapply]');
   if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
   if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  /* the chip row's own "+N More" (built by layoutStockChips(), not any
+     view's template) opens a popup listing every filter this grid has
+     applied; its own backdrop/X close it the same way a kebab menu does */
+  const cm = e.target.closest('[data-chipsmore]');
+  if (cm) { CHIPS_MODAL = cm.dataset.chipsmore; KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; go(CURRENT); return; }
+  const cmc = e.target.closest('[data-chipsmodalclose]');
+  if (cmc) { CHIPS_MODAL = null; go(CURRENT); return; }
+  const qf = e.target.closest('[data-quickfilter]');
+  if (qf) {
+    const [key, field, value] = qf.dataset.quickfilter.split('|');
+    const st = gridOf(key);
+    st.filters[field] = st.filters[field] === value ? '' : value;
+    /* picking a bare Type (or clearing it via All) is a fresh, unqualified
+       selection — any status specialization from a card click no longer applies */
+    if (field === 'Type') st.filters['Status'] = '';
+    go(CURRENT); return;
+  }
+  /* a mini-card click (type name/donut, or one status row within it) sets the
+     grid's own Type/Status filters in place — never navigates, so the reader
+     never loses the list the way the old cross-screen drill used to. */
+  const cf = e.target.closest('[data-cardfilter]');
+  if (cf) {
+    const [key, type, status] = cf.dataset.cardfilter.split('|');
+    const st = gridOf(key);
+    const alreadyActive = st.filters['Type'] === type && (st.filters['Status'] || '') === status;
+    st.filters['Type'] = alreadyActive ? '' : type;
+    st.filters['Status'] = alreadyActive ? '' : status;
+    go(CURRENT); return;
+  }
+  const clr = e.target.closest('[data-clearfilter]');
+  if (clr) {
+    const [key, field] = clr.dataset.clearfilter.split('|');
+    gridOf(key).filters[field] = '';
+    go(CURRENT); return;
+  }
   const gx = e.target.closest('[data-gridexport]');
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');

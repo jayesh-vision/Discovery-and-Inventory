@@ -2473,20 +2473,23 @@ function viewVirtual() {
           { n: 'Planned', c: plannedCount, tone: 'sky' },
           { n: 'Failed', c: failedCount, tone: 'red' }
         ];
+        const gf = gridOf('virtual').filters;
+        const typeOn = gf['Type'] === v.n;
+        const wholeTypeOn = typeOn && !gf['Status'];
         return card(`
           <div class="row vw-justify-between vw-items-center">
-            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
-              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+            <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
+              data-cardfilter="virtual|${esc(v.n)}|">
               <span class="vw-card-title-sm">${v.n}</span>
             </button>
-            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0"
-              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+            <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0"
+              data-cardfilter="virtual|${esc(v.n)}|">
               ${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
             </button>
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
-            ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"
-              ${dA({ v:'virtual', l:`${v.n} · ${s.n}`, q:`type=${encodeURIComponent(v.n)}&st=${encodeURIComponent(s.n)}` })}>
+            ${segs.map(s => `<button class="row vw-justify-between vnf-legend-row${typeOn && gf['Status'] === s.n ? ' is-on' : ''}"
+              data-cardfilter="virtual|${esc(v.n)}|${esc(s.n)}">
               <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
               <span class="vw-value num">${s.c}</span></button>`).join('')}
           </div>`);
@@ -2495,19 +2498,39 @@ function viewVirtual() {
 
     ${card(`
       ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
-        '',
+        (() => {
+          const filters = gridOf('virtual').filters;
+          const active = filters['Type'] || '';
+          const tone = { 'vDU':'info', 'CU-CP':'purple', 'CU-UP':'cyan', 'Others':'warning' };
+          const chip = (label, value) => `<button class="vw-chip stock-chip vw-chip--${active === value ? tone[value] || 'info' : 'neutral'}${active === value ? ' is-on' : ''}"
+            data-quickfilter="virtual|Type|${esc(value)}">${label}</button>`;
+          /* every other filter field the panel exposes (Status, NF name, Subcloud, Host)
+             gets its own removable chip once set, so a filtered-down list never leaves the
+             reader guessing what narrowed it — Type already has its own chip row above */
+          const otherFilterChips = FS.virtual
+            .filter(f => f.n !== 'Type' && filters[f.n])
+            .map(f => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(f.n)}: ${esc(filters[f.n])}
+              <button class="active-filter-chip-x" data-clearfilter="virtual|${esc(f.n)}" aria-label="Remove ${esc(f.n)} filter">${IC_X}</button></span>`)
+            .join('');
+          return `<div class="stock-chips" data-chipsrow="virtual">
+            <button class="vw-chip stock-chip vw-chip--${active ? 'neutral' : 'info'}${active ? '' : ' is-on'}" data-quickfilter="virtual|Type|">All</button>
+            ${VNF_TYPES.map(v => chip(v.n, v.n)).join('')}
+            ${otherFilterChips}
+          </div>`;
+        })(),
         [], 'virtual')}
-      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
-        rows.map((v, i) => [
+      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
+        rows.map(v => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
-          v.type === 'Others'
-            ? `<span style="color:${cv('gray',400)}">not RAN</span>`
-            : `<button class="nst-btn nst-btn--xs nst-btn--ghost"${dA({ v:'physical', l:'RAN detail view', q:'from=Virtual' })} style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })])}`)}
+        /* a Planned NF hasn't been instantiated yet — there's nothing to view
+           details on and no lifecycle to operate on, so it gets no row menu */
+        i => rows[i].st === 'Planned' ? [] : [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
+              A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })],
+        null,
+        i => rows[i].st === 'Planned' ? null : { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })}`)}
   </div>`;
 }
 
@@ -2782,16 +2805,21 @@ function viewVnfDetails() {
     ['PassCode', '-']
   ];
 
+  /* named fields, not positional array slots, so gridApply()'s per-field
+     matching (Host site / Coverage site / Cell identity / Cell name) can
+     actually target one column instead of the whole row's text */
+  /* one row per sector of the same site — same host, distinct identity/name/
+     number per sector, the way a real site's cell list actually reads */
   const cell4gRows = [
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1']
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114816', 'Cell name': 'LTSQC0102011-000-2100-1-000-OMACC', 'Cell number': '1' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114817', 'Cell name': 'LTSQC0102011-000-2100-2-000-OMACC', 'Cell number': '2' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114818', 'Cell name': 'LTSQC0102011-000-2100-3-000-OMACC', 'Cell number': '3' }
   ];
 
   const cell5gRows = [
-    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
-    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
-    ['BGLK-277', nf, '4096', 'NTSLB1436091-00-04096-00600-01-001-OMACC', '0']
+    { 'Host site': 'BGLK-277', 'Coverage site': 'NTSON34350044', 'Cell identity': '4096', 'Cell name': 'NTSLB1436091-OTSLB100275001-OMACC', 'Cell number': '0' },
+    { 'Host site': 'BGLK-277', 'Coverage site': 'NTSON34350044', 'Cell identity': '4097', 'Cell name': 'NTSLB1436091-OTSLB100275002-OMACC', 'Cell number': '1' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '4098', 'Cell name': 'NTSLB1436091-00-04098-00600-01-003-OMACC', 'Cell number': '2' }
   ];
 
   /* the raw fields carry a machine-case key that already tells us which
@@ -2815,22 +2843,25 @@ function viewVnfDetails() {
   const vdu4gSections = groupFieldsBySchema(gridFields(vdu4gFields), VDU_SECTIONS);
   const vdu5gSections = groupFieldsBySchema(gridFields(vdu5gFields), VDU_SECTIONS);
 
-  const renderCellTable = (rows, key) => card(`
-    ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
+  const renderCellTable = (rows, key) => {
+    const filtered = gridApply(key, rows);
+    return card(`
+    ${gridBar(filtered.length, rows.length, 'Host site, coverage site, cell identity, cell name', FS[key] || [], '', [], key, activeFilterChips(key))}
     ${table([{t:'Host site'},{t:'Coverage site'},{t:'Cell identity'},{t:'Cell name'},{t:'Cell number'}],
-      rows.map(r => [
-        `<span class="vw-value">${r[0]}</span>`,
-        `<span class="vw-value">${r[1]}</span>`,
-        `<span class="mono">${r[2]}</span>`,
-        `<span class="mono">${r[3]}</span>`,
-        `<span class="num">${r[4]}</span>`
+      filtered.map(r => [
+        `<span class="vw-value">${r['Host site']}</span>`,
+        `<span class="vw-value">${r['Coverage site']}</span>`,
+        `<span class="mono">${r['Cell identity']}</span>`,
+        `<span class="mono">${r['Cell name']}</span>`,
+        `<span class="num">${r['Cell number']}</span>`
       ]), '',
       /* the drill label names the specific cell, not just the screen kind —
          the crumb chain already ends in "Cell 4G/5G details", so echoing
          that same text as the label duplicated the last breadcrumb segment */
       i => [A('View details', { v: key === 'cell4g' ? 'cell4gdetails' : 'cell5gdetails',
-        l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details · ${rows[i][3]}`, q: `cell=${encodeURIComponent(rows[i][3])}` })])}
+        l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details · ${filtered[i]['Cell name']}`, q: `cell=${encodeURIComponent(filtered[i]['Cell name'])}` })])}
   `);
+  };
 
   /* the header describes the VNF as a whole; vDU-4G and vDU-5G are its two
      separate deployment tracks and can genuinely carry different statuses

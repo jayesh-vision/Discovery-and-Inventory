@@ -37,27 +37,37 @@ const pageHead = (t, d, right = '') =>
    pill rather than a chip that hugs its text. */
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
-/* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
-const table = (cols, rows, cls = '', acts = null, rowAttr = null) => {
+/* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab.
+   rowAttr: a function (rowIndex) => {attr: value} of extra <tr> attributes, or the row's
+   own _attr, or null.
+   rowDrill: a function (rowIndex) => {v,l,q} to make the whole row clickable to that drill
+   target (or an array of the same) — wins over the auto-detected first kebab action below;
+   leave null to fall back to that auto-detection, or to leave the row inert. */
+const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = null) => {
   const gid = 'g' + (GRID_N++);
   const menu = acts ? (typeof acts === 'function' ? acts : i => acts[i]) : null;
+  const rowD = rowDrill ? (typeof rowDrill === 'function' ? rowDrill : i => rowDrill[i]) : null;
   const span = cols.length + (menu ? 1 : 0);
   return `<div class="tbl-wrap"><table class="nst-table ${cls}">
     <thead><tr>${cols.map(c=>`<th${c.r?' class="t-right"':''}>${c.t}</th>`).join('')}${menu?'<th class="kb-th"></th>':''}</tr></thead>
     <tbody>${rows.length
       ? rows.map((r,ri)=>{
           const items = menu ? (menu(ri) || []) : [];
-          /* the row opens whatever its own first action would — its "view
-             info" destination — only when that action truly goes somewhere;
-             a first action that's a copy or has no destination leaves the
+          /* an explicit rowDrill wins outright; otherwise the row opens
+             whatever its own first kebab action would — its "view info"
+             destination — only when that action truly goes somewhere; a
+             first action that's a copy or has no destination leaves the
              row inert rather than guessing at one. Clicking the kebab button
              or one of its own items still resolves to that item's own
              data-drill first (closest() finds it before ever reaching the
              row), so this never fights with the row's own menu. */
+          const explicitD = rowD ? rowD(ri) : null;
           const first = items[0];
+          const inferredD = !explicitD && first && first.d ? first.d : null;
           const attrObj = typeof rowAttr === 'function' ? rowAttr(ri) : (r._attr || null);
           const attrStr = attrObj ? Object.entries(attrObj).map(([k,v])=>`${k}="${esc(v)}"`).join(' ') : '';
-          const rowClick = first && first.d ? ` class="is-click"${dA(first.d)}` : '';
+          const rowClick = explicitD ? ` class="is-row-link"${dA(explicitD)}`
+            : inferredD ? ` class="is-click"${dA(inferredD)}` : '';
           const combined = [attrStr, rowClick].filter(Boolean).join(' ');
           return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
             const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
@@ -1853,6 +1863,7 @@ let KEBAB = null;          /* "<gridId>:<rowIndex>" of the open row menu */
 let GRIDMENU = false;      /* the toolbar's own overflow menu            */
 let FILTER_OPEN = false;   /* the Filters panel                          */
 let FILTER_FIELD = 0;
+let CHIPS_MODAL = null;    /* grid key whose "+N more" chip popup is open */
 let GRID_N = 0;            /* reset each render so grid ids are stable   */
 
 /* ── search + filters, per grid ───────────────────────────
@@ -1998,7 +2009,12 @@ function kebabCell(items, gid, i) {
 }
 
 /* ── toolbar ───────────────────────────────────────────── */
-function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '') {
+/* extra: quick-filter controls (segmented tabs, a "Run now" button, …) that
+   sit left of the search box's grow spacer.
+   filterChips: one removable chip per value the Filters panel currently
+   holds — sits on the right, right against the funnel icon it explains,
+   rather than competing with extra's own controls for the left side. */
+function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '', filterChips = '') {
   const st = gridOf(key);
   const activeFilters = Object.values(st.filters).filter(Boolean).length;
   return `<div class="grid-bar">
@@ -2008,6 +2024,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
       <input class="nst-input" placeholder="${placeholder}" aria-label="Search" data-gridsearch="${key}" value="${esc(st.search)}"></span>
     ${extra}
     <span class="grow"></span>
+    ${filterChips}
     <div class="grid-tools">
       <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}${activeFilters ? ' has-value' : ''}" data-filteropen="${key}" aria-label="Filters"
         aria-expanded="${FILTER_OPEN}">${IC_FILTER}</button>
@@ -2021,6 +2038,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
         <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button></div>` : ''}
       ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
+    ${CHIPS_MODAL === key ? chipsModal(key) : ''}
   </div>`;
 }
 
@@ -2057,6 +2075,86 @@ function filterPanel(spec, key = '') {
   </div>`;
 }
 
+/* ── chip-row overflow ─────────────────────────────────────
+   A `.stock-chips` row (the Type/quick chips plus one chip per active
+   filter) runs single-line, never wrapping the toolbar onto a third line
+   as more filters land. Whatever doesn't fit collapses behind a "+N More"
+   chip (built here, not in any view's template — how many fit is a layout
+   fact go() can't know until the row is painted); clicking it opens
+   chipsModal() below, which lists every applied filter regardless of which
+   ones actually overflowed. Re-run after every go() and on resize, since
+   both can change how many chips fit. */
+let STOCKCHIPS_BOUND = false;
+function layoutStockChips() {
+  if (!STOCKCHIPS_BOUND) { STOCKCHIPS_BOUND = true; window.addEventListener('resize', layoutStockChips); }
+  document.querySelectorAll('.stock-chips').forEach(row => {
+    const key = row.dataset.chipsrow || '';
+    const old = row.querySelector('.stock-chip-more');
+    if (old) old.remove();
+    const chips = Array.from(row.children);
+    chips.forEach(c => c.classList.remove('is-chip-hidden'));
+    if (row.scrollWidth <= row.clientWidth + 1) return;
+
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'vw-chip vw-chip--neutral stock-chip stock-chip-more';
+    more.dataset.chipsmore = key;
+    row.appendChild(more);
+
+    /* the first chip (always "All") stays put as the row's anchor — only
+       the tail collapses, most-recently-added filter first */
+    let hidden = 0;
+    for (let i = chips.length - 1; i >= 1 && row.scrollWidth > row.clientWidth; i--) {
+      chips[i].classList.add('is-chip-hidden');
+      hidden++;
+    }
+    if (!hidden) { more.remove(); return; }
+    more.textContent = `+ ${hidden} More`;
+    more.setAttribute('aria-label', `Show all applied filters (${hidden} more)`);
+  });
+}
+
+/* ── "selected filters" popup ─────────────────────────────
+   Opened from the chip row's "+N More" chip. Rather than reveal just the
+   overflowed chips in place (which would still push the page around every
+   time the set of filters changes), it lists every filter this grid has
+   applied — field and value both live in gridOf(key).filters already, so
+   nothing view-specific is needed here. */
+function chipsModal(key) {
+  const active = Object.entries(gridOf(key).filters).filter(([, v]) => v);
+  return `<div class="drawer-overlay" data-chipsmodalclose="1"></div>
+    <div class="chips-modal" role="dialog" aria-label="Selected filters">
+      <div class="chips-modal-head">
+        <span class="vw-card-title-sm">Selected filters</span>
+        <button class="fp-x" data-chipsmodalclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="chips-modal-meta">
+        <span>${active.length} filter${active.length === 1 ? '' : 's'} applied</span>
+        ${active.length ? `<button class="chips-modal-clear" data-filterreset="${key}">Remove all</button>` : ''}
+      </div>
+      <div class="chips-modal-list">
+        ${active.length ? active.map(([field, value]) => `<span class="vw-chip vw-chip--neutral active-filter-chip">${esc(field)} = ${esc(value)}
+          <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`).join('')
+          : `<span class="chips-modal-empty">No filters applied.</span>`}
+      </div>
+    </div>`;
+}
+
+/* ── active-filter chip row ────────────────────────────────
+   A plain "one chip per active filter" row for any grid whose toolbar has
+   no quick-filter buttons of its own to build a richer chip row around
+   (viewVirtual's Type row is the one exception, and builds its own inline).
+   Feeds the same layoutStockChips()/chipsModal() overflow handling as that
+   row, via the shared .stock-chips/data-chipsrow markup. */
+function activeFilterChips(key) {
+  const filters = gridOf(key).filters;
+  const chips = Object.entries(filters).filter(([, v]) => v)
+    .map(([field, value]) => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(field)}: ${esc(value)}
+      <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`)
+    .join('');
+  return chips ? `<div class="stock-chips" data-chipsrow="${esc(key)}">${chips}</div>` : '';
+}
+
 /* ── per-grid filter field specs ───────────────────────── */
 const FS = {
   location: [{ n:'Status', o:['On-air','Planned','Building','Failed'] }, { n:'Name' },
@@ -2081,8 +2179,13 @@ const FS = {
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },
              { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
-  virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
-             { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
+  virtual:  [{ n:'Status', o:['Ready','In progress','Planned','Failed'] }, { n:'NF name' },
+             { n:'Type', o:['vDU','CU-CP','CU-UP','Others'] }, { n:'Subcloud' }, { n:'Host' }],
+  cell4g:   [{ n:'Host site' }, { n:'Coverage site' }, { n:'Cell identity' }, { n:'Cell name' }],
+  cell5g:   [{ n:'Host site' }, { n:'Coverage site' }, { n:'Cell identity' }, { n:'Cell name' }],
+  /* the Filters panel's Status field is overridden per protocol tab in
+     viewLinks() (linkFS) — the field must stay named 'Status' for that
+     f.n === 'Status' match to find it */
   links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
              { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
@@ -4937,20 +5040,23 @@ function viewVirtual() {
           { n: 'Planned', c: plannedCount, tone: 'sky' },
           { n: 'Failed', c: failedCount, tone: 'red' }
         ];
+        const gf = gridOf('virtual').filters;
+        const typeOn = gf['Type'] === v.n;
+        const wholeTypeOn = typeOn && !gf['Status'];
         return card(`
           <div class="row vw-justify-between vw-items-center">
-            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
-              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+            <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
+              data-cardfilter="virtual|${esc(v.n)}|">
               <span class="vw-card-title-sm">${v.n}</span>
             </button>
-            <button class="nst-btn nst-btn--ghost is-drill" style="padding:0"
-              ${dA({ v:'virtual', l: v.n, q:`type=${encodeURIComponent(v.n)}` })}>
+            <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0"
+              data-cardfilter="virtual|${esc(v.n)}|">
               ${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
             </button>
           </div>
           <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
-            ${segs.map(s => `<button class="row vw-justify-between is-drill lg-row"
-              ${dA({ v:'virtual', l:`${v.n} · ${s.n}`, q:`type=${encodeURIComponent(v.n)}&st=${encodeURIComponent(s.n)}` })}>
+            ${segs.map(s => `<button class="row vw-justify-between vnf-legend-row${typeOn && gf['Status'] === s.n ? ' is-on' : ''}"
+              data-cardfilter="virtual|${esc(v.n)}|${esc(s.n)}">
               <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
               <span class="vw-value num">${s.c}</span></button>`).join('')}
           </div>`);
@@ -4959,19 +5065,39 @@ function viewVirtual() {
 
     ${card(`
       ${gridBar(rows.length, n(IL.vnf), 'NF name, subcloud, host', FS.virtual,
-        '',
+        (() => {
+          const filters = gridOf('virtual').filters;
+          const active = filters['Type'] || '';
+          const tone = { 'vDU':'info', 'CU-CP':'purple', 'CU-UP':'cyan', 'Others':'warning' };
+          const chip = (label, value) => `<button class="vw-chip stock-chip vw-chip--${active === value ? tone[value] || 'info' : 'neutral'}${active === value ? ' is-on' : ''}"
+            data-quickfilter="virtual|Type|${esc(value)}">${label}</button>`;
+          /* every other filter field the panel exposes (Status, NF name, Subcloud, Host)
+             gets its own removable chip once set, so a filtered-down list never leaves the
+             reader guessing what narrowed it — Type already has its own chip row above */
+          const otherFilterChips = FS.virtual
+            .filter(f => f.n !== 'Type' && filters[f.n])
+            .map(f => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(f.n)}: ${esc(filters[f.n])}
+              <button class="active-filter-chip-x" data-clearfilter="virtual|${esc(f.n)}" aria-label="Remove ${esc(f.n)} filter">${IC_X}</button></span>`)
+            .join('');
+          return `<div class="stock-chips" data-chipsrow="virtual">
+            <button class="vw-chip stock-chip vw-chip--${active ? 'neutral' : 'info'}${active ? '' : ' is-on'}" data-quickfilter="virtual|Type|">All</button>
+            ${VNF_TYPES.map(v => chip(v.n, v.n)).join('')}
+            ${otherFilterChips}
+          </div>`;
+        })(),
         [], 'virtual')}
-      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Parent RAN node'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
-        rows.map((v, i) => [
+      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
+        rows.map(v => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
-          v.type === 'Others'
-            ? `<span style="color:${cv('gray',400)}">not RAN</span>`
-            : `<button class="nst-btn nst-btn--xs nst-btn--ghost"${dA({ v:'physical', l:'RAN detail view', q:'from=Virtual' })} style="padding:0">${['BLR-SOUTH-GNB-021','DEL-CENTRAL-GNB-009'][i % 2]}</button>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        i => [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` }),
-              A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })])}`)}
+        /* a Planned NF hasn't been instantiated yet — there's nothing to view
+           details on and no lifecycle to operate on, so it gets no row menu */
+        i => rows[i].st === 'Planned' ? [] : [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
+              A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })],
+        null,
+        i => rows[i].st === 'Planned' ? null : { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })}`)}
   </div>`;
 }
 
@@ -5246,16 +5372,21 @@ function viewVnfDetails() {
     ['PassCode', '-']
   ];
 
+  /* named fields, not positional array slots, so gridApply()'s per-field
+     matching (Host site / Coverage site / Cell identity / Cell name) can
+     actually target one column instead of the whole row's text */
+  /* one row per sector of the same site — same host, distinct identity/name/
+     number per sector, the way a real site's cell list actually reads */
   const cell4gRows = [
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1'],
-    ['BGLK-277', nf, '26114816', 'LTSQC0102011-000-2100-1-000-OMACC', '1']
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114816', 'Cell name': 'LTSQC0102011-000-2100-1-000-OMACC', 'Cell number': '1' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114817', 'Cell name': 'LTSQC0102011-000-2100-2-000-OMACC', 'Cell number': '2' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '26114818', 'Cell name': 'LTSQC0102011-000-2100-3-000-OMACC', 'Cell number': '3' }
   ];
 
   const cell5gRows = [
-    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
-    ['BGLK-277', 'NTSON34350044', '4096', 'NTSLB1436091-OTSLB100275001-OMACC', '0'],
-    ['BGLK-277', nf, '4096', 'NTSLB1436091-00-04096-00600-01-001-OMACC', '0']
+    { 'Host site': 'BGLK-277', 'Coverage site': 'NTSON34350044', 'Cell identity': '4096', 'Cell name': 'NTSLB1436091-OTSLB100275001-OMACC', 'Cell number': '0' },
+    { 'Host site': 'BGLK-277', 'Coverage site': 'NTSON34350044', 'Cell identity': '4097', 'Cell name': 'NTSLB1436091-OTSLB100275002-OMACC', 'Cell number': '1' },
+    { 'Host site': 'BGLK-277', 'Coverage site': nf, 'Cell identity': '4098', 'Cell name': 'NTSLB1436091-00-04098-00600-01-003-OMACC', 'Cell number': '2' }
   ];
 
   /* the raw fields carry a machine-case key that already tells us which
@@ -5279,22 +5410,25 @@ function viewVnfDetails() {
   const vdu4gSections = groupFieldsBySchema(gridFields(vdu4gFields), VDU_SECTIONS);
   const vdu5gSections = groupFieldsBySchema(gridFields(vdu5gFields), VDU_SECTIONS);
 
-  const renderCellTable = (rows, key) => card(`
-    ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
+  const renderCellTable = (rows, key) => {
+    const filtered = gridApply(key, rows);
+    return card(`
+    ${gridBar(filtered.length, rows.length, 'Host site, coverage site, cell identity, cell name', FS[key] || [], '', [], key, activeFilterChips(key))}
     ${table([{t:'Host site'},{t:'Coverage site'},{t:'Cell identity'},{t:'Cell name'},{t:'Cell number'}],
-      rows.map(r => [
-        `<span class="vw-value">${r[0]}</span>`,
-        `<span class="vw-value">${r[1]}</span>`,
-        `<span class="mono">${r[2]}</span>`,
-        `<span class="mono">${r[3]}</span>`,
-        `<span class="num">${r[4]}</span>`
+      filtered.map(r => [
+        `<span class="vw-value">${r['Host site']}</span>`,
+        `<span class="vw-value">${r['Coverage site']}</span>`,
+        `<span class="mono">${r['Cell identity']}</span>`,
+        `<span class="mono">${r['Cell name']}</span>`,
+        `<span class="num">${r['Cell number']}</span>`
       ]), '',
       /* the drill label names the specific cell, not just the screen kind —
          the crumb chain already ends in "Cell 4G/5G details", so echoing
          that same text as the label duplicated the last breadcrumb segment */
       i => [A('View details', { v: key === 'cell4g' ? 'cell4gdetails' : 'cell5gdetails',
-        l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details · ${rows[i][3]}`, q: `cell=${encodeURIComponent(rows[i][3])}` })])}
+        l: `${key === 'cell4g' ? 'Cell 4G' : 'Cell 5G'} details · ${filtered[i]['Cell name']}`, q: `cell=${encodeURIComponent(filtered[i]['Cell name'])}` })])}
   `);
+  };
 
   /* the header describes the VNF as a whole; vDU-4G and vDU-5G are its two
      separate deployment tracks and can genuinely carry different statuses
@@ -8512,6 +8646,7 @@ function go(k) {
     if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
   lazyGrids();
+  layoutStockChips();
   if (window.__nsBridge && window.__nsBridge.sync)
     window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT),
       DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
@@ -8540,9 +8675,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const kbBtn = e.target.closest('[data-kebab]');
   if (kbBtn) { const k = kbBtn.dataset.kebab; KEBAB = (KEBAB === k) ? null : k;
-    GRIDMENU = false; FILTER_OPEN = false; go(CURRENT); return; }
+    GRIDMENU = false; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const gm = e.target.closest('[data-gridmenu]');
-  if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; go(CURRENT); return; }
+  if (gm) { GRIDMENU = !GRIDMENU; KEBAB = null; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const gr = e.target.closest('[data-gridrefresh]');
   /* Refresh re-derives every grid's rows from the underlying data arrays —
      go() always rebuilds the view fresh, never from a cached render — while
@@ -8623,15 +8758,50 @@ document.addEventListener('click', e => {
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
+  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
   const fr = e.target.closest('[data-filterreset]');
-  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; go(CURRENT); return; }
+  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
   const fa = e.target.closest('[data-filterapply]');
   if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
   if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  /* the chip row's own "+N More" (built by layoutStockChips(), not any
+     view's template) opens a popup listing every filter this grid has
+     applied; its own backdrop/X close it the same way a kebab menu does */
+  const cm = e.target.closest('[data-chipsmore]');
+  if (cm) { CHIPS_MODAL = cm.dataset.chipsmore; KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; go(CURRENT); return; }
+  const cmc = e.target.closest('[data-chipsmodalclose]');
+  if (cmc) { CHIPS_MODAL = null; go(CURRENT); return; }
+  const qf = e.target.closest('[data-quickfilter]');
+  if (qf) {
+    const [key, field, value] = qf.dataset.quickfilter.split('|');
+    const st = gridOf(key);
+    st.filters[field] = st.filters[field] === value ? '' : value;
+    /* picking a bare Type (or clearing it via All) is a fresh, unqualified
+       selection — any status specialization from a card click no longer applies */
+    if (field === 'Type') st.filters['Status'] = '';
+    go(CURRENT); return;
+  }
+  /* a mini-card click (type name/donut, or one status row within it) sets the
+     grid's own Type/Status filters in place — never navigates, so the reader
+     never loses the list the way the old cross-screen drill used to. */
+  const cf = e.target.closest('[data-cardfilter]');
+  if (cf) {
+    const [key, type, status] = cf.dataset.cardfilter.split('|');
+    const st = gridOf(key);
+    const alreadyActive = st.filters['Type'] === type && (st.filters['Status'] || '') === status;
+    st.filters['Type'] = alreadyActive ? '' : type;
+    st.filters['Status'] = alreadyActive ? '' : status;
+    go(CURRENT); return;
+  }
+  const clr = e.target.closest('[data-clearfilter]');
+  if (clr) {
+    const [key, field] = clr.dataset.clearfilter.split('|');
+    gridOf(key).filters[field] = '';
+    go(CURRENT); return;
+  }
   const gx = e.target.closest('[data-gridexport]');
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');

@@ -9,6 +9,7 @@ let KEBAB = null;          /* "<gridId>:<rowIndex>" of the open row menu */
 let GRIDMENU = false;      /* the toolbar's own overflow menu            */
 let FILTER_OPEN = false;   /* the Filters panel                          */
 let FILTER_FIELD = 0;
+let CHIPS_MODAL = null;    /* grid key whose "+N more" chip popup is open */
 let GRID_N = 0;            /* reset each render so grid ids are stable   */
 
 /* ── search + filters, per grid ───────────────────────────
@@ -154,7 +155,12 @@ function kebabCell(items, gid, i) {
 }
 
 /* ── toolbar ───────────────────────────────────────────── */
-function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '') {
+/* extra: quick-filter controls (segmented tabs, a "Run now" button, …) that
+   sit left of the search box's grow spacer.
+   filterChips: one removable chip per value the Filters panel currently
+   holds — sits on the right, right against the funnel icon it explains,
+   rather than competing with extra's own controls for the left side. */
+function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '', filterChips = '') {
   const st = gridOf(key);
   const activeFilters = Object.values(st.filters).filter(Boolean).length;
   return `<div class="grid-bar">
@@ -164,6 +170,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
       <input class="nst-input" placeholder="${placeholder}" aria-label="Search" data-gridsearch="${key}" value="${esc(st.search)}"></span>
     ${extra}
     <span class="grow"></span>
+    ${filterChips}
     <div class="grid-tools">
       <button class="icon-btn${FILTER_OPEN ? ' is-on' : ''}${activeFilters ? ' has-value' : ''}" data-filteropen="${key}" aria-label="Filters"
         aria-expanded="${FILTER_OPEN}">${IC_FILTER}</button>
@@ -177,6 +184,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
         <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button></div>` : ''}
       ${FILTER_OPEN ? filterPanel(spec, key) : ''}
     </div>
+    ${CHIPS_MODAL === key ? chipsModal(key) : ''}
   </div>`;
 }
 
@@ -213,6 +221,86 @@ function filterPanel(spec, key = '') {
   </div>`;
 }
 
+/* ── chip-row overflow ─────────────────────────────────────
+   A `.stock-chips` row (the Type/quick chips plus one chip per active
+   filter) runs single-line, never wrapping the toolbar onto a third line
+   as more filters land. Whatever doesn't fit collapses behind a "+N More"
+   chip (built here, not in any view's template — how many fit is a layout
+   fact go() can't know until the row is painted); clicking it opens
+   chipsModal() below, which lists every applied filter regardless of which
+   ones actually overflowed. Re-run after every go() and on resize, since
+   both can change how many chips fit. */
+let STOCKCHIPS_BOUND = false;
+function layoutStockChips() {
+  if (!STOCKCHIPS_BOUND) { STOCKCHIPS_BOUND = true; window.addEventListener('resize', layoutStockChips); }
+  document.querySelectorAll('.stock-chips').forEach(row => {
+    const key = row.dataset.chipsrow || '';
+    const old = row.querySelector('.stock-chip-more');
+    if (old) old.remove();
+    const chips = Array.from(row.children);
+    chips.forEach(c => c.classList.remove('is-chip-hidden'));
+    if (row.scrollWidth <= row.clientWidth + 1) return;
+
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'vw-chip vw-chip--neutral stock-chip stock-chip-more';
+    more.dataset.chipsmore = key;
+    row.appendChild(more);
+
+    /* the first chip (always "All") stays put as the row's anchor — only
+       the tail collapses, most-recently-added filter first */
+    let hidden = 0;
+    for (let i = chips.length - 1; i >= 1 && row.scrollWidth > row.clientWidth; i--) {
+      chips[i].classList.add('is-chip-hidden');
+      hidden++;
+    }
+    if (!hidden) { more.remove(); return; }
+    more.textContent = `+ ${hidden} More`;
+    more.setAttribute('aria-label', `Show all applied filters (${hidden} more)`);
+  });
+}
+
+/* ── "selected filters" popup ─────────────────────────────
+   Opened from the chip row's "+N More" chip. Rather than reveal just the
+   overflowed chips in place (which would still push the page around every
+   time the set of filters changes), it lists every filter this grid has
+   applied — field and value both live in gridOf(key).filters already, so
+   nothing view-specific is needed here. */
+function chipsModal(key) {
+  const active = Object.entries(gridOf(key).filters).filter(([, v]) => v);
+  return `<div class="drawer-overlay" data-chipsmodalclose="1"></div>
+    <div class="chips-modal" role="dialog" aria-label="Selected filters">
+      <div class="chips-modal-head">
+        <span class="vw-card-title-sm">Selected filters</span>
+        <button class="fp-x" data-chipsmodalclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="chips-modal-meta">
+        <span>${active.length} filter${active.length === 1 ? '' : 's'} applied</span>
+        ${active.length ? `<button class="chips-modal-clear" data-filterreset="${key}">Remove all</button>` : ''}
+      </div>
+      <div class="chips-modal-list">
+        ${active.length ? active.map(([field, value]) => `<span class="vw-chip vw-chip--neutral active-filter-chip">${esc(field)} = ${esc(value)}
+          <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`).join('')
+          : `<span class="chips-modal-empty">No filters applied.</span>`}
+      </div>
+    </div>`;
+}
+
+/* ── active-filter chip row ────────────────────────────────
+   A plain "one chip per active filter" row for any grid whose toolbar has
+   no quick-filter buttons of its own to build a richer chip row around
+   (viewVirtual's Type row is the one exception, and builds its own inline).
+   Feeds the same layoutStockChips()/chipsModal() overflow handling as that
+   row, via the shared .stock-chips/data-chipsrow markup. */
+function activeFilterChips(key) {
+  const filters = gridOf(key).filters;
+  const chips = Object.entries(filters).filter(([, v]) => v)
+    .map(([field, value]) => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(field)}: ${esc(value)}
+      <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`)
+    .join('');
+  return chips ? `<div class="stock-chips" data-chipsrow="${esc(key)}">${chips}</div>` : '';
+}
+
 /* ── per-grid filter field specs ───────────────────────── */
 const FS = {
   location: [{ n:'Status', o:['On-air','Planned','Building','Failed'] }, { n:'Name' },
@@ -237,8 +325,13 @@ const FS = {
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
   reconcile:[{ n:'Result', o:['Agree','Differ','Stale','Only in inventory','Only on network','Unidentified'] },
              { n:'Network element' }, { n:'IP address' }, { n:'Circle' }],
-  virtual:  [{ n:'Status', o:['Ready','In progress','Failed'] }, { n:'NF name' },
-             { n:'Type', o:['vDU','CU-CP','CU-UP'] }, { n:'Parent RAN node' }, { n:'Subcloud' }, { n:'Host' }],
+  virtual:  [{ n:'Status', o:['Ready','In progress','Planned','Failed'] }, { n:'NF name' },
+             { n:'Type', o:['vDU','CU-CP','CU-UP','Others'] }, { n:'Subcloud' }, { n:'Host' }],
+  cell4g:   [{ n:'Host site' }, { n:'Coverage site' }, { n:'Cell identity' }, { n:'Cell name' }],
+  cell5g:   [{ n:'Host site' }, { n:'Coverage site' }, { n:'Cell identity' }, { n:'Cell name' }],
+  /* the Filters panel's Status field is overridden per protocol tab in
+     viewLinks() (linkFS) — the field must stay named 'Status' for that
+     f.n === 'Status' match to find it */
   links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
              { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },

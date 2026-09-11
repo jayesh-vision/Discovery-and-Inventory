@@ -62,8 +62,11 @@ export default function Topbar() {
   const segs: { label: string; to: string | null }[] = chain.map((label, i) => ({
     label, to: targetFor(chain.slice(0, i + 1).join(' · '))
   }));
-  segs.push({ label: leaf, to: drill ? targetFor(s.crumb) : null });
-  if (drill) segs.push({ label: drill, to: null });
+  /* A drill label is always the more specific replacement for the screen's
+     static leaf ("View" → "Virtual element details · NTSON3435004",
+     "Lifecycle operation" → "Lifecycle operation · NTSON3435004") — show one
+     final segment, not the generic leaf followed by the specific one. */
+  segs.push(drill ? { label: drill, to: null } : { label: leaf, to: null });
 
   return (
     <nav className="topbar" aria-label="Breadcrumb">
