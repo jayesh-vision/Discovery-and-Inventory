@@ -747,48 +747,24 @@ const REC_FIELDS = [['oem','OEM'],['model','Model'],['os','OS version'],['sn','S
 /* whichever side reported one — a row with neither has nothing to copy */
 const recSerial = r => (r.inv && r.inv.sn) || (r.net && r.net.sn) || '';
 
-/* one hand-drawn icon per outcome, same 24×24/1.7-stroke language as the
-   rest of the app's inline SVGs (see ALERT_ICON, GAP_ICON) */
-const OC_ICON = {
-  Agree: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>`,
-  Differ: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7v10a4 4 0 0 0 4 4h2"/><circle cx="7" cy="5" r="2"/><circle cx="17" cy="19" r="2"/><path d="M13 5h8"/><path d="m18 2 3 3-3 3"/></svg>`,
-  Stale: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3.5 2"/></svg>`,
-  Missing: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8.5 11h5"/></svg>`,
-  Extra: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>`
-};
-
-/* the industry-standard five-way reconciliation read: matched, one attribute
-   off, stale, on record only, or seen live only (folding in the network's
-   unresolved matches — a device that answered but no rule could place is
-   still "extra", just one we can't yet name) — every count and description
-   below is read straight off REC_BANDS, never invented for this tile. */
 function recOutcomes() {
   const B = REC_BANDS;
   const T = [
-    { k:'Agree', icon:OC_ICON.Agree, n:'Matched', d:B.both.parts[0].n, c:B.both.parts[0].c, tone:'emerald' },
-    { k:'Differ', icon:OC_ICON.Differ, n:'Attribute mismatch', d:B.both.parts[1].n, c:B.both.parts[1].c, tone:'amber' },
-    { k:'Stale', icon:OC_ICON.Stale, n:'Stale', d:B.both.parts[2].n, c:B.both.parts[2].c, tone:'orange' },
-    { k:'Only in inventory', icon:OC_ICON.Missing, n:'Missing entity', d:B.invOnly.q, c:B.invOnly.c, tone:'red' },
-    { k:'Extra', icon:OC_ICON.Extra, n:'Extra entity',
-      d:'On the network with no inventory record, or answered with no rule to place it',
-      c:B.netOnly.parts[0].c + B.netOnly.parts[1].c, tone:'fuchsia' }
+    { k:'Agree',              c:B.both.parts[0].c, tone:'emerald' },
+    { k:'Differ',             c:B.both.parts[1].c, tone:'amber'   },
+    { k:'Stale',              c:B.both.parts[2].c, tone:'orange'  },
+    { k:'Only in inventory',  c:B.invOnly.c,       tone:'red'     },
+    { k:'Only on network',    c:B.netOnly.parts[0].c, tone:'fuchsia' },
+    { k:'Unidentified',       c:B.netOnly.parts[1].c, tone:'purple'  }
   ];
   const tile = t => `
     <button class="oc${NE_FILTER === t.k ? ' is-on' : ''}" data-ne-filter="${t.k}"
       style="--oc-a:${cv(t.tone,400)};--oc-b:${cv(t.tone,50)}">
-      <span class="oc-head"><span class="oc-icon" style="color:${cv(t.tone,600)}">${t.icon}</span>
-        <span class="oc-v num" style="color:${cv(t.tone,700)}">${n(t.c)}</span></span>
-      <span class="oc-k">${t.n}</span>
-      <span class="oc-d">${t.d}</span>
+      <span class="oc-v num" style="color:${cv(t.tone,700)}">${n(t.c)}</span>
+      <span class="oc-k">${t.k}</span>
     </button>`;
-  const nc = B.notComparable;
   return `
-    <div class="oc-row">${T.map(tile).join('')}</div>
-    <div class="oc-nc">
-      <span class="oc-nc-v num">${n(nc.c)}</span>
-      <span class="oc-nc-k">outside the comparison</span>
-      <span class="oc-nc-d">${nc.q}</span>
-    </div>`;
+    <div class="oc-row">${T.map(tile).join('')}</div>`;
 }
 
 function recTable() {
@@ -796,7 +772,6 @@ function recTable() {
   const rows = gridApply('reconcile', NE_RECON
     .filter(r => f === 'All' ? true
       : f === 'Open' ? (r.out !== 'Agree' && r.out !== 'Stale')
-      : f === 'Extra' ? (r.out === 'Only on network' || r.out === 'Unidentified')
       : r.out === f)
     .filter(r => !REC_CIRCLE || r.circle === REC_CIRCLE));
   const cell = (r, key) => {
