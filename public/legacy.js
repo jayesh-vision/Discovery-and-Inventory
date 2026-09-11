@@ -7009,67 +7009,96 @@ function nodeHardwareSwitch(N) {
 
 function nodeLinksSwitch(N) {
   const linksList = [
-    { src: 'RTR-DEL-01', dstPort: 'TenGigE0/0/0/2', sip: '10.10.0.1', dip: '10.10.0.2' },
-    { src: 'RTR-DEL-02', dstPort: 'TenGigE0/0/0/3', sip: '10.10.0.2', dip: '10.10.0.3' },
-    { src: 'RTR-MUM-01', dstPort: 'HundredGigE0/0/0/2', sip: '10.20.0.1', dip: '10.20.0.2' },
-    { src: 'RTR-MUM-02', dstPort: 'HundredGigE0/0/0/3', sip: '10.20.0.2', dip: '10.20.0.3' },
-    { src: 'RTR-BLR-01', dstPort: 'TenGigE0/0/0/6', sip: '10.30.0.1', dip: '10.30.0.2' },
-    { src: 'RTR-BLR-02', dstPort: 'TenGigE0/0/0/7', sip: '10.30.0.2', dip: '10.30.0.3' },
-    { src: 'RTR-HYD-01', dstPort: 'FortyGigE0/0/1', sip: '10.40.0.1', dip: '10.40.0.2' },
-    { src: 'RTR-HYD-02', dstPort: 'FortyGigE0/0/2', sip: '10.40.0.2', dip: '10.40.0.3' },
-    { src: 'RTR-MAA-01', dstPort: 'TenGigE0/0/1/0', sip: '10.50.0.1', dip: '10.50.0.2' },
-    { src: 'RTR-CCU-01', dstPort: 'TenGigE0/0/1/2', sip: '10.60.0.1', dip: '10.60.0.2' }
+    { src: 'RTR-DEL-01', dstPort: 'TenGigE0/0/0/2', sip: '10.10.0.1', dip: '10.10.0.2', util: 74, status: 'Active' },
+    { src: 'RTR-DEL-02', dstPort: 'TenGigE0/0/0/3', sip: '10.10.0.2', dip: '10.10.0.3', util: 62, status: 'Active' },
+    { src: 'RTR-MUM-01', dstPort: 'HundredGigE0/0/0/2', sip: '10.20.0.1', dip: '10.20.0.2', util: 88, status: 'High Load' },
+    { src: 'RTR-MUM-02', dstPort: 'HundredGigE0/0/0/3', sip: '10.20.0.2', dip: '10.20.0.3', util: 45, status: 'Active' },
+    { src: 'RTR-BLR-01', dstPort: 'TenGigE0/0/0/6', sip: '10.30.0.1', dip: '10.30.0.2', util: 59, status: 'Active' },
+    { src: 'RTR-BLR-02', dstPort: 'TenGigE0/0/0/7', sip: '10.30.0.2', dip: '10.30.0.3', util: 66, status: 'Active' },
+    { src: 'RTR-HYD-01', dstPort: 'FortyGigE0/0/1', sip: '10.40.0.1', dip: '10.40.0.2', util: 82, status: 'Active' },
+    { src: 'RTR-HYD-02', dstPort: 'FortyGigE0/0/2', sip: '10.40.0.2', dip: '10.40.0.3', util: 38, status: 'Active' },
+    { src: 'RTR-MAA-01', dstPort: 'TenGigE0/0/1/0', sip: '10.50.0.1', dip: '10.50.0.2', util: 51, status: 'Active' },
+    { src: 'RTR-CCU-01', dstPort: 'TenGigE0/0/1/2', sip: '10.60.0.1', dip: '10.60.0.2', util: 29, status: 'Active' }
+  ];
+
+  /* 7 day trend points matching screenshot curve */
+  const trendData = [
+    { m: '23 Jun', a: 82, f: 53 },
+    { m: '24 Jun', a: 78, f: 73 },
+    { m: '25 Jun', a: 33, f: 23 },
+    { m: '26 Jun', a: 57, f: 54 },
+    { m: '27 Jun', a: 29, f: 21 },
+    { m: '28 Jun', a: 47, f: 77 },
+    { m: '29 Jun', a: 63, f: 76 }
   ];
 
   return card(`
-    <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg)">
-      <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
-        <div style="width:36px;height:36px;border-radius:var(--vw-radius-md);background:var(--vw-color-sky-50);border:1px solid var(--vw-color-sky-200);display:flex;align-items:center;justify-content:center;color:var(--vw-color-sky-600);flex-shrink:0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg);padding-bottom:var(--vw-space-md);border-bottom:1px solid var(--vw-color-slate-200)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);border:1px solid #7dd3fc;display:flex;align-items:center;justify-content:center;color:#0284c7;box-shadow:0 2px 6px rgba(2,132,199,0.15);flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
           </svg>
         </div>
         <div>
-          <div style="font-size:1.125rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity dashboard</div>
-          <div class="vw-card-metric-label-sub" style="margin-top:2px">LLDP Protocol capacity analysis</div>
+          <div style="font-size:1.1875rem;font-weight:700;color:var(--vw-color-slate-900);letter-spacing:-0.01em">Link capacity dashboard</div>
+          <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px;display:flex;align-items:center;gap:8px">
+            <span>LLDP Protocol capacity analysis</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;color:#059669;font-weight:500;font-size:0.75rem">
+              <span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981"></span>Live assurance
+            </span>
+          </div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
         ${chip('LLDP Protocol', 'info')}
-        <span class="vw-card-metric-label-sub">Last sync : Jun 30, 2026 14:30:00</span>
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--vw-color-slate-100);border-radius:8px">
+          Last sync : Jun 30, 2026 14:30:00
+        </span>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:320px 1fr;gap:var(--vw-space-xl);align-items:start">
-      <div class="cx-panel" style="padding:var(--vw-space-md)">
-        <div class="cx-panel-head" style="margin-bottom:var(--vw-space-sm)">
-          <span class="eyebrow">10 Links in countdown - LLDP</span>
+    <div style="display:grid;grid-template-columns:330px 1fr;gap:var(--vw-space-xl);align-items:start">
+      <div class="cx-panel" style="padding:16px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
+        <div class="row vw-justify-between vw-items-center" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--vw-color-slate-100)">
+          <span style="font-size:0.75rem;font-weight:700;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">10 Links in countdown - LLDP</span>
+          <span style="font-size:0.6875rem;font-weight:700;padding:2px 8px;border-radius:10px;background:#e0f2fe;color:#0369a1">10 Active</span>
         </div>
-        <div class="stack-s" style="max-height:450px;overflow-y:auto;padding-right:4px">
+        <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:4px">
           ${linksList.map((lk, idx) => `
-            <div class="vw-card-child${idx === 0 ? ' is-sel' : ''}" style="padding:var(--vw-space-sm) var(--vw-space-md);border-radius:var(--vw-radius-md);border:1px solid ${idx === 0 ? 'var(--vw-color-sky-500)' : 'var(--vw-color-slate-200)'};background:${idx === 0 ? 'var(--vw-color-sky-50)' : 'var(--vw-color-white)'};box-shadow:${idx === 0 ? '0 1px 4px rgba(2,132,199,0.12)' : '0 1px 2px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.15s ease">
+            <div class="is-drill" style="padding:12px 14px;border-radius:10px;border:1.5px solid ${idx === 0 ? '#0284c7' : 'var(--vw-color-slate-200)'};background:${idx === 0 ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};border-left:${idx === 0 ? '4px solid #0284c7' : '3px solid transparent'};box-shadow:${idx === 0 ? '0 4px 12px rgba(2,132,199,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1)">
               <div class="row vw-justify-between vw-items-center" style="margin-bottom:6px">
-                <span class="mono" style="font-size:0.875rem;font-weight:700;color:${idx === 0 ? 'var(--vw-color-sky-700)' : 'var(--vw-color-sky-600)'}">${lk.src}</span>
-                <span style="font-size:0.75rem;color:var(--vw-color-slate-400);margin:0 4px">→</span>
-                <span class="mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-700)">${lk.dstPort}</span>
+                <span class="mono" style="font-size:0.875rem;font-weight:700;color:${idx === 0 ? '#0369a1' : '#0284c7'}">${lk.src}</span>
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${idx === 0 ? '#bae6fd' : '#f1f5f9'};color:${idx === 0 ? '#0284c7' : '#94a3b8'};font-size:0.75rem">→</span>
+                <span class="mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-800)">${lk.dstPort}</span>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.75rem">
-                <div><span class="nv-hk">Source IP</span><br><span class="mono" style="font-weight:500;color:var(--vw-color-slate-700)">${lk.sip}</span></div>
-                <div><span class="nv-hk">Destination IP</span><br><span class="mono" style="font-weight:500;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
+                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Source IP</span><br><span class="mono" style="font-weight:600;color:${idx === 0 ? '#0369a1' : '#334155'}">${lk.sip}</span></div>
+                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Destination IP</span><br><span class="mono" style="font-weight:600;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
               </div>
             </div>`).join('')}
         </div>
       </div>
 
-      <div class="cx-panel" style="padding:var(--vw-space-lg)">
-        <div class="cx-panel-head" style="text-align:center;justify-content:center;margin-bottom:var(--vw-space-md)">
-          <span class="eyebrow" style="font-size:0.875rem">Link capacity trend</span>
+      <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
+        <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--vw-color-slate-100)">
+          <div style="font-size:0.9375rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity trend</div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:0.75rem">
+            <span style="padding:3px 10px;border-radius:12px;background:#f0f9ff;color:#0369a1;font-weight:600">Peak: 82%</span>
+            <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:600">Forecast: +4.2%</span>
+          </div>
         </div>
-        ${nvTrend(N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
-        <div class="row vw-justify-center" style="gap:var(--vw-space-xl);margin-top:var(--vw-space-lg);font-size:0.75rem">
-          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-sky-500)"></span><span style="color:var(--vw-color-slate-600)">Delhi-Core-Link - Inbound Utilization</span></span>
-          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-orange-500)"></span><span style="color:var(--vw-color-slate-600)">Delhi-Core-Link - Outbound Utilization</span></span>
+        ${nvTrend(trendData, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
+        <div class="row vw-justify-center" style="gap:24px;margin-top:20px;font-size:0.75rem">
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#f0f9ff;border:1px solid #e0f2fe;border-radius:16px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#0ea5e9;box-shadow:0 0 6px rgba(14,165,233,0.5)"></span>
+            <span style="font-weight:600;color:#0369a1">Delhi-Core-Link - Inbound Utilization</span>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#fff7ed;border:1px solid #ffedd5;border-radius:16px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#f97316;box-shadow:0 0 6px rgba(249,115,22,0.5)"></span>
+            <span style="font-weight:600;color:#c2410c">Delhi-Core-Link - Outbound Utilization</span>
+          </span>
         </div>
       </div>
     </div>`);
