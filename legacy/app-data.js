@@ -1024,17 +1024,17 @@ const LINKS = {
 const SVC_TABS = [{ k:'l3vpn', n:'L3VPN', c:1815 }, { k:'l2vpn', n:'L2VPN', c:642 }];
 const SERVICES = {
   l3vpn: [
-    { st:'Up',   chip:'success', name:'CGDA',                ip:'172.31.53.252', rd:'24186:1015707', rt:'24186:900287, 24186:888970', erp:'1097', ifc:'FortyGigE0/0/0/28.100', v:3 },
-    { st:'Down', chip:'error',   name:'E-24678',             ip:'172.31.53.252', rd:'24186:1001487', rt:'24186:899142, 24186:899138', erp:'1098', ifc:'FortyGigE0/0/0/28.17',  v:3 },
-    { st:'Down', chip:'error',   name:'VSS-RB-Connectivity', ip:'172.31.53.252', rd:'24186:1019673', rt:'24186:900172, 24186:900174', erp:'1099', ifc:'TenGigE0/0/0/2.200',    v:3 },
-    { st:'Up',   chip:'success', name:'NE-CAMERA',           ip:'172.31.53.249', rd:'24186:1016097', rt:'24186:900476, 24186:900478', erp:'1101', ifc:'GigabitEthernet0/0/0/10.3177', v:3 },
-    { st:'Up',   chip:'success', name:'SAFE-CITY-SW-MGMT',   ip:'172.31.53.249', rd:'24186:1016096', rt:'24186:900477, 24186:900479', erp:'1102', ifc:'GigabitEthernet0/0/0/10.10',   v:3 },
-    { st:'Up',   chip:'success', name:'SC-DU',               ip:'172.31.53.24',  rd:'24186:1016064', rt:'24186:901',                  erp:'1105', ifc:'BD6',                   v:10 }
+    { st:'Up',   chip:'success', name:'CGDA',                ip:'172.31.53.252', rd:'24186:1015707', rt:'24186:900287, 24186:888970', erp:'1097', ifc:'FortyGigE0/0/0/28.100', ne:'BGLK-ASR9010-PE-T1', v:3 },
+    { st:'Down', chip:'error',   name:'E-24678',             ip:'172.31.53.252', rd:'24186:1001487', rt:'24186:899142, 24186:899138', erp:'1098', ifc:'FortyGigE0/0/0/28.17',  ne:'BGLK-ASR9010-PE-T1', v:3 },
+    { st:'Down', chip:'error',   name:'VSS-RB-Connectivity', ip:'172.31.53.252', rd:'24186:1019673', rt:'24186:900172, 24186:900174', erp:'1099', ifc:'TenGigE0/0/0/2.200',    ne:'BGLK-ASR9010-PE-T1', v:3 },
+    { st:'Up',   chip:'success', name:'NE-CAMERA',           ip:'172.31.53.249', rd:'24186:1016097', rt:'24186:900476, 24186:900478', erp:'1101', ifc:'GigabitEthernet0/0/0/10.3177', ne:'BGLK-NCS540-PE-T3', v:3 },
+    { st:'Up',   chip:'success', name:'SAFE-CITY-SW-MGMT',   ip:'172.31.53.249', rd:'24186:1016096', rt:'24186:900477, 24186:900479', erp:'1102', ifc:'GigabitEthernet0/0/0/10.10',   ne:'BGLK-NCS540-PE-T3', v:3 },
+    { st:'Up',   chip:'success', name:'SC-DU',               ip:'172.31.53.24',  rd:'24186:1016064', rt:'24186:901',                  erp:'1105', ifc:'BD6',                   ne:'BGLK-MX204-AGG-02', v:10 }
   ],
   l2vpn: [
-    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', v:3 },
-    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   v:3 },
-    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', v:30 }
+    { st:'Up',   chip:'success', name:'VPWS-BGLK-INDR-01', ip:'172.31.31.189', rd:'24186:2001144', rt:'24186:700114', erp:'2041', ifc:'xe-0/0/2.100', ne:'INDR-ASR920-PE-T3', v:3 },
+    { st:'Up',   chip:'success', name:'VPLS-SAFE-CITY',    ip:'172.31.53.249', rd:'24186:2001188', rt:'24186:700118', erp:'2042', ifc:'ge-0/0/5.0',   ne:'BGLK-NCS540-PE-T3', v:3 },
+    { st:'Down', chip:'error',   name:'VPWS-CHE-MAS-04',   ip:'172.31.61.140', rd:'24186:2001202', rt:'24186:700120', erp:'2043', ifc:'xe-0/3/0.200', ne:'CHE-J2.2K-PE-T4-ER', v:30 }
   ]
 };
 
@@ -1090,12 +1090,13 @@ SERVICES.l3vpn = padList(SERVICES.l3vpn, 12, (r, i) => ({ ...r,
          'POLICE-NET', 'HEALTH-DEPT-VPN', 'UNIV-CAMPUS-NET'][i % 8] + `-${String(12 + i).padStart(2, '0')}`,
   ip: PAD_IP(i), rd: `24186:10${16100 + i * 7}`, rt: `24186:9004${70 + i}`,
   erp: String(1110 + i), ifc: `${['TenGigE0/0/0/', 'GigabitEthernet0/0/0/', 'FortyGigE0/0/0/'][i % 3]}${i % 12}.${100 + i}`,
-  v: [3, 6, 14][i % 3] }));
+  ne: PAD_NE[i % PAD_NE.length], v: [3, 6, 14][i % 3] }));
 SERVICES.l2vpn = padList(SERVICES.l2vpn, 10, (r, i) => ({ ...r,
   st: i % 4 === 2 ? 'Down' : 'Up', chip: i % 4 === 2 ? 'error' : 'success',
   name: `${i % 2 ? 'VPWS' : 'VPLS'}-${['BGLK', 'DEL', 'CHE', 'PUN', 'HYD', 'KOL'][i % 6]}-${String(5 + i).padStart(2, '0')}`,
   ip: PAD_IP(i + 2), rd: `24186:20${1210 + i * 3}`, rt: `24186:7001${20 + i}`,
-  erp: String(2050 + i), ifc: `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`, v: [3, 7, 30][i % 3] }));
+  erp: String(2050 + i), ifc: `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`,
+  ne: PAD_NE[(i + 3) % PAD_NE.length], v: [3, 7, 30][i % 3] }));
 
 
 const INACT_TABS = [

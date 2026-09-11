@@ -150,7 +150,8 @@ function kebabCell(items, gid, i) {
     ${open ? `<div class="kmenu">${items.map(it =>
       `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
         it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
-        it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+        it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}${
+        it.svcview ? ` data-svcview="${esc(it.svcview)}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 

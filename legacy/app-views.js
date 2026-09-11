@@ -3182,6 +3182,59 @@ function viewLinks() {
 }
 
 /* ── Services ─────────────────────────────────────────── */
+let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
+
+/* Cloud (the provider-side WAN boundary this attachment terminates on) and
+   the customer's own PE router as two nodes on a wire — the same canvas as
+   the Links page's node-linking diagram, badge and all: the wire carries a
+   small clickable label (copies the source interface), not a floating card
+   that would sit on top of the line, and the rest of the detail lives in
+   the field grid below instead. */
+function svcDiagram(r) {
+  const cloudLabel = `${r.name}_${r.erp}`;
+  return `<div class="linkdiagram-canvas">
+    <span class="linkdiagram-node" style="cursor:default">
+      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+      <span class="linkdiagram-label" title="${esc(cloudLabel)}">${esc(cloudLabel)}</span>
+    </span>
+    <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
+      title="Copy source interface: ${esc(r.ifc)}" aria-label="Copy source interface: ${esc(r.ifc)}">
+      <span class="linkdiagram-wire-badge">${esc(r.ifc)}</span>
+    </button>
+    <span class="linkdiagram-node" style="cursor:default;width:auto;max-width:14rem">
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(r.ne)}">${esc(r.ne)}</span>
+    </span>
+  </div>`;
+}
+
+function svcViewDialog() {
+  if (!SVC_VIEW) return '';
+  const rows = SERVICES[SVC_VIEW.tab] || [];
+  const r = rows[SVC_VIEW.i];
+  if (!r) return '';
+  const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
+  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  return `
+    <div class="drawer-overlay" data-svcclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Service linking</span>
+        <button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+        </div>
+        ${svcDiagram(r)}
+        ${detailFieldGrid([
+          ['Equipment Name', r.ifc], ['ERP number', r.erp],
+          ['Link ID', linkId], ['Admin status', adminStatus]
+        ])}
+      </div>
+    </div>`;
+}
+
 function viewServices() {
   const t = TAB.svc, rows = gridApply('services', SERVICES[t] || []), meta = SVC_TABS.find(x => x.k === t);
   return `<div class="page">
@@ -3199,12 +3252,14 @@ function viewServices() {
       ${tabs(SVC_TABS, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
-      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
         rows.map(s => [
           chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
           `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-          `<span class="mono">${s.ifc}</span>`
-        ]))}`)}
+          `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
+        ]), '',
+        i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
+    ${svcViewDialog()}
   </div>`;
 }
 

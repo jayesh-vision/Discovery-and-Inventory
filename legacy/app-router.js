@@ -102,7 +102,7 @@ function applyDrillQuery(view, q, label) {
   if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
-  if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
+  if (view === 'services') { if (p.tab) TAB.svc  = p.tab; SVC_VIEW = null; }
   if (view === 'resource') {
     /* "View details" row actions elsewhere in the legacy renderer (Site
        details' Network elements table, Reconciliation's exception table)
@@ -302,6 +302,15 @@ document.addEventListener('click', e => {
   }
   const lnkx = e.target.closest('[data-linkclose]');
   if (lnkx) { LINK_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const svcv = e.target.closest('[data-svcview]');
+  if (svcv) {
+    const [tab, i] = svcv.dataset.svcview.split(':');
+    SVC_VIEW = { tab, i: Number(i) };
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const svcx = e.target.closest('[data-svcclose]');
+  if (svcx) { SVC_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const vdt = e.target.closest('[data-vnfdetailtab]');
   if (vdt) { VNF_DETAIL_TAB = vdt.dataset.vnfdetailtab; go('vnfdetails'); return; }
   const vlca = e.target.closest('[data-vnflcaccordion]');
