@@ -750,58 +750,206 @@ function nodeHardwareRouter(N) {
 
 function nodeLinksRouter(N) {
   const sel = N.protoRows.find(p => p.k === NODE_LINK_PROTO) || N.protoRows[0];
+
+  const protoCardsConfig = [
+    { k: 'LLDP', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='LLDP')?.a || 24, change: '↑ +3 vs. last 7 days', tone: 'sky',
+      bg: '#f0f7ff', border: '#dbeafe', iconBg: '#e0f2fe', iconCol: '#0284c7', textCol: '#0369a1',
+      bars: [40, 70, 100],
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>` },
+    { k: 'BGP', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='BGP')?.a || 1, change: '→ No change', tone: 'purple',
+      bg: '#faf5ff', border: '#f3e8ff', iconBg: '#f3e8ff', iconCol: '#9333ea', textCol: '#7e22ce',
+      bars: [50, 50, 50],
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+        <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+      </svg>` },
+    { k: 'OSPF', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='OSPF')?.a || 4, change: '↑ +1 vs. last 7 days', tone: 'emerald',
+      bg: '#f0fdf4', border: '#dcfce7', iconBg: '#dcfce7', iconCol: '#16a34a', textCol: '#15803d',
+      bars: [30, 60, 90],
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="18" r="3"></circle>
+        <line x1="12" y1="9" x2="6" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line>
+      </svg>` },
+    { k: 'ISIS', n: 'Protocol Links', count: N.protoRows.find(p=>p.k==='ISIS')?.a || 1, change: '→ No change', tone: 'amber',
+      bg: '#fffbe6', border: '#fef3c7', iconBg: '#fef3c7', iconCol: '#d97706', textCol: '#b45309',
+      bars: [40, 40, 40],
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 22 22 22 12 2"></polygon>
+      </svg>` }
+  ];
+
+  /* SVG Chart generator for Router Link Capacity Forecast matching screenshot */
+  const renderRouterLinkChart = () => {
+    const W = 900, H = 220, PADL = 40, PADB = 28, PADT = 20, PADR = 20;
+    const months = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const actualVals = [20, 35, 52, 43, 56, 70, 60];
+    const forecastVals = [40, 43, 61, 71, 65, 78, 71];
+
+    const x = i => PADL + (i / (months.length - 1)) * (W - PADL - PADR);
+    const y = v => PADT + (1 - v / 95) * (H - PADT - PADB);
+
+    const actualPts = actualVals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L ');
+    const forecastPts = forecastVals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L ');
+    const areaD = `M ${x(0).toFixed(1)},${y(0)} L ${actualPts} L ${x(months.length - 1).toFixed(1)},${y(0)} Z`;
+
+    const mayX = x(5).toFixed(1);
+
+    return `
+    <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
+      <defs>
+        <linearGradient id="rtr-blue-area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Y Grid ticks: 0, 24, 48, 72, 95 -->
+      ${[0, 24, 48, 72, 95].map(v => `
+        <line x1="${PADL}" x2="${W - PADR}" y1="${y(v)}" y2="${y(v)}" stroke="#f1f5f9" stroke-width="1.2"/>
+        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="system-ui">${v}</text>
+      `).join('')}
+
+      <!-- Gradient Area below Actual line -->
+      <path d="${areaD}" fill="url(#rtr-blue-area)"/>
+
+      <!-- Dashed reference line on May point -->
+      <line x1="${mayX}" x2="${mayX}" y1="${PADT}" y2="${H - PADB}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"/>
+
+      <!-- Forecast Line (Dashed Amber) -->
+      <path d="M ${forecastPts}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
+      ${forecastVals.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>`).join('')}
+
+      <!-- Actual Line (Solid Blue) -->
+      <path d="M ${actualPts}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
+      ${actualVals.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>`).join('')}
+
+      <!-- May Tooltip Popover Box -->
+      <g transform="translate(680, 25)">
+        <rect width="94" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.08))"/>
+        <text x="12" y="16" font-size="10" font-weight="700" fill="#64748b" font-family="system-ui">May</text>
+        <circle cx="16" cy="28" r="3" fill="#2563eb"/>
+        <text x="24" y="31" font-size="10" font-weight="500" fill="#475569" font-family="system-ui">Actual</text>
+        <text x="82" y="31" font-size="10" font-weight="700" fill="#0f172a" font-family="system-ui" text-anchor="end">78</text>
+        <circle cx="16" cy="41" r="3" fill="#f59e0b"/>
+        <text x="24" y="44" font-size="10" font-weight="500" fill="#475569" font-family="system-ui">Forecast</text>
+        <text x="82" y="44" font-size="10" font-weight="700" fill="#0f172a" font-family="system-ui" text-anchor="end">85</text>
+      </g>
+
+      <!-- X Axis Labels -->
+      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#64748b" font-family="system-ui">${m}</text>`).join('')}
+    </svg>`;
+  };
+
   return card(`
     ${headSm('Links')}
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
-      ${N.protoRows.map(p => `
-        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${p.k === sel.k ? ' is-on' : ''}"
+    
+    <!-- Top 4 Protocol Cards matching screenshot -->
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md);margin-bottom:var(--vw-space-xl)">
+      ${protoCardsConfig.map(p => `
+        <button class="vw-card-section vw-card--clickable${p.k === sel.k ? ' is-on' : ''}"
           data-nlink="${p.k}" aria-pressed="${p.k === sel.k}"
-          style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs);--oc-a:${cv(p.tone,500)}">
-          <div class="vw-card-accent" style="background:${cv(p.tone,400)}"></div>
-          <div class="row vw-justify-between vw-items-baseline">
-            <span class="vw-card-metric-label">${p.k}</span>
-            <span class="vw-card-metric-lg num">${p.a}</span>
+          style="padding:16px;border-radius:14px;background:${p.bg};border:1.5px solid ${p.k === sel.k ? p.iconCol : p.border};box-shadow:${p.k === sel.k ? '0 4px 14px rgba(2,132,199,0.12)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:12px;transition:all 0.2s ease">
+          <div class="row vw-justify-between vw-items-center">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:34px;height:34px;border-radius:50%;background:${p.iconBg};color:${p.iconCol};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                ${p.icon}
+              </div>
+              <div>
+                <div style="font-size:1rem;font-weight:700;color:var(--vw-color-slate-900)">${p.k}</div>
+                <div style="font-size:0.75rem;color:var(--vw-color-slate-500)">${p.n}</div>
+              </div>
+            </div>
           </div>
-          <span class="vw-card-metric-label-sub">${p.n} · ${p.d} down · ${p.i} init</span>
+
+          <div class="row vw-justify-between vw-items-end">
+            <span style="font-size:1.875rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">${p.count}</span>
+            <div style="display:flex;align-items:flex-end;gap:3px;height:22px">
+              ${p.bars.map(h => `<span style="width:5px;height:${h}%;background:${p.iconCol};border-radius:2px;opacity:0.7"></span>`).join('')}
+            </div>
+          </div>
+
+          <div style="font-size:0.75rem;font-weight:600;color:${p.textCol}">${p.change}</div>
         </button>`).join('')}
     </div>
 
-    <div class="nv-cap">
-      <div class="cx-panel">
-        <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">Link capacity forecast — ${sel.k}</span>
-          <span class="legend">
-            <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',500)}"></span>actual</span>
-            <span class="legend-i"><span class="legend-sw" style="background:${cv('orange',500)}"></span>forecast</span>
-          </span>
+    <!-- Main Chart Panel matching screenshot -->
+    <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03);margin-bottom:var(--vw-space-xl)">
+      <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--vw-color-slate-100)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:1.0625rem;font-weight:700;color:var(--vw-color-slate-900)">Link Capacity Forecast – ${sel.k}</div>
+            <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px">Projected link capacity trend based on protocol data</div>
+          </div>
         </div>
-        ${nvTrend(N.capTrendByProto[sel.k] || N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange', dash:true }], 190)}
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:inline-flex;padding:3px;background:#f1f5f9;border-radius:20px">
+            <button style="padding:4px 16px;border-radius:16px;background:#2563eb;color:#ffffff;font-size:0.75rem;font-weight:600;border:0;cursor:pointer">Actual</button>
+            <button style="padding:4px 16px;border-radius:16px;background:transparent;color:#64748b;font-size:0.75rem;font-weight:600;border:0;cursor:pointer">Forecast</button>
+          </div>
+          <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;font-size:0.75rem;font-weight:600;color:#334155">
+            Last 6 months <span style="font-size:0.7rem;color:#94a3b8">▼</span>
+          </div>
+        </div>
       </div>
 
-      <div class="cx-panel">
-        <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">Link capacity dashboard</span>
+      ${renderRouterLinkChart()}
+
+      <div class="row vw-justify-between vw-items-center" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100)">
+        <div class="row vw-items-center" style="gap:20px;font-size:0.75rem">
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:#2563eb"></span>
+            <span style="font-weight:600;color:#475569">Actual</span>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b"></span>
+            <span style="font-weight:600;color:#475569">Forecast</span>
+          </span>
+        </div>
+
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:#e0f2fe;color:#0369a1;border-radius:20px;font-size:0.75rem;font-weight:600">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          ${sel.a} active · ${sel.d} down · ${sel.i} init
+        </span>
+      </div>
+    </div>
+
+    <!-- Bottom Link Capacity Dashboard Grid -->
+    <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
+      <div class="row vw-justify-between vw-items-baseline cx-panel-head" style="margin-bottom:16px;padding-bottom:12px">
+        <span class="eyebrow" style="font-size:0.9375rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity dashboard</span>
+        <div style="display:flex;align-items:center;gap:12px">
           ${chip(`${sel.k} protocol`, 'info')}
           <span class="vw-card-metric-label-sub">${sel.a} active · ${sel.d} down · ${sel.i} init</span>
         </div>
-        <div class="nv-linkgrid">
-          ${N.capRows.map(r => `
-            <button class="nv-link is-drill"${dA({ v:'links', l:`${r.n} capacity`, q:'tab=lldp' })}>
-              <div class="row vw-justify-between vw-items-baseline">
-                <span class="vw-value">${r.n}</span>
-                ${chip(r.util > 85 ? 'Backhaul' : 'Healthy', r.util > 85 ? 'error' : 'success')}
-              </div>
-              <div class="nv-link-g">
-                <span class="nv-hk">Source IP</span><span class="mono">${r.sip}</span>
-                <span class="nv-hk">Destination IP</span><span class="mono">${r.dip}</span>
-                <span class="nv-hk">Bandwidth utilisation</span>
-                <span class="num" style="color:${cv(r.tone,700)};font-weight:500">${r.util}%</span>
-                <span class="nv-hk">Active sessions</span><span class="num">${n(r.sess)}</span>
-                <span class="nv-hk">Forecast date</span><span class="num">${r.fc}</span>
-                <span class="nv-hk">Growth rate</span><span class="num">+${r.growth}% / mo</span>
-              </div>
-            </button>`).join('')}
-        </div>
+      </div>
+      <div class="nv-linkgrid">
+        ${N.capRows.map(r => `
+          <button class="nv-link is-drill"${dA({ v:'links', l:`${r.n} capacity`, q:'tab=lldp' })}>
+            <div class="row vw-justify-between vw-items-baseline">
+              <span class="vw-value">${r.n}</span>
+              ${chip(r.util > 85 ? 'Backhaul' : 'Healthy', r.util > 85 ? 'error' : 'success')}
+            </div>
+            <div class="nv-link-g">
+              <span class="nv-hk">Source IP</span><span class="mono">${r.sip}</span>
+              <span class="nv-hk">Destination IP</span><span class="mono">${r.dip}</span>
+              <span class="nv-hk">Bandwidth utilisation</span>
+              <span class="num" style="color:${cv(r.tone,700)};font-weight:500">${r.util}%</span>
+              <span class="nv-hk">Active sessions</span><span class="num">${n(r.sess)}</span>
+              <span class="nv-hk">Forecast date</span><span class="num">${r.fc}</span>
+              <span class="nv-hk">Growth rate</span><span class="num">+${r.growth}% / mo</span>
+            </div>
+          </button>`).join('')}
       </div>
     </div>`);
 }
