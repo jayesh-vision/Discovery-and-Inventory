@@ -64,49 +64,25 @@ export function useSiteLocation(id: string): { l: Location; head: SiteHead | nul
 }
 
 export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) {
-  const [open, setOpen] = useState<boolean>(() => {
-    try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; }
-  });
-
-  const toggleOpen = () => {
-    setOpen(prev => {
-      const next = !prev;
-      try { localStorage.setItem('nst-sitemeta', next ? '1' : '0'); } catch (e) {}
-      return next;
-    });
-  };
-
   return (
     <>
-      <div className="page-bar" style={{ justifyContent: 'flex-start' }}>
-        <div className="stack-x">
-          <span className="vw-card-title">{l.name}</span>
-          <span className="vw-card-description">{head?.sub ?? `${l.type} · ${l.id} · ${l.city}, ${l.state}`}</span>
+      <div className="page-head">
+        <div className="stack-x" style={{ maxWidth: '70ch' }}>
+          <h1 className="vw-page-title" style={{ margin: 0 }}>{l.name}</h1>
+          <p className="vw-page-description" style={{ margin: 0 }}>{head?.sub ?? `${l.type} · ${l.id} · ${l.city}, ${l.state}`}</p>
         </div>
       </div>
       {head && (
         <>
           <Card style={{ padding: 'var(--vw-space-md) var(--vw-space-lg)' }}>
-            <div className="meta-bar">
-              <button className="meta-toggle" aria-expanded={open} onClick={toggleOpen}
-                aria-label={`${open ? 'Hide' : 'Show'} site details`}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: `rotate(${open ? 0 : -90}deg)`, transition: 'transform .15s ease' }}>
-                  <path d="m6 9 6 6 6-6" /></svg>
-              </button>
-              <div className="chip-row">
-                {head.chips.map(c => <Chip key={c.t} tone={c.tone} strong={c.strong}>{c.t}</Chip>)}
-              </div>
-              {!open && <span className="meta-summary">{head.sub} · <span className="mono">{head.coords}</span></span>}
+            <div className="chip-row">
+              {head.chips.map(c => <Chip key={c.t} tone={c.tone} strong={c.strong}>{c.t}</Chip>)}
             </div>
-            {open && (
-              <div className="site-meta">
-                {head.meta.map(([k, v]) => (
-                  <div key={k} className="meta-cell"><span className="vw-label">{k}</span><span className="vw-value">{v}</span></div>
-                ))}
-              </div>
-            )}
+            <div className="site-meta">
+              {head.meta.map(([k, v]) => (
+                <div key={k} className="meta-cell"><span className="vw-label">{k}</span><span className="vw-value">{v}</span></div>
+              ))}
+            </div>
           </Card>
           <StatStrip cells={head.cells.map(c => ({ k: c.k, v: c.v, s: c.s, t: c.t }))} />
         </>

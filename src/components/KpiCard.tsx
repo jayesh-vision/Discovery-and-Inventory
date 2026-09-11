@@ -22,7 +22,9 @@ export function KpiCard({ title, definition, value, unit, of, visual, delta, act
       <div className="kpi3-head">
         <span className="kpi3-title">{title}</span>
         <button className="kpi3-info" aria-label={`What ${title.toLowerCase()} means`} aria-expanded={info}
-          onClick={() => setInfo(v => !v)} onBlur={() => setInfo(false)}>i</button>
+          onMouseEnter={() => setInfo(true)} onMouseLeave={() => setInfo(false)}
+          onFocus={() => setInfo(true)} onBlur={() => setInfo(false)}
+          onClick={() => setInfo(v => !v)}>i</button>
         {info && <div className="kpi3-def" role="tooltip">{definition}</div>}
       </div>
       <div className="kpi3-num">

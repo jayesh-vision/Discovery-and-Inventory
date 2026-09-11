@@ -4062,9 +4062,7 @@ function locMap() {
 
 /* ---- view 4 · site drill-down ---- */
 let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
-let SITE_META_OPEN = (() => { try { return localStorage.getItem('nst-sitemeta') === '1'; } catch (e) { return false; } })();
 function viewSite() {
-  try { SITE_META_OPEN = localStorage.getItem('nst-sitemeta') === '1'; } catch (e) {}
   const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
   const counts = SITE_TABS.map(t => ({ ...t, c: (ne[t.k]||[]).length }));
@@ -4194,21 +4192,11 @@ function viewSite() {
     ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`)}
 
     ${card(`
-      <div class="meta-bar">
-        <button class="meta-toggle" data-metatoggle="1" aria-expanded="${SITE_META_OPEN}"
-          aria-label="${SITE_META_OPEN ? 'Hide' : 'Show'} site details">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${SITE_META_OPEN ? 0 : -90}deg);transition:transform .15s ease">
-            <path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="chip-row">${chip(l.st, l.chip, true)}${chip(l.cat, l.ct==='amber'?'warning':l.ct==='sky'?'info':'success')}
-          ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
-        ${SITE_META_OPEN ? '' : `<span class="meta-summary">${l.type} · ${l.id} · ${l.city}, ${l.state}
-          · <span class="mono">${l.lat ? `${l.lat}°N ${l.lon}°E` : '—'}</span></span>`}
-      </div>
-      ${SITE_META_OPEN ? `<div class="site-meta">
+      <div class="chip-row">${chip(l.st, l.chip, true)}${chip(l.cat, l.ct==='amber'?'warning':l.ct==='sky'?'info':'success')}
+        ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
+      <div class="site-meta">
         ${meta.map(([k,v])=>`<div class="meta-cell"><span class="vw-label">${k}</span><span class="vw-value">${v}</span></div>`).join('')}
-      </div>` : ''}`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
+      </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
       { k:'Network elements', v:n(tot),  s:counts.map(c=>`${c.n} ${c.c}`).join(' · '), t:'sky' },
@@ -8472,10 +8460,6 @@ document.addEventListener('click', e => {
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
-  const mt = e.target.closest('[data-metatoggle]');
-  if (mt) { SITE_META_OPEN = !SITE_META_OPEN;
-    try { localStorage.setItem('nst-sitemeta', SITE_META_OPEN ? '1' : '0'); } catch (err) {}
-    go('site'); return; }
   const ssec = e.target.closest('[data-sitesection]');
   if (ssec) {
     if (ssec.dataset.sitesection === 'passive') { PASS_TAB = 'rack'; go('passive'); return; }

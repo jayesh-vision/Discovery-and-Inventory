@@ -586,12 +586,7 @@ path.st.has-c:hover { fill-opacity: .78; }
 .meta-cell .vw-label { font-size: 0.6875rem; line-height: 1.35; }
 .meta-cell .vw-value { line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* collapsible site meta */
 .meta-bar { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; min-height: 30px; }
-.meta-toggle { width: 24px; height: 24px; border: 1px solid var(--vw-color-slate-200); background: var(--vw-color-white);
-  border-radius: var(--vw-radius-xs); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  color: var(--vw-color-gray-600); flex-shrink: 0; }
-.meta-toggle:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
 .meta-summary { font-size: 0.8125rem; color: var(--vw-color-gray-600);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .site-meta { margin-top: var(--vw-space-md); padding-top: var(--vw-space-md);

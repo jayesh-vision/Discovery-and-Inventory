@@ -390,10 +390,6 @@ document.addEventListener('click', e => {
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
-  const mt = e.target.closest('[data-metatoggle]');
-  if (mt) { SITE_META_OPEN = !SITE_META_OPEN;
-    try { localStorage.setItem('nst-sitemeta', SITE_META_OPEN ? '1' : '0'); } catch (err) {}
-    go('site'); return; }
   const ssec = e.target.closest('[data-sitesection]');
   if (ssec) {
     if (ssec.dataset.sitesection === 'passive') { PASS_TAB = 'rack'; go('passive'); return; }
