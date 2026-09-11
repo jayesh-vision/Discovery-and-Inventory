@@ -148,7 +148,8 @@ function kebabCell(items, gid, i) {
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
       `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
-        it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
+        it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
+        it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
 

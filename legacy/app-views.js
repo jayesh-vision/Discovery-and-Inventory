@@ -3056,6 +3056,62 @@ function viewCell5gDetails() {
 
 /* ── Links ────────────────────────────────────────────── */
 let LINK_NE_FILTER = null;
+let LINK_VIEW = null; /* { proto, i } of the row shown in the node-linking dialog, or null */
+
+/* Source and destination as two nodes on a wire, the way a topology tool
+   draws one link — replaces the old "Open source element / Open destination
+   element" pair of row actions with a single canvas-style view: the nodes
+   and the wire are themselves the controls (open the element / copy the
+   link name) rather than separate buttons bolted on below. */
+function linkDiagram(r) {
+  const node = label => `<button class="linkdiagram-node"${dA({ v: 'resource', l: label })}
+      title="Open ${esc(label)}" aria-label="Open ${esc(label)}">
+    <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+    <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
+  </button>`;
+  const linkName = r.name === '—' ? 'Unnamed link' : r.name;
+  return `<div class="linkdiagram-canvas">
+    ${node(r.sne)}
+    <button class="linkdiagram-wire" data-copy="${esc(linkName)}"
+      title="Copy link name: ${esc(linkName)}" aria-label="Copy link name: ${esc(linkName)}">
+      <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
+    </button>
+    ${node(r.dne)}
+  </div>`;
+}
+
+function linkViewDialog() {
+  if (!LINK_VIEW) return '';
+  const rows = LINKS[LINK_VIEW.proto] || [];
+  const r = rows[LINK_VIEW.i];
+  if (!r) return '';
+  const lst = { ok: ['Confirmed', 'success'], new: ['New this cycle', 'info'], gone: ['No longer seen', 'error'] };
+  const [stLabel, stTone] = lst[r.st];
+  const protoLabel = (LINK_TABS.find(x => x.k === LINK_VIEW.proto) || {}).n || LINK_VIEW.proto.toUpperCase();
+  const isLldp = LINK_VIEW.proto === 'lldp';
+
+  return `
+    <div class="drawer-overlay" data-linkclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Link between ${esc(r.sne)} and ${esc(r.dne)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Node linking</span>
+        <button class="fp-x" data-linkclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${protoLabel} link</span>${chip(stLabel, stTone)}
+        </div>
+        ${linkDiagram(r)}
+        ${detailFieldGrid([
+          ['State', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
+          ['Source NE', r.sne], ['Source IP', r.sip], [isLldp ? 'Source interface' : 'Local', r.sif],
+          ['Destination NE', r.dne], [isLldp ? 'Destination interface' : 'Session', r.dif],
+          ['Verified cycles', String(r.v)]
+        ])}
+      </div>
+    </div>`;
+}
+
 function viewLinks() {
   const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
   const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
@@ -3095,8 +3151,14 @@ function viewLinks() {
           `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dif}</span>`,
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
         ]), '',
-        i => [A('Open source element', { v:'resource', l:rows[i].sne }),
-              A('Open destination element', { v:'resource', l:rows[i].dne })])}`)}
+        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}
+      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
+        <div class="row">
+          <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
+          <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
+        </div>
+      </div>`)}
+    ${linkViewDialog()}
   </div>`;
 }
 

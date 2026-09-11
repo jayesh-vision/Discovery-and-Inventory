@@ -156,6 +156,83 @@ button { font: inherit; }
 }
 .drawer-acc-h:hover { background: var(--vw-color-slate-50); }
 
+/* ── centered dialog: node linking view ──────────────────
+   Shares the drawer's overlay but sits centered rather than sliding in from
+   the side — this one draws a source/destination pair rather than a single
+   record, so it reads better as a floating panel than a docked rail. */
+.linkview-panel {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(46rem, 94vw); max-height: min(38rem, 88vh);
+  background: var(--vw-color-white); border-radius: var(--vw-radius-lg);
+  box-shadow: 0 24px 60px rgba(15,23,42,.24); z-index: 91;
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: linkview-in 160ms ease-out;
+}
+@keyframes linkview-in { from { opacity: 0; transform: translate(-50%,-48%); } to { opacity: 1; transform: translate(-50%,-50%); } }
+@media (prefers-reduced-motion: reduce) { .linkview-panel { animation: none; } }
+.linkview-head {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
+  padding: var(--vw-space-md) var(--vw-space-lg); border-bottom: 1px solid var(--vw-color-slate-200);
+}
+.linkview-body { padding: var(--vw-space-lg); overflow-y: auto; }
+
+.linkdiagram-canvas {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
+  padding: var(--vw-space-2xl) var(--vw-space-xl);
+  background-color: var(--vw-color-slate-50);
+  background-image: radial-gradient(var(--vw-color-slate-200) 1px, transparent 1px);
+  background-size: 18px 18px;
+  border: 1px solid var(--vw-color-slate-100); border-radius: var(--vw-radius-lg);
+}
+/* Nodes and the wire between them are the controls — hover/focus read like
+   a live canvas element, not decoration: a node opens that element, the
+   wire copies the link name. */
+.linkdiagram-node {
+  display: flex; flex-direction: column; align-items: center; gap: var(--vw-space-sm); width: 9rem; flex-shrink: 0;
+  background: none; border: 0; padding: var(--vw-space-xs); border-radius: var(--vw-radius-md);
+  cursor: pointer; font: inherit; color: inherit;
+}
+.linkdiagram-node:hover .linkdiagram-icon { background: var(--vw-color-sky-700); box-shadow: 0 0 0 5px var(--vw-color-sky-100); }
+.linkdiagram-node:hover .linkdiagram-label, .linkdiagram-node:focus-visible .linkdiagram-label { color: var(--vw-color-sky-700); }
+.linkdiagram-node:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
+.linkdiagram-node:active .linkdiagram-icon { transform: scale(0.96); }
+.linkdiagram-icon {
+  width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--vw-color-sky-600); color: var(--vw-color-white);
+  transition: background .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.linkdiagram-label {
+  font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-800);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: color .12s ease;
+}
+.linkdiagram-wire {
+  flex: 1; min-width: 3rem; height: 56px; position: relative; align-self: center;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+}
+.linkdiagram-wire::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+  background: var(--vw-color-slate-300); transition: background .12s ease;
+}
+.linkdiagram-wire:hover::before, .linkdiagram-wire:focus-visible::before { background: var(--vw-color-sky-400); }
+.linkdiagram-wire:hover .linkdiagram-wire-badge, .linkdiagram-wire:focus-visible .linkdiagram-wire-badge {
+  border-color: var(--vw-color-sky-400); color: var(--vw-color-sky-700); box-shadow: 0 2px 6px rgba(15,23,42,.1);
+}
+.linkdiagram-wire:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
+.linkdiagram-wire-badge {
+  position: relative; z-index: 1; background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-full); padding: 4px 10px; font-size: 0.75rem; font-weight: 500;
+  color: var(--vw-color-gray-700); white-space: nowrap;
+  transition: border-color .12s ease, color .12s ease, box-shadow .12s ease;
+}
+@media (max-width: 640px) {
+  .linkview-panel { width: 94vw; }
+  .linkdiagram-canvas { flex-direction: column; padding: var(--vw-space-xl); }
+  .linkdiagram-wire { width: 100%; min-height: 2.5rem; height: auto; flex: 0 0 auto; }
+}
+
 /* Provenance */
 .prov { display: grid; grid-template-columns: 10rem 1fr; gap: var(--vw-space-sm) var(--vw-space-md); align-items: baseline; }
 
