@@ -19,7 +19,7 @@ type Row = NeRow & { region: Region; sysDescr: string };
 
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
-  { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'OEM', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ERICSSON', 'HUAWEI', 'ADVA', 'CIENA', 'HPE'] },
+  { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ERICSSON', 'HUAWEI', 'ADVA', 'CIENA', 'HPE'] },
   { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: ['North', 'East', 'West', 'South'] }
 ];
 
@@ -117,7 +117,7 @@ export default function PhysicalResources() {
             fixed width and ellipsis-truncated (full text on hover) so it
             can't force the whole table to scroll horizontally. */}
         <DataGrid<Row>
-          columns={[{ t: 'Status', w: '9%' }, { t: 'Name / IP', w: '16%' }, { t: 'Model / OEM', w: '12%' }, { t: 'OS version', w: '8%' },
+          columns={[{ t: 'Status', w: '9%' }, { t: 'Name / IP', w: '16%' }, { t: 'Model / Vendor', w: '12%' }, { t: 'OS version', w: '8%' },
             { t: 'Serial number', w: '10%' }, { t: 'Region', w: '6%' }, { t: 'Ports', r: true, w: '7%' }, { t: 'Location', w: '11%' },
             { t: 'System description', w: '20%' }]}
           rows={rows} total={total} rowKey={r => r.name}

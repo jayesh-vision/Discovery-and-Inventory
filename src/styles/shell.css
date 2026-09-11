@@ -940,7 +940,7 @@ button.sb-row.is-drill::after { display: none; }
 .nv-ai-t { font-size: 0.875rem; font-weight: 600; color: var(--vw-color-white); }
 .nv-ai-s { font-size: 0.6875rem; color: rgba(255,255,255,.82); }
 .nv-ai-body { padding: var(--vw-space-sm); display: flex; flex-direction: column; gap: var(--vw-space-sm);
-  max-height: 34rem; overflow-y: auto; }
+  flex: 1; min-height: 0; overflow-y: auto; }
 .nv-ai-card { display: flex; flex-direction: column; gap: 3px; padding: var(--vw-space-sm);
   border-radius: var(--vw-radius-sm); background: var(--vw-color-slate-50); }
 .nv-ai-big { font-size: 1.125rem; font-weight: 400; }

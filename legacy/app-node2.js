@@ -1398,27 +1398,29 @@ function nodeHardwareEnodeb(N) {
     nvTile('Temperature', `${sel.temp}°C`, '', sel.temp > 42 ? 'red' : 'slate')
   ];
   return `
-    <div style="display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
-      ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
-        <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
-      ${card(`
-        <div class="row vw-justify-between vw-items-baseline">
-          <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
-          ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
-        </div>
-        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
-        <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
-          <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
-        </div>
-        <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
-        ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
-        <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
-        </div>`)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0;display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
+        ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
+          <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
+        ${card(`
+          <div class="row vw-justify-between vw-items-baseline">
+            <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
+            ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
+          </div>
+          <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
+          <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
+            <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
+          </div>
+          <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
+          ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
+          <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
+          </div>`)}
+      </div>
+      ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
     </div>
-    ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
     ${aiBanner('Smart maintenance recommendation', E.hwRecommendation)}`;
 }
 
@@ -1439,17 +1441,21 @@ function nodeLinksEnodeb(N) {
       ${TABS.map(([tk, tl]) => `<button class="nst-btn${tabKey === tk ? ' is-on' : ''}" data-nenblink="${tk}"
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${tabKey === tk ? '600' : '500'};color:${tabKey === tk ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${tabKey === tk ? '#ffffff' : 'transparent'};box-shadow:${tabKey === tk ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">${tl}</button>`).join('')}
     </div>
-    ${card(`
-      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
-      <div style="margin-top:var(--vw-space-md)">
-        ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
-          rows.map(x => [
-            `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
-            `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
-            n(x.users), x.growth, x.created, x.modified
-          ]), '', () => [])}
-      </div>`)}
-    ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0">
+        ${card(`
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+        <div style="margin-top:var(--vw-space-md)">
+          ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+            rows.map(x => [
+              `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
+              `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
+              n(x.users), x.growth, x.created, x.modified
+            ]), '', () => [])}
+        </div>`)}
+      </div>
+      ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    </div>
     ${aiBanner('Mobility robustness classification — Cell-007 boundary',
       '18 of the last 24 handover failures at Cell-007 are classified as "too-late handover," coinciding with the RRH-3 thermal alert. Recommendation: hold off remaining A3 offset or TTT for this cell until the RRH-3 hardware condition is resolved.')}`;
 }
@@ -1463,17 +1469,21 @@ function nodeConfigEnodeb(N) {
     nvTile('Compliance score', `${E.configCompliance}%`, 'Overall health', 'purple')
   ];
   return `
-    ${card(`
-      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
-      <div style="margin-top:var(--vw-space-md)">
-        ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
-          E.config.map(c => [
-            chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
-            c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
-            '12-May-2026', '12-May-2026'
-          ]), '', () => [])}
-      </div>`)}
-    ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0">
+        ${card(`
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+        <div style="margin-top:var(--vw-space-md)">
+          ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
+            E.config.map(c => [
+              chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
+              c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
+              '12-May-2026', '12-May-2026'
+            ]), '', () => [])}
+        </div>`)}
+      </div>
+      ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    </div>
     ${aiBanner('Auto-remediation available', E.cfgRemediation)}`;
 }
 
@@ -1488,7 +1498,13 @@ function nodeAlertsEnodeb(N) {
     ['Open', String(E.openAlarms), 'Unacknowledged', 'purple'],
     ['Acknowledged', String(E.ackAlarms), 'In progress', 'emerald']
   ];
-  return card(`
+  /* the alert list and the AI panel are structurally different (an
+     arbitrarily long list vs. a short fixed set of insight cards) — capping
+     both to the same height with their own internal scroll is what keeps
+     them level without either stretching the AI card into mostly-blank
+     space or letting one long alarm list drag the whole row down with it */
+  const SIDE_CAP = 'max-height:36rem;overflow-y:auto';
+  return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
       <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alerts</button>
@@ -1496,8 +1512,10 @@ function nodeAlertsEnodeb(N) {
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
     </div>
     <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
-    ${alertTab === 'alerts' ? `
-      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch;margin-top:var(--vw-space-md)">
+      <div style="flex:1;min-width:0">
+        ${alertTab === 'alerts' ? card(`
+      <div class="cx-panel-head"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${E.alarms.map(a => `
           <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:8px;padding:16px;background:${a.sev === 'Critical' ? '#fff5f5' : a.sev === 'Major' ? '#fffaf0' : '#fffff0'}">
@@ -1522,15 +1540,18 @@ function nodeAlertsEnodeb(N) {
         <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('yellow', 500)}"></span>${E.minor} Minor</span>
         <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('slate', 400)}"></span>0 Info</span>
         <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">${E.alarms.length} Total</span>
-      </div>`
-      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
-          <span class="vw-card-description">No open incidents for this element.</span></div>`}
-    ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
-      { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
-      { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
-      { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
-    ])}
-  `);
+      </div>`, '', SIDE_CAP)
+      : card(`<div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`)}
+      </div>
+      ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
+        { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
+        { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
+        { t: 'Suppression recommendation', s: `${E.alarms.length} correlated`, d: 'Duplicate alarms sharing the same root cause can be auto-suppressed once the primary incident is acknowledged, cutting console noise for this element.', chip: ['Suggested', 'info'] },
+        { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
+      ], SIDE_CAP)}
+    </div>
+  `;
 }
 
 /* ═══════════════════════════════════════════════════════════

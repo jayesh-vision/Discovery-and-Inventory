@@ -50,8 +50,7 @@ export default function SiteDetails() {
           delta={{ text: `${fmt(p.total - p.used)} ports free`, better: null }} />
         <KpiCard tone="purple" title="Building" definition="Floors, rooms and racks recorded for this site."
           value={String(f.racks.length)} unit="racks" of={`${f.floors.length} floors · ${rooms} rooms`}
-          delta={{ text: `${f.power.backups.length} power backup units · PUE ${f.power.pue}`, better: null }}
-          action={{ label: 'Open passive infrastructure', onClick: () => nav('/inventory/passive?tab=rack') }} />
+          delta={{ text: `${f.power.backups.length} power backup units · PUE ${f.power.pue}`, better: null }} />
       </div>
 
       {/* power */}

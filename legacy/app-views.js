@@ -550,7 +550,7 @@ function viewTargets() {
         `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
-        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
+        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
@@ -739,7 +739,7 @@ function viewTarget() {
 
 /* ══ 4 · RECONCILIATION ═══════════════════════════════════ */
 let SEL_NE = 'CHE-J2.2K-PE-T4-ER', NE_FILTER = 'All', REC_CIRCLE = null;
-const REC_FIELDS = [['oem','OEM'],['model','Model'],['os','OS version'],['sn','Serial number']];
+const REC_FIELDS = [['oem','Vendor'],['model','Model'],['os','OS version'],['sn','Serial number']];
 /* whichever side reported one — a row with neither has nothing to copy */
 const recSerial = r => (r.inv && r.inv.sn) || (r.net && r.net.sn) || '';
 
@@ -931,7 +931,7 @@ function viewHome() {
         ${headSm('Recently discovered')}
         <button class="nst-btn nst-btn--sm" data-nav="physical">Open Physical Resources</button>
       </div>
-      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'OEM'},{t:'Location'},{t:'Source'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'Vendor'},{t:'Location'},{t:'Source'}],
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
@@ -1704,10 +1704,10 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source'}]
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source'}];
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
@@ -2195,7 +2195,7 @@ function viewPhysical() {
         'Name, IP address, serial', FS.physical, '',
         [])}
       ${table(
-        [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
+        [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / Vendor'},{t:'OS version'},
          {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source'}],
         rows.map((r, i) => {
           const sk = STOCK_OF[r.stock || 'deployed'];
@@ -2741,7 +2741,7 @@ function viewVnfDetails() {
     ['DuElementId/UserLabel', 'O-BGLK-277-03'],
     ['DuElementAlias', 'NTSON3435016'],
 
-    ['SerialNumber', '-'],
+    ['SerialNumber', 'SGH2402LB16'],
     ['MacAddress1', '-'],
     ['MacAddress2', '-'],
     ['PassCode', '-']
@@ -2783,7 +2783,7 @@ function viewVnfDetails() {
     ['DuElementId', 'O-LB0002-BTS-02'],
     ['DuElementAlias', '-'],
 
-    ['SerialNumber', '-'],
+    ['SerialNumber', 'SGH2412LB02'],
     ['MacAddress1', '-'],
     ['MacAddress2', '-'],
     ['PassCode', '-']
@@ -2861,7 +2861,7 @@ function viewVnfDetails() {
 
     ${resourceHead({
       kind: 'Virtual Resource · VDU', name: nf, status,
-      meta: [['Site type', 'VDU'], ['Created', '13-Feb-2024'], ['Last modified', '22-Feb-2026']]
+      meta: [['Site type', 'VDU']]
     })}
 
     <div class="tabbar tabbar--detail">
@@ -3032,22 +3032,22 @@ function viewCell5gDetails() {
     {
       title: 'Hardware & Equipment Configuration',
       fields: [
-        ['HardwareConfig', '-'],
-        ['ruModel', '-'],
-        ['materialId', '-'],
-        ['vendorName', '-'],
-        ['materialDescription', '-'],
+        ['HardwareConfig', 'RU_5G_NR'],
+        ['ruModel', 'ORU6229'],
+        ['materialId', '2416690'],
+        ['vendorName', 'Samsung ORAN'],
+        ['materialDescription', '5G NR Radio Unit'],
         ['ruName', 'LB0009-RU-0001'],
         ['ruld', '1'],
-        ['druElementId', '-'],
-        ['druElementAlias', '-'],
-        ['retModel', '-'],
-        ['antennaVendor', '-'],
-        ['antennaModel', '-'],
-        ['electricalTilt', '-'],
-        ['mechanicalTilt', '-'],
-        ['Azimuth', '-'],
-        ['retName', '-']
+        ['druElementId', 'O-LB0009-RU-01'],
+        ['druElementAlias', 'NTSLB1436091-RU01'],
+        ['retModel', 'RET-3000'],
+        ['antennaVendor', 'CommScope'],
+        ['antennaModel', 'SBNHH-1D65C'],
+        ['electricalTilt', '2°'],
+        ['mechanicalTilt', '1°'],
+        ['Azimuth', '0°'],
+        ['retName', 'RET-01']
       ]
     }
   ];
@@ -3291,9 +3291,9 @@ function viewInactive() {
           ${x.n}</button>`).join('')}
       </div>
 
-      ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
+      ${gridBar(total, n(total), 'Name, serial number, workorder, Vendor', FS.inactive,
         '', [])}
-      ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
+      ${table([{t:'Name'},{t:'Model / Vendor'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [
           `<span class="vw-value">${r.name}</span> <span class="ro-lock" title="Read-only">&#128274;</span>`,

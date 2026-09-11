@@ -7,7 +7,7 @@ import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../d
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
-  { n: 'OEM', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ADVA', 'HPE', 'DELL'] },
+  { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ADVA', 'HPE', 'DELL'] },
   { n: 'Reason', o: ['End of life', 'End of support', 'Faulty, returned to OEM', 'Site consolidation', 'Capacity migration', 'Hardware refresh'] },
   { n: 'Decommissioned after' }, { n: 'Workorder' },
   { n: 'Discovery', o: ['Silent', 'Still answering'], h: 'A decommissioned unit that still answers is a reconciliation exception.' }
@@ -52,10 +52,10 @@ export default function InactiveInventory() {
           active={cls} onChange={setCls} />
 
         <DataGrid<ArchiveRow>
-          columns={[{ t: 'Name' }, { t: 'Model / OEM' }, { t: 'Serial number' }, { t: 'Last IP / location' },
+          columns={[{ t: 'Name' }, { t: 'Model / Vendor' }, { t: 'Serial number' }, { t: 'Last IP / location' },
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}
           rows={rows} total={total} rowKey={r => r.sn} resetKey={cls}
-          searchPlaceholder="Name, serial number, workorder, OEM" filters={FILTERS}
+          searchPlaceholder="Name, serial number, workorder, Vendor" filters={FILTERS}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
           renderRow={r => [

@@ -820,14 +820,14 @@ const nvHealthCard = (title, sub, state, rows, foot) => `
     <div class="nv-hfoot">${foot}</div>
   </div>`;
 
-const nvAI = (title, sub, tone, cards) => {
+const nvAI = (title, sub, tone, cards, extraStyle = '') => {
   const bg = tone === 'orange' ? 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)' : tone === 'red' ? 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%)' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
   const border = tone === 'orange' ? '#fdba74' : tone === 'red' ? '#f87171' : '#cbd5e1';
   const textCol = tone === 'orange' ? '#9a3412' : tone === 'red' ? '#7f1d1d' : '#0f172a';
   const subCol = tone === 'orange' ? '#c2410c' : tone === 'red' ? '#991b1b' : '#475569';
 
   return `
-  <div class="nv-ai">
+  <div class="nv-ai"${extraStyle ? ` style="${extraStyle}"` : ''}>
     <div class="nv-ai-head" style="background:${bg};border-bottom:1px solid ${border};padding:12px 16px">
       <span class="nv-ai-t" style="color:${textCol};font-weight:700;font-size:0.875rem">${title}</span>
       <span class="nv-ai-s" style="color:${subCol};font-size:0.75rem;margin-top:2px">${sub}</span>

@@ -2179,7 +2179,7 @@ const FS = {
              { n:'State', o:['Karnataka','Delhi','Madhya Pradesh','Tamil Nadu','Andhra Pradesh','Odisha'] },
              { n:'District' }, { n:'Landlord' }, { n:'On-air date' }],
   physical: [{ n:'Status', o:['Agree','Differs','Stale','Never answered'] }, { n:'Stock state', o:['Planned','In store','Deployed','Faulty / RMA','Decommissioned'] },
-             { n:'Name' }, { n:'IP address' }, { n:'OEM', o:['Juniper','Cisco','Nokia','Adva','Edgecore'] },
+             { n:'Name' }, { n:'IP address' }, { n:'Vendor', o:['Juniper','Cisco','Nokia','Adva','Edgecore'] },
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
@@ -2205,12 +2205,12 @@ const FS = {
              { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
              { n:'ERP number' }, { n:'Source IP' }],
-  inactive: [{ n:'Name' }, { n:'Serial number' }, { n:'OEM' }, { n:'Reason' },
+  inactive: [{ n:'Name' }, { n:'Serial number' }, { n:'Vendor' }, { n:'Reason' },
              { n:'Decommissioned' }, { n:'Workorder' }],
   reports:  [{ n:'Status', o:['Completed','Running','Failed'] }, { n:'Report name' },
              { n:'Type', o:['Discovery','Inventory','Capex','Compliance'] },
              { n:'Frequency', o:['Daily','Weekly','Monthly','On demand'] }, { n:'Creator' }],
-  site:     [{ n:'Status' }, { n:'Name' }, { n:'IP address' }, { n:'Model' }, { n:'OEM' }, { n:'Stock state' }],
+  site:     [{ n:'Status' }, { n:'Name' }, { n:'IP address' }, { n:'Model' }, { n:'Vendor' }, { n:'Stock state' }],
   passive:  [{ n:'Class' }, { n:'Identifier' }, { n:'Site' }, { n:'State' }, { n:'Owner' }],
   vlan:     [{ n:'VLAN ID' }, { n:'Name' }, { n:'Type', o:['Data','Server','Wireless','Voice','Guest','Management'] },
              { n:'STP state', o:['Forwarding','Blocking','Learning'] }, { n:'Status', o:['Active','Suspended'] },
@@ -3130,7 +3130,7 @@ function viewTargets() {
     ${card(`
       ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
       ${table(
-        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'OEM · model' },
+        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
@@ -3319,7 +3319,7 @@ function viewTarget() {
 
 /* ══ 4 · RECONCILIATION ═══════════════════════════════════ */
 let SEL_NE = 'CHE-J2.2K-PE-T4-ER', NE_FILTER = 'All', REC_CIRCLE = null;
-const REC_FIELDS = [['oem','OEM'],['model','Model'],['os','OS version'],['sn','Serial number']];
+const REC_FIELDS = [['oem','Vendor'],['model','Model'],['os','OS version'],['sn','Serial number']];
 /* whichever side reported one — a row with neither has nothing to copy */
 const recSerial = r => (r.inv && r.inv.sn) || (r.net && r.net.sn) || '';
 
@@ -3511,7 +3511,7 @@ function viewHome() {
         ${headSm('Recently discovered')}
         <button class="nst-btn nst-btn--sm" data-nav="physical">Open Physical Resources</button>
       </div>
-      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'OEM'},{t:'Location'},{t:'Source'}],
+      ${table([{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'Serial number'},{t:'Vendor'},{t:'Location'},{t:'Source'}],
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
@@ -4284,10 +4284,10 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'OEM'},{t:'Source'}]
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'OEM'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'OEM'},{t:'Rack · U'},{t:'Source'}];
+    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
@@ -4775,7 +4775,7 @@ function viewPhysical() {
         'Name, IP address, serial', FS.physical, '',
         [])}
       ${table(
-        [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / OEM'},{t:'OS version'},
+        [{t:'Status'},{t:'Stock state'},{t:'Name / IP'},{t:'Model / Vendor'},{t:'OS version'},
          {t:'Ports',r:true},{t:'End of sale'},{t:'Location'},{t:'Source'}],
         rows.map((r, i) => {
           const sk = STOCK_OF[r.stock || 'deployed'];
@@ -5321,7 +5321,7 @@ function viewVnfDetails() {
     ['DuElementId/UserLabel', 'O-BGLK-277-03'],
     ['DuElementAlias', 'NTSON3435016'],
 
-    ['SerialNumber', '-'],
+    ['SerialNumber', 'SGH2402LB16'],
     ['MacAddress1', '-'],
     ['MacAddress2', '-'],
     ['PassCode', '-']
@@ -5363,7 +5363,7 @@ function viewVnfDetails() {
     ['DuElementId', 'O-LB0002-BTS-02'],
     ['DuElementAlias', '-'],
 
-    ['SerialNumber', '-'],
+    ['SerialNumber', 'SGH2412LB02'],
     ['MacAddress1', '-'],
     ['MacAddress2', '-'],
     ['PassCode', '-']
@@ -5441,7 +5441,7 @@ function viewVnfDetails() {
 
     ${resourceHead({
       kind: 'Virtual Resource · VDU', name: nf, status,
-      meta: [['Site type', 'VDU'], ['Created', '13-Feb-2024'], ['Last modified', '22-Feb-2026']]
+      meta: [['Site type', 'VDU']]
     })}
 
     <div class="tabbar tabbar--detail">
@@ -5612,22 +5612,22 @@ function viewCell5gDetails() {
     {
       title: 'Hardware & Equipment Configuration',
       fields: [
-        ['HardwareConfig', '-'],
-        ['ruModel', '-'],
-        ['materialId', '-'],
-        ['vendorName', '-'],
-        ['materialDescription', '-'],
+        ['HardwareConfig', 'RU_5G_NR'],
+        ['ruModel', 'ORU6229'],
+        ['materialId', '2416690'],
+        ['vendorName', 'Samsung ORAN'],
+        ['materialDescription', '5G NR Radio Unit'],
         ['ruName', 'LB0009-RU-0001'],
         ['ruld', '1'],
-        ['druElementId', '-'],
-        ['druElementAlias', '-'],
-        ['retModel', '-'],
-        ['antennaVendor', '-'],
-        ['antennaModel', '-'],
-        ['electricalTilt', '-'],
-        ['mechanicalTilt', '-'],
-        ['Azimuth', '-'],
-        ['retName', '-']
+        ['druElementId', 'O-LB0009-RU-01'],
+        ['druElementAlias', 'NTSLB1436091-RU01'],
+        ['retModel', 'RET-3000'],
+        ['antennaVendor', 'CommScope'],
+        ['antennaModel', 'SBNHH-1D65C'],
+        ['electricalTilt', '2°'],
+        ['mechanicalTilt', '1°'],
+        ['Azimuth', '0°'],
+        ['retName', 'RET-01']
       ]
     }
   ];
@@ -5871,9 +5871,9 @@ function viewInactive() {
           ${x.n}</button>`).join('')}
       </div>
 
-      ${gridBar(total, n(total), 'Name, serial number, workorder, OEM', FS.inactive,
+      ${gridBar(total, n(total), 'Name, serial number, workorder, Vendor', FS.inactive,
         '', [])}
-      ${table([{t:'Name'},{t:'Model / OEM'},{t:'Serial number'},{t:'Last IP / location'},
+      ${table([{t:'Name'},{t:'Model / Vendor'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [
           `<span class="vw-value">${r.name}</span> <span class="ro-lock" title="Read-only">&#128274;</span>`,
@@ -8830,14 +8830,14 @@ const nvHealthCard = (title, sub, state, rows, foot) => `
     <div class="nv-hfoot">${foot}</div>
   </div>`;
 
-const nvAI = (title, sub, tone, cards) => {
+const nvAI = (title, sub, tone, cards, extraStyle = '') => {
   const bg = tone === 'orange' ? 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)' : tone === 'red' ? 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%)' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
   const border = tone === 'orange' ? '#fdba74' : tone === 'red' ? '#f87171' : '#cbd5e1';
   const textCol = tone === 'orange' ? '#9a3412' : tone === 'red' ? '#7f1d1d' : '#0f172a';
   const subCol = tone === 'orange' ? '#c2410c' : tone === 'red' ? '#991b1b' : '#475569';
 
   return `
-  <div class="nv-ai">
+  <div class="nv-ai"${extraStyle ? ` style="${extraStyle}"` : ''}>
     <div class="nv-ai-head" style="background:${bg};border-bottom:1px solid ${border};padding:12px 16px">
       <span class="nv-ai-t" style="color:${textCol};font-weight:700;font-size:0.875rem">${title}</span>
       <span class="nv-ai-s" style="color:${subCol};font-size:0.75rem;margin-top:2px">${sub}</span>
@@ -10259,27 +10259,29 @@ function nodeHardwareEnodeb(N) {
     nvTile('Temperature', `${sel.temp}°C`, '', sel.temp > 42 ? 'red' : 'slate')
   ];
   return `
-    <div style="display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
-      ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
-        <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
-      ${card(`
-        <div class="row vw-justify-between vw-items-baseline">
-          <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
-          ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
-        </div>
-        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
-        <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
-          <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
-        </div>
-        <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
-        ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
-        <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
-        </div>`)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0;display:grid;grid-template-columns:280px 1fr;gap:var(--vw-space-md);align-items:start">
+        ${card(`<div class="row vw-justify-between vw-items-baseline"><span class="eyebrow">Hardware hierarchy</span>${chip('Live', 'success')}</div>
+          <div class="stack-s" style="margin-top:var(--vw-space-sm)">${list}</div>`)}
+        ${card(`
+          <div class="row vw-justify-between vw-items-baseline">
+            <div class="stack-x"><span class="vw-card-title">${sel.label}</span><span class="vw-card-description">Site-level equipment status and performance</span></div>
+            ${chip(sel.status, sel.status === 'Active' ? 'success' : sel.status === 'Degraded' ? 'warning' : 'error')}
+          </div>
+          <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-md)">${tiles.join('')}</div>
+          <div class="row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-sm);font-size:0.8125rem;color:var(--vw-color-slate-600)">
+            <span>Model: ${sel.model}</span><span>Firmware: ${sel.firmware}</span><span>Uptime: ${sel.uptime}</span>
+          </div>
+          <div class="cx-panel-head" style="margin-top:var(--vw-space-lg)"><span class="eyebrow">24-Hour performance trend</span></div>
+          ${nvTrend(sel.trend, [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'purple' }, { k: 'temp', tone: 'amber' }], 260)}
+          <div class="row vw-justify-center" style="gap:20px;margin-top:var(--vw-space-sm)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('sky', 500)}"></span>CPU Usage %</span>
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('purple', 500)}"></span>Memory Usage %</span>
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('amber', 500)}"></span>Temperature °C</span>
+          </div>`)}
+      </div>
+      ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
     </div>
-    ${nvAI('AI-Powered hardware insights', 'Capacity, thermal and performance analysis', 'slate', E.hwInsights)}
     ${aiBanner('Smart maintenance recommendation', E.hwRecommendation)}`;
 }
 
@@ -10300,17 +10302,21 @@ function nodeLinksEnodeb(N) {
       ${TABS.map(([tk, tl]) => `<button class="nst-btn${tabKey === tk ? ' is-on' : ''}" data-nenblink="${tk}"
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${tabKey === tk ? '600' : '500'};color:${tabKey === tk ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${tabKey === tk ? '#ffffff' : 'transparent'};box-shadow:${tabKey === tk ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">${tl}</button>`).join('')}
     </div>
-    ${card(`
-      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
-      <div style="margin-top:var(--vw-space-md)">
-        ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
-          rows.map(x => [
-            `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
-            `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
-            n(x.users), x.growth, x.created, x.modified
-          ]), '', () => [])}
-      </div>`)}
-    ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0">
+        ${card(`
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+        <div style="margin-top:var(--vw-space-md)">
+          ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+            rows.map(x => [
+              `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
+              `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
+              n(x.users), x.growth, x.created, x.modified
+            ]), '', () => [])}
+        </div>`)}
+      </div>
+      ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
+    </div>
     ${aiBanner('Mobility robustness classification — Cell-007 boundary',
       '18 of the last 24 handover failures at Cell-007 are classified as "too-late handover," coinciding with the RRH-3 thermal alert. Recommendation: hold off remaining A3 offset or TTT for this cell until the RRH-3 hardware condition is resolved.')}`;
 }
@@ -10324,17 +10330,21 @@ function nodeConfigEnodeb(N) {
     nvTile('Compliance score', `${E.configCompliance}%`, 'Overall health', 'purple')
   ];
   return `
-    ${card(`
-      <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
-      <div style="margin-top:var(--vw-space-md)">
-        ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
-          E.config.map(c => [
-            chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
-            c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
-            '12-May-2026', '12-May-2026'
-          ]), '', () => [])}
-      </div>`)}
-    ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch">
+      <div style="flex:1;min-width:0">
+        ${card(`
+        <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
+        <div style="margin-top:var(--vw-space-md)">
+          ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
+            E.config.map(c => [
+              chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
+              c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
+              '12-May-2026', '12-May-2026'
+            ]), '', () => [])}
+        </div>`)}
+      </div>
+      ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
+    </div>
     ${aiBanner('Auto-remediation available', E.cfgRemediation)}`;
 }
 
@@ -10349,7 +10359,13 @@ function nodeAlertsEnodeb(N) {
     ['Open', String(E.openAlarms), 'Unacknowledged', 'purple'],
     ['Acknowledged', String(E.ackAlarms), 'In progress', 'emerald']
   ];
-  return card(`
+  /* the alert list and the AI panel are structurally different (an
+     arbitrarily long list vs. a short fixed set of insight cards) — capping
+     both to the same height with their own internal scroll is what keeps
+     them level without either stretching the AI card into mostly-blank
+     space or letting one long alarm list drag the whole row down with it */
+  const SIDE_CAP = 'max-height:36rem;overflow-y:auto';
+  return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
       <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Alerts</button>
@@ -10357,8 +10373,10 @@ function nodeAlertsEnodeb(N) {
         style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">Incidents</button>
     </div>
     <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
-    ${alertTab === 'alerts' ? `
-      <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
+    <div style="display:flex;gap:var(--vw-space-md);align-items:stretch;margin-top:var(--vw-space-md)">
+      <div style="flex:1;min-width:0">
+        ${alertTab === 'alerts' ? card(`
+      <div class="cx-panel-head"><span class="eyebrow">Active alerts &amp; events</span><span class="vw-card-metric-label-sub">Real-time monitoring across all network resources</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${E.alarms.map(a => `
           <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:8px;padding:16px;background:${a.sev === 'Critical' ? '#fff5f5' : a.sev === 'Major' ? '#fffaf0' : '#fffff0'}">
@@ -10383,15 +10401,18 @@ function nodeAlertsEnodeb(N) {
         <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('yellow', 500)}"></span>${E.minor} Minor</span>
         <span class="row" style="gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:${cv('slate', 400)}"></span>0 Info</span>
         <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">${E.alarms.length} Total</span>
-      </div>`
-      : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
-          <span class="vw-card-description">No open incidents for this element.</span></div>`}
-    ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
-      { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
-      { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
-      { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
-    ])}
-  `);
+      </div>`, '', SIDE_CAP)
+      : card(`<div class="vw-card-child-shaded stack-s" style="padding:var(--vw-space-lg);text-align:center">
+          <span class="vw-card-description">No open incidents for this element.</span></div>`)}
+      </div>
+      ${nvAI('AI-Powered alarm intelligence', 'Root cause, prediction and suppression analysis', 'red', [
+        { t: 'Root cause identified', s: `${E.critical + E.major} correlated`, d: `AI correlated ${E.alarms.length} alarms to a single root cause candidate. Primary incident INC-2024-${nint(N.name, 6999, 1000, 9999)} identified.`, chip: ['Critical', 'error'] },
+        { t: 'Predictive alert', s: 'RRH-CPRI link', d: 'Pattern analysis suggests a potential RRH-CPRI link alarm within 48 hours. Proactive intervention recommended.', chip: ['Warning', 'warning'] },
+        { t: 'Suppression recommendation', s: `${E.alarms.length} correlated`, d: 'Duplicate alarms sharing the same root cause can be auto-suppressed once the primary incident is acknowledged, cutting console noise for this element.', chip: ['Suggested', 'info'] },
+        { t: 'Unusual pattern detected', s: 'vs 7-day baseline', d: 'Alarm frequency has increased compared to the 7-day baseline. The spike correlates with a recent software update.', chip: ['Investigate', 'info'] }
+      ], SIDE_CAP)}
+    </div>
+  `;
 }
 
 /* ═══════════════════════════════════════════════════════════
