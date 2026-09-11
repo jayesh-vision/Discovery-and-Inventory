@@ -103,7 +103,9 @@ function __legacyParams(k) {
     : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
-    : k === 'target' ? { host: TARGET_ID } : {};
+    : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
+    : k === 'rack' ? { id: RACK_ID } : k === 'power' ? { id: POWER_ID } : k === 'splice' ? { id: SPLICE_ID }
+    : k === 'cord' ? { id: CORD_ID } : k === 'duct' ? { id: DUCT_ID } : k === 'fiber' ? { id: FIBER_ID } : {};
 }
 `, 'sync after render');
 
@@ -149,6 +151,13 @@ window.__nsLegacy = {
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
+    if (k === 'odf' && p.id) { ODF_ID = decodeURIComponent(p.id); }
+    if (k === 'rack' && p.id) { RACK_ID = decodeURIComponent(p.id); }
+    if (k === 'power' && p.id) { POWER_ID = decodeURIComponent(p.id); }
+    if (k === 'splice' && p.id) { SPLICE_ID = decodeURIComponent(p.id); }
+    if (k === 'cord' && p.id) { CORD_ID = decodeURIComponent(p.id); }
+    if (k === 'duct' && p.id) { DUCT_ID = decodeURIComponent(p.id); }
+    if (k === 'fiber' && p.id) { FIBER_ID = decodeURIComponent(p.id); FIBER_TAB = 'overview'; }
     if (k === 'target' && p.host) {
       const decoded = decodeURIComponent(p.host);
       if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }

@@ -24,13 +24,21 @@ const VIEWS = {
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
   node:      { mod:'Inventory', crumb:'Location · Site details · Node view', render:viewNode },
   passive:   { mod:'Inventory', crumb:'Resources · Passive Infrastructure', render:viewPassive },
+  odf:       { mod:'Inventory', crumb:'Resources · Passive Infrastructure · ODF · Element', render:viewOdfDetail },
+  rack:      { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Racks · Element', render:viewRackDetail },
+  power:     { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Power plant · Element', render:viewPowerDetail },
+  splice:    { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Splice closures · Element', render:viewSpliceDetail },
+  cord:      { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Patch cords · Element', render:viewCordDetail },
+  duct:      { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Ducts · Element', render:viewDuctDetail },
+  fiber:     { mod:'Inventory', crumb:'Resources · Passive Infrastructure · Fiber spans · Element', render:viewFiberDetail },
   links:     { mod:'Inventory', crumb:'Connectivity · Links',        render:viewLinks },
   services:  { mod:'Inventory', crumb:'Services',                    render:viewServices },
   reports:   { mod:'Inventory', crumb:'Reports',                     render:viewReports }
 };
 const RAIL_OF = { target: 'targets', site: 'location', capex: 'location', opex: 'location',
                   node: 'location', resource: 'physical', vnflifecycle: 'virtual', vnfdetails: 'virtual',
-                  cell4gdetails: 'virtual', cell5gdetails: 'virtual' };
+                  cell4gdetails: 'virtual', cell5gdetails: 'virtual', odf: 'passive',
+                  rack: 'passive', power: 'passive', splice: 'passive', cord: 'passive', duct: 'passive', fiber: 'passive' };
 
 const viewEl = document.getElementById('view'),
       crumbEl = document.getElementById('crumb'),
@@ -101,6 +109,13 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
+  if (view === 'odf')      { if (p.id) ODF_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'rack')     { if (p.id) RACK_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'power')    { if (p.id) POWER_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'splice')   { if (p.id) SPLICE_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'cord')     { if (p.id) CORD_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'duct')     { if (p.id) DUCT_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; SVC_VIEW = null; }
   if (view === 'resource') {
@@ -494,6 +509,8 @@ document.addEventListener('click', e => {
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
+  const fbt = e.target.closest('[data-fibertab]');
+  if (fbt) { FIBER_TAB = fbt.dataset.fibertab; go('fiber'); return; }
   const ssec = e.target.closest('[data-sitesection]');
   if (ssec) {
     if (ssec.dataset.sitesection === 'passive') { PASS_TAB = 'rack'; go('passive'); return; }
