@@ -7022,42 +7022,54 @@ function nodeLinksSwitch(N) {
   ];
 
   return card(`
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px">
-      <div>
-        <div style="font-size:1.125rem;font-weight:700;color:var(--vw-color-slate-900,#0f172a)">Link capacity dashboard</div>
-        <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">LLDP Protocol capacity analysis</div>
+    <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-bottom:var(--vw-space-lg)">
+      <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
+        <div style="width:36px;height:36px;border-radius:var(--vw-radius-md);background:var(--vw-color-sky-50);border:1px solid var(--vw-color-sky-200);display:flex;align-items:center;justify-content:center;color:var(--vw-color-sky-600);flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:1.125rem;font-weight:700;color:var(--vw-color-slate-900)">Link capacity dashboard</div>
+          <div class="vw-card-metric-label-sub" style="margin-top:2px">LLDP Protocol capacity analysis</div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
         ${chip('LLDP Protocol', 'info')}
-        <span style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b)">Last sync : Jun 30, 2026 14:30:00</span>
+        <span class="vw-card-metric-label-sub">Last sync : Jun 30, 2026 14:30:00</span>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start">
-      <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:12px;padding:16px;background:#ffffff">
-        <div style="font-size:0.75rem;font-weight:600;color:var(--vw-color-slate-500,#64748b);margin-bottom:12px">10 Links in countdown · LLDP</div>
-        <div class="stack-s" style="max-height:420px;overflow-y:auto;padding-right:4px">
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:var(--vw-space-xl);align-items:start">
+      <div class="cx-panel" style="padding:var(--vw-space-md)">
+        <div class="cx-panel-head" style="margin-bottom:var(--vw-space-sm)">
+          <span class="eyebrow">10 Links in countdown - LLDP</span>
+        </div>
+        <div class="stack-s" style="max-height:450px;overflow-y:auto;padding-right:4px">
           ${linksList.map((lk, idx) => `
-            <div style="padding:12px;border-radius:8px;border:1px solid var(--vw-color-slate-200,#e2e8f0);background:${idx === 0 ? 'var(--vw-color-slate-50,#f8fafc)' : '#ffffff'};cursor:pointer">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-size:0.875rem;font-weight:700;color:var(--vw-color-sky-600,#0284c7);font-family:monospace">${lk.src}</span>
+            <div class="vw-card-child${idx === 0 ? ' is-sel' : ''}" style="padding:var(--vw-space-sm) var(--vw-space-md);border-radius:var(--vw-radius-md);border:1px solid ${idx === 0 ? 'var(--vw-color-sky-500)' : 'var(--vw-color-slate-200)'};background:${idx === 0 ? 'var(--vw-color-sky-50)' : 'var(--vw-color-white)'};box-shadow:${idx === 0 ? '0 1px 4px rgba(2,132,199,0.12)' : '0 1px 2px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.15s ease">
+              <div class="row vw-justify-between vw-items-center" style="margin-bottom:6px">
+                <span class="mono" style="font-size:0.875rem;font-weight:700;color:${idx === 0 ? 'var(--vw-color-sky-700)' : 'var(--vw-color-sky-600)'}">${lk.src}</span>
                 <span style="font-size:0.75rem;color:var(--vw-color-slate-400);margin:0 4px">→</span>
-                <span style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-700);font-family:monospace">${lk.dstPort}</span>
+                <span class="mono" style="font-size:0.875rem;font-weight:600;color:var(--vw-color-slate-700)">${lk.dstPort}</span>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.75rem">
-                <div><span style="color:var(--vw-color-slate-400)">Source IP</span><br><span style="font-family:monospace;font-weight:500;color:var(--vw-color-slate-700)">${lk.sip}</span></div>
-                <div><span style="color:var(--vw-color-slate-400)">Destination IP</span><br><span style="font-family:monospace;font-weight:500;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
+                <div><span class="nv-hk">Source IP</span><br><span class="mono" style="font-weight:500;color:var(--vw-color-slate-700)">${lk.sip}</span></div>
+                <div><span class="nv-hk">Destination IP</span><br><span class="mono" style="font-weight:500;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
               </div>
             </div>`).join('')}
         </div>
       </div>
 
-      <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:12px;padding:20px;background:#ffffff">
-        <div style="font-size:0.875rem;font-weight:700;color:var(--vw-color-slate-800,#1e293b);text-align:center;margin-bottom:16px">Link capacity trend</div>
+      <div class="cx-panel" style="padding:var(--vw-space-lg)">
+        <div class="cx-panel-head" style="text-align:center;justify-content:center;margin-bottom:var(--vw-space-md)">
+          <span class="eyebrow" style="font-size:0.875rem">Link capacity trend</span>
+        </div>
         ${nvTrend(N.capTrend, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
-        <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:16px;font-size:0.75rem">
-          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--vw-color-sky-500,#0ea5e9)"></span>Delhi-Core-Link - Inbound Utilization</span>
-          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--vw-color-orange-500,#f97316)"></span>Delhi-Core-Link - Outbound Utilization</span>
+        <div class="row vw-justify-center" style="gap:var(--vw-space-xl);margin-top:var(--vw-space-lg);font-size:0.75rem">
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-sky-500)"></span><span style="color:var(--vw-color-slate-600)">Delhi-Core-Link - Inbound Utilization</span></span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-orange-500)"></span><span style="color:var(--vw-color-slate-600)">Delhi-Core-Link - Outbound Utilization</span></span>
         </div>
       </div>
     </div>`);
