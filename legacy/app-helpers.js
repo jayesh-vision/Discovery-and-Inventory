@@ -3,12 +3,18 @@ const n   = v => v.toLocaleString('en-IN');
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
 const pad2 = v => String(v).padStart(2, '0');
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function getLiveDateSync(h = 9, m = 10) {
   const d = new Date();
   const day = pad2(d.getDate());
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[d.getMonth()];
-  return `${day}-${month}-${d.getFullYear()} ${pad2(h)}:${pad2(m)}`;
+  return `${day}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(h)}:${pad2(m)}`;
+}
+/* a point in real time, `hoursAgo` hours before this instant — proper date
+   arithmetic (crosses midnight, month-end) rather than stamping today's date
+   onto a fixed hour, so "N hours ago" is still true whenever this loads */
+function relativeTimestamp(hoursAgo) {
+  const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())} IST`;
 }
 const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>

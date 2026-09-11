@@ -472,7 +472,11 @@ document.addEventListener('click', e => {
   if (jbf) { JOB_FILTER = jbf.dataset.jobFilter; go('jobs'); return; }
 
   const run = e.target.closest('[data-run]');
-  if (run) { TXRUN = Number(run.dataset.run); go('target'); return; }
+  /* a different run is a different transcript: start it at its first step */
+  if (run) { TXRUN = Number(run.dataset.run); TXSTEP = 0; go('target'); return; }
+
+  const txst = e.target.closest('[data-txstep]');
+  if (txst) { TXSTEP = Number(txst.dataset.txstep); go('target'); return; }
 
   const txdl = e.target.closest('[data-txdownload]');
   if (txdl) {

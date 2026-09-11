@@ -593,7 +593,7 @@ function viewTargets() {
 }
 
 /* ══ 4 · TARGET DETAIL ════════════════════════════════════ */
-let TXRUN = 4412;
+let TXRUN = 4412, TXSTEP = 0;
 
 function txSteps() {
   const s = TRANSCRIPT.steps.map(x => ({ ...x }));
@@ -623,76 +623,66 @@ function formatAsJsonString(val) {
   }
 }
 
+/* The run is a pipeline: seven collectors in the order they were attempted.
+   Laid out across, each step reads as one stage and the whole chain — where
+   it got to, where it stopped — is legible at a glance; picking one opens it
+   underneath, with request beside response rather than stacked, so the width
+   the list used to waste goes to the payloads. */
 function txBody() {
   const steps = txSteps();
-  const dot = st => st === 'ok'
-    ? `<span class="step-dot" style="background:${cv('emerald',100)};color:${cv('emerald',700)}">✓</span>`
-    : st === 'fail'
-      ? `<span class="step-dot" style="background:${cv('red',100)};color:${cv('red',700)}">!</span>`
-      : `<span class="step-dot" style="background:${cv('amber',100)};color:${cv('amber',700)}">–</span>`;
+  const sel = Math.min(Math.max(TXSTEP, 0), steps.length - 1);
+  const s = steps[sel];
+  const tone = st => st === 'ok' ? 'emerald' : st === 'fail' ? 'red' : 'amber';
+  const mark = st => st === 'ok' ? '✓' : st === 'fail' ? '!' : '–';
+  const dotOf = st => `<span class="step-dot" style="background:${cv(tone(st),100)};color:${cv(tone(st),700)}">${mark(st)}</span>`;
+  const timing = x => x.ms ? `${x.ms} ms · ${(x.bytes/1024).toFixed(1)} KB` : 'not attempted';
 
-  return `
-    <div class="steps" style="display:flex;flex-direction:column;gap:12px">
-      ${steps.map(s => `
-        <details class="vw-tx-panel">
-          <summary class="vw-tx-panel-summary">
-            <div class="vw-tx-panel-summary-left">
-              ${dot(s.state)}
-              <span class="vw-card-activity-label" style="font-weight:600;font-size:0.95rem;color:var(--vw-color-slate-800)">${s.n}</span>
-              ${chip(s.proto, 'neutral')}
-            </div>
-            <div class="vw-tx-panel-summary-right">
-              <span class="vw-card-metric-label-sub num">${s.ms ? `${s.ms} ms · ${(s.bytes/1024).toFixed(1)} KB` : 'not attempted'}</span>
-              <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-          </summary>
-
-          <div class="vw-tx-panel-content">
-            ${s.reason ? `
-              <div class="stack-x" style="margin-bottom:var(--vw-space-md);padding:var(--vw-space-sm) var(--vw-space-md);background:${cv('red',50)};border:1px solid ${cv('red',200)};border-radius:var(--vw-radius-md)">
-                <span class="vw-label" style="color:${cv('red',800)}">Reason</span>
-                <span class="vw-value mono" style="color:${cv('red',700)}">${s.reason}</span>
-                <span class="vw-card-description" style="white-space:normal;margin-top:4px;color:${cv('red',900)}">${s.action}</span>
-              </div>`
-              : s.wrote ? `
-              <div class="vw-card-child-shaded" style="margin-bottom:var(--vw-space-md)">
-                <span class="eyebrow" style="color:${cv(s.wrote === 'nothing' || s.wrote.startsWith('nothing') ? 'gray' : 'emerald', 700)}">Wrote</span>
-                <div class="vw-card-description" style="white-space:normal">${s.wrote}</div>
-              </div>` : ''}
-
-            <div class="vw-tx-subpanels">
-              <details class="vw-tx-subpanel">
-                <summary class="vw-tx-subpanel-summary">
-                  <span class="vw-tx-subpanel-title">View Request</span>
-                  <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="vw-tx-subpanel-body">
-                  <div class="vw-tx-box-label">Request</div>
-                  <div class="vw-tx-json-box">
-                    <pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.req))}</code></pre>
-                  </div>
-                </div>
-              </details>
-
-              <details class="vw-tx-subpanel">
-                <summary class="vw-tx-subpanel-summary">
-                  <span class="vw-tx-subpanel-title">View Response</span>
-                  <svg class="vw-tx-chevron" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="vw-tx-subpanel-body">
-                  <div class="vw-tx-box-label">Response</div>
-                  <div class="vw-tx-json-box">
-                    <pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.res))}</code></pre>
-                  </div>
-                </div>
-              </details>
-            </div>
-          </div>
-        </details>
-      `).join('')}
+  const strip = `
+    <div class="tx-strip" role="tablist" aria-label="Collector steps">
+      ${steps.map((x, i) => `
+        <button class="tx-step${i === sel ? ' is-on' : ''}" data-txstep="${i}" role="tab"
+          aria-selected="${i === sel}" style="--tx-a:${cv(tone(x.state),400)}">
+          ${dotOf(x.state)}
+          <span class="tx-step-n">${x.n}</span>
+          <span class="tx-step-p">${x.proto}</span>
+          <span class="tx-step-t num">${x.ms ? `${x.ms} ms` : '—'}</span>
+        </button>`).join('')}
     </div>`;
-}
 
+  const detail = `
+    <div class="tx-detail">
+      <div class="tx-detail-head">
+        ${dotOf(s.state)}
+        <span class="vw-card-title-sm">${s.n}</span>
+        ${chip(s.proto, 'neutral')}
+        <span class="grow"></span>
+        <span class="vw-card-metric-label-sub num">${timing(s)}</span>
+      </div>
+      ${s.reason ? `
+        <div class="stack-x" style="margin:var(--vw-space-md) 0;padding:var(--vw-space-sm) var(--vw-space-md);background:${cv('red',50)};border:1px solid ${cv('red',200)};border-radius:var(--vw-radius-md)">
+          <span class="vw-label" style="color:${cv('red',800)}">Reason</span>
+          <span class="vw-value mono" style="color:${cv('red',700)}">${s.reason}</span>
+          <span class="vw-card-description" style="white-space:normal;margin-top:4px;color:${cv('red',900)}">${s.action}</span>
+        </div>`
+        : s.wrote ? `
+        <div class="vw-card-child-shaded" style="margin:var(--vw-space-md) 0">
+          <span class="eyebrow" style="color:${cv(s.wrote === 'nothing' || s.wrote.startsWith('nothing') ? 'gray' : 'emerald', 700)}">Wrote</span>
+          <div class="vw-card-description" style="white-space:normal">${s.wrote}</div>
+        </div>` : ''}
+      <div class="tx-panes">
+        <div class="tx-pane">
+          <div class="vw-tx-box-label">Request</div>
+          <div class="vw-tx-json-box"><pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.req))}</code></pre></div>
+        </div>
+        <div class="tx-pane">
+          <div class="vw-tx-box-label">Response</div>
+          <div class="vw-tx-json-box"><pre class="vw-tx-json-code"><code>${esc(formatAsJsonString(s.res))}</code></pre></div>
+        </div>
+      </div>
+    </div>`;
+
+  return strip + detail;
+}
 
 function viewTarget() {
   const T = TRANSCRIPT;
@@ -703,9 +693,9 @@ function viewTarget() {
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
-      ${kpi('Last discovery', '3h ago', '01-Sep-2026 09:10 IST', 'sky')}
-      ${kpi('Collectors passed', '7 of 7', 'Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
-      ${kpi('Discovered objects', '49', '19 LLDP · 12 OSPF · 4 BGP · 14 L3VPN', 'purple')}
+      ${kpi('Last discovery', '3h ago', relativeTimestamp(3), 'sky')}
+      ${kpi('Steps passed', '7 of 7', 'Reachability · Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
+      ${kpi('Discovered objects', '49', '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances', 'purple')}
     </div>
 
     <div class="row-t" style="align-items:stretch">

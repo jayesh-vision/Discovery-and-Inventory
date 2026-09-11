@@ -1507,6 +1507,33 @@ a.side-item.active:not(.is-active) { background: transparent; }
   .section-tabs, .tabbar { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
+/* ── Transcript: the run as a horizontal pipeline ──────────
+   Seven collectors in the order they were attempted, read across; the
+   selected one opens underneath with request beside response. */
+.tx-strip { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+.tx-step { position: relative; flex: 1 1 0; min-width: 116px; text-align: left; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; gap: 3px;
+  margin-right: 18px; padding: var(--vw-space-sm) var(--vw-space-md);
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
+  border-top: 3px solid var(--tx-a); border-radius: var(--vw-radius-md); }
+.tx-step:last-child { margin-right: 0; }
+/* the connector that makes the row read as one chain, not seven cards */
+.tx-step:not(:last-child)::after { content: ''; position: absolute; top: 50%; right: -18px;
+  width: 18px; height: 1px; background: var(--vw-color-slate-300); }
+.tx-step:hover { border-color: var(--vw-color-slate-400); }
+.tx-step.is-on { border-color: var(--tx-a); box-shadow: 0 0 0 1px var(--tx-a), 0 1px 3px rgba(15, 23, 42, 0.06); }
+.tx-step .step-dot { align-self: flex-start; }
+.tx-step-n { font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-900); }
+.tx-step-p { font-size: 0.6875rem; color: var(--vw-color-gray-500); }
+.tx-step-t { font-size: 0.6875rem; color: var(--vw-color-gray-500); }
+
+.tx-detail { margin-top: var(--vw-space-lg); padding-top: var(--vw-space-lg);
+  border-top: 1px solid var(--vw-color-slate-200); }
+.tx-detail-head { display: flex; align-items: center; gap: var(--vw-space-sm); }
+.tx-panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vw-space-md); }
+.tx-pane { min-width: 0; }
+@media (max-width: 900px) { .tx-panes { grid-template-columns: 1fr; } }
+
 /* ── Transcript Step Expansion Panels (Accordion) ─────────── */
 .vw-tx-panel {
   background: var(--vw-color-white);
