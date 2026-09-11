@@ -272,8 +272,7 @@ function viewOpex() {
        <button class="nst-btn nst-btn--filled nst-btn--sm" data-oxsave="1">Save changes</button>`)}
 
     ${OPEX_SAVED ? `<div class="vw-card-section vw-card--success row vw-justify-between">
-        <span class="vw-value">Opex updated for ${l.name}. ${d.items.length} contracts, ${inr(Math.round(opexRun(d.items)))} per month.</span>
-        <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
+        <span class="vw-value">Opex updated for ${l.name}. ${d.items.length} contracts, ${inr(Math.round(opexRun(d.items)))} per month.</span></div>` : ''}
 
     ${card(`
       ${headSm('Budget header')}

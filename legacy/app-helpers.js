@@ -30,7 +30,7 @@ const pageHead = (t, d, right = '') =>
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
-const table = (cols, rows, cls = '', acts = null) => {
+const table = (cols, rows, cls = '', acts = null, rowAttr = null) => {
   const gid = 'g' + (GRID_N++);
   const menu = acts ? (typeof acts === 'function' ? acts : i => acts[i]) : null;
   const span = cols.length + (menu ? 1 : 0);
@@ -47,8 +47,11 @@ const table = (cols, rows, cls = '', acts = null) => {
              data-drill first (closest() finds it before ever reaching the
              row), so this never fights with the row's own menu. */
           const first = items[0];
+          const attrObj = typeof rowAttr === 'function' ? rowAttr(ri) : (r._attr || null);
+          const attrStr = attrObj ? Object.entries(attrObj).map(([k,v])=>`${k}="${esc(v)}"`).join(' ') : '';
           const rowClick = first && first.d ? ` class="is-click"${dA(first.d)}` : '';
-          return `<tr${rowClick}>${r.map((c,i)=>{
+          const combined = [attrStr, rowClick].filter(Boolean).join(' ');
+          return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
             const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
             return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
         }).join('')

@@ -1494,7 +1494,8 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), '',
-        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })])}`)}`;
+        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })],
+        i => ({ 'data-site': locRows()[i].id }))}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -2096,8 +2097,7 @@ function viewCapex() {
        <button class="nst-btn nst-btn--filled nst-btn--sm" data-cxsave="1">Save changes</button>`)}
 
     ${CAPEX_SAVED ? `<div class="vw-card-section vw-card--success row vw-justify-between">
-        <span class="vw-value">Capex updated for ${l.name}. ${d.items.length} line items, ${inr(capexTotal(d.items))} committed.</span>
-        <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
+        <span class="vw-value">Capex updated for ${l.name}. ${d.items.length} line items, ${inr(capexTotal(d.items))} committed.</span></div>` : ''}
 
     ${card(`
       ${headSm('Budget header')}
@@ -3096,13 +3096,7 @@ function viewLinks() {
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
         ]), '',
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
-              A('Open destination element', { v:'resource', l:rows[i].dne })])}
-      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
-        <div class="row">
-          <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
-          <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
-        </div>
-      </div>`)}
+              A('Open destination element', { v:'resource', l:rows[i].dne })])}`)}
   </div>`;
 }
 

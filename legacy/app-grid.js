@@ -19,14 +19,72 @@ let GRID_STATE = {};
 const gridOf = key => GRID_STATE[key] || (GRID_STATE[key] = { search: '', filters: {} });
 /* No per-grid field mapping to keep in sync: a row matches if the query (or
    every active filter value) appears anywhere in that row's own data. */
+function getLegacyFieldValue(r, field) {
+  if (!r || typeof r !== 'object') return '';
+  const f = field.toLowerCase().trim();
+
+  if (f === 'status' || f === 'state' || f === 'outcome' || f === 'result') {
+    if (r.st) {
+      if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) return RSTATE[r.st][0];
+      if (typeof lst !== 'undefined' && lst[r.st]) return lst[r.st][0];
+      return String(r.st);
+    }
+    if (r.status) return String(r.status);
+    if (r.outcome) return String(r.outcome);
+    if (r.result) return String(r.result);
+    if (r.res) return String(r.res);
+  }
+
+  if (f === 'stock state' || f === 'stock') {
+    if (r.stock && typeof stockMeta !== 'undefined') return stockMeta(r.stock).n;
+    if (r.stock) return String(r.stock);
+  }
+
+  if (f === 'source') {
+    if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) return SRC[r.s][0];
+    if (r.source) return String(r.source);
+  }
+
+  for (const [k, v] of Object.entries(r)) {
+    const kClean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fClean = f.replace(/[^a-z0-9]/g, '');
+    if (kClean === fClean) return String(v);
+  }
+
+  return '';
+}
+
 function gridApply(key, rows) {
   const st = gridOf(key);
   const q = st.search.trim().toLowerCase();
-  const need = Object.values(st.filters).filter(Boolean).map(v => String(v).toLowerCase());
+  const need = Object.entries(st.filters).filter(([, v]) => v && String(v).trim() !== '');
   if (!q && !need.length) return rows;
+
   return rows.filter(r => {
-    const text = JSON.stringify(r).toLowerCase();
-    return (!q || text.includes(q)) && need.every(v => text.includes(v));
+    let text = JSON.stringify(r).toLowerCase();
+    if (r && typeof r === 'object') {
+      if (r.st) {
+        if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) text += ' ' + RSTATE[r.st][0].toLowerCase();
+        if (typeof lst !== 'undefined' && lst[r.st]) text += ' ' + lst[r.st][0].toLowerCase();
+      }
+      if (r.stock && typeof stockMeta !== 'undefined') text += ' ' + stockMeta(r.stock).n.toLowerCase();
+      if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) text += ' ' + SRC[r.s][0].toLowerCase();
+    }
+
+    if (q && !text.includes(q)) return false;
+
+    for (const [field, fVal] of need) {
+      const v = String(fVal).trim().toLowerCase();
+      if (!v) continue;
+      const fieldVal = getLegacyFieldValue(r, field).toLowerCase();
+      if (fieldVal) {
+        if (!fieldVal.includes(v)) return false;
+      } else {
+        if (!text.includes(v)) return false;
+      }
+    }
+
+    return true;
   });
 }
 

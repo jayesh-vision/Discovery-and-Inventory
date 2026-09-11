@@ -1337,8 +1337,7 @@ function viewNode() {
   }
 
   return `<div class="page">
-    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
-      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
+    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`)}
     ${drillBar()}
     ${nodeHeader(N)}
 

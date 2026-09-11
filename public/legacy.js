@@ -32,7 +32,7 @@ const pageHead = (t, d, right = '') =>
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
 
 /* acts: a function (rowIndex) => [A(...)], or an array of arrays, or null for no kebab */
-const table = (cols, rows, cls = '', acts = null) => {
+const table = (cols, rows, cls = '', acts = null, rowAttr = null) => {
   const gid = 'g' + (GRID_N++);
   const menu = acts ? (typeof acts === 'function' ? acts : i => acts[i]) : null;
   const span = cols.length + (menu ? 1 : 0);
@@ -49,8 +49,11 @@ const table = (cols, rows, cls = '', acts = null) => {
              data-drill first (closest() finds it before ever reaching the
              row), so this never fights with the row's own menu. */
           const first = items[0];
+          const attrObj = typeof rowAttr === 'function' ? rowAttr(ri) : (r._attr || null);
+          const attrStr = attrObj ? Object.entries(attrObj).map(([k,v])=>`${k}="${esc(v)}"`).join(' ') : '';
           const rowClick = first && first.d ? ` class="is-click"${dA(first.d)}` : '';
-          return `<tr${rowClick}>${r.map((c,i)=>{
+          const combined = [attrStr, rowClick].filter(Boolean).join(' ');
+          return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
             const kls = [cols[i].r ? 't-right num' : '', i === 0 && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
             return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
         }).join('')
@@ -1851,14 +1854,72 @@ let GRID_STATE = {};
 const gridOf = key => GRID_STATE[key] || (GRID_STATE[key] = { search: '', filters: {} });
 /* No per-grid field mapping to keep in sync: a row matches if the query (or
    every active filter value) appears anywhere in that row's own data. */
+function getLegacyFieldValue(r, field) {
+  if (!r || typeof r !== 'object') return '';
+  const f = field.toLowerCase().trim();
+
+  if (f === 'status' || f === 'state' || f === 'outcome' || f === 'result') {
+    if (r.st) {
+      if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) return RSTATE[r.st][0];
+      if (typeof lst !== 'undefined' && lst[r.st]) return lst[r.st][0];
+      return String(r.st);
+    }
+    if (r.status) return String(r.status);
+    if (r.outcome) return String(r.outcome);
+    if (r.result) return String(r.result);
+    if (r.res) return String(r.res);
+  }
+
+  if (f === 'stock state' || f === 'stock') {
+    if (r.stock && typeof stockMeta !== 'undefined') return stockMeta(r.stock).n;
+    if (r.stock) return String(r.stock);
+  }
+
+  if (f === 'source') {
+    if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) return SRC[r.s][0];
+    if (r.source) return String(r.source);
+  }
+
+  for (const [k, v] of Object.entries(r)) {
+    const kClean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fClean = f.replace(/[^a-z0-9]/g, '');
+    if (kClean === fClean) return String(v);
+  }
+
+  return '';
+}
+
 function gridApply(key, rows) {
   const st = gridOf(key);
   const q = st.search.trim().toLowerCase();
-  const need = Object.values(st.filters).filter(Boolean).map(v => String(v).toLowerCase());
+  const need = Object.entries(st.filters).filter(([, v]) => v && String(v).trim() !== '');
   if (!q && !need.length) return rows;
+
   return rows.filter(r => {
-    const text = JSON.stringify(r).toLowerCase();
-    return (!q || text.includes(q)) && need.every(v => text.includes(v));
+    let text = JSON.stringify(r).toLowerCase();
+    if (r && typeof r === 'object') {
+      if (r.st) {
+        if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) text += ' ' + RSTATE[r.st][0].toLowerCase();
+        if (typeof lst !== 'undefined' && lst[r.st]) text += ' ' + lst[r.st][0].toLowerCase();
+      }
+      if (r.stock && typeof stockMeta !== 'undefined') text += ' ' + stockMeta(r.stock).n.toLowerCase();
+      if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) text += ' ' + SRC[r.s][0].toLowerCase();
+    }
+
+    if (q && !text.includes(q)) return false;
+
+    for (const [field, fVal] of need) {
+      const v = String(fVal).trim().toLowerCase();
+      if (!v) continue;
+      const fieldVal = getLegacyFieldValue(r, field).toLowerCase();
+      if (fieldVal) {
+        if (!fieldVal.includes(v)) return false;
+      } else {
+        if (!text.includes(v)) return false;
+      }
+    }
+
+    return true;
   });
 }
 
@@ -3887,7 +3948,8 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), '',
-        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })])}`)}`;
+        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })],
+        i => ({ 'data-site': locRows()[i].id }))}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -4249,7 +4311,7 @@ function viewSite() {
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
           A('View details', { v:'resource', l:rows[i].name }),
-          A('Open site', { v:'site', l:l.name, q:'id=' + l.id })
+          A('Site info', { v:'site', l:l.name, q:'id=' + l.id })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -4263,7 +4325,7 @@ function viewSite() {
 }
 
 /* The NE sample rosters tag rows with city-coded locations (DEL-279,
-   BGLK-277) that predate the generated LOCATIONS roster. Every "Open site"
+   BGLK-277) that predate the generated LOCATIONS roster. Every "Site info"
    goes through here: an exact id/name wins, a known city code resolves
    deterministically (by its number) to a real site in that city, and only
    then does the first row remain as the last resort — so a site URL always
@@ -4289,7 +4351,7 @@ function resolveSite(ref) {
    id, so the breadcrumb, the header and the page can never disagree */
 function siteA(ref) {
   const s = resolveSite(ref);
-  return A('Open site', { v: 'site', l: s.name, q: 'id=' + s.id });
+  return A('Site info', { v: 'site', l: s.name, q: 'id=' + s.id });
 }
 
 /* Everything the site page's header shows, as plain data. The React-owned
@@ -4489,8 +4551,7 @@ function viewCapex() {
        <button class="nst-btn nst-btn--filled nst-btn--sm" data-cxsave="1">Save changes</button>`)}
 
     ${CAPEX_SAVED ? `<div class="vw-card-section vw-card--success row vw-justify-between">
-        <span class="vw-value">Capex updated for ${l.name}. ${d.items.length} line items, ${inr(capexTotal(d.items))} committed.</span>
-        <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
+        <span class="vw-value">Capex updated for ${l.name}. ${d.items.length} line items, ${inr(capexTotal(d.items))} committed.</span></div>` : ''}
 
     ${card(`
       ${headSm('Budget header')}
@@ -5489,13 +5550,7 @@ function viewLinks() {
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name, ver(r.v)
         ]), '',
         i => [A('Open source element', { v:'resource', l:rows[i].sne }),
-              A('Open destination element', { v:'resource', l:rows[i].dne })])}
-      <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
-        <div class="row">
-          <button class="nst-btn nst-btn--xs"${dA({ v:'reconcile', l:'Links no longer seen', q:'ne=Only in inventory' })}>Open exceptions</button>
-          <button class="nst-btn nst-btn--xs"${dA({ v:'physical', l:'Elements carrying these links', q:'tab=router' })}>Open elements</button>
-        </div>
-      </div>`)}
+              A('Open destination element', { v:'resource', l:rows[i].dne })])}`)}
   </div>`;
 }
 
@@ -6205,8 +6260,7 @@ function viewOpex() {
        <button class="nst-btn nst-btn--filled nst-btn--sm" data-oxsave="1">Save changes</button>`)}
 
     ${OPEX_SAVED ? `<div class="vw-card-section vw-card--success row vw-justify-between">
-        <span class="vw-value">Opex updated for ${l.name}. ${d.items.length} contracts, ${inr(Math.round(opexRun(d.items)))} per month.</span>
-        <button class="nst-btn nst-btn--xs" data-site="${l.id}">Back to site</button></div>` : ''}
+        <span class="vw-value">Opex updated for ${l.name}. ${d.items.length} contracts, ${inr(Math.round(opexRun(d.items)))} per month.</span></div>` : ''}
 
     ${card(`
       ${headSm('Budget header')}
@@ -8162,8 +8216,7 @@ function viewNode() {
   }
 
   return `<div class="page">
-    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`,
-      `<button class="nst-btn nst-btn--sm" data-site="${N.r.loc}">Back to site</button>`)}
+    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`)}
     ${drillBar()}
     ${nodeHeader(N)}
 

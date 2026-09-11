@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 
 /* ── types ──────────────────────────────────────────────── */
@@ -316,12 +316,83 @@ function useInfinite<Row>(rows: Row[], resetKey: unknown) {
   return { visible: rows.slice(0, count), count, more, next: Math.min(PAGE_STEP, rows.length - count), sentinel, wrap, loadMore };
 }
 
+function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<string, string>): boolean {
+  const q = searchQuery.trim().toLowerCase();
+  const activeFilters = Object.entries(filterValues).filter(([, v]) => v && v.trim() !== '');
+
+  if (!q && !activeFilters.length) return true;
+
+  let text = '';
+  try {
+    text = JSON.stringify(row).toLowerCase();
+  } catch {
+    text = String(row).toLowerCase();
+  }
+
+  const r = row as any;
+  if (r && typeof r === 'object') {
+    if (r.st) text += ' ' + String(r.st).toLowerCase();
+    if (r.stock) text += ' ' + String(r.stock).toLowerCase();
+    if (r.s) text += ' ' + String(r.s).toLowerCase();
+    if (r.oem) text += ' ' + String(r.oem).toLowerCase();
+    if (r.model) text += ' ' + String(r.model).toLowerCase();
+    if (r.name) text += ' ' + String(r.name).toLowerCase();
+    if (r.ip) text += ' ' + String(r.ip).toLowerCase();
+    if (r.loc) text += ' ' + String(r.loc).toLowerCase();
+    if (r.zombie) text += ' still answering';
+  }
+
+  if (q && !text.includes(q)) return false;
+
+  for (const [field, fVal] of activeFilters) {
+    const val = fVal.trim().toLowerCase();
+    if (!val) continue;
+
+    let matchFound = false;
+    if (r && typeof r === 'object') {
+      for (const [k, v] of Object.entries(r)) {
+        if (v != null && (k.toLowerCase() === field.toLowerCase() || k.toLowerCase().replace(/[^a-z0-9]/g, '') === field.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
+          if (String(v).toLowerCase().includes(val)) {
+            matchFound = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!matchFound && !text.includes(val)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /* ── the grid ───────────────────────────────────────────── */
 export function DataGrid<Row>(p: DataGridProps<Row>) {
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [internalSearch, setInternalSearch] = useState('');
+  const [internalFilters, setInternalFilters] = useState<Record<string, string>>({});
+
+  const searchQuery = p.searchValue !== undefined ? p.searchValue : internalSearch;
+
+  const handleSearch = (q: string) => {
+    setInternalSearch(q);
+    p.onSearch?.(q);
+  };
+
+  const handleFilterChange = (values: Record<string, string>) => {
+    setInternalFilters(values);
+    p.onFilterChange?.(values);
+  };
+
+  const filteredRows = useMemo(() => {
+    return p.rows.filter(row => filterDataRow(row, searchQuery, internalFilters));
+  }, [p.rows, searchQuery, internalFilters]);
+
   const span = p.columns.length + (p.rowActions ? 1 : 0);
-  const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite(p.rows, p.resetKey ?? p.rows);
+  const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite<Row>(filteredRows, p.resetKey ?? filteredRows);
   const n = (v: number) => v.toLocaleString('en-IN');
 
   const handleTriggerRefresh = useCallback((btnRect?: DOMRect) => {
@@ -347,9 +418,9 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
   return (
     <>
       {/* the toolbar counts what is on screen, so the page size is visible without scrolling */}
-      <Toolbar showing={Math.min(count, p.rows.length)} total={p.total} placeholder={p.searchPlaceholder}
+      <Toolbar showing={Math.min(count, filteredRows.length)} total={filteredRows.length} placeholder={p.searchPlaceholder}
         filters={p.filters} extra={p.extra} gridActions={p.gridActions} onTriggerRefresh={handleTriggerRefresh}
-        onSearch={p.onSearch} searchValue={p.searchValue} onFilterChange={p.onFilterChange} wrap={wrap} />
+        onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} wrap={wrap} />
       <div className="tbl-wrap" ref={wrap}>
         {isRefreshing && (
           <div className="grid-loader-overlay" role="status" aria-label="Refreshing data">

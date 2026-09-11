@@ -37,6 +37,10 @@ export default function Topbar() {
   const drill = sp.get('drill');
   const from = sp.get('from');
 
+  if (s.key === 'location' && !drill && !from) {
+    return null;
+  }
+
   const targetFor = (prefix: string): string | null => {
     const t = SCREENS.find(x => x.crumb === prefix);
     if (!t) return null;
