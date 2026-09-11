@@ -528,8 +528,12 @@ const nvHealthCard = (title, sub, state, rows, foot) => `
 
 const nvAI = (title, sub, tone, cards) => `
   <div class="nv-ai">
-    <div class="nv-ai-head" style="background:${cv(tone,500)}">
-      <span class="nv-ai-t">${title}</span><span class="nv-ai-s">${sub}</span>
+    <div class="nv-ai-head" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 2px solid ${cv(tone, 500)}">
+      <span class="nv-ai-t" style="display:flex;align-items:center;justify-content:space-between;color:#ffffff">
+        ${title}
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cv(tone, 500)}"></span>
+      </span>
+      <span class="nv-ai-s" style="color:rgba(255,255,255,0.72);font-size:0.75rem">${sub}</span>
     </div>
     <div class="nv-ai-body">
       ${cards.map(c => `<div class="nv-ai-card">
