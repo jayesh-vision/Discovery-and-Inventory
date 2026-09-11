@@ -3043,7 +3043,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('Open run transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
+        i => [A('View transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
