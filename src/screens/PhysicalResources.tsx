@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, StatStrip, Sub, TabBar, cv } from '../components/ui';
+import { Card, Chip, Mono, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
-  ACTIVE_STATES, EST, IL, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
+  ACTIVE_STATES, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
   phyCount, stockCount, type NeClass, type StockState
 } from '../data/ledger';
 import { isActive, PHY, phyRows, portsOf, regionOf, sysDescrOf, type NeRow } from '../data/physical';
@@ -52,12 +52,6 @@ export default function PhysicalResources() {
   }, [stockParam]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const set = (k: string, v: string | null) => {
-    const next = new URLSearchParams(sp);
-    if (v === null) next.delete(k); else next.set(k, v);
-    setSp(next, { replace: true });
-  };
-
   const rows: Row[] = useMemo(() => {
     let r = phyRows(cls, stock);
     if (oem) r = r.filter(x => x.oem.toUpperCase() === oem.toUpperCase());
@@ -105,13 +99,6 @@ export default function PhysicalResources() {
 
   return (
     <div className="page">
-      <StatStrip cells={[
-        { k: 'Network elements', v: fmt(IL.ne), s: 'Router 2,148 · Switch 349 · other 206', t: 'sky' },
-        { k: 'Ports used', v: `${(EST.ports.used / EST.ports.total * 100).toFixed(0)}%`, s: `${fmt(EST.ports.free)} free of ${fmt(EST.ports.total)}`, t: 'emerald' },
-        { k: 'Spares in store', v: fmt(EST.spares.instore), s: `${fmt(EST.spares.rma)} at RMA · ${fmt(EST.spares.intransit)} in transit`, t: 'purple',
-          onClick: () => { set('stock', 'instore'); } }
-      ]} />
-
       <Card>
         <TabBar
           tabs={tabs.map(x => ({
@@ -137,7 +124,10 @@ export default function PhysicalResources() {
           resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS}
           onRefresh={() => setRefreshKey(k => k + 1)}
-          rowActions={rowActions}
+          /* gNodeB rows carry no actions at all — "View details" and "Site
+             info" both apply to every other class, so the whole action
+             column (not just its contents) is dropped for this one tab. */
+          rowActions={cls === 'gnodeb' ? undefined : rowActions}
           renderRow={(r, i) => {
             const [tot, used] = portsOf(cls, i);
             const [label, tone] = RSTATE[r.st];

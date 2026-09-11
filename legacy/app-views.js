@@ -1688,7 +1688,7 @@ function locMap() {
 }
 
 /* ---- view 4 · site drill-down ---- */
-let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
+let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'ne';
 function viewSite() {
   const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
@@ -1736,22 +1736,21 @@ function viewSite() {
     impact: 'Potential service interruption if not resolved before it lapses' });
   if (notDisc) attn.push({ icon: GAP_ICON.notdisc, sev: l.disc === 0 ? 'blocked' : 'delayed',
     label: 'Not discovered', reason: `${n(notDisc)} NE on record never seen by discovery`,
-    impact: 'Planned or no collector — reconcile to close the record gap',
-    d: { v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } });
+    impact: 'Planned or no collector — reconcile to close the record gap' });
   if (drift) attn.push({ icon: GAP_ICON.drift, sev: 'delayed',
     label: 'Configuration drift', reason: `${n(drift)} NE differ from the inventory record`,
-    impact: 'Includes duplicate serials — verify and update the record',
-    d: { v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } });
+    impact: 'Includes duplicate serials — verify and update the record' });
   const attnBits = [
     l.issue ? 'a rollout blocker' : '', l.risk ? 'an operational risk flag' : '',
     notDisc ? `${n(notDisc)} NE not discovered` : '', drift ? `${n(drift)} NE drifted` : ''
   ].filter(Boolean);
   const attentionSection = () => {
+    /* no d: drill target on these — the Attention tab's cards and legend
+       rows are read-only here, not links into Reconciliation. */
     const rec = [
-      { n:'Verified', c: Object.values(ne).flat().filter(r => r.st === 'ok').length, tone:'emerald',
-        d:{ v:'reconcile', l:`Verified at ${l.name}`, q:'ne=Agree' } },
-      { n:'Drifted', c: drift, tone:'amber', d:{ v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } },
-      { n:'Not discovered', c: notDisc, tone:'red', d:{ v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } }
+      { n:'Verified', c: Object.values(ne).flat().filter(r => r.st === 'ok').length, tone:'emerald' },
+      { n:'Drifted', c: drift, tone:'amber' },
+      { n:'Not discovered', c: notDisc, tone:'red' }
     ];
     const steps = [
       ...(l.issue ? [[NEXT_STEP[l.issue.cat], null]] : []),
@@ -1773,7 +1772,7 @@ function viewSite() {
       <div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-sm)">
         ${l.type} · <b>${l.st}</b>${l.stage ? ` at stage <b>${l.stage}</b>` : ''} — ${attnBits.join(', ')}.</div>
       <div class="cov-alert-grid attn-alerts">${attn.map(a => `
-        <div class="cov-alert-card cov-alert-card--${a.sev}"${a.d ? ` role="button" tabindex="0" style="cursor:pointer" aria-label="${esc(a.label)}: open reconciliation"${dA(a.d)}` : ''}>
+        <div class="cov-alert-card cov-alert-card--${a.sev}">
           <span class="cov-alert-icon cov-alert-icon--${a.sev}">${a.icon}</span>
           <div class="cov-alert-body">
             <div class="cov-alert-label">${a.label}</div>

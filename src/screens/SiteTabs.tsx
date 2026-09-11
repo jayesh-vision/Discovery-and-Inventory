@@ -96,9 +96,12 @@ export function SiteTabs({ l, head, active }: { l: Location; head: SiteHead | nu
   const keep = useKeepContext();
   const base = `/inventory/location/site/${l.id}`;
   const toNe = () => { window.__nsLegacy?.setSection?.('ne'); nav(keep(base)); };
+  /* opening a site no longer defaults to Attention (see app-router.js) — this
+     tab still needs to ask for it explicitly, the same way toNe asks for 'ne' */
+  const toAttention = () => { window.__nsLegacy?.setSection?.('attention'); nav(keep(base)); };
   return (
     <div className="section-tabs">
-      <button className="stab" onClick={() => nav(keep(base))}>
+      <button className="stab" onClick={toAttention}>
         Attention{head && <> <span className="tab-n num">{head.tabs.attn}</span></>}</button>
       <button className="stab" onClick={toNe}>
         Network elements{head && <> <span className="tab-n num">{head.tabs.ne}</span></>}</button>

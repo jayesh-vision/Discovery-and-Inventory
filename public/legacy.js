@@ -4266,7 +4266,7 @@ function locMap() {
 }
 
 /* ---- view 4 · site drill-down ---- */
-let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'attention';
+let SITE_ID = 'BGLK-277', SITE_TAB = 'router', SITE_SECTION = 'ne';
 function viewSite() {
   const l = resolveSite(SITE_ID) || LOCATIONS[0];
   const ne = siteNE(l.id, l.ne, l.disc);
@@ -4314,22 +4314,21 @@ function viewSite() {
     impact: 'Potential service interruption if not resolved before it lapses' });
   if (notDisc) attn.push({ icon: GAP_ICON.notdisc, sev: l.disc === 0 ? 'blocked' : 'delayed',
     label: 'Not discovered', reason: `${n(notDisc)} NE on record never seen by discovery`,
-    impact: 'Planned or no collector — reconcile to close the record gap',
-    d: { v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } });
+    impact: 'Planned or no collector — reconcile to close the record gap' });
   if (drift) attn.push({ icon: GAP_ICON.drift, sev: 'delayed',
     label: 'Configuration drift', reason: `${n(drift)} NE differ from the inventory record`,
-    impact: 'Includes duplicate serials — verify and update the record',
-    d: { v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } });
+    impact: 'Includes duplicate serials — verify and update the record' });
   const attnBits = [
     l.issue ? 'a rollout blocker' : '', l.risk ? 'an operational risk flag' : '',
     notDisc ? `${n(notDisc)} NE not discovered` : '', drift ? `${n(drift)} NE drifted` : ''
   ].filter(Boolean);
   const attentionSection = () => {
+    /* no d: drill target on these — the Attention tab's cards and legend
+       rows are read-only here, not links into Reconciliation. */
     const rec = [
-      { n:'Verified', c: Object.values(ne).flat().filter(r => r.st === 'ok').length, tone:'emerald',
-        d:{ v:'reconcile', l:`Verified at ${l.name}`, q:'ne=Agree' } },
-      { n:'Drifted', c: drift, tone:'amber', d:{ v:'reconcile', l:`Drift at ${l.name}`, q:'ne=Differ' } },
-      { n:'Not discovered', c: notDisc, tone:'red', d:{ v:'reconcile', l:`Not discovered at ${l.name}`, q:'ne=Only in inventory' } }
+      { n:'Verified', c: Object.values(ne).flat().filter(r => r.st === 'ok').length, tone:'emerald' },
+      { n:'Drifted', c: drift, tone:'amber' },
+      { n:'Not discovered', c: notDisc, tone:'red' }
     ];
     const steps = [
       ...(l.issue ? [[NEXT_STEP[l.issue.cat], null]] : []),
@@ -4351,7 +4350,7 @@ function viewSite() {
       <div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-sm)">
         ${l.type} · <b>${l.st}</b>${l.stage ? ` at stage <b>${l.stage}</b>` : ''} — ${attnBits.join(', ')}.</div>
       <div class="cov-alert-grid attn-alerts">${attn.map(a => `
-        <div class="cov-alert-card cov-alert-card--${a.sev}"${a.d ? ` role="button" tabindex="0" style="cursor:pointer" aria-label="${esc(a.label)}: open reconciliation"${dA(a.d)}` : ''}>
+        <div class="cov-alert-card cov-alert-card--${a.sev}">
           <span class="cov-alert-icon cov-alert-icon--${a.sev}">${a.icon}</span>
           <div class="cov-alert-body">
             <div class="cov-alert-label">${a.label}</div>
@@ -9416,7 +9415,7 @@ function applyDrillQuery(view, q, label) {
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
-  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'attention'; } }
+  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') { if (p.tab) TAB.svc  = p.tab; }
@@ -9780,7 +9779,10 @@ document.addEventListener('click', e => {
   if (cc) { PIN_GROUP = null; const p = document.getElementById('mappanel');
     if (p) p.innerHTML = mapPanel(); return; }
   const site = e.target.closest('[data-site]');
-  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'attention'; go('site'); return; }
+  /* opening a site from a generic card/row/pin lands on Network elements,
+     not Attention — Attention stays one click away on its own tab, it's
+     just no longer the forced default every site click drops you on. */
+  if (site) { SITE_ID = site.dataset.site; SITE_TAB = 'router'; SITE_SECTION = 'ne'; go('site'); return; }
   const sc = e.target.closest('[data-stock]');
   if (sc) { const k = sc.dataset.stock;
     if (PHY_STOCK.has(k)) { if (PHY_STOCK.size > 1) PHY_STOCK.delete(k); } else PHY_STOCK.add(k);
@@ -10128,7 +10130,15 @@ window.__nsLegacy = {
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
     if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router';
-      SITE_SECTION = __siteSectionPending || 'attention'; __siteSectionPending = null; }
+      SITE_SECTION = __siteSectionPending || 'ne';
+      /* React StrictMode fires this effect twice per navigation (mount,
+         cleanup, mount again) with no gap between — clearing the pending
+         section synchronously here means the second pass reads it as
+         already consumed and falls back to the default, silently undoing
+         an explicit setSection() from the click that navigated here.
+         Deferring the clear lets both passes see the same pending value;
+         a setTimeout(0) still lands well before any real next click. */
+      setTimeout(() => { __siteSectionPending = null; }, 0); }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }

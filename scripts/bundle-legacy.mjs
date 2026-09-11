@@ -133,7 +133,15 @@ window.__nsLegacy = {
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
     if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router';
-      SITE_SECTION = __siteSectionPending || 'attention'; __siteSectionPending = null; }
+      SITE_SECTION = __siteSectionPending || 'ne';
+      /* React StrictMode fires this effect twice per navigation (mount,
+         cleanup, mount again) with no gap between — clearing the pending
+         section synchronously here means the second pass reads it as
+         already consumed and falls back to the default, silently undoing
+         an explicit setSection() from the click that navigated here.
+         Deferring the clear lets both passes see the same pending value;
+         a setTimeout(0) still lands well before any real next click. */
+      setTimeout(() => { __siteSectionPending = null; }, 0); }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
