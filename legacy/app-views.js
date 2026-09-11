@@ -2629,7 +2629,6 @@ const detailSection = (title, fields) => {
   <div class="detail-section-head">
     <span class="detail-section-accent" style="background:${cv(sectionTone(title), 500)}"></span>
     <span class="vw-card-title-sm">${esc(title)}</span>
-    ${deduped.length ? `<span class="detail-section-count">${populated.length}/${deduped.length}</span>` : ''}
   </div>
   ${populated.length ? detailFieldGrid(populated)
     : `<div class="detail-section-empty">No configuration data available for this section yet.</div>`}
@@ -2646,12 +2645,6 @@ const renderSectionedGrid = sections => {
   const cards = sections.filter(s => s.fields.length).map(sec => detailSection(sec.title, sec.fields)).join('');
   return `<div class="detail-sections-grid">${cards}</div>`;
 };
-
-function completenessOf(fields) {
-  const total = fields.length;
-  const filled = fields.filter(isFilled).length;
-  return { total, filled, pct: total ? Math.round(filled / total * 100) : 0 };
-}
 
 /* fills each named section from the field list by key (case-insensitive);
    a field the schema doesn't name still surfaces under "Other" instead of
@@ -2679,13 +2672,7 @@ const pickFields = (fields, keys) => {
    View > ...) — it already links every prefix that names a real screen, so
    a second, redundant "Back to X" button here would just be two controls
    doing the same thing. */
-function resourceHead({ kind, name, status, meta, completeness }) {
-  const bar = completeness ? `<div class="resdetail-completeness">
-      <div class="row vw-justify-between"><span class="vw-label">Configuration completeness</span>
-        <span class="vw-value" style="font-size:0.8125rem">${completeness.filled} of ${completeness.total} fields · ${completeness.pct}%</span></div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${completeness.pct}%;background:${
-        cv(completeness.pct >= 70 ? 'emerald' : completeness.pct >= 40 ? 'amber' : 'red', 400)}"></div></div>
-    </div>` : '';
+function resourceHead({ kind, name, status, meta }) {
   return `<div class="vw-card-section vw-card--accent resdetail-head">
       <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
       <div class="row vw-justify-between" style="align-items:flex-start;gap:var(--vw-space-lg);flex-wrap:wrap">
@@ -2698,7 +2685,6 @@ function resourceHead({ kind, name, status, meta, completeness }) {
       <div class="resdetail-meta-row">
         ${meta.map(([k, v]) => `<div class="meta-cell"><span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span></div>`).join('')}
       </div>
-      ${bar}
     </div>`;
 }
 /* the handful of fields worth seeing before scrolling to the grouped detail
@@ -2839,14 +2825,17 @@ function viewVnfDetails() {
     { title: 'Technology & Coverage', keys: ['Technology', 'CoverageType', 'WorkType', 'Strategy', 'PlanId', 'Toycell'] },
     { title: 'Hardware', keys: ['HardwareConfig', 'BtsModel', 'MaterialId', 'MaterialDescription', 'SerialNumber'] },
     { title: 'Vendor', keys: ['Vendor', 'VendorName'] },
-    { title: 'Network & Interface', keys: ['Interface1Type', 'Interface1Speed', 'Interface2Type', 'Interface2Speed', 'MacAddress1', 'MacAddress2', 'PassCode'] },
-    { title: 'Configuration', keys: ['Status', 'BuildStatus'] }
+    { title: 'Network & Interface', keys: ['Interface1Type', 'Interface1Speed', 'Interface2Type', 'Interface2Speed', 'MacAddress1', 'MacAddress2', 'PassCode'] }
   ];
   const VDU_SUMMARY_KEYS = ['Technology', 'Vendor', 'Region', 'Province', 'CoverageType', 'Status'];
+  /* Status/BuildStatus stay out of the section grid — Status is already the
+     summary strip's own field and the header badge, and a lone leftover
+     BuildStatus would otherwise resurface as a stray "Other" card */
+  const gridFields = fields => fields.filter(([k]) => k !== 'Status' && k !== 'BuildStatus');
   const renderVdu = (fields, sections) => `${resourceSummary(pickFields(fields, VDU_SUMMARY_KEYS))}
     ${renderSectionedGrid(sections)}`;
-  const vdu4gSections = groupFieldsBySchema(vdu4gFields, VDU_SECTIONS);
-  const vdu5gSections = groupFieldsBySchema(vdu5gFields, VDU_SECTIONS);
+  const vdu4gSections = groupFieldsBySchema(gridFields(vdu4gFields), VDU_SECTIONS);
+  const vdu5gSections = groupFieldsBySchema(gridFields(vdu5gFields), VDU_SECTIONS);
 
   const renderCellTable = (rows, key) => card(`
     ${gridBar(rows.length, rows.length, '', FS[key] || [], '', [], key)}
@@ -2879,8 +2868,7 @@ function viewVnfDetails() {
 
     ${resourceHead({
       kind: 'Virtual Resource · VDU', name: nf, status,
-      meta: [['Site type', 'VDU'], ['Created', '13-Feb-2024'], ['Last modified', '22-Feb-2026']],
-      completeness: completenessOf(statusFields)
+      meta: [['Site type', 'VDU'], ['Created', '13-Feb-2024'], ['Last modified', '22-Feb-2026']]
     })}
 
     <div class="tabbar tabbar--detail">
@@ -2984,8 +2972,7 @@ function viewCell4gDetails() {
     ${resourceHead({
       kind: 'LTE cell · 4G', name: cellName, status: 'Ready',
       meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1] ?? 'Not available'],
-        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1] ?? 'Not available']],
-      completeness: completenessOf(flatFields)
+        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1] ?? 'Not available']]
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSiteId', 'neType', 'cellBandCarrier', 'txrxMode']))}
@@ -3083,8 +3070,7 @@ function viewCell5gDetails() {
     ${resourceHead({
       kind: '5G NR cell', name: cellName, status: 'Ready',
       meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1] ?? 'Not available'],
-        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1] ?? 'Not available']],
-      completeness: completenessOf(flatFields)
+        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1] ?? 'Not available']]
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSite', 'nrBandwidth', 'cellIdentity', 'numberOfRxPathsPerRU']))}

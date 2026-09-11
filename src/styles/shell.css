@@ -429,12 +429,18 @@ path.st.has-c:hover { fill-opacity: .78; }
 @media (max-width: 480px)  { .site-meta { grid-template-columns: 1fr; } }
 
 /* ── resource-detail screens (Virtual element / Cell 4G / Cell 5G) ──────
-   A shared header, summary strip, insights card, grouped-section grid and
-   pill tab bar — see resourceHead()/resourceSummary()/insightsCard()/
-   detailSection() in app-views.js. Every block is a real .vw-card-section
-   (bordered, radius-lg, white) so the screen reads as one family of cards
-   instead of loosely-bordered fragments floating on the page. */
-.resdetail-head { padding: calc(var(--vw-space-lg) + 3px) var(--vw-space-xl) var(--vw-space-lg); }
+   A shared header, summary strip, grouped-section grid and pill tab bar —
+   see resourceHead()/resourceSummary()/detailSection() in app-views.js.
+   Every block is a real .vw-card-section (bordered, radius-lg, white) so
+   the screen reads as one family of cards instead of loosely-bordered
+   fragments floating on the page. Their accent runs down the right edge —
+   scoped here rather than in the shared .vw-card--accent/.vw-card-accent
+   pattern, which other cards (KPI cards, etc.) still carry on top. */
+.resdetail-head.vw-card--accent > .vw-card-accent, .detail-section.vw-card--accent > .vw-card-accent {
+  top: 0; bottom: 0; left: auto; right: 0; width: 3px; height: auto;
+  border-radius: 0 var(--vw-radius-lg) var(--vw-radius-lg) 0;
+}
+.resdetail-head { padding: var(--vw-space-lg) calc(var(--vw-space-xl) + 3px) var(--vw-space-lg) var(--vw-space-xl); }
 .resdetail-kind { display: inline-block; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-sky-700);
   background: var(--vw-color-sky-50); text-transform: uppercase; letter-spacing: .03em;
   padding: 3px 8px; border-radius: var(--vw-radius-full); margin-bottom: 8px; }
@@ -472,13 +478,11 @@ path.st.has-c:hover { fill-opacity: .78; }
 @media (max-width: 900px) { .detail-sections-grid { columns: 1; } }
 .detail-sections-grid .detail-section { break-inside: avoid; margin-bottom: var(--vw-space-md); }
 
-.detail-section { padding: calc(var(--vw-space-lg) + 3px) var(--vw-space-xl) var(--vw-space-lg); }
+.detail-section { padding: var(--vw-space-lg) calc(var(--vw-space-xl) + 3px) var(--vw-space-lg) var(--vw-space-xl); }
 .detail-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: var(--vw-space-md);
   padding-bottom: var(--vw-space-sm); border-bottom: 1px solid var(--vw-color-gray-100); }
 .detail-section-accent { width: 4px; height: 14px; background: var(--vw-color-sky-500); border-radius: 2px;
   display: inline-block; flex-shrink: 0; }
-.detail-section-count { margin-left: auto; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-gray-500);
-  background: var(--vw-color-slate-100); padding: 2px 8px; border-radius: var(--vw-radius-full); flex-shrink: 0; }
 .detail-section-empty { font-size: 0.8125rem; color: var(--vw-color-gray-400); padding: 2px 0 4px; }
 /* a section card is narrower once it's sharing the row with another, so its
    own field grid adapts to however many columns actually fit rather than
@@ -500,11 +504,6 @@ path.st.has-c:hover { fill-opacity: .78; }
 .detail-more[open] summary::before { transform: rotate(90deg); }
 .detail-more summary:hover { color: var(--vw-color-gray-800); }
 .detail-more .site-meta { margin-top: var(--vw-space-xs); padding-top: var(--vw-space-sm); border-top: 1px dashed var(--vw-color-gray-100); }
-
-/* a computed, data-driven signal (filled fields / total) rather than
-   another raw field — flags a thinly-populated record at a glance */
-.resdetail-completeness { margin-top: var(--vw-space-md); padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-gray-100); }
-.resdetail-completeness .hbar-track { height: 6px; margin-top: 4px; }
 
 /* a pill-style tab bar reserved for resource-detail screens — a modifier so
    every other .tabbar in the app (Passive, Links, Site, Node, ...) is unaffected */
