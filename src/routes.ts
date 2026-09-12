@@ -6,6 +6,7 @@ import RegionDevices from './screens/RegionDevices';
 import DiscoveredDevices from './screens/DiscoveredDevices';
 import SiteDetails from './screens/SiteDetails';
 import SiteEquipment from './screens/SiteEquipment';
+import Reconcile from './screens/Reconcile';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -31,7 +32,7 @@ export const SCREENS: Screen[] = [
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },
-  { key: 'reconcile', path: '/discovery/reconcile', module: 'Discovery and reconciliation', crumb: 'Reconciliation', legacy: true },
+  { key: 'reconcile', path: '/discovery/reconcile', module: 'Discovery and reconciliation', crumb: 'Reconciliation', component: Reconcile },
 
   { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Home', legacy: true },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', legacy: true },

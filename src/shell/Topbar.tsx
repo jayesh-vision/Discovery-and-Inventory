@@ -42,8 +42,9 @@ export default function Topbar() {
   }
   /* the Discovery landing page names itself in its own page-head ("Discovery");
      a breadcrumb repeating that as "Insights" above it is redundant, and there's
-     nowhere shallower to drill back to from here. */
-  if (s.key === 'insights') {
+     nowhere shallower to drill back to from here. Reconciliation is the same
+     case — its page-head already says "Discovery and reconciliation". */
+  if (s.key === 'insights' || s.key === 'reconcile') {
     return null;
   }
 
