@@ -1352,12 +1352,13 @@ function buildFiberSpanDetail(r) {
   const year = 2022 + nint(s, 4, 0, 3);
   const buriedPct = nint(s, 6, 80, 99);
   const installMethod = FIBER_INSTALL[nint(s, 60, 0, FIBER_INSTALL.length - 1)];
+  const cableType = CABLE_TYPES[nint(s, 8, 0, CABLE_TYPES.length - 1)];
 
   return {
     id: `fbr-${nseed(s).toString(16).padStart(8, '0')}-${nint(s, 5, 1000, 9999)}`,
     usedC, totalC, tubes, lenKm, rag, ragTone, phase, phaseTone,
     closures, avgSpliceLoss, worstLoss, worstLossLabel: hasLoss ? `${worstLoss.toFixed(2)} dB` : '—', otdrPass,
-    cableType: CABLE_TYPES[nint(s, 8, 0, CABLE_TYPES.length - 1)],
+    cableType,
     sheath: nint(s, 9, 0, 1) ? 'LSZH' : 'Armoured HDPE',
     installMethod, buriedPct,
     manufacturer: FIBER_MFR[nint(s, 10, 0, FIBER_MFR.length - 1)],
@@ -1365,7 +1366,18 @@ function buildFiberSpanDetail(r) {
     bendRadius: `${[15, 20, 25][nint(s, 12, 0, 2)]} mm`,
     installDate: `${year}-${pad2(month)}-${pad2(day)}`,
     warranty: `${[15, 20, 25][nint(s, 14, 0, 2)]} yr`,
-    createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)]
+    createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)],
+    /* mechanical & environmental spec sheet — the numbers a field crew or a
+       procurement audit would actually check the datasheet for */
+    diameter: `${9 + nint(s, 90, 0, 6)} mm`,
+    weightPerKm: `${80 + nint(s, 91, 0, 60)} kg/km`,
+    tensileStrength: `${600 + nint(s, 92, 0, 4) * 100} N`,
+    crushResistance: `${400 + nint(s, 96, 0, 3) * 100} N/100mm`,
+    tempRange: '−20°C to +60°C',
+    strengthMember: nint(s, 93, 0, 1) ? 'FRP (fibre-reinforced plastic)' : 'Central steel wire',
+    waterBlock: nint(s, 94, 0, 1) ? 'Dry — water-swellable tape' : 'Gel-filled',
+    standard: `ITU-T ${cableType}, IEC 60794-1`,
+    batchNo: `QA-${year}-${nint(s, 95, 1000, 9999)}`
   };
 }
 
@@ -1429,32 +1441,144 @@ function fiberStages(r, d) {
   ];
 }
 
+/* ── Overview snapshot: KPI row, a fault banner when one applies, and
+   activity/documents teasers ── the Overview tab used to hold only the
+   lifecycle stepper, sending the reader to seven other tabs for anything
+   else. This surfaces one headline number from each of those tabs (route,
+   capacity, splicing, OTDR, health, documents) so the tab reads as a real
+   dashboard landing page, not just a checklist — the lifecycle stepper
+   stays exactly as it was, just no longer alone on the page. */
+const FIBER_ICON_ROUTE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 7.5 16 16.5"/></svg>`;
+const FIBER_ICON_LAYERS = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>`;
+const FIBER_ICON_LINK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="7" height="7" rx="2"/><rect x="14" y="4" width="7" height="7" rx="2"/><path d="M9.5 13 14.5 8"/></svg>`;
+const FIBER_ICON_WAVE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2-7 4 14 3-10 2 5h6"/></svg>`;
+const FIBER_ICON_SHIELD = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>`;
+const FIBER_ICON_FILE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2H4.5a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V8Z"/><path d="M9 2v6h6"/></svg>`;
+const FIBER_ICON_ALERT = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+
+function fiberKpiCard(icon, label, value, sub, tone) {
+  return `<div class="vw-card-section vw-card--accent stack-x" style="padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)">
+    <div class="vw-card-accent" style="background:${cv(tone,400)}"></div>
+    <div class="row vw-justify-between vw-items-start">
+      <span class="vw-card-metric-label">${esc(label)}</span>
+      <span style="color:${cv(tone,500)};flex-shrink:0">${icon}</span>
+    </div>
+    <div class="vw-card-metric-xl num" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(value)}">${esc(value)}</div>
+    <div class="vw-card-metric-label-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(sub)}">${esc(sub)}</div>
+  </div>`;
+}
+function fiberKpiRow(r, d) {
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--vw-space-md)">
+    ${fiberKpiCard(FIBER_ICON_ROUTE, 'Route', r.len, `${r.a} → ${r.b}`, 'sky')}
+    ${fiberKpiCard(FIBER_ICON_LAYERS, 'Fibre capacity', `${d.totalC}F`, `${d.usedC} live · ${d.totalC-d.usedC} spare`, 'purple')}
+    ${fiberKpiCard(FIBER_ICON_LINK, 'Splicing', d.closures.length === 1 ? '1 closure' : `${d.closures.length} closures`, d.closures.length ? `avg ${d.avgSpliceLoss.toFixed(2)} dB` : 'none logged', 'cyan')}
+    ${fiberKpiCard(FIBER_ICON_WAVE, 'OTDR acceptance', `${d.otdrPass}%`, d.phase === 'Live' ? `last ${r.otdr}` : 'not yet tested', d.otdrPass === 100 ? 'emerald' : d.otdrPass > 0 ? 'amber' : 'slate')}
+    ${fiberKpiCard(FIBER_ICON_SHIELD, 'Health', `RAG · ${d.rag}`, `${d.phase} phase`, d.ragTone === 'success' ? 'emerald' : d.ragTone === 'error' ? 'red' : d.ragTone === 'warning' ? 'amber' : 'sky')}
+    ${fiberKpiCard(FIBER_ICON_FILE, 'Documents', '3', 'as-built · datasheet · permit', 'slate')}
+  </div>`;
+}
+function fiberFaultBanner(r, d) {
+  if (r.chip !== 'error' && r.chip !== 'warning') return '';
+  const bad = r.chip === 'error';
+  const label = bad ? 'Span cut — no continuity' : 'Span degraded';
+  const detail = bad ? 'Dispatch a splicing crew to restore continuity before this span carries traffic again.'
+    : `Attenuation elevated (${r.att}) — schedule an OTDR resurvey to isolate the fault.`;
+  return `<div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-md);padding:var(--vw-space-md);border-radius:var(--vw-radius-md);
+    background:${cv(bad?'red':'amber',50)};border:1px solid ${cv(bad?'red':'amber',200)}">
+    <span style="color:${cv(bad?'red':'amber',600)};flex-shrink:0">${FIBER_ICON_ALERT}</span>
+    <div class="grow" style="min-width:0">
+      <span class="vw-value" style="font-weight:600;color:${cv(bad?'red':'amber',800)}">${esc(label)}</span>
+      <span class="vw-card-description" style="display:block;margin-top:1px">${esc(detail)}</span>
+    </div>
+    ${chip(r.st, r.chip)}
+  </div>`;
+}
+function fiberActivityTeaser(stages) {
+  const started = stages.filter(s => s.status !== 'PENDING').slice(-3).reverse();
+  return card(`
+    <div class="row vw-justify-between vw-items-start">
+      ${headSm('Recent activity')}
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-fibertab="history">View full history</button>
+    </div>
+    <div class="stack-s" style="margin-top:var(--vw-space-md)">
+      ${started.length ? started.map(s => {
+        const tone = TONE_COLOR[s.tone] || 'slate';
+        return `<div class="row vw-gap-sm vw-items-center">
+          <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${cv(tone,500)};color:#fff;font-size:0.5625rem">${s.status==='DONE'?'✓':'●'}</span>
+          <span class="vw-value grow" style="font-size:0.8125rem">${esc(s.n)}</span>
+          <span class="vw-card-metric-label-sub" style="flex-shrink:0">${esc(s.when)}</span>
+        </div>`;
+      }).join('') : `<span class="vw-card-description">No activity logged yet.</span>`}
+    </div>`, 'grow');
+}
+function fiberDocsTeaser(d) {
+  const ICON_TONE = { DWG:'cyan', PDF:'red', CERT:'amber' };
+  const docs = [['DWG', 'As-built route drawing'], ['PDF', `Cable datasheet (${d.cableType})`], ['CERT', 'RoW permit']];
+  return card(`
+    <div class="row vw-justify-between vw-items-start">
+      ${headSm('Documents')}
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-fibertab="documents">View all</button>
+    </div>
+    <div class="stack-s" style="margin-top:var(--vw-space-md)">
+      ${docs.map(([icon, name]) => `<div class="row vw-gap-sm vw-items-center">
+        <span style="width:22px;height:22px;border-radius:5px;background:${cv(ICON_TONE[icon],100)};color:${cv(ICON_TONE[icon],700)};display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;flex-shrink:0">${icon}</span>
+        <span class="vw-value grow" style="font-size:0.8125rem">${esc(name)}</span>
+      </div>`).join('')}
+    </div>`, 'grow');
+}
+
+/* A slim connected-dot header — the whole 6-stage journey at a glance —
+   sits above the per-stage cards so the reader sees overall progress before
+   scanning any one stage's detail. */
+function fiberProgressStepper(stages) {
+  const n = stages.length, half = (50 / n).toFixed(2);
+  return `<div style="position:relative;padding:10px 0 26px">
+    <div style="position:absolute;top:23px;left:${half}%;right:${half}%;height:2px;background:${cv('slate',200)}"></div>
+    <div style="display:flex;justify-content:space-between;position:relative">
+      ${stages.map((st, i) => {
+        const tone = TONE_COLOR[st.tone] || 'slate';
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0">
+          <span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+            background:${st.status==='PENDING'?'#fff':cv(tone,500)};border:2px solid ${st.status==='PENDING'?cv('slate',300):cv(tone,500)};
+            color:${st.status==='PENDING'?cv('gray',400):'white'};font-size:0.6875rem;font-weight:600">${st.status==='DONE'?'✓':i+1}</span>
+          <span class="vw-card-metric-label-sub" style="text-align:center;font-size:0.625rem;line-height:1.25;max-width:96px">${esc(st.n)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+/* One compact card per stage — a coloured top accent, a 2x2 data grid and a
+   tight checklist instead of the full-width label/value rows a single
+   vertical list needs — so a responsive grid of these (below) reads left to
+   right across the page rather than forcing one long scroll. */
 function fiberStageCard(stage, idx) {
   const tone = TONE_COLOR[stage.tone] || 'slate';
-  return `<div style="padding:var(--vw-space-lg) 0;${idx > 0 ? `border-top:1px solid ${cv('slate',100)}` : ''}">
-    <div class="row vw-justify-between vw-items-start" style="gap:var(--vw-space-md)">
-      <div class="row vw-gap-md vw-items-start" style="min-width:0">
-        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-          background:${stage.status==='PENDING'?cv('slate',100):cv(tone,500)};color:${stage.status==='PENDING'?cv('gray',500):'white'};font-size:0.75rem;font-weight:600">${stage.status==='DONE'?'✓':idx+1}</span>
-        <div style="min-width:0">
-          <div class="vw-value" style="font-weight:600">${esc(stage.n)}</div>
-          <div class="vw-card-metric-label-sub">${esc(stage.sub)}</div>
-          <div class="vw-card-metric-label-sub" style="margin-top:2px">by ${esc(stage.by)} · ${esc(stage.when)}</div>
-          <div class="vw-card-description" style="font-style:italic;margin-top:4px">"${esc(stage.quote)}"</div>
-        </div>
-      </div>
+  return `<div class="vw-card-child" style="position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--vw-space-sm);min-width:0;padding:var(--vw-space-md)">
+    <span style="position:absolute;top:0;left:0;right:0;height:3px;background:${stage.status==='PENDING'?cv('slate',200):cv(tone,400)}"></span>
+    <div class="row vw-justify-between vw-items-start">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+        background:${stage.status==='PENDING'?cv('slate',100):cv(tone,500)};color:${stage.status==='PENDING'?cv('gray',500):'white'};font-size:0.6875rem;font-weight:600">${stage.status==='DONE'?'✓':idx+1}</span>
       ${chip(stage.status, stage.tone)}
     </div>
-    <div class="vw-card-child-shaded" style="margin-top:var(--vw-space-md);padding:var(--vw-space-sm) var(--vw-space-md)">
-      ${stage.data.map(([k, v]) => `<div class="row vw-justify-between" style="padding:3px 0">
-        <span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span></div>`).join('')}
+    <div style="min-width:0">
+      <div class="vw-value" style="font-weight:600;font-size:0.875rem">${esc(stage.n)}</div>
+      <div class="vw-card-metric-label-sub" style="margin-top:2px">${esc(stage.sub)}</div>
+      <div class="vw-card-metric-label-sub" style="margin-top:1px">by ${esc(stage.by)} · ${esc(stage.when)}</div>
     </div>
-    <div class="stack-s" style="margin-top:var(--vw-space-sm)">
+    <div class="vw-card-description" style="font-style:italic;font-size:0.75rem">"${esc(stage.quote)}"</div>
+    <div class="vw-card-child-shaded" style="padding:var(--vw-space-sm);display:grid;grid-template-columns:1fr 1fr;gap:6px var(--vw-space-sm)">
+      ${stage.data.map(([k, v]) => `<div style="min-width:0">
+        <div class="vw-label" style="font-size:0.625rem">${esc(k)}</div>
+        <div class="vw-value" style="font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)}</div>
+      </div>`).join('')}
+    </div>
+    <div class="stack-s" style="gap:4px">
       ${stage.checks.map((c, i) => `<div class="row vw-gap-sm vw-items-center">
-        <span style="width:14px;height:14px;border:1.5px solid ${stage.checked[i]?cv('emerald',500):cv('slate',300)};border-radius:3px;
+        <span style="width:13px;height:13px;border:1.5px solid ${stage.checked[i]?cv('emerald',500):cv('slate',300)};border-radius:3px;
           background:${stage.checked[i]?cv('emerald',500):'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${stage.checked[i] ? '<span style="color:white;font-size:10px;line-height:1">✓</span>' : ''}</span>
-        <span class="vw-card-description">${esc(c)}</span>
+          ${stage.checked[i] ? '<span style="color:white;font-size:9px;line-height:1">✓</span>' : ''}</span>
+        <span class="vw-card-description" style="font-size:0.6875rem">${esc(c)}</span>
       </div>`).join('')}
     </div>
   </div>`;
@@ -1484,7 +1608,20 @@ function fiberPhysicalTab(r, d) {
     </div>`);
 
   const photoCard = card(`${headSm('Photos')}
-    <div style="margin-top:var(--vw-space-md)">${mediaTile(mediaIllustrationCableBundle(), 'Cable cross-section', d.installDate, false)}</div>`);
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
+      ${mediaTile(mediaIllustrationCableCrossSection(), 'Cable cross-section', d.installDate, false)}
+      ${mediaTile(mediaIllustrationLabelTag(), 'Drum / reel label', d.installDate, false)}
+    </div>`);
+
+  const specCard = card(`${headSm('Mechanical & environmental specification')}
+    <p class="vw-card-description" style="margin-top:2px">Datasheet figures for ${esc(d.cableType)} — the numbers a field crew or a procurement audit checks against</p>
+    <div class="site-meta" style="grid-template-columns:1fr 1fr 1fr;margin-top:var(--vw-space-lg)">
+      ${[['Outer diameter', d.diameter], ['Weight', d.weightPerKm], ['Tensile strength', d.tensileStrength],
+         ['Crush resistance', d.crushResistance], ['Operating temperature', d.tempRange], ['Strength member', d.strengthMember],
+         ['Water blocking', d.waterBlock], ['Standard compliance', d.standard], ['QA batch no.', d.batchNo]]
+        .map(([k, v]) => `<div class="meta-cell" style="padding:10px 0;border-top:1px solid ${cv('slate',100)}">
+          <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
+    </div>`);
 
   return `<div class="row-t" style="align-items:stretch">
     ${detailsCard}
@@ -1492,7 +1629,8 @@ function fiberPhysicalTab(r, d) {
       ${utilCard}
       ${photoCard}
     </div>
-  </div>`;
+  </div>
+  ${specCard}`;
 }
 
 function fiberCoresTab(r, d) {
@@ -1520,7 +1658,7 @@ function fiberCoresTab(r, d) {
       <div style="display:flex;flex-wrap:wrap">${cells.join('')}</div>
     </div>`);
   }
-  return card(`${headSm('Fibre-core allocation')}
+  const coresCard = card(`${headSm('Fibre-core allocation')}
     <p class="vw-card-description" style="margin-top:2px">Per-strand status, service assignment and splice loss — the planner's spare-capacity view</p>
     <div class="legend" style="margin-top:var(--vw-space-md)">
       <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Live}"></span>Live · ${liveCount}</span>
@@ -1529,6 +1667,29 @@ function fiberCoresTab(r, d) {
       <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Faulty}"></span>Faulty · ${faultyCount}</span>
     </div>
     ${tubeRows.join('')}`);
+
+  /* every live fibre carries a real service — the planner's own reason a
+     strand can't be reclaimed as spare — shown as far as the grid above
+     already reads (a 12-row cap keeps a 96F span's table on one screen;
+     the note below says how many more are live but not itemised here) */
+  const SERVICE_TYPES = ['RAN backhaul', 'X2 / Xn interface', 'S1 / NG-C', 'O&M', 'Transport OAM'];
+  const shownLive = Math.min(liveCount, 12);
+  const assignCard = shownLive ? card(`${headSm('Live fibre assignments')}
+    <p class="vw-card-description" style="margin-top:2px">${shownLive < liveCount ? `First ${shownLive} of ${liveCount} live strands` : `All ${liveCount} live strands`}</p>
+    <div style="margin-top:var(--vw-space-md)">
+      ${table([{t:'Fibre'},{t:'Colour'},{t:'Service'},{t:'Circuit'},{t:'Path'}],
+        Array.from({ length: shownLive }, (_, i) => {
+          const [fname] = FIBER_COLORS[i % FIBER_COLORS.length];
+          const svc = SERVICE_TYPES[nint(r.n, 200 + i, 0, SERVICE_TYPES.length - 1)];
+          const circuit = `CKT-${nint(r.n, 210 + i, 10000, 99999)}`;
+          const path = `${r.a} P${nint(r.n, 220 + i, 1, 24)} → ${r.b} P${nint(r.n, 230 + i, 1, 24)}`;
+          return [`<span class="mono">F${i+1}</span>`, fname, chip(svc, 'info'), `<span class="mono">${circuit}</span>`, `<span class="mono">${path}</span>`];
+        }), '', () => [])}
+    </div>
+    ${shownLive < liveCount ? `<p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">+${liveCount - shownLive} more live strand${liveCount-shownLive===1?'':'s'} not itemised here</p>` : ''}`)
+    : '';
+
+  return `${coresCard}${assignCard}`;
 }
 
 function fiberLocationTab(r, d) {
@@ -1565,6 +1726,15 @@ function fiberLocationTab(r, d) {
     }).join('')}
   </div>`;
   const region = /delhi|ndls/i.test(r.a + r.b) ? 'North' : /chennai|mas|vja|indr|hyd/i.test(r.a + r.b) ? 'South' : 'West';
+  const baseLat = region === 'North' ? 28.6 : region === 'South' ? 13.0 : 19.0;
+  const baseLon = region === 'North' ? 77.2 : region === 'South' ? 77.6 : 72.8;
+  const latA = baseLat + nrand(r.n, 40, -1.5, 1.5), lonA = baseLon + nrand(r.n, 41, -1.5, 1.5);
+  const latB = latA + nrand(r.n, 42, -0.3, 0.3), lonB = lonA + nrand(r.n, 43, -0.3, 0.3);
+  const elevation = 50 + nint(r.n, 44, 0, 500);
+  const TERRAIN = ['Urban — paved', 'Semi-urban — mixed', 'Rural — agricultural', 'Hilly — rocky'];
+  const terrain = TERRAIN[nint(r.n, 45, 0, TERRAIN.length - 1)];
+  const LANDMARK_KIND = ['Railway station', 'Bus depot', 'Industrial area', 'Market road', 'Highway junction'];
+  const landmark = `${LANDMARK_KIND[nint(r.n, 46, 0, LANDMARK_KIND.length - 1)]}, ${r.a.split(/[- ]/)[0]}`;
 
   return `${card(`${headSm('Chainage schedule')}
     <p class="vw-card-description" style="margin-top:2px">Closures, chambers and terminations along the route</p>
@@ -1580,14 +1750,56 @@ function fiberLocationTab(r, d) {
   ${card(`${headSm('Geographic')}
     <div class="site-meta" style="grid-template-columns:1fr 1fr;margin-top:var(--vw-space-lg)">
       ${[['Region', region], ['City / area', r.a], ['End A', r.a], ['End B', r.b],
-         ['POP / anchor', `POP-${region.slice(0,3).toUpperCase()}-${String(nint(r.n,26,1,20)).padStart(2,'0')}`], ['Route length', r.len]]
+         ['POP / anchor', `POP-${region.slice(0,3).toUpperCase()}-${String(nint(r.n,26,1,20)).padStart(2,'0')}`], ['Route length', r.len],
+         ['End A coordinates', `${latA.toFixed(4)}° N, ${lonA.toFixed(4)}° E`], ['End B coordinates', `${latB.toFixed(4)}° N, ${lonB.toFixed(4)}° E`],
+         ['Elevation (avg)', `${elevation} m AMSL`], ['Terrain', terrain],
+         ['Nearest landmark', landmark], ['Right of way', /aerial/i.test(d.installMethod) ? 'Utility pole easement' : 'Municipal road reservation']]
         .map(([k, v]) => `<div class="meta-cell" style="padding:10px 0;border-top:1px solid ${cv('slate',100)}">
           <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
     </div>`)}`;
 }
 
+const FIBER_CONN_TYPES = ['SC/APC', 'LC/UPC', 'SC/UPC'];
 function fiberConnectivityTab(r, d) {
-  return `${card(`${headSm(`Splice closures · ${d.closures.length}`)}
+  const portA = 1 + nint(r.n, 250, 0, 47), portB = 1 + nint(r.n, 251, 0, 47);
+  const rackA = `${'AB'[nint(r.n, 252, 0, 1)]} · U0${1 + nint(r.n, 253, 0, 6)}-0${2 + nint(r.n, 253, 0, 6)}`;
+  const rackB = `${'AB'[nint(r.n, 254, 0, 1)]} · U0${1 + nint(r.n, 255, 0, 6)}-0${2 + nint(r.n, 255, 0, 6)}`;
+  const connA = FIBER_CONN_TYPES[nint(r.n, 256, 0, FIBER_CONN_TYPES.length - 1)];
+  const connB = FIBER_CONN_TYPES[nint(r.n, 257, 0, FIBER_CONN_TYPES.length - 1)];
+  const termCard = card(`${headSm('Terminates at')}
+    <p class="vw-card-description" style="margin-top:2px">ODF ports at each end of this span</p>
+    <div class="row-t" style="margin-top:var(--vw-space-md)">
+      <div class="vw-card-child grow" style="padding:var(--vw-space-md)">
+        <span class="vw-label">End A</span>
+        <div class="vw-value" style="font-weight:600;margin-top:2px">${esc(r.a)}</div>
+        <div class="vw-card-metric-label-sub" style="margin-top:2px">Port ${portA} · Rack ${rackA} · ${connA}</div>
+      </div>
+      <div class="vw-card-child grow" style="padding:var(--vw-space-md)">
+        <span class="vw-label">End B</span>
+        <div class="vw-value" style="font-weight:600;margin-top:2px">${esc(r.b)}</div>
+        <div class="vw-card-metric-label-sub" style="margin-top:2px">Port ${portB} · Rack ${rackB} · ${connB}</div>
+      </div>
+    </div>`);
+
+  const SVC_TYPES = [['L3VPN', 'info'], ['L2VPN', 'cyan'], ['Internet transit', 'purple'], ['Voice / IMS', 'success']];
+  const CUSTOMERS = ['Circle Ops', 'Enterprise BU', 'Wholesale', 'Govt SLA'];
+  const svcCount = nint(r.n, 260, 2, 4);
+  const svcRows = Array.from({ length: svcCount }, (_, i) => {
+    const [type, tone] = SVC_TYPES[nint(r.n, 270 + i, 0, SVC_TYPES.length - 1)];
+    const name = `${type.replace(/[^A-Za-z]/g, '')}-${nint(r.n, 280 + i, 1000, 9999)}`;
+    const bw = [10, 20, 50, 100][nint(r.n, 290 + i, 0, 3)];
+    const customer = CUSTOMERS[nint(r.n, 300 + i, 0, CUSTOMERS.length - 1)];
+    const down = r.chip === 'error' && i === 0;
+    return [chip(down ? 'Down' : 'Up', down ? 'error' : 'success'), chip(type, tone),
+      `<span class="mono">${name}</span>`, `<span class="num">${bw} Mbps</span>`, customer];
+  });
+  const svcCard = card(`${headSm('Services carried')}
+    <p class="vw-card-description" style="margin-top:2px">Logical services riding this physical span</p>
+    <div style="margin-top:var(--vw-space-md)">
+      ${table([{t:'Status'},{t:'Type'},{t:'Service'},{t:'Bandwidth'},{t:'Customer / SLA'}], svcRows, '', () => [])}
+    </div>`);
+
+  return `${termCard}${svcCard}${card(`${headSm(`Splice closures · ${d.closures.length}`)}
     <p class="vw-card-description" style="margin-top:2px">Passive joints on this span</p>
     ${d.closures.length ? d.closures.map(c => `<div class="row vw-justify-between vw-items-center" style="padding:var(--vw-space-md) 0;border-top:1px solid ${cv('slate',100)}">
         <div style="min-width:0">
@@ -1635,34 +1847,106 @@ function fiberTestsTab(r, d) {
    app has no photo library anywhere, so these are drawn, not sourced. */
 function mediaIllustrationTrench() {
   return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
-    <rect width="200" height="120" fill="#c99a5b"/><rect y="72" width="200" height="48" fill="#8a6d3b"/>
-    <path d="M0 80 L88 80 L112 96 L200 96" stroke="#3f2f1a" stroke-width="9" fill="none"/>
-    <rect x="58" y="36" width="42" height="30" rx="3" fill="#facc15"/><rect x="72" y="16" width="6" height="24" fill="#facc15"/>
-    <circle cx="60" cy="67" r="8" fill="#1f2937"/><circle cx="98" cy="67" r="8" fill="#1f2937"/>
+    <defs>
+      <linearGradient id="trSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#e0f2fe"/></linearGradient>
+      <linearGradient id="trGround" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a86a"/><stop offset="100%" stop-color="#a8783f"/></linearGradient>
+      <linearGradient id="trPit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5c4326"/><stop offset="100%" stop-color="#2c2013"/></linearGradient>
+      <linearGradient id="trBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fde047"/><stop offset="100%" stop-color="#eab308"/></linearGradient>
+    </defs>
+    <rect width="200" height="46" fill="url(#trSky)"/>
+    <rect y="46" width="200" height="74" fill="url(#trGround)"/>
+    <ellipse cx="140" cy="99" rx="58" ry="7" fill="#000" opacity="0.12"/>
+    <path d="M10 88 L92 88 L118 108 L200 108 L200 120 L10 120 Z" fill="url(#trPit)"/>
+    <path d="M10 88 L92 88 L118 108 L200 108" stroke="#1a1208" stroke-width="1" fill="none" opacity="0.6"/>
+    <circle cx="30" cy="96" r="2" fill="#3f2f1a"/><circle cx="50" cy="100" r="1.6" fill="#3f2f1a"/><circle cx="150" cy="112" r="2" fill="#1a1208"/>
+    <rect x="55" y="55" width="46" height="8" rx="2" fill="#4b5563"/>
+    <rect x="60" y="35" width="36" height="26" rx="4" fill="url(#trBody)" stroke="#a16207" stroke-width="1"/>
+    <rect x="70" y="16" width="7" height="22" rx="2" fill="url(#trBody)" stroke="#a16207" stroke-width="1"/>
+    <rect x="63" y="41" width="10" height="8" rx="1.5" fill="#1f2937"/>
+    <circle cx="62" cy="66" r="9" fill="#111827"/><circle cx="94" cy="66" r="9" fill="#111827"/>
+    <circle cx="62" cy="66" r="3.5" fill="#4b5563"/><circle cx="94" cy="66" r="3.5" fill="#4b5563"/>
   </svg>`;
 }
 function mediaIllustrationSpliceTray() {
   const lines = Array.from({ length: 12 }, (_, i) => {
-    const [, hex] = FIBER_COLORS[i % FIBER_COLORS.length], y = 8 + i * 8;
-    return `<path d="M0 ${y} Q100 ${58+i*3} 200 ${y-18+i*2}" stroke="${hex}" stroke-width="1.6" fill="none" opacity="0.9"/>`;
+    const [, hex] = FIBER_COLORS[i % FIBER_COLORS.length], y = 14 + i * 7.5;
+    return `<path d="M6 ${y} Q100 ${54+i*2.6} 194 ${y-14+i*1.6}" stroke="${hex}" stroke-width="1.8" fill="none" opacity="0.92" filter="url(#stGlow)"/>`;
   }).join('');
-  return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block"><rect width="200" height="120" fill="#0b1220"/>${lines}</svg>`;
+  return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
+    <defs>
+      <radialGradient id="stBg" cx="50%" cy="35%" r="80%"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#020617"/></radialGradient>
+      <filter id="stGlow"><feGaussianBlur stdDeviation="0.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <rect width="200" height="120" fill="url(#stBg)"/>
+    <rect x="4" y="6" width="192" height="108" rx="8" fill="none" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+    ${lines}
+  </svg>`;
 }
 function mediaIllustrationTower() {
   return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
-    <defs><linearGradient id="fbrSky1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient></defs>
-    <rect width="200" height="120" fill="url(#fbrSky1)"/>
-    <path d="M100 15 L80 110 L120 110 Z" fill="none" stroke="#334155" stroke-width="2.5"/>
-    <path d="M88 75 L112 75 M84 92 L116 92" stroke="#334155" stroke-width="2"/><circle cx="100" cy="10" r="3" fill="#ef4444"/>
+    <defs>
+      <linearGradient id="twSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="60%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#e0f2fe"/></linearGradient>
+      <linearGradient id="twGround" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#4ade80"/></linearGradient>
+    </defs>
+    <rect width="200" height="96" fill="url(#twSky)"/>
+    <circle cx="168" cy="24" r="14" fill="#fef9c3" opacity="0.8"/>
+    <rect y="96" width="200" height="24" fill="url(#twGround)"/>
+    <ellipse cx="100" cy="98" rx="26" ry="5" fill="#000" opacity="0.15"/>
+    <path d="M100 12 L78 98 L122 98 Z" fill="none" stroke="#334155" stroke-width="2.2"/>
+    <path d="M89 55 L111 55 M85 72 L115 72 M82 86 L118 86" stroke="#334155" stroke-width="1.6"/>
+    <path d="M78 98 L100 12 M122 98 L100 12" stroke="#475569" stroke-width="0.8" opacity="0.5"/>
+    <rect x="92" y="18" width="6" height="14" rx="1.5" fill="#64748b" transform="rotate(-8 95 25)"/>
+    <rect x="103" y="18" width="6" height="14" rx="1.5" fill="#64748b" transform="rotate(8 106 25)"/>
+    <circle cx="100" cy="8" r="2.6" fill="#ef4444"/>
+    <rect x="88" y="98" width="24" height="16" rx="1.5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
   </svg>`;
 }
 function mediaIllustrationDrone() {
   return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
-    <defs><linearGradient id="fbrSky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#bae6fd"/></linearGradient></defs>
-    <rect width="200" height="120" fill="url(#fbrSky2)"/>
-    <path d="M60 20 L44 110 L76 110 Z" fill="none" stroke="#1e293b" stroke-width="2"/>
-    <path d="M150 30 L136 110 L164 110 Z" fill="none" stroke="#1e293b" stroke-width="2"/>
-    <path d="M76 108 L136 108" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <defs><linearGradient id="drGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#65a30d"/><stop offset="50%" stop-color="#84cc16"/><stop offset="100%" stop-color="#4d7c0f"/></linearGradient></defs>
+    <rect width="200" height="120" fill="url(#drGround)"/>
+    <path d="M0 30 L60 40 L140 20 L200 35 L200 0 L0 0Z" fill="#3f6212" opacity="0.35"/>
+    <path d="M0 90 L70 82 L150 98 L200 88 L200 120 L0 120Z" fill="#365314" opacity="0.35"/>
+    <path d="M20 70 L180 50" stroke="#eab308" stroke-width="2" stroke-dasharray="4 3" opacity="0.85"/>
+    <circle cx="20" cy="70" r="5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="180" cy="50" r="5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="100" cy="60" r="3" fill="#fff" opacity="0.9"/>
+  </svg>`;
+}
+/* A macro shot of a cut cable end — gradients, a glossy highlight arc and a
+   blurred bokeh background stand in for the depth-of-field a real close-up
+   photo would have, rather than the flat line-art the other tiles use, so
+   this one reads as a photograph at a glance instead of a diagram. */
+function mediaIllustrationCableCrossSection() {
+  const cx = 100, cy = 60, ringR = 26, tubeR = 9;
+  const tubes = Array.from({ length: 8 }, (_, i) => {
+    const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + ringR * Math.cos(angle), y = cy + ringR * Math.sin(angle);
+    const [, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
+    const dots = Array.from({ length: 3 }, (_, j) => {
+      const fa = angle + j * 2.1, fx = x + 3.2 * Math.cos(fa), fy = y + 3.2 * Math.sin(fa);
+      return `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="1.1" fill="#fff" opacity="0.85"/>`;
+    }).join('');
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${tubeR}" fill="${hex}" opacity="0.92" stroke="#0b0f19" stroke-width="0.75"/>${dots}`;
+  }).join('');
+  return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
+    <defs>
+      <radialGradient id="ccsBg" cx="50%" cy="40%" r="75%"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#020617"/></radialGradient>
+      <radialGradient id="ccsJacket" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#4b5563"/><stop offset="60%" stop-color="#1f2937"/><stop offset="100%" stop-color="#0b0f19"/></radialGradient>
+      <radialGradient id="ccsCore" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#cbd5e1"/></radialGradient>
+      <filter id="ccsBlur"><feGaussianBlur stdDeviation="7"/></filter>
+    </defs>
+    <rect width="200" height="120" fill="url(#ccsBg)"/>
+    <g filter="url(#ccsBlur)" opacity="0.45">
+      <circle cx="26" cy="18" r="11" fill="#f97316"/>
+      <circle cx="176" cy="102" r="15" fill="#3b82f6"/>
+      <circle cx="16" cy="104" r="8" fill="#22c55e"/>
+    </g>
+    <circle cx="${cx}" cy="${cy}" r="46" fill="url(#ccsJacket)"/>
+    <circle cx="${cx}" cy="${cy}" r="46" fill="none" stroke="#64748b" stroke-width="0.75" opacity="0.4"/>
+    <path d="M74 26 A46 46 0 0 1 128 29" stroke="#94a3b8" stroke-width="2" fill="none" opacity="0.35" stroke-linecap="round"/>
+    ${tubes}
+    <circle cx="${cx}" cy="${cy}" r="7" fill="url(#ccsCore)" stroke="#94a3b8" stroke-width="0.5"/>
   </svg>`;
 }
 function mediaTile(illustrationHtml, title, meta, isVideo) {
@@ -1756,9 +2040,20 @@ function viewFiberDetail() {
     `<button class="stab${t.k===tab?' is-on':''}" data-fibertab="${t.k}">${tabLabel[t.k] || t.n}</button>`).join('')}</div>`;
 
   const body = tab === 'overview'
-    ? card(`${headSm('OSP build lifecycle')}
+    ? `${card(`${headSm('Snapshot')}
+        <p class="vw-card-description" style="margin-top:2px">Key facts across route, capacity, splicing, testing and health</p>
+        <div style="margin-top:var(--vw-space-md)">${fiberKpiRow(r, d)}</div>
+        ${fiberFaultBanner(r, d)}`)}
+      ${card(`${headSm('OSP build lifecycle')}
         <p class="vw-card-description" style="margin-top:2px">The whole span-requested → RFS journey in one view — stage, owner, date, remark + captured evidence</p>
-        <div style="margin-top:var(--vw-space-md)">${stages.map((st, i) => fiberStageCard(st, i)).join('')}</div>`)
+        ${fiberProgressStepper(stages)}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--vw-space-md)">
+          ${stages.map((st, i) => fiberStageCard(st, i)).join('')}
+        </div>`)}
+      <div class="row-t" style="align-items:stretch">
+        ${fiberActivityTeaser(stages)}
+        ${fiberDocsTeaser(d)}
+      </div>`
     : tab === 'physical' ? fiberPhysicalTab(r, d)
     : tab === 'cores' ? fiberCoresTab(r, d)
     : tab === 'location' ? fiberLocationTab(r, d)
