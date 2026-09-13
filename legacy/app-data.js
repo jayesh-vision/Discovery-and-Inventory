@@ -999,25 +999,29 @@ const LINK_TABS = [
   { k:'lldp', n:'LLDP', c:5549 }, { k:'ospf', n:'OSPF', c:1382 },
   { k:'bgp',  n:'BGP',  c:604 },  { k:'isis', n:'ISIS', c:311 }
 ];
+/* every link — whichever protocol reported it — names both ends the same
+   way: a real NE hostname (sne/dne) and that NE's own IP (sip/dip). OSPF,
+   BGP and ISIS used to leave dne holding the peer's IP with no hostname at
+   all; that's fixed below by naming the peer NE and moving its IP to dip. */
 const LINKS = {
   lldp: [
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
-    { st:'up',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/10',       name:'—',              v:3 },
-    { st:'up', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
-    { st:'down',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dif:'TenGigE0/0/0/18',name:'—',             v:168 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.101', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.102', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
+    { st:'up',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.103', dif:'Gi0/0/10',       name:'—',              v:3 },
+    { st:'up', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dip:'172.31.35.152', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
+    { st:'down',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dip:'172.31.35.82', dif:'TenGigE0/0/0/18',name:'—',             v:168 }
   ],
   ospf: [
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'down',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'NDLS-J960-P_R1-T1-SR', dip:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'NDLS-J960-P_R1-T1-ER', dip:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'down',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'MAS-N7750-BNG-R-T1-NR', dip:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
   ],
   bgp: [
-    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
-    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'BGLK-ASR9010-PE-T1', dip:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'BGLK-NCS540-PE-T3', dip:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
   ],
   isis: [
-    { st:'up', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
+    { st:'up', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'VZG-N540X-PE-T4-SR', dip:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
   ]
 };
 
@@ -1066,23 +1070,23 @@ VNFS.push(...VNF_PAD);
 
 LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({ ...r, st: i % 5 === 4 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
-  dne: PAD_NE[(i + 5) % PAD_NE.length], dif: PAD_IF[(i + 3) % PAD_IF.length],
+  dne: PAD_NE[(i + 5) % PAD_NE.length], dip: PAD_IP(i + 30), dif: PAD_IF[(i + 3) % PAD_IF.length],
   name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
   v: [3, 5, 8, 26][i % 4] }));
 LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
-  dne: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
+  dne: PAD_NE[(i + 7) % PAD_NE.length], dip: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
   name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3] }));
 LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
   return { ...r, st,
     sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `AS ${24186 + (i % 2 ? 0 : 9498)}`,
-    dne: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
+    dne: PAD_NE[(i + 11) % PAD_NE.length], dip: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
     name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3] };
 });
 LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: i % 3 ? 'L2' : 'L1L2',
-  dne: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3] }));
+  dne: PAD_NE[(i + 4) % PAD_NE.length], dip: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3] }));
 
 SERVICES.l3vpn = padList(SERVICES.l3vpn, 12, (r, i) => ({ ...r,
   st: i % 5 === 3 ? 'Down' : 'Up', chip: i % 5 === 3 ? 'error' : 'success',
@@ -1366,14 +1370,25 @@ const CAPEX = {
     ]
   }
 };
+/* only the actual network equipment rows carry a linked-element value —
+   civil, power, installation and spares have none in BGLK-277's own
+   hand-authored data either, so the generated sites stay consistent with
+   that rather than inventing links for line items that aren't a device */
+const CAPEX_NE_BY_BASE_ROW = {
+  0: (id, q) => `${id}-MX960-CORE-01${q > 1 ? ` +${q - 1}` : ''}`,
+  1: (id, q) => `${id}-MX204-AGG-01${q > 1 ? ` ×${q}` : ''}`,
+  2: (id, q) => `${id}-ACC-SW-01${q > 1 ? `…${String(q).padStart(2, '0')}` : ''}`
+};
 function capexOf(id, ne) {
   if (CAPEX[id]) return CAPEX[id];
   const scale = Math.max(0.25, ne / 25), base = CAPEX['BGLK-277'], pick = [0,1,2,4,5,7,9,11];
   const items = pick.map((i, j) => {
-    const b = base.items[i];
-    return { ...b, q: Math.max(1, Math.round(b.q * scale * 0.5)),
+    const b = base.items[i], q = Math.max(1, Math.round(b.q * scale * 0.5));
+    const neGen = CAPEX_NE_BY_BASE_ROW[i];
+    return { ...b, q,
       u: Math.round(b.u * (0.55 + (j % 4) * 0.12) / 1000) * 1000,
-      po: b.po === '—' ? '—' : `PO-2024-${1200 + j * 13}`, ne: '—' };
+      po: b.po === '—' ? '—' : `PO-2024-${1200 + j * 13}`,
+      ne: neGen ? neGen(id, q) : '—' };
   });
   const committed = items.reduce((a, r) => a + r.q * r.u, 0);
   return {

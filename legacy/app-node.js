@@ -256,16 +256,23 @@ function nodeOf(name) {
 
   const ALARM = [
     { sev:'Critical', t:'Interface Flapping Detected', d:'Interface state changed 8 times in 20 minutes',
-      src:'Interface', at:'Interface', code:'ALM-1930', when:'30-Jun-2026 12:30:00' },
+      src:'Interface', at:'Interface', code:'ALM-1930', when:agoStamp(45, true) },
     { sev:'Major', t:'High CPU Utilization', d:'CPU sustained above 77% for 45 minutes',
-      src:'CPU', at:'CPU', code:'ALM-1831', when:'30-Jun-2026 14:05:00' },
+      src:'CPU', at:'CPU', code:'ALM-1831', when:agoStamp(20, true) },
     { sev:'Major', t:'Link Degradation', d:'Latency increased to 12.4 ms, packet loss detected',
-      src:'Link', at:'Link', code:'ALM-1774', when:'30-Jun-2026 09:12:00' },
+      src:'Link', at:'Link', code:'ALM-1774', when:agoStamp(180, true) },
     { sev:'Minor', t:'Temperature Warning', d:'Temperature elevated to 58°C in slot 3',
-      src:'Environment', at:'Thermal', code:'ALM-1610', when:'29-Jun-2026 22:41:00' },
+      src:'Environment', at:'Thermal', code:'ALM-1610', when:agoStamp(1580, true) },
     { sev:'Warning', t:'Optical Rx drifting', d:'SFP on xe-0/0/4 down 0.4 dB per month',
-      src:'Optics', at:'Optical', code:'ALM-1502', when:'28-Jun-2026 06:20:00' }
+      src:'Optics', at:'Optical', code:'ALM-1502', when:agoStamp(3320, true) }
   ];
+
+  /* uptime and its reboot date derive from the same sampled duration, so the
+     two never disagree, and — since both are minutes-ago-from-now — neither
+     one silently ages into a stale-looking fixed date */
+  const upDays = sw ? nint(s, 34, 120, 420) : nint(s, 34, 12, 340);
+  const upHours = sw ? 0 : nint(s, 35, 0, 23);
+  const since = agoStamp(upDays * 1440 + upHours * 60, false).split(' ')[0];
 
   return {
     r, cls, meta, live: meta.live, name,
@@ -273,16 +280,16 @@ function nodeOf(name) {
     ov: { health, proto: protoRows.reduce((a, p) => a + p.a, 0),
           arp: sw ? nint(s, 32, 40, 120) : null,
           ifUp, ifTotal, alarms: nint(s, 33, 2, 9),
-          uptime: sw ? `${nint(s, 34, 120, 420)} Days` : `${nint(s, 34, 12, 340)}d ${nint(s, 35, 0, 23)}h`,
-          since: '10-Feb-2026' },
+          uptime: sw ? `${upDays} Days` : `${upDays}d ${upHours}h`,
+          since },
     icmp: { loss:+(nrand(s, 36, 0, 0.6)).toFixed(2), lat:+(nrand(s, 37, 0.7, 2.9)).toFixed(2),
             jit:+(nrand(s, 38, 0.1, 1.4)).toFixed(2), avail:+(nrand(s, 39, 98.4, 100)).toFixed(2),
             checked:'1 min ago', probe:'1:1' },
     ntp:  { off:+(nrand(s, 41, -1.4, 1.9)).toFixed(2), delay:+(nrand(s, 42, 0.4, 0.9)).toFixed(3),
             jit:+(nrand(s, 43, 0.1, 4.8)).toFixed(3), primary:'10.16.16.10', secondary:'10.16.16.11',
-            stratum:nint(s, 44, 2, 4), sync:'30-Jun-2026 11:10:00' },
+            stratum:nint(s, 44, 2, 4), sync:agoStamp(nint(s, 58, 1, 45), true) },
     rad:  { primary:'10.25.25.5', secondary:'10.25.25.6', ok:+(nrand(s, 45, 96.2, 99.9)).toFixed(1),
-            fails:nint(s, 46, 0, 6), last:'30-Jun-2026 11:47:00' },
+            fails:nint(s, 46, 0, 6), last:agoStamp(nint(s, 59, 1, 90), true) },
     avail: { icmp: strip(1, nint(s, 47, 3, 21)), ntp: strip(2, nint(s, 48, 3, 21)) },
     perf: { cpu, mem, temp, series, fc,
             fCpu: fc.cpu.vals[6], fMem: fc.mem.vals[6], fTemp: fc.temp.vals[6] },
@@ -550,7 +557,8 @@ function buildEnodebSite(s, r) {
   const GROWTH = ['100 Mbps', '500 Mbps', '1 Gbps', '2 Gbps', '5 Gbps', '10 Gbps'];
   const mkLink = (n, proto, i, off) => ({
     n, proto, util: nint(s, off + i, 6, 92), users: nint(s, off + 100 + i, 2000, 15000),
-    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026', modified: '12-May-2026'
+    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026',
+    modified: agoStamp(nint(s, off + 300 + i, 60, 4320), false)
   });
   const links = {
     backhaul: [

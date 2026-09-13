@@ -66,7 +66,7 @@ function nodeOverviewSwitch(N) {
     nvTile('VLANs', '58', '52 Active · 6 Reserved', 'amber'),
     nvTile('Interface Status', '372/384', '372 up · 12 down', 'sky'),
     nvTile('Active Alerts', '7', '1 critical · 2 major · 4 minor · 0 warning', 'red'),
-    nvTile('System Uptime', '287 Days', 'Last reboot: Feb 12, 2026 05:30:00', 'purple')
+    nvTile('System Uptime', '287 Days', `Last reboot: ${agoStamp(287 * 1440, true)}`, 'purple')
   ];
   return card(`
     <div class="nv-tiles">${tiles.join('')}</div>
@@ -77,15 +77,15 @@ function nodeOverviewSwitch(N) {
         [['Packet Loss', '0.02%', '1200 sent'],
          ['Latency Avg', '7.62 ms', 'Min: 4.18'], ['Jitter', '1.24 ms', 'Max: 12.44'],
          ['Availability', '99.98%', 'Successful probes']],
-        `Last Sync: Jun 30, 2026 14:26:00 · Probe Interval: 1 hr`)}
+        `Last Sync: ${agoStamp(2, true)} · Probe Interval: 1 hr`)}
       ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
         [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
          ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
-        `Last Sync: Jun 30, 2026 14:10:00`)}
+        `Last Sync: ${agoStamp(18, true)}`)}
       ${nvHealthCard('RADIUS Auth', 'AAA Authentication',
         ['Healthy', 'success'],
         [['Primary DNS', '10.20.20.5 • Reachable'], ['Secondary DNS', '10.20.20.6 • Reachable']],
-        `Last Sync: Jun 30, 2026 14:05:00`)}
+        `Last Sync: ${agoStamp(25, true)}`)}
     </div>`);
 }
 
@@ -137,10 +137,7 @@ function nodeHardwareSwitch(N) {
                       : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
   const utilList = `
     <div class="cx-panel">
-      <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-        <span class="eyebrow">Interface utilisation</span>
-        <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
-      </div>
+      <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -232,7 +229,7 @@ function nodeLinksSwitch(N) {
       <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
         ${chip('LLDP Protocol', 'info')}
         <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--vw-color-slate-100);border-radius:8px">
-          Last sync : Jun 30, 2026 14:30:00
+          Last sync : ${agoStamp(6, true)}
         </span>
       </div>
     </div>
@@ -369,7 +366,7 @@ function nodeAlertsSwitch(N) {
       d: 'Interface state changed 8 times in 20 minutes',
       src: 'Interface',
       at: 'Interface',
-      when: '30-Jun-2026 13:30:00',
+      when: agoStamp(35, true),
       code: 'ALM-1000',
       tone: 'red'
     },
@@ -380,7 +377,7 @@ function nodeAlertsSwitch(N) {
       d: 'CPU sustained above 75% for 45 minutes',
       src: 'Cpu',
       at: 'CPU',
-      when: '30-Jun-2026 12:45:00',
+      when: agoStamp(80, true),
       code: 'ALM-1001',
       tone: 'orange'
     },
@@ -391,7 +388,7 @@ function nodeAlertsSwitch(N) {
       d: 'Latency increased to 12.8ms, packet loss detected',
       src: 'Link',
       at: 'Link',
-      when: '30-Jun-2026 12:00:00',
+      when: agoStamp(125, true),
       code: 'ALM-1002',
       tone: 'orange'
     },
@@ -402,7 +399,7 @@ function nodeAlertsSwitch(N) {
       d: 'Optical receiver power temperature threshold crossed',
       src: 'SFP',
       at: 'Temperature',
-      when: '30-Jun-2026 11:15:00',
+      when: agoStamp(210, true),
       code: 'ALM-1003',
       tone: 'amber'
     }
@@ -600,10 +597,7 @@ function nodeHardwareRouter(N) {
                       : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
   const utilList = `
     <div class="cx-panel">
-      <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-        <span class="eyebrow">Interface utilisation</span>
-        <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
-      </div>
+      <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -920,8 +914,7 @@ function nodeServicesRouter(N) {
     </div>
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
-      ${kpi('Total service instances', String(N.svcTotal), 'across five service families', 'sky',
-        { v:'services', l:`Services on ${N.name}` })}
+      ${kpi('Total service instances', String(N.svcTotal), 'across five service families', 'sky')}
       ${kpi('Average SLA compliance', `${N.sla}%`, 'rolling 30 days', 'emerald')}
       ${kpi('Active customers', String(N.customers), 'with at least one live service', 'purple')}
       ${kpi('Services at risk', String(N.atRisk), 'degraded or above 90% utilisation', 'red')}
@@ -1040,8 +1033,8 @@ function nodeAlertsRouter(N) {
             </span>
           </div>`
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
-            [['INC-4471','Critical','30-Jun-2026 12:34','Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
-             ['INC-4468','Major','29-Jun-2026 22:48','Harish Kumar','At risk','Raise CPU threshold, schedule review']]
+            [['INC-4471','Critical',agoStamp(40, false),'Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
+             ['INC-4468','Major',agoStamp(1620, false),'Harish Kumar','At risk','Raise CPU threshold, schedule review']]
             .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
@@ -1475,10 +1468,10 @@ function nodeConfigEnodeb(N) {
         <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
         <div style="margin-top:var(--vw-space-md)">
           ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
-            E.config.map(c => [
+            E.config.map((c, i) => [
               chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
               c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
-              '12-May-2026', '12-May-2026'
+              '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
             ]), '', () => [])}
         </div>`)}
       </div>
@@ -1603,7 +1596,6 @@ function viewNode() {
        whatever class picks up Node View next without a feed of its own:
        stay honest about that instead of fabricating a dashboard */
     return `<div class="page">
-      ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
       ${nodeHeader(N)}
       ${card(`
@@ -1651,7 +1643,6 @@ function viewNode() {
   }
 
   return `<div class="page">
-    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`)}
     ${drillBar()}
     ${nodeHeader(N)}
 

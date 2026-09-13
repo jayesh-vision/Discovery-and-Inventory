@@ -16,6 +16,14 @@ function relativeTimestamp(hoursAgo) {
   const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())} IST`;
 }
+/* same idea as relativeTimestamp, minute precision and no IST suffix — for
+   the "last sync"/"last auth"/alarm-timestamp style fields, so a page never
+   shows a fixed date that quietly falls further out of date every day */
+function agoStamp(minsAgo, withSeconds) {
+  const d = new Date(Date.now() - minsAgo * 60000);
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${withSeconds ? ':' + pad2(d.getSeconds()) : ''}`;
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${time}`;
+}
 const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;

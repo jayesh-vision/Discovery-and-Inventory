@@ -18,6 +18,14 @@ function relativeTimestamp(hoursAgo) {
   const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())} IST`;
 }
+/* same idea as relativeTimestamp, minute precision and no IST suffix — for
+   the "last sync"/"last auth"/alarm-timestamp style fields, so a page never
+   shows a fixed date that quietly falls further out of date every day */
+function agoStamp(minsAgo, withSeconds) {
+  const d = new Date(Date.now() - minsAgo * 60000);
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${withSeconds ? ':' + pad2(d.getSeconds()) : ''}`;
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${time}`;
+}
 const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;
@@ -1194,25 +1202,29 @@ const LINK_TABS = [
   { k:'lldp', n:'LLDP', c:5549 }, { k:'ospf', n:'OSPF', c:1382 },
   { k:'bgp',  n:'BGP',  c:604 },  { k:'isis', n:'ISIS', c:311 }
 ];
+/* every link — whichever protocol reported it — names both ends the same
+   way: a real NE hostname (sne/dne) and that NE's own IP (sip/dip). OSPF,
+   BGP and ISIS used to leave dne holding the peer's IP with no hostname at
+   all; that's fixed below by naming the peer NE and moving its IP to dip. */
 const LINKS = {
   lldp: [
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
-    { st:'up',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dif:'Gi0/0/10',       name:'—',              v:3 },
-    { st:'up', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
-    { st:'down',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dif:'TenGigE0/0/0/18',name:'—',             v:168 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/1',      dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.101', dif:'Gi0/0/1',        name:'BB:NDLS-PSA 1G', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Te0/0/12',     dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.102', dif:'Te0/0/12.SI.612',name:'BB:NDLS-PSA 10G',v:3 },
+    { st:'up',sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'Gi0/0/0.SI.14',dne:'PSA-C920-WIFI1-T4-ER', dip:'172.31.33.103', dif:'Gi0/0/10',       name:'—',              v:3 },
+    { st:'up', sne:'Kalindi-J1.1K-DU-T4-NR',sip:'172.31.35.151',sif:'ge-0/1/1',     dne:'Janki-J1.1K-DU-T4-NR', dip:'172.31.35.152', dif:'ge-0/1/0',       name:'BB:to Kalindi', v:5 },
+    { st:'down',sne:'SBI_JANAKPURI-J2.2K-PE-T4',sip:'172.31.35.81',sif:'xe-0/3/1',  dne:'CCRAS-JANAKPURI-N540X',dip:'172.31.35.82', dif:'TenGigE0/0/0/18',name:'—',             v:168 }
   ],
   ospf: [
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
-    { st:'down',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'NDLS-J960-P_R1-T1-SR', dip:'172.31.33.101', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'up', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'area 0.0.0.0', dne:'NDLS-J960-P_R1-T1-ER', dip:'172.31.33.109', dif:'full(8)', name:'IGP backbone', v:3 },
+    { st:'down',sne:'MAS-N7750-BNG-R-T1-SR',sip:'172.31.33.130',sif:'area 0.0.0.1', dne:'MAS-N7750-BNG-R-T1-NR', dip:'172.31.33.131', dif:'down(1)', name:'IGP south',    v:6264 }
   ],
   bgp: [
-    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
-    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'BGLK-ASR9010-PE-T1', dip:'172.31.53.252', dif:'established(6)', name:'iBGP RR', v:3 },
+    { st:'established', sne:'NDLS-J960-P_R1-T1-NR', sip:'172.31.33.100', sif:'AS 24186', dne:'BGLK-NCS540-PE-T3', dip:'172.31.53.249', dif:'established(6)', name:'iBGP RR', v:3 }
   ],
   isis: [
-    { st:'up', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
+    { st:'up', sne:'VZG-N540X-PE-T4-NR', sip:'172.31.53.186', sif:'L2', dne:'VZG-N540X-PE-T4-SR', dip:'172.31.53.187', dif:'up', name:'ISIS L2', v:10 }
   ]
 };
 
@@ -1261,23 +1273,23 @@ VNFS.push(...VNF_PAD);
 
 LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({ ...r, st: i % 5 === 4 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
-  dne: PAD_NE[(i + 5) % PAD_NE.length], dif: PAD_IF[(i + 3) % PAD_IF.length],
+  dne: PAD_NE[(i + 5) % PAD_NE.length], dip: PAD_IP(i + 30), dif: PAD_IF[(i + 3) % PAD_IF.length],
   name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
   v: [3, 5, 8, 26][i % 4] }));
 LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
-  dne: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
+  dne: PAD_NE[(i + 7) % PAD_NE.length], dip: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
   name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3] }));
 LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
   return { ...r, st,
     sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `AS ${24186 + (i % 2 ? 0 : 9498)}`,
-    dne: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
+    dne: PAD_NE[(i + 11) % PAD_NE.length], dip: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
     name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3] };
 });
 LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({ ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: i % 3 ? 'L2' : 'L1L2',
-  dne: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3] }));
+  dne: PAD_NE[(i + 4) % PAD_NE.length], dip: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3] }));
 
 SERVICES.l3vpn = padList(SERVICES.l3vpn, 12, (r, i) => ({ ...r,
   st: i % 5 === 3 ? 'Down' : 'Up', chip: i % 5 === 3 ? 'error' : 'success',
@@ -1561,14 +1573,25 @@ const CAPEX = {
     ]
   }
 };
+/* only the actual network equipment rows carry a linked-element value —
+   civil, power, installation and spares have none in BGLK-277's own
+   hand-authored data either, so the generated sites stay consistent with
+   that rather than inventing links for line items that aren't a device */
+const CAPEX_NE_BY_BASE_ROW = {
+  0: (id, q) => `${id}-MX960-CORE-01${q > 1 ? ` +${q - 1}` : ''}`,
+  1: (id, q) => `${id}-MX204-AGG-01${q > 1 ? ` ×${q}` : ''}`,
+  2: (id, q) => `${id}-ACC-SW-01${q > 1 ? `…${String(q).padStart(2, '0')}` : ''}`
+};
 function capexOf(id, ne) {
   if (CAPEX[id]) return CAPEX[id];
   const scale = Math.max(0.25, ne / 25), base = CAPEX['BGLK-277'], pick = [0,1,2,4,5,7,9,11];
   const items = pick.map((i, j) => {
-    const b = base.items[i];
-    return { ...b, q: Math.max(1, Math.round(b.q * scale * 0.5)),
+    const b = base.items[i], q = Math.max(1, Math.round(b.q * scale * 0.5));
+    const neGen = CAPEX_NE_BY_BASE_ROW[i];
+    return { ...b, q,
       u: Math.round(b.u * (0.55 + (j % 4) * 0.12) / 1000) * 1000,
-      po: b.po === '—' ? '—' : `PO-2024-${1200 + j * 13}`, ne: '—' };
+      po: b.po === '—' ? '—' : `PO-2024-${1200 + j * 13}`,
+      ne: neGen ? neGen(id, q) : '—' };
   });
   const committed = items.reduce((a, r) => a + r.q * r.u, 0);
   return {
@@ -2207,7 +2230,8 @@ const FS = {
      viewLinks() (linkFS) — the field must stay named 'Status' for that
      f.n === 'Status' match to find it */
   links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
-             { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
+             { n:'Source IP' }, { n:'Destination NE' }, { n:'Destination IP' },
+             { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
              { n:'ERP number' }, { n:'Source IP' }],
   inactive: [{ n:'Name' }, { n:'Serial number' }, { n:'Vendor' }, { n:'Reason' },
@@ -2868,9 +2892,11 @@ function viewInsights() {
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
 /* Every figure on this screen is read off JOBS against one clock: the cycle
-   that closed at 01-Sep-2026 09:19. Nothing here is a literal — a count that
-   cannot be traced back to a row does not belong on the screen. */
-const JOB_NOW = new Date(2026, 8, 1, 9, 19);
+   that closes at 09:19 today. Nothing here is a literal — a count that
+   cannot be traced back to a row does not belong on the screen. Today, not a
+   fixed 2026 date, so the whole screen — last run, next run, overdue — stays
+   true to the day it's actually viewed rather than ageing into the past. */
+const JOB_NOW = (() => { const d = new Date(); d.setHours(9, 19, 0, 0); return d; })();
 const jobAt = s => {
   const [d, t] = String(s).split(' '), [dd, mon, yy] = d.split('-'), [hh, mi] = (t || '00:00').split(':');
   return new Date(Number(yy), DK_MON.indexOf(mon), Number(dd), Number(hh), Number(mi));
@@ -2894,6 +2920,35 @@ function cadenceH(sched) {
   return null;
 }
 const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
+
+/* Every job's authored "last run" was a single date frozen at file-write
+   time; recomputed here against JOB_NOW and the job's own cadence so it —
+   and everything derived from it, like jobOverdue and the KPI counts below —
+   stays true to "today" whenever this loads, not just on the day this file
+   was written. On-demand jobs have no cadence to recompute against, and
+   DSC-DWDM-RING's "No adapter" collector is stale on purpose — that's the
+   whole point of the row — so both keep their authored value. */
+JOBS.forEach(j => {
+  if (j.state === 'No adapter') return;
+  const c = cadenceH(j.sched);
+  if (c === null) return;
+  const timeMatch = /(\d{1,2}):(\d{2})/.exec(j.sched);
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].findIndex(x => j.sched.includes(x));
+  const d = new Date(JOB_NOW);
+  if (/^Weekly/i.test(j.sched) && wd !== -1) {
+    const [hh, mm] = timeMatch ? [+timeMatch[1], +timeMatch[2]] : [0, 0];
+    d.setHours(hh, mm, 0, 0);
+    let back = (JOB_NOW.getDay() - wd + 7) % 7;
+    if (back === 0 && d > JOB_NOW) back = 7;
+    d.setDate(d.getDate() - back);
+  } else if (timeMatch) {
+    d.setHours(+timeMatch[1], +timeMatch[2], 0, 0);
+    if (d > JOB_NOW) d.setDate(d.getDate() - 1);
+  } else {
+    d.setTime(JOB_NOW.getTime() - c * 3600000);
+  }
+  j.last = `${pad2(d.getDate())}-${DK_MON[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+});
 
 const jobHeld    = j => j.next === 'held';
 const jobRunning = j => j.state === 'Running';
@@ -4399,8 +4454,6 @@ function viewSite() {
   };
 
   return `<div class="page">
-    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`)}
-
     ${card(`
       <div class="chip-row">${chip(l.st, l.chip, true)}${chip(l.cat, l.ct==='amber'?'warning':l.ct==='sky'?'info':'success')}
         ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
@@ -5156,15 +5209,16 @@ function sectionTone(title) {
   return 'slate';
 }
 
+/* only ever called with fields that already passed isFilled — a resource
+   detail screen shows what it knows, not a placeholder for what it doesn't */
 const detailField = ([k, v]) => {
-  const empty = v === '-' || v === '' || v == null;
   const label = humanizeLabel(k);
   const technical = TECH_FIELD_RE.test(k);
   return `<div class="meta-cell detail-field">
     <span class="vw-label">${esc(label)}</span>
     <span class="row detail-field-vrow">
-      <span class="vw-value${technical && !empty ? ' mono' : ''}${empty ? ' is-empty' : ''}"${!empty ? ` title="${esc(v)}"` : ''}>${empty ? 'Not available' : esc(v)}</span>
-      ${!empty && technical ? `<button class="detail-field-copy" data-copy="${esc(v)}" aria-label="Copy ${esc(label)}" title="Copy ${esc(label)}">${kIcon('Copy')}</button>` : ''}
+      <span class="vw-value${technical ? ' mono' : ''}" title="${esc(v)}">${esc(v)}</span>
+      ${technical ? `<button class="detail-field-copy" data-copy="${esc(v)}" aria-label="Copy ${esc(label)}" title="Copy ${esc(label)}">${kIcon('Copy')}</button>` : ''}
     </span>
   </div>`;
 };
@@ -5186,14 +5240,10 @@ const dedupeByValue = fields => {
   });
 };
 /* a section leads with what's actually there; fields the record simply
-   doesn't carry sit behind a closed disclosure instead of padding the page
-   out with rows of "Not available" — the count badge is the section's own
-   completeness signal at a glance, and every field is still one click away,
-   never dropped */
+   doesn't carry are dropped rather than padding the page out with rows of
+   "Not available" — a reader only ever sees facts that are actually known */
 const detailSection = (title, fields) => {
-  const deduped = dedupeByValue(fields);
-  const populated = deduped.filter(isFilled);
-  const empty = deduped.filter(f => !isFilled(f));
+  const populated = dedupeByValue(fields).filter(isFilled);
   return `<div class="vw-card-section vw-card--accent detail-section">
   <div class="vw-card-accent" style="background:${cv(sectionTone(title), 400)}"></div>
   <div class="detail-section-head">
@@ -5202,10 +5252,6 @@ const detailSection = (title, fields) => {
   </div>
   ${populated.length ? detailFieldGrid(populated)
     : `<div class="detail-section-empty">No configuration data available for this section yet.</div>`}
-  ${empty.length ? `<details class="detail-more">
-    <summary>+${empty.length} more field${empty.length === 1 ? '' : 's'} · not configured</summary>
-    ${detailFieldGrid(empty)}
-  </details>` : ''}
 </div>`;
 };
 /* flows the section cards into a responsive 2-up column set instead of one
@@ -5258,22 +5304,26 @@ function resourceHead({ kind, name, status, meta }) {
     </div>`;
 }
 /* the handful of fields worth seeing before scrolling to the grouped detail
-   below — never invented, always a subset of the screen's own field list.
-   One bordered strip (the .stat-strip language, not a colour per item) so
-   it reads as a single row of facts rather than six unrelated boxes; the
-   Status field alone gets colour, because it is the one value here that
-   actually carries a state rather than just naming an attribute. */
-const resourceSummary = fields => fields.length ? `<div class="resdetail-summary">
-    ${fields.map(([k, v]) => {
-      const empty = v === '-' || v === '' || v == null;
+   below — never invented, always a subset of the screen's own field list,
+   and only ever the ones actually known. Card family with the header right
+   above it (same white/border/radius/sky-accent), not a bare row of text,
+   so the two read as one connected identity block. The Status field alone
+   gets colour, because it is the one value here that actually carries a
+   state rather than just naming an attribute. */
+const resourceSummary = fields => {
+  const filled = fields.filter(isFilled);
+  if (!filled.length) return '';
+  return `<div class="vw-card-section vw-card--accent resdetail-summary">
+    <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
+    ${filled.map(([k, v]) => {
       const label = humanizeLabel(k);
       const isStatus = k.toLowerCase() === 'status';
       return `<div class="resdetail-summary-item">
         <span class="vw-label">${esc(label)}</span>${
-          isStatus && !empty ? statusBadge(v)
-          : `<span class="vw-value${empty ? ' is-empty' : ''}">${empty ? 'Not available' : esc(v)}</span>`}</div>`;
+          isStatus ? statusBadge(v) : `<span class="vw-value">${esc(v)}</span>`}</div>`;
     }).join('')}
-  </div>` : '';
+  </div>`;
+};
 
 /* ── Virtual Element Details (View) ─────────────────────── */
 let VNF_DETAIL_ID = null;
@@ -5446,7 +5496,9 @@ function viewVnfDetails() {
 
     ${resourceHead({
       kind: 'Virtual Resource · VDU', name: nf, status,
-      meta: [['Site type', 'VDU']]
+      meta: [['Site type', 'VDU'],
+        ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
+          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])]
     })}
 
     <div class="tabbar tabbar--detail">
@@ -5549,8 +5601,8 @@ function viewCell4gDetails() {
 
     ${resourceHead({
       kind: 'LTE cell · 4G', name: cellName, status: 'Ready',
-      meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1] ?? 'Not available'],
-        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1] ?? 'Not available']]
+      meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1]],
+        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1]]].filter(isFilled)
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSiteId', 'neType', 'cellBandCarrier', 'txrxMode']))}
@@ -5647,8 +5699,8 @@ function viewCell5gDetails() {
 
     ${resourceHead({
       kind: '5G NR cell', name: cellName, status: 'Ready',
-      meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1] ?? 'Not available'],
-        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1] ?? 'Not available']]
+      meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1]],
+        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1]]].filter(isFilled)
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSite', 'nrBandwidth', 'cellIdentity', 'numberOfRxPathsPerRU']))}
@@ -5675,11 +5727,10 @@ const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 
    and the wire are themselves the controls (open the element / copy the
    link name) rather than separate buttons bolted on below. */
 function linkDiagram(r) {
-  const node = label => `<button class="linkdiagram-node"${dA({ v: 'resource', l: label })}
-      title="Open ${esc(label)}" aria-label="Open ${esc(label)}">
+  const node = label => `<div class="linkdiagram-node is-static">
     <span class="linkdiagram-icon">${nodeThumb('router')}</span>
     <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
-  </button>`;
+  </div>`;
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
     ${node(r.sne)}
@@ -5714,7 +5765,7 @@ function linkViewDialog() {
         ${detailFieldGrid([
           ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
           ['Source NE', r.sne], ['Source IP', r.sip],
-          ['Destination NE', r.dne]
+          ['Destination NE', r.dne], ['Destination IP', r.dip]
         ])}
       </div>
     </div>`;
@@ -5751,17 +5802,18 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', linkFS, '',
+      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
         [], 'links')}
       ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
-               {t:'Destination NE'},{t:'Link name'}],
+               {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
         rows.map(r => [
           chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
           `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
-          `<span class="vw-value">${r.dne}</span>`,
+          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
         ]), '',
-        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}`)}
+        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
+        i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}
   </div>`;
 }
@@ -5769,18 +5821,19 @@ function viewLinks() {
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
 
-/* Cloud (the provider-side WAN boundary this attachment terminates on) and
-   the customer's own PE router as two nodes on a wire — the same canvas as
-   the Links page's node-linking diagram, badge and all: the wire carries a
-   small clickable label (copies the source interface), not a floating card
-   that would sit on top of the line, and the rest of the detail lives in
-   the field grid below instead. */
+/* The service attachment (provider-side WAN boundary this terminates on)
+   and the customer's own PE router as two nodes on a wire — the same canvas
+   as the Links page's node-linking diagram, badge and all, with the same
+   router icon on both ends: the wire carries a small clickable label
+   (copies the source interface), not a floating card that would sit on top
+   of the line, and the rest of the detail lives in the field grid below
+   instead. */
 function svcDiagram(r) {
-  const cloudLabel = `${r.name}_${r.erp}`;
+  const svcLabel = `${r.name}_${r.erp}`;
   return `<div class="linkdiagram-canvas">
     <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
-      <span class="linkdiagram-label" title="${esc(cloudLabel)}">${esc(cloudLabel)}</span>
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
     </span>
     <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
       title="Copy source interface: ${esc(r.ifc)}" aria-label="Copy source interface: ${esc(r.ifc)}">
@@ -5853,14 +5906,16 @@ function viewServices() {
                 `<span class="mono">L2:${s.erp}</span>`
               ];
             }), '',
-            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
             ]), '',
-            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))}`)}
     ${svcViewDialog()}
   </div>`;
 }
@@ -8288,16 +8343,23 @@ function nodeOf(name) {
 
   const ALARM = [
     { sev:'Critical', t:'Interface Flapping Detected', d:'Interface state changed 8 times in 20 minutes',
-      src:'Interface', at:'Interface', code:'ALM-1930', when:'30-Jun-2026 12:30:00' },
+      src:'Interface', at:'Interface', code:'ALM-1930', when:agoStamp(45, true) },
     { sev:'Major', t:'High CPU Utilization', d:'CPU sustained above 77% for 45 minutes',
-      src:'CPU', at:'CPU', code:'ALM-1831', when:'30-Jun-2026 14:05:00' },
+      src:'CPU', at:'CPU', code:'ALM-1831', when:agoStamp(20, true) },
     { sev:'Major', t:'Link Degradation', d:'Latency increased to 12.4 ms, packet loss detected',
-      src:'Link', at:'Link', code:'ALM-1774', when:'30-Jun-2026 09:12:00' },
+      src:'Link', at:'Link', code:'ALM-1774', when:agoStamp(180, true) },
     { sev:'Minor', t:'Temperature Warning', d:'Temperature elevated to 58°C in slot 3',
-      src:'Environment', at:'Thermal', code:'ALM-1610', when:'29-Jun-2026 22:41:00' },
+      src:'Environment', at:'Thermal', code:'ALM-1610', when:agoStamp(1580, true) },
     { sev:'Warning', t:'Optical Rx drifting', d:'SFP on xe-0/0/4 down 0.4 dB per month',
-      src:'Optics', at:'Optical', code:'ALM-1502', when:'28-Jun-2026 06:20:00' }
+      src:'Optics', at:'Optical', code:'ALM-1502', when:agoStamp(3320, true) }
   ];
+
+  /* uptime and its reboot date derive from the same sampled duration, so the
+     two never disagree, and — since both are minutes-ago-from-now — neither
+     one silently ages into a stale-looking fixed date */
+  const upDays = sw ? nint(s, 34, 120, 420) : nint(s, 34, 12, 340);
+  const upHours = sw ? 0 : nint(s, 35, 0, 23);
+  const since = agoStamp(upDays * 1440 + upHours * 60, false).split(' ')[0];
 
   return {
     r, cls, meta, live: meta.live, name,
@@ -8305,16 +8367,16 @@ function nodeOf(name) {
     ov: { health, proto: protoRows.reduce((a, p) => a + p.a, 0),
           arp: sw ? nint(s, 32, 40, 120) : null,
           ifUp, ifTotal, alarms: nint(s, 33, 2, 9),
-          uptime: sw ? `${nint(s, 34, 120, 420)} Days` : `${nint(s, 34, 12, 340)}d ${nint(s, 35, 0, 23)}h`,
-          since: '10-Feb-2026' },
+          uptime: sw ? `${upDays} Days` : `${upDays}d ${upHours}h`,
+          since },
     icmp: { loss:+(nrand(s, 36, 0, 0.6)).toFixed(2), lat:+(nrand(s, 37, 0.7, 2.9)).toFixed(2),
             jit:+(nrand(s, 38, 0.1, 1.4)).toFixed(2), avail:+(nrand(s, 39, 98.4, 100)).toFixed(2),
             checked:'1 min ago', probe:'1:1' },
     ntp:  { off:+(nrand(s, 41, -1.4, 1.9)).toFixed(2), delay:+(nrand(s, 42, 0.4, 0.9)).toFixed(3),
             jit:+(nrand(s, 43, 0.1, 4.8)).toFixed(3), primary:'10.16.16.10', secondary:'10.16.16.11',
-            stratum:nint(s, 44, 2, 4), sync:'30-Jun-2026 11:10:00' },
+            stratum:nint(s, 44, 2, 4), sync:agoStamp(nint(s, 58, 1, 45), true) },
     rad:  { primary:'10.25.25.5', secondary:'10.25.25.6', ok:+(nrand(s, 45, 96.2, 99.9)).toFixed(1),
-            fails:nint(s, 46, 0, 6), last:'30-Jun-2026 11:47:00' },
+            fails:nint(s, 46, 0, 6), last:agoStamp(nint(s, 59, 1, 90), true) },
     avail: { icmp: strip(1, nint(s, 47, 3, 21)), ntp: strip(2, nint(s, 48, 3, 21)) },
     perf: { cpu, mem, temp, series, fc,
             fCpu: fc.cpu.vals[6], fMem: fc.mem.vals[6], fTemp: fc.temp.vals[6] },
@@ -8582,7 +8644,8 @@ function buildEnodebSite(s, r) {
   const GROWTH = ['100 Mbps', '500 Mbps', '1 Gbps', '2 Gbps', '5 Gbps', '10 Gbps'];
   const mkLink = (n, proto, i, off) => ({
     n, proto, util: nint(s, off + i, 6, 92), users: nint(s, off + 100 + i, 2000, 15000),
-    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026', modified: '12-May-2026'
+    growth: GROWTH[nint(s, off + 200 + i, 0, GROWTH.length - 1)], created: '12-May-2026',
+    modified: agoStamp(nint(s, off + 300 + i, 60, 4320), false)
   });
   const links = {
     backhaul: [
@@ -8949,7 +9012,7 @@ function nodeOverviewSwitch(N) {
     nvTile('VLANs', '58', '52 Active · 6 Reserved', 'amber'),
     nvTile('Interface Status', '372/384', '372 up · 12 down', 'sky'),
     nvTile('Active Alerts', '7', '1 critical · 2 major · 4 minor · 0 warning', 'red'),
-    nvTile('System Uptime', '287 Days', 'Last reboot: Feb 12, 2026 05:30:00', 'purple')
+    nvTile('System Uptime', '287 Days', `Last reboot: ${agoStamp(287 * 1440, true)}`, 'purple')
   ];
   return card(`
     <div class="nv-tiles">${tiles.join('')}</div>
@@ -8960,15 +9023,15 @@ function nodeOverviewSwitch(N) {
         [['Packet Loss', '0.02%', '1200 sent'],
          ['Latency Avg', '7.62 ms', 'Min: 4.18'], ['Jitter', '1.24 ms', 'Max: 12.44'],
          ['Availability', '99.98%', 'Successful probes']],
-        `Last Sync: Jun 30, 2026 14:26:00 · Probe Interval: 1 hr`)}
+        `Last Sync: ${agoStamp(2, true)} · Probe Interval: 1 hr`)}
       ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
         [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
          ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
-        `Last Sync: Jun 30, 2026 14:10:00`)}
+        `Last Sync: ${agoStamp(18, true)}`)}
       ${nvHealthCard('RADIUS Auth', 'AAA Authentication',
         ['Healthy', 'success'],
         [['Primary DNS', '10.20.20.5 • Reachable'], ['Secondary DNS', '10.20.20.6 • Reachable']],
-        `Last Sync: Jun 30, 2026 14:05:00`)}
+        `Last Sync: ${agoStamp(25, true)}`)}
     </div>`);
 }
 
@@ -9020,10 +9083,7 @@ function nodeHardwareSwitch(N) {
                       : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
   const utilList = `
     <div class="cx-panel">
-      <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-        <span class="eyebrow">Interface utilisation</span>
-        <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
-      </div>
+      <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -9115,7 +9175,7 @@ function nodeLinksSwitch(N) {
       <div style="display:flex;align-items:center;gap:var(--vw-space-md)">
         ${chip('LLDP Protocol', 'info')}
         <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--vw-color-slate-100);border-radius:8px">
-          Last sync : Jun 30, 2026 14:30:00
+          Last sync : ${agoStamp(6, true)}
         </span>
       </div>
     </div>
@@ -9252,7 +9312,7 @@ function nodeAlertsSwitch(N) {
       d: 'Interface state changed 8 times in 20 minutes',
       src: 'Interface',
       at: 'Interface',
-      when: '30-Jun-2026 13:30:00',
+      when: agoStamp(35, true),
       code: 'ALM-1000',
       tone: 'red'
     },
@@ -9263,7 +9323,7 @@ function nodeAlertsSwitch(N) {
       d: 'CPU sustained above 75% for 45 minutes',
       src: 'Cpu',
       at: 'CPU',
-      when: '30-Jun-2026 12:45:00',
+      when: agoStamp(80, true),
       code: 'ALM-1001',
       tone: 'orange'
     },
@@ -9274,7 +9334,7 @@ function nodeAlertsSwitch(N) {
       d: 'Latency increased to 12.8ms, packet loss detected',
       src: 'Link',
       at: 'Link',
-      when: '30-Jun-2026 12:00:00',
+      when: agoStamp(125, true),
       code: 'ALM-1002',
       tone: 'orange'
     },
@@ -9285,7 +9345,7 @@ function nodeAlertsSwitch(N) {
       d: 'Optical receiver power temperature threshold crossed',
       src: 'SFP',
       at: 'Temperature',
-      when: '30-Jun-2026 11:15:00',
+      when: agoStamp(210, true),
       code: 'ALM-1003',
       tone: 'amber'
     }
@@ -9483,10 +9543,7 @@ function nodeHardwareRouter(N) {
                       : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
   const utilList = `
     <div class="cx-panel">
-      <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-        <span class="eyebrow">Interface utilisation</span>
-        <button class="nst-btn nst-btn--xs"${dA({ v:'resource', l:`Interfaces · ${N.name}` })}>Open all</button>
-      </div>
+      <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
           const d = nint(N.name, 2200 + x, -6, 9);
@@ -9803,8 +9860,7 @@ function nodeServicesRouter(N) {
     </div>
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
-      ${kpi('Total service instances', String(N.svcTotal), 'across five service families', 'sky',
-        { v:'services', l:`Services on ${N.name}` })}
+      ${kpi('Total service instances', String(N.svcTotal), 'across five service families', 'sky')}
       ${kpi('Average SLA compliance', `${N.sla}%`, 'rolling 30 days', 'emerald')}
       ${kpi('Active customers', String(N.customers), 'with at least one live service', 'purple')}
       ${kpi('Services at risk', String(N.atRisk), 'degraded or above 90% utilisation', 'red')}
@@ -9923,8 +9979,8 @@ function nodeAlertsRouter(N) {
             </span>
           </div>`
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
-            [['INC-4471','Critical','30-Jun-2026 12:34','Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
-             ['INC-4468','Major','29-Jun-2026 22:48','Harish Kumar','At risk','Raise CPU threshold, schedule review']]
+            [['INC-4471','Critical',agoStamp(40, false),'Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
+             ['INC-4468','Major',agoStamp(1620, false),'Harish Kumar','At risk','Raise CPU threshold, schedule review']]
             .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
@@ -10358,10 +10414,10 @@ function nodeConfigEnodeb(N) {
         <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
         <div style="margin-top:var(--vw-space-md)">
           ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
-            E.config.map(c => [
+            E.config.map((c, i) => [
               chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
               c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
-              '12-May-2026', '12-May-2026'
+              '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
             ]), '', () => [])}
         </div>`)}
       </div>
@@ -10486,7 +10542,6 @@ function viewNode() {
        whatever class picks up Node View next without a feed of its own:
        stay honest about that instead of fabricating a dashboard */
     return `<div class="page">
-      ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc}`)}
       ${drillBar()}
       ${nodeHeader(N)}
       ${card(`
@@ -10534,7 +10589,6 @@ function viewNode() {
   }
 
   return `<div class="page">
-    ${pageHead(`${nodeViewLabel(N.cls)} · ${N.name}`, `${N.meta.n} · ${N.r.ip} · ${N.r.loc} · live assurance view`)}
     ${drillBar()}
     ${nodeHeader(N)}
 

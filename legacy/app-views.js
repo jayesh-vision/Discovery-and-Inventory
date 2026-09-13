@@ -280,9 +280,11 @@ function viewInsights() {
 
 /* ══ 2 · SCAN JOBS ════════════════════════════════════════ */
 /* Every figure on this screen is read off JOBS against one clock: the cycle
-   that closed at 01-Sep-2026 09:19. Nothing here is a literal — a count that
-   cannot be traced back to a row does not belong on the screen. */
-const JOB_NOW = new Date(2026, 8, 1, 9, 19);
+   that closes at 09:19 today. Nothing here is a literal — a count that
+   cannot be traced back to a row does not belong on the screen. Today, not a
+   fixed 2026 date, so the whole screen — last run, next run, overdue — stays
+   true to the day it's actually viewed rather than ageing into the past. */
+const JOB_NOW = (() => { const d = new Date(); d.setHours(9, 19, 0, 0); return d; })();
 const jobAt = s => {
   const [d, t] = String(s).split(' '), [dd, mon, yy] = d.split('-'), [hh, mi] = (t || '00:00').split(':');
   return new Date(Number(yy), DK_MON.indexOf(mon), Number(dd), Number(hh), Number(mi));
@@ -306,6 +308,35 @@ function cadenceH(sched) {
   return null;
 }
 const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
+
+/* Every job's authored "last run" was a single date frozen at file-write
+   time; recomputed here against JOB_NOW and the job's own cadence so it —
+   and everything derived from it, like jobOverdue and the KPI counts below —
+   stays true to "today" whenever this loads, not just on the day this file
+   was written. On-demand jobs have no cadence to recompute against, and
+   DSC-DWDM-RING's "No adapter" collector is stale on purpose — that's the
+   whole point of the row — so both keep their authored value. */
+JOBS.forEach(j => {
+  if (j.state === 'No adapter') return;
+  const c = cadenceH(j.sched);
+  if (c === null) return;
+  const timeMatch = /(\d{1,2}):(\d{2})/.exec(j.sched);
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].findIndex(x => j.sched.includes(x));
+  const d = new Date(JOB_NOW);
+  if (/^Weekly/i.test(j.sched) && wd !== -1) {
+    const [hh, mm] = timeMatch ? [+timeMatch[1], +timeMatch[2]] : [0, 0];
+    d.setHours(hh, mm, 0, 0);
+    let back = (JOB_NOW.getDay() - wd + 7) % 7;
+    if (back === 0 && d > JOB_NOW) back = 7;
+    d.setDate(d.getDate() - back);
+  } else if (timeMatch) {
+    d.setHours(+timeMatch[1], +timeMatch[2], 0, 0);
+    if (d > JOB_NOW) d.setDate(d.getDate() - 1);
+  } else {
+    d.setTime(JOB_NOW.getTime() - c * 3600000);
+  }
+  j.last = `${pad2(d.getDate())}-${DK_MON[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+});
 
 const jobHeld    = j => j.next === 'held';
 const jobRunning = j => j.state === 'Running';
@@ -1814,8 +1845,6 @@ function viewSite() {
   };
 
   return `<div class="page">
-    ${pageHead(l.name, `${l.type} · ${l.id} · ${l.city}, ${l.state}`)}
-
     ${card(`
       <div class="chip-row">${chip(l.st, l.chip, true)}${chip(l.cat, l.ct==='amber'?'warning':l.ct==='sky'?'info':'success')}
         ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
@@ -2571,15 +2600,16 @@ function sectionTone(title) {
   return 'slate';
 }
 
+/* only ever called with fields that already passed isFilled — a resource
+   detail screen shows what it knows, not a placeholder for what it doesn't */
 const detailField = ([k, v]) => {
-  const empty = v === '-' || v === '' || v == null;
   const label = humanizeLabel(k);
   const technical = TECH_FIELD_RE.test(k);
   return `<div class="meta-cell detail-field">
     <span class="vw-label">${esc(label)}</span>
     <span class="row detail-field-vrow">
-      <span class="vw-value${technical && !empty ? ' mono' : ''}${empty ? ' is-empty' : ''}"${!empty ? ` title="${esc(v)}"` : ''}>${empty ? 'Not available' : esc(v)}</span>
-      ${!empty && technical ? `<button class="detail-field-copy" data-copy="${esc(v)}" aria-label="Copy ${esc(label)}" title="Copy ${esc(label)}">${kIcon('Copy')}</button>` : ''}
+      <span class="vw-value${technical ? ' mono' : ''}" title="${esc(v)}">${esc(v)}</span>
+      ${technical ? `<button class="detail-field-copy" data-copy="${esc(v)}" aria-label="Copy ${esc(label)}" title="Copy ${esc(label)}">${kIcon('Copy')}</button>` : ''}
     </span>
   </div>`;
 };
@@ -2601,14 +2631,10 @@ const dedupeByValue = fields => {
   });
 };
 /* a section leads with what's actually there; fields the record simply
-   doesn't carry sit behind a closed disclosure instead of padding the page
-   out with rows of "Not available" — the count badge is the section's own
-   completeness signal at a glance, and every field is still one click away,
-   never dropped */
+   doesn't carry are dropped rather than padding the page out with rows of
+   "Not available" — a reader only ever sees facts that are actually known */
 const detailSection = (title, fields) => {
-  const deduped = dedupeByValue(fields);
-  const populated = deduped.filter(isFilled);
-  const empty = deduped.filter(f => !isFilled(f));
+  const populated = dedupeByValue(fields).filter(isFilled);
   return `<div class="vw-card-section vw-card--accent detail-section">
   <div class="vw-card-accent" style="background:${cv(sectionTone(title), 400)}"></div>
   <div class="detail-section-head">
@@ -2617,10 +2643,6 @@ const detailSection = (title, fields) => {
   </div>
   ${populated.length ? detailFieldGrid(populated)
     : `<div class="detail-section-empty">No configuration data available for this section yet.</div>`}
-  ${empty.length ? `<details class="detail-more">
-    <summary>+${empty.length} more field${empty.length === 1 ? '' : 's'} · not configured</summary>
-    ${detailFieldGrid(empty)}
-  </details>` : ''}
 </div>`;
 };
 /* flows the section cards into a responsive 2-up column set instead of one
@@ -2673,22 +2695,26 @@ function resourceHead({ kind, name, status, meta }) {
     </div>`;
 }
 /* the handful of fields worth seeing before scrolling to the grouped detail
-   below — never invented, always a subset of the screen's own field list.
-   One bordered strip (the .stat-strip language, not a colour per item) so
-   it reads as a single row of facts rather than six unrelated boxes; the
-   Status field alone gets colour, because it is the one value here that
-   actually carries a state rather than just naming an attribute. */
-const resourceSummary = fields => fields.length ? `<div class="resdetail-summary">
-    ${fields.map(([k, v]) => {
-      const empty = v === '-' || v === '' || v == null;
+   below — never invented, always a subset of the screen's own field list,
+   and only ever the ones actually known. Card family with the header right
+   above it (same white/border/radius/sky-accent), not a bare row of text,
+   so the two read as one connected identity block. The Status field alone
+   gets colour, because it is the one value here that actually carries a
+   state rather than just naming an attribute. */
+const resourceSummary = fields => {
+  const filled = fields.filter(isFilled);
+  if (!filled.length) return '';
+  return `<div class="vw-card-section vw-card--accent resdetail-summary">
+    <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
+    ${filled.map(([k, v]) => {
       const label = humanizeLabel(k);
       const isStatus = k.toLowerCase() === 'status';
       return `<div class="resdetail-summary-item">
         <span class="vw-label">${esc(label)}</span>${
-          isStatus && !empty ? statusBadge(v)
-          : `<span class="vw-value${empty ? ' is-empty' : ''}">${empty ? 'Not available' : esc(v)}</span>`}</div>`;
+          isStatus ? statusBadge(v) : `<span class="vw-value">${esc(v)}</span>`}</div>`;
     }).join('')}
-  </div>` : '';
+  </div>`;
+};
 
 /* ── Virtual Element Details (View) ─────────────────────── */
 let VNF_DETAIL_ID = null;
@@ -2861,7 +2887,9 @@ function viewVnfDetails() {
 
     ${resourceHead({
       kind: 'Virtual Resource · VDU', name: nf, status,
-      meta: [['Site type', 'VDU']]
+      meta: [['Site type', 'VDU'],
+        ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
+          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])]
     })}
 
     <div class="tabbar tabbar--detail">
@@ -2964,8 +2992,8 @@ function viewCell4gDetails() {
 
     ${resourceHead({
       kind: 'LTE cell · 4G', name: cellName, status: 'Ready',
-      meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1] ?? 'Not available'],
-        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1] ?? 'Not available']]
+      meta: [['Sector', pickFields(flatFields, ['sector'])[0]?.[1]],
+        ['Band', pickFields(flatFields, ['bandName'])[0]?.[1]]].filter(isFilled)
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSiteId', 'neType', 'cellBandCarrier', 'txrxMode']))}
@@ -3062,8 +3090,8 @@ function viewCell5gDetails() {
 
     ${resourceHead({
       kind: '5G NR cell', name: cellName, status: 'Ready',
-      meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1] ?? 'Not available'],
-        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1] ?? 'Not available']]
+      meta: [['NR band', pickFields(flatFields, ['nrBandName'])[0]?.[1]],
+        ['NR PCI', pickFields(flatFields, ['nrPci'])[0]?.[1]]].filter(isFilled)
     })}
 
     ${resourceSummary(pickFields(flatFields, ['coverageSite', 'nrBandwidth', 'cellIdentity', 'numberOfRxPathsPerRU']))}
@@ -3090,11 +3118,10 @@ const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 
    and the wire are themselves the controls (open the element / copy the
    link name) rather than separate buttons bolted on below. */
 function linkDiagram(r) {
-  const node = label => `<button class="linkdiagram-node"${dA({ v: 'resource', l: label })}
-      title="Open ${esc(label)}" aria-label="Open ${esc(label)}">
+  const node = label => `<div class="linkdiagram-node is-static">
     <span class="linkdiagram-icon">${nodeThumb('router')}</span>
     <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
-  </button>`;
+  </div>`;
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
     ${node(r.sne)}
@@ -3129,7 +3156,7 @@ function linkViewDialog() {
         ${detailFieldGrid([
           ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
           ['Source NE', r.sne], ['Source IP', r.sip],
-          ['Destination NE', r.dne]
+          ['Destination NE', r.dne], ['Destination IP', r.dip]
         ])}
       </div>
     </div>`;
@@ -3166,17 +3193,18 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE', linkFS, '',
+      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
         [], 'links')}
       ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
-               {t:'Destination NE'},{t:'Link name'}],
+               {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
         rows.map(r => [
           chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
           `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
-          `<span class="vw-value">${r.dne}</span>`,
+          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
         ]), '',
-        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }])}`)}
+        i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
+        i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}
   </div>`;
 }
@@ -3184,18 +3212,19 @@ function viewLinks() {
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
 
-/* Cloud (the provider-side WAN boundary this attachment terminates on) and
-   the customer's own PE router as two nodes on a wire — the same canvas as
-   the Links page's node-linking diagram, badge and all: the wire carries a
-   small clickable label (copies the source interface), not a floating card
-   that would sit on top of the line, and the rest of the detail lives in
-   the field grid below instead. */
+/* The service attachment (provider-side WAN boundary this terminates on)
+   and the customer's own PE router as two nodes on a wire — the same canvas
+   as the Links page's node-linking diagram, badge and all, with the same
+   router icon on both ends: the wire carries a small clickable label
+   (copies the source interface), not a floating card that would sit on top
+   of the line, and the rest of the detail lives in the field grid below
+   instead. */
 function svcDiagram(r) {
-  const cloudLabel = `${r.name}_${r.erp}`;
+  const svcLabel = `${r.name}_${r.erp}`;
   return `<div class="linkdiagram-canvas">
     <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
-      <span class="linkdiagram-label" title="${esc(cloudLabel)}">${esc(cloudLabel)}</span>
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
     </span>
     <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
       title="Copy source interface: ${esc(r.ifc)}" aria-label="Copy source interface: ${esc(r.ifc)}">
@@ -3268,14 +3297,16 @@ function viewServices() {
                 `<span class="mono">L2:${s.erp}</span>`
               ];
             }), '',
-            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
             ]), '',
-            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }])}`)}
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))}`)}
     ${svcViewDialog()}
   </div>`;
 }

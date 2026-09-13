@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { KpiCard, Segments } from '../components/KpiCard';
 import { Donut, LineChart } from '../components/charts';
@@ -21,7 +21,6 @@ function Fill({ used, total, label }: { used: number; total: number; label?: str
 }
 
 export default function SiteDetails() {
-  const nav = useNavigate();
   const { id = 'BGLK-277' } = useParams();
   const { l, head } = useSiteLocation(id);
   const f = facilityOf(l.id, l.ne);
@@ -96,7 +95,7 @@ export default function SiteDetails() {
           <div className="row vw-justify-between"><span className="vw-card-title">Floors, rooms and racks</span><span className="vw-card-description">{f.floors.length} floors · {rooms} rooms · {f.racks.length} racks</span></div>
           <table className="mtbl"><thead><tr><th>Rack</th><th>Floor · room</th><th>Role</th><th className="t-right">Height</th><th className="t-right">Used</th><th style={{ width: '22%' }}>U-space</th><th className="t-right">Draw</th></tr></thead>
             <tbody>{f.racks.map(r => (
-              <tr key={r.id} className="is-click" onClick={() => nav('/inventory/passive?tab=rack')}>
+              <tr key={r.id}>
                 <td className="vw-value mono">{r.id}</td><td>{r.floor} · {r.room}</td><td>{r.role}</td>
                 <td className="t-right num">{r.u} U</td><td className="t-right num">{r.used} U</td>
                 <td><Fill used={r.used} total={r.u} /></td>

@@ -196,6 +196,12 @@ button { font: inherit; }
 .linkdiagram-node:hover .linkdiagram-label, .linkdiagram-node:focus-visible .linkdiagram-label { color: var(--vw-color-sky-700); }
 .linkdiagram-node:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
 .linkdiagram-node:active .linkdiagram-icon { transform: scale(0.96); }
+/* the endpoints in the Node linking dialog are read-only — no drill target,
+   so they shouldn't hint at being clickable */
+.linkdiagram-node.is-static { cursor: default; }
+.linkdiagram-node.is-static:hover .linkdiagram-icon,
+.linkdiagram-node.is-static:active .linkdiagram-icon { background: var(--vw-color-sky-600); box-shadow: none; transform: none; }
+.linkdiagram-node.is-static:hover .linkdiagram-label { color: var(--vw-color-gray-800); }
 .linkdiagram-icon {
   width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -513,11 +519,12 @@ path.st.has-c:hover { fill-opacity: .78; }
    fragments floating on the page. Their accent runs down the right edge —
    scoped here rather than in the shared .vw-card--accent/.vw-card-accent
    pattern, which other cards (KPI cards, etc.) still carry on top. */
-.resdetail-head.vw-card--accent > .vw-card-accent, .detail-section.vw-card--accent > .vw-card-accent {
+.resdetail-head.vw-card--accent > .vw-card-accent, .detail-section.vw-card--accent > .vw-card-accent,
+.resdetail-summary.vw-card--accent > .vw-card-accent {
   top: 0; bottom: 0; left: auto; right: 0; width: 3px; height: auto;
   border-radius: 0 var(--vw-radius-lg) var(--vw-radius-lg) 0;
 }
-.resdetail-head { padding: var(--vw-space-lg) calc(var(--vw-space-xl) + 3px) var(--vw-space-lg) var(--vw-space-xl); }
+.resdetail-head, .resdetail-summary { padding: var(--vw-space-lg) calc(var(--vw-space-xl) + 3px) var(--vw-space-lg) var(--vw-space-xl); }
 .resdetail-kind { display: inline-block; font-size: 0.6875rem; font-weight: 600; color: var(--vw-color-sky-700);
   background: var(--vw-color-sky-50); text-transform: uppercase; letter-spacing: .03em;
   padding: 3px 8px; border-radius: var(--vw-radius-full); margin-bottom: 8px; }
@@ -526,14 +533,13 @@ path.st.has-c:hover { fill-opacity: .78; }
   margin-top: var(--vw-space-md); padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-gray-100); }
 @media (max-width: 640px) { .resdetail-meta-row { gap: var(--vw-space-md); } }
 
-/* one bordered strip of key facts (same visual language as .stat-strip)
-   instead of several separate boxes — a row of labelled values reads as
-   one cohesive unit rather than competing for attention with six colours */
-.resdetail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-lg); overflow: hidden; }
-.resdetail-summary-item { padding: 0.625rem 0.875rem; border-left: 1px solid var(--vw-color-slate-200); min-width: 0; }
-.resdetail-summary-item:first-child { border-left: 0; }
+/* the same card family as .resdetail-head/.detail-section (white, bordered,
+   radius-lg, sky accent) rather than a bare row of text — the header and
+   this strip sit directly on top of each other and should read as one
+   connected identity block, not two differently-styled fragments */
+.resdetail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; }
+.resdetail-summary-item { padding: 0.375rem 0.875rem; border-left: 1px solid var(--vw-color-slate-200); min-width: 0; }
+.resdetail-summary-item:first-child { padding-left: 0; border-left: 0; }
 .resdetail-summary-item .vw-label { display: block; margin-bottom: 4px; }
 .resdetail-summary-item .vw-value { font-size: 0.9375rem; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -570,17 +576,6 @@ path.st.has-c:hover { fill-opacity: .78; }
 .detail-field-copy { flex-shrink: 0; border: 0; background: transparent; cursor: pointer; padding: 2px;
   border-radius: 4px; display: inline-flex; color: var(--vw-color-gray-400); }
 .detail-field-copy:hover { color: var(--vw-color-gray-700); background: var(--vw-color-slate-100); }
-.vw-value.is-empty, .resdetail-summary-item .vw-value.is-empty { color: var(--vw-color-gray-400); font-weight: 400; }
-
-/* the disclosure for a section's unconfigured fields — collapsed by default */
-.detail-more { margin-top: var(--vw-space-sm); }
-.detail-more summary { cursor: pointer; font-size: 0.8125rem; color: var(--vw-color-gray-500); font-weight: 500;
-  list-style: none; padding: 6px 0; user-select: none; }
-.detail-more summary::-webkit-details-marker { display: none; }
-.detail-more summary::before { content: '\203a'; display: inline-block; margin-right: 6px; transition: transform .15s ease; }
-.detail-more[open] summary::before { transform: rotate(90deg); }
-.detail-more summary:hover { color: var(--vw-color-gray-800); }
-.detail-more .site-meta { margin-top: var(--vw-space-xs); padding-top: var(--vw-space-sm); border-top: 1px dashed var(--vw-color-gray-100); }
 
 /* a pill-style tab bar reserved for resource-detail screens — a modifier so
    every other .tabbar in the app (Passive, Links, Site, Node, ...) is unaffected */

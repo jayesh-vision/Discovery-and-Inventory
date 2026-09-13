@@ -63,15 +63,9 @@ export function useSiteLocation(id: string): { l: Location; head: SiteHead | nul
   return { l, head };
 }
 
-export function SiteHeader({ l, head }: { l: Location; head: SiteHead | null }) {
+export function SiteHeader({ head }: { l: Location; head: SiteHead | null }) {
   return (
     <>
-      <div className="page-head">
-        <div className="stack-x" style={{ maxWidth: '70ch' }}>
-          <h1 className="vw-page-title" style={{ margin: 0 }}>{l.name}</h1>
-          <p className="vw-page-description" style={{ margin: 0 }}>{head?.sub ?? `${l.type} · ${l.id} · ${l.city}, ${l.state}`}</p>
-        </div>
-      </div>
       {head && (
         <>
           <Card style={{ padding: 'var(--vw-space-md) var(--vw-space-lg)' }}>

@@ -334,7 +334,8 @@ const FS = {
      viewLinks() (linkFS) — the field must stay named 'Status' for that
      f.n === 'Status' match to find it */
   links:    [{ n:'Status', o:['Up','Down','Established','Idle','Active','Connect'] }, { n:'Source NE' },
-             { n:'Source IP' }, { n:'Destination NE' }, { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
+             { n:'Source IP' }, { n:'Destination NE' }, { n:'Destination IP' },
+             { n:'Protocol', o:['LLDP','OSPF','BGP','ISIS'] }],
   services: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'VRF — RD' },
              { n:'ERP number' }, { n:'Source IP' }],
   inactive: [{ n:'Name' }, { n:'Serial number' }, { n:'Vendor' }, { n:'Reason' },
