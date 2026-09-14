@@ -269,7 +269,7 @@ export default function Reconcile() {
                     <Chip tone={open ? 'orange' : 'neutral'}>{open} still open</Chip>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', paddingLeft: 'var(--vw-space-md)' }}>
+                <div style={{ textAlign: 'right', paddingLeft: 'var(--vw-space-md)', paddingRight: 'var(--vw-space-sm)' }}>
                   <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(rate >= 60 ? 'emerald' : 'amber', 700), lineHeight: 1.1 }}>{rate}%</div>
                   <div className="vw-card-metric-label-sub">resolved</div>
                 </div>

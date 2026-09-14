@@ -83,12 +83,21 @@ const RES_CONFIG = {
   ]
 };
 
+/* minsAgo, not a fixed date — each entry is really "N minutes before
+   whenever this loads", the same relative-timestamp technique already used
+   for the Scan Target transcript's Run history table, so this list reads
+   as real recent activity instead of a fixed snapshot that quietly slides
+   further into the past every day. Gaps between entries are preserved from
+   the original authored dates; entry 1 (6 h) matches the xe-0/0/5 row's own
+   `chg` field on the Interfaces tab — same event, same age, on purpose.
+   "Record created" is a genuine historical anchor, not a rolling one, so
+   it keeps a fixed date rather than a minsAgo offset. */
 const RES_HISTORY = [
-  { at:'01-Sep-2026 09:19', who:'discovery', f:'Interface xe-0/0/5', from:'up',           to:'down',            src:'Device collector' },
-  { at:'30-Aug-2026 03:09', who:'discovery', f:'OS version',         from:'21.2R3-S8.4',  to:'21.2R3-S8.5',     src:'Device collector' },
-  { at:'29-Aug-2026 04:12', who:'fault mgmt',f:'Alarm',              from:'—',            to:'PEM 1 failure',   src:'Fault management' },
-  { at:'21-Jul-2026 11:02', who:'Gaurav Shukla', f:'Rack position',  from:'A · U40-41',   to:'A · U42-43',      src:'Manual' },
-  { at:'14-Jun-2026 16:44', who:'Harish Kumar',  f:'Stock state',    from:'In stock',     to:'Deployed',        src:'Workorder WO-2291' },
+  { minsAgo:360,    who:'discovery', f:'Interface xe-0/0/5', from:'up',           to:'down',            src:'Device collector' },
+  { minsAgo:2170,   who:'discovery', f:'OS version',         from:'21.2R3-S8.4',  to:'21.2R3-S8.5',     src:'Device collector' },
+  { minsAgo:3547,   who:'fault mgmt',f:'Alarm',              from:'—',            to:'PEM 1 failure',   src:'Fault management' },
+  { minsAgo:59297,  who:'Gaurav Shukla', f:'Rack position',  from:'A · U40-41',   to:'A · U42-43',      src:'Manual' },
+  { minsAgo:112235, who:'Harish Kumar',  f:'Stock state',    from:'In stock',     to:'Deployed',        src:'Workorder WO-2291' },
   { at:'02-Mar-2024 10:15', who:'CIQ import',    f:'Record created', from:'—',            to:'Planned',         src:'Planned · CIQ' }
 ];
 

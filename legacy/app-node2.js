@@ -857,13 +857,14 @@ function nodeLinksRouter(N) {
         ${chip(`${sel.k} Protocol`, 'info')}
       </div>
 
+      ${(() => { const rows = N.capRowsByProto[sel.k] || N.capRowsByProto.LLDP; return `
       <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--vw-space-xl);align-items:start">
         <div class="cx-panel" style="padding:14px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
           <div class="row vw-justify-between vw-items-center" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--vw-color-slate-100)">
-            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · ${sel.k}</span>
+            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${rows.length} Links in countdown · ${sel.k}</span>
           </div>
           <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:2px">
-            ${N.capRows.map((r, i) => `
+            ${rows.map((r, i) => `
               <button data-nlinksel="${i}" aria-pressed="${i === NODE_LINK_SEL}" style="width:100%;text-align:left;padding:10px 12px;border-radius:10px;
                 border:1.5px solid ${i === NODE_LINK_SEL ? '#0284c7' : 'var(--vw-color-slate-200)'};
                 background:${i === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};
@@ -887,9 +888,9 @@ function nodeLinksRouter(N) {
         </div>
 
         <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
-          ${renderLinkCapacityChart(N.capRows[NODE_LINK_SEL] || N.capRows[0], N.linkTrend, sel.k)}
+          ${renderLinkCapacityChart(rows[NODE_LINK_SEL] || rows[0], N.linkTrend, sel.k)}
         </div>
-      </div>`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
+      </div>`; })()}`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
 }
 
 function nodeServicesRouter(N) {
@@ -991,23 +992,21 @@ function nodeAlertsRouter(N) {
           </div>
           ${alertTab === 'alerts' ? `
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
-                <option>All severity</option>
-                <option>Critical</option>
-                <option>Major</option>
-                <option>Minor</option>
+              <select class="nst-input nst-input--sm" data-nalertsev style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                ${['All severity', 'Critical', 'Major', 'Minor', 'Warning'].map(v => `<option${NODE_ALERT_SEV === v ? ' selected' : ''}>${v}</option>`).join('')}
               </select>
-              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
-                <option>All sources</option>
-                <option>Interface</option>
-                <option>CPU</option>
-                <option>Memory</option>
+              <select class="nst-input nst-input--sm" data-nalertsrc style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                ${['All sources', 'Interface', 'CPU', 'Link', 'Memory', 'Environment', 'Optics'].map(v => `<option${NODE_ALERT_SRC === v ? ' selected' : ''}>${v}</option>`).join('')}
               </select>
             </div>` : ''}
         </div>
-        ${alertTab === 'alerts' ? `
+        ${alertTab === 'alerts' ? (() => {
+          const filtered = N.alarmsList
+            .filter(a => NODE_ALERT_SEV === 'All severity' || a.sev === NODE_ALERT_SEV)
+            .filter(a => NODE_ALERT_SRC === 'All sources' || a.src === NODE_ALERT_SRC);
+          return `
           <div class="stack-s">
-            ${N.alarmsList.map(a => `
+            ${filtered.length ? filtered.map(a => `
               <div class="nv-alarm" style="--nt:${cv(SEV[a.sev] === 'error' ? 'red' : SEV[a.sev] === 'warning' ? 'amber' : 'orange', 400)}">
                 <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-sm)">
                   <div class="stack-x grow" style="min-width:0">
@@ -1024,14 +1023,18 @@ function nodeAlertsRouter(N) {
                   <span class="nv-hk">Event start time</span><span class="vw-value num">${a.when}</span>
                   <span class="nv-hk">Alert code</span><span class="vw-value mono">${a.code}</span>
                 </div>
-              </div>`).join('')}
+              </div>`).join('')
+              : `<div class="vw-card-child-shaded" style="padding:var(--vw-space-lg);text-align:center">
+                   <span class="vw-card-description">No active alerts match ${NODE_ALERT_SEV !== 'All severity' ? esc(NODE_ALERT_SEV) : ''}${NODE_ALERT_SEV !== 'All severity' && NODE_ALERT_SRC !== 'All sources' ? ' · ' : ''}${NODE_ALERT_SRC !== 'All sources' ? esc(NODE_ALERT_SRC) : ''}.</span>
+                 </div>`}
           </div>
           <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
             <span class="legend">
               ${[['Critical','red'],['Major','amber'],['Minor','orange'],['Warning','slate']].map(([l, t]) =>
                 `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
             </span>
-          </div>`
+          </div>`;
+        })()
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
             [['INC-4471','Critical',agoStamp(40, false),'Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
              ['INC-4468','Major',agoStamp(1620, false),'Harish Kumar','At risk','Raise CPU threshold, schedule review']]

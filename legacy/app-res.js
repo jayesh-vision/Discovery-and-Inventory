@@ -207,7 +207,7 @@ function resHistory() {
         `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
     ${table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
-      hist.map(h => [`<span class="num">${h.at}</span>`,
+      hist.map(h => [`<span class="num">${h.minsAgo !== undefined ? agoStamp(h.minsAgo) : h.at}</span>`,
         h.who === 'discovery' || h.who === 'fault mgmt' || h.who === 'CIQ import'
           ? `<span class="mono" style="color:${cv('gray',500)}">${h.who}</span>` : `<span class="vw-value">${h.who}</span>`,
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,

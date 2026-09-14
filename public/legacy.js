@@ -2495,12 +2495,21 @@ const RES_CONFIG = {
   ]
 };
 
+/* minsAgo, not a fixed date — each entry is really "N minutes before
+   whenever this loads", the same relative-timestamp technique already used
+   for the Scan Target transcript's Run history table, so this list reads
+   as real recent activity instead of a fixed snapshot that quietly slides
+   further into the past every day. Gaps between entries are preserved from
+   the original authored dates; entry 1 (6 h) matches the xe-0/0/5 row's own
+   `chg` field on the Interfaces tab — same event, same age, on purpose.
+   "Record created" is a genuine historical anchor, not a rolling one, so
+   it keeps a fixed date rather than a minsAgo offset. */
 const RES_HISTORY = [
-  { at:'01-Sep-2026 09:19', who:'discovery', f:'Interface xe-0/0/5', from:'up',           to:'down',            src:'Device collector' },
-  { at:'30-Aug-2026 03:09', who:'discovery', f:'OS version',         from:'21.2R3-S8.4',  to:'21.2R3-S8.5',     src:'Device collector' },
-  { at:'29-Aug-2026 04:12', who:'fault mgmt',f:'Alarm',              from:'—',            to:'PEM 1 failure',   src:'Fault management' },
-  { at:'21-Jul-2026 11:02', who:'Gaurav Shukla', f:'Rack position',  from:'A · U40-41',   to:'A · U42-43',      src:'Manual' },
-  { at:'14-Jun-2026 16:44', who:'Harish Kumar',  f:'Stock state',    from:'In stock',     to:'Deployed',        src:'Workorder WO-2291' },
+  { minsAgo:360,    who:'discovery', f:'Interface xe-0/0/5', from:'up',           to:'down',            src:'Device collector' },
+  { minsAgo:2170,   who:'discovery', f:'OS version',         from:'21.2R3-S8.4',  to:'21.2R3-S8.5',     src:'Device collector' },
+  { minsAgo:3547,   who:'fault mgmt',f:'Alarm',              from:'—',            to:'PEM 1 failure',   src:'Fault management' },
+  { minsAgo:59297,  who:'Gaurav Shukla', f:'Rack position',  from:'A · U40-41',   to:'A · U42-43',      src:'Manual' },
+  { minsAgo:112235, who:'Harish Kumar',  f:'Stock state',    from:'In stock',     to:'Deployed',        src:'Workorder WO-2291' },
   { at:'02-Mar-2024 10:15', who:'CIQ import',    f:'Record created', from:'—',            to:'Planned',         src:'Planned · CIQ' }
 ];
 
@@ -6324,7 +6333,7 @@ function resHistory() {
         `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
     ${table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
-      hist.map(h => [`<span class="num">${h.at}</span>`,
+      hist.map(h => [`<span class="num">${h.minsAgo !== undefined ? agoStamp(h.minsAgo) : h.at}</span>`,
         h.who === 'discovery' || h.who === 'fault mgmt' || h.who === 'CIQ import'
           ? `<span class="mono" style="color:${cv('gray',500)}">${h.who}</span>` : `<span class="vw-value">${h.who}</span>`,
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,
@@ -8604,6 +8613,8 @@ function viewOpex() {
 let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
+let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */
+let NODE_ALERT_SRC = 'All sources';  /* Router Alerts & diagnostics: source filter */
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
@@ -8769,18 +8780,48 @@ function nodeOf(name) {
     { k:'LSP',  n:'Protocol Links', a:nint(s, 18, 1, 10), d:nint(s, 19, 0, 2), i:nint(s, 20, 0, 1), tone:'rose' }
   ];
 
-  const capRows = Array.from({ length: 5 }, (_, i) => {
+  /* one capacity-countdown link list PER PROTOCOL, so switching the
+     selected protocol card on the Router Links tab actually changes which
+     links are shown — every protocol used to reuse this same OSPF-flavoured
+     list, just relabelled by whichever protocol happened to be selected,
+     which read as "every protocol has identical links". Each set below has
+     its own seed offset, so the numbers differ meaningfully too, not just
+     the names. Switch's Links tab has no protocol switcher (always LLDP)
+     and keeps its own pre-existing sw-branch naming, computed separately
+     below so this change can't touch its output. */
+  const CAP_PROTO = {
+    OSPF: { off: 0,   n: i => `BB-T4 Akashvani-IC${i + 1}`, peer: i => `${['Akashvani','Vivekanand','Karolbagh','Rohini','Dwarka'][i]}-Shpantal`, ipBase: 10 },
+    ISIS: { off: 150, n: i => `L2-BB-${['Vivekanand','Karolbagh','Rohini','Dwarka','Akashvani'][i]}-IC${i + 1}`, peer: i => `${['Karolbagh','Rohini','Dwarka','Akashvani','Vivekanand'][i]}-ISIS-RTR`, ipBase: 21 },
+    BGP:  { off: 300, n: i => `AS24186-PEER-${i + 1}`, peer: i => ['Airtel-NIX','Tata-IX','Vodafone-Peer','Reliance-Transit','BSNL-Peer'][i], ipBase: 53 },
+    LLDP: { off: 450, n: i => `xe-0/0/${i + 1}`, peer: i => ['PSA-C920-WIFI1-T4-ER','Kalindi-J1.1K-DU-T4-NR','Janki-J1.1K-DU-T4-NR','NDLS-CORE-P-T1-NR','CCRAS-JANAKPURI-N540X'][i], ipBase: 38 },
+    LSP:  { off: 600, n: i => `LSP-Akashvani-T${i + 1}`, peer: i => `to-${['Vivekanand','Karolbagh','Rohini','Dwarka','Akashvani'][i]}`, ipBase: 70 }
+  };
+  const capRowsFor = proto => {
+    const m = CAP_PROTO[proto];
+    return Array.from({ length: 5 }, (_, i) => {
+      const util = nint(s, 700 + m.off + i, 46, 94);
+      return {
+        n: m.n(i), peer: m.peer(i),
+        sip: `10.${m.ipBase + i}.0.${i + 1}`, dip: `10.${m.ipBase + i}.0.${i + 2}`,
+        util, sess: nint(s, 800 + m.off + i, 4000, 9400),
+        fc: ['Jan 2026','Apr 2026','May 2026','Aug 2026','Nov 2026'][i],
+        growth: +(nrand(s, 900 + m.off + i, 2.4, 9.8)).toFixed(1),
+        tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
+      };
+    });
+  };
+  const capRowsByProto = { OSPF: capRowsFor('OSPF'), BGP: capRowsFor('BGP'), LLDP: capRowsFor('LLDP'), LSP: capRowsFor('LSP'), ISIS: capRowsFor('ISIS') };
+  const capRows = sw ? Array.from({ length: 5 }, (_, i) => {
     const util = nint(s, 700 + i, 46, 94);
     return {
-      n: sw ? `RTR-${['DEL','DEL','MUM','MUM','BLR'][i]}-0${i + 1}` : `BB-T4 Akashvani-IC${i + 1}`,
-      peer: sw ? `TenGigE0/${i}/0/2` : `${['Akashvani','Vivekanand','Karolbagh','Rohini','Dwarka'][i]}-Shpantal`,
+      n: `RTR-${['DEL','DEL','MUM','MUM','BLR'][i]}-0${i + 1}`, peer: `TenGigE0/${i}/0/2`,
       sip: `10.${10 + i}.0.${i + 1}`, dip: `10.${10 + i}.0.${i + 2}`,
       util, sess: nint(s, 800 + i, 4000, 9400),
       fc: ['Jan 2026','Apr 2026','May 2026','Aug 2026','Nov 2026'][i],
       growth: +(nrand(s, 900 + i, 2.4, 9.8)).toFixed(1),
       tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
     };
-  });
+  }) : capRowsByProto.LLDP;
   /* one capacity trend per protocol card — same deterministic-seed technique
      as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
      each get their own stable, plausible curve instead of sharing one */
@@ -8891,7 +8932,7 @@ function nodeOf(name) {
     enb: cls === 'enodeb' ? buildEnodebSite(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
+    sfp, protoRows, capRows, capRowsByProto, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),
@@ -10309,13 +10350,14 @@ function nodeLinksRouter(N) {
         ${chip(`${sel.k} Protocol`, 'info')}
       </div>
 
+      ${(() => { const rows = N.capRowsByProto[sel.k] || N.capRowsByProto.LLDP; return `
       <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--vw-space-xl);align-items:start">
         <div class="cx-panel" style="padding:14px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
           <div class="row vw-justify-between vw-items-center" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--vw-color-slate-100)">
-            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · ${sel.k}</span>
+            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${rows.length} Links in countdown · ${sel.k}</span>
           </div>
           <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:2px">
-            ${N.capRows.map((r, i) => `
+            ${rows.map((r, i) => `
               <button data-nlinksel="${i}" aria-pressed="${i === NODE_LINK_SEL}" style="width:100%;text-align:left;padding:10px 12px;border-radius:10px;
                 border:1.5px solid ${i === NODE_LINK_SEL ? '#0284c7' : 'var(--vw-color-slate-200)'};
                 background:${i === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};
@@ -10339,9 +10381,9 @@ function nodeLinksRouter(N) {
         </div>
 
         <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
-          ${renderLinkCapacityChart(N.capRows[NODE_LINK_SEL] || N.capRows[0], N.linkTrend, sel.k)}
+          ${renderLinkCapacityChart(rows[NODE_LINK_SEL] || rows[0], N.linkTrend, sel.k)}
         </div>
-      </div>`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
+      </div>`; })()}`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
 }
 
 function nodeServicesRouter(N) {
@@ -10443,23 +10485,21 @@ function nodeAlertsRouter(N) {
           </div>
           ${alertTab === 'alerts' ? `
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
-                <option>All severity</option>
-                <option>Critical</option>
-                <option>Major</option>
-                <option>Minor</option>
+              <select class="nst-input nst-input--sm" data-nalertsev style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                ${['All severity', 'Critical', 'Major', 'Minor', 'Warning'].map(v => `<option${NODE_ALERT_SEV === v ? ' selected' : ''}>${v}</option>`).join('')}
               </select>
-              <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
-                <option>All sources</option>
-                <option>Interface</option>
-                <option>CPU</option>
-                <option>Memory</option>
+              <select class="nst-input nst-input--sm" data-nalertsrc style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
+                ${['All sources', 'Interface', 'CPU', 'Link', 'Memory', 'Environment', 'Optics'].map(v => `<option${NODE_ALERT_SRC === v ? ' selected' : ''}>${v}</option>`).join('')}
               </select>
             </div>` : ''}
         </div>
-        ${alertTab === 'alerts' ? `
+        ${alertTab === 'alerts' ? (() => {
+          const filtered = N.alarmsList
+            .filter(a => NODE_ALERT_SEV === 'All severity' || a.sev === NODE_ALERT_SEV)
+            .filter(a => NODE_ALERT_SRC === 'All sources' || a.src === NODE_ALERT_SRC);
+          return `
           <div class="stack-s">
-            ${N.alarmsList.map(a => `
+            ${filtered.length ? filtered.map(a => `
               <div class="nv-alarm" style="--nt:${cv(SEV[a.sev] === 'error' ? 'red' : SEV[a.sev] === 'warning' ? 'amber' : 'orange', 400)}">
                 <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-sm)">
                   <div class="stack-x grow" style="min-width:0">
@@ -10476,14 +10516,18 @@ function nodeAlertsRouter(N) {
                   <span class="nv-hk">Event start time</span><span class="vw-value num">${a.when}</span>
                   <span class="nv-hk">Alert code</span><span class="vw-value mono">${a.code}</span>
                 </div>
-              </div>`).join('')}
+              </div>`).join('')
+              : `<div class="vw-card-child-shaded" style="padding:var(--vw-space-lg);text-align:center">
+                   <span class="vw-card-description">No active alerts match ${NODE_ALERT_SEV !== 'All severity' ? esc(NODE_ALERT_SEV) : ''}${NODE_ALERT_SEV !== 'All severity' && NODE_ALERT_SRC !== 'All sources' ? ' · ' : ''}${NODE_ALERT_SRC !== 'All sources' ? esc(NODE_ALERT_SRC) : ''}.</span>
+                 </div>`}
           </div>
           <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
             <span class="legend">
               ${[['Critical','red'],['Major','amber'],['Minor','orange'],['Warning','slate']].map(([l, t]) =>
                 `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
             </span>
-          </div>`
+          </div>`;
+        })()
         : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
             [['INC-4471','Critical',agoStamp(40, false),'Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
              ['INC-4468','Major',agoStamp(1620, false),'Harish Kumar','At risk','Raise CPU threshold, schedule review']]
@@ -11254,6 +11298,8 @@ function applyDrillQuery(view, q, label) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
+      NODE_ALERT_SEV = 'All severity';
+      NODE_ALERT_SRC = 'All sources';
       NODE_LINK_PROTO = 'LLDP';
       NODE_LINK_SEL = 0;
       NODE_HW_SEL = 'bbu';
@@ -11614,7 +11660,7 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
@@ -11801,6 +11847,12 @@ document.addEventListener('input', e => {
   }
   if (el.hasAttribute && el.hasAttribute('data-nperfsel')) {
     NODE_PERF = el.value; go('node'); return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-nalertsev')) {
+    NODE_ALERT_SEV = el.value; go('node'); return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-nalertsrc')) {
+    NODE_ALERT_SRC = el.value; go('node'); return;
   }
   if (el.hasAttribute && el.hasAttribute('data-gridsearch')) {
     const key = el.dataset.gridsearch, pos = el.selectionStart;

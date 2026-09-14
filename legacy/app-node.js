@@ -11,6 +11,8 @@
 let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
+let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */
+let NODE_ALERT_SRC = 'All sources';  /* Router Alerts & diagnostics: source filter */
 let NODE_SVC_TAB = 'l3vpn';
 let NODE_LINK_PROTO = 'LLDP'; /* which protocol card is selected in the Links section */
 let NODE_LINK_SEL = 0; /* index into capRows — which link's own trend the capacity chart plots */
@@ -176,18 +178,48 @@ function nodeOf(name) {
     { k:'LSP',  n:'Protocol Links', a:nint(s, 18, 1, 10), d:nint(s, 19, 0, 2), i:nint(s, 20, 0, 1), tone:'rose' }
   ];
 
-  const capRows = Array.from({ length: 5 }, (_, i) => {
+  /* one capacity-countdown link list PER PROTOCOL, so switching the
+     selected protocol card on the Router Links tab actually changes which
+     links are shown — every protocol used to reuse this same OSPF-flavoured
+     list, just relabelled by whichever protocol happened to be selected,
+     which read as "every protocol has identical links". Each set below has
+     its own seed offset, so the numbers differ meaningfully too, not just
+     the names. Switch's Links tab has no protocol switcher (always LLDP)
+     and keeps its own pre-existing sw-branch naming, computed separately
+     below so this change can't touch its output. */
+  const CAP_PROTO = {
+    OSPF: { off: 0,   n: i => `BB-T4 Akashvani-IC${i + 1}`, peer: i => `${['Akashvani','Vivekanand','Karolbagh','Rohini','Dwarka'][i]}-Shpantal`, ipBase: 10 },
+    ISIS: { off: 150, n: i => `L2-BB-${['Vivekanand','Karolbagh','Rohini','Dwarka','Akashvani'][i]}-IC${i + 1}`, peer: i => `${['Karolbagh','Rohini','Dwarka','Akashvani','Vivekanand'][i]}-ISIS-RTR`, ipBase: 21 },
+    BGP:  { off: 300, n: i => `AS24186-PEER-${i + 1}`, peer: i => ['Airtel-NIX','Tata-IX','Vodafone-Peer','Reliance-Transit','BSNL-Peer'][i], ipBase: 53 },
+    LLDP: { off: 450, n: i => `xe-0/0/${i + 1}`, peer: i => ['PSA-C920-WIFI1-T4-ER','Kalindi-J1.1K-DU-T4-NR','Janki-J1.1K-DU-T4-NR','NDLS-CORE-P-T1-NR','CCRAS-JANAKPURI-N540X'][i], ipBase: 38 },
+    LSP:  { off: 600, n: i => `LSP-Akashvani-T${i + 1}`, peer: i => `to-${['Vivekanand','Karolbagh','Rohini','Dwarka','Akashvani'][i]}`, ipBase: 70 }
+  };
+  const capRowsFor = proto => {
+    const m = CAP_PROTO[proto];
+    return Array.from({ length: 5 }, (_, i) => {
+      const util = nint(s, 700 + m.off + i, 46, 94);
+      return {
+        n: m.n(i), peer: m.peer(i),
+        sip: `10.${m.ipBase + i}.0.${i + 1}`, dip: `10.${m.ipBase + i}.0.${i + 2}`,
+        util, sess: nint(s, 800 + m.off + i, 4000, 9400),
+        fc: ['Jan 2026','Apr 2026','May 2026','Aug 2026','Nov 2026'][i],
+        growth: +(nrand(s, 900 + m.off + i, 2.4, 9.8)).toFixed(1),
+        tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
+      };
+    });
+  };
+  const capRowsByProto = { OSPF: capRowsFor('OSPF'), BGP: capRowsFor('BGP'), LLDP: capRowsFor('LLDP'), LSP: capRowsFor('LSP'), ISIS: capRowsFor('ISIS') };
+  const capRows = sw ? Array.from({ length: 5 }, (_, i) => {
     const util = nint(s, 700 + i, 46, 94);
     return {
-      n: sw ? `RTR-${['DEL','DEL','MUM','MUM','BLR'][i]}-0${i + 1}` : `BB-T4 Akashvani-IC${i + 1}`,
-      peer: sw ? `TenGigE0/${i}/0/2` : `${['Akashvani','Vivekanand','Karolbagh','Rohini','Dwarka'][i]}-Shpantal`,
+      n: `RTR-${['DEL','DEL','MUM','MUM','BLR'][i]}-0${i + 1}`, peer: `TenGigE0/${i}/0/2`,
       sip: `10.${10 + i}.0.${i + 1}`, dip: `10.${10 + i}.0.${i + 2}`,
       util, sess: nint(s, 800 + i, 4000, 9400),
       fc: ['Jan 2026','Apr 2026','May 2026','Aug 2026','Nov 2026'][i],
       growth: +(nrand(s, 900 + i, 2.4, 9.8)).toFixed(1),
       tone: util > 85 ? 'red' : util > 70 ? 'amber' : 'emerald'
     };
-  });
+  }) : capRowsByProto.LLDP;
   /* one capacity trend per protocol card — same deterministic-seed technique
      as everything else here, just offset per protocol so LLDP/BGP/OSPF/ISIS
      each get their own stable, plausible curve instead of sharing one */
@@ -298,7 +330,7 @@ function nodeOf(name) {
     enb: cls === 'enodeb' ? buildEnodebSite(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
-    sfp, protoRows, capRows, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
+    sfp, protoRows, capRows, capRowsByProto, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
     svcTypes, svcTotal, instances,
     sla: +(nrand(s, 54, 99.2, 99.98)).toFixed(2),
     customers: nint(s, 55, 6, 18), atRisk: nint(s, 56, 1, 6),

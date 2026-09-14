@@ -146,6 +146,8 @@ function applyDrillQuery(view, q, label) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
+      NODE_ALERT_SEV = 'All severity';
+      NODE_ALERT_SRC = 'All sources';
       NODE_LINK_PROTO = 'LLDP';
       NODE_LINK_SEL = 0;
       NODE_HW_SEL = 'bbu';
@@ -474,7 +476,7 @@ document.addEventListener('click', e => {
   const res = e.target.closest('[data-res]');
   if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');
@@ -666,6 +668,12 @@ document.addEventListener('input', e => {
   }
   if (el.hasAttribute && el.hasAttribute('data-nperfsel')) {
     NODE_PERF = el.value; go('node'); return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-nalertsev')) {
+    NODE_ALERT_SEV = el.value; go('node'); return;
+  }
+  if (el.hasAttribute && el.hasAttribute('data-nalertsrc')) {
+    NODE_ALERT_SRC = el.value; go('node'); return;
   }
   if (el.hasAttribute && el.hasAttribute('data-gridsearch')) {
     const key = el.dataset.gridsearch, pos = el.selectionStart;
