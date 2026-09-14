@@ -12,12 +12,20 @@ export const DISCOVERY_STATS: OverviewStat[] = [
   { value: '9', label: 'new objects found today', tone: 'purple' }
 ];
 
+/* purple+fuchsia read as near-identical at a glance, and orange doubles as
+   this same page's "Unreachable" status color (see SCAN_OUTCOME) — reusing
+   it for a plain domain label made a neutral category look like a warning.
+   These four are spaced further apart on the wheel and stay off the
+   red/orange/amber range the status tiles above already claim. The -400
+   shade (not -500) keeps them light, matching the pale, low-saturation
+   tone the rest of this page's cards and tiles already use — solid -500
+   fills read as far more heavily "highlighted" than anything around them. */
 export type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';
 export const DOMAIN_HEX: Record<DomainKey, string> = {
-  RAN: 'var(--vw-color-purple-500)',
-  Core: 'var(--vw-color-fuchsia-500)',
-  Transport: 'var(--vw-color-orange-500)',
-  IPMPLS: 'var(--vw-color-sky-500)'
+  RAN: 'var(--vw-color-blue-400)',
+  Core: 'var(--vw-color-violet-400)',
+  Transport: 'var(--vw-color-teal-400)',
+  IPMPLS: 'var(--vw-color-pink-400)'
 };
 export const DOMAIN_LABEL: Record<DomainKey, string> = { RAN: 'RAN', Core: 'Core', Transport: 'Transport', IPMPLS: 'IP/MPLS' };
 
