@@ -837,7 +837,6 @@ function viewOdfDetail() {
         </div>
         <p class="vw-page-description" style="margin:0">ODF · ${esc(site.name)}</p>
       </div>
-      <div class="row"><button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Edit</button></div>
     </div>
 
     ${statStrip([
@@ -886,7 +885,6 @@ function passiveDetailChrome({ name, kind, sub, cells, tabsHtml, dot, badges }) 
         </div>
         <p class="vw-page-description" style="margin:0">${esc(sub)}</p>
       </div>
-      <div class="row"><button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Edit</button></div>
     </div>
     ${statStrip(cells)}
     ${tabsHtml || `<div class="section-tabs"><button class="stab is-on">Overview</button></div>`}`;
@@ -1320,7 +1318,7 @@ const FIBER_INSTALL = ['Buried (direct/duct)', 'Aerial (ADSS)', 'Underground (du
 const CABLE_TYPES = ['G.652D', 'G.654E', 'G.657A1'];
 const FIBER_TABS = [
   { k:'overview', n:'Overview' }, { k:'physical', n:'Physical' }, { k:'cores', n:'Fibre cores' },
-  { k:'location', n:'Location & GIS' }, { k:'connectivity', n:'Connectivity' }, { k:'tests', n:'Tests (OTDR)' },
+  { k:'location', n:'Location' }, { k:'connectivity', n:'Connectivity' }, { k:'tests', n:'Tests (OTDR)' },
   { k:'media', n:'Media' }, { k:'documents', n:'Documents' }, { k:'history', n:'History' }
 ];
 
@@ -1387,9 +1385,15 @@ function fiberStages(r, d) {
   const permit = { status: permitBad ? 'WARN' : 'DONE', tone: permitBad ? 'error' : 'success' };
   const civil = { status: d.phase === 'Plan' ? 'PENDING' : d.phase === 'Build' ? 'ACTIVE' : 'DONE',
     tone: d.phase === 'Plan' ? 'neutral' : d.phase === 'Build' ? 'info' : 'success' };
+  /* zero closures logged doesn't mean splicing hasn't happened — a short
+     direct span can legitimately need none. Only read as not-yet-started
+     while the span is still mid-build with nothing logged; once it's Live
+     (or a closure is on record), the stage is done unless the loss on
+     record is actually over budget. */
   const splicingBad = d.closures.length > 0 && d.worstLoss > 0.15;
-  const splicing = { status: d.closures.length === 0 ? 'PENDING' : splicingBad ? 'WARN' : 'DONE',
-    tone: d.closures.length === 0 ? 'neutral' : splicingBad ? 'error' : 'success' };
+  const splicingStarted = d.phase === 'Live' || d.closures.length > 0;
+  const splicing = { status: !splicingStarted ? 'PENDING' : splicingBad ? 'WARN' : 'DONE',
+    tone: !splicingStarted ? 'neutral' : splicingBad ? 'error' : 'success' };
   const otdrStage = { status: d.phase === 'Live' ? 'DONE' : 'PENDING', tone: d.phase === 'Live' ? 'success' : 'neutral' };
   const turnup = { status: d.phase === 'Live' && r.st === 'In service' ? 'DONE' : 'PENDING',
     tone: d.phase === 'Live' && r.st === 'In service' ? 'success' : 'neutral' };
@@ -1414,10 +1418,11 @@ function fiberStages(r, d) {
       checks:['Trench depth / cover ≥ 1.0 m', 'Duct integrity (mandrel)', 'Cable pulled & as-built'],
       checked: civil.status === 'DONE' ? [true, true, true] : civil.status === 'ACTIVE' ? [true, true, false] : [false, false, false] },
     { key:'splicing', n:'Splicing & closure sealing', sub:`${d.closures.length} closure(s)`,
-      by: d.closures.length ? ODF_STAFF[nint(r.n, 19, 0, ODF_STAFF.length - 1)] : '—',
-      when: d.closures.length ? `${d.installDate} 12:00` : 'pending civil',
+      by: d.closures.length ? ODF_STAFF[nint(r.n, 19, 0, ODF_STAFF.length - 1)] : splicingStarted ? 'Field QA' : '—',
+      when: d.closures.length ? `${d.installDate} 12:00` : splicingStarted ? r.otdr : 'pending civil',
       quote: splicing.status === 'WARN' ? `${d.closures.length} closure(s) over 0.15 dB — re-splice`
-        : splicing.status === 'DONE' ? 'All closures within loss budget' : 'No closures logged yet', ...splicing,
+        : splicing.status === 'DONE' ? (d.closures.length ? 'All closures within loss budget' : 'No mid-span closures required on this route')
+        : 'No closures logged yet', ...splicing,
       data:[['Closures', String(d.closures.length)], ['Avg splice loss', d.closures.length ? `${d.avgSpliceLoss.toFixed(2)} dB` : '—'],
         ['Worst splice loss', d.worstLossLabel], ['Budget', 'over 0.15 dB']],
       checks:['Splice loss < 0.15 dB', 'Tray dressing & bend radius', 'Closure pressure-sealed'],
@@ -1474,7 +1479,7 @@ function fiberKpiRow(r, d) {
     ${fiberKpiCard(FIBER_ICON_LINK, 'Splicing', d.closures.length === 1 ? '1 closure' : `${d.closures.length} closures`, d.closures.length ? `avg ${d.avgSpliceLoss.toFixed(2)} dB` : 'none logged', 'cyan')}
     ${fiberKpiCard(FIBER_ICON_WAVE, 'OTDR acceptance', `${d.otdrPass}%`, d.phase === 'Live' ? `last ${r.otdr}` : 'not yet tested', d.otdrPass === 100 ? 'emerald' : d.otdrPass > 0 ? 'amber' : 'slate')}
     ${fiberKpiCard(FIBER_ICON_SHIELD, 'Health', `RAG · ${d.rag}`, `${d.phase} phase`, d.ragTone === 'success' ? 'emerald' : d.ragTone === 'error' ? 'red' : d.ragTone === 'warning' ? 'amber' : 'sky')}
-    ${fiberKpiCard(FIBER_ICON_FILE, 'Documents', '3', 'as-built · datasheet · permit', 'slate')}
+    ${fiberKpiCard(FIBER_ICON_FILE, 'Documents', '6', 'as-built · datasheet · permits · reports', 'slate')}
   </div>`;
 }
 function fiberFaultBanner(r, d) {
@@ -1584,9 +1589,19 @@ function fiberStageCard(stage, idx) {
   </div>`;
 }
 
+/* shared by the Physical tab's donut and the Fibre cores tab's tube grid —
+   one seed, so the two tabs never disagree on the same span's breakdown */
+function fiberCoreBreakdown(r, d) {
+  const total = d.totalC, liveCount = Math.min(d.usedC, total);
+  const reservedCount = Math.min(total - liveCount, nint(r.n, 25, 0, 2));
+  const faultyCount = r.chip === 'error' ? Math.min(total - liveCount - reservedCount, 1) : 0;
+  const spareCount = Math.max(0, total - liveCount - reservedCount - faultyCount);
+  return { total, liveCount, reservedCount, faultyCount, spareCount };
+}
+
 function fiberPhysicalTab(r, d) {
   const detailsCard = card(`${headSm('Cable & construction')}
-    <div class="site-meta" style="grid-template-columns:1fr 1fr;margin-top:var(--vw-space-lg)">
+    <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:var(--vw-space-lg)">
       ${[['Cable type', d.cableType], ['Fibre count', `${d.totalC}F (${d.tubes} × 12-fibre tubes)`],
          ['Sheath / armour', d.sheath], ['Install method', d.installMethod],
          ['Buried %', `${d.buriedPct}%`], ['Route length', r.len],
@@ -1597,15 +1612,24 @@ function fiberPhysicalTab(r, d) {
           <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
     </div>`, 'grow');
 
-  const fillPct = d.totalC ? Math.round(d.usedC / d.totalC * 100) : 0;
+  const cb = fiberCoreBreakdown(r, d);
+  const fillPct = cb.total ? Math.round(cb.liveCount / cb.total * 100) : 0;
+  const svcEstimate = Math.max(1, Math.floor(cb.spareCount / 4));
   const utilCard = card(`${headSm('Core utilisation')}
-    <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-md)">
-      ${donut([{ n:'Live', c:d.usedC, tone:'sky' }, { n:'Spare', c:Math.max(0,d.totalC-d.usedC), tone:'slate' }], d.totalC, `${fillPct}%`, 'live', 96)}
+    <div class="row vw-gap-lg vw-items-center" style="margin-top:var(--vw-space-md)">
+      ${donut([{ n:'Live', c:cb.liveCount, tone:'sky' }, { n:'Reserved', c:cb.reservedCount, tone:'amber' },
+                { n:'Spare', c:cb.spareCount, tone:'slate' }, { n:'Faulty', c:cb.faultyCount, tone:'red' }],
+              cb.total, `${fillPct}%`, 'utilised', 128)}
       <div class="stack-s grow">
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',400)}"></span>Live <span class="vw-value num">${d.usedC}</span></span>
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',300)}"></span>Spare <span class="vw-value num">${Math.max(0,d.totalC-d.usedC)}</span></span>
+        <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',400)}"></span>Live <span class="vw-value num">${cb.liveCount}</span>
+          <span class="vw-card-metric-label-sub">(${Math.round(cb.liveCount/cb.total*100)}%)</span></span>
+        <span class="legend-i"><span class="legend-sw" style="background:${cv('amber',400)}"></span>Reserved <span class="vw-value num">${cb.reservedCount}</span></span>
+        <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',300)}"></span>Spare <span class="vw-value num">${cb.spareCount}</span></span>
+        ${cb.faultyCount ? `<span class="legend-i"><span class="legend-sw" style="background:${cv('red',400)}"></span>Faulty <span class="vw-value num">${cb.faultyCount}</span></span>` : ''}
       </div>
-    </div>`);
+    </div>
+    <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md);padding-top:var(--vw-space-sm);border-top:1px solid ${cv('slate',100)}">
+      ${cb.spareCount} spare fibre${cb.spareCount===1?'':'s'} — headroom for ~${svcEstimate} more service${svcEstimate===1?'':'s'} at a typical 4-fibre allocation</p>`);
 
   const photoCard = card(`${headSm('Photos')}
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
@@ -1615,7 +1639,7 @@ function fiberPhysicalTab(r, d) {
 
   const specCard = card(`${headSm('Mechanical & environmental specification')}
     <p class="vw-card-description" style="margin-top:2px">Datasheet figures for ${esc(d.cableType)} — the numbers a field crew or a procurement audit checks against</p>
-    <div class="site-meta" style="grid-template-columns:1fr 1fr 1fr;margin-top:var(--vw-space-lg)">
+    <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:var(--vw-space-lg)">
       ${[['Outer diameter', d.diameter], ['Weight', d.weightPerKm], ['Tensile strength', d.tensileStrength],
          ['Crush resistance', d.crushResistance], ['Operating temperature', d.tempRange], ['Strength member', d.strengthMember],
          ['Water blocking', d.waterBlock], ['Standard compliance', d.standard], ['QA batch no.', d.batchNo]]
@@ -1625,7 +1649,7 @@ function fiberPhysicalTab(r, d) {
 
   return `<div class="row-t" style="align-items:stretch">
     ${detailsCard}
-    <div class="stack" style="width:min(320px,100%);flex-shrink:0">
+    <div class="stack" style="width:min(360px,100%);flex-shrink:0">
       ${utilCard}
       ${photoCard}
     </div>
@@ -1634,11 +1658,15 @@ function fiberPhysicalTab(r, d) {
 }
 
 function fiberCoresTab(r, d) {
-  const total = d.totalC, liveCount = Math.min(d.usedC, total);
-  const reservedCount = Math.min(total - liveCount, nint(r.n, 25, 0, 2));
-  const faultyCount = r.chip === 'error' ? Math.min(total - liveCount - reservedCount, 1) : 0;
-  const spareCount = Math.max(0, total - liveCount - reservedCount - faultyCount);
-  const CORE_TONE = { Live:'#2563eb', Reserved:'#f59e0b', Spare:'#cbd5e1', Faulty:'#dc2626' };
+  const { total, liveCount, reservedCount, faultyCount, spareCount } = fiberCoreBreakdown(r, d);
+  /* status colour drives the chip's fill (the same soft-tint, no-border
+     language every .vw-chip on this site already uses) — the fibre's own
+     EIA/TIA-598 colour survives as a small dot inside the chip instead of
+     the chip's own border/background, so the two colour systems (what the
+     strand is *for* vs. which physical fibre it *is*) don't fight for the
+     same pixels */
+  const CORE_TONE = { Live:'sky', Reserved:'amber', Faulty:'red', Spare:'slate' };
+  const CORE_TEXT_SHADE = { Live:800, Reserved:800, Faulty:800, Spare:400 };
   const statusFor = i => i < liveCount ? 'Live' : i < liveCount + reservedCount ? 'Reserved'
     : i < liveCount + reservedCount + faultyCount ? 'Faulty' : 'Spare';
   const tubeRows = [];
@@ -1648,23 +1676,25 @@ function fiberCoresTab(r, d) {
       const idx = t * 12 + i;
       if (idx >= total) break;
       const st = statusFor(idx);
+      const tone = CORE_TONE[st];
       const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
-      cells.push(`<span title="F${idx+1} · ${fname} · ${st}" style="display:inline-flex;align-items:center;justify-content:center;
-        width:34px;height:26px;margin:3px;border-radius:5px;font-size:0.625rem;font-weight:600;
-        background:${st==='Spare'?'#fff':hex+'1f'};border:2px solid ${CORE_TONE[st]};color:${st==='Spare'?cv('gray',400):hex}">F${idx+1}</span>`);
+      cells.push(`<span title="F${idx+1} · ${fname} · ${st}" style="display:flex;align-items:center;justify-content:center;gap:5px;
+        padding:7px 4px;border-radius:var(--vw-radius-full);font-size:var(--vw-font-label-xs);font-weight:500;min-width:0;
+        background:${cv(tone,50)};color:${cv(tone,CORE_TEXT_SHADE[st])};border:1px solid ${cv(tone,st==='Spare'?200:100)}">
+        <span style="width:7px;height:7px;border-radius:50%;background:${hex};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></span>F${idx+1}</span>`);
     }
-    tubeRows.push(`<div class="row vw-items-center vw-gap-sm" style="margin-top:10px">
-      <span class="vw-label" style="width:4rem;flex-shrink:0">Tube ${t+1}</span>
-      <div style="display:flex;flex-wrap:wrap">${cells.join('')}</div>
+    tubeRows.push(`<div style="margin-top:var(--vw-space-md)">
+      <span class="vw-label">Tube ${t+1}</span>
+      <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;margin-top:6px">${cells.join('')}</div>
     </div>`);
   }
   const coresCard = card(`${headSm('Fibre-core allocation')}
     <p class="vw-card-description" style="margin-top:2px">Per-strand status, service assignment and splice loss — the planner's spare-capacity view</p>
     <div class="legend" style="margin-top:var(--vw-space-md)">
-      <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Live}"></span>Live · ${liveCount}</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Reserved}"></span>Reserved · ${reservedCount}</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Spare}"></span>Spare · ${spareCount}</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${CORE_TONE.Faulty}"></span>Faulty · ${faultyCount}</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv(CORE_TONE.Live,400)}"></span>Live · ${liveCount}</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv(CORE_TONE.Reserved,400)}"></span>Reserved · ${reservedCount}</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv(CORE_TONE.Spare,300)}"></span>Spare · ${spareCount}</span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv(CORE_TONE.Faulty,400)}"></span>Faulty · ${faultyCount}</span>
     </div>
     ${tubeRows.join('')}`);
 
@@ -1693,38 +1723,6 @@ function fiberCoresTab(r, d) {
 }
 
 function fiberLocationTab(r, d) {
-  if (!d.lenKm) {
-    return card(`${headSm('Chainage schedule')}
-      <div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
-        Route not yet surveyed to chainage — this span is still ${d.phase === 'Plan' ? 'planned' : 'in build'}.</div>`);
-  }
-  const chamberCount = nint(r.n, 18, 2, 3);
-  const siteCode = r.a.split(/[- ]/)[0];
-  const slots = chamberCount + d.closures.length + 1;
-  const waypoints = [{ km:0, label:r.a, sub:'End A', tag:'TERMINATED', tone:'purple', above:false }];
-  for (let i = 0; i < chamberCount; i++) {
-    waypoints.push({ km:+(d.lenKm * (i + 1) / slots).toFixed(2), label:`MH-${siteCode}-${i+1}`, sub:'Chamber', tag:'OK', tone:'success', above: i % 2 === 0 });
-  }
-  d.closures.forEach((c, i) => {
-    const bad = parseFloat(c.loss) > 0.15;
-    waypoints.push({ km:+(d.lenKm * (chamberCount + i + 1) / slots).toFixed(2), label:c.n, sub:'Closure',
-      tag: bad ? 'OVER BUDGET' : 'OK', tone: bad ? 'error' : 'success', above:true });
-  });
-  waypoints.push({ km:d.lenKm, label:r.b, sub:'End B', tag:'TERMINATED', tone:'purple', above:false });
-  waypoints.sort((a, b) => a.km - b.km);
-
-  const diagram = `<div style="position:relative;height:100px;margin:28px 20px 12px">
-    <div style="position:absolute;top:50px;left:0;right:0;height:3px;background:${cv('emerald',400)}"></div>
-    ${waypoints.map(w => {
-      const pct = Math.min(100, Math.max(0, w.km / d.lenKm * 100));
-      return `<div style="position:absolute;top:0;bottom:0;left:${pct}%;transform:translateX(-50%);width:120px;text-align:center">
-        ${w.above ? `<div style="font-size:0.6875rem;color:${cv('gray',500)};position:absolute;top:0;left:0;right:0">${w.km} km<br>${esc(w.label)}</div>` : ''}
-        <span style="position:absolute;top:44px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;
-          background:${cv(w.tone,500)};border:2px solid white;box-shadow:0 0 0 1.5px ${cv(w.tone,300)}"></span>
-        ${!w.above ? `<div style="font-size:0.6875rem;color:${cv('gray',500)};position:absolute;top:62px;left:0;right:0">${esc(w.label)}<br>${w.km} km</div>` : ''}
-      </div>`;
-    }).join('')}
-  </div>`;
   const region = /delhi|ndls/i.test(r.a + r.b) ? 'North' : /chennai|mas|vja|indr|hyd/i.test(r.a + r.b) ? 'South' : 'West';
   const baseLat = region === 'North' ? 28.6 : region === 'South' ? 13.0 : 19.0;
   const baseLon = region === 'North' ? 77.2 : region === 'South' ? 77.6 : 72.8;
@@ -1736,18 +1734,7 @@ function fiberLocationTab(r, d) {
   const LANDMARK_KIND = ['Railway station', 'Bus depot', 'Industrial area', 'Market road', 'Highway junction'];
   const landmark = `${LANDMARK_KIND[nint(r.n, 46, 0, LANDMARK_KIND.length - 1)]}, ${r.a.split(/[- ]/)[0]}`;
 
-  return `${card(`${headSm('Chainage schedule')}
-    <p class="vw-card-description" style="margin-top:2px">Closures, chambers and terminations along the route</p>
-    ${diagram}
-    <div style="margin-top:var(--vw-space-md)">
-      ${waypoints.map(w => `<div class="row vw-justify-between vw-items-center" style="padding:8px 0;border-top:1px solid ${cv('slate',100)}">
-        <span class="mono" style="width:5rem;flex-shrink:0;color:${cv('gray',500)}">${w.km} km</span>
-        <span class="vw-label" style="width:6rem;flex-shrink:0">${w.sub}</span>
-        <span class="vw-value grow">${esc(w.label)}</span>
-        <span style="font-size:0.75rem;font-weight:600;color:${cv(w.tone,700)}">${w.tag}</span>
-      </div>`).join('')}
-    </div>`)}
-  ${card(`${headSm('Geographic')}
+  return card(`${headSm('Geographic')}
     <div class="site-meta" style="grid-template-columns:1fr 1fr;margin-top:var(--vw-space-lg)">
       ${[['Region', region], ['City / area', r.a], ['End A', r.a], ['End B', r.b],
          ['POP / anchor', `POP-${region.slice(0,3).toUpperCase()}-${String(nint(r.n,26,1,20)).padStart(2,'0')}`], ['Route length', r.len],
@@ -1756,7 +1743,7 @@ function fiberLocationTab(r, d) {
          ['Nearest landmark', landmark], ['Right of way', /aerial/i.test(d.installMethod) ? 'Utility pole easement' : 'Municipal road reservation']]
         .map(([k, v]) => `<div class="meta-cell" style="padding:10px 0;border-top:1px solid ${cv('slate',100)}">
           <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
-    </div>`)}`;
+    </div>`);
 }
 
 const FIBER_CONN_TYPES = ['SC/APC', 'LC/UPC', 'SC/UPC'];
@@ -1808,7 +1795,22 @@ function fiberConnectivityTab(r, d) {
         </div>
         <span style="font-weight:600;flex-shrink:0;color:${cv(parseFloat(c.loss)>0.15?'red':'emerald',700)}">max ${esc(c.loss)}</span>
       </div>`).join('')
-      : `<div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">No splice closures logged on this span yet.</div>`}`)}
+      : `<div class="vw-card-child-shaded" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg)">
+          <div class="row vw-gap-sm vw-items-center">
+            <span style="color:${d.phase==='Live'?cv('emerald',600):cv('gray',400)}">${d.phase==='Live'?'✓':'○'}</span>
+            <span class="vw-value" style="font-weight:600">${d.phase==='Live'?'Splice-free run confirmed':'No mid-span joints planned'}</span>
+          </div>
+          <p class="vw-card-description" style="margin-top:4px">${d.phase==='Live'
+            ? `This span runs as a single continuous ${r.len} pull with no intermediate joints — both ends terminate directly at their ODF.`
+            : `Route length (${r.len}) doesn't call for an in-line closure — confirm once the civil/splicing stages complete.`}</p>
+          <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:var(--vw-space-md)">
+            ${[['Continuity', 'Single continuous run'], ['Cable run', r.len], ['Fibre count', `${d.totalC}F`],
+               ['Verified by', d.phase==='Live' ? ODF_STAFF[nint(r.n,29,0,ODF_STAFF.length-1)] : '—'],
+               ['Verified on', d.phase==='Live' ? d.installDate : '—']]
+              .map(([k, v]) => `<div class="meta-cell" style="padding:8px 0;border-top:1px solid ${cv('slate',200)}">
+                <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
+          </div>
+        </div>`}`)}
   ${card(`${headSm('Cross-domain references')}
     <p class="vw-card-description" style="margin-top:2px">This RAN-backhaul span feeds a gNB</p>
     <div class="stack-s" style="margin-top:var(--vw-space-md)">
@@ -1823,6 +1825,29 @@ function fiberConnectivityTab(r, d) {
     </div>`)}`;
 }
 
+function fiberOtdrTraceSvg(r, d) {
+  const W = 600, H = 160, padL = 34, padR = 16, padT = 14, padB = 24;
+  const innerW = W - padL - padR;
+  const events = Math.max(1, Math.min(d.closures.length || 1, 6));
+  const pts = [];
+  let y = padT + 6;
+  const stepX = innerW / (events + 1);
+  for (let i = 0; i <= events + 1; i++) {
+    pts.push([padL + i * stepX, y]);
+    y += nint(r.n, 400 + i, 4, 12);
+  }
+  const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const markers = pts.slice(1, -1).map(([x, y2], i) => `<circle cx="${x.toFixed(1)}" cy="${y2.toFixed(1)}" r="3.5" fill="${cv('amber',400)}"><title>Event ${i+1}</title></circle>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block" role="img" aria-label="OTDR trace">
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="${cv('slate',200)}" stroke-width="1"/>
+    <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${cv('slate',200)}" stroke-width="1"/>
+    <path d="${path}" fill="none" stroke="${cv('sky',400)}" stroke-width="2"/>
+    ${markers}
+    <text x="${padL}" y="${H-6}" font-size="10" fill="${cv('gray',400)}">0 km</text>
+    <text x="${W-padR-30}" y="${H-6}" font-size="10" fill="${cv('gray',400)}">${d.lenKm.toFixed(1)} km</text>
+    <text x="2" y="${padT+8}" font-size="10" fill="${cv('gray',400)}">dB</text>
+  </svg>`;
+}
 function fiberTestsTab(r, d) {
   if (d.phase !== 'Live') {
     return card(`${headSm('OTDR / ATP results · 0')}
@@ -1830,17 +1855,35 @@ function fiberTestsTab(r, d) {
       <div class="vw-card-child-shaded vw-card-description" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
         No OTDR tests recorded yet — attaches once the span reaches Test/Accept.</div>`);
   }
-  const rows = Array.from({ length: Math.min(6, d.usedC || 1) }, (_, i) => {
+  const totalTraces = d.usedC * 2;
+  const rows = Array.from({ length: Math.min(12, d.usedC || 1) }, (_, i) => {
     const loss = +(0.05 + nint(r.n, 40 + i, 0, 20) / 100).toFixed(2);
     return { fibre:`F${i+1}`, dir: i % 2 ? 'B → A' : 'A → B', loss, result: loss <= 0.3 ? 'Pass' : 'Fail' };
   });
-  return card(`${headSm(`OTDR / ATP results · ${rows.length}`)}
-    <p class="vw-card-description" style="margin-top:2px">Per-fibre acceptance measurements</p>
+  const passCount = rows.filter(t2 => t2.result === 'Pass').length;
+  const avgLoss = rows.reduce((a, t2) => a + t2.loss, 0) / rows.length;
+  const worst = rows.reduce((m, t2) => Math.max(m, t2.loss), 0);
+  const shown = rows.length;
+
+  const summaryCard = card(`${headSm('OTDR trace')}
+    <p class="vw-card-description" style="margin-top:2px">Composite loss curve, A end to B end — amber markers are splice/closure events</p>
+    <div style="margin-top:var(--vw-space-md)">${fiberOtdrTraceSvg(r, d)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-lg)">
+      ${fiberKpiCard(FIBER_ICON_WAVE, 'Total traces', String(totalTraces), 'both directions', 'sky')}
+      ${fiberKpiCard(FIBER_ICON_SHIELD, 'Pass rate', `${Math.round(passCount/shown*100)}%`, `${passCount} of ${shown} sampled`, passCount===shown?'emerald':'amber')}
+      ${fiberKpiCard(FIBER_ICON_LINK, 'Avg loss', `${avgLoss.toFixed(2)} dB`, 'across sampled fibres', 'purple')}
+      ${fiberKpiCard(FIBER_ICON_ALERT, 'Worst event', `${worst.toFixed(2)} dB`, worst<=0.3?'within budget':'over 0.3 dB budget', worst<=0.3?'emerald':'red')}
+    </div>`);
+
+  const resultsCard = card(`${headSm(`Per-fibre results · ${shown}`)}
+    <p class="vw-card-description" style="margin-top:2px">${shown < d.usedC ? `First ${shown} of ${d.usedC} live fibres sampled` : `All ${d.usedC} live fibres`} · 1310 / 1550 nm</p>
     <div style="margin-top:var(--vw-space-md)">
       ${table([{t:'Fibre'},{t:'Direction'},{t:'Length'},{t:'Loss'},{t:'Result'}],
         rows.map(t2 => [`<span class="mono">${t2.fibre}</span>`, t2.dir, r.len, `<span class="num">${t2.loss} dB</span>`,
           chip(t2.result, t2.result==='Pass'?'success':'error')]), '', () => [])}
     </div>`);
+
+  return `${summaryCard}${resultsCard}`;
 }
 
 /* Custom line-art illustrations stand in for field photography here — the
@@ -1963,15 +2006,34 @@ function mediaTile(illustrationHtml, title, meta, isVideo) {
     <span class="vw-card-metric-label-sub">${esc(meta)}</span>
   </div>`;
 }
+function mediaIllustrationManhole() {
+  const bolts = Array.from({ length: 8 }, (_, i) => {
+    const a = (i / 8) * Math.PI * 2, x = 100 + 42 * Math.cos(a), y = 60 + 42 * Math.sin(a);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#0f172a"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
+    <defs>
+      <radialGradient id="mhBg" cx="50%" cy="40%" r="75%"><stop offset="0%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#475569"/></radialGradient>
+      <radialGradient id="mhCover" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#64748b"/><stop offset="100%" stop-color="#1e293b"/></radialGradient>
+    </defs>
+    <rect width="200" height="120" fill="url(#mhBg)"/>
+    <circle cx="100" cy="60" r="48" fill="url(#mhCover)" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="100" cy="60" r="38" fill="none" stroke="#334155" stroke-width="1.5"/>
+    ${bolts}
+    <text x="100" y="64" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="monospace">OFC</text>
+  </svg>`;
+}
 function fiberMediaTab(r, d) {
   const items = [
     mediaTile(mediaIllustrationTrench(), 'Route trench — chainage 0.4 km', `Field · ${ODF_STAFF[nint(r.n,30,0,ODF_STAFF.length-1)]} · ${nint(r.n,31,2,6)}d ago`, false),
     mediaTile(mediaIllustrationSpliceTray(), d.closures.length ? `Splice tray — ${d.closures[0].n}` : 'Splice tray', `Splicer · ${ODF_STAFF[nint(r.n,32,0,ODF_STAFF.length-1)]} · ${nint(r.n,33,2,6)}d ago`, false),
-    mediaTile(mediaIllustrationTower(), 'Cable label / drum tag', `QA · ${ODF_STAFF[nint(r.n,34,0,ODF_STAFF.length-1)]} · ${nint(r.n,35,2,6)}d ago`, false),
+    mediaTile(mediaIllustrationLabelTag(), 'Cable label / drum tag', `QA · ${ODF_STAFF[nint(r.n,34,0,ODF_STAFF.length-1)]} · ${nint(r.n,35,2,6)}d ago`, false),
+    mediaTile(mediaIllustrationManhole(), 'Chamber / manhole inspection', `Civil · ${ODF_STAFF[nint(r.n,37,0,ODF_STAFF.length-1)]} · ${nint(r.n,38,1,5)}d ago`, false),
+    mediaTile(mediaIllustrationTower(), 'Site marker — nearest mast', `Survey · GIS team · ${nint(r.n,39,3,7)}d ago`, false),
     mediaTile(mediaIllustrationDrone(), 'Route walk (drone) — full span', `Survey · GIS team · ${nint(r.n,36,4,8)}d ago`, true)
   ];
   return card(`${headSm('Photos & videos')}
-    <p class="vw-card-description" style="margin-top:2px">Geo-tagged field capture — route, splice trays, labels, drone walk</p>
+    <p class="vw-card-description" style="margin-top:2px">Geo-tagged field capture — route, splice trays, labels, chambers, drone walk</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
       ${items.join('')}
     </div>`);
@@ -1983,7 +2045,16 @@ function fiberDocumentsTab(r, d) {
     { icon:'DWG', name:`As-built route drawing — ${r.n}`, meta:`DWG · 3.4 MB · ${d.installDate}`, status:'Approved' },
     { icon:'PDF', name:`Cable datasheet (${d.cableType})`, meta:`PDF · 820 KB · ${d.installDate}`, status:'Approved' },
     { icon:'CERT', name:`RoW permit — ROW-${String(nint(r.n,16,1,99999)).padStart(5,'0')}`, meta:`CERT · 1.1 MB · ${d.installDate}`,
-      status: d.rag === 'Red' ? 'Pending' : 'Approved' }
+      status: d.rag === 'Red' ? 'Pending' : 'Approved' },
+    { icon:'PDF', name:'OTDR test report — bidirectional', meta:`PDF · ${(1.2+nint(r.n,50,0,8)/10).toFixed(1)} MB · ${d.phase==='Live'?r.otdr:'—'}`,
+      status: d.phase === 'Live' ? 'Approved' : 'Pending' },
+    { icon:'PDF', name:`Splice completion report — ${d.closures.length} closure${d.closures.length===1?'':'s'}`, meta:`PDF · ${(0.6+nint(r.n,51,0,6)/10).toFixed(1)} MB · ${d.installDate}`,
+      /* zero closures logged isn't "incomplete" — a short direct span can
+         legitimately need none, same reasoning as the Overview stepper's
+         splicing stage (see fiberStages) */
+      status: (d.phase === 'Live' || d.closures.length > 0) ? 'Approved' : 'Pending' },
+    { icon:'CERT', name:'Handover & acceptance certificate', meta:`CERT · 540 KB · ${d.phase==='Live'?r.otdr:'—'}`,
+      status: d.phase === 'Live' && r.st === 'In service' ? 'Approved' : 'Pending' }
   ];
   return card(`${headSm('Associated documents')}
     <p class="vw-card-description" style="margin-top:2px">As-builts, OTDR traces, permits, certificates, handover</p>
@@ -1997,33 +2068,55 @@ function fiberDocumentsTab(r, d) {
             <div class="vw-card-metric-label-sub">${esc(doc.meta)}</div>
           </div>
         </div>
-        <div class="row vw-gap-sm vw-items-center" style="flex-shrink:0">
+        <div style="flex-shrink:0">
           ${chip(doc.status.toUpperCase(), doc.status==='Approved'?'success':'warning')}
-          <button class="nst-btn nst-btn--xs js-ack">Open</button>
         </div>
       </div>`).join('')}
     </div>`);
 }
 
-function fiberHistoryTab(stages) {
+/* A fuller audit trail than "one line per lifecycle stage" — real OSP
+   projects generate paperwork events (application submitted, contractor
+   assigned) between the milestones the stepper already tracks, so History
+   interleaves those rather than just repeating the same six rows. */
+function fiberHistoryEvents(r, d, stages) {
+  const [survey, permit, civil, splicing, otdrStage, turnup] = stages;
+  const events = [
+    { status:'DONE', n:'Span record created in inventory', who:d.createdBy, ago:'8w ago' },
+    { status:'DONE', n:'Assigned to contractor for build', who:'Network Planning', ago:'7w ago' },
+    { status:survey.status, n:survey.n, who:survey.by, ago:'6w ago' },
+    { status:'DONE', n:'RoW / wayleave application submitted', who:'RoW / liaison', ago:'6w ago' },
+    { status:permit.status, n:permit.n, who:permit.by, ago:'5w ago', warn:permit.status==='WARN'?permit.quote:null },
+    { status:civil.status, n:civil.n, who:civil.by, ago:civil.status==='ACTIVE'?'in progress':civil.status==='PENDING'?'—':'4w ago' },
+    { status:splicing.status, n:splicing.n, who:splicing.by, ago:splicing.status==='PENDING'?'—':'3w ago', warn:splicing.status==='WARN'?splicing.quote:null },
+    { status:otdrStage.status, n:otdrStage.n, who:otdrStage.by, ago:otdrStage.status==='DONE'?'2w ago':'—' },
+    { status:turnup.status, n:turnup.n, who:turnup.by, ago:turnup.status==='DONE'?'1w ago':'—' }
+  ];
+  if (d.phase === 'Live' && r.st === 'In service') {
+    events.push({ status:'DONE', n:'Warranty registered with manufacturer', who:d.manufacturer, ago:'1w ago' });
+  }
+  return events;
+}
+function fiberHistoryTab(r, d, stages) {
   const STATUS_ICON = { DONE:'✓', WARN:'!', ACTIVE:'●', PENDING:'○' };
-  return card(`${headSm('Build lifecycle')}
-    <p class="vw-card-description" style="margin-top:2px">Stage transitions from survey to service turn-up</p>
+  const events = fiberHistoryEvents(r, d, stages);
+  return card(`${headSm(`Activity history · ${events.length}`)}
+    <p class="vw-card-description" style="margin-top:2px">Every stage transition and paperwork event from record creation to service turn-up</p>
     <div style="margin-top:var(--vw-space-lg)">
-      ${stages.map((st, i) => {
-        const tone = TONE_COLOR[st.tone] || 'slate';
-        const ago = st.status === 'PENDING' ? '—' : st.status === 'ACTIVE' ? 'in progress' : `${6-i}w ago`;
-        return `<div class="row vw-justify-between vw-items-start" style="padding:var(--vw-space-md) 0;${i>0?`border-top:1px solid ${cv('slate',100)}`:''}">
+      ${events.map((ev, i) => {
+        const tone = ev.status === 'WARN' ? 'error' : ev.status === 'DONE' ? 'success' : ev.status === 'ACTIVE' ? 'info' : 'neutral';
+        const dotTone = TONE_COLOR[tone] || 'slate';
+        return `<div class="row vw-justify-between vw-items-start" style="padding:var(--vw-space-sm) 0;${i>0?`border-top:1px solid ${cv('slate',100)}`:''}">
           <div class="row vw-gap-sm vw-items-start" style="min-width:0">
             <span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-              background:${st.status==='PENDING'?cv('slate',100):cv(tone,500)};color:${st.status==='PENDING'?cv('gray',400):'white'};font-size:0.625rem">${STATUS_ICON[st.status]}</span>
+              background:${ev.status==='PENDING'?cv('slate',100):cv(dotTone,500)};color:${ev.status==='PENDING'?cv('gray',400):'white'};font-size:0.625rem">${STATUS_ICON[ev.status]}</span>
             <div style="min-width:0">
-              <div class="vw-value" style="font-weight:500">${esc(st.n)}</div>
-              ${st.status==='ACTIVE' ? `<div class="vw-card-metric-label-sub">in progress</div>` : ''}
-              ${st.status==='WARN' ? `<div class="vw-card-metric-label-sub" style="color:${cv('red',600)}">⚠ ${esc(st.quote)}</div>` : ''}
+              <div class="vw-value" style="font-weight:500">${esc(ev.n)}</div>
+              <div class="vw-card-metric-label-sub">by ${esc(ev.who)}</div>
+              ${ev.warn ? `<div class="vw-card-metric-label-sub" style="color:${cv('red',600)}">⚠ ${esc(ev.warn)}</div>` : ''}
             </div>
           </div>
-          <span class="vw-card-metric-label-sub" style="flex-shrink:0">${ago}</span>
+          <span class="vw-card-metric-label-sub" style="flex-shrink:0">${esc(ev.ago)}</span>
         </div>`;
       }).join('')}
     </div>`);
@@ -2035,7 +2128,7 @@ function viewFiberDetail() {
   const d = buildFiberSpanDetail(r);
   const stages = fiberStages(r, d);
   const tab = FIBER_TABS.some(t => t.k === FIBER_TAB) ? FIBER_TAB : 'overview';
-  const tabLabel = { cores:`Fibre cores · ${d.totalC}F`, media:'Media · 4', documents:'Documents · 3' };
+  const tabLabel = { cores:`Fibre cores · ${d.totalC}F`, media:'Media · 6', documents:'Documents · 6' };
   const tabsHtml = `<div class="section-tabs">${FIBER_TABS.map(t =>
     `<button class="stab${t.k===tab?' is-on':''}" data-fibertab="${t.k}">${tabLabel[t.k] || t.n}</button>`).join('')}</div>`;
 
@@ -2061,7 +2154,7 @@ function viewFiberDetail() {
     : tab === 'tests' ? fiberTestsTab(r, d)
     : tab === 'media' ? fiberMediaTab(r, d)
     : tab === 'documents' ? fiberDocumentsTab(r, d)
-    : fiberHistoryTab(stages);
+    : fiberHistoryTab(r, d, stages);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:d.phase, sub:`OFC span · RAN backhaul · ${r.a} → ${r.b} · ${r.len}`,
