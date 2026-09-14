@@ -37,9 +37,6 @@ export default function Topbar() {
   const drill = sp.get('drill');
   const from = sp.get('from');
 
-  if (s.key === 'location' && !drill && !from) {
-    return null;
-  }
   /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
      shallower to drill back to from here, so there's no real trail to show.
      Scan jobs and Scan targets are the same case from the crumb's own shape:
@@ -65,14 +62,35 @@ export default function Topbar() {
     return path.includes(':') ? null : path;
   };
 
-  const origin = from && from !== s.crumb ? SCREENS.find(x => x.crumb === from) : undefined;
+  /* A jump made while the origin screen was itself mid-drill (Location's
+     "All locations" list, say) carries that state as "<crumb>?<query>" —
+     see drillTo() in app-router.js. Split it back apart: the crumb still
+     resolves the origin screen, the query is spliced onto that screen's own
+     segment below so its link returns to the exact list the reader left,
+     not the screen's plain default view. */
+  const fromQMark = from ? from.indexOf('?') : -1;
+  const fromCrumb = fromQMark >= 0 ? from!.slice(0, fromQMark) : from;
+  const fromQuery = fromQMark >= 0 ? from!.slice(fromQMark + 1) : '';
+
+  const origin = fromCrumb && fromCrumb !== s.crumb ? SCREENS.find(x => x.crumb === fromCrumb) : undefined;
   const ownParts = s.crumb.split(' · ');
   const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
   const leaf = ownParts[ownParts.length - 1];
 
-  const segs: { label: string; to: string | null }[] = chain.map((label, i) => ({
-    label, to: targetFor(chain.slice(0, i + 1).join(' · '))
-  }));
+  const segs: { label: string; to: string | null }[] = chain.map((label, i) => {
+    const base = targetFor(chain.slice(0, i + 1).join(' · '));
+    const isOriginLeaf = !!origin && i === chain.length - 1;
+    return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
+  });
+  /* A drilled screen with no " · " parent of its own (Location, today) would
+     otherwise lose its only ancestor: the drill label below replaces the
+     leaf outright, and the chain above is empty, so there'd be nothing left
+     to click back to the screen's own base view. Every other drilled screen
+     already has a real chain segment ahead of its leaf, so this only ever
+     fires for that empty-chain case. */
+  if (drill && !chain.length) {
+    segs.push({ label: leaf, to: pathname });
+  }
   /* A drill label is always the more specific replacement for the screen's
      static leaf ("View" → "Virtual element details · NTSON3435004",
      "Lifecycle operation" → "Lifecycle operation · NTSON3435004") — show one

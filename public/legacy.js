@@ -11219,7 +11219,20 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
-  const fromName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
+  const crumbName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
+  /* the reader may already be mid-drill on CURRENT (Location's "All
+     locations" list, say) — a plain single-segment crumb like "Location"
+     has no " · " parent of its own for the breadcrumb to fall back on, so
+     losing that drill state here means the next screen's back-link lands on
+     Location's bare default view instead of the list the reader was
+     actually on. Carry the query along for that case. Screens with a real
+     " · " parent (Resources · Physical Resources, say) already keep a
+     visible ancestor segment either way, so they're left exactly as they
+     were. */
+  const curDrill = !crumbName.includes(' · ') && DRILL && DRILL.view === CURRENT ? DRILL : null;
+  const fromName = curDrill && curDrill.q
+    ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
+    : crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
