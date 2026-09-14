@@ -410,6 +410,43 @@ const FAIL_STEP = {
   reason: 'SNMP_TIMEOUT', action: 'Retry at 8000 ms on the next pass; escalate to the circle NOC after 3 consecutive timeouts.'
 };
 
+/* ── Collector transcript, driven by whichever target was actually
+   clicked ── real IANA-assigned enterprise OIDs per OEM, and a firmware
+   string in that vendor's own real naming convention, seeded off the
+   target's own host/ip so it's stable across renders (same "sample but
+   deterministic" technique used everywhere else in this app) rather than
+   the single fixed Juniper/MX960 example every target used to show. */
+const TX_OID = { Juniper: '.1.3.6.1.4.1.2636.1.1.1.2.57', Cisco: '.1.3.6.1.4.1.9.1.1745',
+  Nokia: '.1.3.6.1.4.1.6527.1.3.3', Adva: '.1.3.6.1.4.1.2544.1.11.2' };
+function txSysDescr(oem, model, seed) {
+  const m = model || 'router';
+  if (oem === 'Juniper') return `Juniper Networks, Inc. ${m.toLowerCase()} internet router, kernel JUNOS ${nint(seed,701,17,24)}.${nint(seed,702,1,4)}R${nint(seed,703,1,3)}-S${nint(seed,704,1,9)}`;
+  if (oem === 'Cisco')   return `Cisco IOS XE Software, ${m}, Version ${nint(seed,705,16,17)}.${nint(seed,706,1,12)}.${nint(seed,707,1,5)}`;
+  if (oem === 'Nokia')   return `Nokia ${m}, TiMOS-${String.fromCharCode(65+nint(seed,708,0,5))}-${nint(seed,709,20,24)}.${nint(seed,710,1,10)}.R${nint(seed,711,1,9)}`;
+  if (oem === 'Adva')    return `ADVA Optical Networking, ${m}, Release ${nint(seed,712,10,12)}.${nint(seed,713,1,9)}`;
+  return `${oem || 'Unknown vendor'} ${m}`.trim();
+}
+const txSerial = seed => `${String.fromCharCode(65+nint(seed,720,0,25))}${String.fromCharCode(65+nint(seed,721,0,25))}${nint(seed,722,10000000,99999999)}`;
+
+/* what actually failed, in the target's own words — reuses the same
+   TGT_REASON vocabulary the Scan Targets list already shows on that row,
+   so the reason named in the transcript always matches the reason chip
+   the reader clicked through from. */
+const TX_FAIL = {
+  unreach: ip => ({ res: `Timeout: No Response from ${ip}\n0 of 3 ICMP echo replies received`,
+    reason: 'HOST_UNREACHABLE', action: 'Confirm the gateway route and any ACL on the collector subnet; retry once the network path is confirmed.' }),
+  timeout: ip => ({ res: `Timeout: No Response from ${ip}`,
+    reason: 'SNMP_TIMEOUT', action: 'Retry at 8,000 ms on the next pass; escalate to the circle NOC after three consecutive timeouts.' }),
+  auth:    ip => ({ res: `snmpget: Authentication failure (incorrect password, community or key) for ${ip}`,
+    reason: 'AUTH_FAILED', action: 'Verify the credential profile is current and bound to this device; rotate it if expired.' }),
+  parse:   ip => ({ res: `Response received from ${ip}, but it did not match the expected MIB structure — an unsupported CLI banner or encoding broke the fact parser`,
+    reason: 'PARSE_ERROR', action: 'Capture the raw payload and add a parser rule for this response shape.' }),
+  adapter: ip => ({ res: `sysObjectID reported by ${ip} has no registered adapter`,
+    reason: 'NO_ADAPTER', action: 'Add an adapter for this OEM / model pair, or leave unsupported until vendor coverage is prioritised.' }),
+  dupip:   ip => ({ res: `More than one chassis answered on ${ip} — duplicate management IP`,
+    reason: 'DUPLICATE_IP', action: 'Identify the second device on this address and reassign one of the two.' })
+};
+
 /* ── circles: exceptions plotted the way an ops team acts ── */
 const CIRCLES = [
   { c: 'JK', n: 'Jammu & Kashmir', x: 2, y: 0, master: 41,  rogue: 1,  missing: 2,  drift: 4 },
@@ -3236,7 +3273,71 @@ function targetOf(id) {
   return TARGETS.find(t => t.host === id) || null;
 }
 
+/* TRANSCRIPT.steps[0] is Reachability, which has no entry of its own in a
+   target row's ch[] — ch[] lines up 1:1 with COLLECTORS (Device, Hardware,
+   LLDP, OSPF, BGP, Service) starting at steps[1]. A target's own `reason`
+   (the same code the Scan Targets list already shows as a chip) says which
+   kind of failure actually happened; the first 'fail' in the chain gets
+   that reason, everything after it is skipped, matching chainOf()'s own
+   fail-then-skip convention in the list above. */
+function txStepsFor(rec) {
+  const ip = rec.ip, host = rec.host, oem = rec.oem, model = rec.model, seed = rec.host !== '—' ? rec.host : rec.ip;
+  const base = TRANSCRIPT.steps.map(x => ({ ...x }));
+  const ch = rec.ch || [];
+  const reachFails = rec.reason === 'unreach';
+  let stopped = reachFails;
+
+  return base.map((step, i) => {
+    if (i === 0) {
+      if (!reachFails) return { ...step, req: `ping -c 3 -W 2 ${ip}`,
+        res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.031/0.036/0.044/0.005 ms',
+        wrote: 'reachable = true' };
+      const f = TX_FAIL.unreach(ip);
+      return { ...step, state: 'fail', ms: 2000, bytes: 0, req: `ping -c 3 -W 2 ${ip}`,
+        res: f.res, wrote: 'nothing — previous routing data retained', reason: f.reason, action: f.action };
+    }
+
+    const chState = ch[i - 1];
+    if (stopped || chState === undefined) {
+      return { ...step, state: 'skip', ms: 0, bytes: 0, req: '—', res: `skipped — depends on ${base[i - 1].n}`, wrote: 'nothing' };
+    }
+    /* 'na' on its own means this collector doesn't apply to this device
+       class (e.g. no BGP on an access switch) — it's independent per step,
+       not a chain stop, matching chainOf()'s own semantics in the Scan
+       Targets list: only an actual 'fail' cascades into skipping the rest. */
+    if (chState === 'na') {
+      return { ...step, state: 'na', ms: 0, bytes: 0, req: '—', res: 'not applicable for this device class', wrote: 'nothing' };
+    }
+    if (chState === 'fail') {
+      stopped = true;
+      const f = (TX_FAIL[rec.reason] || TX_FAIL.timeout)(ip);
+      return { ...step, state: 'fail', ms: 3000, bytes: 0,
+        req: step.req.replace(/172\.31\.33\.100/g, ip),
+        res: f.res, wrote: 'nothing — previous data retained', reason: f.reason, action: f.action };
+    }
+
+    /* passed — same realistic payload shape as the sample, with this
+       target's own IP/host/vendor/model in it rather than the fixed demo's */
+    let req = step.req.replace(/172\.31\.33\.100/g, ip);
+    let res = step.res.replace(/172\.31\.33\.100/g, ip).replace(/NDLS-J960-P_R1-T1-NR/g, host === '—' ? ip : host);
+    let wrote = step.wrote;
+    if (step.k === 'device') {
+      res = `sysObjectID.0 = OID: ${TX_OID[oem] || '.1.3.6.1.4.1.0.0.0.0'}\nsysDescr.0   = "${txSysDescr(oem, model, seed)}"\nsysName.0    = "${host === '—' ? ip : host}"\nsysUpTime.0  = ${nint(seed,730,80000000,500000000)}  (${nint(seed,731,10,90)}d ${nint(seed,732,0,23)}h ${nint(seed,733,0,59)}m)`;
+      wrote = `oem = ${(oem || 'UNKNOWN').toUpperCase()} (derived from OID) · model = ${model || '—'} · sysName · uptime`;
+    } else if (step.k === 'hardware') {
+      const sn = txSerial(seed);
+      res = step.res.replace(/^chassis\s+\S+\s+serial\s+\S+/, `chassis            ${model || 'Unknown'}              serial ${sn}`);
+      wrote = step.wrote.replace('JN1236F87AFB', sn);
+    }
+    return { ...step, req, res, wrote };
+  });
+}
+
 function txSteps() {
+  const rec = targetOf(TARGET_ID);
+  if (rec) return txStepsFor(rec);
+  /* no real per-target row (outside the 12-row sample) — the illustrative
+     demo record, same as the header falls back to in viewTarget() */
   const s = TRANSCRIPT.steps.map(x => ({ ...x }));
   if (TXRUN === 4364) {
     s[4] = { ...s[4], state: 'fail', ms: 3000, bytes: 0,
@@ -3333,14 +3434,21 @@ function viewTarget() {
   const rec = targetOf(TARGET_ID);
   const T = rec ? { host: rec.host, ip: rec.ip, job: rec.job, circle: rec.circle } : TRANSCRIPT;
   const aMax = Math.max(...ADJACENCY.map(a => a.c));
+  /* the transcript strip below is the one place that already knows, per
+     step, whether this target actually passed — reading the count back off
+     it (rather than a second hardcoded "7 of 7") is what keeps this tile
+     from claiming a clean run for a target the transcript shows failing */
+  const txStepsNow = txSteps();
+  const passedCount = txStepsNow.filter(s => s.state === 'ok').length;
+  const freshLabel = h => h < 1 ? 'just now' : h < 24 ? `${h}h ago` : h < 720 ? `${Math.round(h / 24)}d ago` : `${Math.round(h / 720)}mo ago`;
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · ${T.circle || 'Delhi'}`,
       `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
-      ${kpi('Last discovery', '3h ago', relativeTimestamp(3), 'sky')}
-      ${kpi('Steps passed', '7 of 7', 'Reachability · Device · Hardware · LLDP · OSPF · BGP · Service', 'cyan')}
+      ${kpi('Last discovery', rec ? freshLabel(rec.fresh) : '3h ago', rec ? rec.sync : relativeTimestamp(3), 'sky')}
+      ${kpi('Steps passed', `${passedCount} of 7`, 'Reachability · Device · Hardware · LLDP · OSPF · BGP · Service', passedCount === 7 ? 'cyan' : passedCount === 0 ? 'red' : 'amber')}
       ${kpi('Discovered objects', '49', '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances', 'purple')}
     </div>
 

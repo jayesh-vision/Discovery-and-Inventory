@@ -207,6 +207,43 @@ const FAIL_STEP = {
   reason: 'SNMP_TIMEOUT', action: 'Retry at 8000 ms on the next pass; escalate to the circle NOC after 3 consecutive timeouts.'
 };
 
+/* ── Collector transcript, driven by whichever target was actually
+   clicked ── real IANA-assigned enterprise OIDs per OEM, and a firmware
+   string in that vendor's own real naming convention, seeded off the
+   target's own host/ip so it's stable across renders (same "sample but
+   deterministic" technique used everywhere else in this app) rather than
+   the single fixed Juniper/MX960 example every target used to show. */
+const TX_OID = { Juniper: '.1.3.6.1.4.1.2636.1.1.1.2.57', Cisco: '.1.3.6.1.4.1.9.1.1745',
+  Nokia: '.1.3.6.1.4.1.6527.1.3.3', Adva: '.1.3.6.1.4.1.2544.1.11.2' };
+function txSysDescr(oem, model, seed) {
+  const m = model || 'router';
+  if (oem === 'Juniper') return `Juniper Networks, Inc. ${m.toLowerCase()} internet router, kernel JUNOS ${nint(seed,701,17,24)}.${nint(seed,702,1,4)}R${nint(seed,703,1,3)}-S${nint(seed,704,1,9)}`;
+  if (oem === 'Cisco')   return `Cisco IOS XE Software, ${m}, Version ${nint(seed,705,16,17)}.${nint(seed,706,1,12)}.${nint(seed,707,1,5)}`;
+  if (oem === 'Nokia')   return `Nokia ${m}, TiMOS-${String.fromCharCode(65+nint(seed,708,0,5))}-${nint(seed,709,20,24)}.${nint(seed,710,1,10)}.R${nint(seed,711,1,9)}`;
+  if (oem === 'Adva')    return `ADVA Optical Networking, ${m}, Release ${nint(seed,712,10,12)}.${nint(seed,713,1,9)}`;
+  return `${oem || 'Unknown vendor'} ${m}`.trim();
+}
+const txSerial = seed => `${String.fromCharCode(65+nint(seed,720,0,25))}${String.fromCharCode(65+nint(seed,721,0,25))}${nint(seed,722,10000000,99999999)}`;
+
+/* what actually failed, in the target's own words — reuses the same
+   TGT_REASON vocabulary the Scan Targets list already shows on that row,
+   so the reason named in the transcript always matches the reason chip
+   the reader clicked through from. */
+const TX_FAIL = {
+  unreach: ip => ({ res: `Timeout: No Response from ${ip}\n0 of 3 ICMP echo replies received`,
+    reason: 'HOST_UNREACHABLE', action: 'Confirm the gateway route and any ACL on the collector subnet; retry once the network path is confirmed.' }),
+  timeout: ip => ({ res: `Timeout: No Response from ${ip}`,
+    reason: 'SNMP_TIMEOUT', action: 'Retry at 8,000 ms on the next pass; escalate to the circle NOC after three consecutive timeouts.' }),
+  auth:    ip => ({ res: `snmpget: Authentication failure (incorrect password, community or key) for ${ip}`,
+    reason: 'AUTH_FAILED', action: 'Verify the credential profile is current and bound to this device; rotate it if expired.' }),
+  parse:   ip => ({ res: `Response received from ${ip}, but it did not match the expected MIB structure — an unsupported CLI banner or encoding broke the fact parser`,
+    reason: 'PARSE_ERROR', action: 'Capture the raw payload and add a parser rule for this response shape.' }),
+  adapter: ip => ({ res: `sysObjectID reported by ${ip} has no registered adapter`,
+    reason: 'NO_ADAPTER', action: 'Add an adapter for this OEM / model pair, or leave unsupported until vendor coverage is prioritised.' }),
+  dupip:   ip => ({ res: `More than one chassis answered on ${ip} — duplicate management IP`,
+    reason: 'DUPLICATE_IP', action: 'Identify the second device on this address and reassign one of the two.' })
+};
+
 /* ── circles: exceptions plotted the way an ops team acts ── */
 const CIRCLES = [
   { c: 'JK', n: 'Jammu & Kashmir', x: 2, y: 0, master: 41,  rogue: 1,  missing: 2,  drift: 4 },
