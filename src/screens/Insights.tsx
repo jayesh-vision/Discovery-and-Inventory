@@ -46,13 +46,6 @@ const DomainDot = ({ domain }: { domain: keyof typeof DOMAIN_HEX }) => (
 export default function Insights() {
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="stack-x" style={{ maxWidth: '70ch' }}>
-          <h1 className="vw-page-title" style={{ margin: 0 }}>Discovery</h1>
-          <p className="vw-page-description" style={{ margin: 0 }}>Scan engine status · RAN, Core, Transport, IP/MPLS</p>
-        </div>
-      </div>
-
       <div className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: 'var(--vw-space-lg)' }}>
         {DISCOVERY_STATS.map(s => (
           <div key={s.label} className={`vw-card-section vw-card--accent ${STAT_CARD_CLASS[s.tone]}`}

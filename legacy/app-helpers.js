@@ -14,7 +14,7 @@ function getLiveDateSync(h = 9, m = 10) {
    onto a fixed hour, so "N hours ago" is still true whenever this loads */
 function relativeTimestamp(hoursAgo) {
   const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
-  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())} IST`;
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 /* same idea as relativeTimestamp, minute precision and no IST suffix — for
    the "last sync"/"last auth"/alarm-timestamp style fields, so a page never

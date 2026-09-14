@@ -16,7 +16,7 @@ function getLiveDateSync(h = 9, m = 10) {
    onto a fixed hour, so "N hours ago" is still true whenever this loads */
 function relativeTimestamp(hoursAgo) {
   const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
-  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())} IST`;
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 /* same idea as relativeTimestamp, minute precision and no IST suffix — for
    the "last sync"/"last auth"/alarm-timestamp style fields, so a page never
@@ -3033,7 +3033,7 @@ function viewJobs() {
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
       ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
       ${due
-        ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1] + ' IST',
+        ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1],
             `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
         : kpi('Next run', '—', 'nothing scheduled — every job is held or on demand', 'cyan')}
       ${kpi('Jobs needing attention', n(attention), reasons || 'every job ran clean and on time', 'amber')}
@@ -5104,7 +5104,11 @@ function viewVirtual() {
         const gf = gridOf('virtual').filters;
         const typeOn = gf['Type'] === v.n;
         const wholeTypeOn = typeOn && !gf['Status'];
+        /* matches the accent-strip treatment every other KPI-style card in
+           the app already carries (see kpi() and the Discovery stat tiles) —
+           these four were still plain white boxes with no accent at all. */
         return card(`
+          <div class="vw-card-accent" style="background:${cv(v.tone,400)}"></div>
           <div class="row vw-justify-between vw-items-center">
             <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
               data-cardfilter="virtual|${esc(v.n)}|">
@@ -5120,7 +5124,7 @@ function viewVirtual() {
               data-cardfilter="virtual|${esc(v.n)}|${esc(s.n)}">
               <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
               <span class="vw-value num">${s.c}</span></button>`).join('')}
-          </div>`);
+          </div>`, 'vw-card--accent', 'padding-top:calc(var(--vw-space-lg) + 3px)');
       }).join('')}
     </div>
 

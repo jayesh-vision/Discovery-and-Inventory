@@ -5,7 +5,7 @@ import type { ColorTone } from '../data/ledger';
 import {
   CYCLE_OUTCOME, DOMAIN_COVERAGE, DISCREPANCY_BY_DOMAIN, REGION_HEALTH, REGION_DOMAINS,
   DISTRIBUTION, DISTRIBUTION_TOTAL, CYCLE_ACTIVITY,
-  DOMAIN_HEX, DOMAIN_LABEL, RANGE_OPTIONS, type RangeOption, type DomainKey
+  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey
 } from '../data/reconcileOverview';
 
 const OUTCOME_TONE_COLOR = {
@@ -115,24 +115,9 @@ const REGION_HEAT_MAX = Math.max(...REGION_HEALTH.flatMap(r => REGION_DOMAINS.ma
 const DOMAIN_TONE: Record<DomainKey, ColorTone> = { RAN: 'purple', Core: 'fuchsia', Transport: 'orange', IPMPLS: 'sky' };
 
 export default function Reconcile() {
-  const [range, setRange] = useState<RangeOption>('Today');
-
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="stack-x" style={{ maxWidth: '70ch' }}>
-          <h1 className="vw-page-title" style={{ margin: 0 }}>Discovery and reconciliation</h1>
-          <p className="vw-page-description" style={{ margin: 0 }}>PAN network overview · RAN, Core, Transport, IP/MPLS</p>
-        </div>
-        <div className="seg">
-          {RANGE_OPTIONS.map(r => (
-            <button key={r} className={r === range ? 'is-on' : ''} onClick={() => setRange(r)}>{r}</button>
-          ))}
-        </div>
-      </div>
-
       <div>
-        <div className="vw-card-title-sm" style={{ marginBottom: 'var(--vw-space-sm)' }}>How the cycle came out</div>
         <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
           {CYCLE_OUTCOME.map(t => {
             const tone = OUTCOME_TONE_COLOR[t.tone];
