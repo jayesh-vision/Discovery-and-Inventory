@@ -739,8 +739,14 @@ function viewTarget() {
       ${card(`${headSm('Run history')}
         <div style="margin-top:var(--vw-space-md)">
         ${table([{ t: 'Run' }, { t: 'Started' }, { t: 'Elapsed' }, { t: 'Steps' }, { t: 'Outcome' }, { t: 'What changed' }],
-          RUN_HISTORY.map(r => [
-            `<span class="mono">#${r.run}</span>`, `<span class="num">${r.at}</span>`, `<span class="num">${r.dur}</span>`,
+          /* the newest run matches the "Last discovery · 3h ago" KPI above it
+             exactly, and each older run keeps its original gap from the one
+             before it (~30h, then ~24h, ~24h) — so the whole table reads as
+             real recent history, not a fixed snapshot that ages every day */
+          RUN_HISTORY.map((r, i) => [
+            `<span class="mono">#${r.run}</span>`,
+            `<span class="num">${agoStamp([180, 1980, 3420, 4860][i] ?? 180 + i * 1440, true)}</span>`,
+            `<span class="num">${r.dur}</span>`,
             r.steps, chip(r.out, r.chip),
             `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
           ]))}
