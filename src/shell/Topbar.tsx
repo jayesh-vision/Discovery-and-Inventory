@@ -40,11 +40,15 @@ export default function Topbar() {
   if (s.key === 'location' && !drill && !from) {
     return null;
   }
-  /* the Discovery landing page names itself in its own page-head ("Discovery");
-     a breadcrumb repeating that as "Insights" above it is redundant, and there's
-     nowhere shallower to drill back to from here. Reconciliation is the same
-     case — its page-head already says "Discovery and reconciliation". */
-  if (s.key === 'insights' || s.key === 'reconcile') {
+  /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
+     shallower to drill back to from here, so there's no real trail to show.
+     Scan jobs and Scan targets are the same case from the crumb's own shape:
+     routes.ts gives both a single-segment crumb with no " · " parent, so the
+     chain below is always empty and this would render as a lone, unclickable
+     line of text — a second page title, not a navigation aid. (The target
+     *detail* page keeps its breadcrumb — "Scan targets · Target" is a real
+     two-segment trail back to the list.) */
+  if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'jobs' || s.key === 'targets') {
     return null;
   }
 
