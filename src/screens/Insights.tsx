@@ -56,6 +56,21 @@ function SectionTitle({ children }: { children: ReactNode }) {
   return <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--vw-color-gray-900)' }}>{children}</div>;
 }
 
+/* the hero card's own delta reads "▲ 0.41 pt vs 7 days ago · target 99.00%" —
+   split off the leading arrow + figure and color it by direction (▲ green,
+   ▼ red), leaving the rest of the sentence in the page's usual muted tone */
+function TrustDelta({ sub }: { sub: string }) {
+  const m = /^([▲▼])\s*([^\s]+(?:\s+[a-z.]+)?)\s*(.*)$/.exec(sub);
+  if (!m) return <span className="vw-card-metric-label-sub">{sub}</span>;
+  const [, arrow, figure, rest] = m;
+  const up = arrow === '▲';
+  return (
+    <span className="vw-card-metric-label-sub">
+      <span style={{ color: up ? cv('emerald', 600) : cv('red', 600), fontWeight: 600 }}>{arrow} {figure}</span>{' '}{rest}
+    </span>
+  );
+}
+
 /* inline mini meter beside a percentage — used for adapter success rate,
    job coverage and trust index, the same idiom the Reconciliation page
    uses for scan % */
@@ -119,7 +134,7 @@ export default function Insights() {
           <div className="eyebrow">{TRUST_METRICS[0].label}</div>
           <div className="num" style={{ fontSize: '2.75rem', fontWeight: 700, marginTop: '6px', lineHeight: 1 }}>{TRUST_METRICS[0].value}</div>
           <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-            <span className="vw-card-metric-label-sub">{TRUST_METRICS[0].sub}</span>
+            <TrustDelta sub={TRUST_METRICS[0].sub} />
           </div>
         </Card>
         <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
@@ -129,7 +144,7 @@ export default function Insights() {
               <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
               <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
               <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
-                <Sparkline values={m.trend} hex={m.tone === 'up' ? 'var(--vw-color-emerald-500)' : 'var(--vw-color-slate-400)'} />
+                <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
               </div>
             </Card>
           ))}
