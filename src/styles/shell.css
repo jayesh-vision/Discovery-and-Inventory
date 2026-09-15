@@ -59,6 +59,12 @@ button { font: inherit; }
 .row     { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; }
 .row-t   { display: flex; align-items: flex-start; gap: var(--vw-space-md); }
 .grow    { flex: 1; min-width: 0; }
+/* A column of cards on a detail page. Paired with align-items:stretch on the
+   parent grid, both columns get the same height and the last card in each
+   absorbs the leftover, so two columns of unequal content still finish on the
+   same line instead of leaving one side ragged. */
+.pv-col  { display: flex; flex-direction: column; gap: var(--vw-space-lg); min-width: 0; }
+.pv-col > :last-child { flex: 1 1 auto; }
 .scroll-x { overflow-x: auto; }
 .eyebrow {
   font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
