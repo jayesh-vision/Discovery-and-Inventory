@@ -46,6 +46,10 @@ function getLegacyFieldValue(r, field) {
     if (r.source) return String(r.source);
   }
 
+  if (f === 'domain' && r.domain && typeof DOMAIN_META !== 'undefined' && DOMAIN_META[r.domain]) {
+    return DOMAIN_META[r.domain].n;
+  }
+
   for (const [k, v] of Object.entries(r)) {
     const kClean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
     const fClean = f.replace(/[^a-z0-9]/g, '');
@@ -79,7 +83,12 @@ function gridApply(key, rows) {
       if (!v) continue;
       const fieldVal = getLegacyFieldValue(r, field).toLowerCase();
       if (fieldVal) {
-        if (!fieldVal.includes(v)) return false;
+        /* "RAN" is a substring of "Transport" — a categorical field like
+           Domain, whose options are a fixed enum rather than free text,
+           needs an exact match or a domain filter for RAN silently pulls in
+           every Transport row too */
+        const exact = field.toLowerCase() === 'domain';
+        if (exact ? fieldVal !== v : !fieldVal.includes(v)) return false;
       } else {
         if (!text.includes(v)) return false;
       }
@@ -315,12 +324,14 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
+             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
+             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],

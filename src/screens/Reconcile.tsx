@@ -1,12 +1,18 @@
 import { useState, type CSSProperties } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { Tip } from '../components/charts';
 import type { ColorTone } from '../data/ledger';
 import {
   CYCLE_OUTCOME, DOMAIN_COVERAGE, DISCREPANCY_BY_DOMAIN, REGION_HEALTH, REGION_DOMAINS,
-  DISTRIBUTION, DISTRIBUTION_TOTAL, CYCLE_ACTIVITY,
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey
+  DISTRIBUTION, DISTRIBUTION_TOTAL, CYCLE_ACTIVITY, QUICK_LINKS,
+  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey, type QuickLink
 } from '../data/reconcileOverview';
+
+const QUICK_LINK_TARGET: Record<QuickLink['icon'], string> = {
+  workbench: '/discovery/reconcile/results', scan: '/discovery/reconcile/jobs', rules: '/discovery/reconcile/rules'
+};
+const QUICK_LINK_GLYPH: Record<QuickLink['icon'], string> = { workbench: '⊞', scan: '◎', rules: '⚖' };
 
 const OUTCOME_TONE_COLOR = {
   success: 'emerald', warning: 'amber', orange: 'orange', error: 'red', purple: 'purple'
@@ -115,8 +121,25 @@ const REGION_HEAT_MAX = Math.max(...REGION_HEALTH.flatMap(r => REGION_DOMAINS.ma
 const DOMAIN_TONE: Record<DomainKey, ColorTone> = { RAN: 'purple', Core: 'fuchsia', Transport: 'orange', IPMPLS: 'sky' };
 
 export default function Reconcile() {
+  const nav = useNavigate();
   return (
     <div className="page">
+      <div className="row vw-gap-md" style={{ flexWrap: 'wrap' }}>
+        {QUICK_LINKS.map(q => (
+          <button key={q.title} className="vw-card-section row vw-items-center is-drill" style={{ gap: '12px', flex: '1 1 220px' }}
+            onClick={() => nav(QUICK_LINK_TARGET[q.icon])}>
+            <span style={{
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: cv('blue', 50), color: cv('blue', 600), fontSize: '1.125rem'
+            }}>{QUICK_LINK_GLYPH[q.icon]}</span>
+            <span>
+              <div className="vw-value" style={{ fontWeight: 600 }}>{q.title}</div>
+              <div className="vw-card-metric-label-sub">{q.sub}</div>
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div>
         <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
           {CYCLE_OUTCOME.map(t => {
@@ -143,7 +166,7 @@ export default function Reconcile() {
         <table className="mtbl">
           <thead><tr><th>Domain</th><th>In scope</th><th>Scanned</th><th>In sync</th><th>Drifted</th><th>Last scan</th><th>Next scan</th></tr></thead>
           <tbody>{DOMAIN_COVERAGE.map(d => (
-            <tr key={d.domain}>
+            <tr key={d.domain} className="is-click" onClick={() => nav(`/discovery/reconcile/results?domain=${d.domain}`)}>
               <td><DomainDot domain={d.domain} /></td>
               <td className="num">{d.inScope.toLocaleString('en-IN')}</td>
               <td className="num">

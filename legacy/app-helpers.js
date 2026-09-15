@@ -2,6 +2,17 @@
 const n   = v => v.toLocaleString('en-IN');
 const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
+/* RAN/Core/Transport/IP-MPLS — same keys, same hex ramp as the React
+   Insights/Reconciliation screens' DOMAIN_HEX/DOMAIN_LABEL (src/data/
+   discoveryOverview.ts), so a domain reads the same colour everywhere,
+   legacy screens included. */
+const DOMAIN_META = {
+  RAN:       { n: 'RAN',      hex: cv('blue', 400) },
+  Core:      { n: 'Core',     hex: cv('violet', 400) },
+  Transport: { n: 'Transport',hex: cv('teal', 400) },
+  IPMPLS:    { n: 'IP/MPLS',  hex: cv('pink', 400) }
+};
+const domainDot = d => `<span class="row" style="align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${DOMAIN_META[d]?.hex || cv('gray',400)};flex-shrink:0"></span>${DOMAIN_META[d]?.n || d}</span>`;
 const pad2 = v => String(v).padStart(2, '0');
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function getLiveDateSync(h = 9, m = 10) {
