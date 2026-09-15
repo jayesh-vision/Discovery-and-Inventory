@@ -4622,10 +4622,12 @@ function viewSite() {
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
       ${rows.length ? table(cols, rows.map(cell), '',
+        /* no "Site info" here — every row on this tab already belongs to
+           the site this whole page is showing, so that action would only
+           ever reopen the page the reader is already on */
         i => [
           ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
-          A('Site info', { v:'site', l:l.name, q:'id=' + l.id })
+          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
