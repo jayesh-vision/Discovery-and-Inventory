@@ -109,6 +109,147 @@ export function SplitBar({ ok, fail, max }: { ok: number; fail: number; max: num
   );
 }
 
+/* ── sparkline ──────────────────────────────────────────────
+   A trend line with no axes, ticks or hover — decoration on a KPI card, not
+   a chart to read values off. Scaled to its own min/max, not zero-based, so
+   a tight 12-point run (98.0 → 98.2) still shows visible movement. */
+export function Sparkline({ values, height = 32, hex = 'var(--vw-color-blue-500)' }: { values: number[]; height?: number; hex?: string }) {
+  const W = 200, H = height, pad = 3;
+  const hi = Math.max(...values), lo = Math.min(...values), span = hi - lo || 1;
+  const x = (i: number) => pad + (W - pad * 2) * (values.length === 1 ? 0.5 : i / (values.length - 1));
+  const y = (v: number) => pad + (H - pad * 2) * (1 - (v - lo) / span);
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const area = `${d} L${x(values.length - 1).toFixed(1)} ${H} L${x(0).toFixed(1)} ${H} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" role="img" aria-hidden="true">
+      <path d={area} fill={hex} opacity=".1" />
+      <path d={d} fill="none" stroke={hex} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r="2.6" fill={hex} />
+    </svg>
+  );
+}
+
+/* ── two-series line, zero-based ─────────────────────────────
+   Same shape as LineChart, but overlays a second series with its own
+   legend swatch (detected vs auto-resolved), rather than stacking or
+   sharing an axis with a single line drawn twice. */
+export interface LineSeries { n: string; hex: string; values: number[] }
+export function MultiLineChart({ labels, series, height = 220, format, detail }: {
+  labels: string[]; series: LineSeries[]; height?: number; format: (v: number) => string; detail?: (i: number) => ReactNode;
+}) {
+  const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
+  const W = 1000, H = height, padL = 46, padR = 16, padT = 18, padB = 32;
+  const all = series.flatMap(s => s.values);
+  const { y0, y1 } = lineAxisBounds(all);
+  const y = (v: number) => padT + (H - padT - padB) * (1 - (v - y0) / (y1 - y0));
+  const n = labels.length;
+  const x = (i: number) => padL + (W - padL - padR) * (n === 1 ? 0.5 : i / (n - 1));
+  const ticks = [y0, (y0 + y1) / 2, y1];
+  const step = Math.max(1, Math.round(n / 8));
+  return (
+    <div className="ch-wrap" onMouseLeave={() => setHov(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label="Detected vs auto-resolved discrepancies per day">
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className="ch-grid" />
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="ch-axis">{format(t)}</text>
+          </g>
+        ))}
+        {series.map(s => {
+          const d = s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i)} ${y(v)}`).join(' ');
+          return <path key={s.n} d={d} fill="none" stroke={s.hex} strokeWidth="2" strokeLinejoin="round" />;
+        })}
+        {labels.map((lab, i) => (i % step !== 0 && i !== n - 1) ? null : (
+          <g key={i} onMouseEnter={e => setHov({ i, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ i, x: e.clientX, y: e.clientY })}>
+            <rect x={x(i) - (W - padL - padR) / n / 2} y={padT} width={(W - padL - padR) / n} height={H - padT - padB} fill="transparent" />
+            <text x={x(i)} y={H - 10} textAnchor="middle" className="ch-axis">{lab}</text>
+          </g>
+        ))}
+        {series.map(s => s.values.map((v, i) => (
+          <circle key={`${s.n}-${i}`} cx={x(i)} cy={y(v)} r={hov?.i === i ? 4 : 0} fill={s.hex}
+            style={{ pointerEvents: 'none', transition: 'r .1s' }} />
+        )))}
+      </svg>
+      {hov && (
+        <Tip x={hov.x} y={hov.y}>
+          <div className="ch-tip-h">{labels[hov.i]}</div>
+          {detail ? detail(hov.i) : series.map(s => (
+            <div key={s.n} className="ch-tip-r"><span className="ch-dot" style={{ background: s.hex }} />{s.n}<span className="grow" /><span className="num">{format(s.values[hov.i])}</span></div>
+          ))}
+        </Tip>
+      )}
+      <div className="ch-legend">
+        {series.map(s => <span key={s.n} className="ch-leg"><span className="ch-dot" style={{ background: s.hex }} />{s.n}</span>)}
+      </div>
+    </div>
+  );
+}
+
+/* ── measured history + dashed run-rate projection ─────────────
+   A solid line for what happened, a dashed continuation of the same slope
+   for where it's headed, and a horizontal target line to show when (if
+   ever) the dashed line crosses it. The two series share one x-axis built
+   by concatenating historyLabels with projectionLabels (skipping its first
+   point — "today" — since that's the same point history already drew). */
+export function ProjectionChart({ historyLabels, historyValues, projectionLabels, projectionValues, target, targetLabel, yBounds, height = 260, format }: {
+  historyLabels: string[]; historyValues: number[]; projectionLabels: string[]; projectionValues: number[];
+  target: number; targetLabel: string; yBounds: { y0: number; y1: number }; height?: number; format: (v: number) => string;
+}) {
+  const [hov, setHov] = useState<{ i: number; x: number; y: number; label: string; value: number; kind: 'measured' | 'projected' } | null>(null);
+  const W = 1000, H = height, padL = 50, padR = 60, padT = 20, padB = 32;
+  const { y0, y1 } = yBounds;
+  const labels = [...historyLabels, ...projectionLabels.slice(1)];
+  const n = labels.length;
+  const y = (v: number) => padT + (H - padT - padB) * (1 - (v - y0) / (y1 - y0));
+  const x = (i: number) => padL + (W - padL - padR) * (n === 1 ? 0.5 : i / (n - 1));
+  const ticks = [y0, (y0 + y1) / 2, y1];
+  const hi = historyValues.length;
+  const dHist = historyValues.map((v, i) => `${i ? 'L' : 'M'}${x(i)} ${y(v)}`).join(' ');
+  const dProj = projectionValues.map((v, i) => `${i ? 'L' : 'M'}${x(hi - 1 + i)} ${y(v)}`).join(' ');
+  const step = Math.max(1, Math.round(n / 10));
+  return (
+    <div className="ch-wrap" onMouseLeave={() => setHov(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label="Inventory trust index, measured and projected">
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className="ch-grid" />
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="ch-axis">{format(t)}</text>
+          </g>
+        ))}
+        <line x1={padL} x2={W - padR} y1={y(target)} y2={y(target)} stroke="var(--vw-color-emerald-500)" strokeWidth="1.5" strokeDasharray="2 4" />
+        <text x={W - padR + 6} y={y(target) - 6} className="ch-axis" style={{ fill: 'var(--vw-color-emerald-600)' }}>{targetLabel}</text>
+        <path d={dHist} fill="none" stroke="var(--vw-color-blue-500)" strokeWidth="2" strokeLinejoin="round" />
+        <path d={dProj} fill="none" stroke="var(--vw-color-blue-400)" strokeWidth="2" strokeDasharray="5 4" strokeLinejoin="round" />
+        <circle cx={x(hi - 1)} cy={y(historyValues[hi - 1])} r="4" fill="var(--vw-color-blue-600)" />
+        <text x={x(hi - 1)} y={y(historyValues[hi - 1]) - 12} textAnchor="middle" className="ch-lab">{format(historyValues[hi - 1])}</text>
+        <circle cx={x(n - 1)} cy={y(projectionValues[projectionValues.length - 1])} r="4" fill="var(--vw-color-emerald-600)" />
+        <text x={x(n - 1)} y={y(projectionValues[projectionValues.length - 1]) - 12} textAnchor="middle" className="ch-lab">{format(projectionValues[projectionValues.length - 1])}</text>
+        {labels.map((lab, i) => (i % step !== 0 && i !== n - 1 && i !== hi - 1) ? null : (
+          <g key={i} onMouseEnter={e => {
+            const kind: 'measured' | 'projected' = i < hi ? 'measured' : 'projected';
+            const value = i < hi ? historyValues[i] : projectionValues[i - hi + 1];
+            setHov({ i, x: e.clientX, y: e.clientY, label: lab, value, kind });
+          }} onMouseMove={e => setHov(h => h && { ...h, x: e.clientX, y: e.clientY })}>
+            <rect x={x(i) - (W - padL - padR) / n / 2} y={padT} width={(W - padL - padR) / n} height={H - padT - padB} fill="transparent" />
+            <text x={x(i)} y={H - 10} textAnchor="middle" className="ch-axis">{lab}</text>
+          </g>
+        ))}
+      </svg>
+      {hov && (
+        <Tip x={hov.x} y={hov.y}>
+          <div className="ch-tip-h">{hov.label}</div>
+          <div className="ch-tip-r">{hov.kind === 'measured' ? 'Measured' : 'Projected'}<span className="grow" /><span className="num">{format(hov.value)}</span></div>
+        </Tip>
+      )}
+      <div className="ch-legend">
+        <span className="ch-leg"><span className="ch-dot" style={{ background: 'var(--vw-color-blue-500)' }} />Measured</span>
+        <span className="ch-leg"><span className="ch-dot" style={{ background: 'var(--vw-color-blue-400)' }} />Projection at current rate</span>
+        <span className="ch-leg"><span className="ch-dot" style={{ background: 'var(--vw-color-emerald-500)' }} />{targetLabel}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── single-series line, zero-based ──────────────────────────
    One series, so no legend. */
 /** The floor/ceiling a LineChart draws its axis to — exported so callers can
