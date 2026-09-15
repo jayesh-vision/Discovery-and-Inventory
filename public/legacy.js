@@ -6890,7 +6890,7 @@ function viewPassive() {
         /* every passive tab key (t) doubles as its own View details view
            key — viewOdfDetail/viewRackDetail/… below, one per PASSIVE_TABS
            entry — so no per-tab mapping table is needed here */
-        i => [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) }), siteA(rows[i].site || rows[i].n)])
+        i => [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
       ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
@@ -7001,6 +7001,28 @@ const odfDetailRows = fields => fields.map(([k, v]) => `<div class="cx-row" styl
     <span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span>
   </div>`).join('');
 
+/* Every port on the frame, laid out in the 12-port trays an ODF is wired in —
+   filled squares are patched, outlines are free. */
+function odfPortMap(used, total) {
+  const trays = Math.max(1, Math.ceil(total / 12));
+  const rows = [];
+  for (let t = 0; t < trays; t++) {
+    const cells = [];
+    for (let i = 0; i < 12; i++) {
+      const idx = t * 12 + i;
+      if (idx >= total) break;
+      const on = idx < used;
+      cells.push(`<span title="Port ${idx + 1} · ${on ? 'patched' : 'free'}" style="width:100%;aspect-ratio:1;border-radius:3px;
+        background:${on ? cv('emerald', 400) : '#fff'};border:1.5px solid ${on ? cv('emerald', 500) : cv('slate', 300)}"></span>`);
+    }
+    rows.push(`<div class="row vw-items-center vw-gap-sm">
+      <span class="vw-label" style="width:2rem;flex-shrink:0;font-size:0.625rem">T${t + 1}</span>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;flex:1">${cells.join('')}</div>
+    </div>`);
+  }
+  return `<div class="stack-s" style="width:290px;gap:5px">${rows.join('')}</div>`;
+}
+
 function viewOdfDetail() {
   const rows = PASSIVE.odf;
   const r = rows.find(x => x.n === ODF_ID) || rows[0];
@@ -7019,29 +7041,45 @@ function viewOdfDetail() {
         ['Installation completed', `${d.installPct > 0 ? 'Yes' : 'No'} (${d.installPct}%)`],
         ['Installation date', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
+    </div>`);
+
+  /* An ODF is wired in 12-port trays, so the map and the breakdown both group
+     that way — a planner reads "tray 3 has 4 free" far faster than a raw count. */
+  const trayCount = Math.max(1, Math.ceil(r.cap / 12));
+  const trayList = Array.from({ length: trayCount }, (_, i) => {
+    const capIn = Math.min(12, r.cap - i * 12);
+    const usedIn = Math.max(0, Math.min(capIn, r.used - i * 12));
+    const full = usedIn === capIn;
+    return passiveRecordRow({
+      badge: String(i + 1), tone: full ? 'red' : 'emerald', active: usedIn > 0,
+      title: `Tray ${i + 1}`,
+      sub: `${usedIn} of ${capIn} ports patched · ${r.term}`,
+      chipLabel: full ? 'Full' : usedIn ? `${capIn - usedIn} free` : 'Empty',
+      chipTone: full ? 'error' : usedIn ? 'success' : 'neutral'
+    });
+  }).join('');
 
   const portUtilCard = card(`${headSm('Port utilisation')}
-    <div class="row vw-gap-lg vw-items-center" style="margin-top:var(--vw-space-md)">
-      ${donut([{ n:'In use', c:r.used, tone:'emerald' }, { n:'Free', c:free, tone:'sky' }], r.cap, `${fillPct}%`, 'used', 96)}
-      <div class="stack-s grow">
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',400)}"></span>In use <span class="vw-value num">${r.used}</span></span>
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>Free <span class="vw-value num">${free}</span></span>
-        <div class="hbar-track" style="height:8px;margin-top:4px">
-          <span class="hbar-fill" style="display:block;width:${fillPct}%;background:${cv(fillPct>85?'red':fillPct>70?'amber':'emerald',400)}"></span>
-        </div>
-      </div>
-    </div>`);
+    <p class="vw-card-description" style="margin-top:2px">${r.used} of ${r.cap} ports patched — ${esc(r.type)} · ${esc(r.term)}</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Total ports', String(r.cap), 'sky'],
+        ['In use', String(r.used), 'emerald'],
+        ['Free', String(free), 'purple'],
+        ['Fill', `${fillPct}%`, fillPct > 85 ? 'red' : fillPct > 70 ? 'amber' : 'emerald']
+      ])}
+    </div>
+    ${passiveChartSplit(
+      passiveDonutBlock([{ n:'In use', c:r.used, tone:'emerald' }, { n:'Free', c:free, tone:'slate' }], r.cap, `${fillPct}%`, 'patched'),
+      trayList)}
+    ${passiveDiagramNote(odfPortMap(r.used, r.cap), `Port map · ${r.cap}F frame`,
+      'Every port on the frame, grouped into the 12-port trays it is wired in — filled squares are patched, outlines are free.',
+      `${free} free port${free === 1 ? '' : 's'} — ${fillPct >= 85 ? 'approaching exhaustion, plan an additional frame.' : `room for ${free} more circuit${free === 1 ? '' : 's'} on this frame.`}`)}`);
 
   const ODF_PHOTO_ILLUSTRATIONS = [mediaIllustrationPanel, mediaIllustrationConnectorEnd, mediaIllustrationCableBundle, mediaIllustrationLabelTag];
-  const photosCard = card(`
-    <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Photos')}
-      <button class="nst-btn nst-btn--xs nst-btn--ghost js-ack">View all (${d.photos.length})</button>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md)">
-      ${d.photos.map((p, i) => mediaTile(ODF_PHOTO_ILLUSTRATIONS[i % ODF_PHOTO_ILLUSTRATIONS.length](), p.n, p.at, false)).join('')}
-    </div>`);
+  const photosCard = passivePhotosCard(
+    d.photos.map((p, i) => [p.n, ODF_PHOTO_ILLUSTRATIONS[i % ODF_PHOTO_ILLUSTRATIONS.length], p.at]),
+    d.installDate);
 
   const locationCard = card(`${headSm('Location')}
     <div class="row-t" style="margin-top:var(--vw-space-md);align-items:stretch">
@@ -7054,7 +7092,7 @@ function viewOdfDetail() {
         <div class="row vw-gap-sm"><span class="vw-label" style="width:6rem">Address</span><span class="vw-value">${esc(site.addr)}</span></div>
         <a class="nst-btn nst-btn--sm" style="align-self:flex-start;margin-top:4px" href="${esc(mapsUrl)}" target="_blank" rel="noopener">View on map</a>
       </div>
-    </div>`, 'grow');
+    </div>`);
 
   const additionalInfoCard = card(`${headSm('Additional information')}
     <div style="margin-top:var(--vw-space-md)">
@@ -7062,49 +7100,19 @@ function viewOdfDetail() {
         ['Vendor', d.vendor], ['Frame type', d.frameType], ['Cabinet/Rack no.', d.cabinetRackNo],
         ['Height (U)', d.height], ['Power required', d.powerRequired], ['Environment', d.environment]
       ])}
-    </div>`, 'grow');
-
-  /* The real, visible breadcrumb is React's Topbar — it reads this screen's
-     crumb chain off src/routes.ts ('Resources · Passive Infrastructure · ODF
-     · Element') and swaps the static "Element" leaf for the row action's own
-     drill label (this ODF's name), the same convention every other legacy
-     detail screen (resource, node, site, …) already relies on. Back lives
-     there alone — no second, hand-rolled "Back" button here. */
+    </div>`);
 
   return `<div class="page">
-    <div class="page-head">
-      <div class="stack-x" style="max-width:70ch">
-        <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
-          <h1 class="vw-page-title" style="margin:0">${esc(r.n)}</h1>
-          ${chip('ODF', 'info', true)}
-        </div>
-        <p class="vw-page-description" style="margin:0">ODF · ${esc(site.name)}</p>
-      </div>
-    </div>
-
-    ${statStrip([
-      { k:'Status',        v:r.st,                                   s:'', t:r.chip==='success'?'emerald':r.chip==='info'?'sky':'amber' },
-      { k:'Total ports',   v:String(r.cap),                          s:'', t:'sky' },
-      { k:'Used / Free',   v:`${r.used} / ${free}`,                  s:'', t:'purple' },
-      { k:'Lat / Long',    v:`${parseFloat(site.lat).toFixed(4)}, ${parseFloat(site.lon).toFixed(4)}`, s:'', t:'cyan' },
-      { k:'Serial number', v:d.serialNumber,                         s:'', t:'slate' },
-      { k:'Installation',  v:`${d.installPct}%`,                     s:'', t:d.installPct===100?'emerald':'amber' }
-    ])}
-
-    <div class="section-tabs"><button class="stab is-on">Overview</button></div>
-
-    <div class="row-t" style="align-items:stretch">
-      ${odfDetailsCard}
-      <div class="stack" style="width:min(400px,100%);flex-shrink:0">
-        ${portUtilCard}
-        ${photosCard}
-      </div>
-    </div>
-
-    <div class="row-t" style="align-items:stretch;margin-top:var(--vw-space-lg)">
-      ${locationCard}
-      ${additionalInfoCard}
-    </div>
+    ${passiveDetailChrome({ name:r.n, kind:'ODF', sub:`ODF · ${site.name}`,
+      cells: [
+        { k:'Status',        v:r.st,                                   s:'', t:r.chip==='success'?'emerald':r.chip==='info'?'sky':'amber' },
+        { k:'Total ports',   v:String(r.cap),                          s:'', t:'sky' },
+        { k:'Used / Free',   v:`${r.used} / ${free}`,                  s:'', t:'purple' },
+        { k:'Lat / Long',    v:`${parseFloat(site.lat).toFixed(4)}, ${parseFloat(site.lon).toFixed(4)}`, s:'', t:'cyan' },
+        { k:'Serial number', v:d.serialNumber,                         s:'', t:'slate' },
+        { k:'Installation',  v:`${d.installPct}%`,                     s:'', t:d.installPct===100?'emerald':'amber' }
+      ]})}
+    ${passiveTwoCol(`${odfDetailsCard}${additionalInfoCard}${photosCard}`, `${portUtilCard}${locationCard}`)}
   </div>`;
 }
 
@@ -7133,6 +7141,84 @@ function passiveDetailChrome({ name, kind, sub, cells, tabsHtml, dot, badges }) 
     ${tabsHtml || `<div class="section-tabs"><button class="stab is-on">Overview</button></div>`}`;
 }
 
+/* ═══ shared layout idioms for every passive detail page ═══
+   Extracted so ODF / Racks / Power / Splice / Cords / Ducts all read as one
+   product rather than six one-off designs: the same KPI strip, the same
+   record-row list, and the same "narrow details+photos column beside a wide
+   analysis column" page shell. */
+
+/* Four-ish compact figures with a colour-coded accent — the headline numbers
+   for whatever the record measures, sitting above its chart. */
+function passiveKpiStrip(cells) {
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--vw-space-md)">
+    ${cells.map(([k, v, t]) => `<div class="vw-card-child" style="padding:var(--vw-space-md);border-left:3px solid ${cv(t,400)}">
+      <div class="vw-card-metric-label">${esc(k)}</div>
+      <div class="vw-value num" style="font-size:1.375rem;font-weight:300;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(v)}">${esc(v)}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+/* One row of a record list — a numbered/lettered swatch that ties back to the
+   diagram beside it, a title, a sub-line, and a status chip. Reads as a set of
+   things rather than a spreadsheet, and fills horizontal run beside a chart. */
+function passiveRecordRow({ badge, tone, active, title, sub, chipLabel, chipTone }) {
+  return `<div class="row vw-gap-md vw-items-center" style="padding:10px 12px;border-radius:var(--vw-radius-md);
+    background:${active?cv(tone,50):cv('slate',50)};border:1px solid ${active?cv(tone,100):cv('slate',200)}">
+    <span style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+      font-size:0.75rem;font-weight:600;background:#fff;border:2px solid ${cv(active?tone:'slate',active?500:300)};
+      color:${cv(active?tone:'slate',active?700:400)}">${esc(badge)}</span>
+    <div class="grow" style="min-width:0">
+      <div class="vw-value" style="font-weight:600;font-size:0.8125rem">${esc(title)}</div>
+      <div class="vw-card-metric-label-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sub)}</div>
+    </div>
+    ${chipLabel ? chip(chipLabel, chipTone) : ''}
+  </div>`;
+}
+
+/* A donut with its legend centred beneath it — the left half of the standard
+   "chart beside a list" row. */
+function passiveDonutBlock(segs, total, top, sub, size = 150) {
+  return `<div class="stack-s" style="align-items:center">
+    ${donut(segs, total || 1, top, sub, size)}
+    <div class="legend" style="justify-content:center;margin-top:var(--vw-space-sm)">
+      ${segs.map(s => `<span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone, s.tone==='slate'?300:400)}"></span>${esc(s.n)} ${s.c}</span>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* chart on the left, list on the right — never one stacked on the other, which
+   is what left these cards half-empty before */
+const passiveChartSplit = (chartHtml, listHtml) =>
+  `<div style="display:grid;grid-template-columns:minmax(200px,280px) 1fr;gap:var(--vw-space-xl);margin-top:var(--vw-space-xl);align-items:start">
+    ${chartHtml}<div class="stack-s" style="min-width:0">${listHtml}</div>
+  </div>`;
+
+/* diagram + its plain-English reading, closing out an analysis card */
+const passiveDiagramNote = (diagramHtml, title, body, note) =>
+  `<div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+    <div style="flex:0 0 auto">${diagramHtml}</div>
+    <div class="stack-s grow" style="min-width:0">
+      <span class="vw-value" style="font-weight:600">${esc(title)}</span>
+      <span class="vw-card-description">${esc(body)}</span>
+      ${note ? `<span class="vw-card-metric-label-sub" style="margin-top:2px">${esc(note)}</span>` : ''}
+    </div>
+  </div>`;
+
+/* the page shell: a narrow column carrying the record's own fields and its
+   photos, beside a wide column carrying the analysis */
+const passiveTwoCol = (leftCards, rightCards) =>
+  `<div style="display:grid;grid-template-columns:minmax(320px,0.8fr) 1.6fr;gap:var(--vw-space-lg);align-items:start">
+    <div class="stack">${leftCards}</div>
+    <div class="stack">${rightCards}</div>
+  </div>`;
+
+/* a Photos card sized for the narrow column, with a count/date sub-line */
+const passivePhotosCard = (photos, meta) => card(`
+  ${headSm('Photos', `${photos.length} field capture${photos.length===1?'':'s'}${meta?` · ${meta}`:''}`)}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
+    ${photos.map(([n, fn, when]) => mediaTile(fn(), n, when, false)).join('')}
+  </div>`);
+
 /* ── Rack — View details: an elevation diagram + an occupants table ── */
 const RACK_MOUNT = ['19" 4-post open rack', '19" enclosed cabinet', '23" telco rack'];
 function buildRackDetail(r, site) {
@@ -7160,7 +7246,7 @@ function rackElevationDetail(r) {
       </div>
     </div>`);
   }
-  return `<div style="max-height:420px;overflow-y:auto;border:1px solid ${cv('slate',200)};border-radius:var(--vw-radius-md);padding:4px 8px">${rows.join('')}</div>`;
+  return `<div style="max-height:300px;overflow-y:auto;border:1px solid ${cv('slate',200)};border-radius:var(--vw-radius-md);padding:4px 8px">${rows.join('')}</div>`;
 }
 function viewRackDetail() {
   const rows = PASSIVE.rack;
@@ -7170,6 +7256,7 @@ function viewRackDetail() {
   const free = r.h - r.used;
   const [kwUsed, kwTotal] = r.kw.split('/').map(x => parseFloat(x));
   const kwPct = kwTotal ? Math.round(kwUsed / kwTotal * 100) : 0;
+  const uPct = r.h ? Math.round(r.used / r.h * 100) : 0;
 
   const detailsCard = card(`${headSm('Rack details')}
     <div style="margin-top:var(--vw-space-md)">
@@ -7178,42 +7265,60 @@ function viewRackDetail() {
         ['Mount type', d.mountType], ['Height', `${r.h}U`], ['U used', String(r.used)], ['U free', String(free)],
         ['Cooling', r.cool], ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
+    </div>`);
 
-  const elevationCard = card(`${headSm('Rack elevation')}
-    <div style="margin-top:var(--vw-space-md)">${rackElevationDetail(r)}</div>
-    <div class="legend" style="margin-top:var(--vw-space-sm)">
-      <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>Router</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>Switch</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
-      <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',50)};border:1px solid ${cv('slate',300)}"></span>Free U</span>
-    </div>`, 'grow');
+  const OCC_KIND = { rtr: ['Router', 'sky'], sw: ['Switch', 'emerald'] };
+  const occList = r.occ.map((o, i) => {
+    const [label, tone] = OCC_KIND[o[3]] || ['ODF / panel', 'purple'];
+    const span = o[1] > o[0] ? `${o[1] - o[0] + 1}U` : '1U';
+    return passiveRecordRow({
+      badge: `U${o[0]}`, tone, active: true, title: o[2],
+      sub: `${label} · occupies U${o[0]}${o[1] > o[0] ? `–U${o[1]}` : ''} · ${span}`,
+      chipLabel: label, chipTone: tone === 'sky' ? 'info' : tone === 'emerald' ? 'success' : 'purple'
+    });
+  }).join('') || `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No equipment mounted in this rack yet.</div>`;
 
-  const occupantsCard = card(`${headSm('Occupants')}
-    <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Position'},{t:'Device'},{t:'Type'}],
-        r.occ.map(o => [`<span class="mono">U${o[0]}${o[1]>o[0]?'-'+o[1]:''}</span>`, `<span class="vw-value">${esc(o[2])}</span>`,
-          chip(o[3]==='rtr'?'Router':o[3]==='sw'?'Switch':'ODF / panel', o[3]==='rtr'?'info':o[3]==='sw'?'success':'purple')]), '', () => [])}
-    </div>`, 'grow');
-
-  const powerCard = card(`${headSm('Power draw')}
-    <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-md)">
-      ${donut([{ n:'Used', c:kwUsed, tone:'amber' }, { n:'Headroom', c:Math.max(0, kwTotal - kwUsed), tone:'slate' }], kwTotal || 1, `${kwPct}%`, 'of rating', 88)}
-      <div class="stack-s grow">
-        <span class="vw-card-metric-label-sub num">${r.kw} kW</span>
-        <div class="hbar-track" style="height:8px;margin-top:2px">
-          <span class="hbar-fill" style="display:block;width:${kwPct}%;background:${cv(kwPct>85?'red':kwPct>70?'amber':'emerald',400)}"></span>
+  const capacityCard = card(`${headSm('Capacity & occupancy')}
+    <p class="vw-card-description" style="margin-top:2px">${r.used} of ${r.h}U populated · ${r.occ.length} device${r.occ.length===1?'':'s'} mounted · ${esc(r.cool)}</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Rack height', `${r.h}U`, 'sky'],
+        ['U used', String(r.used), 'purple'],
+        ['U free', String(free), 'emerald'],
+        ['Power draw', `${kwPct}%`, kwPct > 85 ? 'red' : kwPct > 70 ? 'amber' : 'emerald']
+      ])}
+    </div>
+    ${passiveChartSplit(
+      `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
+        ${passiveDonutBlock([{ n:'Used', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.h, `${uPct}%`, 'rack space', 150)}
+        <div style="width:100%">
+          <div class="row vw-justify-between vw-items-baseline">
+            <span class="vw-label">Power draw</span>
+            <span class="vw-value num" style="font-size:0.8125rem">${esc(r.kw)} kW</span>
+          </div>
+          <div class="hbar-track" style="height:10px;margin-top:6px">
+            <span class="hbar-fill" style="display:block;width:${kwPct}%;background:${cv(kwPct>85?'red':kwPct>70?'amber':'emerald',400)}"></span>
+          </div>
+          <span class="vw-card-metric-label-sub" style="margin-top:4px;display:block">${kwPct}% of rated capacity</span>
         </div>
-      </div>
-    </div>`);
+      </div>`,
+      occList)}
+    ${passiveDiagramNote(
+      `<div style="width:300px">${rackElevationDetail(r)}
+        <div class="legend" style="margin-top:var(--vw-space-sm)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>Router</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>Switch</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',50)};border:1px solid ${cv('slate',300)}"></span>Free U</span>
+        </div>
+      </div>`,
+      `Rack elevation · ${r.h}U`,
+      'Front elevation from the top rail down — every occupied U is shaded by equipment class, blank rows are free rack units available for mounting.',
+      `${free}U free — ${uPct >= 90 ? 'effectively full, plan an adjacent rack for further growth.' : `room for roughly ${Math.max(1, Math.floor(free / 2))} more 2U device${Math.floor(free/2) === 1 ? '' : 's'}.`}`)}`);
 
-  const RACK_PHOTOS = [
-    ['Rack front view', mediaIllustrationRackFront], ['Asset / rack tag', mediaIllustrationLabelTag]
-  ];
-  const photosCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
-      ${RACK_PHOTOS.map(([n, fn]) => mediaTile(fn(), n, d.installDate, false)).join('')}
-    </div>`);
+  const photosCard = passivePhotosCard(
+    [['Rack front view', mediaIllustrationRackFront, d.installDate], ['Asset / rack tag', mediaIllustrationLabelTag, d.installDate]],
+    d.installDate);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Rack', sub:`Rack · ${site.name}`,
@@ -7225,17 +7330,7 @@ function viewRackDetail() {
         { k:'Cooling', v:r.cool, s:'', t:'cyan' },
         { k:'Site', v:site.name, s:'', t:'slate' }
       ]})}
-    <div class="row-t" style="align-items:stretch">
-      ${detailsCard}
-      ${elevationCard}
-    </div>
-    <div class="row-t" style="align-items:stretch;margin-top:var(--vw-space-lg)">
-      ${occupantsCard}
-      <div class="stack" style="width:min(360px,100%);flex-shrink:0">
-        ${powerCard}
-        ${photosCard}
-      </div>
-    </div>
+    ${passiveTwoCol(`${detailsCard}${photosCard}`, capacityCard)}
   </div>`;
 }
 
@@ -7274,31 +7369,55 @@ function viewPowerDetail() {
         ['Rating', r.rating], ['Runtime', r.runtime], ['Vendor', r.vendor], ['Last tested', r.tested],
         ['Next test due', d.nextTest], ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
+    </div>`);
 
-  const historyCard = card(`${headSm('Test history')}
-    <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Date'},{t:'Result'},{t:'Load'},{t:'Duration'},{t:'Tested by'}],
-        d.tests.map(t2 => [`<span class="num">${t2.date}</span>`, chip(t2.result, t2.result==='Pass'?'success':'warning'),
-          `<span class="num">${t2.load}</span>`, t2.duration, t2.by]), '', () => [])}
-    </div>`, 'grow');
+  const loads = d.tests.map(t2 => parseInt(t2.load, 10) || 0);
+  const lastLoad = loads[loads.length - 1] || 0;
+  const passCount = d.tests.filter(t2 => t2.result === 'Pass').length;
+  const loadTone = lastLoad > 85 ? 'red' : lastLoad > 70 ? 'amber' : 'emerald';
 
-  const lastLoad = parseInt(d.tests[d.tests.length - 1].load, 10) || 0;
-  const loadCard = card(`${headSm('Load & capacity')}
-    <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-md)">
-      ${donut([{ n:'Load', c:lastLoad, tone: lastLoad>85?'red':lastLoad>70?'amber':'emerald' }, { n:'Headroom', c:Math.max(0,100-lastLoad), tone:'slate' }], 100, `${lastLoad}%`, 'last test', 96)}
-      <div class="stack-s grow">
-        <span class="legend-i"><span class="legend-sw" style="background:${cv(lastLoad>85?'red':lastLoad>70?'amber':'emerald',400)}"></span>Load <span class="vw-value num">${lastLoad}%</span></span>
-        <span class="vw-card-metric-label-sub">Rated ${r.rating}</span>
-        <span class="vw-card-metric-label-sub">Runtime ${r.runtime}</span>
-      </div>
-    </div>`, 'grow');
+  /* load across the recorded tests — a trend is the point of a test log, and a
+     bar per run reads it far faster than scanning the percentage column */
+  const trendChart = `<div class="row vw-items-end vw-gap-sm" style="height:120px;padding:0 4px">
+    ${d.tests.map((t2, i) => {
+      const v = loads[i], tone = v > 85 ? 'red' : v > 70 ? 'amber' : 'emerald';
+      return `<div class="stack-x grow" style="align-items:center;gap:4px;min-width:0">
+        <span class="vw-card-metric-label-sub num">${v}%</span>
+        <div style="width:100%;height:${Math.max(4, Math.round(v * 0.78))}px;border-radius:4px 4px 0 0;background:${cv(tone,400)}"
+          title="${esc(t2.date)} · ${v}% load · ${esc(t2.result)}"></div>
+        <span class="vw-card-metric-label-sub" style="font-size:0.5625rem;white-space:nowrap">${esc(t2.date.slice(0,6))}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
 
-  const POWER_PHOTOS = [[`${r.type} unit`, mediaIllustrationPowerUnit], ['Nameplate / rating label', mediaIllustrationLabelTag]];
-  const photosCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
-      ${POWER_PHOTOS.map(([n, fn]) => mediaTile(fn(), n, r.tested, false)).join('')}
-    </div>`, 'grow');
+  const testList = d.tests.slice().reverse().map((t2, i) => passiveRecordRow({
+    badge: String(d.tests.length - i), tone: t2.result === 'Pass' ? 'emerald' : 'amber', active: true,
+    title: `${t2.date} · ${t2.load} load`,
+    sub: `${t2.duration} run · tested by ${t2.by}`,
+    chipLabel: t2.result, chipTone: t2.result === 'Pass' ? 'success' : 'warning'
+  })).join('');
+
+  const loadCard = card(`${headSm('Load, capacity & test record')}
+    <p class="vw-card-description" style="margin-top:2px">${esc(r.type)} rated ${esc(r.rating)} · ${passCount} of ${d.tests.length} recorded tests passed</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Rating', r.rating, 'sky'],
+        ['Last load', `${lastLoad}%`, loadTone],
+        ['Autonomy', r.runtime === '—' ? 'N/A' : r.runtime, 'purple'],
+        ['Tests passed', `${passCount}/${d.tests.length}`, passCount === d.tests.length ? 'emerald' : 'amber']
+      ])}
+    </div>
+    ${passiveChartSplit(
+      passiveDonutBlock([{ n:'Load', c:lastLoad, tone:loadTone }, { n:'Headroom', c:Math.max(0,100-lastLoad), tone:'slate' }], 100, `${lastLoad}%`, 'last test', 150),
+      testList)}
+    ${passiveDiagramNote(`<div style="width:300px">${trendChart}</div>`,
+      'Load trend across recorded tests',
+      'Measured load at each scheduled test run, oldest to newest — amber above 70% of rating, red above 85%.',
+      `Next test due ${d.nextTest}${lastLoad > 85 ? ' — running hot, review the load before the next cycle.' : lastLoad > 70 ? ' — trending high, keep an eye on growth.' : ' — comfortable headroom at current draw.'}`)}`);
+
+  const photosCard = passivePhotosCard(
+    [[`${r.type} unit`, mediaIllustrationPowerUnit, r.tested], ['Nameplate / rating label', mediaIllustrationLabelTag, r.tested]],
+    r.tested);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:r.type, sub:`${r.type} · ${site.name}`,
@@ -7310,14 +7429,7 @@ function viewPowerDetail() {
         { k:'Last tested', v:r.tested, s:'', t:'emerald' },
         { k:'Vendor', v:r.vendor, s:'', t:'slate' }
       ]})}
-    <div class="row-t" style="align-items:stretch">
-      ${detailsCard}
-      ${historyCard}
-    </div>
-    <div class="row-t" style="align-items:stretch;margin-top:var(--vw-space-lg)">
-      ${loadCard}
-      ${photosCard}
-    </div>
+    ${passiveTwoCol(`${detailsCard}${photosCard}`, loadCard)}
   </div>`;
 }
 
@@ -7355,6 +7467,10 @@ function viewSpliceDetail() {
   const r = rows.find(x => x.n === SPLICE_ID) || rows[0];
   const site = resolveSite(r.site) || LOCATIONS[0];
   const d = buildSpliceDetail(r, site);
+  const free = Math.max(0, d.total - d.used);
+  const pct = d.total ? Math.round(d.used / d.total * 100) : 0;
+  const lossNum = parseFloat(r.loss);
+  const overBudget = !isNaN(lossNum) && lossNum > 0.15;
 
   const detailsCard = card(`${headSm('Splice closure details')}
     <div style="margin-top:var(--vw-space-md)">
@@ -7364,20 +7480,55 @@ function viewSpliceDetail() {
         ['Mean splice loss', r.loss], ['Last surveyed', r.surveyed],
         ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
-
-  const mapCard = card(`${headSm('Fibre splice map')}
-    <div class="row vw-gap-lg vw-items-start" style="margin-top:var(--vw-space-md)">
-      ${donut([{ n:'Spliced', c:d.used, tone:'emerald' }, { n:'Free', c:Math.max(0,d.total-d.used), tone:'slate' }], d.total, `${Math.round(d.used/d.total*100)}%`, 'spliced', 88)}
-      <div class="grow">${spliceFiberMap(d.used, d.total)}</div>
-    </div>
-    <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">${d.used} of ${d.total} fibres spliced — filled = spliced, outline = free, coloured to the EIA/TIA-598 fibre code</p>`, 'grow');
-
-  const SPLICE_PHOTOS = [['Splice tray', mediaIllustrationSpliceTray], ['Closure housing', mediaIllustrationCableBundle], ['Closure label', mediaIllustrationLabelTag]];
-  const photosCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
-      ${SPLICE_PHOTOS.map(([n, fn]) => mediaTile(fn(), n, r.surveyed, false)).join('')}
     </div>`);
+
+  /* one row per 12-fibre tray, the unit a splicer actually works in */
+  const trayCount = Math.max(1, Math.ceil(d.total / 12));
+  const trayList = Array.from({ length: trayCount }, (_, i) => {
+    const capIn = Math.min(12, d.total - i * 12);
+    const usedIn = Math.max(0, Math.min(capIn, d.used - i * 12));
+    return passiveRecordRow({
+      badge: String(i + 1), tone: 'emerald', active: usedIn > 0,
+      title: `Tray ${i + 1}`,
+      sub: `${usedIn} of ${capIn} fibres spliced · ${esc(r.housing)} housing`,
+      chipLabel: usedIn === capIn ? 'Complete' : usedIn ? `${capIn - usedIn} free` : 'Unspliced',
+      chipTone: usedIn === capIn ? 'success' : usedIn ? 'info' : 'neutral'
+    });
+  }).join('');
+
+  const spliceCard = card(`${headSm('Splice capacity & loss')}
+    <p class="vw-card-description" style="margin-top:2px">${d.used} of ${d.total} fibres spliced — ${esc(r.type)} on ${esc(r.span)}</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Closure capacity', `${d.total}F`, 'sky'],
+        ['Spliced', String(d.used), 'emerald'],
+        ['Free', String(free), 'purple'],
+        ['Mean loss', r.loss, overBudget ? 'red' : 'emerald']
+      ])}
+    </div>
+    ${passiveChartSplit(
+      `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
+        ${passiveDonutBlock([{ n:'Spliced', c:d.used, tone:'emerald' }, { n:'Free', c:free, tone:'slate' }], d.total, `${pct}%`, 'spliced', 150)}
+        <div style="width:100%">
+          <div class="row vw-justify-between vw-items-baseline">
+            <span class="vw-label">Loss vs 0.15 dB budget</span>
+            <span class="vw-value num" style="font-size:0.8125rem;color:${cv(overBudget?'red':'emerald',700)}">${esc(r.loss)}</span>
+          </div>
+          <div class="hbar-track" style="height:10px;margin-top:6px">
+            <span class="hbar-fill" style="display:block;width:${isNaN(lossNum)?0:Math.min(100,Math.round(lossNum/0.15*100))}%;background:${cv(overBudget?'red':'emerald',400)}"></span>
+          </div>
+          <span class="vw-card-metric-label-sub" style="margin-top:4px;display:block">${overBudget ? 'Over budget — re-splice recommended' : 'Within the 0.15 dB per-splice budget'}</span>
+        </div>
+      </div>`,
+      trayList)}
+    ${passiveDiagramNote(`<div style="width:300px">${spliceFiberMap(d.used, d.total)}</div>`,
+      `Fibre splice map · ${d.total}F`,
+      'Every fibre in the closure, coloured to the EIA/TIA-598 code — filled circles are spliced through, outlines are free for future work.',
+      `${free} fibre${free===1?'':'s'} free${free ? ' — spare capacity for later drops without re-entering the closure.' : ' — closure is fully spliced.'}`)}`);
+
+  const photosCard = passivePhotosCard(
+    [['Splice tray', mediaIllustrationSpliceTray, r.surveyed], ['Closure housing', mediaIllustrationCableBundle, r.surveyed], ['Closure label', mediaIllustrationLabelTag, r.surveyed]],
+    r.surveyed);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Splice closure', sub:`Splice closure · ${site.name} · on ${r.span}`,
@@ -7389,11 +7540,7 @@ function viewSpliceDetail() {
         { k:'Housing', v:r.housing, s:'', t:'amber' },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
       ]})}
-    <div class="row-t" style="align-items:stretch">
-      ${detailsCard}
-      ${mapCard}
-    </div>
-    <div style="margin-top:var(--vw-space-lg)">${photosCard}</div>
+    ${passiveTwoCol(`${detailsCard}${photosCard}`, spliceCard)}
   </div>`;
 }
 
@@ -7437,27 +7584,47 @@ function viewCordDetail() {
         ['A end', r.a], ['B end', r.b], ['Length', r.len], ['Insertion loss', r.loss],
         ['Last surveyed', r.surveyed], ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
+    </div>`);
 
   const lossNum = parseFloat(r.loss);
   const lossBudget = 0.3;
   const lossPct = isNaN(lossNum) ? 0 : Math.min(100, Math.round(lossNum / lossBudget * 100));
   const lossTone = lossPct > 90 ? 'red' : lossPct > 70 ? 'amber' : 'emerald';
-  const diagramCard = card(`${headSm('Connection')}
-    ${cordConnectionDiagram(r)}
-    <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-lg);padding-top:var(--vw-space-md);border-top:1px solid ${cv('slate',100)}">
-      ${donut([{ n:'Used', c:lossPct, tone:lossTone }, { n:'Headroom', c:Math.max(0,100-lossPct), tone:'slate' }], 100, `${lossPct}%`, 'of 0.30 dB', 88)}
-      <div class="stack-s grow">
-        <span class="vw-label">Loss budget</span>
-        <span class="vw-card-metric-label-sub num">${isNaN(lossNum) ? '—' : lossNum.toFixed(2)} dB of 0.30 dB</span>
-      </div>
-    </div>`, 'grow');
+  const headroom = isNaN(lossNum) ? null : Math.max(0, lossBudget - lossNum);
 
-  const CORD_PHOTOS = [['Connector close-up', mediaIllustrationConnectorEnd], ['Cable label', mediaIllustrationLabelTag]];
-  const photosCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
-      ${CORD_PHOTOS.map(([n, fn]) => mediaTile(fn(), n, r.surveyed, false)).join('')}
-    </div>`);
+  /* the loss budget broken into the components that actually consume it —
+     a connector pair at each end plus the cable run itself */
+  const connLoss = isNaN(lossNum) ? 0 : +(lossNum * 0.4).toFixed(2);
+  const cableLoss = isNaN(lossNum) ? 0 : +(lossNum - connLoss * 2).toFixed(2);
+  const budgetList = [
+    { badge:'A', title:`A end · ${r.a}`, sub:`${r.type.split(' ')[0]} connector pair · ${connLoss.toFixed(2)} dB`, chipLabel:'Mated', chipTone:'success', tone:'sky' },
+    { badge:'L', title:`Cable run · ${r.len}`, sub:`Attenuation across the jumper · ${Math.max(0,cableLoss).toFixed(2)} dB`, chipLabel:r.type, chipTone:'info', tone:'purple' },
+    { badge:'B', title:`B end · ${r.b}`, sub:`${r.type.split(' ')[0]} connector pair · ${connLoss.toFixed(2)} dB`, chipLabel:'Mated', chipTone:'success', tone:'sky' },
+    { badge:'Σ', title:'Measured insertion loss', sub:`Against a ${lossBudget.toFixed(2)} dB link budget`, chipLabel:isNaN(lossNum)?'Not measured':`${lossPct}% used`, chipTone:isNaN(lossNum)?'neutral':lossTone==='red'?'error':lossTone==='amber'?'warning':'success', tone:lossTone }
+  ].map(x => passiveRecordRow({ ...x, active: true })).join('');
+
+  const lossCard = card(`${headSm('Link budget & connection')}
+    <p class="vw-card-description" style="margin-top:2px">${esc(r.type)} jumper · ${esc(r.len)} · ${isNaN(lossNum) ? 'not yet measured' : `${r.loss} of a ${lossBudget.toFixed(2)} dB budget`}</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Length', r.len, 'sky'],
+        ['Connector', r.type.split(' ')[0], 'purple'],
+        ['Insertion loss', r.loss, lossTone],
+        ['Budget used', isNaN(lossNum) ? '—' : `${lossPct}%`, lossTone]
+      ])}
+    </div>
+    ${passiveChartSplit(
+      passiveDonutBlock([{ n:'Used', c:lossPct, tone:lossTone }, { n:'Headroom', c:Math.max(0,100-lossPct), tone:'slate' }], 100, `${lossPct}%`, 'of budget', 150),
+      budgetList)}
+    ${passiveDiagramNote(`<div style="width:300px">${cordConnectionDiagram(r)}</div>`,
+      'End-to-end connection',
+      'What this jumper physically bridges — the A-end port, the cable run, and the B-end port, with the measured loss across the pair.',
+      headroom === null ? 'Not yet measured — schedule an insertion-loss test at the next survey.'
+        : `${headroom.toFixed(2)} dB headroom remaining${lossPct > 90 ? ' — at budget, replace or re-terminate this cord.' : ' against the link budget.'}`)}`);
+
+  const photosCard = passivePhotosCard(
+    [['Connector close-up', mediaIllustrationConnectorEnd, r.surveyed], ['Cable label', mediaIllustrationLabelTag, r.surveyed]],
+    r.surveyed);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:r.type, sub:`Patch cord · ${site.name}`,
@@ -7469,11 +7636,7 @@ function viewCordDetail() {
         { k:'Last surveyed', v:r.surveyed, s:'', t:'emerald' },
         { k:'Site', v:site.name, s:'', t:'slate' }
       ]})}
-    <div class="row-t" style="align-items:stretch">
-      ${detailsCard}
-      ${diagramCard}
-    </div>
-    <div style="margin-top:var(--vw-space-lg)">${photosCard}</div>
+    ${passiveTwoCol(`${detailsCard}${photosCard}`, lossCard)}
   </div>`;
 }
 
@@ -7490,21 +7653,53 @@ function buildDuctDetail(r) {
     remarks: `Duct route between ${r.a} and ${r.b}`
   };
 }
+/* A real duct cross-section: numbered sub-ducts packed in a ring inside the
+   outer HDPE bore wall, not a plain left-aligned row of circles — the shape
+   a field crew would actually recognise from the drawing. */
 function ductCrossSection(used, total) {
-  const cells = [];
-  for (let i = 0; i < total; i++) {
+  const S = 240, cx = S / 2, cy = S / 2;
+  const wayR = total <= 4 ? 38 : total <= 6 ? 31 : 25;
+  const ringR = total <= 4 ? 54 : total <= 6 ? 63 : 71;
+  const boreR = ringR + wayR + 11;
+  const ways = Array.from({ length: total }, (_, i) => {
+    const angle = (i / total) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + ringR * Math.cos(angle), y = cy + ringR * Math.sin(angle);
     const on = i < used;
-    cells.push(`<div title="Way ${i+1} · ${on?'occupied':'free'}" style="width:34px;height:34px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;margin:4px;font-size:0.6875rem;
-      background:${on?cv('purple',100):cv('slate',50)};border:2px solid ${on?cv('purple',400):cv('slate',300)};
-      color:${on?cv('purple',700):cv('gray',400)}">${i+1}</div>`);
-  }
-  return `<div style="display:flex;flex-wrap:wrap">${cells.join('')}</div>`;
+    return `<g>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${wayR}" fill="${on?cv('purple',100):'#fff'}"
+        stroke="${on?cv('purple',500):cv('slate',300)}" stroke-width="${on?3:2}"/>
+      <text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="600"
+        fill="${on?cv('purple',700):cv('gray',400)}">${i+1}</text>
+    </g>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${S} ${S}" style="width:100%;max-width:${S}px;height:auto;display:block"
+      role="img" aria-label="Duct cross-section, ${used} of ${total} ways occupied">
+    <circle cx="${cx}" cy="${cy}" r="${boreR}" fill="${cv('slate',50)}" stroke="${cv('amber',400)}" stroke-width="5" stroke-dasharray="4 6" opacity="0.85"/>
+    ${ways}
+  </svg>`;
+}
+function mediaIllustrationHdpePipe() {
+  return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block">
+    <defs>
+      <radialGradient id="hdpeBg" cx="50%" cy="35%" r="80%"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#020617"/></radialGradient>
+      <radialGradient id="hdpeWall" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#fb923c"/><stop offset="70%" stop-color="#ea580c"/><stop offset="100%" stop-color="#9a3412"/></radialGradient>
+    </defs>
+    <rect width="200" height="120" fill="url(#hdpeBg)"/>
+    <circle cx="100" cy="60" r="50" fill="url(#hdpeWall)" stroke="#7c2d12" stroke-width="2"/>
+    <circle cx="100" cy="60" r="40" fill="#0f172a"/>
+    ${[0,1,2,3].map(i => {
+      const a = (i/4)*Math.PI*2 - Math.PI/4, x = 100 + 20*Math.cos(a), y = 60 + 20*Math.sin(a);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="${i===0?cv('purple',200):'#334155'}" stroke="#64748b" stroke-width="1"/>`;
+    }).join('')}
+    <path d="M60 22 A46 46 0 0 1 132 26" stroke="#fed7aa" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+  </svg>`;
 }
 function viewDuctDetail() {
   const rows = PASSIVE.duct;
   const r = rows.find(x => x.n === DUCT_ID) || rows[0];
   const d = buildDuctDetail(r);
+  const free = Math.max(0, d.total - d.used);
+  const fillPct = d.total ? Math.round(d.used / d.total * 100) : 0;
 
   const detailsCard = card(`${headSm('Duct details')}
     <div style="margin-top:var(--vw-space-md)">
@@ -7513,20 +7708,39 @@ function viewDuctDetail() {
         ['Length', r.len], ['Bore', r.bore], ['Ownership', r.own], ['Last surveyed', r.surveyed],
         ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`, 'grow');
+    </div>`);
+
+  const wayList = Array.from({ length: d.total }, (_, i) => {
+    const on = i < d.used;
+    return passiveRecordRow({
+      badge: String(i + 1), tone: 'purple', active: on, title: `Way ${i + 1}`,
+      sub: on ? `Primary OFC route · pulled ${d.installDate}` : `Spare — ${r.bore} bore`,
+      chipLabel: on ? 'Occupied' : 'Free', chipTone: on ? 'purple' : 'neutral'
+    });
+  }).join('');
 
   const crossSectionCard = card(`${headSm('Duct cross-section')}
-    <div style="margin-top:var(--vw-space-md)">${ductCrossSection(d.used, d.total)}</div>
-    <div class="row vw-gap-md vw-items-center" style="margin-top:var(--vw-space-lg);padding-top:var(--vw-space-md);border-top:1px solid ${cv('slate',100)}">
-      ${donut([{ n:'Occupied', c:d.used, tone:'purple' }, { n:'Free', c:Math.max(0,d.total-d.used), tone:'slate' }], d.total, `${Math.round(d.used/d.total*100)}%`, 'occupied', 88)}
-      <span class="vw-card-metric-label-sub grow">${d.used} of ${d.total} ways occupied — ${r.bore}</span>
-    </div>`, 'grow');
+    <p class="vw-card-description" style="margin-top:2px">${d.used} of ${d.total} ways occupied — ${esc(r.bore)}</p>
+    <div style="margin-top:var(--vw-space-lg)">
+      ${passiveKpiStrip([
+        ['Total ways', String(d.total), 'sky'],
+        ['Occupied', String(d.used), 'purple'],
+        ['Free', String(free), 'emerald'],
+        ['Utilisation', `${fillPct}%`, fillPct > 85 ? 'red' : fillPct > 60 ? 'amber' : 'emerald']
+      ])}
+    </div>
+    ${passiveChartSplit(
+      passiveDonutBlock([{ n:'Occupied', c:d.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], d.total, `${fillPct}%`, 'occupied', 150),
+      wayList)}
+    ${passiveDiagramNote(ductCrossSection(d.used, d.total), `Bore layout · ${r.bore}`,
+      'Sub-ducts packed inside the outer bore wall, numbered to match the way list above — filled circles are occupied, outlines are free.',
+      `${free} free way${free===1?'':'s'} — capacity for ${free} more cable pull${free===1?'':'s'} without opening new duct.`)}`);
 
-  const DUCT_PHOTOS = [['Duct route (trench)', mediaIllustrationTrench], ['Cable entry / gland', mediaIllustrationCableBundle]];
-  const photosCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
-      ${DUCT_PHOTOS.map(([n, fn]) => mediaTile(fn(), n, r.surveyed, false)).join('')}
-    </div>`);
+  const photosCard = passivePhotosCard(
+    [['Duct route (trench)', mediaIllustrationTrench, r.surveyed],
+     ['Pipe cross-section', mediaIllustrationHdpePipe, r.surveyed],
+     ['Chamber entry', mediaIllustrationManhole, r.surveyed]],
+    r.surveyed);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Duct', sub:`Duct · ${r.a} ↔ ${r.b}`,
@@ -7538,11 +7752,7 @@ function viewDuctDetail() {
         { k:'Ownership', v:r.own, s:'', t:'emerald' },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
       ]})}
-    <div class="row-t" style="align-items:stretch">
-      ${detailsCard}
-      ${crossSectionCard}
-    </div>
-    <div style="margin-top:var(--vw-space-lg)">${photosCard}</div>
+    ${passiveTwoCol(`${detailsCard}${photosCard}`, crossSectionCard)}
   </div>`;
 }
 
@@ -7843,39 +8053,42 @@ function fiberCoreBreakdown(r, d) {
 }
 
 function fiberPhysicalTab(r, d) {
+  /* three even columns — details, chart, photos — rather than a wide grid
+     card plus a narrow stacked sidebar, so each section reads as its own
+     clean block instead of two mismatched widths side by side */
   const detailsCard = card(`${headSm('Cable & construction')}
-    <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:var(--vw-space-lg)">
-      ${[['Cable type', d.cableType], ['Fibre count', `${d.totalC}F (${d.tubes} × 12-fibre tubes)`],
-         ['Sheath / armour', d.sheath], ['Install method', d.installMethod],
-         ['Buried %', `${d.buriedPct}%`], ['Route length', r.len],
-         ['Manufacturer', d.manufacturer], ['Drum / reel no.', d.drumNo],
-         ['Bend radius', d.bendRadius], ['Installed', d.installDate],
-         ['Warranty', d.warranty], ['Owner / O&M', r.own === 'Own' ? 'Self-owned' : `Leased — ${d.manufacturer}`]]
-        .map(([k, v]) => `<div class="meta-cell" style="padding:10px 0;border-top:1px solid ${cv('slate',100)}">
-          <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
-    </div>`, 'grow');
+    <div style="margin-top:var(--vw-space-md)">
+      ${odfDetailRows([
+        ['Cable type', d.cableType], ['Fibre count', `${d.totalC}F (${d.tubes} × 12-fibre tubes)`],
+        ['Sheath / armour', d.sheath], ['Install method', d.installMethod],
+        ['Buried %', `${d.buriedPct}%`], ['Route length', r.len],
+        ['Manufacturer', d.manufacturer], ['Drum / reel no.', d.drumNo],
+        ['Bend radius', d.bendRadius], ['Installed', d.installDate],
+        ['Warranty', d.warranty], ['Owner / O&M', r.own === 'Own' ? 'Self-owned' : `Leased — ${d.manufacturer}`]
+      ])}
+    </div>`);
 
   const cb = fiberCoreBreakdown(r, d);
   const fillPct = cb.total ? Math.round(cb.liveCount / cb.total * 100) : 0;
   const svcEstimate = Math.max(1, Math.floor(cb.spareCount / 4));
   const utilCard = card(`${headSm('Core utilisation')}
-    <div class="row vw-gap-lg vw-items-center" style="margin-top:var(--vw-space-md)">
+    <div style="text-align:center;margin-top:var(--vw-space-lg)">
       ${donut([{ n:'Live', c:cb.liveCount, tone:'sky' }, { n:'Reserved', c:cb.reservedCount, tone:'amber' },
                 { n:'Spare', c:cb.spareCount, tone:'slate' }, { n:'Faulty', c:cb.faultyCount, tone:'red' }],
               cb.total, `${fillPct}%`, 'utilised', 128)}
-      <div class="stack-s grow">
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',400)}"></span>Live <span class="vw-value num">${cb.liveCount}</span>
-          <span class="vw-card-metric-label-sub">(${Math.round(cb.liveCount/cb.total*100)}%)</span></span>
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('amber',400)}"></span>Reserved <span class="vw-value num">${cb.reservedCount}</span></span>
-        <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',300)}"></span>Spare <span class="vw-value num">${cb.spareCount}</span></span>
-        ${cb.faultyCount ? `<span class="legend-i"><span class="legend-sw" style="background:${cv('red',400)}"></span>Faulty <span class="vw-value num">${cb.faultyCount}</span></span>` : ''}
-      </div>
+    </div>
+    <div class="stack-s" style="margin-top:var(--vw-space-lg)">
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',400)}"></span>Live <span class="vw-value num">${cb.liveCount}</span>
+        <span class="vw-card-metric-label-sub">(${Math.round(cb.liveCount/cb.total*100)}%)</span></span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('amber',400)}"></span>Reserved <span class="vw-value num">${cb.reservedCount}</span></span>
+      <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',300)}"></span>Spare <span class="vw-value num">${cb.spareCount}</span></span>
+      ${cb.faultyCount ? `<span class="legend-i"><span class="legend-sw" style="background:${cv('red',400)}"></span>Faulty <span class="vw-value num">${cb.faultyCount}</span></span>` : ''}
     </div>
     <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md);padding-top:var(--vw-space-sm);border-top:1px solid ${cv('slate',100)}">
       ${cb.spareCount} spare fibre${cb.spareCount===1?'':'s'} — headroom for ~${svcEstimate} more service${svcEstimate===1?'':'s'} at a typical 4-fibre allocation</p>`);
 
   const photoCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
       ${mediaTile(mediaIllustrationCableCrossSection(), 'Cable cross-section', d.installDate, false)}
       ${mediaTile(mediaIllustrationLabelTag(), 'Drum / reel label', d.installDate, false)}
     </div>`);
@@ -7890,12 +8103,10 @@ function fiberPhysicalTab(r, d) {
           <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
     </div>`);
 
-  return `<div class="row-t" style="align-items:stretch">
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vw-space-lg);align-items:start">
     ${detailsCard}
-    <div class="stack" style="width:min(360px,100%);flex-shrink:0">
-      ${utilCard}
-      ${photoCard}
-    </div>
+    ${utilCard}
+    ${photoCard}
   </div>
   ${specCard}`;
 }
@@ -8235,17 +8446,21 @@ function mediaIllustrationCableCrossSection() {
     <circle cx="${cx}" cy="${cy}" r="7" fill="url(#ccsCore)" stroke="#94a3b8" stroke-width="0.5"/>
   </svg>`;
 }
+/* A "Photo" badge on a tile that already sits inside a card headed Photos is
+   noise — only the Video badge earns its place, because that one distinguishes
+   a clip from a still. */
 function mediaTile(illustrationHtml, title, meta, isVideo) {
   return `<div class="stack-x">
-    <div style="position:relative;aspect-ratio:4/3;border-radius:var(--vw-radius-md);overflow:hidden">
+    <div style="position:relative;aspect-ratio:4/3;border-radius:var(--vw-radius-md);overflow:hidden;
+      border:1px solid ${cv('slate',200)};box-shadow:0 1px 2px rgba(15,23,42,0.06)">
       ${illustrationHtml}
-      <span style="position:absolute;top:8px;left:8px;background:rgba(15,23,42,0.75);color:#fff;font-size:0.625rem;
-        font-weight:600;letter-spacing:0.04em;padding:2px 8px;border-radius:4px;text-transform:uppercase">${isVideo?'Video':'Photo'}</span>
-      ${isVideo ? `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      ${isVideo ? `<span style="position:absolute;top:8px;left:8px;background:rgba(15,23,42,0.75);color:#fff;font-size:0.625rem;
+        font-weight:600;letter-spacing:0.04em;padding:2px 8px;border-radius:4px;text-transform:uppercase">Video</span>
+      <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
         <span style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#0f172a"><path d="M8 5v14l11-7z"/></svg></span></span>` : ''}
     </div>
-    <span class="vw-value" style="font-size:0.8125rem;font-weight:500">${esc(title)}</span>
+    <span class="vw-value" style="font-size:0.8125rem;font-weight:500;margin-top:2px">${esc(title)}</span>
     <span class="vw-card-metric-label-sub">${esc(meta)}</span>
   </div>`;
 }
@@ -8386,7 +8601,7 @@ function viewFiberDetail() {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--vw-space-md)">
           ${stages.map((st, i) => fiberStageCard(st, i)).join('')}
         </div>`)}
-      <div class="row-t" style="align-items:stretch">
+      <div class="row-t" style="align-items:start">
         ${fiberActivityTeaser(stages)}
         ${fiberDocsTeaser(d)}
       </div>`
