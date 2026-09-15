@@ -504,7 +504,7 @@ function nodeHeaderRouter(N) {
         <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}` })}>Node resources</button>
+        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}`, q:`name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">

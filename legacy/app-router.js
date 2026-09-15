@@ -78,9 +78,26 @@ function drillTo(view, label, q) {
      visible ancestor segment either way, so they're left exactly as they
      were. */
   const curDrill = !crumbName.includes(' · ') && DRILL && DRILL.view === CURRENT ? DRILL : null;
-  const fromName = curDrill && curDrill.q
+  /* CURRENT may itself have been reached by a cross-section jump — Node
+     view opened from a Physical Resources row, say, which sets its own
+     "from". That's the reader's real origin, not CURRENT's own static
+     crumb: falling back to crumbName here would silently forget it and
+     reset the trail to CURRENT's normal parent on the very next hop (every
+     Node view visit, however it was reached, shares one hardcoded crumb —
+     "Location · Site details · Node view" — so "Node resources" clicked
+     from it always named that fixed chain, never wherever the reader
+     actually came from). Keep propagating the inherited origin instead —
+     but only once curDrill above has had first refusal: that one captures
+     a *richer* state (CURRENT's own live drill, query string and all) than
+     a bare inherited crumb name ever could, and the two can coincide (a
+     screen mid-drill on itself has a DRILL object that also carries a
+     "from" from whatever got it there originally) — losing the query
+     there would silently re-break "back returns to the exact drilled list"
+     for that case. */
+  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
+  const fromName = (curDrill && curDrill.q
     ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : crumbName;
+    : null) || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -147,6 +164,7 @@ function applyDrillQuery(view, q, label) {
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';
       NBR_VIEW = null;
+      RES_SVC_VIEW = null;
     }
   }
   if (view === 'node')     {
@@ -342,6 +360,15 @@ document.addEventListener('click', e => {
   }
   const nbrx = e.target.closest('[data-nbrclose]');
   if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const rsvcv = e.target.closest('[data-ressvcview]');
+  if (rsvcv) {
+    const [tab, i] = rsvcv.dataset.ressvcview.split(':');
+    RES_SVC_VIEW = { tab, i: Number(i) };
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const rsvcx = e.target.closest('[data-ressvcclose]');
+  if (rsvcx) { RES_SVC_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');
@@ -497,7 +524,7 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
   if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
@@ -532,6 +559,8 @@ document.addEventListener('click', e => {
   if (hf) { RES_HIST_FILTER = hf.dataset.histfilter; go('resource'); return; }
   const nbt = e.target.closest('[data-nbrtab]');
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
+  const rstab = e.target.closest('[data-ressvctab]');
+  if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
   const fbt = e.target.closest('[data-fibertab]');

@@ -1225,28 +1225,37 @@ const LC_STATUS = {
    Every stage's start/end and every step's "Modified date" used to be the
    same one hardcoded literal ('02-Aug-26 09:05:30 PM') copy-pasted
    everywhere — offset from "now" instead, 12-hour clock to match this
-   screen's own display convention, so the timeline both varies per
-   stage/step and never goes stale. */
+   screen's own display convention. Stages used to be pushed days/months
+   apart (each stage's own huge, independent minsAgo), which scattered the
+   timeline across unrelated calendar dates — one continuous run should
+   stay on one date. Now every step across every stage ticks forward from
+   a single shared timeline, 5 minutes after the previous one (Day 0's
+   first step is the oldest, GPL's last step the most recent), so only the
+   time of day advances and the whole lifecycle reads as the same date. */
 const agoStamp12 = minsAgo => {
   const d = new Date(Date.now() - minsAgo * 60000);
   const h = d.getHours();
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(h % 12 || 12)}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())} ${h >= 12 ? 'PM' : 'AM'}`;
 };
-/* steps within a stage ran in sequence, a few minutes apart, finishing at
-   the stage's own end time — so the last step's timestamp is endMinsAgo
-   and earlier steps carry progressively larger (older) offsets */
-const vnfLcSteps = (names, endMinsAgo) => names.map((n, i) => ({ n, at: agoStamp12(endMinsAgo + (names.length - 1 - i) * 3) }));
-const VNF_LC_STAGES = [
-  { k: 'day0',   n: 'Day 0',   start: agoStamp12(576420), end: agoStamp12(302400),
-    steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
-      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'], 302400) },
-  { k: 'grow',   n: 'Grow',   start: agoStamp12(201620), end: agoStamp12(201600),
-    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity'], 201600) },
-  { k: 'events', n: 'Events', start: agoStamp12(43220), end: agoStamp12(43200),
-    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events'], 43200) },
-  { k: 'gpl',    n: 'GPL',    start: agoStamp12(4340), end: agoStamp12(4320),
-    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL'], 4320) }
+const VNF_LC_STEP_NAMES = [
+  ['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
+    'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'],
+  ['Scale vDU replicas', 'Verify capacity'],
+  ['Collect fault events', 'Acknowledge events'],
+  ['Generate golden package list', 'Publish GPL']
 ];
+const VNF_LC_STEP_GAP_MIN = 5;
+const VNF_LC_TOTAL_STEPS = VNF_LC_STEP_NAMES.reduce((n, s) => n + s.length, 0);
+let vnfLcStepIdx = 0;
+const VNF_LC_STAGES = [['day0', 'Day 0'], ['grow', 'Grow'], ['events', 'Events'], ['gpl', 'GPL']]
+  .map(([k, n], si) => {
+    const steps = VNF_LC_STEP_NAMES[si].map(name => {
+      const at = agoStamp12(VNF_LC_STEP_GAP_MIN * (VNF_LC_TOTAL_STEPS - vnfLcStepIdx));
+      vnfLcStepIdx++;
+      return { n: name, at };
+    });
+    return { k, n, start: steps[0].at, end: steps[steps.length - 1].at, steps };
+  });
 
 const LINK_TABS = [
   { k:'lldp', n:'LLDP', c:5549 }, { k:'ospf', n:'OSPF', c:1382 },
@@ -6146,6 +6155,7 @@ function viewReports() {
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
 let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
+let RES_SVC_TAB = 'l3vpn', RES_SVC_VIEW = null; /* which tab, and { tab, i } of the row shown in the service-linking dialog, or null — see resSvcs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
 let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
 let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
@@ -6340,17 +6350,56 @@ function resNbrs() {
            No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`) + nbrViewDialog();
 }
 
+/* the exact same "Service linking" dialog the top-level Services page opens
+   on a row click — cloud icon for L3VPN, router icon for L2VPN, same field
+   grid — reused here rather than reinvented. The far end is this element
+   itself (RES_ID): every row on this tab is, by definition, a service
+   attached to the node the reader is already looking at. */
+function resSvcViewDialog() {
+  if (!RES_SVC_VIEW) return '';
+  const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === RES_SVC_VIEW.tab);
+  const r = rows[RES_SVC_VIEW.i];
+  if (!r) return '';
+  const linkId = `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
+  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  return `
+    <div class="drawer-overlay" data-ressvcclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Service linking</span>
+        <button class="fp-x" data-ressvcclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+        </div>
+        ${svcDiagram({ name: r.name, erp: r.erp, ifc: r.ifc, ne: RES_ID }, RES_SVC_VIEW.tab)}
+        ${detailFieldGrid([
+          ['Equipment Name', r.ifc], ['ERP number', r.erp],
+          ['Link ID', linkId], ['Admin status', adminStatus]
+        ])}
+      </div>
+    </div>`;
+}
+
 function resSvcs() {
+  const t = RES_SVC_TAB;
+  const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
+  const l3Count = RES_SERVICES.filter(s => s.t === 'L3VPN').length;
+  const l2Count = RES_SERVICES.filter(s => s.t === 'L2VPN').length;
+  const downCount = RES_SERVICES.filter(s => s.st === 'Down').length;
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('Services')}
-      <div class="chip-row">${chip('4 L3VPN','info')}${chip('1 L2VPN','cyan')}${chip('2 down','error')}</div>
+      <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
     </div>
-    ${table([{t:'Status'},{t:'Type'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
-      RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
-        `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
-        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [])}`);
+    <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
+    ${rows.length ? table([{t:'Status'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
+      rows.map(s => [chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
+        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '', null,
+        i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
+           No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
 }
 
 function resAlarms() {
@@ -6718,16 +6767,23 @@ function viewDwdmResource(N) {
 function viewResource() {
   /* eNodeB, Switch and DWDM aren't router-chassis-shaped — resolve RES_ID's
      real class first and hand it to its own page rather than falling into
-     the router-only rendering below (which never actually reads RES_ID at
-     all: every other class still falls back to a random router's data,
-     unchanged here — only these three classes get a page that reads their
-     own record) */
-  const resCls = nodeRecord(RES_ID).cls;
-  if (resCls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
-  if (resCls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
-  if (resCls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+     the router-only rendering below. nodeRecord() is the same universal
+     resolver Node View itself uses: it checks PHY first, then the
+     auto-generated per-site roster (siteNE — where names like
+     "MH-DC-001-PE-T4-05" actually live, never in the small hand-authored
+     PHY.router list), then finally synthesises a plausible record so it
+     always resolves to *something* for RES_ID specifically. */
+  const rec = nodeRecord(RES_ID);
+  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
+  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
+  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
 
-  const r = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
+  /* a curated PHY.router entry wins when RES_ID happens to be one of the
+     ~30 named samples (it carries more hand-authored depth) — everything
+     else, which is most nodes reached through Location/Site/Node View,
+     falls back to nodeRecord's own resolved data for RES_ID instead of
+     silently substituting a different router's record */
+  const r = PHY.router.find(x => x.name === RES_ID) || rec;
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
   return `<div class="page">
@@ -10058,7 +10114,7 @@ function nodeHeaderRouter(N) {
         <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}` })}>Node resources</button>
+        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}`, q:`name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
@@ -11291,9 +11347,26 @@ function drillTo(view, label, q) {
      visible ancestor segment either way, so they're left exactly as they
      were. */
   const curDrill = !crumbName.includes(' · ') && DRILL && DRILL.view === CURRENT ? DRILL : null;
-  const fromName = curDrill && curDrill.q
+  /* CURRENT may itself have been reached by a cross-section jump — Node
+     view opened from a Physical Resources row, say, which sets its own
+     "from". That's the reader's real origin, not CURRENT's own static
+     crumb: falling back to crumbName here would silently forget it and
+     reset the trail to CURRENT's normal parent on the very next hop (every
+     Node view visit, however it was reached, shares one hardcoded crumb —
+     "Location · Site details · Node view" — so "Node resources" clicked
+     from it always named that fixed chain, never wherever the reader
+     actually came from). Keep propagating the inherited origin instead —
+     but only once curDrill above has had first refusal: that one captures
+     a *richer* state (CURRENT's own live drill, query string and all) than
+     a bare inherited crumb name ever could, and the two can coincide (a
+     screen mid-drill on itself has a DRILL object that also carries a
+     "from" from whatever got it there originally) — losing the query
+     there would silently re-break "back returns to the exact drilled list"
+     for that case. */
+  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
+  const fromName = (curDrill && curDrill.q
     ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : crumbName;
+    : null) || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -11360,6 +11433,7 @@ function applyDrillQuery(view, q, label) {
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';
       NBR_VIEW = null;
+      RES_SVC_VIEW = null;
     }
   }
   if (view === 'node')     {
@@ -11587,6 +11661,15 @@ document.addEventListener('click', e => {
   }
   const nbrx = e.target.closest('[data-nbrclose]');
   if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const rsvcv = e.target.closest('[data-ressvcview]');
+  if (rsvcv) {
+    const [tab, i] = rsvcv.dataset.ressvcview.split(':');
+    RES_SVC_VIEW = { tab, i: Number(i) };
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const rsvcx = e.target.closest('[data-ressvcclose]');
+  if (rsvcx) { RES_SVC_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');
@@ -11742,7 +11825,7 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
   if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');
@@ -11777,6 +11860,8 @@ document.addEventListener('click', e => {
   if (hf) { RES_HIST_FILTER = hf.dataset.histfilter; go('resource'); return; }
   const nbt = e.target.closest('[data-nbrtab]');
   if (nbt) { NBR_TAB = nbt.dataset.nbrtab; go('resource'); return; }
+  const rstab = e.target.closest('[data-ressvctab]');
+  if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
   const fbt = e.target.closest('[data-fibertab]');

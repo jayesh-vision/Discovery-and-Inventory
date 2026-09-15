@@ -1,6 +1,7 @@
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
 let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
+let RES_SVC_TAB = 'l3vpn', RES_SVC_VIEW = null; /* which tab, and { tab, i } of the row shown in the service-linking dialog, or null — see resSvcs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
 let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
 let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
@@ -195,17 +196,56 @@ function resNbrs() {
            No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`) + nbrViewDialog();
 }
 
+/* the exact same "Service linking" dialog the top-level Services page opens
+   on a row click — cloud icon for L3VPN, router icon for L2VPN, same field
+   grid — reused here rather than reinvented. The far end is this element
+   itself (RES_ID): every row on this tab is, by definition, a service
+   attached to the node the reader is already looking at. */
+function resSvcViewDialog() {
+  if (!RES_SVC_VIEW) return '';
+  const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === RES_SVC_VIEW.tab);
+  const r = rows[RES_SVC_VIEW.i];
+  if (!r) return '';
+  const linkId = `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
+  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  return `
+    <div class="drawer-overlay" data-ressvcclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Service linking</span>
+        <button class="fp-x" data-ressvcclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+        </div>
+        ${svcDiagram({ name: r.name, erp: r.erp, ifc: r.ifc, ne: RES_ID }, RES_SVC_VIEW.tab)}
+        ${detailFieldGrid([
+          ['Equipment Name', r.ifc], ['ERP number', r.erp],
+          ['Link ID', linkId], ['Admin status', adminStatus]
+        ])}
+      </div>
+    </div>`;
+}
+
 function resSvcs() {
+  const t = RES_SVC_TAB;
+  const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
+  const l3Count = RES_SERVICES.filter(s => s.t === 'L3VPN').length;
+  const l2Count = RES_SERVICES.filter(s => s.t === 'L2VPN').length;
+  const downCount = RES_SERVICES.filter(s => s.st === 'Down').length;
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('Services')}
-      <div class="chip-row">${chip('4 L3VPN','info')}${chip('1 L2VPN','cyan')}${chip('2 down','error')}</div>
+      <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
     </div>
-    ${table([{t:'Status'},{t:'Type'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
-      RES_SERVICES.map(s => [chip(s.st, s.chip), chip(s.t, s.t==='L3VPN'?'info':'cyan'),
-        `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
-        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '',
-        i => [])}`);
+    <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
+    ${rows.length ? table([{t:'Status'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
+      rows.map(s => [chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
+        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '', null,
+        i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
+           No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
 }
 
 function resAlarms() {
@@ -573,16 +613,23 @@ function viewDwdmResource(N) {
 function viewResource() {
   /* eNodeB, Switch and DWDM aren't router-chassis-shaped — resolve RES_ID's
      real class first and hand it to its own page rather than falling into
-     the router-only rendering below (which never actually reads RES_ID at
-     all: every other class still falls back to a random router's data,
-     unchanged here — only these three classes get a page that reads their
-     own record) */
-  const resCls = nodeRecord(RES_ID).cls;
-  if (resCls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
-  if (resCls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
-  if (resCls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+     the router-only rendering below. nodeRecord() is the same universal
+     resolver Node View itself uses: it checks PHY first, then the
+     auto-generated per-site roster (siteNE — where names like
+     "MH-DC-001-PE-T4-05" actually live, never in the small hand-authored
+     PHY.router list), then finally synthesises a plausible record so it
+     always resolves to *something* for RES_ID specifically. */
+  const rec = nodeRecord(RES_ID);
+  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
+  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
+  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
 
-  const r = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
+  /* a curated PHY.router entry wins when RES_ID happens to be one of the
+     ~30 named samples (it carries more hand-authored depth) — everything
+     else, which is most nodes reached through Location/Site/Node View,
+     falls back to nodeRecord's own resolved data for RES_ID instead of
+     silently substituting a different router's record */
+  const r = PHY.router.find(x => x.name === RES_ID) || rec;
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
   return `<div class="page">

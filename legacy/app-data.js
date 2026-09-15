@@ -1022,28 +1022,37 @@ const LC_STATUS = {
    Every stage's start/end and every step's "Modified date" used to be the
    same one hardcoded literal ('02-Aug-26 09:05:30 PM') copy-pasted
    everywhere — offset from "now" instead, 12-hour clock to match this
-   screen's own display convention, so the timeline both varies per
-   stage/step and never goes stale. */
+   screen's own display convention. Stages used to be pushed days/months
+   apart (each stage's own huge, independent minsAgo), which scattered the
+   timeline across unrelated calendar dates — one continuous run should
+   stay on one date. Now every step across every stage ticks forward from
+   a single shared timeline, 5 minutes after the previous one (Day 0's
+   first step is the oldest, GPL's last step the most recent), so only the
+   time of day advances and the whole lifecycle reads as the same date. */
 const agoStamp12 = minsAgo => {
   const d = new Date(Date.now() - minsAgo * 60000);
   const h = d.getHours();
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(h % 12 || 12)}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())} ${h >= 12 ? 'PM' : 'AM'}`;
 };
-/* steps within a stage ran in sequence, a few minutes apart, finishing at
-   the stage's own end time — so the last step's timestamp is endMinsAgo
-   and earlier steps carry progressively larger (older) offsets */
-const vnfLcSteps = (names, endMinsAgo) => names.map((n, i) => ({ n, at: agoStamp12(endMinsAgo + (names.length - 1 - i) * 3) }));
-const VNF_LC_STAGES = [
-  { k: 'day0',   n: 'Day 0',   start: agoStamp12(576420), end: agoStamp12(302400),
-    steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
-      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'], 302400) },
-  { k: 'grow',   n: 'Grow',   start: agoStamp12(201620), end: agoStamp12(201600),
-    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity'], 201600) },
-  { k: 'events', n: 'Events', start: agoStamp12(43220), end: agoStamp12(43200),
-    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events'], 43200) },
-  { k: 'gpl',    n: 'GPL',    start: agoStamp12(4340), end: agoStamp12(4320),
-    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL'], 4320) }
+const VNF_LC_STEP_NAMES = [
+  ['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
+    'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'],
+  ['Scale vDU replicas', 'Verify capacity'],
+  ['Collect fault events', 'Acknowledge events'],
+  ['Generate golden package list', 'Publish GPL']
 ];
+const VNF_LC_STEP_GAP_MIN = 5;
+const VNF_LC_TOTAL_STEPS = VNF_LC_STEP_NAMES.reduce((n, s) => n + s.length, 0);
+let vnfLcStepIdx = 0;
+const VNF_LC_STAGES = [['day0', 'Day 0'], ['grow', 'Grow'], ['events', 'Events'], ['gpl', 'GPL']]
+  .map(([k, n], si) => {
+    const steps = VNF_LC_STEP_NAMES[si].map(name => {
+      const at = agoStamp12(VNF_LC_STEP_GAP_MIN * (VNF_LC_TOTAL_STEPS - vnfLcStepIdx));
+      vnfLcStepIdx++;
+      return { n: name, at };
+    });
+    return { k, n, start: steps[0].at, end: steps[steps.length - 1].at, steps };
+  });
 
 const LINK_TABS = [
   { k:'lldp', n:'LLDP', c:5549 }, { k:'ospf', n:'OSPF', c:1382 },
