@@ -68,20 +68,26 @@ function PctBar({ pct, hex }: { pct: number; hex: string }) {
   );
 }
 
-/* region × domain drift cell — a solid pill on the shared blue intensity
+/* region × domain drift cell — a solid block on the shared blue intensity
    scale the legend below the table spells out, rather than a per-domain
    hue: the thing being compared across a row is severity, not which
-   domain it is (that's already the column header) */
+   domain it is (that's already the column header). Fills most of the
+   column, not a small centered pill, so the shade is the thing a reader's
+   eye actually lands on scanning down a column. */
+const REGION_HEAT_STEPS = [50, 100, 200, 300, 400, 500, 600] as const;
 const REGION_HEAT_MAX = Math.max(...REGION_DISCREPANCY.flatMap(r => Object.values(r.drift)));
-function HeatPill({ v }: { v: number }) {
-  const r = v / REGION_HEAT_MAX;
-  const shade = r > 0.75 ? 700 : r > 0.55 ? 500 : r > 0.3 ? 300 : r > 0 ? 150 : 50;
+function heatShade(v: number, max: number) {
+  const r = v / max;
+  return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
+}
+function HeatPill({ v, max = REGION_HEAT_MAX }: { v: number; max?: number }) {
+  const shade = heatShade(v, max);
   return (
-    <td style={{ textAlign: 'center', padding: '8px 6px' }}>
-      <span className="num" style={{
-        display: 'inline-block', minWidth: '2.25rem', padding: '3px 10px', borderRadius: '999px',
+    <td style={{ padding: '4px' }}>
+      <div className="num" style={{
+        padding: '13px 8px', borderRadius: '10px', textAlign: 'center', fontSize: '1rem',
         background: cv('blue', shade), color: shade >= 500 ? 'var(--vw-color-white)' : cv('blue', 900), fontWeight: 600
-      }}>{v}</span>
+      }}>{v}</div>
     </td>
   );
 }
@@ -297,25 +303,27 @@ export default function Insights() {
           <table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
             <thead>
               <tr>
-                <th>Region</th>
-                {DOMAIN_KEYS.map(k => <th key={k} style={{ textAlign: 'center' }}>{DOMAIN_LABEL[k]}</th>)}
-                <th style={{ textAlign: 'right' }}>Open</th>
+                <th className="eyebrow">Region</th>
+                {DOMAIN_KEYS.map(k => <th key={k} className="eyebrow" style={{ textAlign: 'center' }}>{DOMAIN_LABEL[k]}</th>)}
+                <th className="eyebrow" style={{ textAlign: 'right' }}>Open</th>
               </tr>
             </thead>
             <tbody>{REGION_DISCREPANCY.map(r => {
               const open = Object.values(r.drift).reduce((a, b) => a + b, 0);
               return (
                 <tr key={r.region}>
-                  <td className="vw-value" style={{ fontWeight: 500 }}>{r.region}</td>
+                  <td className="vw-value" style={{ fontWeight: 600 }}>{r.region}</td>
                   {DOMAIN_KEYS.map(k => <HeatPill key={k} v={r.drift[k]} />)}
                   <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{open}</td>
                 </tr>
               );
             })}</tbody>
           </table>
-          <div className="row vw-items-center" style={{ gap: '10px', marginTop: 'auto', paddingTop: 'var(--vw-space-md)' }}>
+          <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: 'var(--vw-space-md)' }}>
             <span className="vw-card-metric-label-sub">0</span>
-            <span className="grow" style={{ height: '8px', borderRadius: '999px', background: `linear-gradient(90deg, ${cv('blue', 50)}, ${cv('blue', 700)})` }} />
+            <div className="row" style={{ gap: '3px' }}>
+              {REGION_HEAT_STEPS.map(s => <span key={s} style={{ width: '20px', height: '14px', borderRadius: '3px', background: cv('blue', s), flexShrink: 0 }} />)}
+            </div>
             <span className="vw-card-metric-label-sub">{REGION_HEAT_MAX}+ open</span>
           </div>
         </Card>

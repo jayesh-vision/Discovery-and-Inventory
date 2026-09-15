@@ -3295,8 +3295,9 @@ let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialo
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
-   as the Links page's node-linking diagram, badge and all, with the same
-   router icon on both ends: the wire carries a small clickable label
+   as the Links page's node-linking diagram, badge and all, except the left
+   node is the service itself (a cloud glyph, not a device) and the right
+   node is the router it lands on: the wire carries a small clickable label
    (copies the source interface), not a floating card that would sit on top
    of the line, and the rest of the detail lives in the field grid below
    instead. */
@@ -3304,7 +3305,7 @@ function svcDiagram(r) {
   const svcLabel = `${r.name}_${r.erp}`;
   return `<div class="linkdiagram-canvas">
     <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
       <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
     </span>
     <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
