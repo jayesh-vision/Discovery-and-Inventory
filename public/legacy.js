@@ -1221,18 +1221,31 @@ const LC_STATUS = {
   skipped:    ['Skipped',     'purple',  '»']
 };
 /* step status is NOT baked in here — it depends on the NF's own status
-   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time */
-const vnfLcSteps = names => names.map(n => ({ n, at: '02-Aug-26 09:05:30 PM' }));
+   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time.
+   Every stage's start/end and every step's "Modified date" used to be the
+   same one hardcoded literal ('02-Aug-26 09:05:30 PM') copy-pasted
+   everywhere — offset from "now" instead, 12-hour clock to match this
+   screen's own display convention, so the timeline both varies per
+   stage/step and never goes stale. */
+const agoStamp12 = minsAgo => {
+  const d = new Date(Date.now() - minsAgo * 60000);
+  const h = d.getHours();
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(h % 12 || 12)}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+/* steps within a stage ran in sequence, a few minutes apart, finishing at
+   the stage's own end time — so the last step's timestamp is endMinsAgo
+   and earlier steps carry progressively larger (older) offsets */
+const vnfLcSteps = (names, endMinsAgo) => names.map((n, i) => ({ n, at: agoStamp12(endMinsAgo + (names.length - 1 - i) * 3) }));
 const VNF_LC_STAGES = [
-  { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
+  { k: 'day0',   n: 'Day 0',   start: agoStamp12(576420), end: agoStamp12(302400),
     steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
-      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status']) },
-  { k: 'grow',   n: 'Grow',   start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity']) },
-  { k: 'events', n: 'Events', start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events']) },
-  { k: 'gpl',    n: 'GPL',    start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL']) }
+      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'], 302400) },
+  { k: 'grow',   n: 'Grow',   start: agoStamp12(201620), end: agoStamp12(201600),
+    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity'], 201600) },
+  { k: 'events', n: 'Events', start: agoStamp12(43220), end: agoStamp12(43200),
+    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events'], 43200) },
+  { k: 'gpl',    n: 'GPL',    start: agoStamp12(4340), end: agoStamp12(4320),
+    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL'], 4320) }
 ];
 
 const LINK_TABS = [
@@ -5274,12 +5287,13 @@ function viewVirtual() {
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        /* a Planned NF hasn't been instantiated yet — there's nothing to view
-           details on and no lifecycle to operate on, so it gets no row menu */
-        i => rows[i].st === 'Planned' ? [] : [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
-              A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })],
+        /* every row — Planned included — can still view its own details;
+           only "Lifecycle operation" needs an instantiated NF, so that one
+           action stays off a Planned row's menu */
+        i => [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
+              ...(rows[i].st === 'Planned' ? [] : [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })])],
         null,
-        i => rows[i].st === 'Planned' ? null : { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })}`)}
+        i => ({ v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }))}`)}
   </div>`;
 }
 
@@ -5950,17 +5964,19 @@ let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialo
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
-   as the Links page's node-linking diagram, badge and all, except the left
-   node is the service itself (a cloud glyph, not a device) and the right
-   node is the router it lands on: the wire carries a small clickable label
-   (copies the source interface), not a floating card that would sit on top
-   of the line, and the rest of the detail lives in the field grid below
-   instead. */
-function svcDiagram(r) {
+   as the Links page's node-linking diagram, badge and all, except an L3VPN
+   attachment's left node is the service itself (a cloud glyph, not a
+   device) — an L2VPN attachment is a point-to-point circuit between two
+   router ports, not a routed service boundary, so it keeps the plain
+   router icon both ends already had. The right node is the router it
+   lands on either way: the wire carries a small clickable label (copies
+   the source interface), not a floating card that would sit on top of the
+   line, and the rest of the detail lives in the field grid below instead. */
+function svcDiagram(r, tab) {
   const svcLabel = `${r.name}_${r.erp}`;
   return `<div class="linkdiagram-canvas">
     <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+      <span class="linkdiagram-icon">${nodeThumb(tab === 'l3vpn' ? 'cloud' : 'router')}</span>
       <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
     </span>
     <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
@@ -5992,7 +6008,7 @@ function svcViewDialog() {
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
           <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
         </div>
-        ${svcDiagram(r)}
+        ${svcDiagram(r, SVC_VIEW.tab)}
         ${detailFieldGrid([
           ['Equipment Name', r.ifc], ['ERP number', r.erp],
           ['Link ID', linkId], ['Admin status', adminStatus]
@@ -6127,6 +6143,7 @@ function viewReports() {
 
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
 let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
 let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
@@ -6262,6 +6279,46 @@ function resIfaces() {
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}`)}`;
 }
 
+/* the exact same "Node linking" dialog the Links page opens on a row click
+   (title, field grid and all) — this element and the neighbour as two
+   nodes on a wire, the session/port as the wire's label — so a reader
+   sees one consistent linking view everywhere in the app, not a
+   differently-worded one-off for Neighbours. Works the same for all four
+   protocol tabs, including LLDP (where the remote element is a real
+   device) and OSPF/BGP (where it's only an IP, so Destination NE and
+   Destination IP end up showing the same value — that's what the
+   adjacency itself reports, not a bug). */
+function nbrViewDialog() {
+  if (!NBR_VIEW) return '';
+  const rows = NBRS[NBR_VIEW.tab] || [];
+  const r = rows[NBR_VIEW.i];
+  if (!r) return '';
+  const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
+  const [stLabel, stTone] = lst[r.st];
+  const tabLabel = (NBR_TABS.find(x => x.k === NBR_VIEW.tab) || {}).n || NBR_VIEW.tab.toUpperCase();
+  const srcRouter = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
+  const linkName = !r.rport || r.rport === '—' ? 'Unnamed' : r.rport;
+  return `
+    <div class="drawer-overlay" data-nbrclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Link between ${esc(RES_ID)} and ${esc(r.remote)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Node linking</span>
+        <button class="fp-x" data-nbrclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${tabLabel} link</span>${chip(stLabel, stTone)}
+        </div>
+        ${linkDiagram({ sne: RES_ID, dne: r.remote, name: r.rport })}
+        ${detailFieldGrid([
+          ['Status', stLabel], ['Protocol', tabLabel], ['Link name', linkName],
+          ['Source NE', RES_ID], ['Source IP', srcRouter.ip],
+          ['Destination NE', r.remote], ['Destination IP', r.rip]
+        ])}
+      </div>
+    </div>`;
+}
+
 function resNbrs() {
   const rows = NBRS[NBR_TAB] || [];
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
@@ -6275,9 +6332,10 @@ function resNbrs() {
              {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
       rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
         `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
-        `<span class="mono">${r.rip}</span>`, r.seen]))
+        `<span class="mono">${r.rip}</span>`, r.seen]), '', null,
+      i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`);
+           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`) + nbrViewDialog();
 }
 
 function resSvcs() {
@@ -11299,6 +11357,7 @@ function applyDrillQuery(view, q, label) {
       RES_ENB_TAB = 'cell';
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';
+      NBR_VIEW = null;
     }
   }
   if (view === 'node')     {
@@ -11517,6 +11576,15 @@ document.addEventListener('click', e => {
   }
   const lnkx = e.target.closest('[data-linkclose]');
   if (lnkx) { LINK_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const nbrv = e.target.closest('[data-nbrview]');
+  if (nbrv) {
+    const [tab, i] = nbrv.dataset.nbrview.split(':');
+    NBR_VIEW = { tab, i: Number(i) };
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const nbrx = e.target.closest('[data-nbrclose]');
+  if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');
@@ -11672,7 +11740,7 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
   if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');

@@ -2619,12 +2619,13 @@ function viewVirtual() {
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
         ]), '',
-        /* a Planned NF hasn't been instantiated yet — there's nothing to view
-           details on and no lifecycle to operate on, so it gets no row menu */
-        i => rows[i].st === 'Planned' ? [] : [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
-              A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })],
+        /* every row — Planned included — can still view its own details;
+           only "Lifecycle operation" needs an instantiated NF, so that one
+           action stays off a Planned row's menu */
+        i => [A('View details', { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }),
+              ...(rows[i].st === 'Planned' ? [] : [A('Lifecycle operation', { v:'vnflifecycle', l:`Lifecycle operation · ${rows[i].nf}`, q:`nf=${encodeURIComponent(rows[i].nf)}` })])],
         null,
-        i => rows[i].st === 'Planned' ? null : { v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` })}`)}
+        i => ({ v:'vnfdetails', l:`Virtual element details · ${rows[i].nf}`, q:`name=${encodeURIComponent(rows[i].nf)}` }))}`)}
   </div>`;
 }
 
@@ -3295,17 +3296,19 @@ let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialo
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
-   as the Links page's node-linking diagram, badge and all, except the left
-   node is the service itself (a cloud glyph, not a device) and the right
-   node is the router it lands on: the wire carries a small clickable label
-   (copies the source interface), not a floating card that would sit on top
-   of the line, and the rest of the detail lives in the field grid below
-   instead. */
-function svcDiagram(r) {
+   as the Links page's node-linking diagram, badge and all, except an L3VPN
+   attachment's left node is the service itself (a cloud glyph, not a
+   device) — an L2VPN attachment is a point-to-point circuit between two
+   router ports, not a routed service boundary, so it keeps the plain
+   router icon both ends already had. The right node is the router it
+   lands on either way: the wire carries a small clickable label (copies
+   the source interface), not a floating card that would sit on top of the
+   line, and the rest of the detail lives in the field grid below instead. */
+function svcDiagram(r, tab) {
   const svcLabel = `${r.name}_${r.erp}`;
   return `<div class="linkdiagram-canvas">
     <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+      <span class="linkdiagram-icon">${nodeThumb(tab === 'l3vpn' ? 'cloud' : 'router')}</span>
       <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
     </span>
     <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
@@ -3337,7 +3340,7 @@ function svcViewDialog() {
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
           <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
         </div>
-        ${svcDiagram(r)}
+        ${svcDiagram(r, SVC_VIEW.tab)}
         ${detailFieldGrid([
           ['Equipment Name', r.ifc], ['ERP number', r.erp],
           ['Link ID', linkId], ['Admin status', adminStatus]

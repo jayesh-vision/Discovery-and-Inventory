@@ -146,6 +146,7 @@ function applyDrillQuery(view, q, label) {
       RES_ENB_TAB = 'cell';
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';
+      NBR_VIEW = null;
     }
   }
   if (view === 'node')     {
@@ -332,6 +333,15 @@ document.addEventListener('click', e => {
   }
   const lnkx = e.target.closest('[data-linkclose]');
   if (lnkx) { LINK_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const nbrv = e.target.closest('[data-nbrview]');
+  if (nbrv) {
+    const [tab, i] = nbrv.dataset.nbrview.split(':');
+    NBR_VIEW = { tab, i: Number(i) };
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const nbrx = e.target.closest('[data-nbrclose]');
+  if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');
@@ -487,7 +497,7 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; go('resource'); return; }
   const nd = e.target.closest('[data-node]');
   if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
   const ntab = e.target.closest('[data-nodetab]');

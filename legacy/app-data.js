@@ -1018,18 +1018,31 @@ const LC_STATUS = {
   skipped:    ['Skipped',     'purple',  '»']
 };
 /* step status is NOT baked in here — it depends on the NF's own status
-   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time */
-const vnfLcSteps = names => names.map(n => ({ n, at: '02-Aug-26 09:05:30 PM' }));
+   (Ready/Failed/Planned), computed by vnfLifecycleStages() at render time.
+   Every stage's start/end and every step's "Modified date" used to be the
+   same one hardcoded literal ('02-Aug-26 09:05:30 PM') copy-pasted
+   everywhere — offset from "now" instead, 12-hour clock to match this
+   screen's own display convention, so the timeline both varies per
+   stage/step and never goes stale. */
+const agoStamp12 = minsAgo => {
+  const d = new Date(Date.now() - minsAgo * 60000);
+  const h = d.getHours();
+  return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${pad2(h % 12 || 12)}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+/* steps within a stage ran in sequence, a few minutes apart, finishing at
+   the stage's own end time — so the last step's timestamp is endMinsAgo
+   and earlier steps carry progressively larger (older) offsets */
+const vnfLcSteps = (names, endMinsAgo) => names.map((n, i) => ({ n, at: agoStamp12(endMinsAgo + (names.length - 1 - i) * 3) }));
 const VNF_LC_STAGES = [
-  { k: 'day0',   n: 'Day 0',   start: '29-Aug-25 05:33:26 AM', end: '02-Aug-26 09:05:30 PM',
+  { k: 'day0',   n: 'Day 0',   start: agoStamp12(576420), end: agoStamp12(302400),
     steps: vnfLcSteps(['Verify subcloud', 'Generate vDU values.yaml', 'Push adpf-pre-values.yaml',
-      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status']) },
-  { k: 'grow',   n: 'Grow',   start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity']) },
-  { k: 'events', n: 'Events', start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events']) },
-  { k: 'gpl',    n: 'GPL',    start: '02-Aug-26 09:05:30 PM', end: '02-Aug-26 09:05:30 PM',
-    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL']) }
+      'Push adpf-values.yaml', 'Deploy CNF', 'Check deployment status'], 302400) },
+  { k: 'grow',   n: 'Grow',   start: agoStamp12(201620), end: agoStamp12(201600),
+    steps: vnfLcSteps(['Scale vDU replicas', 'Verify capacity'], 201600) },
+  { k: 'events', n: 'Events', start: agoStamp12(43220), end: agoStamp12(43200),
+    steps: vnfLcSteps(['Collect fault events', 'Acknowledge events'], 43200) },
+  { k: 'gpl',    n: 'GPL',    start: agoStamp12(4340), end: agoStamp12(4320),
+    steps: vnfLcSteps(['Generate golden package list', 'Publish GPL'], 4320) }
 ];
 
 const LINK_TABS = [

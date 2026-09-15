@@ -1,5 +1,6 @@
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
 let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
 let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
@@ -135,6 +136,46 @@ function resIfaces() {
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}`)}`;
 }
 
+/* the exact same "Node linking" dialog the Links page opens on a row click
+   (title, field grid and all) — this element and the neighbour as two
+   nodes on a wire, the session/port as the wire's label — so a reader
+   sees one consistent linking view everywhere in the app, not a
+   differently-worded one-off for Neighbours. Works the same for all four
+   protocol tabs, including LLDP (where the remote element is a real
+   device) and OSPF/BGP (where it's only an IP, so Destination NE and
+   Destination IP end up showing the same value — that's what the
+   adjacency itself reports, not a bug). */
+function nbrViewDialog() {
+  if (!NBR_VIEW) return '';
+  const rows = NBRS[NBR_VIEW.tab] || [];
+  const r = rows[NBR_VIEW.i];
+  if (!r) return '';
+  const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
+  const [stLabel, stTone] = lst[r.st];
+  const tabLabel = (NBR_TABS.find(x => x.k === NBR_VIEW.tab) || {}).n || NBR_VIEW.tab.toUpperCase();
+  const srcRouter = PHY.router.find(x => x.name === RES_ID) || PHY.router[0];
+  const linkName = !r.rport || r.rport === '—' ? 'Unnamed' : r.rport;
+  return `
+    <div class="drawer-overlay" data-nbrclose="1"></div>
+    <div class="linkview-panel" role="dialog" aria-label="Link between ${esc(RES_ID)} and ${esc(r.remote)}">
+      <div class="linkview-head">
+        <span class="vw-card-title-sm">Node linking</span>
+        <button class="fp-x" data-nbrclose="1" aria-label="Close">${IC_X}</button>
+      </div>
+      <div class="linkview-body">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+          <span class="vw-card-description">${tabLabel} link</span>${chip(stLabel, stTone)}
+        </div>
+        ${linkDiagram({ sne: RES_ID, dne: r.remote, name: r.rport })}
+        ${detailFieldGrid([
+          ['Status', stLabel], ['Protocol', tabLabel], ['Link name', linkName],
+          ['Source NE', RES_ID], ['Source IP', srcRouter.ip],
+          ['Destination NE', r.remote], ['Destination IP', r.rip]
+        ])}
+      </div>
+    </div>`;
+}
+
 function resNbrs() {
   const rows = NBRS[NBR_TAB] || [];
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
@@ -148,9 +189,10 @@ function resNbrs() {
              {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
       rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
         `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
-        `<span class="mono">${r.rip}</span>`, r.seen]))
+        `<span class="mono">${r.rip}</span>`, r.seen]), '', null,
+      i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`);
+           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`) + nbrViewDialog();
 }
 
 function resSvcs() {
