@@ -70,6 +70,36 @@ export function StackedBars({ days, series, values, height = 240 }: {
   );
 }
 
+/* ── ramp-coloured bars ───────────────────────────────────
+   One bar per bucket, each its own colour (a severity ramp — an age
+   histogram's oldest bucket is the one that matters, not "which series is
+   this"), rather than StackedBars' one-hex-per-series-across-every-x-value. */
+export function RampBars({ buckets, height = 240 }: { buckets: { label: string; count: number; hex: string }[]; height?: number }) {
+  const [hov, setHov] = useState<number | null>(null);
+  const W = 1000, H = height, padL = 12, padB = 34, padT = 26;
+  const max = Math.max(1, ...buckets.map(b => b.count));
+  const y = (v: number) => padT + (H - padT - padB) * (1 - v / max);
+  const slot = (W - padL) / buckets.length, bw = Math.min(64, slot * 0.5);
+  return (
+    <div className="ch-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label="Age of open discrepancies">
+        {buckets.map((b, i) => {
+          const cx = padL + slot * i + slot / 2, y0 = y(b.count), h = Math.max(2, H - padB - y0);
+          return (
+            <g key={b.label} onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}>
+              <rect x={cx - slot / 2} y={padT} width={slot} height={H - padT - padB} fill="transparent" />
+              <rect x={cx - bw / 2} y={y0} width={bw} height={h} rx={4} fill={b.hex} opacity={hov !== null && hov !== i ? 0.55 : 1} />
+              <text x={cx} y={y0 - 8} textAnchor="middle" className="ch-axis num" style={{ fontWeight: 600 }}>{b.count}</text>
+              <text x={cx} y={H - 10} textAnchor="middle" className="ch-axis">{b.label}</text>
+            </g>
+          );
+        })}
+        <line x1={padL} x2={W} y1={H - padB} y2={H - padB} className="ch-grid" />
+      </svg>
+    </div>
+  );
+}
+
 /* ── donut ──────────────────────────────────────────────── */
 export interface Slice { k: string; n: string; c: number; hex: string }
 export function Donut({ slices, total, label, size = 220, onSliceClick }: { slices: Slice[]; total: number; label: string; size?: number; onSliceClick?: (k: string) => void }) {

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
-import { StackedBars, Sparkline, MultiLineChart } from '../components/charts';
+import { StackedBars, RampBars, Sparkline, MultiLineChart } from '../components/charts';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   ADAPTER_ROWS, COLLECTOR_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
@@ -8,6 +9,7 @@ import {
   BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
   DOMAIN_HEX, DOMAIN_LABEL, type DomainKey
 } from '../data/discoveryOverview';
+import { domainToUrl } from './DomainDevices';
 
 /* RAN, Transport, Core, IP/MPLS — the display order every legend and table
    on this page uses. DOMAIN_HEX itself keeps its own key order (it's
@@ -36,15 +38,15 @@ const DomainDots = ({ domains }: { domains: DomainKey[] }) => (
   </span>
 );
 
-/* the eyebrow + rule that separates the two modules this page covers —
-   there's nowhere for a reader to drill from either label, so it's plain
-   text, not a link */
-function ModuleDivider({ label }: { label: string }) {
+/* the numbered rule that separates the two modules this page covers — a
+   roman numeral, the module name, then a hairline running to the card's
+   right edge. Nowhere for a reader to drill from either label, so it's
+   plain text, not a link. */
+function ModuleDivider({ num, label }: { num: string; label: string }) {
   return (
-    <div className="row vw-items-center" style={{ gap: 'var(--vw-space-sm)', margin: 'var(--vw-space-xs) 0' }}>
-      <span className="eyebrow row vw-items-center" style={{ gap: '4px', flexShrink: 0 }}>
-        <span style={{ fontSize: '0.6rem' }}>▾</span>{label}
-      </span>
+    <div className="row vw-items-center" style={{ gap: 'var(--vw-space-md)', margin: 'var(--vw-space-md) 0 var(--vw-space-xs)' }}>
+      <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '.14em', color: 'var(--vw-color-blue-600)', flexShrink: 0 }}>{num}</span>
+      <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '.11em', textTransform: 'uppercase', color: 'var(--vw-color-gray-900)', flexShrink: 0 }}>{label}</span>
       <span className="divider grow" />
     </div>
   );
@@ -74,6 +76,11 @@ function PctBar({ pct, hex }: { pct: number; hex: string }) {
    domain it is (that's already the column header). Fills most of the
    column, not a small centered pill, so the shade is the thing a reader's
    eye actually lands on scanning down a column. */
+/* age histogram bars — one shade per bucket, oldest run the darkest: the
+   thing a reader should notice first is how far right the color deepens,
+   not a flat single-hue bar chart */
+const AGE_RAMP = [cv('blue', 200), cv('blue', 300), cv('blue', 400), cv('blue', 500), cv('blue', 700)];
+
 const REGION_HEAT_STEPS = [50, 100, 200, 300, 400, 500, 600] as const;
 const REGION_HEAT_MAX = Math.max(...REGION_DISCREPANCY.flatMap(r => Object.values(r.drift)));
 function heatShade(v: number, max: number) {
@@ -93,6 +100,8 @@ function HeatPill({ v, max = REGION_HEAT_MAX }: { v: number; max?: number }) {
 }
 
 export default function Insights() {
+  const nav = useNavigate();
+  const openDomain = (d: DomainKey) => nav(`/discovery/insights/domain/${domainToUrl(d)}`);
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
   const [objView, setObjView] = useState<'chart' | 'table'>('chart');
   const [backlogView, setBacklogView] = useState<'chart' | 'table'>('chart');
@@ -105,23 +114,32 @@ export default function Insights() {
   return (
     <div className="page">
       <SectionTitle>Inventory trust</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-        {TRUST_METRICS.map(m => (
-          <Card key={m.label} style={m.hero ? { border: '1.5px solid var(--vw-color-blue-200)', background: 'var(--vw-color-blue-25)' } : undefined}>
-            <div className="eyebrow">{m.label}</div>
-            <div className="num" style={{ fontSize: m.hero ? 'var(--vw-font-value-xxl)' : 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
-            <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
-            <div style={{ marginTop: 'var(--vw-space-sm)' }}>
-              <Sparkline values={m.trend} hex={m.hero ? 'var(--vw-color-blue-500)' : m.tone === 'up' ? 'var(--vw-color-emerald-500)' : 'var(--vw-color-slate-400)'} />
-            </div>
-          </Card>
-        ))}
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(240px, 21rem) minmax(0, 1fr)' }}>
+        <Card style={{ borderLeft: '3px solid var(--vw-color-blue-500)', display: 'flex', flexDirection: 'column' }}>
+          <div className="eyebrow">{TRUST_METRICS[0].label}</div>
+          <div className="num" style={{ fontSize: '2.75rem', fontWeight: 700, marginTop: '6px', lineHeight: 1 }}>{TRUST_METRICS[0].value}</div>
+          <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--vw-color-slate-100)' }}>
+            <span className="vw-card-metric-label-sub">{TRUST_METRICS[0].sub}</span>
+          </div>
+        </Card>
+        <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+          {TRUST_METRICS.slice(1).map(m => (
+            <Card key={m.label} style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="eyebrow">{m.label}</div>
+              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
+              <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
+              <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
+                <Sparkline values={m.trend} hex={m.tone === 'up' ? 'var(--vw-color-emerald-500)' : 'var(--vw-color-slate-400)'} />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <ModuleDivider label="DISCOVERY" />
+      <ModuleDivider num="I" label="DISCOVERY" />
 
       <SectionTitle>Jobs and daily discovery</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)' }}>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
         <Card>
           <span className="vw-card-title-sm">Discovery jobs</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Schedule, coverage and adapters per domain</div>
@@ -180,7 +198,7 @@ export default function Insights() {
       </div>
 
       <SectionTitle>Adapters and collectors</SectionTitle>
-      <div className="vw-grid vw-grid-cols-2 vw-gap-md">
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.28fr) minmax(0, 1fr)' }}>
         <Card>
           <span className="vw-card-title-sm">Discovery adapters</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Endpoint counts and per-adapter success</div>
@@ -229,19 +247,23 @@ export default function Insights() {
           {ROOT_CAUSE_FAILURES.map(f => {
             const extra = f.targets - f.examples.length;
             return (
-              <div key={f.cause} style={{ padding: '12px 0', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-                <div className="row vw-justify-between vw-items-center" style={{ gap: 'var(--vw-space-sm)' }}>
-                  <div className="row vw-items-center" style={{ gap: '8px', minWidth: 0 }}>
-                    <Chip tone="neutral" strong>{f.tag}</Chip>
-                    <span className="vw-value" style={{ fontWeight: 600 }}>{f.cause}</span>
+              <div key={f.cause} className="row vw-items-center" style={{ gap: '12px', padding: '11px 0', borderTop: '1px solid var(--vw-color-slate-100)' }}>
+                <span className="mono" style={{
+                  width: 28, height: 28, borderRadius: '7px', flexShrink: 0, marginTop: '1px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--vw-color-slate-100)', color: 'var(--vw-color-gray-600)',
+                  fontSize: '0.625rem', fontWeight: 600
+                }}>{f.tag}</span>
+                <div className="grow" style={{ minWidth: 0 }}>
+                  <div className="vw-value" style={{ fontSize: '0.9375rem', fontWeight: 600 }}>{f.cause}</div>
+                  <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {f.examples.map(ex => <span key={ex} className="mono" style={{ fontSize: '0.6875rem', color: 'var(--vw-color-gray-600)', background: 'var(--vw-color-slate-100)', borderRadius: '4px', padding: '2px 7px' }}>{ex}</span>)}
+                    {extra > 0 && <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--vw-color-gray-600)', background: 'var(--vw-color-slate-100)', borderRadius: '4px', padding: '2px 7px' }}>+{extra} more</span>}
                   </div>
-                  <Chip tone="error">{f.targets} targets</Chip>
                 </div>
-                <div className="row vw-justify-between vw-items-center" style={{ marginTop: '6px' }}>
-                  <div className="vw-card-metric-label-sub mono">
-                    {f.examples.join('  ·  ')}{extra > 0 ? `  ·  +${extra} more` : ''}
-                  </div>
-                  <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ flexShrink: 0 }}>{f.action}</button>
+                <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                  <Chip tone="neutral">{f.targets} targets</Chip>
+                  <button className="nst-btn nst-btn--xs nst-btn--ghost">{f.action}</button>
                 </div>
               </div>
             );
@@ -249,31 +271,37 @@ export default function Insights() {
         </div>
       </Card>
 
-      <ModuleDivider label="RECONCILIATION" />
+      <ModuleDivider num="II" label="RECONCILIATION" />
 
       <SectionTitle>Match outcome</SectionTitle>
       <Card>
         <span className="vw-card-title-sm">Match classes</span>
         <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{MATCH_TOTAL_NOTE}</div>
-        <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', marginTop: 'var(--vw-space-sm)' }}>
-          {MATCH_OUTCOME.map(t => (
-            <div key={t.label}>
-              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, color: cv(t.tone, 700) }}>{t.value.toLocaleString('en-IN')}</div>
-              <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{t.label}</div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '1px',
+          background: 'var(--vw-color-slate-200)',
+          borderTop: '1px solid var(--vw-color-slate-200)', marginTop: 'var(--vw-space-md)'
+        }}>
+          {MATCH_OUTCOME.slice(0, 5).map((t, i) => (
+            <div key={t.label} style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px' }}>
+              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
+              <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>{t.label}</div>
             </div>
           ))}
         </div>
       </Card>
 
       <SectionTitle>Trust by domain and region</SectionTitle>
-      <div className="vw-grid vw-grid-cols-2 vw-gap-md">
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)' }}>
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">By domain</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Trust index scale 90–100%</div>
           <table className="mtbl">
             <thead><tr><th>Domain</th><th style={{ textAlign: 'right' }}>In scope</th><th style={{ textAlign: 'right' }}>Unverified</th><th style={{ textAlign: 'right' }}>In sync</th><th style={{ textAlign: 'right' }}>Trust index</th><th style={{ textAlign: 'right' }}>Open</th><th style={{ textAlign: 'right' }}>MTTR</th><th style={{ textAlign: 'right' }}>Automated</th></tr></thead>
             <tbody>{DOMAIN_TRUST_ROWS.map(d => (
-              <tr key={d.domain}>
+              <tr key={d.domain} className="is-click" tabIndex={0} onClick={() => openDomain(d.domain)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDomain(d.domain); } }}
+                aria-label={`View ${DOMAIN_LABEL[d.domain]} domain devices`}>
                 <td><DomainDot domain={d.domain} /></td>
                 <td className="num" style={{ textAlign: 'right' }}>{d.inScope.toLocaleString('en-IN')}</td>
                 <td className="num" style={{ textAlign: 'right' }}>{d.unverified ?? '–'}</td>
@@ -330,7 +358,7 @@ export default function Insights() {
       </div>
 
       <SectionTitle>Backlog</SectionTitle>
-      <div className="vw-grid vw-grid-cols-2 vw-gap-md">
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
         <Card>
           <div className="row vw-justify-between vw-items-start">
             <div>
@@ -380,14 +408,13 @@ export default function Insights() {
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>
             {BACKLOG_AGE.reduce((a, b) => a + b.count, 0)} open · {backlogOlder} older than 7d · oldest 41d
           </div>
-          <StackedBars days={BACKLOG_AGE.map(b => b.bucket)} height={230}
-            series={[{ k: 'open', n: 'Open discrepancies', hex: 'var(--vw-color-blue-400)' }]}
-            values={BACKLOG_AGE.map(b => [b.count])} />
+          <RampBars height={230}
+            buckets={BACKLOG_AGE.map((b, i) => ({ label: b.bucket, count: b.count, hex: AGE_RAMP[i] }))} />
         </Card>
       </div>
 
       <SectionTitle>Discrepancy types and reconciliation cycles</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
         <Card>
           <span className="vw-card-title-sm">Open items by type</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0)} open</div>
@@ -400,7 +427,10 @@ export default function Insights() {
           </div>
           {DISCREPANCY_TYPES.map(r => (
             <div key={r.label} className="row vw-items-center" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0' }}>
-              <span className="vw-value" style={{ width: '13.5rem', flexShrink: 0 }}>{r.label}</span>
+              <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
+                <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+              </span>
               <span className="vw-card-metric-label-sub" style={{ width: '6rem', flexShrink: 0 }}>{r.category}</span>
               <span className="hbar-track grow" style={{ height: '0.75rem' }}>
                 <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} />
@@ -414,25 +444,40 @@ export default function Insights() {
           <span className="vw-card-title-sm">Reconciliation cycles</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
           <div>
-            {RECONCILE_CYCLE_ROWS.map(c => (
-              <div key={c.domain} className="row vw-items-center" style={{ gap: 'var(--vw-space-sm)', padding: '10px 0', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-                <span className="mono vw-card-metric-label-sub" style={{ width: '5rem', flexShrink: 0 }}>{c.when}</span>
-                <div className="grow" style={{ minWidth: 0 }}>
+            {RECONCILE_CYCLE_ROWS.map((c, i) => (
+              <div key={c.domain} style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
+                <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{c.when}</span>
+                <span style={{ position: 'relative', alignSelf: 'stretch' }}>
+                  <span style={{ position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%', background: DOMAIN_HEX[c.domain], boxShadow: '0 0 0 3px var(--vw-color-white)' }} />
+                  {i < RECONCILE_CYCLE_ROWS.length - 1 && <span style={{ position: 'absolute', left: 10, top: 16, bottom: -22, width: 1, background: 'var(--vw-color-slate-200)' }} />}
+                </span>
+                <div style={{ minWidth: 0 }}>
                   <div className="vw-value"><b style={{ color: cv('gray', 800) }}>{DOMAIN_LABEL[c.domain]}</b> cycle complete · {c.scanned.toLocaleString('en-IN')} records scanned</div>
-                  <div className="row vw-card-metric-label-sub" style={{ gap: '10px', marginTop: '2px' }}>
-                    <span>{c.drifted} drifted</span><span>{c.autoResolved} auto-resolved</span><span>{c.queue} to queue</span>
+                  <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                    <Chip tone="neutral">{c.drifted} drifted</Chip>
+                    <Chip tone="neutral">{c.autoResolved} auto-resolved</Chip>
+                    <Chip tone="neutral">{c.queue} to queue</Chip>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(c.touchlessPct >= 60 ? 'emerald' : 'amber', 700) }}>{c.touchlessPct}%</div>
+                  <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(c.touchlessPct >= 60 ? 'emerald' : 'amber', 700), lineHeight: 1.1 }}>{c.touchlessPct}%</div>
                   <div className="vw-card-metric-label-sub">automated</div>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: 'var(--vw-space-sm)', paddingTop: 'var(--vw-space-sm)', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
-            {RECONCILE_NEXT.at} ○ Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> {RECONCILE_NEXT.note}
-            · {RECONCILE_NEXT.unverified} unverified retried · {RECONCILE_NEXT.inScope.toLocaleString('en-IN')} in scope · in {RECONCILE_NEXT.eta}
+            <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
+              <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
+              <span style={{ position: 'relative', alignSelf: 'stretch' }}>
+                <span style={{
+                  position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%',
+                  background: 'var(--vw-color-white)', border: `2px solid ${DOMAIN_HEX[RECONCILE_NEXT.domain]}`, boxSizing: 'border-box'
+                }} />
+              </span>
+              <div className="vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>
+                Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> {RECONCILE_NEXT.note}
+                · {RECONCILE_NEXT.unverified} unverified retried · {RECONCILE_NEXT.inScope.toLocaleString('en-IN')} in scope · in {RECONCILE_NEXT.eta}
+              </div>
+            </div>
           </div>
         </Card>
       </div>

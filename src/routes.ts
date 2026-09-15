@@ -4,6 +4,7 @@ import InactiveInventory from './screens/InactiveInventory';
 import Insights from './screens/Insights';
 import RegionDevices from './screens/RegionDevices';
 import DiscoveredDevices from './screens/DiscoveredDevices';
+import DomainDevices from './screens/DomainDevices';
 import SiteDetails from './screens/SiteDetails';
 import SiteEquipment from './screens/SiteEquipment';
 import Reconcile from './screens/Reconcile';
@@ -29,6 +30,8 @@ export const SCREENS: Screen[] = [
     crumb: 'Insights · Devices by region', rail: 'insights', component: RegionDevices },
   { key: 'discovereddevices', path: '/discovery/insights/discovered', module: 'Discovery and reconciliation',
     crumb: 'Insights · Discovered devices', rail: 'insights', component: DiscoveredDevices },
+  { key: 'domaindevices', path: '/discovery/insights/domain/:domain', module: 'Discovery and reconciliation',
+    crumb: 'Insights · Domain devices', rail: 'insights', component: DomainDevices },
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },

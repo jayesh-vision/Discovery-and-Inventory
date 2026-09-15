@@ -1724,3 +1724,31 @@ details[open] > summary .vw-tx-chevron {
   color: inherit;
 }
 
+
+/* ── overlay drawer (domain device detail) ─────────────────
+   Same visual weight as the grid's .fpanel (white card, slate border,
+   platform shadow) but anchored to the viewport edge rather than a toolbar
+   button, since it inspects one record rather than configuring a list. */
+.ov-scrim {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, .38); z-index: 150;
+}
+.ov-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 151;
+  width: min(26rem, 92vw); background: var(--vw-color-white);
+  border-left: 1px solid var(--vw-color-slate-200);
+  box-shadow: -12px 0 32px -14px rgba(15, 23, 42, .35);
+  display: flex; flex-direction: column;
+}
+.ov-drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-md);
+  padding: var(--vw-space-lg); border-bottom: 1px solid var(--vw-color-slate-100); flex: none;
+}
+.ov-drawer-body { padding: var(--vw-space-lg); overflow-y: auto; flex: 1; }
+
+/* a compact key/value list, for a record's own fields inside the drawer */
+.kv { display: flex; flex-direction: column; }
+.kv > div { display: flex; justify-content: space-between; gap: var(--vw-space-md);
+  padding: 7px 0; border-top: 1px solid var(--vw-color-slate-100); font-size: 0.8125rem; }
+.kv > div:first-child { border-top: 0; }
+.kv .k { color: var(--vw-color-gray-500); }
+.kv .v { font-weight: 500; text-align: right; }
