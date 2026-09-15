@@ -36,9 +36,6 @@ export const TRUST_METRICS: TrustMetric[] = [
   { label: 'Discovery coverage', value: '99.44%',
     sub: '12,106 of 12,174 reached and classified today',
     trend: [98.6, 98.8, 98.9, 99.0, 99.1, 99.0, 99.2, 99.1, 99.3, 99.2, 99.3, 99.44] },
-  { label: 'Touchless resolution', value: '60.7%', tone: 'up',
-    sub: '82 of 135 detected today closed with no engineer',
-    trend: [52, 54, 53, 56, 58, 57, 59, 58, 60, 59, 61, 60.7] },
   { label: 'Open discrepancy backlog', value: '147',
     sub: '53 raised today · 94 carried from earlier cycles',
     trend: [210, 198, 190, 182, 175, 168, 160, 155, 150, 149, 150, 147] },
@@ -120,10 +117,10 @@ export const ROOT_CAUSE_FAILURES: RootCauseFailure[] = [
 /* ── Reconciliation cycles, most recent per domain ───────────────────── */
 export interface ReconcileCycleRow { domain: DomainKey; when: string; scanned: number; touchlessPct: number; drifted: number; autoResolved: number; queue: number }
 export const RECONCILE_CYCLE_ROWS: ReconcileCycleRow[] = [
-  { domain: 'IPMPLS', when: '40 sec ago', scanned: 1204, touchlessPct: 75, drifted: 12, autoResolved: 9, queue: 3 },
-  { domain: 'Core', when: '2 min ago', scanned: 340, touchlessPct: 61, drifted: 18, autoResolved: 11, queue: 7 },
-  { domain: 'RAN', when: '6 min ago', scanned: 8412, touchlessPct: 65, drifted: 52, autoResolved: 40, queue: 18 },
-  { domain: 'Transport', when: '12 min ago', scanned: 2150, touchlessPct: 53, drifted: 53, autoResolved: 28, queue: 25 }
+  { domain: 'IPMPLS', when: '10:31:28', scanned: 1204, touchlessPct: 75, drifted: 12, autoResolved: 9, queue: 3 },
+  { domain: 'Core', when: '10:30:08', scanned: 340, touchlessPct: 61, drifted: 18, autoResolved: 11, queue: 7 },
+  { domain: 'RAN', when: '10:26:00', scanned: 8412, touchlessPct: 65, drifted: 52, autoResolved: 40, queue: 18 },
+  { domain: 'Transport', when: '10:20:00', scanned: 2150, touchlessPct: 53, drifted: 53, autoResolved: 28, queue: 25 }
 ];
 export const RECONCILE_NEXT = { domain: 'Transport' as DomainKey, note: 'nightly full window', unverified: 30, inScope: 2180, eta: '6h 28m', at: '01:00' };
 
