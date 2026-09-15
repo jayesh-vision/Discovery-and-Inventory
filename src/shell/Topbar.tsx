@@ -48,6 +48,22 @@ export default function Topbar() {
   if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'jobs' || s.key === 'targets') {
     return null;
   }
+  /* Every other sidebar-rail landing page has the same "second page title"
+     problem as the four above, just in one of two shapes: a single-segment
+     crumb with no " · " parent at all (Location, Services, Inactive
+     inventory), or a " · " parent ("Resources", "Connectivity") that isn't
+     itself a real, clickable screen (Virtual/Physical/Passive Resources,
+     Links) — routes.ts has no screen whose crumb is exactly "Resources" or
+     "Connectivity" for targetFor() to resolve. Either way, undrilled, the
+     breadcrumb below would only ever render dead or duplicate text, so
+     these stay suppressed the same way Location does — up to the point a
+     reader actually drills into something (a KPI card, a donut segment),
+     at which point the drill branch further down gives the trail a real
+     destination to name. */
+  if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
+    || s.key === 'links' || s.key === 'services' || s.key === 'inactive') && !drill) {
+    return null;
+  }
 
   const targetFor = (prefix: string): string | null => {
     const t = SCREENS.find(x => x.crumb === prefix);
