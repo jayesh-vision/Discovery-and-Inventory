@@ -3660,7 +3660,6 @@ const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>
 const ACTIVE_MIX = [
   { n:'Routers',  c:2148, tone:'sky',     tab:'router' },
   { n:'Switches', c:349,  tone:'emerald', tab:'switch' },
-  { n:'Servers',  c:96,   tone:'cyan',    tab:'server' },
   { n:'DWDM',     c:78,   tone:'purple',  tab:'dwdm' },
   { n:'eNodeB',   c:18,   tone:'amber',   tab:'enodeb' },
   { n:'gNodeB',   c:14,   tone:'orange',  tab:'gnodeb' }
@@ -4153,36 +4152,48 @@ function locInsights() {
 
   /* the three estate cards, broken down by type the way the rest of the
      dashboard does it: icon + headline, a share meter, then one chip per
-     class. The whole card is still the drill — chips are labels, and the
-     per-class drills live on the target screen's own tabs. */
+     class. Each chip used to be an inert label nested inside the card's
+     one big button — since a button can't nest another button, every
+     chip actually fired the CARD's own click, so "L2VPN" or "ISIS" (say)
+     silently opened the same generic "All virtual resources" list as
+     every other chip in that card, never its own class. The head (icon +
+     total + meter) is now its own button for the card-level destination,
+     and every chip that carries its own `d` is a sibling button for its
+     specific one — same look, no nested buttons. */
   const invCard = (title, icon, tone, total, sub, segs, d) => {
     const tSum = segs.reduce((a,s) => a + s.c, 0) || 1;
-    return `<button class="kpi-progress" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}"
-      aria-label="${esc(title)}: ${esc(total)}, ${esc(sub)}"${dA(d)}>
-      <div class="row vw-gap-sm vw-items-center">
-        <span class="cov-alert-icon" style="background:${cv(tone,50)};color:${cv(tone,600)}">${icon}</span>
-        <div class="stack-x" style="gap:0">
-          <span class="vw-card-metric-label">${title}</span>
-          <span class="vw-card-metric-xl num">${total}</span>
+    return `<div class="kpi-progress" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}">
+      <button class="kpi-progress-hd is-drill" aria-label="${esc(title)}: ${esc(total)}, ${esc(sub)}"${dA(d)}>
+        <div class="row vw-gap-sm vw-items-center">
+          <span class="cov-alert-icon" style="background:${cv(tone,50)};color:${cv(tone,600)}">${icon}</span>
+          <div class="stack-x" style="gap:0">
+            <span class="vw-card-metric-label">${title}</span>
+            <span class="vw-card-metric-xl num">${total}</span>
+          </div>
         </div>
-      </div>
-      <div class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-xs)">${sub}</div>
-      <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">
-        ${segs.map(s => `<span style="width:${(s.c/tSum*100).toFixed(2)}%;background:${cv(s.tone,500)}" title="${s.n}: ${n(s.c)}"></span>`).join('')}</div>
-      <div class="cov-chip-row">${segs.map(s =>
-        `<span class="cov-chip inv-chip"><span class="legend-sw" style="background:${cv(s.tone,500)}"></span>${s.n} <b class="num">${n(s.c)}</b></span>`).join('')}</div>
-    </button>`;
+        <div class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-xs)">${sub}</div>
+        <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">
+          ${segs.map(s => `<span style="width:${(s.c/tSum*100).toFixed(2)}%;background:${cv(s.tone,500)}" title="${s.n}: ${n(s.c)}"></span>`).join('')}</div>
+      </button>
+      <div class="cov-chip-row">${segs.map(s => s.d
+        ? `<button class="cov-chip inv-chip is-drill" aria-label="${esc(s.n)}: ${esc(n(s.c))}"${dA(s.d)}><span class="legend-sw" style="background:${cv(s.tone,500)}"></span>${s.n} <b class="num">${n(s.c)}</b></button>`
+        : `<span class="cov-chip inv-chip"><span class="legend-sw" style="background:${cv(s.tone,500)}"></span>${s.n} <b class="num">${n(s.c)}</b></span>`).join('')}</div>
+    </div>`;
   };
+  const activeSegs = ACTIVE_MIX.map(x => ({ ...x, d: { v:'physical', l:`${x.n} in inventory`, q:`tab=${x.tab}` } }));
+  const linkSegD = (nm, tab) => ({ v:'links', l:`${nm} — filtered list`, q:`tab=${tab}` });
+  const svcSegD = (nm, tab) => ({ v:'services', l:`${nm} — filtered list`, q:`tab=${tab}` });
   const logicalSegs = [
-    { n:'LLDP links', c: Math.round(IL.links*0.45), tone:'purple' },
-    { n:'OSPF', c: Math.round(IL.links*0.25), tone:'sky' },
-    { n:'BGP', c: Math.round(IL.links*0.15), tone:'cyan' },
-    { n:'ISIS', c: IL.links - Math.round(IL.links*0.45) - Math.round(IL.links*0.25) - Math.round(IL.links*0.15), tone:'slate' },
-    { n:'L3VPN', c: Math.round(IL.services*0.74), tone:'teal' },
-    { n:'L2VPN', c: IL.services - Math.round(IL.services*0.74), tone:'emerald' }
+    { n:'LLDP links', c: Math.round(IL.links*0.45), tone:'purple', d: linkSegD('LLDP links','lldp') },
+    { n:'OSPF', c: Math.round(IL.links*0.25), tone:'sky', d: linkSegD('OSPF links','ospf') },
+    { n:'BGP', c: Math.round(IL.links*0.15), tone:'cyan', d: linkSegD('BGP links','bgp') },
+    { n:'ISIS', c: IL.links - Math.round(IL.links*0.45) - Math.round(IL.links*0.25) - Math.round(IL.links*0.15), tone:'slate', d: linkSegD('ISIS links','isis') },
+    { n:'L3VPN', c: Math.round(IL.services*0.74), tone:'teal', d: svcSegD('L3VPN services','l3vpn') },
+    { n:'L2VPN', c: IL.services - Math.round(IL.services*0.74), tone:'emerald', d: svcSegD('L2VPN services','l2vpn') }
   ];
   const PASSIVE_TONE = { fiber:'cyan', odf:'sky', rack:'slate', power:'amber', splice:'purple', cord:'teal', duct:'orange' };
-  const passiveSegs = PASSIVE_TABS.map(t => ({ n: t.n, c: t.c, tone: PASSIVE_TONE[t.k] || 'slate' }));
+  const passiveSegs = PASSIVE_TABS.map(t => ({ n: t.n, c: t.c, tone: PASSIVE_TONE[t.k] || 'slate',
+    d: { v:'passive', l:`${t.n} — filtered list`, q:`tab=${t.k}` } }));
 
   return `
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -4202,7 +4213,7 @@ function locInsights() {
       <div class="vw-grid vw-grid-cols-3 vw-gap-md">
         ${invCard('Active inventory', INV_ICON.active, 'sky', n(IL.ne),
           `Physical elements across the estate · ${n(IL.discovered)} verified on the network`,
-          ACTIVE_MIX, { v:'physical', l:'All network elements' })}
+          activeSegs, { v:'physical', l:'All network elements' })}
         ${invCard('Logical inventory', INV_ICON.logical, 'purple', n(IL.links + IL.services),
           `${n(IL.links)} links and ${n(IL.services)} provisioned services · plus ${n(IL.vnf)} VNFs`,
           logicalSegs, { v:'virtual', l:'All virtual resources' })}

@@ -1106,6 +1106,14 @@ button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
 .kpi-progress .legend { flex-wrap: nowrap; gap: 8px; overflow: hidden; }
 .kpi-progress .legend-i { white-space: nowrap; font-size: 0.65rem; gap: 4px; flex: 0 0 auto; }
 .kpi-progress .legend-sw { width: 9px; height: 9px; flex-shrink: 0; }
+/* the estate inventory cards (see invCard()) split their old single
+   whole-card button in two: this is the head (icon/total/meter) —
+   still card-shaped, not a bare row, so it keeps .kpi-progress's own
+   lift-on-hover instead of the plain-row .is-drill reset below */
+button.kpi-progress-hd { display: flex; flex-direction: column; width: 100%;
+  background: none; border: 0; padding: 0; margin: 0; }
+button.kpi-progress-hd:hover { opacity: .82; }
+button.kpi-progress-hd::after { top: 4px; right: 2px; }
 
 /* ── Location · network hierarchy diagram ─────────────────
    Datacenters (hub) → PoPs (mid ring) → Sites (outer ring), one spoke per
@@ -1230,6 +1238,12 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 /* estate inventory cards: chips carry a colour swatch keyed to the meter */
 .inv-chip { display: inline-flex; align-items: center; gap: 5px; }
 .kpi-progress .cov-chip-row { margin-top: var(--vw-space-sm); }
+/* a chip with its own drill (see invCard()) is a real button, not a
+   label — same pill look as the static chip, just interactive. No
+   chevron: too small a target for the generic .is-drill affordance. */
+button.cov-chip { appearance: none; -webkit-appearance: none; }
+button.cov-chip:hover { background: var(--vw-color-slate-100); border-color: var(--vw-color-slate-300); }
+button.cov-chip.is-drill::after { display: none; }
 
 .cov-stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--vw-space-sm); margin-top: var(--vw-space-sm); }
 .cov-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--vw-space-sm);
