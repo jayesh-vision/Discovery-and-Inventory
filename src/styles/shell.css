@@ -193,17 +193,21 @@ button { font: inherit; }
    tiles read as one strip; the count steps down rather than reflowing into a
    ragged last row. */
 .stile-row {
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  /* Flex, not a fixed grid: the row carries five tiles on one page and six on
+     another, and a fixed track count leaves a dead column on whichever has
+     fewer. Flexing lets the tiles on the last line grow into the leftover, so
+     the strip finishes flush at every width and every count. */
+  display: flex; flex-wrap: wrap;
   gap: var(--vw-space-md); margin: var(--vw-space-lg) 0;
 }
-@media (max-width: 1400px) { .stile-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px)  { .stile-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stile {
-  display: flex; align-items: center; gap: var(--vw-space-md); min-width: 0;
+  flex: 1 1 13.75rem; min-width: 13.75rem;
+  display: flex; align-items: center; gap: var(--vw-space-md);
   padding: var(--vw-space-md); background: var(--vw-color-white);
   border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg);
   box-shadow: 0 1px 2px rgba(15,23,42,.05);
 }
+@media (max-width: 420px) { .stile { min-width: 100%; } }
 .stile-ic {
   flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--vw-radius-md);
   display: flex; align-items: center; justify-content: center;
@@ -222,6 +226,155 @@ button { font: inherit; }
 .stile-bar { flex: 1 1 auto; height: 8px; border-radius: 999px; }
 .stile-bar .hbar-fill { border-radius: 999px; }
 .stile-pct { flex-shrink: 0; font-size: 0.75rem; font-weight: 600; color: var(--vw-color-slate-600); }
+
+/* ── Rack View details ────────────────────────────────────
+   Three card rows of equal tracks. Each row is its own grid, so cards line up
+   within a row without a short row being dragged tall by a taller one. */
+.pv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-lg); flex-wrap: wrap; }
+.pv-head-meta { display: flex; gap: var(--vw-space-xl); flex-shrink: 0; }
+.pv-meta { display: flex; align-items: center; gap: var(--vw-space-sm); }
+
+.rk-row { display: grid; gap: var(--vw-space-lg); align-items: stretch; margin-bottom: var(--vw-space-lg); }
+.rk-row-1 { grid-template-columns: 1fr; }
+.rk-row-2 { grid-template-columns: 1fr 1.25fr; }
+.rk-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* a spec list beside a chart that wants the room */
+.rk-row-wide { grid-template-columns: 1fr 1.9fr; }
+@media (max-width: 1250px) {
+  .rk-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rk-row-2, .rk-row-wide { grid-template-columns: 1fr; }
+}
+@media (max-width: 820px) { .rk-row-3 { grid-template-columns: 1fr; } }
+
+.rk-hic {
+  flex-shrink: 0; width: 1.75rem; height: 1.75rem; border-radius: var(--vw-radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* U Space Utilization */
+.rk-util { display: flex; flex-direction: column; justify-content: space-between; gap: var(--vw-space-lg); margin-top: var(--vw-space-md); }
+.rk-util-top { display: flex; align-items: center; gap: var(--vw-space-lg); }
+.rk-minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vw-space-md); }
+.rk-mini { display: flex; align-items: center; gap: var(--vw-space-sm); padding: var(--vw-space-md); min-width: 0; }
+
+/* U Space Distribution */
+.rk-dist { display: flex; flex-direction: column; justify-content: space-between; gap: var(--vw-space-lg); margin-top: var(--vw-space-md); }
+.rk-distlabels { display: flex; margin-bottom: 4px; }
+.rk-distlabels > span { font-size: 0.75rem; font-weight: 600; color: var(--vw-color-slate-600); text-align: center; }
+.rk-distbar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--vw-color-slate-100); }
+.rk-distbar > span { display: block; height: 100%; }
+.rk-kinds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--vw-space-sm); }
+.rk-kind { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-left: var(--vw-space-sm); border-left: 1px solid var(--vw-color-slate-100); }
+.rk-kind:first-child { border-left: 0; padding-left: 0; }
+.rk-note {
+  display: flex; align-items: center; gap: var(--vw-space-sm);
+  padding: var(--vw-space-md); border-radius: var(--vw-radius-md);
+  background: var(--vw-color-emerald-25); border: 1px solid var(--vw-color-emerald-100);
+}
+
+/* Power & environment */
+.rk-env { display: flex; gap: var(--vw-space-lg); align-items: center; margin-top: var(--vw-space-md); }
+.rk-env-gauge { flex: 0 0 42%; min-width: 0; }
+.rk-env-list { flex: 1 1 auto; min-width: 0; }
+.rk-env-row {
+  display: grid; grid-template-columns: 1.75rem 1fr auto; align-items: center;
+  gap: var(--vw-space-sm); padding: 5px 0;
+}
+.rk-env-row + .rk-env-row { border-top: 1px dashed var(--vw-color-slate-200); }
+.rk-env-row .vw-value { font-weight: 500; text-align: right; }
+@media (max-width: 900px) { .rk-env { flex-direction: column; align-items: stretch; } .rk-env-gauge { flex: 0 0 auto; } }
+
+/* U Allocation Summary */
+.rk-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.rk-table th {
+  text-align: left; font-weight: 500; color: var(--vw-color-slate-500);
+  padding: 6px 8px; border-bottom: 1px solid var(--vw-color-slate-200); white-space: nowrap;
+}
+.rk-table td { padding: 8px; border-bottom: 1px dashed var(--vw-color-slate-200); }
+.rk-table tfoot td { font-weight: 600; border-bottom: 0; border-top: 1px solid var(--vw-color-slate-200); }
+.rk-table .ta-r { text-align: right; }
+
+/* Free U Ranges */
+.rk-ranges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vw-space-sm); align-content: start; margin-top: var(--vw-space-md); }
+.rk-range {
+  display: flex; flex-direction: column; gap: 2px; padding: var(--vw-space-md);
+  border-radius: var(--vw-radius-md);
+  background: var(--vw-color-emerald-25); border: 1px solid var(--vw-color-emerald-100);
+}
+
+/* Location */
+.rk-loc { display: flex; gap: var(--vw-space-lg); align-items: flex-start; margin-top: var(--vw-space-md); }
+.rk-loc-map {
+  flex: 0 0 34%; max-width: 15rem; border-radius: var(--vw-radius-md); overflow: hidden;
+  border: 1px solid var(--vw-color-slate-200);
+}
+@media (max-width: 760px) { .rk-loc { flex-direction: column; } .rk-loc-map { flex: 0 0 auto; max-width: none; width: 100%; } }
+
+/* Splice closure: three-up mini stats, the loss card, its status pill, the
+   lifecycle timeline, and a photo strip pinned to three across. */
+.rk-minis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 480px) { .rk-minis-3 { grid-template-columns: 1fr; } }
+.rk-loss { display: flex; flex-direction: column; justify-content: space-between; gap: var(--vw-space-sm); margin-top: var(--vw-space-md); }
+/* The chart keeps its 3:1 aspect, so its height follows its width — cap the
+   width or an ultra-wide card makes it tall again and the spec list beside it
+   goes back to stretching. 58rem is the width at which the chart is exactly as
+   tall as the twelve spec rows leave room for; past that it centres instead. */
+.rk-loss-chart { margin-top: var(--vw-space-md); }
+.rk-loss-chart > svg { max-width: 58rem; margin: 0 auto; }
+.rk-pill {
+  display: flex; align-items: center; gap: var(--vw-space-sm); flex-shrink: 0;
+  padding: var(--vw-space-sm) var(--vw-space-md);
+  border-radius: var(--vw-radius-md); border: 1px solid transparent;
+}
+/* ── lifecycle, as a horizontal track ─────────────────────
+   One column per milestone: icon, dot, label, value, state chip. The rail is
+   drawn per step and clipped at the first and last so it never overhangs the
+   end dots. Below it, a band for the two derived figures. */
+.lc { display: flex; flex-direction: column; gap: var(--vw-space-lg); }
+.lc-head { display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md); flex-wrap: wrap; }
+.lc-status {
+  display: inline-flex; align-items: center; gap: var(--vw-space-sm); flex-shrink: 0;
+  padding: var(--vw-space-sm) var(--vw-space-md); border-radius: 999px;
+  font-size: 0.875rem; font-weight: 600;
+}
+.lc-status-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+.lc-track { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--vw-space-sm); }
+.lc-step { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; gap: 4px; }
+.lc-ic {
+  width: 3.25rem; height: 3.25rem; border-radius: var(--vw-radius-lg);
+  display: flex; align-items: center; justify-content: center; margin-bottom: var(--vw-space-sm);
+}
+.lc-dotrow { position: relative; width: 100%; height: 22px; display: flex; align-items: center; justify-content: center; }
+.lc-dotrow::before {
+  content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 2px;
+  background: var(--vw-color-slate-200); transform: translateY(-50%);
+}
+.lc-step:first-child .lc-dotrow::before { left: 50%; }
+.lc-step:last-child  .lc-dotrow::before { right: 50%; }
+.lc-dot {
+  position: relative; width: 17px; height: 17px; border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--vw-color-white);
+}
+.lc-k { font-weight: 600; color: var(--vw-color-slate-900); margin-top: var(--vw-space-sm); }
+.lc-v { color: var(--vw-color-slate-600); overflow-wrap: anywhere; }
+.lc-chip {
+  display: inline-block; margin-top: 4px; padding: 3px var(--vw-space-md);
+  border-radius: var(--vw-radius-md); font-size: 0.8125rem; font-weight: 500;
+}
+.lc-foot {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vw-space-lg);
+  padding: var(--vw-space-lg); border-radius: var(--vw-radius-lg);
+  background: var(--vw-color-sky-25);
+}
+.lc-foot-i { display: flex; align-items: center; gap: var(--vw-space-md); min-width: 0; }
+.lc-foot-i + .lc-foot-i { border-left: 1px solid var(--vw-color-sky-100); padding-left: var(--vw-space-lg); }
+@media (max-width: 900px) {
+  .lc-track { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; row-gap: var(--vw-space-lg); }
+  .lc-dotrow::before { left: 50% !important; right: 50% !important; }
+  .lc-foot { grid-template-columns: 1fr; }
+  .lc-foot-i + .lc-foot-i { border-left: 0; padding-left: 0; }
+}
 
 /* Facet rail */
 .facets { width: 232px; flex-shrink: 0; }

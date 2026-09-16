@@ -158,9 +158,15 @@ window.__nsLegacy = {
       const decodedOdf = decodeURIComponent(p.id);
       if (decodedOdf !== ODF_ID) { ODF_ID = decodedOdf; ODF_GALLERY = null; }
     }
-    if (k === 'rack' && p.id) { RACK_ID = decodeURIComponent(p.id); }
+    if (k === 'rack' && p.id) {
+      const decodedRack = decodeURIComponent(p.id);
+      if (decodedRack !== RACK_ID) { RACK_ID = decodedRack; RACK_GALLERY = null; }
+    }
     if (k === 'power' && p.id) { POWER_ID = decodeURIComponent(p.id); }
-    if (k === 'splice' && p.id) { SPLICE_ID = decodeURIComponent(p.id); }
+    if (k === 'splice' && p.id) {
+      const decodedSplice = decodeURIComponent(p.id);
+      if (decodedSplice !== SPLICE_ID) { SPLICE_ID = decodedSplice; SPLICE_GALLERY = null; }
+    }
     if (k === 'cord' && p.id) { CORD_ID = decodeURIComponent(p.id); }
     if (k === 'duct' && p.id) { DUCT_ID = decodeURIComponent(p.id); }
     if (k === 'fiber' && p.id) { FIBER_ID = decodeURIComponent(p.id); FIBER_TAB = 'overview'; }

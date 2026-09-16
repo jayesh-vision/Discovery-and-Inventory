@@ -6277,6 +6277,8 @@ let ODF_ID = null; /* which ODF frame is open on its own View details page — s
    closed — same state-var + re-render pattern the link/service dialogs use */
 let ODF_GALLERY = null;
 let RACK_ID = null, POWER_ID = null, SPLICE_ID = null, CORD_ID = null, DUCT_ID = null, FIBER_ID = null;
+let RACK_GALLERY = null;     /* index of the photo the Rack gallery is showing, or null */
+let SPLICE_GALLERY = null;   /* the same, for a Splice closure */
 /* which record of each other Passive Infrastructure tab is open on its own
    View details page — see viewRackDetail(), viewPowerDetail(), etc. below */
 let FIBER_TAB = 'overview'; /* which sub-tab is open on a Fiber span's own View details page */
@@ -7297,41 +7299,46 @@ function viewOdfDetail() {
   </div>`;
 }
 
-/* Full-bleed photo gallery. Follows the link/service dialog pattern — overlay
-   plus a centered panel, closed and stepped through by the document-level
-   click handler in app-router.js, so no listener has to survive a re-render. */
-function odfGallery(d, r) {
-  const n = d.photos.length;
-  const i = Math.min(Math.max(ODF_GALLERY, 0), n - 1);
-  const p = d.photos[i];
+/* Full-bleed photo gallery, shared by every record type that has photos.
+   Follows the link/service dialog pattern — overlay plus a centered panel,
+   closed and stepped through by the document-level click handler in
+   app-router.js, so no listener has to survive a re-render. The caller passes
+   its own data attributes, which is what keeps each page's gallery on its own
+   state variable instead of a shared one. */
+function photoGalleryDialog({ photos, art, idx, record, navAttr, closeAttr }) {
+  const n = photos.length;
+  const i = Math.min(Math.max(idx, 0), n - 1);
+  const p = photos[i];
   const prev = (i - 1 + n) % n, next = (i + 1) % n;
-  const navBtn = (to, label, path) => `<button class="odf-gal-nav" data-odfgal="${to}" aria-label="${label}">
+  const navBtn = (to, label, path) => `<button class="odf-gal-nav" ${navAttr}="${to}" aria-label="${label}">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg></button>`;
   return `
-    <div class="drawer-overlay" data-odfgalclose="1"></div>
-    <div class="linkview-panel odf-gal" role="dialog" aria-label="Photos of ${esc(r.n)}">
+    <div class="drawer-overlay" ${closeAttr}="1"></div>
+    <div class="linkview-panel odf-gal" role="dialog" aria-label="Photos of ${esc(record)}">
       <div class="linkview-head">
         <div class="stack-x">
           <span class="vw-card-title-sm">${esc(p.n)}</span>
-          <span class="vw-card-description">${esc(r.n)} · ${esc(p.at)}</span>
+          <span class="vw-card-description">${esc(record)} · ${esc(p.at)}</span>
         </div>
         <div class="row vw-items-center" style="gap:var(--vw-space-md)">
           <span class="vw-card-metric-label-sub num">${i + 1} / ${n}</span>
-          <button class="fp-x" data-odfgalclose="1" aria-label="Close">${IC_X}</button>
+          <button class="fp-x" ${closeAttr}="1" aria-label="Close">${IC_X}</button>
         </div>
       </div>
       <div class="odf-gal-stage">
-        ${odfPhotoArt(i)}
+        ${art(i)}
         ${n > 1 ? navBtn(prev, 'Previous photo', 'M15 18l-6-6 6-6') : ''}
         ${n > 1 ? `<span class="odf-gal-next">${navBtn(next, 'Next photo', 'M9 18l6-6-6-6')}</span>` : ''}
       </div>
       <div class="odf-gal-strip">
-        ${d.photos.map((ph, k) => `<button class="odf-gal-thumb${k === i ? ' is-on' : ''}" data-odfgal="${k}"
-          aria-label="${esc(ph.n)}" aria-current="${k === i}">${odfPhotoArt(k)}</button>`).join('')}
+        ${photos.map((ph, k) => `<button class="odf-gal-thumb${k === i ? ' is-on' : ''}" ${navAttr}="${k}"
+          aria-label="${esc(ph.n)}" aria-current="${k === i}">${art(k)}</button>`).join('')}
       </div>
     </div>`;
 }
+const odfGallery = (d, r) => photoGalleryDialog({ photos: d.photos, art: odfPhotoArt,
+  idx: ODF_GALLERY, record: r.n, navAttr: 'data-odfgal', closeAttr: 'data-odfgalclose' });
 
 /* ═══ the other six Passive Infrastructure tabs — View details ═══
    Each gets its own body shaped around what actually makes that class of
@@ -7343,8 +7350,8 @@ function odfGallery(d, r) {
    every ancestor of this screen's own crumb chain) — a second "Back" button
    here would just be two controls doing the same thing, so this only ever
    renders the record header, the stat strip and the tab bar. */
-function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, dot, badges }) {
-  return `<div class="page-head">
+function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, dot, badges, meta }) {
+  return `<div class="page-head pv-head">
       <div class="stack-x" style="max-width:70ch">
         <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
           ${dot ? `<span style="width:9px;height:9px;border-radius:3px;background:${cv(dot,500)};flex-shrink:0"></span>` : ''}
@@ -7353,6 +7360,11 @@ function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, d
         </div>
         <p class="vw-page-description" style="margin:0">${esc(sub)}</p>
       </div>
+      ${meta ? `<div class="pv-head-meta">${meta.map(([k, v], i) => `<span class="pv-meta">
+        ${rkIcon('slate', i ? 'clock' : 'info', 15)}
+        <span class="stack-x"><span class="vw-card-metric-label">${esc(k)}</span>
+          <span class="vw-value" style="font-size:0.8125rem;font-weight:500">${esc(v)}</span></span>
+      </span>`).join('')}</div>` : ''}
     </div>
     ${tiles ? statTileRow(tiles) : cards ? statCardGrid(cards) : statStrip(cells)}
     ${tabsHtml || `<div class="section-tabs"><button class="stab is-on">Overview</button></div>`}`;
@@ -7369,7 +7381,13 @@ const STILE_ICONS = {
   box: `<path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="M4 7l8 4 8-4M12 11v10"/>`,
   bolt: `<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>`,
   snow: `<path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"/><path d="M12 6l2.5-2.5M12 6L9.5 3.5M12 18l2.5 2.5M12 18l-2.5 2.5"/>`,
-  pin: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`
+  pin: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`,
+  /* splice closure: a dome shell over its cable entries */
+  dome: `<path d="M6 20V11a6 6 0 0 1 12 0v9Z"/><path d="M4 20h16M9 20v-6M15 20v-6"/>`,
+  splice: `<circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>`,
+  gauge: `<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>`,
+  home: `<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><path d="M9 21v-6h6v6"/>`,
+  cal: `<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`
 };
 function statTileRow(tiles) {
   return `<div class="stile-row">${tiles.map(t => {
@@ -7602,38 +7620,182 @@ function buildRackDetail(r, site) {
     inletTemp: `${20 + nint(s, 52, 0, 6)}°C`,
     earthing: nint(s, 53, 0, 1) ? 'Bonded to MEB bar' : 'Rack-frame earth strap',
     doorAccess: nint(s, 54, 0, 1) ? 'Keyed, front + rear' : 'Open frame, no doors',
-    containment: nint(s, 55, 0, 1) ? 'Overhead tray' : 'Underfloor'
+    containment: nint(s, 55, 0, 1) ? 'Overhead tray' : 'Underfloor',
+    /* asset-register fields. The roster carries one identifier per rack, so
+       the code / barcode / migration refs are derived from that same seed —
+       stable per rack, and never contradicting anything the roster states.
+       Owner, account and acceptance genuinely are not held anywhere in this
+       data, so they read as blank rather than as invented names. */
+    assetCode: `RACK-${String(nint(s, 11, 100, 9999)).padStart(4, '0')}`,
+    barcode: `${nint(s, 12, 10, 99)}.${String(nint(s, 13, 1000, 99999)).padStart(5, '0')}`,
+    assetOwner: '—', accountCode: '—', acceptanceName: '—', acceptanceDate: '—',
+    vendor: '—', comments: '—', pni: '—', pniMigrated: '—', migrationDb: '—',
+    room: nint(s, 14, 0, 1) ? `Hall ${1 + nint(s, 15, 0, 3)}` : '—',
+    migrationId: `IND-RG05-${site.state ? site.state.slice(0, 2).toUpperCase() : 'XX'}-${(site.city || 'SITE').slice(0, 4).toUpperCase()}-SITE-${nint(s, 16, 1000000, 9999999)}`,
+    customerId: String(1 + nint(s, 17, 0, 8)),
+    workflowStage: r.st === 'In service' ? 'Completed' : r.st === 'Planned' ? 'Yet to Start' : 'In progress',
+    createdTime: `${pad2(9 + nint(s, 18, 0, 8))}:${pad2(nint(s, 19, 0, 59))}`,
+    updatedDate: `${pad2(nint(s, 21, 1, 27))}-${MONTHS_SHORT[nint(s, 22, 0, 11)]}-${2024 + nint(s, 23, 0, 1)}`,
+    updatedTime: `${pad2(9 + nint(s, 24, 0, 8))}:${pad2(nint(s, 25, 0, 59))}`,
+    updatedBy: ODF_STAFF[nint(s, 26, 0, ODF_STAFF.length - 1)]
   };
 }
-function rackElevationDetail(r) {
-  const rows = [];
-  for (let u = r.h; u >= 1; u--) {
-    const occ = r.occ.find(o => u >= o[0] && u <= o[1]);
-    const isTop = occ && u === occ[1];
-    const tone = occ ? (occ[3] === 'rtr' ? 'sky' : occ[3] === 'sw' ? 'emerald' : 'purple') : null;
-    rows.push(`<div class="row vw-items-center vw-gap-sm" style="height:22px;border-bottom:1px solid ${cv('slate',100)}">
-      <span class="mono" style="width:2.75rem;font-size:0.6875rem;color:${cv('gray',400)};text-align:right;flex-shrink:0">U${u}</span>
-      <div style="flex:1;height:16px;border-radius:3px;display:flex;align-items:center;padding:0 8px;min-width:0;
-        ${occ ? `background:${cv(tone,100)};border:1px solid ${cv(tone,300)}` : `background:${cv('slate',50)}`}">
-        ${isTop ? `<span class="vw-value" style="font-size:0.75rem;color:${cv(tone,700)};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(occ[2])}</span>` : ''}
-      </div>
-    </div>`);
-  }
-  return `<div style="max-height:300px;overflow-y:auto;border:1px solid ${cv('slate',200)};border-radius:var(--vw-radius-md);padding:4px 8px">${rows.join('')}</div>`;
-}
-/* the contiguous free runs in a rack, largest first — the elevation shows
-   what's mounted, this answers "where does the next device fit". */
-function rackFreeBlocks(r) {
+const RACK_PHOTO_NAMES = ['Rack front view', 'Rack rear view', 'Asset / rack tag', 'Cable management', 'PDU & power feed', 'Elevation overview'];
+const RACK_PHOTO_ART = [mediaIllustrationRackFront, mediaIllustrationPanel, mediaIllustrationLabelTag,
+  mediaIllustrationCableBundle, mediaIllustrationPowerUnit, mediaIllustrationCableCrossSection];
+const rackPhotoArt = i => RACK_PHOTO_ART[i % RACK_PHOTO_ART.length]();
+/* ── the rack's U space, reconciled ───────────────────────
+   `occ` itemises only part of what `used` records as occupied — every rack in
+   the sample data has a shortfall (BGLK-277-RACK-A itemises 16U of 31U). So
+   free ranges cannot come from the elevation gaps alone: CHE-118-RACK-A would
+   read 35U free against a recorded 5U. This places the unitemised remainder
+   into the largest gaps first — the way a rack actually fills — so devices,
+   allocation, free ranges and the headline U figure all reconcile. */
+const RACK_KIND = { odf:['ODF / Panel','purple'], sw:['Switch','sky'], rtr:['Router','emerald'], other:['Others','cyan'] };
+function rackSpaceModel(r) {
+  const items = r.occ.map(o => ({ s:o[0], e:o[1], u:o[1] - o[0] + 1, label:o[2], kind:o[3] }));
+  const itemisedU = items.reduce((a, b) => a + b.u, 0);
   const taken = new Set();
-  r.occ.forEach(o => { for (let u = o[0]; u <= o[1]; u++) taken.add(u); });
-  const blocks = [];
+  items.forEach(it => { for (let u = it.s; u <= it.e; u++) taken.add(u); });
+  const runs = [];
   let start = null;
   for (let u = 1; u <= r.h + 1; u++) {
     if (u <= r.h && !taken.has(u)) { if (start === null) start = u; }
-    else if (start !== null) { blocks.push({ from: start, to: u - 1, size: u - start }); start = null; }
+    else if (start !== null) { runs.push({ s:start, e:u - 1, u:u - start }); start = null; }
   }
-  return blocks.sort((a, b) => b.size - a.size);
+  let need = Math.max(0, Math.min(r.used - itemisedU, runs.reduce((a, b) => a + b.u, 0)));
+  const unitemised = [], free = [];
+  runs.slice().sort((a, b) => b.u - a.u || a.s - b.s).forEach(run => {
+    const take = Math.min(need, run.u); need -= take;
+    if (take) unitemised.push({ s:run.s, e:run.s + take - 1, u:take, label:'Unitemised equipment', kind:'other' });
+    if (take < run.u) free.push({ s:run.s + take, e:run.e, u:run.u - take });
+  });
+  free.sort((a, b) => a.s - b.s);
+  const all = items.concat(unitemised).sort((a, b) => a.s - b.s);
+  const byKind = ['odf', 'sw', 'rtr', 'other'].map(k => {
+    const list = all.filter(x => x.kind === k), u = list.reduce((a, b) => a + b.u, 0);
+    return { k, label:RACK_KIND[k][0], tone:RACK_KIND[k][1], count:list.length, u,
+             pct: r.used ? Math.round(u / r.used * 100) : 0 };
+  }).filter(x => x.u > 0);
+  return { items, all, unitemised, free, byKind, devices: items.length, itemisedU,
+           largest: free.slice().sort((a, b) => b.u - a.u || a.s - b.s)[0] || null,
+           freeU: free.reduce((a, b) => a + b.u, 0) };
 }
+
+/* a card heading with the section's own accent icon */
+const RK_ICONS = {
+  info:  `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>`,
+  user:  `<circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/>`,
+  chart: `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 16v-4M12 16V8M16 16v-6"/>`,
+  bolt:  `<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>`,
+  list:  `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>`,
+  grid:  `<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>`,
+  pin:   `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`,
+  note:  `<path d="M4 4h16v12l-4 4H4z"/><path d="M8 9h8M8 13h5"/>`,
+  arrow: `<path d="M12 19V5M5 12l7-7 7 7"/>`,
+  clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
+  check: `<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>`,
+  wrench: `<path d="M15.5 7.5a4.5 4.5 0 0 1-5.9 5.9L4.5 18.5a2.1 2.1 0 0 0 3 3l5.1-5.1a4.5 4.5 0 0 0 5.9-5.9l-2.8 2.8-2.9-.1-.1-2.9Z"/>`,
+  search: `<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16 16"/>`,
+  shield: `<path d="M12 3.2 19 6v6.1c0 4.4-2.9 7.9-7 8.9-4.1-1-7-4.5-7-8.9V6Z"/><path d="m9 12 2.2 2.2L15.2 10"/>`,
+  history: `<path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4.5V9h4.5"/><path d="M12 8.2V12l2.8 1.8"/>`,
+  cal: `<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`,
+  infoc: `<circle cx="12" cy="12" r="9"/><path d="M12 11.2v4.6M12 8.2h.01"/>`
+};
+
+/* the roster stores dates as "14-Oct-2022" strings; the lifecycle card needs
+   to do arithmetic on them — how long in service, when the next survey falls */
+const parseDmy = s => {
+  const p = String(s || '').split('-');
+  const mi = MONTHS_SHORT.indexOf(p[1]);
+  return p.length === 3 && mi >= 0 && +p[0] && +p[2] ? new Date(+p[2], mi, +p[0]) : null;
+};
+const fmtDmy = dt => `${pad2(dt.getDate())}-${MONTHS_SHORT[dt.getMonth()]}-${dt.getFullYear()}`;
+/* Calendar-accurate years/months/days, so February and the 31-day months do
+   not skew the figure the way dividing a day-count by 365 would.
+
+   The days are measured from the clamped anniversary rather than by borrowing
+   from the month before `to`: borrowing breaks whenever the start day exceeds
+   that month's length — 31-Jan to 01-Mar settles at "1 month, -1 days",
+   because a 29-day February cannot cover a 31st. Advancing the start by the
+   whole months first (clamping 31 Jan to 29 Feb) and measuring the remainder
+   from there gives the expected "1 month, 1 day". */
+function spanYmd(from, to) {
+  if (!from || !to || to < from) return null;
+  let y = to.getFullYear() - from.getFullYear();
+  let m = to.getMonth() - from.getMonth();
+  if (to.getDate() < from.getDate()) m -= 1;
+  if (m < 0) { y -= 1; m += 12; }
+  const totalM = from.getMonth() + m;
+  const aY = from.getFullYear() + y + Math.floor(totalM / 12), aM = ((totalM % 12) + 12) % 12;
+  const anchor = new Date(aY, aM, Math.min(from.getDate(), new Date(aY, aM + 1, 0).getDate()));
+  const d = Math.max(0, Math.round((to - anchor) / 86400000));
+  const bit = (v, u) => `${v} ${u}${v === 1 ? '' : 's'}`;
+  return [y && bit(y, 'year'), m && bit(m, 'month'), bit(d, 'day')].filter(Boolean).join(', ');
+}
+
+/* ── the lifecycle card, as a horizontal track ────────────
+   Each milestone carries its own icon, dot, label, value and state chip; the
+   rail runs behind the dots and is clipped at the first and last so it never
+   overhangs. The band underneath carries the two derived figures. */
+function lifecycleTimeline({ steps, status, statusTone, footer, sub }) {
+  return `<div class="lc">
+    <div class="lc-head">
+      <span class="row vw-items-center" style="gap:var(--vw-space-md);min-width:0">
+        ${rkIcon('sky', 'clock', 22)}
+        <span class="stack-x" style="min-width:0">
+          <span class="vw-card-title-sm">Lifecycle</span>
+          <span class="vw-card-description">${esc(sub)}</span>
+        </span>
+      </span>
+      <span class="lc-status" style="background:${cv(statusTone,25)};color:${cv(statusTone,700)}">
+        <span class="lc-status-dot" style="background:${cv(statusTone,500)}"></span>${esc(status)}
+      </span>
+    </div>
+    <ol class="lc-track" style="grid-template-columns:repeat(${steps.length},minmax(0,1fr))">
+      ${steps.map(s => `<li class="lc-step">
+        <span class="lc-ic" style="background:${cv(s.tone,50)};color:${cv(s.tone,600)}">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7"
+            stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[s.i] || ''}</svg>
+        </span>
+        <span class="lc-dotrow"><span class="lc-dot" style="background:${cv(s.tone,500)}"></span></span>
+        <span class="lc-k">${esc(s.k)}</span>
+        <span class="lc-v">${esc(s.v)}</span>
+        <span class="lc-chip" style="background:${cv(s.chipTone,25)};color:${cv(s.chipTone,700)}">${esc(s.chip)}</span>
+      </li>`).join('')}
+    </ol>
+    <div class="lc-foot">
+      ${footer.map(f => `<span class="lc-foot-i">
+        ${rkIcon(f.tone, f.i, 20)}
+        <span class="stack-x" style="min-width:0">
+          <span class="vw-value" style="font-weight:600">${esc(f.k)}</span>
+          <span class="vw-card-metric-label-sub">${esc(f.v)}</span>
+        </span></span>`).join('')}
+    </div>
+  </div>`;
+}
+const rkIcon = (tone, key, size = 16) => `<span class="rk-hic" style="background:${cv(tone,50)};color:${cv(tone,600)}">
+  <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8"
+    stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[key] || ''}</svg></span>`;
+const rkHead = (tone, key, title, right = '') => `<div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-sm)">
+    <span class="row vw-items-center" style="gap:var(--vw-space-sm);min-width:0">
+      ${rkIcon(tone, key)}<span class="vw-card-title-sm">${title}</span>
+    </span>${right}
+  </div>`;
+
+/* a half-dial for a single percentage — the donut already covers two-part
+   splits, this reads better for "how much of the rating is in use" */
+function rackGauge(pct, tone, label) {
+  const p = Math.max(0, Math.min(100, pct)), len = Math.PI * 70;
+  return `<svg viewBox="0 0 180 108" style="width:100%;max-width:200px;height:auto;display:block;margin:0 auto">
+    <path d="M20 92 A70 70 0 0 1 160 92" fill="none" stroke="${cv('slate',100)}" stroke-width="15" stroke-linecap="round"/>
+    <path d="M20 92 A70 70 0 0 1 160 92" fill="none" stroke="${cv(tone,400)}" stroke-width="15" stroke-linecap="round"
+      stroke-dasharray="${(len * p / 100).toFixed(1)} ${len.toFixed(1)}"/>
+    <text x="90" y="74" text-anchor="middle" style="font-size:25px;font-weight:600;fill:${cv('slate',900)}">${p}%</text>
+    <text x="90" y="90" text-anchor="middle" style="font-size:11px;fill:${cv('slate',500)}">${esc(label)}</text>
+  </svg>`;
+}
+
 function viewRackDetail() {
   const rows = PASSIVE.rack;
   const r = rows.find(x => x.n === RACK_ID) || rows[0];
@@ -7643,95 +7805,203 @@ function viewRackDetail() {
   const [kwUsed, kwTotal] = r.kw.split('/').map(x => parseFloat(x));
   const kwPct = kwTotal ? Math.round(kwUsed / kwTotal * 100) : 0;
   const uPct = r.h ? Math.round(r.used / r.h * 100) : 0;
+  const m = rackSpaceModel(r);
+  const mapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(site.lat)},${encodeURIComponent(site.lon)}`;
+  const uRange = b => `U${b.s}${b.u > 1 ? ` – U${b.e}` : ''}`;
 
-  const detailsCard = card(`${headSm('Rack details')}
+  /* ═══ Overview ═══ */
+  const detailsCard = card(`${rkHead('sky', 'info', 'Rack details')}
     <div style="margin-top:var(--vw-space-md)">
       ${odfDetailRows([
-        ['ID', d.id], ['Type', 'Rack'], ['Name / Code', r.n], ['Site / Location', site.name],
-        ['Mount type', d.mountType], ['Height', `${r.h}U`], ['U used', String(r.used)], ['U free', String(free)],
-        ['Cooling', r.cool], ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
+        ['Name', r.n], ['Code', d.assetCode], ['ID', d.id], ['Type', 'Rack'],
+        ['Mount type', d.mountType], ['Height', `${r.h}U`],
+        ['U used', String(r.used)], ['U free', String(free)],
+        ['Site / Location', site.name], ['Barcode number', d.barcode],
+        ['Asset owner', d.assetOwner], ['Account code', d.accountCode]
       ])}
-    </div>`);
+    </div>`, 'odf-fill');
 
-  const OCC_KIND = { rtr: ['Router', 'sky'], sw: ['Switch', 'emerald'] };
-  const occList = r.occ.map((o, i) => {
-    const [label, tone] = OCC_KIND[o[3]] || ['ODF / panel', 'purple'];
-    const span = o[1] > o[0] ? `${o[1] - o[0] + 1}U` : '1U';
-    return passiveRecordRow({
-      badge: `U${o[0]}`, tone, active: true, title: o[2],
-      sub: `${label} · occupies U${o[0]}${o[1] > o[0] ? `–U${o[1]}` : ''} · ${span}`,
-      chipLabel: label, chipTone: tone === 'sky' ? 'info' : tone === 'emerald' ? 'success' : 'purple'
-    });
-  }).join('') || `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No equipment mounted in this rack yet.</div>`;
-
-  const capacityCard = card(`${headSm('Capacity & occupancy')}
-    <p class="vw-card-description" style="margin-top:2px">${r.used} of ${r.h}U populated · ${r.occ.length} device${r.occ.length===1?'':'s'} mounted · ${esc(r.cool)}</p>
-    <div style="margin-top:var(--vw-space-lg)">
-      ${passiveKpiStrip([
-        ['Rack height', `${r.h}U`, 'sky'],
-        ['U used', String(r.used), 'purple'],
-        ['U free', String(free), 'slate'],
-        ['Power draw', `${kwPct}%`, kwPct > 85 ? 'red' : kwPct > 70 ? 'amber' : 'emerald']
-      ])}
-    </div>
-    ${passiveChartSplit(
-      `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
-        ${passiveDonutBlock([{ n:'Used', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.h, `${uPct}%`, 'rack space', 180)}
-        <div style="width:100%">
-          <div class="row vw-justify-between vw-items-baseline">
-            <span class="vw-label">Power draw</span>
-            <span class="vw-value num" style="font-size:0.8125rem">${esc(r.kw)} kW</span>
+  const utilCard = card(`${rkHead('violet', 'chart', 'U Space Utilization')}
+    <div class="odf-fill-body rk-util">
+      <div class="rk-util-top">
+        ${donut([{ n:'Used U', c:r.used, tone:'violet' }, { n:'Free U', c:free, tone:'slate' }], r.h, `${uPct}%`, 'Used', 190)}
+        <div class="stack-s grow" style="min-width:0">
+          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('violet',400)}"></span>Used U</span>
+            <span class="vw-value num" style="font-weight:600">${r.used} <span class="vw-card-metric-label-sub">(${uPct}%)</span></span>
           </div>
-          <div class="hbar-track" style="height:10px;margin-top:6px">
-            <span class="hbar-fill" style="display:block;width:${kwPct}%;background:${cv(kwPct>85?'red':kwPct>70?'amber':'emerald',400)}"></span>
+          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-top:var(--vw-space-sm)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',300)}"></span>Free U</span>
+            <span class="vw-value num" style="font-weight:600">${free} <span class="vw-card-metric-label-sub">(${100 - uPct}%)</span></span>
           </div>
-          <span class="vw-card-metric-label-sub" style="margin-top:4px;display:block">${kwPct}% of rated capacity</span>
-        </div>
-      </div>`,
-      occList)}
-    <div class="row-t vw-gap-lg" style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)};align-items:flex-start">
-      <div style="flex:0 0 300px">${rackElevationDetail(r)}
-        <div class="legend" style="margin-top:var(--vw-space-sm)">
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>Router</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>Switch</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',50)};border:1px solid ${cv('slate',300)}"></span>Free U</span>
+          <span class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">${r.used} of ${r.h} U populated</span>
         </div>
       </div>
+      <div class="rk-minis">
+        <div class="vw-card-child rk-mini">
+          ${rkIcon('emerald', 'arrow')}
+          <span class="stack-x" style="min-width:0">
+            <span class="vw-card-metric-label">Largest Free Block</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.largest ? `${m.largest.u}U` : '—'}</span>
+            <span class="vw-card-metric-label-sub">${m.largest ? uRange(m.largest) : 'rack is full'}</span>
+          </span>
+        </div>
+        <div class="vw-card-child rk-mini">
+          ${rkIcon('sky', 'list')}
+          <span class="stack-x" style="min-width:0">
+            <span class="vw-card-metric-label">Total Devices</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.devices}</span>
+            <span class="vw-card-metric-label-sub">Devices mounted</span>
+          </span>
+        </div>
+      </div>
+    </div>`, 'odf-fill');
+
+  const distCard = card(`${rkHead('cyan', 'grid', 'U Space Distribution')}
+    <div class="odf-fill-body rk-dist">
+      <div>
+        <div class="rk-distlabels">
+          <span style="width:${uPct}%">${uPct}%</span><span style="width:${100 - uPct}%">${100 - uPct}%</span>
+        </div>
+        <div class="rk-distbar">
+          <span style="width:${uPct}%;background:${cv('violet',400)}"></span>
+          <span style="width:${100 - uPct}%;background:${cv('slate',200)}"></span>
+        </div>
+        <div class="row vw-justify-between" style="margin-top:var(--vw-space-sm)">
+          <span class="stack-x"><span class="vw-card-metric-label">Used</span>
+            <span class="vw-value num" style="font-weight:600">${r.used} U</span></span>
+          <span class="stack-x" style="text-align:right"><span class="vw-card-metric-label">Free</span>
+            <span class="vw-value num" style="font-weight:600">${free} U</span></span>
+        </div>
+      </div>
+      <div class="rk-kinds">
+        ${m.byKind.map(k => `<div class="rk-kind">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(k.tone,400)}"></span>${k.label}</span>
+          <span class="vw-value num" style="font-size:1.0625rem;font-weight:600">${k.u}U</span>
+          <span class="vw-card-metric-label-sub">(${k.pct}%)</span>
+        </div>`).join('')}
+      </div>
+      <div class="rk-note">
+        ${rkIcon(free ? 'emerald' : 'amber', 'check')}
+        <span class="stack-x" style="min-width:0">
+          <span class="vw-value" style="font-weight:600;font-size:0.8125rem">Space availability</span>
+          <span class="vw-card-metric-label-sub">${free
+            ? `${free}U free across ${m.free.length} range${m.free.length === 1 ? '' : 's'}`
+            : 'fully populated — no free U'}</span>
+        </span>
+      </div>
+    </div>`, 'odf-fill');
+
+  const ENV_ROWS = [
+    ['bolt', 'amber', 'Power capacity', `${kwTotal.toFixed(1)} kW`],
+    ['bolt', 'amber', 'Current draw', `${kwUsed.toFixed(1)} kW`],
+    ['list', 'sky', 'PDU outlets used', d.pduOutlets],
+    ['info', 'cyan', 'Power feed', d.feed],
+    ['grid', 'cyan', 'Cooling', r.cool],
+    ['chart', 'rose', 'Inlet temperature', d.inletTemp],
+    ['list', 'purple', 'Cable containment', d.containment],
+    ['check', 'emerald', 'Earthing', d.earthing],
+    ['info', 'slate', 'Door / access', d.doorAccess]
+  ];
+  const envCard = card(`${rkHead('amber', 'bolt', 'Power &amp; environment')}
+    <div class="odf-fill-body rk-env">
+      <div class="rk-env-gauge">
+        ${rackGauge(kwPct, kwPct > 85 ? 'red' : kwPct > 70 ? 'amber' : 'emerald', 'Power Usage')}
+        <div class="stack-s" style="margin-top:var(--vw-space-md)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(kwPct>85?'red':kwPct>70?'amber':'emerald',400)}"></span>Current (${kwUsed.toFixed(1)} kW)</span>
+          <span class="legend-i" style="margin-top:4px"><span class="legend-sw" style="background:${cv('slate',200)}"></span>Remaining (${(kwTotal - kwUsed).toFixed(1)} kW)</span>
+        </div>
+      </div>
+      <div class="rk-env-list">
+        ${ENV_ROWS.map(([ic, tone, k, v]) => `<div class="rk-env-row">
+          ${rkIcon(tone, ic, 13)}<span class="vw-label">${k}</span><span class="vw-value">${esc(String(v))}</span>
+        </div>`).join('')}
+      </div>
+    </div>`, 'odf-fill');
+
+  const allocCard = card(`${rkHead('sky', 'list', 'U Allocation Summary')}
+    <div class="odf-fill-body" style="margin-top:var(--vw-space-md);overflow-x:auto">
+      <table class="rk-table">
+        <thead><tr><th>Equipment Type</th><th class="ta-r">Count</th><th class="ta-r">Total U</th><th class="ta-r">Usage %</th></tr></thead>
+        <tbody>
+          ${m.byKind.map(k => `<tr>
+            <td><span class="legend-i"><span class="legend-sw" style="background:${cv(k.tone,400)}"></span>${k.label}</span></td>
+            <td class="ta-r num">${k.count}</td><td class="ta-r num">${k.u}U</td><td class="ta-r num">${k.pct}%</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="ta-r num">${m.all.length}</td>
+          <td class="ta-r num">${r.used}U</td><td class="ta-r num">100%</td></tr></tfoot>
+      </table>
+    </div>`, 'odf-fill');
+
+  const rangesCard = card(`${rkHead('emerald', 'grid', 'Free U Ranges',
+      `<span class="vw-card-metric-label-sub">${free}U total</span>`)}
+    <div class="odf-fill-body rk-ranges">
+      ${m.free.length ? m.free.map(b => `<div class="rk-range">
+          <span class="vw-value mono" style="font-weight:600;font-size:0.8125rem">${uRange(b)}</span>
+          <span class="vw-card-metric-label-sub">${b.u}U</span>
+        </div>`).join('')
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;grid-column:1/-1">
+          No free rack units — this rack is fully populated.</div>`}
+    </div>`, 'odf-fill');
+
+  const locationCard = card(`${rkHead('rose', 'pin', 'Location')}
+    <div class="odf-fill-body rk-loc">
+      <div class="rk-loc-map">${miniMapSvg(site)}</div>
       <div class="grow" style="min-width:0">
-        <span class="vw-value" style="font-weight:600">Rack elevation &amp; free slots · ${r.h}U</span>
-        <p class="vw-card-description" style="margin-top:2px">Front elevation from the top rail down — occupied U shaded by equipment class. The blocks below are the contiguous free runs, largest first, so you can see what will actually fit.</p>
-        ${(() => { const bl = rackFreeBlocks(r); return bl.length
-          ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">
-              ${bl.slice(0, 9).map(b => `<div class="vw-card-child" style="padding:10px 12px;border-left:3px solid ${cv(b.size >= 4 ? 'emerald' : b.size >= 2 ? 'sky' : 'slate', 400)}">
-                <div class="vw-value mono" style="font-size:0.8125rem;font-weight:600">U${b.from}${b.size > 1 ? `–U${b.to}` : ''}</div>
-                <div class="vw-card-metric-label-sub">${b.size}U free${b.size >= 4 ? ' · fits 4U' : b.size >= 2 ? ' · fits 2U' : ' · 1U only'}</div>
-              </div>`).join('')}
-            </div>${bl.length > 9 ? `<p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">+${bl.length - 9} smaller gap${bl.length - 9 === 1 ? '' : 's'} not listed.</p>` : ''}`
-          : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;margin-top:var(--vw-space-md)">No free rack units — this rack is fully populated.</div>`; })()}
-        <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free}U free — ${uPct >= 90 ? 'effectively full, plan an adjacent rack for further growth.' : `room for roughly ${Math.max(1, Math.floor(free / 2))} more 2U device${Math.floor(free/2) === 1 ? '' : 's'}.`}</p>
+        ${odfDetailRows([
+          ['Address', site.addr || '—'], ['Site', site.name],
+          ['City / State', `${site.city || '—'}, ${site.state || '—'}`],
+          ['Latitude', String(site.lat)], ['Longitude', String(site.lon)],
+          ['Facility', site.type || '—'], ['Room', d.room]
+        ])}
+        <div class="row vw-justify-end" style="margin-top:var(--vw-space-md)">
+          <a class="nst-btn nst-btn--sm nst-btn--ghost" href="${mapsUrl}" target="_blank" rel="noopener">Open in map</a>
+        </div>
       </div>
-    </div>`);
+    </div>`, 'odf-fill');
 
-  const photosCard = passivePhotosCard(
-    [['Rack front view', mediaIllustrationRackFront, d.installDate], ['Asset / rack tag', mediaIllustrationLabelTag, d.installDate]],
-    d.installDate);
-
-  const envCard = card(`${headSm('Power & environment')}
-    <div style="margin-top:var(--vw-space-md)">
+  const remarksCard = card(`${rkHead('purple', 'note', 'Remarks &amp; additional information')}
+    <div class="odf-fill-body odf-specs" style="margin-top:var(--vw-space-md)">
       ${odfDetailRows([
-        ['Power feed', d.feed], ['PDU outlets used', d.pduOutlets], ['Cooling', r.cool],
-        ['Inlet temperature', d.inletTemp], ['Cable containment', d.containment],
-        ['Earthing', d.earthing], ['Door / access', d.doorAccess]
+        ['User remarks', d.remarks], ['Construction status', r.st],
+        ['User comments', d.comments], ['Workflow stage', d.workflowStage],
+        ['Migration database', d.migrationDb], ['Customer ID', d.customerId],
+        ['Migration record ID', d.migrationId], ['Vendor', d.vendor],
+        ['PNI', d.pni], ['Installer name', d.createdBy],
+        ['PNI migrated', d.pniMigrated], ['Installed date', d.installDate],
+        ['Acceptance name', d.acceptanceName], ['Acceptance date', d.acceptanceDate]
       ])}
+    </div>`, 'odf-fill');
+
+  /* Photos keep their place on the single page — the gallery is reached from
+     any tile or from "View all". */
+  const photosCard = card(`
+    <div class="row vw-justify-between vw-items-start">
+      ${rkHead('emerald', 'grid', `Photos (${RACK_PHOTO_NAMES.length})`)}
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-rackgal="0">View all</button>
+    </div>
+    <div class="odf-photos-grid" style="margin-top:var(--vw-space-md)">
+      ${RACK_PHOTO_NAMES.map((p, i) => `<button class="odf-photo" data-rackgal="${i}" aria-label="Open ${esc(p)} in gallery">
+        <span class="odf-photo-frame">${rackPhotoArt(i)}</span>
+        <span class="vw-value" style="font-size:0.8125rem;font-weight:500;margin-top:6px">${esc(p)}</span>
+        <span class="vw-card-metric-label-sub">${d.installDate}</span>
+      </button>`).join('')}
     </div>`);
+
+  const overview = `
+    <div class="rk-row rk-row-3">${detailsCard}${utilCard}${distCard}</div>
+    <div class="rk-row rk-row-3">${envCard}${allocCard}${rangesCard}</div>
+    <div class="rk-row rk-row-2">${locationCard}${remarksCard}</div>
+    <div class="rk-row rk-row-1">${photosCard}</div>`;
 
   return `<div class="page">
-    ${passiveDetailChrome({ name:r.n, kind:'Rack', sub:`Rack · ${site.name}`,
+    ${passiveDetailChrome({ name:r.n, kind:'Rack', sub:`${d.assetCode} · ${site.name} · ${d.mountType}`,
       /* Status moves up beside the title: the tile row is six readings wide
          and has no slot for a non-numeric state, but dropping it would lose
          the one field that says whether the rack is in service. */
       badges: [{ label:'Rack', tone:'info' }, { label:r.st, tone:r.chip }],
+      meta: [['Created on', `${d.installDate}, ${d.createdTime}`], ['Last updated', `${d.updatedDate}, ${d.updatedTime}`]],
       tiles: [
         { k:'Rack Height',  v:`${r.h}U`,        t:'sky',     i:'rack' },
         { k:'U Space Used', v:`${r.used} / ${r.h}`, t:'violet', i:'stack', pct: uPct },
@@ -7739,8 +8009,11 @@ function viewRackDetail() {
         { k:'Power Draw',   v:`${r.kw} kW`,     t:'amber',   i:'bolt',  pct: kwPct },
         { k:'Cooling',      v:r.cool,           t:'cyan',    i:'snow' },
         { k:'Site',         v:site.name,        t:'rose',    i:'pin' }
-      ]})}
-    ${passiveTwoCol(`${detailsCard}${envCard}${photosCard}`, capacityCard)}
+      ] })}
+    ${overview}
+    ${RACK_GALLERY === null ? '' : photoGalleryDialog({
+      photos: RACK_PHOTO_NAMES.map(p => ({ n:p, at:d.installDate })), art: rackPhotoArt,
+      idx: RACK_GALLERY, record: r.n, navAttr: 'data-rackgal', closeAttr: 'data-rackgalclose' })}
   </div>`;
 }
 
@@ -7863,71 +8136,7 @@ const FIBER_COLORS = [
   ['Slate','#64748b'], ['White','#e5e7eb'], ['Red','#dc2626'], ['Black','#111827'],
   ['Yellow','#eab308'], ['Violet','#7c3aed'], ['Rose','#e11d48'], ['Aqua','#06b6d4']
 ];
-/* every fibre in the closure, laid out in the 12-fibre trays a splicer
-   actually works in, coloured to the EIA/TIA-598 code */
-function spliceFiberMap(used, total) {
-  const trays = Math.max(1, Math.ceil(total / 12));
-  const rows = [];
-  for (let t = 0; t < trays; t++) {
-    const cells = [];
-    for (let i = 0; i < 12; i++) {
-      const idx = t * 12 + i;
-      if (idx >= total) break;
-      const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
-      const on = idx < used;
-      cells.push(`<span title="Fibre ${idx + 1} · ${fname} · ${on ? 'spliced' : 'free'}"
-        style="width:100%;aspect-ratio:1;border-radius:50%;background:${on ? hex : 'transparent'};border:2.5px solid ${hex}"></span>`);
-    }
-    rows.push(`<div class="row vw-items-center vw-gap-sm">
-      <span class="vw-label" style="width:2rem;flex-shrink:0;font-size:0.625rem">T${t + 1}</span>
-      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:7px;flex:1;max-width:460px">${cells.join('')}</div>
-    </div>`);
-  }
-  return `<div class="stack-s" style="gap:8px;margin-top:var(--vw-space-md)">${rows.join('')}</div>`;
-}
 const SPLICE_BUDGET = 0.15;
-/* the closure's cable entries, itemised — the Housing card states how many of
-   the ports are used, this is what actually occupies them: a feeder in from
-   each side of the span, plus any drop/branch taken off at this point. */
-function spliceEntryList(r, d) {
-  const used = parseInt(String(d.cableEntries).split(' ')[0], 10) || 2;
-  const drops = Math.max(0, used - 2);
-  const rows = [
-    passiveRecordRow({ badge:'A', tone:'sky', active:true, title:`A-side feeder · ${r.span}`,
-      sub:`${d.total}F through · trays 1–${d.trayCount}`, chipLabel:'Through', chipTone:'info' }),
-    passiveRecordRow({ badge:'B', tone:'sky', active:true, title:`B-side feeder · ${r.span}`,
-      sub:`${d.total}F through · trays 1–${d.trayCount}`, chipLabel:'Through', chipTone:'info' })
-  ];
-  for (let i = 0; i < drops; i++) {
-    rows.push(passiveRecordRow({ badge:`D${i + 1}`, tone:'purple', active: d.used > 0,
-      title:`Drop / branch ${i + 1}`,
-      sub: d.used ? `${d.used}F spliced out · tray ${1 + i}` : 'Port fitted, not yet spliced',
-      chipLabel: d.used ? 'Branched' : 'Idle', chipTone: d.used ? 'purple' : 'neutral' }));
-  }
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">${rows.join('')}</div>`;
-}
-/* a splicer logs a loss reading per fusion, not just a closure average — this
-   is that record, derived deterministically around the closure's mean so the
-   per-fibre figures and the headline mean always agree. */
-function spliceRecordGrid(r, d) {
-  if (!d.used) return `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;margin-top:var(--vw-space-md)">
-    No fusions recorded yet — this closure is staged but not spliced.</div>`;
-  const mean = parseFloat(r.loss);
-  const rows = Array.from({ length: d.used }, (_, i) => {
-    const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
-    const jitter = (nint(r.n, 500 + i, 0, 10) - 5) / 100;
-    const loss = Math.max(0.01, +((isNaN(mean) ? 0.08 : mean) + jitter).toFixed(2));
-    const over = loss > SPLICE_BUDGET;
-    return `<div class="row vw-gap-sm vw-items-center" style="padding:8px 12px;border-radius:var(--vw-radius-md);
-      background:${cv(over?'red':'slate',50)};border:1px solid ${cv(over?'red':'slate',over?100:200)}">
-      <span style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:${hex};border:2px solid ${hex}"></span>
-      <span class="vw-value mono" style="font-size:0.75rem;width:2.5rem;flex-shrink:0">F${i + 1}</span>
-      <span class="vw-card-metric-label-sub grow" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fname)}</span>
-      <span class="vw-value num" style="font-size:0.75rem;flex-shrink:0;color:${cv(over?'red':'emerald',700)}">${loss.toFixed(2)} dB</span>
-    </div>`;
-  }).join('');
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">${rows}</div>`;
-}
 function buildSpliceDetail(r, site) {
   const s = r.n;
   const parts = r.fibers.split('/').map(x => parseInt(x, 10));
@@ -7943,105 +8152,284 @@ function buildSpliceDetail(r, site) {
     cableEntries: `${1 + nint(s, 41, 1, 3)} of ${4 + nint(s, 42, 0, 2)}`,
     reEntries: String(nint(s, 43, 0, 3)),
     mounting: /aerial/i.test(r.housing) ? 'Pole-mounted bracket' : /manhole/i.test(r.housing) ? 'Chamber wall bracket' : 'Direct buried, marker tape',
-    ingressRating: nint(s, 44, 0, 1) ? 'IP68' : 'IP67'
+    ingressRating: nint(s, 44, 0, 1) ? 'IP68' : 'IP67',
+    lastModified: r.surveyed,
+    photos: SPLICE_PHOTO_NAMES.map(n => ({ n, at: r.surveyed }))
   };
 }
+const SPLICE_PHOTO_NAMES = ['Splice closure', 'Closure housing', 'Closure label',
+  'Cable entries', 'Tray detail', 'Marker tape'];
+const SPLICE_PHOTO_ART = [mediaIllustrationManhole, mediaIllustrationCableBundle, mediaIllustrationLabelTag,
+  mediaIllustrationCableCrossSection, mediaIllustrationSpliceTray, mediaIllustrationTrench];
+const splicePhotoArt = i => SPLICE_PHOTO_ART[i % SPLICE_PHOTO_ART.length]();
+
+/* Per-splice loss readings. The roster records one figure — the closure's MEAN
+   loss — so the individual bars are derived from the record's own seed and then
+   scaled so their mean is exactly the figure the record states. The spread is
+   illustrative; the mean is true. Returns null when the record has no reading
+   at all (a faulty closure carries '—'), so the card can say so rather than
+   draw a chart out of nothing. Budget threshold is SPLICE_BUDGET, declared
+   with the fibre-map helpers above. */
+function spliceLossReadings(r, d) {
+  const mean = parseFloat(r.loss);
+  if (!isFinite(mean) || !d.used) return null;
+  const n = d.used;
+  const raw = Array.from({ length: n }, (_, i) => 40 + nint(r.n, 200 + i, 0, 160));
+  const sum = raw.reduce((a, b) => a + b, 0);
+  const vals = raw.map(v => Math.max(0.01, Math.round(v / sum * mean * n * 100) / 100));
+  /* rounding to 2dp drifts the mean; put the difference on the largest reading
+     so the readings still average out to the stated figure */
+  const drift = Math.round((mean * n - vals.reduce((a, b) => a + b, 0)) * 100) / 100;
+  if (drift) {
+    let at = 0;
+    vals.forEach((v, i) => { if (v > vals[at]) at = i; });
+    vals[at] = Math.max(0.01, Math.round((vals[at] + drift) * 100) / 100);
+  }
+  /* the chart plots a readable handful of the readings, not all of them */
+  return { chart: vals.slice(0, 6), mean, sampled: Math.min(6, n), of: n };
+}
+/* The viewBox is wide and short on purpose. An SVG sized `width:100%;
+   height:auto` scales its height with the card, so the old 540x240 box (2.25:1)
+   grew to 405px tall once this card took the wide half of the row — which is
+   what pushed the spec list beside it into 96px of trailing white space. At
+   3:1 the chart stays around 300px however wide the card gets, so the row ends
+   level with the last spec row. Type sizes are set for that near-1:1 scale. */
+function spliceLossChart(read, budget) {
+  const vals = read.chart, N = vals.length;
+  const W = 900, H = 300, L = 62, R = 24, T = 30, B = 44;
+  const top = Math.max(0.2, Math.ceil(Math.max(budget * 1.35, ...vals) * 20) / 20);
+  const iw = W - L - R, ih = H - T - B;
+  const y = v => T + ih - (v / top) * ih;
+  const step = iw / N, bw = Math.min(76, step * 0.52);
+  const ticks = [];
+  for (let t = 0; t <= top + 1e-9; t += 0.05) ticks.push(Math.round(t * 100) / 100);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img"
+      aria-label="Per-splice loss against a ${budget} dB budget">
+    ${ticks.map(t => `<g><line x1="${L}" x2="${W - R}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"
+        stroke="${cv('slate',100)}" stroke-width="1"/>
+      <text x="${L - 12}" y="${(y(t) + 5).toFixed(1)}" text-anchor="end" font-size="14"
+        fill="${cv('gray',500)}" font-family="Poppins,sans-serif">${t.toFixed(2)}</text></g>`).join('')}
+    <line x1="${L}" x2="${W - R}" y1="${y(budget).toFixed(1)}" y2="${y(budget).toFixed(1)}"
+      stroke="${cv('red',400)}" stroke-width="2" stroke-dasharray="8 6"/>
+    <text x="${W - R}" y="${(y(budget) - 8).toFixed(1)}" text-anchor="end" font-size="14"
+      fill="${cv('red',500)}" font-family="Poppins,sans-serif">Budget (${budget.toFixed(2)} dB)</text>
+    ${vals.map((v, i) => {
+      const cx = L + step * i + step / 2, h = Math.max(1, T + ih - y(v));
+      const tone = v > budget ? 'red' : SPLICE_BAR_TONES[i % SPLICE_BAR_TONES.length];
+      return `<g><rect x="${(cx - bw / 2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}"
+          height="${h.toFixed(1)}" rx="5" fill="${cv(tone,400)}"><title>F${i + 1}: ${v.toFixed(2)} dB</title></rect>
+        <text x="${cx.toFixed(1)}" y="${(y(v) - 9).toFixed(1)}" text-anchor="middle" font-size="16"
+          font-weight="600" fill="${cv('gray',700)}" font-family="Poppins,sans-serif">${v.toFixed(2)}</text>
+        <text x="${cx.toFixed(1)}" y="${H - 12}" text-anchor="middle" font-size="15"
+          fill="${cv('gray',500)}" font-family="Poppins,sans-serif">F${i + 1}</text></g>`;
+    }).join('')}
+    <line x1="${L}" x2="${W - R}" y1="${(T + ih).toFixed(1)}" y2="${(T + ih).toFixed(1)}" stroke="${cv('slate',300)}" stroke-width="1"/>
+  </svg>`;
+}
+const SPLICE_BAR_TONES = ['sky', 'amber', 'emerald', 'rose', 'slate', 'violet'];
+
 function viewSpliceDetail() {
   const rows = PASSIVE.splice;
   const r = rows.find(x => x.n === SPLICE_ID) || rows[0];
   const site = resolveSite(r.site) || LOCATIONS[0];
   const d = buildSpliceDetail(r, site);
-  const free = Math.max(0, d.total - d.used);
+  const free = d.total - d.used;
   const pct = d.total ? Math.round(d.used / d.total * 100) : 0;
-  const lossNum = parseFloat(r.loss);
-  const overBudget = !isNaN(lossNum) && lossNum > 0.15;
+  const read = spliceLossReadings(r, d);
+  const overBudget = read && read.mean > SPLICE_BUDGET;
+  /* Spliced/free share the palette the ODF port donut already uses — emerald
+     for what is in use, sky for what is still available — so the same split
+     reads the same way on both pages. */
+  const USED_TONE = 'emerald', FREE_TONE = 'sky';
 
-  const detailsCard = card(`${headSm('Splice closure details')}
-    <div style="margin-top:var(--vw-space-md)">
+  /* trays fill in order, so the per-tray counts add up to the record's own
+     "fibres spliced" figure rather than to an independent guess */
+  const trays = Array.from({ length: d.trayCount }, (_, i) => {
+    const capIn = Math.min(12, d.total - i * 12);
+    const inTray = Math.max(0, Math.min(capIn, d.used - i * 12));
+    return { i: i + 1, capIn, used: inTray, free: capIn - inTray };
+  });
+
+  const detailsCard = card(`${rkHead('sky', 'info', 'Equipment details')}
+    <div class="odf-fill-body" style="margin-top:var(--vw-space-md)">
       ${odfDetailRows([
-        ['ID', d.id], ['Type', r.type], ['Name / Code', r.n], ['Site / Location', site.name],
-        ['On span', r.span], ['Housing', r.housing], ['Fibres spliced', r.fibers],
+        ['ID', d.id], ['Name / Code', r.n], ['Type', r.type], ['Site / Location', site.name],
+        ['On span', r.span], ['Housing', r.housing], ['Fibers spliced', r.fibers],
         ['Mean splice loss', r.loss], ['Last surveyed', r.surveyed],
         ['Installed', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
       ])}
-    </div>`);
+    </div>`, 'odf-fill');
 
-  /* one row per 12-fibre tray, the unit a splicer actually works in */
-  const trayCount = Math.max(1, Math.ceil(d.total / 12));
-  const trayList = Array.from({ length: trayCount }, (_, i) => {
-    const capIn = Math.min(12, d.total - i * 12);
-    const usedIn = Math.max(0, Math.min(capIn, d.used - i * 12));
-    return passiveRecordRow({
-      badge: String(i + 1), tone: 'emerald', active: usedIn > 0,
-      title: `Tray ${i + 1}`,
-      sub: `${usedIn} of ${capIn} fibres spliced · ${esc(r.housing)} housing`,
-      chipLabel: usedIn === capIn ? 'Complete' : usedIn ? `${capIn - usedIn} free` : 'Unspliced',
-      chipTone: usedIn === capIn ? 'success' : usedIn ? 'info' : 'neutral'
-    });
+  const statusCard = card(`${rkHead(USED_TONE, 'splice', 'Splice status')}
+    <div class="odf-fill-body rk-util">
+      <div class="rk-util-top">
+        ${donut([{ n:'Spliced', c:d.used, tone:USED_TONE }, { n:'Free', c:free, tone:FREE_TONE }], d.total, `${pct}%`, 'Spliced', 190)}
+        <div class="stack-s grow" style="min-width:0">
+          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,400)}"></span>Spliced</span>
+            <span class="vw-value num" style="font-weight:600">${d.used} <span class="vw-card-metric-label-sub">(${pct}%)</span></span>
+          </div>
+          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-top:var(--vw-space-sm)">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,400)}"></span>Free</span>
+            <span class="vw-value num" style="font-weight:600">${free} <span class="vw-card-metric-label-sub">(${100 - pct}%)</span></span>
+          </div>
+          <span class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">${d.used} of ${d.total} fibres spliced</span>
+        </div>
+      </div>
+      <div class="rk-minis rk-minis-3">
+        ${[['list', 'slate', 'Total capacity', `${d.total}F`], ['splice', USED_TONE, 'Spliced', `${d.used}F`],
+           ['box', FREE_TONE, 'Free', `${free}F`]].map(([ic, tone, k, v]) => `<div class="vw-card-child rk-mini">
+          ${rkIcon(tone, ic)}
+          <span class="stack-x" style="min-width:0">
+            <span class="vw-card-metric-label">${k}</span>
+            <span class="vw-value num" style="font-size:1.125rem;font-weight:600">${v}</span>
+          </span>
+        </div>`).join('')}
+      </div>
+    </div>`, 'odf-fill');
+
+  const lossCard = card(`${rkHead('emerald', 'gauge', 'Splice loss (dB)')}
+    <div class="odf-fill-body rk-loss">
+      <div class="row vw-justify-between vw-items-start" style="gap:var(--vw-space-md)">
+        <span class="row vw-items-center" style="gap:var(--vw-space-sm);min-width:0">
+          ${rkIcon(overBudget ? 'red' : 'emerald', overBudget ? 'gauge' : 'check')}
+          <span class="stack-x" style="min-width:0">
+            <span class="vw-card-metric-label">Mean splice loss</span>
+            <span class="vw-value num" style="font-size:1.375rem;font-weight:600">${esc(r.loss)}</span>
+          </span>
+        </span>
+        ${read ? `<span class="rk-pill" style="background:${cv(overBudget ? 'red' : 'emerald', 25)};border-color:${cv(overBudget ? 'red' : 'emerald', 100)}">
+          ${rkIcon(overBudget ? 'red' : 'emerald', 'arrow')}
+          <span class="stack-x">
+            <span class="vw-value" style="font-weight:600;font-size:0.8125rem">${overBudget ? 'Above limit' : 'Within limit'}</span>
+            <span class="vw-card-metric-label-sub">(${overBudget ? '>' : '<'} ${SPLICE_BUDGET.toFixed(2)} dB)</span>
+          </span></span>` : ''}
+      </div>
+      ${read ? `<div class="rk-loss-chart">${spliceLossChart(read, SPLICE_BUDGET)}</div>
+        <span class="vw-card-metric-label-sub">${read.sampled === read.of
+          /* only the complete set averages to the recorded figure — say so
+             when every fusion is plotted, and do not claim it when the chart
+             is showing the first handful of a larger set */
+          ? `all ${read.of} splice${read.of === 1 ? '' : 's'} · mean matches the recorded ${esc(r.loss)}`
+          : `first ${read.sampled} of ${read.of} splices · closure mean is ${esc(r.loss)}`}</span>`
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-xl);text-align:center;margin-top:var(--vw-space-md)">
+          No loss reading recorded for this closure${r.st === 'Faulty' ? ' — it is flagged faulty and awaiting a survey.' : '.'}</div>`}
+    </div>`, 'odf-fill');
+
+  const traysCard = card(`${rkHead('purple', 'list', 'Splice trays',
+      `<span class="vw-card-metric-label-sub">${d.trayCount} × 12F</span>`)}
+    <div class="odf-fill-body" style="margin-top:var(--vw-space-md);overflow-x:auto">
+      <table class="rk-table">
+        <thead><tr><th>Tray</th><th>Fibers spliced</th><th>Housing</th><th class="ta-r">Status</th></tr></thead>
+        <tbody>
+          ${trays.map(t => `<tr>
+            <td style="font-weight:600">Tray ${t.i}</td>
+            <td class="num">${t.used} of ${t.capIn}</td>
+            <td>${esc(r.housing)}</td>
+            <td class="ta-r">${chip(t.used === 0 ? 'Unspliced' : t.free === 0 ? 'Full' : `${t.free} free`,
+              t.used === 0 ? 'neutral' : t.free === 0 ? 'warning' : 'success')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`, 'odf-fill');
+
+  /* Same split as the donut above, so it carries the same two colours — the
+     bar is a second reading of one figure, not a different measurement. */
+  const allocCard = card(`${rkHead(FREE_TONE, 'chart', 'Fiber allocation')}
+    <div class="odf-fill-body rk-dist">
+      <div>
+        <div class="rk-distlabels">
+          <span style="width:${pct}%">${d.used}F (${pct}%)</span>
+          <span style="width:${100 - pct}%">${free}F (${100 - pct}%)</span>
+        </div>
+        <div class="rk-distbar">
+          <span style="width:${pct}%;background:${cv(USED_TONE,400)}"></span>
+          <span style="width:${100 - pct}%;background:${cv(FREE_TONE,300)}"></span>
+        </div>
+        <div class="legend" style="margin-top:var(--vw-space-md)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,400)}"></span>Spliced fibers</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,300)}"></span>Available fibers</span>
+        </div>
+      </div>
+      <div class="rk-note" style="background:${cv(free ? 'emerald' : 'amber', 25)};border-color:${cv(free ? 'emerald' : 'amber', 100)}">
+        ${rkIcon(free ? 'emerald' : 'amber', 'check')}
+        <span class="stack-x" style="min-width:0">
+          <span class="vw-value" style="font-weight:600;font-size:0.8125rem">Capacity headroom</span>
+          <span class="vw-card-metric-label-sub">${free
+            ? `${free}F available across ${d.trayCount} tray${d.trayCount === 1 ? '' : 's'}`
+            : 'every fibre in this closure is spliced'}</span>
+        </span>
+      </div>
+    </div>`, 'odf-fill');
+
+  const photoTiles = (from, to) => d.photos.slice(from, to).map((p, k) => {
+    const i = from + k;
+    return `<button class="odf-photo" data-splgal="${i}" aria-label="Open ${esc(p.n)} in gallery">
+      <span class="odf-photo-frame">${splicePhotoArt(i)}</span>
+      <span class="vw-value" style="font-size:0.8125rem;font-weight:500;margin-top:6px">${esc(p.n)}</span>
+      <span class="vw-card-metric-label-sub">${esc(p.at)}</span>
+    </button>`;
   }).join('');
 
-  const spliceCard = card(`${headSm('Splice capacity & loss')}
-    <p class="vw-card-description" style="margin-top:2px">${d.used} of ${d.total} fibres spliced — ${esc(r.type)} on ${esc(r.span)}</p>
-    <div style="margin-top:var(--vw-space-lg)">
-      ${passiveKpiStrip([
-        ['Closure capacity', `${d.total}F`, 'sky'],
-        ['Spliced', String(d.used), 'purple'],
-        ['Free', String(free), 'slate'],
-        ['Mean loss', r.loss, overBudget ? 'red' : 'emerald']
-      ])}
+  const photosCard = card(`
+    <div class="row vw-justify-between vw-items-start">
+      ${rkHead('violet', 'grid', `Photos (${d.photos.length})`)}
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-splgal="0">View all</button>
     </div>
-    ${passiveChartSplit(
-      `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
-        ${passiveDonutBlock([{ n:'Spliced', c:d.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], d.total, `${pct}%`, 'spliced', 180)}
-        <div style="width:100%">
-          <div class="row vw-justify-between vw-items-baseline">
-            <span class="vw-label">Loss vs 0.15 dB budget</span>
-            <span class="vw-value num" style="font-size:0.8125rem;color:${cv(overBudget?'red':'emerald',700)}">${esc(r.loss)}</span>
-          </div>
-          <div class="hbar-track" style="height:10px;margin-top:6px">
-            <span class="hbar-fill" style="display:block;width:${isNaN(lossNum)?0:Math.min(100,Math.round(lossNum/0.15*100))}%;background:${cv(overBudget?'red':'emerald',400)}"></span>
-          </div>
-          <span class="vw-card-metric-label-sub" style="margin-top:4px;display:block">${overBudget ? 'Over budget — re-splice recommended' : 'Within the 0.15 dB per-splice budget'}</span>
-        </div>
-      </div>`,
-      trayList)}
-    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
-      ${headSm(`Fibre splice map · ${d.total}F`, 'Coloured to the EIA/TIA-598 code and grouped into 12-fibre trays — filled circles are spliced through, outlines are free')}
-      ${spliceFiberMap(d.used, d.total)}
-      <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free} fibre${free===1?'':'s'} free${free ? ' — spare capacity for later drops without re-entering the closure.' : ' — closure is fully spliced.'}</p>
-    </div>
-    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
-      ${headSm('Splice record', `Measured loss on each spliced fibre against the ${SPLICE_BUDGET.toFixed(2)} dB per-splice budget`)}
-      ${spliceRecordGrid(r, d)}
-    </div>
-    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
-      ${headSm('Cable entries', `${esc(d.cableEntries)} entry ports in use on this ${esc(r.type)} closure`)}
-      ${spliceEntryList(r, d)}
+    <div class="odf-photos-grid" style="margin-top:var(--vw-space-md)">
+      ${photoTiles(0, d.photos.length)}
     </div>`);
 
-  const photosCard = passivePhotosCard(
-    [['Splice tray', mediaIllustrationSpliceTray, r.surveyed], ['Closure housing', mediaIllustrationCableBundle, r.surveyed], ['Closure label', mediaIllustrationLabelTag, r.surveyed]],
-    r.surveyed);
+  /* Two derived figures sit under the track: how long the closure has been in
+     service (install date → today) and when its next survey falls (a year on
+     from the last one). Both are computed, not stored. */
+  const installedOn = parseDmy(d.installDate), surveyedOn = parseDmy(r.surveyed);
+  const inService = spanYmd(installedOn, new Date());
+  const stTone = r.chip === 'success' ? 'emerald' : r.chip === 'error' ? 'red' : 'amber';
+  const lifecycleCard = card(lifecycleTimeline({
+    sub: 'Key events and status of this equipment',
+    status: r.st, statusTone: stTone,
+    steps: [
+      { k:'Installed', v:d.installDate, i:'wrench', tone:'emerald', chip:'Completed', chipTone:'emerald' },
+      { k:'Last surveyed', v:r.surveyed, i:'search', tone:'sky', chip:'Completed', chipTone:'sky' },
+      { k:'Status', v:r.st, i:'shield', tone:stTone,
+        chip: r.st === 'In service' ? 'Active' : r.st, chipTone: stTone },
+      { k:'Created by', v:d.createdBy, i:'user', tone:'purple', chip:'Info', chipTone:'slate' },
+      { k:'Last modified', v:d.lastModified, i:'history', tone:'amber', chip:'Updated', chipTone:'slate' }
+    ],
+    footer: [
+      { k:'Total in service duration', i:'infoc', tone:'sky',
+        v: inService ? `${inService} (since ${d.installDate})` : `since ${d.installDate}` },
+      { k:'Next survey due', i:'cal', tone:'sky',
+        v: surveyedOn ? fmtDmy(new Date(surveyedOn.getFullYear() + 1, surveyedOn.getMonth(), surveyedOn.getDate())) : '—' }
+    ]
+  }));
 
-  const additionalInfoCard = card(`${headSm('Housing & access')}
-    <div style="margin-top:var(--vw-space-md)">
-      ${odfDetailRows([
-        ['Seal type', d.sealType], ['Ingress rating', d.ingressRating], ['Mounting', d.mounting],
-        ['Splice trays', `${d.trayCount} × 12F`], ['Cable entries used', d.cableEntries], ['Re-entries logged', d.reEntries]
-      ])}
-    </div>`);
+  /* Splice loss takes the wide half of the top row — it is the only card here
+     carrying a chart, and the bars need the width far more than the spec list
+     beside it does. */
+  const overview = `
+    <div class="rk-row rk-row-wide">${detailsCard}${lossCard}</div>
+    <div class="rk-row rk-row-3">${traysCard}${allocCard}${statusCard}</div>
+    <div class="rk-row rk-row-1">${lifecycleCard}</div>
+    <div class="rk-row rk-row-1">${photosCard}</div>`;
 
   return `<div class="page">
-    ${passiveDetailChrome({ name:r.n, kind:'Splice closure', sub:`Splice closure · ${site.name} · on ${r.span}`,
-      cells: [
-        { k:'Status', v:r.st, s:'', t:r.chip==='success'?'emerald':r.chip==='error'?'red':'amber' },
-        { k:'Type', v:r.type, s:'', t:'sky' },
-        { k:'Fibres spliced', v:r.fibers, s:'', t:'purple', pct: pct },
-        { k:'Mean splice loss', v:r.loss, s:'', t:'cyan', pct: isNaN(lossNum) ? null : lossNum / SPLICE_BUDGET * 100 },
-        { k:'Housing', v:r.housing, s:'', t:'amber' },
-        { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
-      ]})}
-    ${passiveTwoCol(`${detailsCard}${additionalInfoCard}${photosCard}`, spliceCard)}
+    ${passiveDetailChrome({ name:r.n, kind:'Splice closure',
+      sub:`Splice closure · ${site.name} · on ${r.span}`,
+      badges: [{ label:'Splice closure', tone:'info' }, { label:r.st, tone:r.chip }],
+      meta: [['Last updated', d.lastModified]],
+      tiles: [
+        { k:'Type',             v:r.type,     t:'purple',  i:'dome' },
+        { k:'Fibers spliced',   v:r.fibers,   t:'violet',  i:'splice', pct },
+        { k:'Mean splice loss', v:r.loss,     t:overBudget ? 'red' : 'emerald', i:'gauge' },
+        { k:'Housing',          v:r.housing,  t:'amber',   i:'home' },
+        { k:'Last surveyed',    v:r.surveyed, t:'sky',     i:'cal' }
+      ] })}
+    ${overview}
+    ${SPLICE_GALLERY === null ? '' : photoGalleryDialog({
+      photos: d.photos, art: splicePhotoArt, idx: SPLICE_GALLERY, record: r.n,
+      navAttr: 'data-splgal', closeAttr: 'data-splgalclose' })}
   </div>`;
 }
 
@@ -12237,9 +12625,13 @@ function applyDrillQuery(view, q, label) {
      also runs on the re-render that follows opening it */
   if (view === 'odf')      { if (p.id) { const v = decodeURIComponent(p.id).trim();
                                if (v !== ODF_ID) { ODF_ID = v; ODF_GALLERY = null; } } }
-  if (view === 'rack')     { if (p.id) RACK_ID = decodeURIComponent(p.id).trim(); }
+  /* as for ODF: only a move to a different rack resets the tab and closes the
+     gallery, since this also runs on the re-render that follows opening them */
+  if (view === 'rack')     { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== RACK_ID) { RACK_ID = v; RACK_GALLERY = null; } } }
   if (view === 'power')    { if (p.id) POWER_ID = decodeURIComponent(p.id).trim(); }
-  if (view === 'splice')   { if (p.id) SPLICE_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'splice')   { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== SPLICE_ID) { SPLICE_ID = v; SPLICE_GALLERY = null; } } }
   if (view === 'cord')     { if (p.id) CORD_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'duct')     { if (p.id) DUCT_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
@@ -12394,12 +12786,17 @@ function __legacyParams(k) {
 document.addEventListener('keydown', e => {
   /* the photo gallery is the one dialog that owns the whole viewport, so it
      takes the keys a reader expects there: Escape out, arrows to step */
-  if (ODF_GALLERY !== null && CURRENT === 'odf') {
-    const photos = ODF_PHOTO_NAMES.length;
-    if (e.key === 'Escape') { e.preventDefault(); ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const gal = ODF_GALLERY !== null && CURRENT === 'odf'
+    ? { i: ODF_GALLERY, n: ODF_PHOTO_NAMES.length, set: v => { ODF_GALLERY = v; } }
+    : RACK_GALLERY !== null && CURRENT === 'rack'
+    ? { i: RACK_GALLERY, n: RACK_PHOTO_NAMES.length, set: v => { RACK_GALLERY = v; } }
+    : SPLICE_GALLERY !== null && CURRENT === 'splice'
+    ? { i: SPLICE_GALLERY, n: SPLICE_PHOTO_NAMES.length, set: v => { SPLICE_GALLERY = v; } } : null;
+  if (gal) {
+    if (e.key === 'Escape') { e.preventDefault(); gal.set(null); DRILL_PENDING = DRILL; go(CURRENT); return; }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
-      ODF_GALLERY = (ODF_GALLERY + (e.key === 'ArrowRight' ? 1 : photos - 1)) % photos;
+      gal.set((gal.i + (e.key === 'ArrowRight' ? 1 : gal.n - 1)) % gal.n);
       DRILL_PENDING = DRILL; go(CURRENT); return;
     }
   }
@@ -12510,6 +12907,15 @@ document.addEventListener('click', e => {
   }
   const odfgx = e.target.closest('[data-odfgalclose]');
   if (odfgx) { ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  /* same contract for the rack gallery, on its own state variable */
+  const rkg = e.target.closest('[data-rackgal]');
+  if (rkg) { RACK_GALLERY = Number(rkg.dataset.rackgal); KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const rkgx = e.target.closest('[data-rackgalclose]');
+  if (rkgx) { RACK_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const spg = e.target.closest('[data-splgal]');
+  if (spg) { SPLICE_GALLERY = Number(spg.dataset.splgal); KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const spgx = e.target.closest('[data-splgalclose]');
+  if (spgx) { SPLICE_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const rsvcv = e.target.closest('[data-ressvcview]');
   if (rsvcv) {
     const [tab, i] = rsvcv.dataset.ressvcview.split(':');
@@ -13044,9 +13450,15 @@ window.__nsLegacy = {
       const decodedOdf = decodeURIComponent(p.id);
       if (decodedOdf !== ODF_ID) { ODF_ID = decodedOdf; ODF_GALLERY = null; }
     }
-    if (k === 'rack' && p.id) { RACK_ID = decodeURIComponent(p.id); }
+    if (k === 'rack' && p.id) {
+      const decodedRack = decodeURIComponent(p.id);
+      if (decodedRack !== RACK_ID) { RACK_ID = decodedRack; RACK_GALLERY = null; }
+    }
     if (k === 'power' && p.id) { POWER_ID = decodeURIComponent(p.id); }
-    if (k === 'splice' && p.id) { SPLICE_ID = decodeURIComponent(p.id); }
+    if (k === 'splice' && p.id) {
+      const decodedSplice = decodeURIComponent(p.id);
+      if (decodedSplice !== SPLICE_ID) { SPLICE_ID = decodedSplice; SPLICE_GALLERY = null; }
+    }
     if (k === 'cord' && p.id) { CORD_ID = decodeURIComponent(p.id); }
     if (k === 'duct' && p.id) { DUCT_ID = decodeURIComponent(p.id); }
     if (k === 'fiber' && p.id) { FIBER_ID = decodeURIComponent(p.id); FIBER_TAB = 'overview'; }

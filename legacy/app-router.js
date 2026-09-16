@@ -143,9 +143,13 @@ function applyDrillQuery(view, q, label) {
      also runs on the re-render that follows opening it */
   if (view === 'odf')      { if (p.id) { const v = decodeURIComponent(p.id).trim();
                                if (v !== ODF_ID) { ODF_ID = v; ODF_GALLERY = null; } } }
-  if (view === 'rack')     { if (p.id) RACK_ID = decodeURIComponent(p.id).trim(); }
+  /* as for ODF: only a move to a different rack resets the tab and closes the
+     gallery, since this also runs on the re-render that follows opening them */
+  if (view === 'rack')     { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== RACK_ID) { RACK_ID = v; RACK_GALLERY = null; } } }
   if (view === 'power')    { if (p.id) POWER_ID = decodeURIComponent(p.id).trim(); }
-  if (view === 'splice')   { if (p.id) SPLICE_ID = decodeURIComponent(p.id).trim(); }
+  if (view === 'splice')   { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== SPLICE_ID) { SPLICE_ID = v; SPLICE_GALLERY = null; } } }
   if (view === 'cord')     { if (p.id) CORD_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'duct')     { if (p.id) DUCT_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
@@ -268,12 +272,17 @@ function go(k) {
 document.addEventListener('keydown', e => {
   /* the photo gallery is the one dialog that owns the whole viewport, so it
      takes the keys a reader expects there: Escape out, arrows to step */
-  if (ODF_GALLERY !== null && CURRENT === 'odf') {
-    const photos = ODF_PHOTO_NAMES.length;
-    if (e.key === 'Escape') { e.preventDefault(); ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const gal = ODF_GALLERY !== null && CURRENT === 'odf'
+    ? { i: ODF_GALLERY, n: ODF_PHOTO_NAMES.length, set: v => { ODF_GALLERY = v; } }
+    : RACK_GALLERY !== null && CURRENT === 'rack'
+    ? { i: RACK_GALLERY, n: RACK_PHOTO_NAMES.length, set: v => { RACK_GALLERY = v; } }
+    : SPLICE_GALLERY !== null && CURRENT === 'splice'
+    ? { i: SPLICE_GALLERY, n: SPLICE_PHOTO_NAMES.length, set: v => { SPLICE_GALLERY = v; } } : null;
+  if (gal) {
+    if (e.key === 'Escape') { e.preventDefault(); gal.set(null); DRILL_PENDING = DRILL; go(CURRENT); return; }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
-      ODF_GALLERY = (ODF_GALLERY + (e.key === 'ArrowRight' ? 1 : photos - 1)) % photos;
+      gal.set((gal.i + (e.key === 'ArrowRight' ? 1 : gal.n - 1)) % gal.n);
       DRILL_PENDING = DRILL; go(CURRENT); return;
     }
   }
@@ -384,6 +393,15 @@ document.addEventListener('click', e => {
   }
   const odfgx = e.target.closest('[data-odfgalclose]');
   if (odfgx) { ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  /* same contract for the rack gallery, on its own state variable */
+  const rkg = e.target.closest('[data-rackgal]');
+  if (rkg) { RACK_GALLERY = Number(rkg.dataset.rackgal); KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const rkgx = e.target.closest('[data-rackgalclose]');
+  if (rkgx) { RACK_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const spg = e.target.closest('[data-splgal]');
+  if (spg) { SPLICE_GALLERY = Number(spg.dataset.splgal); KEBAB = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const spgx = e.target.closest('[data-splgalclose]');
+  if (spgx) { SPLICE_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const rsvcv = e.target.closest('[data-ressvcview]');
   if (rsvcv) {
     const [tab, i] = rsvcv.dataset.ressvcview.split(':');
