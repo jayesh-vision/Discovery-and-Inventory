@@ -382,6 +382,18 @@ const TARGETS = [
     circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 5, job: 'DSC-CORE-NRF', domain: 'Core',
     ch: ['ok','ok','na','na','na','ok'], out: 'Exact match', chip: 'success' }
 ];
+/* each row's `sync` above was a hand-typed date that only agreed with its
+   own `fresh` (hours-ago) the moment this file was written, then quietly
+   fell further out of date every day after — the Scan Targets list's "Last
+   sync" column and the Target detail page's "Last discovery" tile
+   (viewTarget(), which reads a real TARGETS row's own .sync rather than the
+   dynamic relativeTimestamp() fallback it uses for targets outside this
+   sample) both showed that frozen date forever. Deriving sync from fresh
+   with the same relativeTimestamp() helper that fallback already uses
+   keeps the two permanently consistent and keeps "last sync" true
+   whenever the page loads, the same fix already applied to VNF lifecycle
+   and other "hardcoded ago" timestamps elsewhere in this app. */
+TARGETS.forEach(t => { t.sync = relativeTimestamp(t.fresh); });
 
 /* ── run transcript, one target, all six collectors ─────── */
 const TRANSCRIPT = {

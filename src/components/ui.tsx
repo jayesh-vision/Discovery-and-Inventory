@@ -101,7 +101,16 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
      handling gets the same behavior without ever nesting interactive
      elements. */
   return (
-    <span className="info-tip">
+    /* title="" (not omitted) stops the browser's native title tooltip from
+       inheriting whatever `title` the surrounding clickable card carries
+       (several call sites — the Insights hero KPIs, for one — wrap an
+       InfoTip in a button with its own title="View X" hint). Without it,
+       hovering the "i" fires BOTH that native tooltip and this component's
+       own info-tip-def box at once, stacked on top of each other. Empty
+       string, not deleting the attribute, is what actually breaks the
+       inheritance — an element with no title of its own still shows the
+       nearest ancestor's. */
+    <span className="info-tip" title="">
       <span role="button" tabIndex={0} className="info-tip-btn" aria-label={label ?? 'What this shows'} aria-expanded={open}
         onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
