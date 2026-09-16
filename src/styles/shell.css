@@ -65,6 +65,104 @@ button { font: inherit; }
    same line instead of leaving one side ragged. */
 .pv-col  { display: flex; flex-direction: column; gap: var(--vw-space-lg); min-width: 0; }
 .pv-col > :last-child { flex: 1 1 auto; }
+
+/* ── ODF overview ─────────────────────────────────────────
+   One merged spec card next to Port utilisation, photos on their own
+   full-width row underneath. Both top cards are direct grid items, so
+   align-items:stretch puts them on a shared row track and they always end
+   level; .odf-fill lets whichever card is shorter spread its blocks through
+   the slack instead of parking it at the bottom. */
+.odf-grid {
+  display: grid; grid-template-columns: 1.35fr 1fr;
+  gap: var(--vw-space-lg); align-items: stretch;
+}
+.odf-grid > :last-child { grid-column: 1 / -1; }   /* photos span the row */
+@media (max-width: 1100px) { .odf-grid { grid-template-columns: 1fr; } }
+.odf-fill { display: flex; flex-direction: column; }
+.odf-fill > .odf-fill-body { flex: 1 1 auto; min-height: 0; }
+
+/* The merged spec list runs in two columns, which halves its height and lets
+   it square up against Port utilisation. .cx-row's own `+` rule would draw a
+   rule above the first row of the second column too, so the first two items
+   clear it explicitly. Free-text rows (.odf-span) take the full width. */
+.odf-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--vw-space-xl); }
+.odf-specs > .odf-span { grid-column: 1 / -1; }
+.odf-specs > .cx-row:nth-child(-n + 2) { border-top: 0; }
+@media (max-width: 760px) { .odf-specs { grid-template-columns: 1fr; } }
+
+/* Port utilisation: donut beside its legend, then the four figures on one
+   full-width row, then the fill bar. space-between spreads those three blocks
+   through whatever height the shared row track hands the card. */
+.odf-pu {
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: var(--vw-space-lg); margin-top: var(--vw-space-lg);
+}
+.odf-pu-top { display: flex; align-items: center; gap: var(--vw-space-xl); }
+.odf-pu-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--vw-space-md); }
+@media (max-width: 1400px) { .odf-pu-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .odf-pu-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 620px) {
+  .odf-pu-top { flex-direction: column; align-items: stretch; }
+  .odf-pu-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Fixed track counts rather than auto-fit: there are six photos, so only a
+   count that divides six leaves no half-empty last row — six across on the
+   full-width row, three once the grid narrows, two once it stacks. */
+.odf-photos-grid {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--vw-space-lg);
+}
+@media (max-width: 1250px) { .odf-photos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .odf-photos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.odf-photo {
+  display: flex; flex-direction: column; min-width: 0;
+  background: none; border: 0; padding: 0; font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+}
+.odf-photo-frame {
+  aspect-ratio: 4 / 3; position: relative; overflow: hidden;
+  border-radius: var(--vw-radius-md); border: 1px solid var(--vw-color-slate-200);
+  box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: box-shadow 140ms ease, border-color 140ms ease;
+}
+.odf-photo:hover .odf-photo-frame { border-color: var(--vw-color-slate-400); box-shadow: 0 6px 18px rgba(15,23,42,.16); }
+.odf-photo:focus-visible { outline: none; }
+.odf-photo:focus-visible .odf-photo-frame { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
+
+/* ── ODF photo gallery dialog ─────────────────────────────
+   Reuses .linkview-panel's overlay, animation and head; only the stage and
+   the thumbnail strip below it are specific to photos. */
+.odf-gal { width: min(64rem, 94vw); max-height: min(46rem, 92vh); }
+.odf-gal-stage {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--vw-color-slate-900);
+}
+.odf-gal-stage > svg { width: 100%; height: 100%; max-height: 32rem; object-fit: contain; }
+.odf-gal-nav {
+  position: absolute; top: 50%; left: var(--vw-space-md); transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  background: rgba(255,255,255,.92); color: var(--vw-color-slate-900);
+  border: 0; cursor: pointer; box-shadow: 0 2px 10px rgba(15,23,42,.3);
+}
+.odf-gal-nav:hover { background: #fff; }
+.odf-gal-next { position: absolute; inset: 0; pointer-events: none; }
+.odf-gal-next .odf-gal-nav { left: auto; right: var(--vw-space-md); pointer-events: auto; }
+.odf-gal-strip {
+  flex-shrink: 0; display: flex; gap: var(--vw-space-sm); overflow-x: auto;
+  padding: var(--vw-space-md) var(--vw-space-lg);
+  border-top: 1px solid var(--vw-color-slate-200);
+}
+.odf-gal-thumb {
+  flex: 0 0 auto; width: 5.5rem; height: 3.5rem; padding: 0; overflow: hidden; cursor: pointer;
+  border-radius: var(--vw-radius-sm); border: 2px solid transparent; background: none;
+  opacity: .55; transition: opacity 140ms ease, border-color 140ms ease;
+}
+.odf-gal-thumb:hover { opacity: 1; }
+.odf-gal-thumb.is-on { opacity: 1; border-color: var(--vw-color-sky-500); }
+.odf-gal-thumb > svg { width: 100%; height: 100%; display: block; }
+
 .scroll-x { overflow-x: auto; }
 .eyebrow {
   font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
@@ -88,6 +186,42 @@ button { font: inherit; }
 .hbar { display: grid; grid-template-columns: 8.5rem 1fr 3.5rem; gap: var(--vw-space-sm); align-items: center; }
 .hbar-track { height: 1rem; background: var(--vw-color-slate-100); border-radius: var(--vw-radius-xs); overflow: hidden; }
 .hbar-fill { height: 100%; border-radius: var(--vw-radius-xs); }
+
+/* ── record header as a row of icon tiles ─────────────────
+   A tighter header than .statc cards: an accent-tinted icon, the label, the
+   figure, and a fill bar where the figure is a ratio. Equal tracks so the
+   tiles read as one strip; the count steps down rather than reflowing into a
+   ragged last row. */
+.stile-row {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--vw-space-md); margin: var(--vw-space-lg) 0;
+}
+@media (max-width: 1400px) { .stile-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .stile-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stile {
+  display: flex; align-items: center; gap: var(--vw-space-md); min-width: 0;
+  padding: var(--vw-space-md); background: var(--vw-color-white);
+  border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg);
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+}
+.stile-ic {
+  flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--vw-radius-md);
+  display: flex; align-items: center; justify-content: center;
+}
+.stile-body { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.stile-k {
+  font-size: 0.8125rem; color: var(--vw-color-slate-500);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stile-v {
+  font-size: 1.375rem; font-weight: 600; line-height: 1.2; margin-top: 2px;
+  color: var(--vw-color-slate-900);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stile-barrow { display: flex; align-items: center; gap: var(--vw-space-sm); margin-top: 8px; }
+.stile-bar { flex: 1 1 auto; height: 8px; border-radius: 999px; }
+.stile-bar .hbar-fill { border-radius: 999px; }
+.stile-pct { flex-shrink: 0; font-size: 0.75rem; font-weight: 600; color: var(--vw-color-slate-600); }
 
 /* Facet rail */
 .facets { width: 232px; flex-shrink: 0; }
@@ -648,7 +782,39 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stat-cell:first-child { border-left: 0; }
 .stat-cell.is-click { cursor: pointer; }
 .stat-cell.is-click:hover { background: var(--vw-color-slate-50); }
-.stat-dot { grid-row: 1 / 4; width: 4px; border-radius: var(--vw-radius-full); align-self: stretch; }
+.stat-dot { grid-row: 1 / -1; width: 4px; border-radius: var(--vw-radius-full); align-self: stretch; }
+/* A stat cell whose value is a share (a percentage, or a used/total split)
+   can carry a mini bar on a fourth row — opt in by passing `pct` to
+   statStrip(). Cells without it keep the original three-row layout. */
+/* ── record header, as KPI cards ─────────────────────────
+   One card per headline figure: accent, label, period, value + movement
+   badge, then a chart (or a visual suited to a field with no time axis). */
+/* three to a row, so six figures wrap onto two rows and each card has room
+   to breathe — packing all six across reads as cramped */
+.statc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--vw-space-md); align-items: stretch; }
+.statc { position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg); padding: var(--vw-space-md) var(--vw-space-md) var(--vw-space-sm) calc(var(--vw-space-md) + 10px); }
+.statc-accent { position: absolute; left: var(--vw-space-md); top: calc(var(--vw-space-md) + 2px);
+  width: 4px; height: 30px; border-radius: var(--vw-radius-full); }
+.statc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-sm); }
+.statc-k { font-size: 0.75rem; color: var(--vw-color-gray-500); line-height: 1.3; }
+.statc-period { font-size: 0.625rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
+.statc-valrow { display: flex; align-items: baseline; gap: var(--vw-space-sm); margin-top: 2px; min-width: 0; }
+.statc-v { font-size: 1.375rem; font-weight: 300; line-height: 1.2; color: var(--vw-color-gray-900);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.statc-trend { font-size: 0.6875rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.statc-map { margin-top: var(--vw-space-sm); border-radius: var(--vw-radius-md); overflow: hidden;
+  border: 1px solid var(--vw-color-slate-200); height: 126px; }
+.statc-facts { display: flex; flex-direction: column; gap: 7px; margin-top: var(--vw-space-md);
+  padding-top: var(--vw-space-sm); border-top: 1px solid var(--vw-color-slate-100); }
+@media (max-width: 1100px) { .statc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .statc-grid { grid-template-columns: 1fr; } }
+
+.stat-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--vw-radius-full);
+  background: var(--vw-color-slate-100); overflow: hidden; }
+.stat-bar > span { display: block; height: 100%; border-radius: var(--vw-radius-full); }
 .stat-k { font-size: 0.6875rem; color: var(--vw-color-gray-500); line-height: 1.3; }
 .stat-v { font-size: 1.375rem; font-weight: 300; line-height: 1.15; color: var(--vw-color-gray-900); }
 .stat-s { font-size: 0.6875rem; color: var(--vw-color-gray-500); line-height: 1.3;

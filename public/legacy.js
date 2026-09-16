@@ -3728,10 +3728,15 @@ function viewHome() {
 
 /* compact stat strip — six figures in the height of one card */
 const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
+  /* `pct` is optional: a cell whose value is really a share (72 of 96 ports,
+     an installation at 100%) can show that share as a bar instead of leaving
+     the sub-line blank. Cells that don't pass it render exactly as before. */
+  const pct = typeof c.pct === 'number' && isFinite(c.pct) ? Math.max(0, Math.min(100, Math.round(c.pct))) : null;
   const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
     <span class="stat-k">${c.k}</span>
     <span class="stat-v num">${c.v}</span>
-    <span class="stat-s">${c.s}</span>`;
+    <span class="stat-s">${c.s}</span>${pct === null ? '' :
+    `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(c.t,400)}"></span></span>`}`;
   return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
     : c.d ? `<button class="stat-cell is-click"${dA(c.d)}>${inner}</button>`
     : `<div class="stat-cell">${inner}</div>`;
@@ -6171,6 +6176,9 @@ let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details p
 let RES_SW_TAB = 'hardware'; /* which tab is open on a Switch's own View details page — see viewSwitchResource() */
 let RES_DW_TAB = 'hardware'; /* which tab is open on a DWDM's own View details page — see viewDwdmResource() */
 let ODF_ID = null; /* which ODF frame is open on its own View details page — see viewOdfDetail() */
+/* index of the photo the gallery dialog is showing, or null while it is
+   closed — same state-var + re-render pattern the link/service dialogs use */
+let ODF_GALLERY = null;
 let RACK_ID = null, POWER_ID = null, SPLICE_ID = null, CORD_ID = null, DUCT_ID = null, FIBER_ID = null;
 /* which record of each other Passive Infrastructure tab is open on its own
    View details page — see viewRackDetail(), viewPowerDetail(), etc. below */
@@ -6921,6 +6929,13 @@ function viewPassive() {
    given frame always renders the same detail. Coordinates and address come
    straight off the frame's real site record rather than being invented
    again, so they never disagree with the Site info page for the same site. */
+/* module scope so the Photos card, the gallery dialog and the gallery's
+   keyboard stepping all agree on how many photos there are and which picture
+   belongs to a given index */
+const ODF_PHOTO_NAMES = ['Front view', 'Port close-up', 'Cable management', 'Labeling', 'Rack elevation', 'Rear cable entry'];
+const ODF_PHOTO_ILLUSTRATIONS = [mediaIllustrationPanel, mediaIllustrationConnectorEnd, mediaIllustrationCableBundle,
+  mediaIllustrationLabelTag, mediaIllustrationRackFront, mediaIllustrationCableCrossSection];
+const odfPhotoArt = i => ODF_PHOTO_ILLUSTRATIONS[i % ODF_PHOTO_ILLUSTRATIONS.length]();
 const ODF_MFR = ['Nokia', 'Corning', 'CommScope', 'Huawei', 'STL'];
 const ODF_STAFF = ['Rohit Sharma', 'Ananya Iyer', 'Vikram Shetty', 'Priya Menon', 'Suresh Rao'];
 function buildOdfDetail(r, site) {
@@ -6945,15 +6960,41 @@ function buildOdfDetail(r, site) {
     height: wallMount ? '—' : `${[42, 45, 47][nint(s, 8, 0, 2)]}U`,
     powerRequired: 'No',
     environment: nint(s, 9, 0, 4) === 0 ? 'Outdoor' : 'Indoor (AC)',
-    photos: [
-      { n: 'Front view', at: `${stamp} 10:24` },
-      { n: 'Port close-up', at: `${stamp} 10:26` },
-      { n: 'Cable management', at: `${stamp} 10:28` },
-      { n: 'Labeling', at: `${stamp} 10:30` }
-    ]
+    photos: ODF_PHOTO_NAMES.map((n, i) => ({ n, at: `${stamp} 10:${pad2(24 + i * 2)}` }))
   };
 }
 const ODF_PIN_ICON = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+/* A street-map thumbnail for the Location card. There is no tile source wired
+   into this app, so the streets/blocks are drawn — deterministic off the site
+   name so a given site always renders the same little map, with the pin at
+   its centre and the site named beneath it. */
+function miniMapSvg(site) {
+  const s = site.name || 'site';
+  const W = 300, H = 190;
+  const vx = 60 + nint(s, 1, 0, 60), hy = 60 + nint(s, 2, 0, 40);
+  const blocks = Array.from({ length: 7 }, (_, i) => {
+    const x = nint(s, 10 + i, 6, W - 70), y = nint(s, 20 + i, 6, H - 50);
+    const w = 28 + nint(s, 30 + i, 0, 36), h = 20 + nint(s, 40 + i, 0, 24);
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${cv('slate',200)}" opacity="0.55"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;display:block" role="img" aria-label="Map of ${esc(s)}">
+    <rect width="${W}" height="${H}" fill="#eef2f6"/>
+    <rect x="${nint(s,3,10,150)}" y="${nint(s,4,100,140)}" width="120" height="70" rx="6" fill="${cv('emerald',100)}" opacity="0.8"/>
+    ${blocks}
+    <path d="M0 ${hy} H${W}" stroke="#fff" stroke-width="9"/>
+    <path d="M${vx} 0 V${H}" stroke="#fff" stroke-width="7"/>
+    <path d="M0 ${hy + 52} H${W}" stroke="#fff" stroke-width="5"/>
+    <path d="M${vx + 96} 0 V${H}" stroke="#fff" stroke-width="5"/>
+    <path d="M0 ${H} L${W} ${hy - 40}" stroke="#fde68a" stroke-width="6" opacity="0.9"/>
+    <g transform="translate(${W / 2 - 11} ${H / 2 - 30})">
+      <path d="M11 0a11 11 0 0 1 11 11c0 8-11 21-11 21S0 19 0 11A11 11 0 0 1 11 0Z" fill="${cv('red',500)}"/>
+      <circle cx="11" cy="11" r="4.2" fill="#fff"/>
+    </g>
+    <text x="${W / 2}" y="${H / 2 + 22}" text-anchor="middle" font-size="12" font-weight="600" fill="${cv('gray',700)}"
+      font-family="Poppins,sans-serif">${esc(s)}</text>
+  </svg>`;
+}
 
 /* ── shared field-photo illustrations, every Passive Infrastructure detail
    page's Photos card ── the app has no photo library anywhere, so these are
@@ -7008,31 +7049,12 @@ function mediaIllustrationRackFront() {
   }).join('');
   return `<svg viewBox="0 0 200 120" style="width:100%;height:100%;display:block"><rect width="200" height="120" fill="#0f172a"/>${slots}</svg>`;
 }
-const odfDetailRows = fields => fields.map(([k, v]) => `<div class="cx-row" style="grid-template-columns:11rem 1fr">
+/* A third element marks the row as full-width — only meaningful inside the
+   two-column .odf-specs grid, ignored by the single-column callers. */
+const odfDetailRows = fields => fields.map(([k, v, span]) => `<div class="cx-row${span ? ' odf-span' : ''}" style="grid-template-columns:11rem 1fr">
     <span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span>
   </div>`).join('');
 
-/* Every port on the frame, laid out in the 12-port trays an ODF is wired in —
-   filled squares are patched, outlines are free. */
-function odfPortMap(used, total) {
-  const trays = Math.max(1, Math.ceil(total / 12));
-  const rows = [];
-  for (let t = 0; t < trays; t++) {
-    const cells = [];
-    for (let i = 0; i < 12; i++) {
-      const idx = t * 12 + i;
-      if (idx >= total) break;
-      const on = idx < used;
-      cells.push(`<span title="Port ${idx + 1} · ${on ? 'patched' : 'free'}" style="width:100%;aspect-ratio:1;border-radius:3px;
-        background:${on ? cv('emerald', 400) : '#fff'};border:1.5px solid ${on ? cv('emerald', 500) : cv('slate', 300)}"></span>`);
-    }
-    rows.push(`<div class="row vw-items-center vw-gap-sm">
-      <span class="vw-label" style="width:2rem;flex-shrink:0;font-size:0.625rem">T${t + 1}</span>
-      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;flex:1">${cells.join('')}</div>
-    </div>`);
-  }
-  return `<div class="stack-s" style="width:290px;gap:5px">${rows.join('')}</div>`;
-}
 
 function viewOdfDetail() {
   const rows = PASSIVE.odf;
@@ -7043,88 +7065,151 @@ function viewOdfDetail() {
   const fillPct = r.cap ? Math.round(r.used / r.cap * 100) : 0;
   const mapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(site.lat)},${encodeURIComponent(site.lon)}`;
 
-  const odfDetailsCard = card(`${headSm('ODF details')}
-    <div style="margin-top:var(--vw-space-md)">
+  /* One spec card rather than "ODF details" plus a second "Additional
+     information" list — the split was arbitrary, and merging lets the fields
+     run in two columns, which halves the height and squares the card up
+     against Port utilisation beside it. Manufacturer and the old Vendor row
+     resolved to the same value, so only one of them survives the merge.
+     Remarks is free text, so it spans both columns on its own line. */
+  const odfDetailsCard = card(`${headSm('ODF details', `${r.type} · ${d.manufacturer} ${d.model}`)}
+    <div class="odf-specs" style="margin-top:var(--vw-space-md)">
       ${odfDetailRows([
-        ['ID', d.id], ['Type', 'ODF'], ['Name / Code', r.n],
-        ['Site / Location', site.name], ['Manufacturer', d.manufacturer], ['Model', d.model],
-        ['Serial number', d.serialNumber], ['Number of ports', String(r.cap)],
-        ['Installation completed', `${d.installPct > 0 ? 'Yes' : 'No'} (${d.installPct}%)`],
-        ['Installation date', d.installDate], ['Created by', d.createdBy], ['Remarks', d.remarks]
+        ['ID', d.id], ['Type', 'ODF'],
+        ['Name / Code', r.n], ['Serial number', d.serialNumber],
+        ['Site / Location', site.name], ['Site code', r.site],
+        ['Cabinet/Rack no.', d.cabinetRackNo], ['U position', r.rack && r.rack.includes(' · ') ? r.rack.split(' · ')[1] : '—'],
+        ['Coordinates', `${site.lat}, ${site.lon}`], ['Environment', d.environment],
+        ['Manufacturer', d.manufacturer], ['Model', d.model],
+        ['Frame type', d.frameType], ['Height (U)', d.height],
+        ['Termination', r.term], ['Power required', d.powerRequired],
+        ['Number of ports', String(r.cap)], ['Spare ports', `${free} of ${r.cap}`],
+        ['Operational status', r.st], ['Installation completed', `${d.installPct > 0 ? 'Yes' : 'No'} (${d.installPct}%)`],
+        ['Installation date', d.installDate], ['Created by', d.createdBy],
+        ['Remarks', d.remarks, true]
       ])}
-    </div>`);
+    </div>`, 'odf-fill');
 
-  /* An ODF is wired in 12-port trays, so the map and the breakdown both group
-     that way — a planner reads "tray 3 has 4 free" far faster than a raw count. */
-  const trayCount = Math.max(1, Math.ceil(r.cap / 12));
-  const trayList = Array.from({ length: trayCount }, (_, i) => {
-    const capIn = Math.min(12, r.cap - i * 12);
-    const usedIn = Math.max(0, Math.min(capIn, r.used - i * 12));
-    const full = usedIn === capIn;
-    return passiveRecordRow({
-      badge: String(i + 1), tone: full ? 'red' : 'emerald', active: usedIn > 0,
-      title: `Tray ${i + 1}`,
-      sub: `${usedIn} of ${capIn} ports patched · ${r.term}`,
-      chipLabel: full ? 'Full' : usedIn ? `${capIn - usedIn} free` : 'Empty',
-      chipTone: full ? 'error' : usedIn ? 'success' : 'neutral'
-    });
-  }).join('');
+  /* Three stacked blocks — donut beside its legend, the four figures on one
+     full-width row, then the fill bar — rather than the old donut-plus-narrow-
+     column split, which squeezed the tiles into a single file and wrapped the
+     bar's caption. justify-content:space-between spreads the blocks into
+     whatever height the row track gives the card, so nothing pools at the
+     bottom. */
+  const fillTone = fillPct > 85 ? 'red' : fillPct > 70 ? 'amber' : 'emerald';
+  const portUtilCard = card(`${headSm('Port utilisation', `${r.used} of ${r.cap} ports patched — ${r.type} · ${r.term}`)}
+    <div class="odf-fill-body odf-pu">
+      <div class="odf-pu-top">
+        ${donut([{ n:'In use', c:r.used, tone:'emerald' }, { n:'Free', c:free, tone:'sky' }], r.cap, `${fillPct}%`, 'used', 220)}
+        <div class="stack-s grow" style="min-width:0">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',500)}"></span>In use <span class="vw-value num" style="font-weight:600">${r.used}</span></span>
+          <span class="legend-i" style="margin-top:var(--vw-space-sm)"><span class="legend-sw" style="background:${cv('sky',500)}"></span>Free <span class="vw-value num" style="font-weight:600">${free}</span></span>
+          <span class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free} port${free===1?'':'s'} free for new circuits</span>
+        </div>
+      </div>
+      <div class="odf-pu-kpis">
+        ${[['Total ports', String(r.cap), 'sky'], ['In use', String(r.used), 'emerald'],
+           ['Free', String(free), 'purple'], ['Fill', `${fillPct}%`, fillTone]]
+          .map(([k, v, t]) => `<div class="vw-card-child" style="padding:var(--vw-space-md);border-left:3px solid ${cv(t,400)}">
+            <div class="vw-card-metric-label">${k}</div>
+            <div class="vw-value num" style="font-size:1.25rem;font-weight:300;margin-top:2px">${v}</div>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div class="row vw-justify-between vw-items-baseline">
+          <span class="vw-value">${r.used} / ${r.cap} ports used</span>
+          <span class="vw-value num" style="font-weight:600">${fillPct}%</span>
+        </div>
+        <div class="hbar-track" style="height:12px;margin-top:6px">
+          <span class="hbar-fill" style="display:block;width:${fillPct}%;background:${cv(fillTone,500)}"></span>
+        </div>
+      </div>
+    </div>`, 'odf-fill');
 
-  const portUtilCard = card(`${headSm('Port utilisation')}
-    <p class="vw-card-description" style="margin-top:2px">${r.used} of ${r.cap} ports patched — ${esc(r.type)} · ${esc(r.term)}</p>
-    <div style="margin-top:var(--vw-space-lg)">
-      ${passiveKpiStrip([
-        ['Total ports', String(r.cap), 'sky'],
-        ['In use', String(r.used), 'purple'],
-        ['Free', String(free), 'slate'],
-        ['Fill', `${fillPct}%`, fillPct > 85 ? 'red' : fillPct > 70 ? 'amber' : 'emerald']
-      ])}
+  /* Photos own the full-width row under the three detail cards, so the tiles
+     size themselves off their own aspect ratio rather than stretching to fill
+     a track. Each one opens the gallery at its own index. */
+  const photosCard = card(`
+    <div class="row vw-justify-between vw-items-start">
+      ${headSm('Photos', `${d.photos.length} captured on site`)}
+      <button class="nst-btn nst-btn--xs nst-btn--ghost" data-odfgal="0">View all (${d.photos.length})</button>
     </div>
-    ${passiveChartSplit(
-      passiveDonutBlock([{ n:'In use', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.cap, `${fillPct}%`, 'patched'),
-      trayList)}
-    ${passiveDiagramNote(odfPortMap(r.used, r.cap), `Port map · ${r.cap}F frame`,
-      'Every port on the frame, grouped into the 12-port trays it is wired in — filled squares are patched, outlines are free.',
-      `${free} free port${free === 1 ? '' : 's'} — ${fillPct >= 85 ? 'approaching exhaustion, plan an additional frame.' : `room for ${free} more circuit${free === 1 ? '' : 's'} on this frame.`}`)}`);
-
-  const ODF_PHOTO_ILLUSTRATIONS = [mediaIllustrationPanel, mediaIllustrationConnectorEnd, mediaIllustrationCableBundle, mediaIllustrationLabelTag];
-  const photosCard = passivePhotosCard(
-    d.photos.map((p, i) => [p.n, ODF_PHOTO_ILLUSTRATIONS[i % ODF_PHOTO_ILLUSTRATIONS.length], p.at]),
-    d.installDate);
-
-  const locationCard = card(`${headSm('Location')}
-    <div class="row-t grow" style="margin-top:var(--vw-space-md);align-items:stretch;min-height:150px">
-      <div style="flex:0 0 200px;border-radius:var(--vw-radius-md);background:${cv('sky',50)};border:1px solid ${cv('slate',200)};display:flex;align-items:center;justify-content:center;color:${cv('sky',400)}">
-        ${ODF_PIN_ICON}
-      </div>
-      <div class="stack-s grow" style="justify-content:center">
-        <div class="row vw-gap-sm"><span class="vw-label" style="width:6rem">Latitude</span><span class="vw-value mono">${esc(site.lat)}</span></div>
-        <div class="row vw-gap-sm"><span class="vw-label" style="width:6rem">Longitude</span><span class="vw-value mono">${esc(site.lon)}</span></div>
-        <div class="row vw-gap-sm"><span class="vw-label" style="width:6rem">Address</span><span class="vw-value">${esc(site.addr)}</span></div>
-        <a class="nst-btn nst-btn--sm" style="align-self:flex-start;margin-top:4px" href="${esc(mapsUrl)}" target="_blank" rel="noopener">View on map</a>
-      </div>
-    </div>`, '', 'display:flex;flex-direction:column');
-
-  const additionalInfoCard = card(`${headSm('Additional information')}
-    <div style="margin-top:var(--vw-space-md)">
-      ${odfDetailRows([
-        ['Vendor', d.vendor], ['Frame type', d.frameType], ['Cabinet/Rack no.', d.cabinetRackNo],
-        ['Height (U)', d.height], ['Power required', d.powerRequired], ['Environment', d.environment]
-      ])}
+    <div class="odf-photos-grid" style="margin-top:var(--vw-space-md)">
+      ${d.photos.map((p, i) => `<button class="odf-photo" data-odfgal="${i}" aria-label="Open ${esc(p.n)} in gallery">
+        <span class="odf-photo-frame">${odfPhotoArt(i)}</span>
+        <span class="vw-value" style="font-size:0.8125rem;font-weight:500;margin-top:6px">${esc(p.n)}</span>
+        <span class="vw-card-metric-label-sub">${esc(p.at)}</span>
+      </button>`).join('')}
     </div>`);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'ODF', sub:`ODF · ${site.name}`,
-      cells: [
-        { k:'Status',        v:r.st,                                   s:'', t:r.chip==='success'?'emerald':r.chip==='info'?'sky':'amber' },
-        { k:'Total ports',   v:String(r.cap),                          s:'', t:'sky' },
-        { k:'Used / Free',   v:`${r.used} / ${free}`,                  s:'', t:'purple' },
-        { k:'Lat / Long',    v:`${parseFloat(site.lat).toFixed(4)}, ${parseFloat(site.lon).toFixed(4)}`, s:'', t:'cyan' },
-        { k:'Serial number', v:d.serialNumber,                         s:'', t:'slate' },
-        { k:'Installation',  v:`${d.installPct}%`,                     s:'', t:d.installPct===100?'emerald':'amber' }
-      ]})}
-    ${passiveTwoCol(`${odfDetailsCard}${additionalInfoCard}${photosCard}`, `${portUtilCard}${locationCard}`)}
+      /* Charts only where the figure genuinely moves month to month: ports
+         patched, and installation progress. Capacity, coordinates, serial and
+         status do not have a time axis on a fixed frame, so they get a visual
+         that matches what they are rather than an invented trend line. */
+      cards: (() => {
+        const usedSeries = statcSeries(r.n, 300, r.used).map(v => Math.round(v));
+        const freeSeries = usedSeries.map(v => r.cap - v);
+        const instSeries = statcSeries(r.n, 340, d.installPct, 0.6).map(v => Math.round(v));
+        const growth = usedSeries[0] ? Math.round((r.used - usedSeries[0]) / usedSeries[0] * 100) : 0;
+        return [
+          { k:'Status', v:r.st, t:r.chip==='success'?'emerald':r.chip==='info'?'sky':'amber',
+            visual:'steady', steadyNote:`${esc(r.st)} for the full period — no state change logged` },
+          { k:'Total ports', v:String(r.cap), t:'sky',
+            facts:[['Frame type', d.frameType], ['Model', d.model], ['Termination', r.term], ['Trays', `${Math.ceil(r.cap/12)} × 12F`]] },
+          { k:'Used / Free', v:`${r.used} / ${free}`, t:'purple', trend: growth,
+            series:[{ n:'Used', tone:'purple', values:usedSeries }, { n:'Free', tone:'violet', values:freeSeries }] },
+          { k:'Lat / Long', v:`${parseFloat(site.lat).toFixed(4)}, ${parseFloat(site.lon).toFixed(4)}`, t:'cyan',
+            visual:'map', mapSite: site, mapAddr: site.addr, mapUrl: mapsUrl },
+          { k:'Serial number', v:d.serialNumber, t:'slate',
+            facts:[['Manufacturer', d.manufacturer], ['Installed', d.installDate], ['Warranty', '—'], ['Created by', d.createdBy]] },
+          { k:'Installation', v:`${d.installPct}%`, t:d.installPct===100?'emerald':'amber',
+            trend: instSeries[0] ? Math.round((d.installPct - instSeries[0]) / Math.max(1, instSeries[0]) * 100) : 0,
+            series:[{ n:'Complete', tone:d.installPct===100?'emerald':'amber', values:instSeries }] }
+        ];
+      })() })}
+    <div class="odf-grid">
+      ${odfDetailsCard}${portUtilCard}
+      ${photosCard}
+    </div>
+    ${ODF_GALLERY === null ? '' : odfGallery(d, r)}
   </div>`;
+}
+
+/* Full-bleed photo gallery. Follows the link/service dialog pattern — overlay
+   plus a centered panel, closed and stepped through by the document-level
+   click handler in app-router.js, so no listener has to survive a re-render. */
+function odfGallery(d, r) {
+  const n = d.photos.length;
+  const i = Math.min(Math.max(ODF_GALLERY, 0), n - 1);
+  const p = d.photos[i];
+  const prev = (i - 1 + n) % n, next = (i + 1) % n;
+  const navBtn = (to, label, path) => `<button class="odf-gal-nav" data-odfgal="${to}" aria-label="${label}">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg></button>`;
+  return `
+    <div class="drawer-overlay" data-odfgalclose="1"></div>
+    <div class="linkview-panel odf-gal" role="dialog" aria-label="Photos of ${esc(r.n)}">
+      <div class="linkview-head">
+        <div class="stack-x">
+          <span class="vw-card-title-sm">${esc(p.n)}</span>
+          <span class="vw-card-description">${esc(r.n)} · ${esc(p.at)}</span>
+        </div>
+        <div class="row vw-items-center" style="gap:var(--vw-space-md)">
+          <span class="vw-card-metric-label-sub num">${i + 1} / ${n}</span>
+          <button class="fp-x" data-odfgalclose="1" aria-label="Close">${IC_X}</button>
+        </div>
+      </div>
+      <div class="odf-gal-stage">
+        ${odfPhotoArt(i)}
+        ${n > 1 ? navBtn(prev, 'Previous photo', 'M15 18l-6-6 6-6') : ''}
+        ${n > 1 ? `<span class="odf-gal-next">${navBtn(next, 'Next photo', 'M9 18l6-6-6-6')}</span>` : ''}
+      </div>
+      <div class="odf-gal-strip">
+        ${d.photos.map((ph, k) => `<button class="odf-gal-thumb${k === i ? ' is-on' : ''}" data-odfgal="${k}"
+          aria-label="${esc(ph.n)}" aria-current="${k === i}">${odfPhotoArt(k)}</button>`).join('')}
+      </div>
+    </div>`;
 }
 
 /* ═══ the other six Passive Infrastructure tabs — View details ═══
@@ -7137,7 +7222,7 @@ function viewOdfDetail() {
    every ancestor of this screen's own crumb chain) — a second "Back" button
    here would just be two controls doing the same thing, so this only ever
    renders the record header, the stat strip and the tab bar. */
-function passiveDetailChrome({ name, kind, sub, cells, tabsHtml, dot, badges }) {
+function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, dot, badges }) {
   return `<div class="page-head">
       <div class="stack-x" style="max-width:70ch">
         <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
@@ -7148,8 +7233,147 @@ function passiveDetailChrome({ name, kind, sub, cells, tabsHtml, dot, badges }) 
         <p class="vw-page-description" style="margin:0">${esc(sub)}</p>
       </div>
     </div>
-    ${statStrip(cells)}
+    ${tiles ? statTileRow(tiles) : cards ? statCardGrid(cards) : statStrip(cells)}
     ${tabsHtml || `<div class="section-tabs"><button class="stab is-on">Overview</button></div>`}`;
+}
+
+/* ═══ the record header, as a row of icon tiles ═══
+   A tighter alternative to statCardGrid: an icon in the record's own accent,
+   the label, the figure, and a fill bar wherever the figure is a ratio. No
+   trend lines here — these are current-state readings, and the underlying
+   records hold a single snapshot (see the note on statCardGrid). */
+const STILE_ICONS = {
+  rack: `<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7.5h8M8 12h8M8 16.5h8"/>`,
+  stack: `<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>`,
+  box: `<path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="M4 7l8 4 8-4M12 11v10"/>`,
+  bolt: `<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>`,
+  snow: `<path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"/><path d="M12 6l2.5-2.5M12 6L9.5 3.5M12 18l2.5 2.5M12 18l-2.5 2.5"/>`,
+  pin: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`
+};
+function statTileRow(tiles) {
+  return `<div class="stile-row">${tiles.map(t => {
+    const pct = typeof t.pct === 'number' ? Math.max(0, Math.min(100, Math.round(t.pct))) : null;
+    return `<div class="stile">
+      <span class="stile-ic" style="background:${cv(t.t, 50)};color:${cv(t.t, 600)}">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
+          stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${STILE_ICONS[t.i] || ''}</svg>
+      </span>
+      <span class="stile-body">
+        <span class="stile-k">${esc(t.k)}</span>
+        <span class="stile-v">${esc(t.v)}</span>
+        ${pct === null ? '' : `<span class="stile-barrow">
+          <span class="hbar-track stile-bar"><span class="hbar-fill" style="display:block;width:${pct}%;background:${cv(t.t, 500)}"></span></span>
+          <span class="stile-pct num">${pct}%</span>
+        </span>`}
+      </span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ═══ the record header, as KPI cards ═══
+   A card per headline figure: accent, label, period selector, the value with
+   a movement badge, and a chart.
+
+   NOTE ON THE DATA. These records are a single snapshot — there is no history
+   anywhere in the app — so the six-month series is generated deterministically
+   from the record's own seed and is anchored so its LAST point is the real
+   current value. The shape is illustrative; the endpoint is true. Fields that
+   genuinely do not vary over time (a serial number, a fixed frame's
+   coordinates, its rated capacity) are NOT given a wandering line, because a
+   serial number that appears to trend would be a lie about the record. They
+   get a visual suited to what they actually are instead. */
+const STATC_MONTHS = () => {
+  const out = [], now = new Date();
+  for (let i = 5; i >= 0; i--) out.push(MONTHS_SHORT[new Date(now.getFullYear(), now.getMonth() - i, 1).getMonth()]);
+  return out;
+};
+/* a plausible six-month approach to `current`, ending exactly on it */
+function statcSeries(seed, key, current, floor = 0.55) {
+  const start = current * (floor + nint(seed, key, 0, 22) / 100);
+  return Array.from({ length: 6 }, (_, i) => {
+    if (i === 5) return current;
+    const base = start + (current - start) * (i / 5);
+    const jitter = ((nint(seed, key + 11 + i, 0, 100) - 50) / 100) * current * 0.07;
+    return Math.max(0, +(base + jitter).toFixed(2));
+  });
+}
+function statcChart(seriesList, months) {
+  const W = 300, H = 126, padL = 30, padR = 8, padT = 10, padB = 20;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const all = seriesList.flatMap(s => s.values);
+  const raw = Math.max(...all, 1);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw))) || 1;
+  const step = mag / 2;
+  const top = Math.max(step, Math.ceil(raw / step) * step);
+  const X = i => padL + iw * i / (months.length - 1);
+  const Y = v => padT + ih - ih * (v / top);
+  const fmt = n => (n >= 1000 ? (n / 1000) + 'k' : (Math.round(n * 100) / 100));
+  const ticks = [0, top / 2, top];
+  const gid = 'sc' + Math.abs(seriesList[0].values.reduce((a, b) => a + b, 0) * 7 | 0) + seriesList.length;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block;margin-top:var(--vw-space-sm)" role="img"
+      aria-label="${esc(seriesList.map(s => s.n).join(' and '))} over ${months.length} months">
+    <defs>${seriesList.map((sr, i) => `<linearGradient id="${gid}_${i}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${cv(sr.tone, 400)}" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="${cv(sr.tone, 400)}" stop-opacity="0.02"/></linearGradient>`).join('')}</defs>
+    ${ticks.map(t => `<g><line x1="${padL}" y1="${Y(t).toFixed(1)}" x2="${W - padR}" y2="${Y(t).toFixed(1)}"
+      stroke="${cv('slate',100)}" stroke-width="1"/>
+      <text x="${padL - 6}" y="${(Y(t) + 3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="${cv('gray',400)}"
+        font-family="Poppins,sans-serif">${fmt(t)}</text></g>`).join('')}
+    ${seriesList.map((sr, i) => {
+      const pts = sr.values.map((v, j) => `${X(j).toFixed(1)},${Y(v).toFixed(1)}`);
+      return `<path d="M${X(0).toFixed(1)},${Y(0).toFixed(1)} L${pts.join(' L')} L${X(sr.values.length-1).toFixed(1)},${Y(0).toFixed(1)} Z"
+          fill="url(#${gid}_${i})"/>
+        <polyline points="${pts.join(' ')}" fill="none" stroke="${cv(sr.tone, 500)}" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        ${sr.values.map((v, j) => `<circle cx="${X(j).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.6" fill="${cv(sr.tone, 500)}"><title>${esc(months[j])}: ${fmt(v)}</title></circle>`).join('')}`;
+    }).join('')}
+    ${months.map((m, i) => `<text x="${X(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="9"
+      fill="${cv('gray',400)}" font-family="Poppins,sans-serif">${esc(m)}</text>`).join('')}
+  </svg>`;
+}
+/* the honest stand-in for a field with no time dimension: the last six months
+   marked as unchanged, so the card keeps the same rhythm without pretending
+   the value moved */
+function statcSteady(label, tone, months) {
+  return `<div style="margin-top:var(--vw-space-md)">
+    <div class="row vw-gap-sm" style="align-items:flex-end;height:74px">
+      ${months.map(() => `<div style="flex:1;height:26px;border-radius:var(--vw-radius-xs);background:${cv(tone,100)};border:1px solid ${cv(tone,200)}"></div>`).join('')}
+    </div>
+    <div class="row vw-justify-between" style="margin-top:6px">
+      ${months.map(m => `<span style="flex:1;text-align:center;font-size:0.5625rem;color:${cv('gray',400)}">${esc(m)}</span>`).join('')}
+    </div>
+    <span class="vw-card-metric-label-sub" style="display:block;margin-top:6px">${esc(label)}</span>
+  </div>`;
+}
+function statCardGrid(cells) {
+  const months = STATC_MONTHS();
+  return `<div class="statc-grid">${cells.map(c => {
+    const hasChart = Array.isArray(c.series) && c.series.length;
+    const trend = typeof c.trend === 'number' && isFinite(c.trend) ? Math.round(c.trend) : null;
+    return `<div class="statc">
+      <span class="statc-accent" style="background:${cv(c.t, 400)}"></span>
+      <div class="statc-head">
+        <span class="statc-k">${esc(c.k)}</span>
+        ${hasChart ? `<span class="statc-period">Last 6 months</span>` : ''}
+      </div>
+      <div class="statc-valrow">
+        <span class="statc-v num" title="${esc(c.v)}">${esc(c.v)}</span>
+        ${trend === null ? '' : `<span class="statc-trend" style="color:${cv(trend >= 0 ? 'emerald' : 'red', 600)}">${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend)}%</span>`}
+      </div>
+      ${hasChart ? statcChart(c.series, months)
+        : c.visual === 'map' ? `<div class="statc-map">${miniMapSvg(c.mapSite)}</div>
+            ${c.mapAddr ? `<div class="row vw-justify-between vw-items-center vw-gap-sm" style="margin-top:var(--vw-space-sm)">
+              <span class="vw-card-metric-label-sub" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.mapAddr)}</span>
+              ${c.mapUrl ? `<a class="nst-btn nst-btn--xs" style="flex-shrink:0" href="${esc(c.mapUrl)}" target="_blank" rel="noopener">View on map</a>` : ''}
+            </div>` : ''}`
+        : c.visual === 'steady' ? statcSteady(c.steadyNote || 'Unchanged over the period', c.t, months)
+        : `<div class="statc-facts">${(c.facts || []).map(([k, v]) => `<div class="row vw-justify-between vw-gap-sm">
+             <span class="vw-label">${esc(k)}</span><span class="vw-value" style="font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</span></div>`).join('')}</div>`}
+      ${hasChart && c.series.length > 1 ? `<div class="legend" style="justify-content:center;margin-top:6px">
+        ${c.series.map(sr => `<span class="legend-i"><span class="legend-sw" style="background:${cv(sr.tone,500)}"></span>${esc(sr.n)}</span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
 }
 
 /* ═══ shared layout idioms for every passive detail page ═══
@@ -7383,13 +7607,17 @@ function viewRackDetail() {
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Rack', sub:`Rack · ${site.name}`,
-      cells: [
-        { k:'Status', v:r.st, s:'', t:r.chip==='success'?'emerald':r.chip==='error'?'red':'amber' },
-        { k:'Height', v:`${r.h}U`, s:'', t:'sky' },
-        { k:'U used / free', v:`${r.used} / ${free}`, s:'', t:'purple' },
-        { k:'Power', v:`${r.kw} kW`, s:'', t:'amber' },
-        { k:'Cooling', v:r.cool, s:'', t:'cyan' },
-        { k:'Site', v:site.name, s:'', t:'slate' }
+      /* Status moves up beside the title: the tile row is six readings wide
+         and has no slot for a non-numeric state, but dropping it would lose
+         the one field that says whether the rack is in service. */
+      badges: [{ label:'Rack', tone:'info' }, { label:r.st, tone:r.chip }],
+      tiles: [
+        { k:'Rack Height',  v:`${r.h}U`,        t:'sky',     i:'rack' },
+        { k:'U Space Used', v:`${r.used} / ${r.h}`, t:'violet', i:'stack', pct: uPct },
+        { k:'Free U Space', v:String(free),     t:'emerald', i:'box',   pct: 100 - uPct },
+        { k:'Power Draw',   v:`${r.kw} kW`,     t:'amber',   i:'bolt',  pct: kwPct },
+        { k:'Cooling',      v:r.cool,           t:'cyan',    i:'snow' },
+        { k:'Site',         v:site.name,        t:'rose',    i:'pin' }
       ]})}
     ${passiveTwoCol(`${detailsCard}${envCard}${photosCard}`, capacityCard)}
   </div>`;
@@ -7687,8 +7915,8 @@ function viewSpliceDetail() {
       cells: [
         { k:'Status', v:r.st, s:'', t:r.chip==='success'?'emerald':r.chip==='error'?'red':'amber' },
         { k:'Type', v:r.type, s:'', t:'sky' },
-        { k:'Fibres spliced', v:r.fibers, s:'', t:'purple' },
-        { k:'Mean splice loss', v:r.loss, s:'', t:'cyan' },
+        { k:'Fibres spliced', v:r.fibers, s:'', t:'purple', pct: pct },
+        { k:'Mean splice loss', v:r.loss, s:'', t:'cyan', pct: isNaN(lossNum) ? null : lossNum / SPLICE_BUDGET * 100 },
         { k:'Housing', v:r.housing, s:'', t:'amber' },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
       ]})}
@@ -7820,7 +8048,7 @@ function viewCordDetail() {
         { k:'Status', v:r.st, s:'', t:r.chip==='success'?'emerald':r.chip==='error'?'red':r.chip==='info'?'sky':'amber' },
         { k:'Connector', v:r.type, s:'', t:'sky' },
         { k:'Length', v:r.len, s:'', t:'purple' },
-        { k:'Insertion loss', v:r.loss, s:'', t:'cyan' },
+        { k:'Insertion loss', v:r.loss, s:'', t:'cyan', pct: isNaN(lossNum) ? null : lossPct },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'emerald' },
         { k:'Site', v:site.name, s:'', t:'slate' }
       ]})}
@@ -7964,7 +8192,7 @@ function viewDuctDetail() {
       cells: [
         { k:'Status', v:r.st, s:'', t:r.chip==='success'?'emerald':r.chip==='error'?'red':r.chip==='info'?'sky':'amber' },
         { k:'Length', v:r.len, s:'', t:'sky' },
-        { k:'Ways used / free', v:r.ways, s:'', t:'purple' },
+        { k:'Ways used / free', v:r.ways, s:'', t:'purple', pct: fillPct },
         { k:'Bore', v:r.bore, s:'', t:'cyan' },
         { k:'Ownership', v:r.own, s:'', t:'emerald' },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
@@ -8880,10 +9108,10 @@ function viewFiberDetail() {
       dot: TONE_COLOR[d.ragTone], badges:[{ label:d.phase, tone:d.phaseTone }, { label:`RAG · ${d.rag}`, tone:d.ragTone }],
       cells: [
         { k:'Fibres', v:`${d.totalC}F`, s:'', t:'sky' },
-        { k:'Live / Spare', v:`${d.usedC} / ${d.totalC-d.usedC}`, s:'', t:'purple' },
+        { k:'Live / Spare', v:`${d.usedC} / ${d.totalC-d.usedC}`, s:'', t:'purple', pct: d.totalC ? d.usedC / d.totalC * 100 : 0 },
         { k:'Closures', v:String(d.closures.length), s:'', t:'cyan' },
         { k:'Worst loss', v:d.worstLossLabel, s:'', t:d.worstLoss>0.15?'red':'emerald' },
-        { k:'OTDR pass', v:`${d.otdrPass}%`, s:'', t:d.otdrPass===100?'emerald':'amber' }
+        { k:'OTDR pass', v:`${d.otdrPass}%`, s:'', t:d.otdrPass===100?'emerald':'amber', pct: d.otdrPass }
       ], tabsHtml })}
     ${body}
   </div>`;
@@ -11884,7 +12112,10 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
-  if (view === 'odf')      { if (p.id) ODF_ID = decodeURIComponent(p.id).trim(); }
+  /* as in setParams: only a different frame closes the gallery, since this
+     also runs on the re-render that follows opening it */
+  if (view === 'odf')      { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== ODF_ID) { ODF_ID = v; ODF_GALLERY = null; } } }
   if (view === 'rack')     { if (p.id) RACK_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'power')    { if (p.id) POWER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'splice')   { if (p.id) SPLICE_ID = decodeURIComponent(p.id).trim(); }
@@ -12040,6 +12271,17 @@ function __legacyParams(k) {
    same click the pointer path already handles rather than duplicating
    the expand/drill logic here. */
 document.addEventListener('keydown', e => {
+  /* the photo gallery is the one dialog that owns the whole viewport, so it
+     takes the keys a reader expects there: Escape out, arrows to step */
+  if (ODF_GALLERY !== null && CURRENT === 'odf') {
+    const photos = ODF_PHOTO_NAMES.length;
+    if (e.key === 'Escape') { e.preventDefault(); ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      ODF_GALLERY = (ODF_GALLERY + (e.key === 'ArrowRight' ? 1 : photos - 1)) % photos;
+      DRILL_PENDING = DRILL; go(CURRENT); return;
+    }
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -12137,6 +12379,16 @@ document.addEventListener('click', e => {
   }
   const nbrx = e.target.closest('[data-nbrclose]');
   if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  /* ODF photo gallery: every thumbnail, the "View all" button and both arrows
+     carry the index they open, so one handler covers open, step and jump */
+  const odfg = e.target.closest('[data-odfgal]');
+  if (odfg) {
+    ODF_GALLERY = Number(odfg.dataset.odfgal);
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const odfgx = e.target.closest('[data-odfgalclose]');
+  if (odfgx) { ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const rsvcv = e.target.closest('[data-ressvcview]');
   if (rsvcv) {
     const [tab, i] = rsvcv.dataset.ressvcview.split(':');
@@ -12663,7 +12915,13 @@ window.__nsLegacy = {
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
-    if (k === 'odf' && p.id) { ODF_ID = decodeURIComponent(p.id); }
+    /* only a move to a *different* frame closes the gallery — this runs on
+       every URL sync, including the one go() fires right after a thumbnail
+       click, so an unconditional reset would slam the dialog shut again */
+    if (k === 'odf' && p.id) {
+      const decodedOdf = decodeURIComponent(p.id);
+      if (decodedOdf !== ODF_ID) { ODF_ID = decodedOdf; ODF_GALLERY = null; }
+    }
     if (k === 'rack' && p.id) { RACK_ID = decodeURIComponent(p.id); }
     if (k === 'power' && p.id) { POWER_ID = decodeURIComponent(p.id); }
     if (k === 'splice' && p.id) { SPLICE_ID = decodeURIComponent(p.id); }

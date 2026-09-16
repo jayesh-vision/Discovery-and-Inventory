@@ -1051,10 +1051,15 @@ function viewHome() {
 
 /* compact stat strip — six figures in the height of one card */
 const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
+  /* `pct` is optional: a cell whose value is really a share (72 of 96 ports,
+     an installation at 100%) can show that share as a bar instead of leaving
+     the sub-line blank. Cells that don't pass it render exactly as before. */
+  const pct = typeof c.pct === 'number' && isFinite(c.pct) ? Math.max(0, Math.min(100, Math.round(c.pct))) : null;
   const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
     <span class="stat-k">${c.k}</span>
     <span class="stat-v num">${c.v}</span>
-    <span class="stat-s">${c.s}</span>`;
+    <span class="stat-s">${c.s}</span>${pct === null ? '' :
+    `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(c.t,400)}"></span></span>`}`;
   return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
     : c.d ? `<button class="stat-cell is-click"${dA(c.d)}>${inner}</button>`
     : `<div class="stat-cell">${inner}</div>`;
