@@ -2780,7 +2780,7 @@ const pickFields = (fields, keys) => {
    View > ...) — it already links every prefix that names a real screen, so
    a second, redundant "Back to X" button here would just be two controls
    doing the same thing. */
-function resourceHead({ kind, name, status, meta }) {
+function resourceHead({ kind, name, status, meta, actions = [] }) {
   return `<div class="vw-card-section vw-card--accent resdetail-head">
       <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
       <div class="row vw-justify-between" style="align-items:flex-start;gap:var(--vw-space-lg);flex-wrap:wrap">
@@ -2788,7 +2788,10 @@ function resourceHead({ kind, name, status, meta }) {
           <span class="resdetail-kind">${esc(kind)}</span>
           <h1 class="resdetail-name">${esc(name)}</h1>
         </div>
-        ${statusBadge(status)}
+        <div class="row vw-items-center vw-gap-sm vw-wrap" style="flex-shrink:0">
+          ${actions.join('')}
+          ${statusBadge(status)}
+        </div>
       </div>
       <div class="resdetail-meta-row">
         ${meta.map(([k, v]) => `<div class="meta-cell"><span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span></div>`).join('')}
@@ -2983,6 +2986,12 @@ function viewVnfDetails() {
   const statusFields = tab === 'vdu5g' ? vdu5gFields : vdu4gFields;
   const status = (pickFields(statusFields, ['Status'])[0] || [])[1];
 
+  /* the same NF this page describes, looked up in the VNFS roster that backs
+     the Virtual Resources list — its lifecycle only exists once the NF is
+     instantiated, so a still-Planned NF gets no lifecycle action here either,
+     matching the row kebab menu's own rule (see viewVirtual()) */
+  const vnf = VNFS.find(v => v.nf === nf);
+
   return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
@@ -2990,7 +2999,10 @@ function viewVnfDetails() {
       kind: 'Virtual Resource · VDU', name: nf, status,
       meta: [['Site type', 'VDU'],
         ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
-          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])]
+          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])],
+      actions: vnf && vnf.st !== 'Planned'
+        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
+        : []
     })}
 
     <div class="tabbar tabbar--detail">
