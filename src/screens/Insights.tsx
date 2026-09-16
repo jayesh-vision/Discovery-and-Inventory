@@ -3,20 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Chip, cv, InfoTip } from '../components/ui';
 import { StackedBars, RampBars, Sparkline, MultiLineChart } from '../components/charts';
 import { Drawer } from '../components/Drawer';
+import { legacyPath } from '../routes';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   ADAPTER_ROWS, COLLECTOR_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
   MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
   BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
   DOMAIN_HEX, DOMAIN_LABEL, type DomainKey,
-  type DiscoveryJobRow, type AdapterRow, type CollectorRow, type RootCauseFailure, type ReconcileCycleRow
+  type AdapterRow, type CollectorRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
 import { domainToUrl } from './DomainDevices';
 
 /* one drawer, five possible row shapes — simpler than five parallel
    useState hooks for what is, on screen, always exactly one open panel */
 type DrawerState =
-  | { kind: 'job'; row: DiscoveryJobRow }
   | { kind: 'adapter'; row: AdapterRow }
   | { kind: 'collector'; row: CollectorRow }
   | { kind: 'failure'; row: RootCauseFailure }
@@ -24,7 +24,6 @@ type DrawerState =
 
 function drawerTitle(d: DrawerState): string {
   switch (d.kind) {
-    case 'job': return `${DOMAIN_LABEL[d.row.domain]} discovery job`;
     case 'adapter': return d.row.adapter;
     case 'collector': return d.row.name;
     case 'failure': return d.row.cause;
@@ -40,6 +39,18 @@ function drawerSub(d: DrawerState): string {
    shared with the Reconciliation page), so this is defined locally rather
    than read off Object.keys(DOMAIN_HEX). */
 const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
+
+/* the one job Scan jobs opens to for each domain's "Discovery jobs" row —
+   that row is a rollup of several real jobs (legacy/app-data.js's JOBS),
+   not one record, so there's no single job it can literally mean; this
+   names the domain's main one rather than landing on its whole fleet.
+   Transport's pick is deliberate, not just "the first one": DSC-DWDM-RING
+   is the one Transport job actually in "No adapter" state, matching this
+   row's own "Credential warning" status — the other picks are each
+   domain's largest/original job. */
+const PRIMARY_JOB_ID: Record<DomainKey, string> = {
+  RAN: 'DSC-RAN-BLR', Core: 'DSC-CORE-NRF', Transport: 'DSC-DWDM-RING', IPMPLS: 'DSC-SOUTH-CORE'
+};
 
 /* Match outcome → the Discrepancy details screen's own category filter.
    "Matched" has nothing to drill into (it's the healthy population, not a
@@ -197,6 +208,17 @@ export default function Insights() {
     const p = new URLSearchParams(params);
     nav(`/discovery/insights/discrepancies${p.toString() ? '?' + p.toString() : ''}`);
   };
+  /* opens Scan jobs narrowed to this domain's one named job (see
+     PRIMARY_JOB_ID) rather than a drawer repeating the row's own numbers,
+     or a filtered list of every job the domain runs. Scan jobs' own crumb
+     has no Insights parent, so — same cross-section-jump idiom
+     PhysicalResources.tsx already uses for Site info/Node view — this
+     names its origin via drill/from so the reader still gets a real
+     "Insights > {job}" trail back, instead of landing with no way up. */
+  const toJobs = (d: DomainKey) => {
+    const jobId = PRIMARY_JOB_ID[d];
+    nav(legacyPath('jobs', { label: jobId, from: 'Insights', q: `domain=${DOMAIN_LABEL[d]}&job=${jobId}` }));
+  };
   /* the 3 non-hero KPI tiles each have one real, meaningful destination;
      "Inventory trust index" itself stays a plain figure — there's no single
      drill-down it names the way the other three do */
@@ -250,9 +272,9 @@ export default function Insights() {
           <table className="mtbl">
             <thead><tr><th>Domain · adapters</th><th>Schedule</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>Coverage</th><th>Last → next run</th></tr></thead>
             <tbody>{DISCOVERY_JOB_ROWS.map(j => (
-              <tr key={j.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'job', row: j })}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'job', row: j }); } }}
-                aria-label={`View ${DOMAIN_LABEL[j.domain]} discovery job details`}>
+              <tr key={j.domain} className="is-click" tabIndex={0} onClick={() => toJobs(j.domain)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toJobs(j.domain); } }}
+                aria-label={`View ${DOMAIN_LABEL[j.domain]} scan jobs`}>
                 <td>
                   <DomainDot domain={j.domain} />
                   <div className="cell-sub">{j.protocols}</div>
@@ -596,17 +618,6 @@ export default function Insights() {
 
       <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
         sub={drawer ? drawerSub(drawer) : undefined}>
-        {drawer?.kind === 'job' && (
-          <div className="kv">
-            <div><span className="k">Adapters</span><span className="v">{drawer.row.protocols}</span></div>
-            <div><span className="k">Schedule</span><span className="v">{drawer.row.schedule}</span></div>
-            <div><span className="k">Targets</span><span className="v">{drawer.row.targets.toLocaleString('en-IN')}</span></div>
-            <div><span className="k">Coverage</span><span className="v">{drawer.row.coveragePct}%</span></div>
-            <div><span className="k">Status</span><span className="v">{drawer.row.status}</span></div>
-            <div><span className="k">Last run</span><span className="v">{drawer.row.lastRun}</span></div>
-            <div><span className="k">Next run</span><span className="v">{drawer.row.nextRun}</span></div>
-          </div>
-        )}
         {drawer?.kind === 'adapter' && (
           <div className="kv">
             <div><span className="k">Protocol</span><span className="v">{drawer.row.proto}</span></div>
