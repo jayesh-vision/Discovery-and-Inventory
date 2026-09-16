@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { ChipTone, ColorTone } from '../data/ledger';
 
 /* design-system colour ramp, read from the CSS variables the bundle defines */
@@ -63,6 +63,29 @@ export function DrillBar({ from, label, onBack, onClear }: { from: string; label
         </>
       )}
     </div>
+  );
+}
+
+/* an "i" info button that reveals a one-sentence explanation of the
+   card/metric beside it — hover or focus for a peek, click to pin it open.
+   Drawn as a dot-and-stem SVG rather than an italic "i" character: at
+   16px an italic serif "i" (KpiCard's original glyph) reads as a "?" to
+   readers, so this one is shape-drawn to never be ambiguous. */
+export function InfoTip({ text, label }: { text: string; label?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="info-tip">
+      <button type="button" className="info-tip-btn" aria-label={label ?? 'What this shows'} aria-expanded={open}
+        onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
+        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }}>
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" aria-hidden="true">
+          <circle cx="8" cy="4" r="1.4" />
+          <rect x="6.8" y="6.8" width="2.4" height="6.2" rx="1.1" />
+        </svg>
+      </button>
+      {open && <span className="info-tip-def" role="tooltip">{text}</span>}
+    </span>
   );
 }
 

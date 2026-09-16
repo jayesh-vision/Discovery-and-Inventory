@@ -1519,6 +1519,21 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .kpi3-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 18rem;
   padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
   border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25); }
+
+/* ── InfoTip · the "i" info-button "what does this show" affordance ──
+   same interaction as .kpi3-info above, generalised to sit next to any
+   card title rather than only a KPI's own heading. The glyph itself is a
+   shape-drawn SVG dot-and-stem, not a font character — an italic serif
+   "i" at this size reads as a "?" to readers, so this can't be ambiguous. */
+.info-tip { position: relative; display: inline-flex; align-items: center; margin-left: 6px; vertical-align: middle; }
+.info-tip-btn { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--vw-color-slate-300);
+  background: none; padding: 0; color: var(--vw-color-gray-500);
+  display: inline-flex; align-items: center; justify-content: center; cursor: help; flex-shrink: 0; }
+.info-tip-btn:hover, .info-tip-btn[aria-expanded="true"] { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
+.info-tip-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 17rem; max-width: 70vw;
+  padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
+  border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
+  font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; }
 .kpi3-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; row-gap: 2px; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }
