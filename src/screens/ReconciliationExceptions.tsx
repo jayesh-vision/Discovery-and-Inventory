@@ -23,6 +23,11 @@ export default function ReconciliationExceptions() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const urlState = sp.get('state');
+  /* set when this screen is reached from a specific rule's "Exceptions" tab
+     (RuleDetails.tsx) — the relationship is real (every exception carries a
+     ruleId), so the navigation that names it should actually filter by it,
+     not just land here unscoped and lose the context the click had. */
+  const urlRuleId = sp.get('ruleId');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>(() => {
     const f: Record<string, string> = {};
@@ -35,12 +40,14 @@ export default function ReconciliationExceptions() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return RECONCILE_EXCEPTIONS.filter(e => {
+      if (urlRuleId && e.ruleId !== urlRuleId) return false;
       if (q && !(e.subject.toLowerCase().includes(q) || e.id.toLowerCase().includes(q))) return false;
       if (filters.Domain && DOMAIN_LABEL[e.domain] !== filters.Domain) return false;
       if (filters.State && e.state !== filters.State) return false;
       return true;
     });
-  }, [query, filters]);
+  }, [query, filters, urlRuleId]);
+  const filteredRule = urlRuleId ? ruleById(urlRuleId) : undefined;
 
   const breached = RECONCILE_EXCEPTIONS.filter(e => e.sla === 'Breached').length;
   const atRisk = RECONCILE_EXCEPTIONS.filter(e => e.sla === 'At risk').length;
@@ -53,6 +60,17 @@ export default function ReconciliationExceptions() {
 
   return (
     <div className="page">
+      {urlRuleId && (
+        <div className="row vw-items-center" style={{
+          gap: '8px', padding: '8px 12px', background: 'var(--vw-color-slate-50)',
+          border: '1px solid var(--vw-color-slate-200)', borderRadius: 'var(--vw-radius-sm)'
+        }}>
+          <span className="vw-card-metric-label-sub">
+            Filtered to exceptions raised by <b style={{ color: 'var(--vw-color-gray-800)' }}>{filteredRule?.name ?? urlRuleId}</b> ({rows.length} of {RECONCILE_EXCEPTIONS.length})
+          </span>
+          <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={() => nav('/discovery/reconcile/exceptions')}>Clear</button>
+        </div>
+      )}
       <StatStrip cells={[
         { k: 'Open exceptions', v: String(RECONCILE_EXCEPTIONS.length), s: 'across all domains', t: 'sky' },
         { k: 'SLA breached', v: String(breached), s: 'past the reconciliation SLA window', t: 'red' },

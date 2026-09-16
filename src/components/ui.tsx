@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { ChipTone, ColorTone } from '../data/ledger';
 
 /* design-system colour ramp, read from the CSS variables the bundle defines */
@@ -73,18 +73,53 @@ export function DrillBar({ from, label, onBack, onClear }: { from: string; label
    readers, so this one is shape-drawn to never be ambiguous. */
 export function InfoTip({ text, label }: { text: string; label?: string }) {
   const [open, setOpen] = useState(false);
+  const defRef = useRef<HTMLSpanElement>(null);
+  /* the definition box is a fixed-width absolute box anchored to the icon's
+     left edge — fine near the left of a card, but an icon sitting near the
+     RIGHT edge (the last of several tiles in a row, say) pushes that box
+     straight past the viewport edge, spilling outside the page rather than
+     wrapping back over the card it's describing. Rather than hand-tune a
+     position per call site (there are 20+), measure the box against the
+     viewport every time it opens and nudge it back in — the one fix covers
+     every InfoTip in the app at once. */
+  const [shiftPx, setShiftPx] = useState(0);
+  useLayoutEffect(() => {
+    if (!open) { setShiftPx(0); return; }
+    const el = defRef.current;
+    if (!el) return;
+    const margin = 8;
+    const rect = el.getBoundingClientRect();
+    let dx = 0;
+    if (rect.right > window.innerWidth - margin) dx = (window.innerWidth - margin) - rect.right;
+    if (rect.left + dx < margin) dx = margin - rect.left;
+    setShiftPx(dx);
+  }, [open]);
+  /* a real <button> here would sit nested inside the KPI card / outcome
+     tile's own <button> at several call sites — invalid HTML (a button
+     can't contain a button) that also confuses which element a click or a
+     Tab stop actually lands on. A span with the button role/keyboard
+     handling gets the same behavior without ever nesting interactive
+     elements. */
   return (
     <span className="info-tip">
-      <button type="button" className="info-tip-btn" aria-label={label ?? 'What this shows'} aria-expanded={open}
+      <span role="button" tabIndex={0} className="info-tip-btn" aria-label={label ?? 'What this shows'} aria-expanded={open}
         onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
-        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }}>
+        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }
+        }}>
         <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" aria-hidden="true">
           <circle cx="8" cy="4" r="1.4" />
           <rect x="6.8" y="6.8" width="2.4" height="6.2" rx="1.1" />
         </svg>
-      </button>
-      {open && <span className="info-tip-def" role="tooltip">{text}</span>}
+      </span>
+      {open && (
+        <span ref={defRef} className="info-tip-def" role="tooltip"
+          style={shiftPx ? { transform: `translateX(${shiftPx}px)` } : undefined}>
+          {text}
+        </span>
+      )}
     </span>
   );
 }
