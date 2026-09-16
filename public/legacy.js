@@ -382,6 +382,18 @@ const TARGETS = [
     circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 5, job: 'DSC-CORE-NRF', domain: 'Core',
     ch: ['ok','ok','na','na','na','ok'], out: 'Exact match', chip: 'success' }
 ];
+/* each row's `sync` above was a hand-typed date that only agreed with its
+   own `fresh` (hours-ago) the moment this file was written, then quietly
+   fell further out of date every day after — the Scan Targets list's "Last
+   sync" column and the Target detail page's "Last discovery" tile
+   (viewTarget(), which reads a real TARGETS row's own .sync rather than the
+   dynamic relativeTimestamp() fallback it uses for targets outside this
+   sample) both showed that frozen date forever. Deriving sync from fresh
+   with the same relativeTimestamp() helper that fallback already uses
+   keeps the two permanently consistent and keeps "last sync" true
+   whenever the page loads, the same fix already applied to VNF lifecycle
+   and other "hardcoded ago" timestamps elsewhere in this app. */
+TARGETS.forEach(t => { t.sync = relativeTimestamp(t.fresh); });
 
 /* ── run transcript, one target, all six collectors ─────── */
 const TRANSCRIPT = {
@@ -650,18 +662,69 @@ JOBS.push(...[
 ].map(a => ({ id:a[0], site:a[1], scope:a[2], collector:a[3], cred:a[4], sched:a[5], next:a[6],
   last:a[7], dur:a[8], targets:a[9], clean:a[10], partial:a[11], fail:a[12], state:a[13], chip:a[14], domain:a[15] })));
 
-/* two new rows so RAN and Core each have a genuine scan job, not just
-   router/switch circle-scans wearing a Transport label */
+/* RAN, Core and Transport each get a proper regional fleet of jobs here,
+   not one token row apiece — the per-job target counts are sized so each
+   domain's jobs sum exactly to that domain's real scan scope in
+   src/data/discoveryOverview.ts's DISCOVERY_JOB_ROWS (RAN 8,450 · Core 340 ·
+   Transport 2,180 already carried by the two pre-existing Transport rows
+   plus these three), the same way the ten IPMPLS/router-switch rows above
+   already read as a real regional fleet. This also naturally rebalances
+   growTargets() below, which cycles through every JOBS row by index to
+   assign each generated TARGETS row's domain — more non-IPMPLS jobs here
+   means the generated sample stops skewing almost entirely IPMPLS. */
 JOBS.push(
   { id: 'DSC-RAN-BLR', site: 'Karnataka · RAN cluster', scope: 'gNodeB/eNodeB · Bengaluru-East',
-    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Every 6 h', next: 'today 15:00', domain: 'RAN',
-    last: '01-Sep-2026 09:05', dur: '5 m 51 s', targets: 42, clean: 38, partial: 3, fail: 1,
+    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:05', dur: '5 m 51 s', targets: 2350, clean: 2309, partial: 30, fail: 11,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-DEL', site: 'Delhi NCR · RAN cluster', scope: 'gNodeB/eNodeB · Delhi-Central',
+    collector: 'clr-del-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:04', dur: '5 m 22 s', targets: 2200, clean: 2163, partial: 28, fail: 9,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-MUM', site: 'Maharashtra · RAN cluster', scope: 'gNodeB/eNodeB · Mumbai-West',
+    collector: 'clr-mum-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:03', dur: '4 m 58 s', targets: 2050, clean: 2016, partial: 26, fail: 8,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-HYD', site: 'Telangana · RAN cluster', scope: 'gNodeB/eNodeB · Hyderabad-South',
+    collector: 'clr-hyd-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:02', dur: '4 m 41 s', targets: 1850, clean: 1818, partial: 24, fail: 8,
     state: 'Completed', chip: 'success' },
   { id: 'DSC-CORE-NRF', site: 'Karnataka · 5GC core', scope: 'AMF/UPF · NRF-registered NFs',
-    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Every 2 h', next: 'today 15:00', domain: 'Core',
-    last: '01-Sep-2026 09:02', dur: '1 m 40 s', targets: 18, clean: 18, partial: 0, fail: 0,
+    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 09:02', dur: '1 m 40 s', targets: 130, clean: 130, partial: 0, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-CORE-DEL', site: 'Delhi · 5GC core (secondary)', scope: 'AMF/UPF · NRF-registered NFs',
+    collector: 'clr-del-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 09:01', dur: '1 m 22 s', targets: 115, clean: 114, partial: 1, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-CORE-MUM', site: 'Maharashtra · 5GC core (tertiary)', scope: 'AMF/UPF/SMF · NRF-registered NFs',
+    collector: 'clr-mum-02', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 08:58', dur: '1 m 15 s', targets: 95, clean: 94, partial: 1, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-BLR', site: 'Karnataka · transport ring', scope: '172.31.90.0/24 · 172.31.91.0/24',
+    collector: 'clr-blr-06', cred: 'ro-optical-v3', sched: 'Nightly 01:00', next: 'tomorrow 01:00', domain: 'Transport',
+    last: '01-Sep-2026 01:00', dur: '15 m 40 s', targets: 650, clean: 598, partial: 41, fail: 11,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-DEL', site: 'Delhi · transport ring', scope: '172.31.92.0/24 · 172.31.93.0/24',
+    collector: 'clr-del-06', cred: 'ro-optical-v3', sched: 'Nightly 01:30', next: 'tomorrow 01:30', domain: 'Transport',
+    last: '01-Sep-2026 01:30', dur: '13 m 58 s', targets: 600, clean: 561, partial: 30, fail: 9,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-CHE', site: 'Tamil Nadu · transport ring', scope: '172.31.94.0/24 · 172.31.95.0/24',
+    collector: 'clr-mas-02', cred: 'ro-optical-v3', sched: 'Nightly 02:00', next: 'tomorrow 02:00', domain: 'Transport',
+    last: '01-Sep-2026 02:00', dur: '16 m 12 s', targets: 676, clean: 612, partial: 47, fail: 17,
     state: 'Completed', chip: 'success' }
 );
+/* every domain's job rows must foot exactly to its DISCOVERY_JOB_ROWS scope
+   (src/data/discoveryOverview.ts) — the same invariant that file's own
+   IIFEs already enforce for the React side, mirrored here so the legacy
+   Scan Jobs list can never silently show a different total than Insights */
+(() => {
+  const want = { RAN: 8450, Core: 340, Transport: 2180 };
+  Object.entries(want).forEach(([d, total]) => {
+    const sum = JOBS.filter(j => j.domain === d).reduce((a, j) => a + j.targets, 0);
+    if (sum !== total) throw new Error(`app-data: ${d} job targets sum to ${sum}, DISCOVERY_JOB_ROWS says ${total}`);
+  });
+})();
 
 const RUN_HISTORY = [
   { run: 4412, at: '01-Sep-2026 09:10:02', dur: '6.42 s', steps: '7 of 7', out: 'Exact match', chip: 'success', note: 'No change' },
@@ -1318,6 +1381,36 @@ const LINKS = {
 };
 
 const SVC_TABS = [{ k:'l3vpn', n:'L3VPN', c:1815 }, { k:'l2vpn', n:'L2VPN', c:642 }];
+/* Services used to be IP/MPLS-only (L3VPN/L2VPN). These round it out to
+   the same domain vocabulary the app already uses elsewhere (Discovery's
+   own Domain filter — see FS.targets/FS.jobs: RAN, Core, Transport,
+   IP/MPLS) so "domain" means the same thing on every screen. L3VPN/L2VPN
+   themselves are untouched — they just become the IP/MPLS domain's own
+   two tabs instead of the page's only two tabs. */
+const RAN_SVC_TABS = [{ k:'s1ng', n:'S1/NG', c:412 }, { k:'x2xn', n:'X2/Xn', c:268 }];
+const TRANSPORT_SVC_TABS = [{ k:'wave', n:'Wavelength', c:186 }, { k:'otn', n:'OTN', c:94 }, { k:'trunk', n:'Trunk', c:112 }];
+const CORE_SVC_TABS = [{ k:'apn', n:'APN', c:38 }, { k:'nif', n:'N-Interface', c:126 }];
+const SVC_DOMAINS = [
+  { k:'ran',       n:'RAN',       tone:'purple',  tabs: RAN_SVC_TABS },
+  { k:'transport', n:'Transport', tone:'amber',   tabs: TRANSPORT_SVC_TABS },
+  { k:'core',      n:'Core',      tone:'emerald', tabs: CORE_SVC_TABS },
+  { k:'ipmpls',    n:'IP/MPLS',   tone:'sky',     tabs: SVC_TABS }
+];
+const SVC_TABS_BY_DOMAIN = Object.fromEntries(SVC_DOMAINS.map(d => [d.k, d.tabs]));
+const domainForSvcTab = k => (SVC_DOMAINS.find(d => d.tabs.some(x => x.k === k)) || {}).k || 'ipmpls';
+/* column labels for the seven new (non-IP/MPLS) service types — every
+   one of them shares L2VPN's own point-to-point shape (src/dst NE, IP,
+   interface), so one generic table (svcP2PTable, app-views.js) renders
+   all seven; only the labels change per type. */
+const SVC_P2P_COLS = {
+  s1ng:  { title:'S1/NG interface', name:'Interface',    ref:'Bearer ID' },
+  x2xn:  { title:'X2/Xn link',      name:'Link name',    ref:'Interface ID' },
+  wave:  { title:'Wavelength',      name:'Circuit name', ref:'Wavelength (nm)' },
+  otn:   { title:'OTN circuit',     name:'Circuit name', ref:'Circuit ID' },
+  trunk: { title:'Transport trunk', name:'Trunk name',   ref:'Circuit ID' },
+  apn:   { title:'APN',             name:'APN name',     ref:'APN ID' },
+  nif:   { title:'N-Interface',     name:'Interface',    ref:'Session ID' }
+};
 const SERVICES = {
   l3vpn: [
     { st:'Up',   chip:'success', name:'CGDA',                ip:'172.31.53.252', rd:'24186:1015707', rt:'24186:900287, 24186:888970', erp:'1097', ifc:'FortyGigE0/0/0/28.100', ne:'BGLK-ASR9010-PE-T1', v:3 },
@@ -1395,6 +1488,126 @@ SERVICES.l2vpn = padList(SERVICES.l2vpn, 10, (r, i) => ({ ...r,
   ne: PAD_NE[(i + 3) % PAD_NE.length],
   dstIp: PAD_IP(i + 9), dstNe: PAD_NE[(i + 7) % PAD_NE.length], dstIfc: `${i % 2 ? 'ge' : 'xe'}-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`,
   v: [3, 7, 30][i % 3] }));
+
+/* ── RAN, Transport and Core domain services ────────────────
+   Every one of these six new types shares L2VPN's own point-to-point
+   shape (st, chip, name, srcNe/srcIp/srcIfc, dstNe/dstIp/dstIfc, erp, v)
+   so svcP2PTable() in app-views.js can render all of them with one
+   function instead of six bespoke tables.
+
+   Node names and NF types below follow the same domain model the
+   Discovery/Reconciliation pages already established (src/data/
+   discoveryOverview.ts, rules.ts, reconciliationOps.ts) rather than
+   inventing a separate one: Core is 5GC NF instances (AMF/UPF, matched
+   by NF instance ID via NRF — 'RUL-CORE-001'), Transport is ROADM/DWDM
+   wavelength circuits ('RUL-TRN-001' ROADM wavelength match), RAN is
+   cell-level (gNodeB/eNodeB). BLR-AMF-CORE-02, BLR-UPF-CORE-05 and
+   MUM-ROADM-RING-03 are the exact element names those pages already
+   use, reused here rather than re-invented so the same element reads
+   as the same element on every screen. */
+const CORE_NF_NODES = ['BLR-AMF-CORE-02', 'DEL-AMF-CORE-01', 'PUN-AMF-CORE-01',
+  'BLR-UPF-CORE-05', 'DEL-UPF-CORE-01', 'PUN-UPF-CORE-01',
+  'BLR-SMF-CORE-01', 'DEL-SMF-CORE-01'];
+const RAN_ENB = ['PUN-HNJW-C3-ENB-014', 'INDR-AREA-001-ENB-07', 'BLR-SOUTH-GNB-021', 'DEL-CENTRAL-GNB-009'];
+
+/* S1 (4G eNodeB · EPC) and NG (5G gNodeB · 5GC) are the same backhaul
+   role for each generation — one tab covers both since PHY carries both
+   eNodeB and gNodeB samples. */
+SERVICES.s1ng = [
+  { st:'Up',   chip:'success', name:'S1-MME', srcNe:'PUN-HNJW-C3-ENB-014', srcIp:'10.44.18.14', srcIfc:'s1-mme0', dstNe:'DEL-AMF-CORE-01', dstIp:'10.60.10.5', dstIfc:'gtp-c0', erp:'S1-4021', v:3 },
+  { st:'Up',   chip:'success', name:'S1-U',   srcNe:'PUN-HNJW-C3-ENB-014', srcIp:'10.44.18.14', srcIfc:'s1-u0',   dstNe:'DEL-UPF-CORE-01', dstIp:'10.60.11.5', dstIfc:'gtp-u0', erp:'S1-4022', v:3 },
+  { st:'Up',   chip:'success', name:'N2',     srcNe:'BLR-SOUTH-GNB-021',   srcIp:'10.51.22.21', srcIfc:'n2-0',    dstNe:'BLR-AMF-CORE-02', dstIp:'10.61.10.5', dstIfc:'ngap0',  erp:'N2-5031', v:5 },
+  { st:'Down', chip:'error',   name:'N3',     srcNe:'BLR-SOUTH-GNB-021',   srcIp:'10.51.22.21', srcIfc:'n3-0',    dstNe:'BLR-UPF-CORE-05', dstIp:'10.61.11.5', dstIfc:'gtp-u0', erp:'N3-5032', v:5 }
+];
+SERVICES.s1ng = padList(SERVICES.s1ng, 10, (r, i) => ({ ...r,
+  st: i % 5 === 3 ? 'Down' : 'Up', chip: i % 5 === 3 ? 'error' : 'success',
+  srcNe: RAN_ENB[i % RAN_ENB.length], srcIp: `10.4${i % 5}.${18 + i}.${14 + i}`,
+  dstNe: CORE_NF_NODES[i % 6], dstIp: `10.6${i % 3}.1${i % 2}.${5 + i}`,
+  erp: `${r.name}-${4020 + i}`, v: [3, 5, 8][i % 3] }));
+
+/* X2 (eNodeB-eNodeB, 4G) / Xn (gNodeB-gNodeB, 5G) — the neighbour
+   relation that 'RUL-RAN-002'/'Neighbour relation drift' already tracks
+   for these same cells. */
+SERVICES.x2xn = [
+  { st:'Up', chip:'success', name:'X2:PUN-INDR', srcNe:'PUN-HNJW-C3-ENB-014', srcIp:'10.44.18.14', srcIfc:'x2-0', dstNe:'INDR-AREA-001-ENB-07', dstIp:'10.44.19.7', dstIfc:'x2-0', erp:'X2-3011', v:3 },
+  { st:'Up', chip:'success', name:'Xn:BLR-DEL',   srcNe:'BLR-SOUTH-GNB-021',   srcIp:'10.51.22.21', srcIfc:'xn-0', dstNe:'DEL-CENTRAL-GNB-009',  dstIp:'10.51.23.9', dstIfc:'xn-0', erp:'XN-3012', v:5 }
+];
+SERVICES.x2xn = padList(SERVICES.x2xn, 10, (r, i) => ({ ...r,
+  st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
+  srcNe: RAN_ENB[i % RAN_ENB.length], srcIp: `10.4${i % 5}.${18 + i}.${14 + i}`,
+  dstNe: RAN_ENB[(i + 2) % RAN_ENB.length], dstIp: `10.4${(i + 2) % 5}.${18 + i}.${7 + i}`,
+  name: `${i % 2 ? 'X2' : 'Xn'}:${RAN_ENB[i % RAN_ENB.length].slice(0, 3)}-${RAN_ENB[(i + 2) % RAN_ENB.length].slice(0, 3)}`,
+  erp: `${i % 2 ? 'X2' : 'XN'}-${3010 + i}`, v: [3, 5, 8][i % 3] }));
+
+/* Wavelength — a provisioned circuit on a live ROADM/DWDM shelf, the
+   exact thing 'RUL-TRN-001' (ROADM wavelength match) and the 42
+   "no service record" wavelengths in the cost-of-drift figures are
+   about. MUM-ROADM-RING-03 is the same rogue element reconciliation
+   already flags; WR-ADVA-FSP3000-01/02 are PHY's own DWDM pair. */
+const ROADM_NODES = ['WR-ADVA-FSP3000-01', 'WR-ADVA-FSP3000-02', 'MUM-ROADM-RING-03', 'PUN-ROADM-RING-01'];
+SERVICES.wave = [
+  { st:'Up',   chip:'success', name:'WAVE-MUM-PUN-1550.12', srcNe:'WR-ADVA-FSP3000-01', srcIp:'172.31.47.144', srcIfc:'OT-1/1', dstNe:'MUM-ROADM-RING-03', dstIp:'172.31.48.10', dstIfc:'deg-1',  erp:'1550.12nm', v:10 },
+  { st:'Down', chip:'error',   name:'WAVE-MUM-PUN-1551.72', srcNe:'WR-ADVA-FSP3000-01', srcIp:'172.31.47.144', srcIfc:'OT-1/2', dstNe:'MUM-ROADM-RING-03', dstIp:'172.31.48.10', dstIfc:'deg-2',  erp:'1551.72nm', v:10 }
+];
+SERVICES.wave = padList(SERVICES.wave, 10, (r, i) => ({ ...r,
+  st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
+  srcNe: ROADM_NODES[i % ROADM_NODES.length], srcIfc: `OT-1/${1 + i}`,
+  dstNe: ROADM_NODES[(i + 1) % ROADM_NODES.length], dstIfc: `deg-${1 + (i % 4)}`,
+  name: `WAVE-MUM-PUN-${(1550.12 + (i + 2) * 0.8).toFixed(2)}`, erp: `${(1550.12 + (i + 2) * 0.8).toFixed(2)}nm`, v: [10, 14][i % 2] }));
+
+SERVICES.otn = [
+  { st:'Up',   chip:'success', name:'OTN-MUM-PUN-W12', srcNe:'WR-ADVA-FSP3000-01', srcIp:'172.31.47.144', srcIfc:'OT-1/1', dstNe:'WR-ADVA-FSP3000-02', dstIp:'172.31.47.145', dstIfc:'OT-1/1', erp:'OTN-7001', v:10 },
+  { st:'Down', chip:'error',   name:'OTN-MUM-PUN-W13', srcNe:'WR-ADVA-FSP3000-01', srcIp:'172.31.47.144', srcIfc:'OT-1/2', dstNe:'WR-ADVA-FSP3000-02', dstIp:'172.31.47.145', dstIfc:'OT-1/2', erp:'OTN-7002', v:10 }
+];
+SERVICES.otn = padList(SERVICES.otn, 10, (r, i) => ({ ...r,
+  st: i % 5 === 4 ? 'Down' : 'Up', chip: i % 5 === 4 ? 'error' : 'success',
+  srcIfc: `OT-1/${1 + i}`, dstIfc: `OT-1/${1 + i}`, name: `OTN-MUM-PUN-W${12 + i}`, erp: `OTN-${7000 + i}`, v: [10, 14][i % 2] }));
+
+/* Trunk — Transport's third element type in the domain device roster
+   (src/data/domainDevices.ts: Transport: ['ROADM','OTN','PE-TRK']), the
+   one Wavelength/OTN don't cover: a packet-transport trunk aggregating
+   RAN backhaul and O&M traffic across the transport network (the same
+   'RAN backhaul'/'Transport OAM' service labels a fiber span's own live
+   strands already carry — see SERVICE_TYPES in fiberCoresTab()). */
+const PE_TRK_NODES = ['BLR-PE-TRK-01', 'BLR-PE-TRK-02', 'DEL-PE-TRK-01', 'PUN-PE-TRK-01'];
+SERVICES.trunk = [
+  { st:'Up', chip:'success', name:'TRUNK-BLR-01-02', srcNe:'BLR-PE-TRK-01', srcIp:'172.31.95.11', srcIfc:'trk0', dstNe:'BLR-PE-TRK-02', dstIp:'172.31.95.12', dstIfc:'trk0', erp:'TRK-8001', v:5 },
+  { st:'Up', chip:'success', name:'TRUNK-DEL-PUN',    srcNe:'DEL-PE-TRK-01', srcIp:'172.31.96.11', srcIfc:'trk0', dstNe:'PUN-PE-TRK-01', dstIp:'172.31.96.12', dstIfc:'trk0', erp:'TRK-8002', v:5 }
+];
+SERVICES.trunk = padList(SERVICES.trunk, 10, (r, i) => ({ ...r,
+  st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
+  srcNe: PE_TRK_NODES[i % PE_TRK_NODES.length], srcIp: `172.31.9${5 + (i % 2)}.${11 + i}`,
+  dstNe: PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length], dstIp: `172.31.9${5 + ((i + 1) % 2)}.${12 + i}`,
+  name: `TRUNK-${PE_TRK_NODES[i % PE_TRK_NODES.length].split('-PE-TRK-')[0]}-${PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length].split('-PE-TRK-')[0]}`,
+  erp: `TRK-${8000 + i}`, v: [3, 5, 9][i % 3] }));
+
+/* APN/DNN — the subscriber session terminating at UPF's N6 boundary
+   (the same UPF instances 'RUL-CORE-001' reconciles). */
+const CORE_APN_NAMES = ['internet', 'ims', 'volte', 'mms', 'ent-vpn', 'iot'];
+SERVICES.apn = [
+  { st:'Up', chip:'success', name:'internet', srcNe:'BLR-UPF-CORE-05', srcIp:'10.61.11.5', srcIfc:'n6-0', dstNe:'IGW-BLR-01', dstIp:'172.31.200.1', dstIfc:'n6-peer', erp:'APN-1', v:5 },
+  { st:'Up', chip:'success', name:'ims',      srcNe:'DEL-UPF-CORE-01', srcIp:'10.61.11.6', srcIfc:'n6-0', dstNe:'IMS-DEL-01', dstIp:'172.31.201.1', dstIfc:'sgi0',    erp:'APN-2', v:5 }
+];
+SERVICES.apn = padList(SERVICES.apn, 10, (r, i) => ({ ...r,
+  st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
+  name: CORE_APN_NAMES[i % CORE_APN_NAMES.length], srcNe: CORE_NF_NODES[3 + (i % 3)],
+  srcIp: `10.61.1${i % 2}.${5 + i}`, dstIp: `172.31.20${i % 3}.${1 + i}`, erp: `APN-${1 + i}`, v: [3, 5][i % 2] }));
+
+/* N-Interface — the 5G service-based interfaces between the same NF
+   instances Core discovery/reconciliation already tracks: N11
+   (AMF-SMF) and N4 (SMF-UPF). Not Diameter/4G-EPC signalling — this
+   app's Core domain is NRF/REST-registered 5GC NFs end to end
+   ('RUL-CORE-001': "every AMF/UPF instance the network reports"), so
+   the second Core tab stays on that same 5G service-based-interface
+   model rather than a different, older protocol family. */
+SERVICES.nif = [
+  { st:'Up', chip:'success', name:'N11', srcNe:'BLR-AMF-CORE-02', srcIp:'10.61.10.5', srcIfc:'sbi0', dstNe:'BLR-SMF-CORE-01', dstIp:'10.61.12.5', dstIfc:'sbi0', erp:'N11-1', v:3 },
+  { st:'Up', chip:'success', name:'N4',  srcNe:'BLR-SMF-CORE-01', srcIp:'10.61.12.5', srcIfc:'pfcp0', dstNe:'BLR-UPF-CORE-05', dstIp:'10.61.11.5', dstIfc:'pfcp0', erp:'N4-1',  v:3 }
+];
+SERVICES.nif = padList(SERVICES.nif, 10, (r, i) => ({ ...r,
+  st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
+  name: ['N11', 'N4', 'N8', 'N10'][i % 4], srcIp: `10.61.1${i % 3}.${4 + i}`, dstIp: `10.61.1${(i + 1) % 3}.${5 + i}`,
+  erp: `${['N11', 'N4', 'N8', 'N10'][i % 4]}-${1 + Math.floor(i / 4)}`, v: [3, 5][i % 2] }));
 
 
 const INACT_TABS = [
@@ -3361,7 +3574,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('View transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
+        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -3652,7 +3865,7 @@ function recTable() {
         r.inv && r.net && r.diff.length
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
         : !r.inv
-          ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
+          ? [A('Open the run transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(r.ne)}` })]
         : !r.net
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
           : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}
@@ -3718,7 +3931,7 @@ function viewReconcile() {
 }
 
 
-let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
+let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
@@ -5762,7 +5975,7 @@ function viewVnfDetails() {
         ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
           .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])],
       actions: vnf && vnf.st !== 'Planned'
-        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
+        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled lc-op-btn is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
         : []
     })}
 
@@ -6085,6 +6298,9 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
+let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or IP/MPLS; see SVC_DOMAINS. RAN is
+  first in SVC_DOMAINS, matching every other tab group on this page (TAB.phy defaults to PHY_TABS[0], TAB.link
+  to LINK_TABS[0]) — the first tab loads first, not the last one in the row. */
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
@@ -6114,11 +6330,51 @@ function svcDiagram(r, tab) {
   </div>`;
 }
 
+/* generic point-to-point service table — every RAN/Transport/Core type
+   (S1/NG, X2/Xn, Microwave, OTN, APN, Diameter) shares L2VPN's own
+   src/dst NE-IP-interface row shape, so this one function renders all
+   six instead of six near-duplicate bespoke tables. Only the column
+   labels vary per type (SVC_P2P_COLS). */
+function svcP2PTable(t, rows) {
+  const cols = SVC_P2P_COLS[t] || { name: 'Name', ref: 'Reference ID' };
+  return table([{t:'Status'},{t:cols.name},{t:'Source NE'},{t:'Source IP'},{t:'Source interface'},
+                {t:'Destination NE'},{t:'Destination IP'},{t:'Destination interface'},{t:cols.ref}],
+    rows.map(s => [
+      chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`,
+      `<span class="mono">${s.srcNe}</span>`, `<span class="mono">${s.srcIp}</span>`, `<span class="mono">${s.srcIfc}</span>`,
+      `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstIfc}</span>`,
+      `<span class="mono">${s.erp}</span>`
+    ]), '',
+    i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+    i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }));
+}
+
 function svcViewDialog() {
   if (!SVC_VIEW) return '';
   const rows = SERVICES[SVC_VIEW.tab] || [];
   const r = rows[SVC_VIEW.i];
   if (!r) return '';
+  if (SVC_VIEW.tab !== 'l3vpn' && SVC_VIEW.tab !== 'l2vpn') {
+    const cols = SVC_P2P_COLS[SVC_VIEW.tab] || { title: 'Service', name: 'Name', ref: 'Reference ID' };
+    return `
+      <div class="drawer-overlay" data-svcclose="1"></div>
+      <div class="linkview-panel" role="dialog" aria-label="${esc(cols.title)} for ${esc(r.name)}">
+        <div class="linkview-head">
+          <span class="vw-card-title-sm">${esc(cols.title)}</span>
+          <button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button>
+        </div>
+        <div class="linkview-body">
+          <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+            <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          </div>
+          ${detailFieldGrid([
+            ['Source NE', r.srcNe], ['Source IP', r.srcIp], ['Source interface', r.srcIfc],
+            ['Destination NE', r.dstNe], ['Destination IP', r.dstIp], ['Destination interface', r.dstIfc],
+            [cols.ref, r.erp]
+          ])}
+        </div>
+      </div>`;
+  }
   const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
   const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
   return `
@@ -6142,20 +6398,26 @@ function svcViewDialog() {
 }
 
 function viewServices() {
-  const t = TAB.svc, rows = gridApply('services', SERVICES[t] || []), meta = SVC_TABS.find(x => x.k === t);
+  /* SVC_DOMAIN picks which row of tabs is showing; TAB.svc is the tab
+     within it. A stale TAB.svc (e.g. a direct URL naming a tab from a
+     different domain) falls back to the domain's own first tab rather
+     than rendering an empty SERVICES[t]. */
+  const domainTabs = SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS;
+  const t = domainTabs.some(x => x.k === TAB.svc) ? TAB.svc : domainTabs[0].k;
+  const rows = gridApply('services', SERVICES[t] || []), meta = domainTabs.find(x => x.k === t);
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald')}
-      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan')}
-      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky')}
-      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red')}
+      ${SVC_DOMAINS.map(d => kpi(d.n, n(d.tabs.reduce((a, x) => a + x.c, 0)),
+        d.tabs.map(x => `${x.n} ${n(x.c)}`).join(' · '), d.tone,
+        { v:'services', l:`${d.n} services`, q:`domain=${d.k}` })).join('')}
     </div>
 
     ${card(`
-      ${tabs(SVC_TABS, t, 'svc')}
+      <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
+      ${tabs(domainTabs, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
       ${t === 'l2vpn'
@@ -6176,14 +6438,16 @@ function viewServices() {
             }), '',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
-        : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+        : t === 'l3vpn'
+        ? table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
             ]), '',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
-            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))}`)}
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
+        : svcP2PTable(t, rows)}`)}
     ${svcViewDialog()}
   </div>`;
 }
@@ -12576,10 +12840,14 @@ function drillTo(view, label, q) {
      "from" from whatever got it there originally) — losing the query
      there would silently re-break "back returns to the exact drilled list"
      for that case. */
+  const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
+    ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const fromName = (curDrill && curDrill.q
-    ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : null) || inheritedFrom || crumbName;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const fromName = curDrillFrom
+    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
+    || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -12636,7 +12904,16 @@ function applyDrillQuery(view, q, label) {
   if (view === 'duct')     { if (p.id) DUCT_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
-  if (view === 'services') { if (p.tab) TAB.svc  = p.tab; SVC_VIEW = null; }
+  if (view === 'services') {
+    /* ?domain= picks a whole domain (its own first tab); ?tab= (the
+       existing mechanism every other Services link already uses, e.g.
+       the Location dashboard's L3VPN/L2VPN chips) still just names a
+       tab directly — its domain is derived so those links keep working
+       unchanged now that Services has more than one domain. */
+    if (p.domain && SVC_TABS_BY_DOMAIN[p.domain]) { SVC_DOMAIN = p.domain; TAB.svc = SVC_TABS_BY_DOMAIN[p.domain][0].k; }
+    else if (p.tab) { TAB.svc = p.tab; SVC_DOMAIN = domainForSvcTab(p.tab); }
+    SVC_VIEW = null;
+  }
   if (view === 'resource') {
     /* "View details" row actions elsewhere in the legacy renderer (Site
        details' Network elements table, Reconciliation's exception table)
@@ -12925,6 +13202,14 @@ document.addEventListener('click', e => {
   }
   const rsvcx = e.target.closest('[data-ressvcclose]');
   if (rsvcx) { RES_SVC_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const svcd = e.target.closest('[data-svcdomain]');
+  if (svcd) {
+    SVC_DOMAIN = svcd.dataset.svcdomain;
+    TAB.svc = (SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS)[0].k;
+    SVC_VIEW = null;
+    go('services');
+    return;
+  }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');

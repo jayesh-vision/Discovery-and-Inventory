@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card } from '../components/ui';
 import {
-  RULES, MOCK_USERS, OPERATORS, DOMAIN_LABEL, ruleById,
+  RULES, MOCK_USERS, OPERATORS, DOMAIN_LABEL, ruleById, persistRules,
   type Condition, type DomainKey, type Operator, type Rule, type RulePriority
 } from '../data/rules';
 
@@ -70,6 +70,7 @@ export default function RuleDefinition() {
         conditions, lastUpdated: `${today()} ${new Date().toTimeString().slice(0, 5)}`
       });
       editing.activity.unshift({ at: `${today()} ${new Date().toTimeString().slice(0, 5)}`, by: owner, event: 'Rule definition edited' });
+      persistRules();
       nav(`/discovery/reconcile/rules/${editing.id}`);
     } else {
       const newRule: Rule = {
@@ -81,6 +82,7 @@ export default function RuleDefinition() {
         approvalHistory: [], activity: [{ at: today(), by: owner, event: 'Rule created' }], executions: []
       };
       RULES.push(newRule);
+      persistRules();
       nav(`/discovery/reconcile/rules/${newRule.id}`);
     }
   };

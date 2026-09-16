@@ -94,10 +94,14 @@ function drillTo(view, label, q) {
      "from" from whatever got it there originally) — losing the query
      there would silently re-break "back returns to the exact drilled list"
      for that case. */
+  const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
+    ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const fromName = (curDrill && curDrill.q
-    ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : null) || inheritedFrom || crumbName;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const fromName = curDrillFrom
+    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
+    || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -154,7 +158,16 @@ function applyDrillQuery(view, q, label) {
   if (view === 'duct')     { if (p.id) DUCT_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
-  if (view === 'services') { if (p.tab) TAB.svc  = p.tab; SVC_VIEW = null; }
+  if (view === 'services') {
+    /* ?domain= picks a whole domain (its own first tab); ?tab= (the
+       existing mechanism every other Services link already uses, e.g.
+       the Location dashboard's L3VPN/L2VPN chips) still just names a
+       tab directly — its domain is derived so those links keep working
+       unchanged now that Services has more than one domain. */
+    if (p.domain && SVC_TABS_BY_DOMAIN[p.domain]) { SVC_DOMAIN = p.domain; TAB.svc = SVC_TABS_BY_DOMAIN[p.domain][0].k; }
+    else if (p.tab) { TAB.svc = p.tab; SVC_DOMAIN = domainForSvcTab(p.tab); }
+    SVC_VIEW = null;
+  }
   if (view === 'resource') {
     /* "View details" row actions elsewhere in the legacy renderer (Site
        details' Network elements table, Reconciliation's exception table)
@@ -411,6 +424,14 @@ document.addEventListener('click', e => {
   }
   const rsvcx = e.target.closest('[data-ressvcclose]');
   if (rsvcx) { RES_SVC_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const svcd = e.target.closest('[data-svcdomain]');
+  if (svcd) {
+    SVC_DOMAIN = svcd.dataset.svcdomain;
+    TAB.svc = (SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS)[0].k;
+    SVC_VIEW = null;
+    go('services');
+    return;
+  }
   const svcv = e.target.closest('[data-svcview]');
   if (svcv) {
     const [tab, i] = svcv.dataset.svcview.split(':');

@@ -1,8 +1,35 @@
-import { useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 /* ── shared tooltip ─────────────────────────────────────── */
+/* Every chart below reports the raw cursor position (x, y) and this
+   anchors a fixed-position box 14px to its right — fine until the
+   cursor (and so the box) is near the right edge of the viewport, e.g.
+   the last bucket/point of a chart that runs edge to edge, where the
+   box's natural width pushes it straight past the edge and gets clipped
+   by the browser itself, not by anything this app draws. Same clamp
+   idiom as InfoTip (ui.tsx): measure the box against the viewport after
+   every position update and nudge it back with a translateX delta added
+   to the CSS class's own translate(14px, -50%) rather than overriding
+   it outright — one fix here covers every chart's tooltip at once. */
 export function Tip({ x, y, children }: { x: number; y: number; children: ReactNode }) {
-  return <div className="ch-tip" style={{ left: x, top: y }}>{children}</div>;
+  const ref = useRef<HTMLDivElement>(null);
+  const [shiftPx, setShiftPx] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const margin = 8;
+    const rect = el.getBoundingClientRect();
+    let dx = 0;
+    if (rect.right > window.innerWidth - margin) dx = (window.innerWidth - margin) - rect.right;
+    if (rect.left + dx < margin) dx = margin - rect.left;
+    setShiftPx(dx);
+  }, [x, y, children]);
+  return (
+    <div ref={ref} className="ch-tip" style={{ left: x, top: y,
+      ...(shiftPx ? { transform: `translate(calc(14px + ${shiftPx}px), -50%)` } : {}) }}>
+      {children}
+    </div>
+  );
 }
 
 const fmt = (v: number) => v.toLocaleString('en-IN');

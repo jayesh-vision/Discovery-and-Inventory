@@ -38,21 +38,14 @@ export default function Topbar() {
   const from = sp.get('from');
 
   /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
-     shallower to drill back to from here, so there's no real trail to show.
-     Scan jobs and Scan targets sit one level under Insights instead (their
-     crumb is "Insights · Scan jobs"/"Insights · Scan targets") — same shape
-     as Domain devices and Discrepancies below, so they need no special case
-     here; the chain/leaf logic further down renders their trail like any
-     other Insights child, and the target *detail* page's own three-segment
-     crumb extends that same trail one level further ("Insights · Scan
-     targets · Target") without needing a cross-section ?from= at all. */
+  shallower to drill back to from here, so there's no real trail to show. */
   if (s.key === 'insights' || s.key === 'reconcile') {
     return null;
   }
   /* Every other sidebar-rail landing page has the same "second page title"
      problem as the four above, just in one of two shapes: a single-segment
      crumb with no " · " parent at all (Location, Services, Inactive
-     inventory), or a " · " parent ("Resources", "Connectivity") that isn't
+     inventory, Scan jobs, Scan targets), or a " · " parent ("Resources", "Connectivity") that isn't
      itself a real, clickable screen (Virtual/Physical/Passive Resources,
      Links) — routes.ts has no screen whose crumb is exactly "Resources" or
      "Connectivity" for targetFor() to resolve. Either way, undrilled, the
@@ -62,12 +55,13 @@ export default function Topbar() {
      at which point the drill branch further down gives the trail a real
      destination to name. */
   if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
-    || s.key === 'links' || s.key === 'services' || s.key === 'inactive') && !drill) {
+    || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
+    || s.key === 'jobs' || s.key === 'targets') && !drill) {
     return null;
   }
 
   const targetFor = (prefix: string): string | null => {
-    const t = SCREENS.find(x => x.crumb === prefix);
+    const t = SCREENS.find(x => x.crumb === prefix || x.crumb.toLowerCase() === prefix.toLowerCase());
     if (!t) return null;
     let path = t.path;
     const mergedParams: Record<string, string> = { ...params };
@@ -89,30 +83,61 @@ export default function Topbar() {
   const fromCrumb = fromQMark >= 0 ? from!.slice(0, fromQMark) : from;
   const fromQuery = fromQMark >= 0 ? from!.slice(fromQMark + 1) : '';
 
-  const origin = fromCrumb && fromCrumb !== s.crumb ? SCREENS.find(x => x.crumb === fromCrumb) : undefined;
+  const origin = fromCrumb && fromCrumb.toLowerCase() !== s.crumb.toLowerCase()
+    ? SCREENS.find(x => x.crumb === fromCrumb || x.crumb.toLowerCase() === fromCrumb.toLowerCase())
+    : undefined;
   const ownParts = s.crumb.split(' · ');
-  const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
   const leaf = ownParts[ownParts.length - 1];
 
-  const segs: { label: string; to: string | null }[] = chain.map((label, i) => {
-    const base = targetFor(chain.slice(0, i + 1).join(' · '));
-    const isOriginLeaf = !!origin && i === chain.length - 1;
-    return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
-  });
-  /* A drilled screen with no " · " parent of its own (Location, today) would
-     otherwise lose its only ancestor: the drill label below replaces the
-     leaf outright, and the chain above is empty, so there'd be nothing left
-     to click back to the screen's own base view. Every other drilled screen
-     already has a real chain segment ahead of its leaf, so this only ever
-     fires for that empty-chain case. */
-  if (drill && !chain.length) {
-    segs.push({ label: leaf, to: pathname });
+  let segs: { label: string; to: string | null }[] = [];
+
+  const fromParams = new URLSearchParams(fromQuery);
+  const originDrill = fromParams.get('drill');
+  const grandOriginCrumb = fromParams.get('from');
+  const grandCrumbClean = grandOriginCrumb ? grandOriginCrumb.split('?')[0] : null;
+  const grandOrigin = grandCrumbClean
+    ? SCREENS.find(x => x.crumb === grandCrumbClean || x.crumb.toLowerCase() === grandCrumbClean.toLowerCase())
+    : undefined;
+
+  if (origin && (originDrill || grandOrigin)) {
+    /* Origin was mid-drill and/or had its own origin (e.g. Scan jobs > Targets in DSC-SOUTH-CORE > Transcript).
+       Expand grandparents and preserve the drilled parent with its full query so back returns to that exact list. */
+    if (grandOrigin) {
+      const grandChain = grandOrigin.crumb.split(' · ');
+      grandChain.forEach((lbl, i) => {
+        const base = targetFor(grandChain.slice(0, i + 1).join(' · '));
+        segs.push({ label: lbl, to: base });
+      });
+    }
+    const originLabel = originDrill || origin.crumb.split(' · ').pop() || origin.crumb;
+    const originBase = targetFor(origin.crumb);
+    segs.push({
+      label: originLabel,
+      to: originBase ? (fromQuery ? `${originBase}?${fromQuery}` : originBase) : null
+    });
+  } else {
+    const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
+    segs = chain.map((label, i) => {
+      const base = targetFor(chain.slice(0, i + 1).join(' · '));
+      const isOriginLeaf = !!origin && i === chain.length - 1;
+      return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
+    });
+    /* A drilled screen with no " · " parent of its own (Location, today) would
+       otherwise lose its only ancestor: the drill label below replaces the
+       leaf outright, and the chain above is empty, so there'd be nothing left
+       to click back to the screen's own base view. */
+    if (drill && !chain.length) {
+      segs.push({ label: leaf, to: pathname });
+    }
   }
-  /* A drill label is always the more specific replacement for the screen's
-     static leaf ("View" → "Virtual element details · NTSON3435004",
-     "Lifecycle operation" → "Lifecycle operation · NTSON3435004") — show one
-     final segment, not the generic leaf followed by the specific one. */
-  segs.push(drill ? { label: drill, to: null } : { label: leaf, to: null });
+
+  /* When on detail/transcript, display just "Transcript" without duplicating the device
+     name already prominent in the page header. */
+  let finalLeafLabel = drill || leaf;
+  if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
+    finalLeafLabel = 'Transcript';
+  }
+  segs.push({ label: finalLeafLabel, to: null });
 
   return (
     <nav className="topbar" aria-label="Breadcrumb">
