@@ -218,36 +218,25 @@ export default function Insights() {
   return (
     <div className="page">
       <SectionTitle>Inventory trust</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(240px, 21rem) minmax(0, 1fr)' }}>
-        <Card style={{ borderLeft: '3px solid var(--vw-color-blue-500)', display: 'flex', flexDirection: 'column' }}>
-          <div className="eyebrow">{TRUST_METRICS[0].label}
-            {KPI_DEF[TRUST_METRICS[0].label] && <InfoTip text={KPI_DEF[TRUST_METRICS[0].label]} label={`What ${TRUST_METRICS[0].label.toLowerCase()} means`} />}
-          </div>
-          <div className="num" style={{ fontSize: '2.75rem', fontWeight: 700, marginTop: '6px', lineHeight: 1 }}>{TRUST_METRICS[0].value}</div>
-          <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-            <TrustDelta sub={TRUST_METRICS[0].sub} />
-          </div>
-        </Card>
-        <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-          {TRUST_METRICS.slice(1).map(m => {
-            const to = KPI_TARGET[m.label];
-            const Wrap = to ? 'button' : 'div';
-            return (
-              <Wrap key={m.label} className={`vw-card-section${to ? ' is-drill' : ''}`}
-                style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
-                {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
-                <div className="eyebrow">{m.label}
-                  {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
-                </div>
-                <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
-                <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
-                <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
-                  <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
-                </div>
-              </Wrap>
-            );
-          })}
-        </div>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+        {TRUST_METRICS.map(m => {
+          const to = KPI_TARGET[m.label];
+          const Wrap = to ? 'button' : 'div';
+          return (
+            <Wrap key={m.label} className={`vw-card-section${to ? ' is-drill' : ''}`}
+              style={{ borderLeft: '3px solid var(--vw-color-blue-500)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+              {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
+              <div className="eyebrow">{m.label}
+                {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
+              </div>
+              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
+              {m.hero ? <TrustDelta sub={m.sub} /> : <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>}
+              <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
+                <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
+              </div>
+            </Wrap>
+          );
+        })}
       </div>
 
       <ModuleDivider num="I" label="DISCOVERY" />
