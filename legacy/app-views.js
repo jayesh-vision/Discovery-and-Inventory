@@ -3019,7 +3019,7 @@ function viewVnfDetails() {
         ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
           .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])],
       actions: vnf && vnf.st !== 'Planned'
-        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
+        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled lc-op-btn is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
         : []
     })}
 

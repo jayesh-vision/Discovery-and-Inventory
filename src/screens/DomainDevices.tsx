@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, StatStrip, Sub } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
@@ -10,10 +10,16 @@ const URL_TO_DOMAIN: Record<string, DomainKey> = { ran: 'RAN', transport: 'Trans
 export const domainToUrl = (d: DomainKey) => d.toLowerCase();
 
 export default function DomainDevices() {
-  const nav = useNavigate();
   const { domain: urlDomain } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const domain = urlDomain ? URL_TO_DOMAIN[urlDomain.toLowerCase()] : undefined;
   const row = domain ? DOMAIN_TRUST_ROWS.find(d => d.domain === domain) : undefined;
+  /* set only when this screen was reached by clicking one cell of Insights'
+     "Open discrepancies by region" heatmap — otherwise every region cell
+     for a domain landed on the exact same undifferentiated roster, which
+     read as "wrong data" no matter which cell was actually clicked */
+  const region = searchParams.get('region');
+  const clearRegion = () => setSearchParams(p => { const n = new URLSearchParams(p); n.delete('region'); return n; });
 
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -23,7 +29,7 @@ export default function DomainDevices() {
   const [showRaw, setShowRaw] = useState(false);
   const [justScanned, setJustScanned] = useState(false);
 
-  const base = useMemo(() => (domain ? domainDevices(domain) : []), [domain]);
+  const base = useMemo(() => (domain ? domainDevices(domain, region ?? undefined) : []), [domain, region]);
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter(d => {
@@ -60,7 +66,8 @@ export default function DomainDevices() {
     <div className="page">
       <div className="row vw-items-center" style={{ gap: '10px', marginBottom: 'var(--vw-space-sm)' }}>
         <span style={{ width: 11, height: 11, borderRadius: '50%', background: hex, flexShrink: 0 }} />
-        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>{DOMAIN_LABEL[domain]} devices</span>
+        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>{DOMAIN_LABEL[domain]} devices{region ? ` · ${region}` : ''}</span>
+        {region && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearRegion}>Clear region · show all</button>}
       </div>
 
       <StatStrip cells={[
@@ -69,12 +76,17 @@ export default function DomainDevices() {
         { k: 'Unverified', v: row.unverified !== null ? String(row.unverified) : '—', s: 'not yet scanned this cycle', t: 'amber' },
         { k: 'Trust index', v: `${row.trustIndexPct}%`, s: `MTTR ${row.mttrHours}h · ${row.touchlessPct}% automated`, t: 'emerald' }
       ]} />
+      {region && (
+        <p className="vw-card-metric-label-sub" style={{ margin: '4px 0 0' }}>
+          The figures above are {DOMAIN_LABEL[domain]}-wide; the list below is filtered to {region} only.
+        </p>
+      )}
 
       <Card>
         <DataGrid<DomainDevice>
           columns={[{ t: 'Device' }, { t: 'Status' }, { t: 'Issue' }, { t: 'Last scan' }]}
           rows={rows} total={rows.length} rowKey={d => d.id}
-          resetKey={`${domain}|${query}|${JSON.stringify(filters)}`}
+          resetKey={`${domain}|${region}|${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Device, IP, issue"
           filters={[{ n: 'Status', o: ['Open', 'Unverified'] }]}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters}
@@ -86,21 +98,22 @@ export default function DomainDevices() {
             <span className="num">{d.lastScan}</span>
           ]}
         />
-        <div className="vw-card-footer-divider row vw-justify-between vw-wrap">
+        <div className="vw-card-footer-divider">
           <span className="vw-card-description">
-            {row.inScope.toLocaleString('en-IN')} in scope · {row.open} open · {row.unverified ?? 0} unverified are listed here; the rest are in sync with nothing to action.
+            {base.filter(d => d.status === 'Open').length} open · {base.filter(d => d.status === 'Unverified').length} unverified
+            {region ? ` in ${region}` : ''} are listed here; the rest are in sync with nothing to action.
           </span>
-          <button className="nst-btn nst-btn--xs" onClick={() => nav('/discovery/insights')}>Back to Insights</button>
         </div>
       </Card>
 
       <Drawer open={!!open} onClose={closeDevice} title={open?.name ?? ''}
-        sub={open ? `${DOMAIN_LABEL[open.domain]} · ${open.ip}` : undefined}>
+        sub={open ? `${DOMAIN_LABEL[open.domain]} · ${open.region} · ${open.ip}` : undefined}>
         {open && (
           <>
             <Chip tone={open.status === 'Open' ? 'error' : 'warning'}>{open.status}</Chip>
             <div className="kv" style={{ marginTop: 'var(--vw-space-md)' }}>
               <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[open.domain]}</span></div>
+              <div><span className="k">Region</span><span className="v">{open.region}</span></div>
               <div><span className="k">Address</span><span className="v"><Mono>{open.ip}</Mono></span></div>
               <div><span className="k">Last scan</span><span className="v">{justScanned ? 'Just now' : open.lastScan}</span></div>
               <div><span className="k">Issue</span><span className="v">{open.issue}</span></div>
