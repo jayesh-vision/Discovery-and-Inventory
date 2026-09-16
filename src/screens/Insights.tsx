@@ -314,26 +314,24 @@ export default function Insights() {
           </table>
         </Card>
 
-        <Card style={{ display: 'flex', flexDirection: 'column' }}>
+        <Card>
           <span className="vw-card-title-sm">Collector health<InfoTip text={CARD_DEF['Collector health']} label="What collector health shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Targets, p95 poll latency and check-in</div>
-          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <table className="mtbl">
-              <thead><tr><th>Collector</th><th>Domain</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
-              <tbody>{COLLECTOR_ROWS.map(c => (
-                <tr key={c.name} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'collector', row: c })}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'collector', row: c }); } }}
-                  aria-label={`View ${c.name} collector details`}>
-                  <td className="vw-value">{c.name}</td>
-                  <td><DomainDot domain={c.domain} /></td>
-                  <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
-                  <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
-                  <td className="cell-sub">{c.checkin}</td>
-                  <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
-                </tr>))}
-              </tbody>
-            </table>
-          </div>
+          <table className="mtbl">
+            <thead><tr><th>Collector</th><th>Domain</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
+            <tbody>{COLLECTOR_ROWS.map(c => (
+              <tr key={c.name} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'collector', row: c })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'collector', row: c }); } }}
+                aria-label={`View ${c.name} collector details`}>
+                <td className="vw-value">{c.name}</td>
+                <td><DomainDot domain={c.domain} /></td>
+                <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
+                <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
+                <td className="cell-sub">{c.checkin}</td>
+                <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
+              </tr>))}
+            </tbody>
+          </table>
         </Card>
       </div>
 
