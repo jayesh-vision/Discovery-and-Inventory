@@ -78,7 +78,7 @@ const CARD_DEF: Record<string, string> = {
   'Detected vs auto-resolved, per day': 'New discrepancies found each day, and how many were closed automatically by policy without an engineer.',
   'Age of open discrepancies': 'How long the currently open discrepancies have sat unresolved — the older the bucket, the more attention it likely needs.',
   'Open items by type': 'The open backlog broken down by the specific kind of discrepancy, so the most common failure patterns stand out.',
-  'Reconciliation cycles': 'The most recently completed reconciliation run for each domain, and what’s scheduled to run next.'
+  'Reconciliation cycles': 'The last few completed reconciliation runs for each domain, newest first, and what’s scheduled to run next.'
 };
 
 const DomainDot = ({ domain }: { domain: DomainKey }) => (
@@ -515,40 +515,46 @@ export default function Insights() {
 
       <SectionTitle>Discrepancy types and reconciliation cycles</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-        <Card>
+        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
           <span className="vw-card-title-sm">Open items by type<InfoTip text={CARD_DEF['Open items by type']} label="What this list shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0)} open</div>
-          <div className="row" style={{ gap: 'var(--vw-space-lg)', margin: 'var(--vw-space-sm) 0', flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 'var(--vw-space-lg)', margin: 'var(--vw-space-sm) 0', flexWrap: 'wrap', flexShrink: 0 }}>
             {DOMAIN_KEYS.map(d => (
               <span key={d} className="row vw-items-center vw-card-metric-label-sub" style={{ gap: '6px' }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: DOMAIN_HEX[d] }} />{DOMAIN_LABEL[d]}
               </span>
             ))}
           </div>
-          {DISCREPANCY_TYPES.map(r => (
-            <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
-              title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
-              onClick={() => toDiscrepancies({ q: r.label })}>
-              <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
-                <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
-              </span>
-              <span className="vw-card-metric-label-sub" style={{ width: '6rem', flexShrink: 0 }}>{r.category}</span>
-              <span className="hbar-track grow" style={{ height: '0.75rem' }}>
-                <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} />
-              </span>
-              <span className="num" style={{ width: '2.5rem', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{r.count}</span>
-            </button>
-          ))}
+          {/* the two cards in this row hold very differently-sized real
+              content (a fixed 14-row type list vs. a growing cycle history) —
+              a shared fixed card height with this list scrolling internally,
+              same idiom as the Location map's site-list panel, keeps both
+              card borders aligned regardless of how either side's data grows */}
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+            {DISCREPANCY_TYPES.map(r => (
+              <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
+                title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
+                onClick={() => toDiscrepancies({ q: r.label })}>
+                <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
+                  <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+                </span>
+                <span className="vw-card-metric-label-sub" style={{ width: '6rem', flexShrink: 0 }}>{r.category}</span>
+                <span className="hbar-track grow" style={{ height: '0.75rem' }}>
+                  <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} />
+                </span>
+                <span className="num" style={{ width: '2.5rem', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{r.count}</span>
+              </button>
+            ))}
+          </div>
         </Card>
 
-        <Card style={{ display: 'flex', flexDirection: 'column' }}>
+        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
           <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
-          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 3 cycles per domain, newest first</div>
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
             {RECONCILE_CYCLE_ROWS.map((c, i) => (
-              <div key={c.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
+              <div key={`${c.domain}-${c.when}`} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'cycle', row: c }); } }}
                 aria-label={`View ${DOMAIN_LABEL[c.domain]} cycle details`}
                 style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
@@ -572,18 +578,17 @@ export default function Insights() {
               </div>
             ))}
           </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
-              <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
-              <span style={{ position: 'relative', alignSelf: 'stretch' }}>
-                <span style={{
-                  position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%',
-                  background: 'var(--vw-color-white)', border: `2px solid ${DOMAIN_HEX[RECONCILE_NEXT.domain]}`, boxSizing: 'border-box'
-                }} />
-              </span>
-              <div className="vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>
-                Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> {RECONCILE_NEXT.note}
-                · {RECONCILE_NEXT.unverified} unverified retried · {RECONCILE_NEXT.inScope.toLocaleString('en-IN')} in scope · in {RECONCILE_NEXT.eta}
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)', flexShrink: 0 }}>
+            <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
+            <span style={{ position: 'relative', alignSelf: 'stretch' }}>
+              <span style={{
+                position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%',
+                background: 'var(--vw-color-white)', border: `2px solid ${DOMAIN_HEX[RECONCILE_NEXT.domain]}`, boxSizing: 'border-box'
+              }} />
+            </span>
+            <div className="vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>
+              Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> {RECONCILE_NEXT.note}
+              · {RECONCILE_NEXT.unverified} unverified retried · {RECONCILE_NEXT.inScope.toLocaleString('en-IN')} in scope · in {RECONCILE_NEXT.eta}
             </div>
           </div>
         </Card>

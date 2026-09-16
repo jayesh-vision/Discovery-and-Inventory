@@ -116,13 +116,27 @@ export const ROOT_CAUSE_FAILURES: RootCauseFailure[] = [
     examples: ['BLR-UPF-CORE-05', 'BLR-AMF-CORE-02'], action: 'Restart NRF subscription', tag: 'NET' }
 ];
 
-/* ── Reconciliation cycles, most recent per domain ───────────────────── */
+/* ── Reconciliation cycles, most recent first ─────────────────────────
+   Each domain's own most recent cycle sits first (its exact numbers are
+   read elsewhere — DOMAIN_COVERAGE, CYCLE_ACTIVITY, RECONCILE_JOBS'
+   resultSummary, RULES' activity log — so those stay unchanged); the two
+   older cycles behind each one are real history, not filler, and let the
+   Insights "Reconciliation cycles" timeline read as an actual log instead
+   of a four-row snapshot with the card mostly empty beneath it. */
 export interface ReconcileCycleRow { domain: DomainKey; when: string; scanned: number; touchlessPct: number; drifted: number; autoResolved: number; queue: number }
 export const RECONCILE_CYCLE_ROWS: ReconcileCycleRow[] = [
   { domain: 'IPMPLS', when: '10:31:28', scanned: 1204, touchlessPct: 75, drifted: 12, autoResolved: 9, queue: 3 },
   { domain: 'Core', when: '10:30:08', scanned: 340, touchlessPct: 61, drifted: 18, autoResolved: 11, queue: 7 },
   { domain: 'RAN', when: '10:26:00', scanned: 8412, touchlessPct: 65, drifted: 52, autoResolved: 40, queue: 18 },
-  { domain: 'Transport', when: '10:20:00', scanned: 2150, touchlessPct: 53, drifted: 53, autoResolved: 28, queue: 25 }
+  { domain: 'Transport', when: '10:20:00', scanned: 2150, touchlessPct: 53, drifted: 53, autoResolved: 28, queue: 25 },
+  { domain: 'IPMPLS', when: '10:16:40', scanned: 1198, touchlessPct: 73, drifted: 15, autoResolved: 11, queue: 4 },
+  { domain: 'Core', when: '10:14:52', scanned: 339, touchlessPct: 59, drifted: 20, autoResolved: 12, queue: 8 },
+  { domain: 'RAN', when: '10:08:10', scanned: 8405, touchlessPct: 63, drifted: 58, autoResolved: 43, queue: 15 },
+  { domain: 'Transport', when: '09:58:00', scanned: 2148, touchlessPct: 51, drifted: 57, autoResolved: 27, queue: 30 },
+  { domain: 'IPMPLS', when: '09:41:15', scanned: 1201, touchlessPct: 71, drifted: 14, autoResolved: 10, queue: 4 },
+  { domain: 'Core', when: '09:38:30', scanned: 340, touchlessPct: 58, drifted: 21, autoResolved: 12, queue: 9 },
+  { domain: 'RAN', when: '08:52:44', scanned: 8398, touchlessPct: 61, drifted: 61, autoResolved: 44, queue: 17 },
+  { domain: 'Transport', when: '07:40:00', scanned: 2145, touchlessPct: 49, drifted: 60, autoResolved: 26, queue: 34 }
 ];
 export const RECONCILE_NEXT = { domain: 'Transport' as DomainKey, note: 'nightly full window', unverified: 30, inScope: 2180, eta: '6h 28m', at: '01:00' };
 
