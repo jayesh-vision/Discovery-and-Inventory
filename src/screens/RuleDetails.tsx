@@ -4,7 +4,7 @@ import { Card, Chip, Mono, StatStrip, TabBar } from '../components/ui';
 import { Lifecycle, type LifecycleStage } from '../components/Lifecycle';
 import { Timeline } from '../components/Timeline';
 import {
-  ruleById, RULE_LIFECYCLE, STATUS_TONE, STATUS_NEXT, PRIORITY_TONE, DOMAIN_HEX, DOMAIN_LABEL,
+  ruleById, RULE_LIFECYCLE, STATUS_TONE, STATUS_NEXT, PRIORITY_TONE, DOMAIN_HEX, DOMAIN_LABEL, persistRules,
   type RuleStatus
 } from '../data/rules';
 import { exceptionsForRule, EXCEPTION_TONE, SLA_TONE } from '../data/reconciliationOps';
@@ -59,6 +59,7 @@ export default function RuleDetails() {
     rule.activity.unshift({ at: nowStamp(), by: rule.reviewer, event: `${action}${note ? ' — ' + note : ''}` });
     rule.status = status;
     rule.lastUpdated = nowStamp();
+    persistRules();
     rerender();
   };
 

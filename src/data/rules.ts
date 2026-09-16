@@ -215,10 +215,40 @@ export const ruleById = (id: string) => RULES.find(r => r.id === id);
 export const rulesByStatus = (status: RuleStatus) => RULES.filter(r => r.status === status);
 
 /* ledger self-check: every status this page can filter to must actually
-   have at least one rule, so a status filter never opens on an empty grid
-   with nothing to demonstrate */
+   have at least one rule in the SEED data below, so a status filter never
+   opens on an empty grid with nothing to demonstrate. This runs against the
+   ten hand-authored rules only, before any persisted edits are applied —
+   once a reader starts editing rules (retiring the one Suspended sample,
+   say), that invariant is no longer something the app can guarantee, and
+   a reader's own edits should never crash the page on their next visit. */
 (() => {
   RULE_LIFECYCLE.forEach(s => {
     if (!RULES.some(r => r.status === s)) throw new Error(`rules: no sample rule carries status "${s}"`);
   });
 })();
+
+/* ── persistence ───────────────────────────────────────────
+   No backend: RuleDefinition/RuleDetails mutate this array directly
+   (push/Object.assign), and until now that state only ever lived in this
+   module's memory — reloading the page (the natural thing to do right
+   after creating a rule, to check it "saved") silently reverted to the
+   ten seed rules, which read as "the count isn't increasing." localStorage
+   is the lightest fix that stays within "no backend": it survives a
+   reload without a server, and persistRules()/the load-on-import below are
+   exactly the shape a future real API client would replace. */
+const STORAGE_KEY = 'ns.reconciliation.rules.v1';
+function loadPersistedRules(): Rule[] | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length ? parsed as Rule[] : null;
+  } catch {
+    return null;
+  }
+}
+export function persistRules() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(RULES)); } catch { /* storage unavailable (private mode, quota) — edits still work for this tab */ }
+}
+const persistedRules = loadPersistedRules();
+if (persistedRules) { RULES.length = 0; RULES.push(...persistedRules); }
