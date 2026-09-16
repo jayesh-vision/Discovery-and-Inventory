@@ -488,9 +488,17 @@ button { font: inherit; }
 /* ── Location map view ───────────────────────────────── */
 .map-row { display: flex; gap: var(--vw-space-xl); align-items: flex-start; flex-wrap: wrap; }
 .map-row > * { min-width: 0; }
-.map-wrap { flex: 1 1 420px; position: relative; }
-.map-side { flex: 0 1 340px; min-width: 260px; }
-.map-svg { width: 100%; height: auto; max-height: 620px; display: block; }
+.map-wrap { flex: 1 1 calc(60% - var(--vw-space-xl) / 2); position: relative; }
+/* the side panel sits parallel to the map and must not grow past it —
+   picking a state with a long site roster used to stretch this panel
+   (and drag the card's footer down with it); it's now a fixed-height
+   column and only the site roster inside it scrolls, same idiom as
+   .cov-scroll for Coverage by circle. */
+.map-side { flex: 1 1 calc(40% - var(--vw-space-xl) / 2); min-width: 260px;
+  height: 460px; display: flex; flex-direction: column; overflow: hidden; }
+.map-side > .stack { flex: 1 1 auto; min-height: 0; }
+.map-side-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.map-svg { width: 100%; height: auto; max-height: 460px; display: block; }
 .map-bub { cursor: pointer; transition: transform .12s ease; }
 .map-bub:hover { transform-box: fill-box; }
 .map-bub circle { transition: stroke-width .12s ease, fill-opacity .12s ease; }

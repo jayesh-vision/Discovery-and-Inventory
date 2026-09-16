@@ -1699,9 +1699,11 @@ function mapPanel() {
           <span class="vw-card-description">${items[0].city}, ${items[0].state}</span></div>
         <button class="nst-btn nst-btn--xs" data-clusterclear="1">Clear</button>
       </div>
-      ${items.map(l=>`<button class="site-row" data-site="${l.id}">
-        <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
-        <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+      <div class="map-side-scroll">
+        ${items.map(l=>`<button class="site-row" data-site="${l.id}">
+          <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
+          <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+      </div>
     </div>`;
   }
   if (!LOC_SEL) {
@@ -1756,13 +1758,15 @@ function mapPanel() {
         <span class="legend-i"><span class="legend-sw" style="background:${cv(t,400)}"></span>${k}</span>
         <span class="vw-value num">${n(v)}</span></div>`).join('')}
     </div>
-    ${sites.length ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
-      <span class="eyebrow">Sites on record here</span>
-      ${sites.slice(0, 8).map(l=>`<button class="site-row" data-site="${l.id}">
-        <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
-        <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
-      ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
-    </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
+    <div class="map-side-scroll">
+      ${sites.length ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
+        <span class="eyebrow">Sites on record here</span>
+        ${sites.slice(0, 8).map(l=>`<button class="site-row" data-site="${l.id}">
+          <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
+          <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+        ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
+      </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
+    </div>
     <button class="nst-btn nst-btn--sm nst-btn--filled is-drill" style="align-self:flex-start"${dA({ v:'location', l:`Sites in ${g.n}`, q:`view=list&state=${g.st}` })}>Open ${n(g.tot)} sites</button>
   </div>`;
 }
