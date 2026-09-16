@@ -23,11 +23,35 @@ const HW_ICON = { chassis:'▤', re:'◧', fpc:'▥', pic:'▦', port:'▪', pem
 
 function resOverview() {
   const svcDown = RES_SERVICES.filter(s => s.st === 'Down').length;
+  /* PROV used to be one hardcoded sample record (NDLS-J960-P_R1-T1-NR's own
+     identity) shown verbatim regardless of which element RES_ID actually
+     named — every other router's Overview tab silently displayed NDLS's
+     management IP, vendor, model, serial and OS instead of its own. The
+     identity fields below now come from the same resolved record
+     viewResource() itself renders the header from (PHY.router's own entry
+     when RES_ID is one of the curated samples, nodeRecord()'s resolution —
+     the same one Node View uses — otherwise), so this table always names
+     the element the reader is actually looking at. */
+  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID);
+  const provLoc = LOCATIONS.find(l => l.id === provR.loc);
+  const PROV_LIVE = [
+    { f: 'Management IP', v: provR.ip,    src: 'Scope',                ok: true },
+    { f: 'Vendor',        v: provR.oem,   src: 'Derived · sysObjectID', ok: true },
+    { f: 'Model',         v: provR.model, src: 'Device collector',     ok: true },
+    { f: 'Serial number', v: provR.sn,    src: 'Hardware collector',   ok: true },
+    { f: 'OS version',    v: provR.os,    src: 'Device collector',     ok: true },
+    { f: 'Uptime',        v: '47 d 18 h', src: 'Device collector',     ok: true },
+    { f: 'Adjacencies',   v: '19 LLDP · 12 OSPF · 4 BGP', src: 'LLDP · OSPF · BGP', ok: true },
+    { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', ok: true },
+    { f: 'Circle · site', v: `${provLoc ? provLoc.state : PROV[8].v.split(' · ')[0]} · ${provR.loc}`, src: 'Manual', ok: true },
+    { f: 'Stock state',   v: PROV[9].v,   src: 'Workorder WO-2291',    ok: true },
+    { f: 'Warranty ends', v: 'Not linked', src: 'ERP · not integrated', ok: false }
+  ];
   return `
   <div class="row-t" style="align-items:stretch">
     ${card(`${headSm('Identity and provenance')}
       <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Field'},{t:'Value'},{t:'Source'}], PROV.map(p => [
+      ${table([{t:'Field'},{t:'Value'},{t:'Source'}], PROV_LIVE.map(p => [
         `<span class="vw-label">${p.f}</span>`,
         `<span class="vw-value mono"${p.ok?'':` style="color:${cv('gray',400)}"`}>${p.v}</span>`,
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
