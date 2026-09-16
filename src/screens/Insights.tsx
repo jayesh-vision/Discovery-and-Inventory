@@ -396,7 +396,7 @@ export default function Insights() {
             const Tile = category ? 'button' : 'div';
             return (
               <Tile key={t.label} className={category ? 'is-drill' : undefined}
-                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%' }}
+                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%', border: 0 }}
                 {...(category ? { onClick: () => toDiscrepancies({ category }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
                 <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
                 <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>
@@ -544,7 +544,8 @@ export default function Insights() {
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
-          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
             {RECONCILE_CYCLE_ROWS.map((c, i) => (
               <div key={c.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'cycle', row: c }); } }}
@@ -569,6 +570,7 @@ export default function Insights() {
                 </div>
               </div>
             ))}
+          </div>
             <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
               <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
               <span style={{ position: 'relative', alignSelf: 'stretch' }}>

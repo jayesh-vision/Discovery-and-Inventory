@@ -794,6 +794,11 @@ path.st.has-c:hover { fill-opacity: .78; }
 
 /* ── drill-down ───────────────────────────────────────── */
 .is-drill { position: relative; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+/* a plain (non-keyboard) :focus — e.g. the button a click landed on, restored
+   by the browser after a back-navigation — must stay unstyled, or the
+   default UA focus ring reappears as a stray dark box around whichever card
+   was last clicked; the visible ring is reserved for real keyboard use. */
+.is-drill:focus { outline: none; }
 .is-drill:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
 .is-drill::after { content: '›'; position: absolute; top: 6px; right: 8px;
   font-size: 0.9rem; line-height: 1; color: var(--vw-color-gray-400); opacity: 0; transition: opacity .12s; }
