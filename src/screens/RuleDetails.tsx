@@ -209,7 +209,7 @@ export default function RuleDetails() {
                   {exceptions.length === 0
                     ? <tr><td colSpan={6} className="vw-card-metric-label-sub">No exceptions raised by this rule.</td></tr>
                     : exceptions.map(e => (
-                      <tr key={e.id} className="is-click" onClick={() => nav('/discovery/reconcile/exceptions')}>
+                      <tr key={e.id} className="is-click" onClick={() => nav(`/discovery/reconcile/exceptions?ruleId=${rule.id}`)}>
                         <td className="mono">{e.id}</td>
                         <td><Chip tone={EXCEPTION_TONE[e.state]}>{e.state}</Chip></td>
                         <td className="vw-value">{e.subject}</td>

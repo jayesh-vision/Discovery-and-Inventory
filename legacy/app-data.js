@@ -436,18 +436,69 @@ JOBS.push(...[
 ].map(a => ({ id:a[0], site:a[1], scope:a[2], collector:a[3], cred:a[4], sched:a[5], next:a[6],
   last:a[7], dur:a[8], targets:a[9], clean:a[10], partial:a[11], fail:a[12], state:a[13], chip:a[14], domain:a[15] })));
 
-/* two new rows so RAN and Core each have a genuine scan job, not just
-   router/switch circle-scans wearing a Transport label */
+/* RAN, Core and Transport each get a proper regional fleet of jobs here,
+   not one token row apiece — the per-job target counts are sized so each
+   domain's jobs sum exactly to that domain's real scan scope in
+   src/data/discoveryOverview.ts's DISCOVERY_JOB_ROWS (RAN 8,450 · Core 340 ·
+   Transport 2,180 already carried by the two pre-existing Transport rows
+   plus these three), the same way the ten IPMPLS/router-switch rows above
+   already read as a real regional fleet. This also naturally rebalances
+   growTargets() below, which cycles through every JOBS row by index to
+   assign each generated TARGETS row's domain — more non-IPMPLS jobs here
+   means the generated sample stops skewing almost entirely IPMPLS. */
 JOBS.push(
   { id: 'DSC-RAN-BLR', site: 'Karnataka · RAN cluster', scope: 'gNodeB/eNodeB · Bengaluru-East',
-    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Every 6 h', next: 'today 15:00', domain: 'RAN',
-    last: '01-Sep-2026 09:05', dur: '5 m 51 s', targets: 42, clean: 38, partial: 3, fail: 1,
+    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:05', dur: '5 m 51 s', targets: 2350, clean: 2309, partial: 30, fail: 11,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-DEL', site: 'Delhi NCR · RAN cluster', scope: 'gNodeB/eNodeB · Delhi-Central',
+    collector: 'clr-del-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:04', dur: '5 m 22 s', targets: 2200, clean: 2163, partial: 28, fail: 9,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-MUM', site: 'Maharashtra · RAN cluster', scope: 'gNodeB/eNodeB · Mumbai-West',
+    collector: 'clr-mum-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:03', dur: '4 m 58 s', targets: 2050, clean: 2016, partial: 26, fail: 8,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-RAN-HYD', site: 'Telangana · RAN cluster', scope: 'gNodeB/eNodeB · Hyderabad-South',
+    collector: 'clr-hyd-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    last: '01-Sep-2026 09:02', dur: '4 m 41 s', targets: 1850, clean: 1818, partial: 24, fail: 8,
     state: 'Completed', chip: 'success' },
   { id: 'DSC-CORE-NRF', site: 'Karnataka · 5GC core', scope: 'AMF/UPF · NRF-registered NFs',
-    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Every 2 h', next: 'today 15:00', domain: 'Core',
-    last: '01-Sep-2026 09:02', dur: '1 m 40 s', targets: 18, clean: 18, partial: 0, fail: 0,
+    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 09:02', dur: '1 m 40 s', targets: 130, clean: 130, partial: 0, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-CORE-DEL', site: 'Delhi · 5GC core (secondary)', scope: 'AMF/UPF · NRF-registered NFs',
+    collector: 'clr-del-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 09:01', dur: '1 m 22 s', targets: 115, clean: 114, partial: 1, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-CORE-MUM', site: 'Maharashtra · 5GC core (tertiary)', scope: 'AMF/UPF/SMF · NRF-registered NFs',
+    collector: 'clr-mum-02', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    last: '01-Sep-2026 08:58', dur: '1 m 15 s', targets: 95, clean: 94, partial: 1, fail: 0,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-BLR', site: 'Karnataka · transport ring', scope: '172.31.90.0/24 · 172.31.91.0/24',
+    collector: 'clr-blr-06', cred: 'ro-optical-v3', sched: 'Nightly 01:00', next: 'tomorrow 01:00', domain: 'Transport',
+    last: '01-Sep-2026 01:00', dur: '15 m 40 s', targets: 650, clean: 598, partial: 41, fail: 11,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-DEL', site: 'Delhi · transport ring', scope: '172.31.92.0/24 · 172.31.93.0/24',
+    collector: 'clr-del-06', cred: 'ro-optical-v3', sched: 'Nightly 01:30', next: 'tomorrow 01:30', domain: 'Transport',
+    last: '01-Sep-2026 01:30', dur: '13 m 58 s', targets: 600, clean: 561, partial: 30, fail: 9,
+    state: 'Completed', chip: 'success' },
+  { id: 'DSC-TRANSPORT-CHE', site: 'Tamil Nadu · transport ring', scope: '172.31.94.0/24 · 172.31.95.0/24',
+    collector: 'clr-mas-02', cred: 'ro-optical-v3', sched: 'Nightly 02:00', next: 'tomorrow 02:00', domain: 'Transport',
+    last: '01-Sep-2026 02:00', dur: '16 m 12 s', targets: 676, clean: 612, partial: 47, fail: 17,
     state: 'Completed', chip: 'success' }
 );
+/* every domain's job rows must foot exactly to its DISCOVERY_JOB_ROWS scope
+   (src/data/discoveryOverview.ts) — the same invariant that file's own
+   IIFEs already enforce for the React side, mirrored here so the legacy
+   Scan Jobs list can never silently show a different total than Insights */
+(() => {
+  const want = { RAN: 8450, Core: 340, Transport: 2180 };
+  Object.entries(want).forEach(([d, total]) => {
+    const sum = JOBS.filter(j => j.domain === d).reduce((a, j) => a + j.targets, 0);
+    if (sum !== total) throw new Error(`app-data: ${d} job targets sum to ${sum}, DISCOVERY_JOB_ROWS says ${total}`);
+  });
+})();
 
 const RUN_HISTORY = [
   { run: 4412, at: '01-Sep-2026 09:10:02', dur: '6.42 s', steps: '7 of 7', out: 'Exact match', chip: 'success', note: 'No change' },
@@ -1673,7 +1724,12 @@ REPORTS.push(
     const oem = oems[i % oems.length];
     const model = pick(MODELS_BY_OEM[oem]);
     const circle = CIRCLES[i % CIRCLES.length];
-    const job = JOBS[i % JOBS.length].id;
+    /* the target's domain always follows the job that scanned it — never a
+       fixed guess — so a target of a RAN/Core/Transport job is never
+       mislabeled into the IPMPLS bucket the rest of this generator defaults
+       to */
+    const jobRow = JOBS[i % JOBS.length];
+    const job = jobRow.id;
     /* unreachable / timed-out targets never got far enough to answer the
        device collector, so nothing about them is known yet */
     const known = reason !== 'unreach' && reason !== 'timeout';
@@ -1682,7 +1738,7 @@ REPORTS.push(
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
       circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
-      fresh: 1 + i % 18, job, domain: 'IPMPLS',
+      fresh: 1 + i % 18, job, domain: jobRow.domain,
       ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
     });
   });
@@ -1694,13 +1750,14 @@ REPORTS.push(
     const circle = CIRCLES[(i + 5) % CIRCLES.length];
     const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
     const model = pick(MODELS_BY_OEM[oem]);
-    const job = JOBS[(i + 3) % JOBS.length].id;
+    const jobRow = JOBS[(i + 3) % JOBS.length];
+    const job = jobRow.id;
     TARGETS.push({
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
-      fresh: 1 + i % 12, job, domain: 'IPMPLS',
+      fresh: 1 + i % 12, job, domain: jobRow.domain,
       ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
       out: 'Rogue', chip: 'pink', isNew: true
     });

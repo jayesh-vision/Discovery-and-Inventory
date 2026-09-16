@@ -379,9 +379,9 @@ function jobNextIn(j) {
 }
 
 /* targets carried per collector node, busiest first */
-function collectorLoad() {
+function collectorLoad(jobs = JOBS) {
   const load = {};
-  JOBS.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
+  jobs.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
   return Object.entries(load).sort((a, b) => b[1] - a[1]);
 }
 
@@ -398,28 +398,32 @@ function viewJobs() {
   const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
   const rows = gridApply('jobs', JOBS.filter(test));
 
-  const onDemand = JOBS.filter(j => cadenceH(j.sched) === null).length;
-  const weekly   = JOBS.filter(j => /^Weekly/i.test(j.sched)).length;
-  const held     = JOBS.filter(jobHeld).length;
-  const live     = JOBS.length - onDemand - held;      /* the three partition the whole */
-  const running  = JOBS.filter(jobRunning).length;
-  const errors   = JOBS.filter(jobErrors).length;
-  const attention = JOBS.filter(jobAttention).length;
+  /* every summary card below reads the same domain/filter-scoped rows the
+     table shows, not the whole fleet — otherwise "Total jobs" (and the
+     cards beside it) would still count every domain's jobs while a Domain
+     filter narrows the table to just one of them */
+  const onDemand = rows.filter(j => cadenceH(j.sched) === null).length;
+  const weekly   = rows.filter(j => /^Weekly/i.test(j.sched)).length;
+  const held     = rows.filter(jobHeld).length;
+  const live     = rows.length - onDemand - held;      /* the three partition the whole */
+  const running  = rows.filter(jobRunning).length;
+  const errors   = rows.filter(jobErrors).length;
+  const attention = rows.filter(jobAttention).length;
   /* named in the same order the reasons are ranked, so the parts sum to the card */
   const reasons = JOB_REASONS
-    .map(([label, test]) => [label, JOBS.filter(j => jobReason(j) === label && test(j)).length])
+    .map(([label, test]) => [label, rows.filter(j => jobReason(j) === label && test(j)).length])
     .filter(([, c]) => c > 0).map(([label, c]) => `${n(c)} ${label}`).join(' · ');
 
-  const due = JOBS.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
+  const due = rows.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
     .sort((a, b) => a.h - b.h)[0];
-  const load = collectorLoad();
+  const load = collectorLoad(rows);
 
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
+      ${kpi('Total jobs', n(rows.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
       ${due
         ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1],
             `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
@@ -574,12 +578,21 @@ function viewTargets() {
   const segs = [['All','All'],['success','Success'],['partial','Partial'],['failed','Failed']];
   const activeKey = normFilterKey.toLowerCase();
 
+  /* the failed/partial chips beside the grid describe what's actually in
+     `rows` below them — they used to read static DL.runFail/DL.runPartial
+     ledger figures that never moved with the Domain filter, the quick
+     tabs, or search, so a Domain-narrowed table still bragged about every
+     domain's failures. Same fix for the "of N" grand total: TARGETS.length,
+     not DL.targets (a stale figure from an earlier, differently-sized seed). */
+  const failedShown = rows.filter(t => getScanTargetStatus(t) === 'Failed').length;
+  const partialShown = rows.filter(t => getScanTargetStatus(t) === 'Partial').length;
+
   return `<div class="page">
     ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
     ${drillBar()}
     ${card(`
-      ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
+      ${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets,
+        `${chip(`${n(failedShown)} failed`,'error')}${chip(`${n(partialShown)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
         [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
@@ -1053,10 +1066,15 @@ function viewHome() {
 
 /* compact stat strip — six figures in the height of one card */
 const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
+  /* `pct` is optional: a cell whose value is really a share (72 of 96 ports,
+     an installation at 100%) can show that share as a bar instead of leaving
+     the sub-line blank. Cells that don't pass it render exactly as before. */
+  const pct = typeof c.pct === 'number' && isFinite(c.pct) ? Math.max(0, Math.min(100, Math.round(c.pct))) : null;
   const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
     <span class="stat-k">${c.k}</span>
     <span class="stat-v num">${c.v}</span>
-    <span class="stat-s">${c.s}</span>`;
+    <span class="stat-s">${c.s}</span>${pct === null ? '' :
+    `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(c.t,400)}"></span></span>`}`;
   return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
     : c.d ? `<button class="stat-cell is-click"${dA(c.d)}>${inner}</button>`
     : `<div class="stat-cell">${inner}</div>`;
@@ -1699,9 +1717,11 @@ function mapPanel() {
           <span class="vw-card-description">${items[0].city}, ${items[0].state}</span></div>
         <button class="nst-btn nst-btn--xs" data-clusterclear="1">Clear</button>
       </div>
-      ${items.map(l=>`<button class="site-row" data-site="${l.id}">
-        <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
-        <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+      <div class="map-side-scroll">
+        ${items.map(l=>`<button class="site-row" data-site="${l.id}">
+          <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
+          <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+      </div>
     </div>`;
   }
   if (!LOC_SEL) {
@@ -1756,13 +1776,15 @@ function mapPanel() {
         <span class="legend-i"><span class="legend-sw" style="background:${cv(t,400)}"></span>${k}</span>
         <span class="vw-value num">${n(v)}</span></div>`).join('')}
     </div>
-    ${sites.length ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
-      <span class="eyebrow">Sites on record here</span>
-      ${sites.slice(0, 8).map(l=>`<button class="site-row" data-site="${l.id}">
-        <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
-        <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
-      ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
-    </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
+    <div class="map-side-scroll">
+      ${sites.length ? `<div class="stack-x" style="margin-top:var(--vw-space-xs)">
+        <span class="eyebrow">Sites on record here</span>
+        ${sites.slice(0, 8).map(l=>`<button class="site-row" data-site="${l.id}">
+          <span class="row" style="gap:var(--vw-space-xs)">${chip(l.st,l.chip)}<span class="vw-value">${l.name}</span></span>
+          <span class="vw-card-metric-label-sub num">${l.disc}/${l.ne} NE</span></button>`).join('')}
+        ${sites.length > 8 ? `<span class="vw-card-metric-label-sub">+ ${n(sites.length - 8)} more — open the list for all of them</span>` : ''}
+      </div>` : `<div class="vw-card-child-shaded vw-card-description">No sample sites loaded for this circle.</div>`}
+    </div>
     <button class="nst-btn nst-btn--sm nst-btn--filled is-drill" style="align-self:flex-start"${dA({ v:'location', l:`Sites in ${g.n}`, q:`view=list&state=${g.st}` })}>Open ${n(g.tot)} sites</button>
   </div>`;
 }
@@ -2776,7 +2798,7 @@ const pickFields = (fields, keys) => {
    View > ...) — it already links every prefix that names a real screen, so
    a second, redundant "Back to X" button here would just be two controls
    doing the same thing. */
-function resourceHead({ kind, name, status, meta }) {
+function resourceHead({ kind, name, status, meta, actions = [] }) {
   return `<div class="vw-card-section vw-card--accent resdetail-head">
       <div class="vw-card-accent" style="background:${cv('sky', 400)}"></div>
       <div class="row vw-justify-between" style="align-items:flex-start;gap:var(--vw-space-lg);flex-wrap:wrap">
@@ -2784,7 +2806,10 @@ function resourceHead({ kind, name, status, meta }) {
           <span class="resdetail-kind">${esc(kind)}</span>
           <h1 class="resdetail-name">${esc(name)}</h1>
         </div>
-        ${statusBadge(status)}
+        <div class="row vw-items-center vw-gap-sm vw-wrap" style="flex-shrink:0">
+          ${actions.join('')}
+          ${statusBadge(status)}
+        </div>
       </div>
       <div class="resdetail-meta-row">
         ${meta.map(([k, v]) => `<div class="meta-cell"><span class="vw-label">${esc(k)}</span><span class="vw-value">${esc(v)}</span></div>`).join('')}
@@ -2979,6 +3004,12 @@ function viewVnfDetails() {
   const statusFields = tab === 'vdu5g' ? vdu5gFields : vdu4gFields;
   const status = (pickFields(statusFields, ['Status'])[0] || [])[1];
 
+  /* the same NF this page describes, looked up in the VNFS roster that backs
+     the Virtual Resources list — its lifecycle only exists once the NF is
+     instantiated, so a still-Planned NF gets no lifecycle action here either,
+     matching the row kebab menu's own rule (see viewVirtual()) */
+  const vnf = VNFS.find(v => v.nf === nf);
+
   return `<div class="page" style="display:flex;flex-direction:column;gap:var(--vw-space-md)">
     ${drillBar()}
 
@@ -2986,7 +3017,10 @@ function viewVnfDetails() {
       kind: 'Virtual Resource · VDU', name: nf, status,
       meta: [['Site type', 'VDU'],
         ...pickFields(statusFields, ['HostSiteId', 'NeName', 'ReferenceId', 'PlanId'])
-          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])]
+          .filter(isFilled).map(([k, v]) => [humanizeLabel(k), v])],
+      actions: vnf && vnf.st !== 'Planned'
+        ? [`<button class="nst-btn nst-btn--sm nst-btn--filled is-drill"${dA({ v:'vnflifecycle', l:`Lifecycle operation · ${nf}`, q:`nf=${encodeURIComponent(nf)}` })}>Lifecycle operation</button>`]
+        : []
     })}
 
     <div class="tabbar tabbar--detail">

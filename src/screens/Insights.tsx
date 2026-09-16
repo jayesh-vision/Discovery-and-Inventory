@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chip, cv } from '../components/ui';
+import { Card, Chip, cv, InfoTip } from '../components/ui';
 import { StackedBars, RampBars, Sparkline, MultiLineChart } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import {
@@ -49,6 +49,36 @@ const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
   'Extra — no record': 'EXISTENCE',
   'Relationship drift': 'RELATIONSHIP',
   'Missing — no live peer': 'EXISTENCE'
+};
+const MATCH_OUTCOME_DEF: Record<string, string> = {
+  'Matched': 'The record’s identity, attributes and relationships all agree with the live network — no reconciliation action needed.',
+  'Attribute mismatch': 'The record exists and its identity matches, but one or more attribute values differ from what the live network reports.',
+  'Extra — no record': 'The live network reports an object that has no corresponding record in inventory.',
+  'Relationship drift': 'The record exists but its relationships — neighbours, parent/child links — no longer match what the live network reports.',
+  'Missing — no live peer': 'Inventory has a record for this object, but the live network no longer reports it.'
+};
+
+/* one-sentence explanations for the eye icon beside a KPI or card title —
+   plain language, never repeating the numbers already on screen */
+const KPI_DEF: Record<string, string> = {
+  'Inventory trust index': 'Share of in-scope inventory where discovery and reconciliation agree with the live network — the single top-line trust signal for this page.',
+  'Discovery coverage': 'Share of known inventory that a discovery scan has actually reached and answered at least once.',
+  'Open discrepancy backlog': 'Records where discovery or reconciliation disagrees with the live network and the difference hasn’t been resolved yet.',
+  'Mean time to reconcile': 'Average time from a discrepancy being detected to it being resolved, whether closed automatically or by an engineer.'
+};
+const CARD_DEF: Record<string, string> = {
+  'Discovery jobs': 'Scheduled discovery scans, one row per domain, with the adapters they use and how much of that domain’s inventory they currently cover.',
+  'New items discovered per day': 'New assets discovery has found for the first time each day, split out by domain.',
+  'Discovery adapters': 'The protocols discovery uses to reach devices, and how reliably each one succeeds across the domains it covers.',
+  'Collector health': 'The collector processes running each domain’s scans — how many targets they carry, how fast they respond, and when they last checked in.',
+  'Failures by root cause': 'Scan attempts that failed, grouped by their underlying cause rather than by device, so one fix can clear many failures at once.',
+  'Match classes': 'How reconciliation classified every compared record last cycle — matched, or one of the ways a record can disagree with the live network.',
+  'By domain': 'Inventory trust broken down by domain — in-scope, in-sync, and the open backlog and repair time each domain is carrying.',
+  'Open discrepancies by region': 'Where the open discrepancy backlog is concentrated geographically, one cell per region × domain.',
+  'Detected vs auto-resolved, per day': 'New discrepancies found each day, and how many were closed automatically by policy without an engineer.',
+  'Age of open discrepancies': 'How long the currently open discrepancies have sat unresolved — the older the bucket, the more attention it likely needs.',
+  'Open items by type': 'The open backlog broken down by the specific kind of discrepancy, so the most common failure patterns stand out.',
+  'Reconciliation cycles': 'The most recently completed reconciliation run for each domain, and what’s scheduled to run next.'
 };
 
 const DomainDot = ({ domain }: { domain: DomainKey }) => (
@@ -188,32 +218,25 @@ export default function Insights() {
   return (
     <div className="page">
       <SectionTitle>Inventory trust</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(240px, 21rem) minmax(0, 1fr)' }}>
-        <Card style={{ borderLeft: '3px solid var(--vw-color-blue-500)', display: 'flex', flexDirection: 'column' }}>
-          <div className="eyebrow">{TRUST_METRICS[0].label}</div>
-          <div className="num" style={{ fontSize: '2.75rem', fontWeight: 700, marginTop: '6px', lineHeight: 1 }}>{TRUST_METRICS[0].value}</div>
-          <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-            <TrustDelta sub={TRUST_METRICS[0].sub} />
-          </div>
-        </Card>
-        <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-          {TRUST_METRICS.slice(1).map(m => {
-            const to = KPI_TARGET[m.label];
-            const Wrap = to ? 'button' : 'div';
-            return (
-              <Wrap key={m.label} className={`vw-card-section${to ? ' is-drill' : ''}`}
-                style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
-                {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
-                <div className="eyebrow">{m.label}</div>
-                <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
-                <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
-                <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
-                  <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
-                </div>
-              </Wrap>
-            );
-          })}
-        </div>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+        {TRUST_METRICS.map(m => {
+          const to = KPI_TARGET[m.label];
+          const Wrap = to ? 'button' : 'div';
+          return (
+            <Wrap key={m.label} className={`vw-card-section${to ? ' is-drill' : ''}`}
+              style={{ borderLeft: '3px solid var(--vw-color-blue-500)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+              {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
+              <div className="eyebrow">{m.label}
+                {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
+              </div>
+              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
+              {m.hero ? <TrustDelta sub={m.sub} /> : <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>}
+              <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
+                <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
+              </div>
+            </Wrap>
+          );
+        })}
       </div>
 
       <ModuleDivider num="I" label="DISCOVERY" />
@@ -221,7 +244,7 @@ export default function Insights() {
       <SectionTitle>Jobs and daily discovery</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
         <Card>
-          <span className="vw-card-title-sm">Discovery jobs</span>
+          <span className="vw-card-title-sm">Discovery jobs<InfoTip text={CARD_DEF['Discovery jobs']} label="What discovery jobs shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Schedule, coverage and adapters per domain</div>
           <table className="mtbl">
             <thead><tr><th>Domain · adapters</th><th>Schedule</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>Coverage</th><th>Last → next run</th></tr></thead>
@@ -253,7 +276,7 @@ export default function Insights() {
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="row vw-justify-between vw-items-start">
             <div>
-              <span className="vw-card-title-sm">New items discovered per day</span>
+              <span className="vw-card-title-sm">New items discovered per day<InfoTip text={CARD_DEF['New items discovered per day']} label="What this chart shows" /></span>
               <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last {objRange === '7d' ? '7' : '14'} days · {objTotal} items · {objToday} today</div>
             </div>
             <div className="tabbar" style={{ marginBottom: 0, flexShrink: 0 }}>
@@ -270,7 +293,7 @@ export default function Insights() {
       <SectionTitle>Adapters and collectors</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.28fr) minmax(0, 1fr)' }}>
         <Card>
-          <span className="vw-card-title-sm">Discovery adapters</span>
+          <span className="vw-card-title-sm">Discovery adapters<InfoTip text={CARD_DEF['Discovery adapters']} label="What discovery adapters shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Endpoint counts and per-adapter success</div>
           <table className="mtbl">
             <thead><tr><th>Adapter</th><th>Domains</th><th style={{ textAlign: 'right' }}>Endpoints</th><th style={{ textAlign: 'right' }}>Success</th><th>Status</th></tr></thead>
@@ -291,32 +314,30 @@ export default function Insights() {
           </table>
         </Card>
 
-        <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">Collector health</span>
+        <Card>
+          <span className="vw-card-title-sm">Collector health<InfoTip text={CARD_DEF['Collector health']} label="What collector health shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Targets, p95 poll latency and check-in</div>
-          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <table className="mtbl">
-              <thead><tr><th>Collector</th><th>Domain</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
-              <tbody>{COLLECTOR_ROWS.map(c => (
-                <tr key={c.name} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'collector', row: c })}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'collector', row: c }); } }}
-                  aria-label={`View ${c.name} collector details`}>
-                  <td className="vw-value">{c.name}</td>
-                  <td><DomainDot domain={c.domain} /></td>
-                  <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
-                  <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
-                  <td className="cell-sub">{c.checkin}</td>
-                  <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
-                </tr>))}
-              </tbody>
-            </table>
-          </div>
+          <table className="mtbl">
+            <thead><tr><th>Collector</th><th>Domain</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
+            <tbody>{COLLECTOR_ROWS.map(c => (
+              <tr key={c.name} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'collector', row: c })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'collector', row: c }); } }}
+                aria-label={`View ${c.name} collector details`}>
+                <td className="vw-value">{c.name}</td>
+                <td><DomainDot domain={c.domain} /></td>
+                <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
+                <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
+                <td className="cell-sub">{c.checkin}</td>
+                <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
+              </tr>))}
+            </tbody>
+          </table>
         </Card>
       </div>
 
       <SectionTitle>Scan failures</SectionTitle>
       <Card>
-        <span className="vw-card-title-sm">Failures by root cause</span>
+        <span className="vw-card-title-sm">Failures by root cause<InfoTip text={CARD_DEF['Failures by root cause']} label="What this list shows" /></span>
         <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>
           {ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0)} targets · {ROOT_CAUSE_FAILURES.length} root causes · one fix each
         </div>
@@ -363,7 +384,7 @@ export default function Insights() {
 
       <SectionTitle>Match outcome</SectionTitle>
       <Card>
-        <span className="vw-card-title-sm">Match classes</span>
+        <span className="vw-card-title-sm">Match classes<InfoTip text={CARD_DEF['Match classes']} label="What match classes shows" /></span>
         <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{MATCH_TOTAL_NOTE}</div>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '1px',
@@ -375,10 +396,13 @@ export default function Insights() {
             const Tile = category ? 'button' : 'div';
             return (
               <Tile key={t.label} className={category ? 'is-drill' : undefined}
-                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%' }}
+                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%', border: 0 }}
                 {...(category ? { onClick: () => toDiscrepancies({ category }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
                 <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
-                <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>{t.label}</div>
+                <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>
+                  {t.label}
+                  {MATCH_OUTCOME_DEF[t.label] && <InfoTip text={MATCH_OUTCOME_DEF[t.label]} label={`What ${t.label.toLowerCase()} means`} />}
+                </div>
               </Tile>
             );
           })}
@@ -388,7 +412,7 @@ export default function Insights() {
       <SectionTitle>Trust by domain and region</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)' }}>
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">By domain</span>
+          <span className="vw-card-title-sm">By domain<InfoTip text={CARD_DEF['By domain']} label="What this table shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Trust index scale 90–100%</div>
           <table className="mtbl">
             <thead><tr><th>Domain</th><th style={{ textAlign: 'right' }}>In scope</th><th style={{ textAlign: 'right' }}>Unverified</th><th style={{ textAlign: 'right' }}>In sync</th><th style={{ textAlign: 'right' }}>Trust index</th><th style={{ textAlign: 'right' }}>Open</th><th style={{ textAlign: 'right' }}>MTTR</th><th style={{ textAlign: 'right' }}>Automated</th></tr></thead>
@@ -420,7 +444,7 @@ export default function Insights() {
         </Card>
 
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">Open discrepancies by region</span>
+          <span className="vw-card-title-sm">Open discrepancies by region<InfoTip text={CARD_DEF['Open discrepancies by region']} label="What this heatmap shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {REGION_DISCREPANCY.reduce((a, r) => a + Object.values(r.drift).reduce((x, y) => x + y, 0), 0)} open</div>
           <table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
             <thead>
@@ -454,7 +478,7 @@ export default function Insights() {
       <SectionTitle>Backlog</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
         <Card>
-          <span className="vw-card-title-sm">Detected vs auto-resolved, per day</span>
+          <span className="vw-card-title-sm">Detected vs auto-resolved, per day<InfoTip text={CARD_DEF['Detected vs auto-resolved, per day']} label="What this chart shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 30 days</div>
           <MultiLineChart labels={BACKLOG_DAYS} height={230} format={v => v.toLocaleString('en-IN')}
             series={[
@@ -476,7 +500,7 @@ export default function Insights() {
         </Card>
 
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">Age of open discrepancies</span>
+          <span className="vw-card-title-sm">Age of open discrepancies<InfoTip text={CARD_DEF['Age of open discrepancies']} label="What this chart shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>
             {BACKLOG_AGE.reduce((a, b) => a + b.count, 0)} open · {backlogOlder} older than 7d · oldest 41d
           </div>
@@ -491,7 +515,7 @@ export default function Insights() {
       <SectionTitle>Discrepancy types and reconciliation cycles</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
         <Card>
-          <span className="vw-card-title-sm">Open items by type</span>
+          <span className="vw-card-title-sm">Open items by type<InfoTip text={CARD_DEF['Open items by type']} label="What this list shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0)} open</div>
           <div className="row" style={{ gap: 'var(--vw-space-lg)', margin: 'var(--vw-space-sm) 0', flexWrap: 'wrap' }}>
             {DOMAIN_KEYS.map(d => (
@@ -518,9 +542,10 @@ export default function Insights() {
         </Card>
 
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">Reconciliation cycles</span>
+          <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
-          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
             {RECONCILE_CYCLE_ROWS.map((c, i) => (
               <div key={c.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'cycle', row: c }); } }}
@@ -545,6 +570,7 @@ export default function Insights() {
                 </div>
               </div>
             ))}
+          </div>
             <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
               <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
               <span style={{ position: 'relative', alignSelf: 'stretch' }}>

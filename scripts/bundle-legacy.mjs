@@ -75,12 +75,12 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
 patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>\`)}
     \${drillBar()}
     \${card(\`
-      \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        \`\${chip(\`\${n(DL.runFail)} failed\`,'error')}\${chip(\`\${n(DL.runPartial)} partial\`,'warning')}
+      \${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets,
+        \`\${chip(\`\${n(failedShown)} failed\`,'error')}\${chip(\`\${n(partialShown)} partial\`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>\`, [], 'targets')}`,
 `    \${drillBar()}
     \${card(\`
-      \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}`, 'targets quick filter in grid bar');
+      \${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}`, 'targets quick filter in grid bar');
 patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`,
       `  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`, 'run-now icon');
 
@@ -151,7 +151,13 @@ window.__nsLegacy = {
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }
-    if (k === 'odf' && p.id) { ODF_ID = decodeURIComponent(p.id); }
+    /* only a move to a *different* frame closes the gallery — this runs on
+       every URL sync, including the one go() fires right after a thumbnail
+       click, so an unconditional reset would slam the dialog shut again */
+    if (k === 'odf' && p.id) {
+      const decodedOdf = decodeURIComponent(p.id);
+      if (decodedOdf !== ODF_ID) { ODF_ID = decodedOdf; ODF_GALLERY = null; }
+    }
     if (k === 'rack' && p.id) { RACK_ID = decodeURIComponent(p.id); }
     if (k === 'power' && p.id) { POWER_ID = decodeURIComponent(p.id); }
     if (k === 'splice' && p.id) { SPLICE_ID = decodeURIComponent(p.id); }

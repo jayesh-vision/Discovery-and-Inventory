@@ -204,7 +204,7 @@ export const RULES: Rule[] = [
     owner: 'Priya Iyer', reviewer: 'Anjali Verma', approver: 'Rohan Mehta', executor: 'Priya Iyer', exceptionReviewer: 'Harish Kumar',
     createdBy: 'Priya Iyer', createdDate: '22-Aug-2026', lastUpdated: '29-Aug-2026 14:00', lastExecution: null,
     conditions: [cond('c1', 'Inventory status', 'Equals', 'Decommissioned', 'AND'), cond('c2', 'Network reachability', 'Equals', 'Reachable')],
-    expectedImpact: 'Closes the 12 "decommissioned record on file" open items by catching devices that were retired on paper but never powered down.',
+    expectedImpact: 'Catches Transport network elements still answering live after being marked decommissioned in inventory — a class of drift this domain doesn’t yet have a dedicated discrepancy type for.',
     approvalHistory: [{ at: '29-Aug-2026 14:00', by: 'Rohan Mehta', action: 'Approved', note: 'Ready to activate — awaiting the next maintenance window.' }],
     activity: [{ at: '29-Aug-2026 14:00', by: 'Rohan Mehta', event: 'Approved, pending activation' }],
     executions: []

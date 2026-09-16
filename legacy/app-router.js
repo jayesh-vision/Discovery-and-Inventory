@@ -139,7 +139,10 @@ function applyDrillQuery(view, q, label) {
   }
   if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
-  if (view === 'odf')      { if (p.id) ODF_ID = decodeURIComponent(p.id).trim(); }
+  /* as in setParams: only a different frame closes the gallery, since this
+     also runs on the re-render that follows opening it */
+  if (view === 'odf')      { if (p.id) { const v = decodeURIComponent(p.id).trim();
+                               if (v !== ODF_ID) { ODF_ID = v; ODF_GALLERY = null; } } }
   if (view === 'rack')     { if (p.id) RACK_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'power')    { if (p.id) POWER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'splice')   { if (p.id) SPLICE_ID = decodeURIComponent(p.id).trim(); }
@@ -272,6 +275,17 @@ function go(k) {
    same click the pointer path already handles rather than duplicating
    the expand/drill logic here. */
 document.addEventListener('keydown', e => {
+  /* the photo gallery is the one dialog that owns the whole viewport, so it
+     takes the keys a reader expects there: Escape out, arrows to step */
+  if (ODF_GALLERY !== null && CURRENT === 'odf') {
+    const photos = ODF_PHOTO_NAMES.length;
+    if (e.key === 'Escape') { e.preventDefault(); ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      ODF_GALLERY = (ODF_GALLERY + (e.key === 'ArrowRight' ? 1 : photos - 1)) % photos;
+      DRILL_PENDING = DRILL; go(CURRENT); return;
+    }
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -369,6 +383,16 @@ document.addEventListener('click', e => {
   }
   const nbrx = e.target.closest('[data-nbrclose]');
   if (nbrx) { NBR_VIEW = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  /* ODF photo gallery: every thumbnail, the "View all" button and both arrows
+     carry the index they open, so one handler covers open, step and jump */
+  const odfg = e.target.closest('[data-odfgal]');
+  if (odfg) {
+    ODF_GALLERY = Number(odfg.dataset.odfgal);
+    KEBAB = null;
+    DRILL_PENDING = DRILL; go(CURRENT); return;
+  }
+  const odfgx = e.target.closest('[data-odfgalclose]');
+  if (odfgx) { ODF_GALLERY = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const rsvcv = e.target.closest('[data-ressvcview]');
   if (rsvcv) {
     const [tab, i] = rsvcv.dataset.ressvcview.split(':');

@@ -38,20 +38,14 @@ export default function Topbar() {
   const from = sp.get('from');
 
   /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
-     shallower to drill back to from here, so there's no real trail to show.
-     Scan jobs and Scan targets are the same case from the crumb's own shape:
-     routes.ts gives both a single-segment crumb with no " · " parent, so the
-     chain below is always empty and this would render as a lone, unclickable
-     line of text — a second page title, not a navigation aid. (The target
-     *detail* page keeps its breadcrumb — "Scan targets · Target" is a real
-     two-segment trail back to the list.) */
-  if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'jobs' || s.key === 'targets') {
+  shallower to drill back to from here, so there's no real trail to show. */
+  if (s.key === 'insights' || s.key === 'reconcile') {
     return null;
   }
   /* Every other sidebar-rail landing page has the same "second page title"
      problem as the four above, just in one of two shapes: a single-segment
      crumb with no " · " parent at all (Location, Services, Inactive
-     inventory), or a " · " parent ("Resources", "Connectivity") that isn't
+     inventory, Scan jobs, Scan targets), or a " · " parent ("Resources", "Connectivity") that isn't
      itself a real, clickable screen (Virtual/Physical/Passive Resources,
      Links) — routes.ts has no screen whose crumb is exactly "Resources" or
      "Connectivity" for targetFor() to resolve. Either way, undrilled, the
@@ -61,12 +55,13 @@ export default function Topbar() {
      at which point the drill branch further down gives the trail a real
      destination to name. */
   if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
-    || s.key === 'links' || s.key === 'services' || s.key === 'inactive') && !drill) {
+    || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
+    || s.key === 'jobs' || s.key === 'targets') && !drill) {
     return null;
   }
 
   const targetFor = (prefix: string): string | null => {
-    const t = SCREENS.find(x => x.crumb === prefix);
+    const t = SCREENS.find(x => x.crumb === prefix || x.crumb.toLowerCase() === prefix.toLowerCase());
     if (!t) return null;
     let path = t.path;
     const mergedParams: Record<string, string> = { ...params };
@@ -88,7 +83,9 @@ export default function Topbar() {
   const fromCrumb = fromQMark >= 0 ? from!.slice(0, fromQMark) : from;
   const fromQuery = fromQMark >= 0 ? from!.slice(fromQMark + 1) : '';
 
-  const origin = fromCrumb && fromCrumb !== s.crumb ? SCREENS.find(x => x.crumb === fromCrumb) : undefined;
+  const origin = fromCrumb && fromCrumb.toLowerCase() !== s.crumb.toLowerCase()
+    ? SCREENS.find(x => x.crumb === fromCrumb || x.crumb.toLowerCase() === fromCrumb.toLowerCase())
+    : undefined;
   const ownParts = s.crumb.split(' · ');
   const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
   const leaf = ownParts[ownParts.length - 1];
