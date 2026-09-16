@@ -1952,3 +1952,18 @@ details[open] > summary .vw-tx-chevron {
 .kv > div:first-child { border-top: 0; }
 .kv .k { color: var(--vw-color-gray-500); }
 .kv .v { font-weight: 500; text-align: right; }
+
+/* Virtual element details' "Lifecycle operation" button — nst-btn--filled
+   is the design system's one global full-saturation primary colour, used
+   everywhere a filled button appears; changing it here would darken every
+   primary button in the app, not just this one. Scoped to this button
+   instead: the same light-background/dark-text tint chips already use
+   (.vw-chip--info) reads as an action without the heavy, out-of-place
+   contrast a solid-blue button had sitting right next to a pale status
+   chip. */
+.lc-op-btn.nst-btn--filled {
+  background: var(--vw-color-blue-50); border-color: var(--vw-color-blue-200); color: var(--vw-color-blue-700);
+}
+.lc-op-btn.nst-btn--filled:hover {
+  background: var(--vw-color-blue-100); border-color: var(--vw-color-blue-300); color: var(--vw-color-blue-700);
+}
