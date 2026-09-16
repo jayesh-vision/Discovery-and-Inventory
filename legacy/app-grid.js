@@ -31,6 +31,12 @@ function getLegacyFieldValue(r, field) {
       return String(r.st);
     }
     if (r.status) return String(r.status);
+    /* JOBS rows carry their run status as `.state` ('Completed', 'Completed
+       with errors', 'Running', 'No adapter') rather than `.st` — without
+       this branch the Status filter fell through to a whole-row substring
+       search, which also let "Completed" silently match "Completed with
+       errors" (see the `exact` check below, which now covers this field too) */
+    if (r.state) return String(r.state);
     if (r.outcome) return String(r.outcome);
     if (r.result) return String(r.result);
     if (r.res) return String(r.res);
@@ -44,6 +50,22 @@ function getLegacyFieldValue(r, field) {
   if (f === 'source') {
     if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) return SRC[r.s][0];
     if (r.source) return String(r.source);
+  }
+
+  if (f === 'domain' && r.domain && typeof DOMAIN_META !== 'undefined' && DOMAIN_META[r.domain]) {
+    return DOMAIN_META[r.domain].n;
+  }
+
+  /* Scan Targets' Age filter options ('Under 24 h', '1 – 7 days', ...) never
+     appear verbatim in a target row — only the raw `.fresh` hour count does
+     — so without this bucketing the filter always matched nothing. Same
+     boundaries freshChip() already renders the Age column with (24h/7d/30d),
+     so the filter option a reader picks always matches what the column shows. */
+  if (f === 'age' && typeof r.fresh === 'number') {
+    if (r.fresh < 24) return 'Under 24 h';
+    if (r.fresh < 168) return '1 – 7 days';
+    if (r.fresh < 720) return '7 – 30 days';
+    return 'Over 30 days';
   }
 
   for (const [k, v] of Object.entries(r)) {
@@ -79,7 +101,13 @@ function gridApply(key, rows) {
       if (!v) continue;
       const fieldVal = getLegacyFieldValue(r, field).toLowerCase();
       if (fieldVal) {
-        if (!fieldVal.includes(v)) return false;
+        /* "RAN" is a substring of "Transport", and "Completed" is a prefix
+           of "Completed with errors" — categorical fields like Domain and
+           Status, whose options are a fixed enum rather than free text,
+           need an exact match or filtering one option silently pulls in
+           any other option whose text contains it */
+        const exact = field.toLowerCase() === 'domain' || field.toLowerCase() === 'status';
+        if (exact ? fieldVal !== v : !fieldVal.includes(v)) return false;
       } else {
         if (!text.includes(v)) return false;
       }
@@ -315,12 +343,14 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
+             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
+             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],

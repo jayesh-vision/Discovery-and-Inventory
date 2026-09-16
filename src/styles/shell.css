@@ -622,9 +622,17 @@ button { font: inherit; }
 /* ── Location map view ───────────────────────────────── */
 .map-row { display: flex; gap: var(--vw-space-xl); align-items: flex-start; flex-wrap: wrap; }
 .map-row > * { min-width: 0; }
-.map-wrap { flex: 1 1 420px; position: relative; }
-.map-side { flex: 0 1 340px; min-width: 260px; }
-.map-svg { width: 100%; height: auto; max-height: 620px; display: block; }
+.map-wrap { flex: 1 1 calc(60% - var(--vw-space-xl) / 2); position: relative; }
+/* the side panel sits parallel to the map and must not grow past it —
+   picking a state with a long site roster used to stretch this panel
+   (and drag the card's footer down with it); it's now a fixed-height
+   column and only the site roster inside it scrolls, same idiom as
+   .cov-scroll for Coverage by circle. */
+.map-side { flex: 1 1 calc(40% - var(--vw-space-xl) / 2); min-width: 260px;
+  height: 460px; display: flex; flex-direction: column; overflow: hidden; }
+.map-side > .stack { flex: 1 1 auto; min-height: 0; }
+.map-side-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.map-svg { width: 100%; height: auto; max-height: 460px; display: block; }
 .map-bub { cursor: pointer; transition: transform .12s ease; }
 .map-bub:hover { transform-box: fill-box; }
 .map-bub circle { transition: stroke-width .12s ease, fill-opacity .12s ease; }
@@ -952,6 +960,11 @@ path.st.has-c:hover { fill-opacity: .78; }
 
 /* ── drill-down ───────────────────────────────────────── */
 .is-drill { position: relative; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+/* a plain (non-keyboard) :focus — e.g. the button a click landed on, restored
+   by the browser after a back-navigation — must stay unstyled, or the
+   default UA focus ring reappears as a stray dark box around whichever card
+   was last clicked; the visible ring is reserved for real keyboard use. */
+.is-drill:focus { outline: none; }
 .is-drill:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 1px; }
 .is-drill::after { content: '›'; position: absolute; top: 6px; right: 8px;
   font-size: 0.9rem; line-height: 1; color: var(--vw-color-gray-400); opacity: 0; transition: opacity .12s; }
@@ -1677,6 +1690,21 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .kpi3-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 18rem;
   padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
   border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25); }
+
+/* ── InfoTip · the "i" info-button "what does this show" affordance ──
+   same interaction as .kpi3-info above, generalised to sit next to any
+   card title rather than only a KPI's own heading. The glyph itself is a
+   shape-drawn SVG dot-and-stem, not a font character — an italic serif
+   "i" at this size reads as a "?" to readers, so this can't be ambiguous. */
+.info-tip { position: relative; display: inline-flex; align-items: center; margin-left: 6px; vertical-align: middle; }
+.info-tip-btn { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--vw-color-slate-300);
+  background: none; padding: 0; color: var(--vw-color-gray-500);
+  display: inline-flex; align-items: center; justify-content: center; cursor: help; flex-shrink: 0; }
+.info-tip-btn:hover, .info-tip-btn[aria-expanded="true"] { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
+.info-tip-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 17rem; max-width: 70vw;
+  padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
+  border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
+  font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; }
 .kpi3-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; row-gap: 2px; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }

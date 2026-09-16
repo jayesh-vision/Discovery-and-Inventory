@@ -30,7 +30,7 @@ export default function InactiveInventory() {
   const total = rows.length;
 
   const setCls = (k: InactiveTab) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
-  const toExceptions = () => nav(`/discovery/reconcile?ne=${encodeURIComponent('Only on network')}`);
+  const toExceptions = () => nav(`/discovery/reconcile/exceptions?state=${encodeURIComponent('Rogue')}`);
 
   const rowActions = (r: ArchiveRow): Action[] =>
     r.zombie ? [{ l: 'Open reconciliation exception', onClick: toExceptions }] : [];
