@@ -962,7 +962,7 @@ function viewReconcile() {
 }
 
 
-let TAB = { phy: 'router', link: 'lldp', svc: 'l3vpn', inact: 'ne' };
+let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
@@ -3308,6 +3308,9 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
+let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or IP/MPLS; see SVC_DOMAINS. RAN is
+  first in SVC_DOMAINS, matching every other tab group on this page (TAB.phy defaults to PHY_TABS[0], TAB.link
+  to LINK_TABS[0]) — the first tab loads first, not the last one in the row. */
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
@@ -3337,11 +3340,51 @@ function svcDiagram(r, tab) {
   </div>`;
 }
 
+/* generic point-to-point service table — every RAN/Transport/Core type
+   (S1/NG, X2/Xn, Microwave, OTN, APN, Diameter) shares L2VPN's own
+   src/dst NE-IP-interface row shape, so this one function renders all
+   six instead of six near-duplicate bespoke tables. Only the column
+   labels vary per type (SVC_P2P_COLS). */
+function svcP2PTable(t, rows) {
+  const cols = SVC_P2P_COLS[t] || { name: 'Name', ref: 'Reference ID' };
+  return table([{t:'Status'},{t:cols.name},{t:'Source NE'},{t:'Source IP'},{t:'Source interface'},
+                {t:'Destination NE'},{t:'Destination IP'},{t:'Destination interface'},{t:cols.ref}],
+    rows.map(s => [
+      chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`,
+      `<span class="mono">${s.srcNe}</span>`, `<span class="mono">${s.srcIp}</span>`, `<span class="mono">${s.srcIfc}</span>`,
+      `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstIfc}</span>`,
+      `<span class="mono">${s.erp}</span>`
+    ]), '',
+    i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+    i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }));
+}
+
 function svcViewDialog() {
   if (!SVC_VIEW) return '';
   const rows = SERVICES[SVC_VIEW.tab] || [];
   const r = rows[SVC_VIEW.i];
   if (!r) return '';
+  if (SVC_VIEW.tab !== 'l3vpn' && SVC_VIEW.tab !== 'l2vpn') {
+    const cols = SVC_P2P_COLS[SVC_VIEW.tab] || { title: 'Service', name: 'Name', ref: 'Reference ID' };
+    return `
+      <div class="drawer-overlay" data-svcclose="1"></div>
+      <div class="linkview-panel" role="dialog" aria-label="${esc(cols.title)} for ${esc(r.name)}">
+        <div class="linkview-head">
+          <span class="vw-card-title-sm">${esc(cols.title)}</span>
+          <button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button>
+        </div>
+        <div class="linkview-body">
+          <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+            <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          </div>
+          ${detailFieldGrid([
+            ['Source NE', r.srcNe], ['Source IP', r.srcIp], ['Source interface', r.srcIfc],
+            ['Destination NE', r.dstNe], ['Destination IP', r.dstIp], ['Destination interface', r.dstIfc],
+            [cols.ref, r.erp]
+          ])}
+        </div>
+      </div>`;
+  }
   const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
   const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
   return `
@@ -3365,20 +3408,26 @@ function svcViewDialog() {
 }
 
 function viewServices() {
-  const t = TAB.svc, rows = gridApply('services', SERVICES[t] || []), meta = SVC_TABS.find(x => x.k === t);
+  /* SVC_DOMAIN picks which row of tabs is showing; TAB.svc is the tab
+     within it. A stale TAB.svc (e.g. a direct URL naming a tab from a
+     different domain) falls back to the domain's own first tab rather
+     than rendering an empty SERVICES[t]. */
+  const domainTabs = SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS;
+  const t = domainTabs.some(x => x.k === TAB.svc) ? TAB.svc : domainTabs[0].k;
+  const rows = gridApply('services', SERVICES[t] || []), meta = domainTabs.find(x => x.k === t);
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('L3VPN', '1,815', '1,684 up · 131 down', 'emerald')}
-      ${kpi('L2VPN', '642', '598 up · 44 down', 'cyan')}
-      ${kpi('Service endpoints', '4,912', 'attachment interfaces discovered', 'sky')}
-      ${kpi('Not in inventory', '146', 'found on device, no service record', 'red')}
+      ${SVC_DOMAINS.map(d => kpi(d.n, n(d.tabs.reduce((a, x) => a + x.c, 0)),
+        d.tabs.map(x => `${x.n} ${n(x.c)}`).join(' · '), d.tone,
+        { v:'services', l:`${d.n} services`, q:`domain=${d.k}` })).join('')}
     </div>
 
     ${card(`
-      ${tabs(SVC_TABS, t, 'svc')}
+      <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
+      ${tabs(domainTabs, t, 'svc')}
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
         [], 'services')}
       ${t === 'l2vpn'
@@ -3399,14 +3448,16 @@ function viewServices() {
             }), '',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
-        : table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+        : t === 'l3vpn'
+        ? table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
             ]), '',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
-            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))}`)}
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
+        : svcP2PTable(t, rows)}`)}
     ${svcViewDialog()}
   </div>`;
 }
