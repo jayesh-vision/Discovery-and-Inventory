@@ -627,6 +627,7 @@ document.addEventListener('click', e => {
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 
+
   const jbf = e.target.closest('[data-job-filter]');
   if (jbf) { JOB_FILTER = jbf.dataset.jobFilter; go('jobs'); return; }
 

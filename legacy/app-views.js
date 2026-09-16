@@ -433,11 +433,12 @@ function viewJobs() {
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs, '', [], 'jobs')}
       ${table(
-        [{ t: 'Status' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
+        [{ t: 'Status' }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
         rows.map(j => [
           chip(j.state, jobChip(j)),
+          domainDot(j.domain),
           `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
            <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
           `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
@@ -581,7 +582,7 @@ function viewTargets() {
         `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
-        [{ t: 'Status' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
+        [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
@@ -593,6 +594,7 @@ function viewTargets() {
 
           return [
             chip(stStatus, stTone),
+            domainDot(t.domain),
             `<span class="mono">${t.ip}</span>`,
             `${t.host === '—' ? `<span style="color:${cv('gray',400)}">no sysName</span>` : `<span class="vw-value">${t.host}</span>`}
              <br><span class="vw-card-metric-label-sub">${t.circle} · <span class="mono">${t.job}</span></span>`,

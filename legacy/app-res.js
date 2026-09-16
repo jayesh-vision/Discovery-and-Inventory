@@ -934,13 +934,13 @@ function viewOdfDetail() {
     <div style="margin-top:var(--vw-space-lg)">
       ${passiveKpiStrip([
         ['Total ports', String(r.cap), 'sky'],
-        ['In use', String(r.used), 'emerald'],
-        ['Free', String(free), 'purple'],
+        ['In use', String(r.used), 'purple'],
+        ['Free', String(free), 'slate'],
         ['Fill', `${fillPct}%`, fillPct > 85 ? 'red' : fillPct > 70 ? 'amber' : 'emerald']
       ])}
     </div>
     ${passiveChartSplit(
-      passiveDonutBlock([{ n:'In use', c:r.used, tone:'emerald' }, { n:'Free', c:free, tone:'slate' }], r.cap, `${fillPct}%`, 'patched'),
+      passiveDonutBlock([{ n:'In use', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.cap, `${fillPct}%`, 'patched'),
       trayList)}
     ${passiveDiagramNote(odfPortMap(r.used, r.cap), `Port map · ${r.cap}F frame`,
       'Every port on the frame, grouped into the 12-port trays it is wired in — filled squares are patched, outlines are free.',
@@ -952,7 +952,7 @@ function viewOdfDetail() {
     d.installDate);
 
   const locationCard = card(`${headSm('Location')}
-    <div class="row-t" style="margin-top:var(--vw-space-md);align-items:stretch">
+    <div class="row-t grow" style="margin-top:var(--vw-space-md);align-items:stretch;min-height:150px">
       <div style="flex:0 0 200px;border-radius:var(--vw-radius-md);background:${cv('sky',50)};border:1px solid ${cv('slate',200)};display:flex;align-items:center;justify-content:center;color:${cv('sky',400)}">
         ${ODF_PIN_ICON}
       </div>
@@ -962,7 +962,7 @@ function viewOdfDetail() {
         <div class="row vw-gap-sm"><span class="vw-label" style="width:6rem">Address</span><span class="vw-value">${esc(site.addr)}</span></div>
         <a class="nst-btn nst-btn--sm" style="align-self:flex-start;margin-top:4px" href="${esc(mapsUrl)}" target="_blank" rel="noopener">View on map</a>
       </div>
-    </div>`);
+    </div>`, '', 'display:flex;flex-direction:column');
 
   const additionalInfoCard = card(`${headSm('Additional information')}
     <div style="margin-top:var(--vw-space-md)">
@@ -1030,13 +1030,24 @@ function passiveKpiStrip(cells) {
 
 /* One row of a record list — a numbered/lettered swatch that ties back to the
    diagram beside it, a title, a sub-line, and a status chip. Reads as a set of
-   things rather than a spreadsheet, and fills horizontal run beside a chart. */
-function passiveRecordRow({ badge, tone, active, title, sub, chipLabel, chipTone }) {
+   things rather than a spreadsheet, and fills horizontal run beside a chart.
+
+   `keepTone` switches the row from status-colouring (colour means in-use vs
+   free) to identity-colouring (colour means *which* one this is, and stays on
+   whether or not it's in use). Used where the real hardware is itself colour
+   coded — a duct's sub-ducts — so the row and the diagram cross-reference by
+   colour. Left unset everywhere else, where colour should still mean status. */
+function passiveRecordRow({ badge, tone, active, title, sub, chipLabel, chipTone, keepTone }) {
+  const t = (active || keepTone) ? tone : 'slate';
+  const bgShade = (active || keepTone) ? 50 : 50;
+  const bdShade = (active || keepTone) ? 100 : 200;
+  const ringShade = active ? 500 : keepTone ? 400 : 300;
+  const textShade = active ? 700 : keepTone ? 600 : 400;
   return `<div class="row vw-gap-md vw-items-center" style="padding:10px 12px;border-radius:var(--vw-radius-md);
-    background:${active?cv(tone,50):cv('slate',50)};border:1px solid ${active?cv(tone,100):cv('slate',200)}">
+    background:${cv(t,bgShade)};border:1px solid ${cv(t,bdShade)}">
     <span style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-      font-size:0.75rem;font-weight:600;background:#fff;border:2px solid ${cv(active?tone:'slate',active?500:300)};
-      color:${cv(active?tone:'slate',active?700:400)}">${esc(badge)}</span>
+      font-size:0.75rem;font-weight:600;background:${active&&keepTone?cv(t,100):'#fff'};border:2px solid ${cv(t,ringShade)};
+      color:${cv(t,textShade)}">${esc(badge)}</span>
     <div class="grow" style="min-width:0">
       <div class="vw-value" style="font-weight:600;font-size:0.8125rem">${esc(title)}</div>
       <div class="vw-card-metric-label-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sub)}</div>
@@ -1047,7 +1058,7 @@ function passiveRecordRow({ badge, tone, active, title, sub, chipLabel, chipTone
 
 /* A donut with its legend centred beneath it — the left half of the standard
    "chart beside a list" row. */
-function passiveDonutBlock(segs, total, top, sub, size = 150) {
+function passiveDonutBlock(segs, total, top, sub, size = 180) {
   return `<div class="stack-s" style="align-items:center">
     ${donut(segs, total || 1, top, sub, size)}
     <div class="legend" style="justify-content:center;margin-top:var(--vw-space-sm)">
@@ -1077,15 +1088,15 @@ const passiveDiagramNote = (diagramHtml, title, body, note) =>
 /* the page shell: a narrow column carrying the record's own fields and its
    photos, beside a wide column carrying the analysis */
 const passiveTwoCol = (leftCards, rightCards) =>
-  `<div style="display:grid;grid-template-columns:minmax(320px,0.8fr) 1.6fr;gap:var(--vw-space-lg);align-items:start">
-    <div class="stack">${leftCards}</div>
-    <div class="stack">${rightCards}</div>
+  `<div style="display:grid;grid-template-columns:minmax(320px,0.8fr) 1.6fr;gap:var(--vw-space-lg);align-items:stretch">
+    <div class="pv-col">${leftCards}</div>
+    <div class="pv-col">${rightCards}</div>
   </div>`;
 
 /* a Photos card sized for the narrow column, with a count/date sub-line */
 const passivePhotosCard = (photos, meta) => card(`
   ${headSm('Photos', `${photos.length} field capture${photos.length===1?'':'s'}${meta?` · ${meta}`:''}`)}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,168px));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
     ${photos.map(([n, fn, when]) => mediaTile(fn(), n, when, false)).join('')}
   </div>`);
 
@@ -1099,7 +1110,13 @@ function buildRackDetail(r, site) {
     mountType: RACK_MOUNT[nint(s, 6, 0, RACK_MOUNT.length - 1)],
     installDate: `${pad2(day)}-${month}-${year}`,
     createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)],
-    remarks: `Primary rack at ${site.name}`
+    remarks: `Primary rack at ${site.name}`,
+    feed: nint(s, 50, 0, 1) ? 'Dual A/B (redundant)' : 'Single feed A',
+    pduOutlets: `${6 + nint(s, 51, 0, 10)} of 24`,
+    inletTemp: `${20 + nint(s, 52, 0, 6)}°C`,
+    earthing: nint(s, 53, 0, 1) ? 'Bonded to MEB bar' : 'Rack-frame earth strap',
+    doorAccess: nint(s, 54, 0, 1) ? 'Keyed, front + rear' : 'Open frame, no doors',
+    containment: nint(s, 55, 0, 1) ? 'Overhead tray' : 'Underfloor'
   };
 }
 function rackElevationDetail(r) {
@@ -1117,6 +1134,19 @@ function rackElevationDetail(r) {
     </div>`);
   }
   return `<div style="max-height:300px;overflow-y:auto;border:1px solid ${cv('slate',200)};border-radius:var(--vw-radius-md);padding:4px 8px">${rows.join('')}</div>`;
+}
+/* the contiguous free runs in a rack, largest first — the elevation shows
+   what's mounted, this answers "where does the next device fit". */
+function rackFreeBlocks(r) {
+  const taken = new Set();
+  r.occ.forEach(o => { for (let u = o[0]; u <= o[1]; u++) taken.add(u); });
+  const blocks = [];
+  let start = null;
+  for (let u = 1; u <= r.h + 1; u++) {
+    if (u <= r.h && !taken.has(u)) { if (start === null) start = u; }
+    else if (start !== null) { blocks.push({ from: start, to: u - 1, size: u - start }); start = null; }
+  }
+  return blocks.sort((a, b) => b.size - a.size);
 }
 function viewRackDetail() {
   const rows = PASSIVE.rack;
@@ -1154,13 +1184,13 @@ function viewRackDetail() {
       ${passiveKpiStrip([
         ['Rack height', `${r.h}U`, 'sky'],
         ['U used', String(r.used), 'purple'],
-        ['U free', String(free), 'emerald'],
+        ['U free', String(free), 'slate'],
         ['Power draw', `${kwPct}%`, kwPct > 85 ? 'red' : kwPct > 70 ? 'amber' : 'emerald']
       ])}
     </div>
     ${passiveChartSplit(
       `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
-        ${passiveDonutBlock([{ n:'Used', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.h, `${uPct}%`, 'rack space', 150)}
+        ${passiveDonutBlock([{ n:'Used', c:r.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], r.h, `${uPct}%`, 'rack space', 180)}
         <div style="width:100%">
           <div class="row vw-justify-between vw-items-baseline">
             <span class="vw-label">Power draw</span>
@@ -1173,22 +1203,42 @@ function viewRackDetail() {
         </div>
       </div>`,
       occList)}
-    ${passiveDiagramNote(
-      `<div style="width:300px">${rackElevationDetail(r)}
+    <div class="row-t vw-gap-lg" style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)};align-items:flex-start">
+      <div style="flex:0 0 300px">${rackElevationDetail(r)}
         <div class="legend" style="margin-top:var(--vw-space-sm)">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>Router</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>Switch</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
           <span class="legend-i"><span class="legend-sw" style="background:${cv('slate',50)};border:1px solid ${cv('slate',300)}"></span>Free U</span>
         </div>
-      </div>`,
-      `Rack elevation · ${r.h}U`,
-      'Front elevation from the top rail down — every occupied U is shaded by equipment class, blank rows are free rack units available for mounting.',
-      `${free}U free — ${uPct >= 90 ? 'effectively full, plan an adjacent rack for further growth.' : `room for roughly ${Math.max(1, Math.floor(free / 2))} more 2U device${Math.floor(free/2) === 1 ? '' : 's'}.`}`)}`);
+      </div>
+      <div class="grow" style="min-width:0">
+        <span class="vw-value" style="font-weight:600">Rack elevation &amp; free slots · ${r.h}U</span>
+        <p class="vw-card-description" style="margin-top:2px">Front elevation from the top rail down — occupied U shaded by equipment class. The blocks below are the contiguous free runs, largest first, so you can see what will actually fit.</p>
+        ${(() => { const bl = rackFreeBlocks(r); return bl.length
+          ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">
+              ${bl.slice(0, 9).map(b => `<div class="vw-card-child" style="padding:10px 12px;border-left:3px solid ${cv(b.size >= 4 ? 'emerald' : b.size >= 2 ? 'sky' : 'slate', 400)}">
+                <div class="vw-value mono" style="font-size:0.8125rem;font-weight:600">U${b.from}${b.size > 1 ? `–U${b.to}` : ''}</div>
+                <div class="vw-card-metric-label-sub">${b.size}U free${b.size >= 4 ? ' · fits 4U' : b.size >= 2 ? ' · fits 2U' : ' · 1U only'}</div>
+              </div>`).join('')}
+            </div>${bl.length > 9 ? `<p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">+${bl.length - 9} smaller gap${bl.length - 9 === 1 ? '' : 's'} not listed.</p>` : ''}`
+          : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;margin-top:var(--vw-space-md)">No free rack units — this rack is fully populated.</div>`; })()}
+        <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free}U free — ${uPct >= 90 ? 'effectively full, plan an adjacent rack for further growth.' : `room for roughly ${Math.max(1, Math.floor(free / 2))} more 2U device${Math.floor(free/2) === 1 ? '' : 's'}.`}</p>
+      </div>
+    </div>`);
 
   const photosCard = passivePhotosCard(
     [['Rack front view', mediaIllustrationRackFront, d.installDate], ['Asset / rack tag', mediaIllustrationLabelTag, d.installDate]],
     d.installDate);
+
+  const envCard = card(`${headSm('Power & environment')}
+    <div style="margin-top:var(--vw-space-md)">
+      ${odfDetailRows([
+        ['Power feed', d.feed], ['PDU outlets used', d.pduOutlets], ['Cooling', r.cool],
+        ['Inlet temperature', d.inletTemp], ['Cable containment', d.containment],
+        ['Earthing', d.earthing], ['Door / access', d.doorAccess]
+      ])}
+    </div>`);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Rack', sub:`Rack · ${site.name}`,
@@ -1200,7 +1250,7 @@ function viewRackDetail() {
         { k:'Cooling', v:r.cool, s:'', t:'cyan' },
         { k:'Site', v:site.name, s:'', t:'slate' }
       ]})}
-    ${passiveTwoCol(`${detailsCard}${photosCard}`, capacityCard)}
+    ${passiveTwoCol(`${detailsCard}${envCard}${photosCard}`, capacityCard)}
   </div>`;
 }
 
@@ -1223,6 +1273,11 @@ function buildPowerDetail(r, site) {
     createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)],
     nextTest: `${pad2(nint(s, 80, 1, 27))}-${MONTHS_SHORT[nint(s, 81, 0, 11)]}-2027`,
     remarks: `${r.type} serving ${site.name}`,
+    serviceInterval: `${[3, 6, 12][nint(s, 90, 0, 2)]} months`,
+    lastService: `${pad2(nint(s, 91, 1, 27))}-${MONTHS_SHORT[nint(s, 92, 0, 11)]}-2025`,
+    contractor: ['Cummins Service', 'Delta Field Ops', 'Exide Care', 'Site FM team'][nint(s, 93, 0, 3)],
+    warrantyEnd: `${pad2(nint(s, 94, 1, 27))}-${MONTHS_SHORT[nint(s, 95, 0, 11)]}-${2027 + nint(s, 96, 0, 2)}`,
+    sparesHeld: nint(s, 97, 0, 1) ? 'On-site kit' : 'Regional depot',
     tests
   };
 }
@@ -1272,18 +1327,27 @@ function viewPowerDetail() {
     <div style="margin-top:var(--vw-space-lg)">
       ${passiveKpiStrip([
         ['Rating', r.rating, 'sky'],
-        ['Last load', `${lastLoad}%`, loadTone],
         ['Autonomy', r.runtime === '—' ? 'N/A' : r.runtime, 'purple'],
-        ['Tests passed', `${passCount}/${d.tests.length}`, passCount === d.tests.length ? 'emerald' : 'amber']
+        ['Tests passed', `${passCount}/${d.tests.length}`, 'slate'],
+        ['Last load', `${lastLoad}%`, loadTone]
       ])}
     </div>
     ${passiveChartSplit(
-      passiveDonutBlock([{ n:'Load', c:lastLoad, tone:loadTone }, { n:'Headroom', c:Math.max(0,100-lastLoad), tone:'slate' }], 100, `${lastLoad}%`, 'last test', 150),
+      passiveDonutBlock([{ n:'Load', c:lastLoad, tone:loadTone }, { n:'Headroom', c:Math.max(0,100-lastLoad), tone:'slate' }], 100, `${lastLoad}%`, 'last test', 180),
       testList)}
     ${passiveDiagramNote(`<div style="width:300px">${trendChart}</div>`,
       'Load trend across recorded tests',
       'Measured load at each scheduled test run, oldest to newest — amber above 70% of rating, red above 85%.',
-      `Next test due ${d.nextTest}${lastLoad > 85 ? ' — running hot, review the load before the next cycle.' : lastLoad > 70 ? ' — trending high, keep an eye on growth.' : ' — comfortable headroom at current draw.'}`)}`);
+      `Next test due ${d.nextTest}${lastLoad > 85 ? ' — running hot, review the load before the next cycle.' : lastLoad > 70 ? ' — trending high, keep an eye on growth.' : ' — comfortable headroom at current draw.'}`)}
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm('Service & maintenance', `Serviced every ${d.serviceInterval} by ${d.contractor}`)}
+      <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:var(--vw-space-md)">
+        ${[['Service interval', d.serviceInterval], ['Last service', d.lastService], ['Next test due', d.nextTest],
+           ['Maintained by', d.contractor], ['Warranty / AMC to', d.warrantyEnd], ['Spares held', d.sparesHeld]]
+          .map(([k, v]) => `<div class="meta-cell" style="padding:10px 0;border-top:1px solid ${cv('slate',100)}">
+            <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
+      </div>
+    </div>`);
 
   const photosCard = passivePhotosCard(
     [[`${r.type} unit`, mediaIllustrationPowerUnit, r.tested], ['Nameplate / rating label', mediaIllustrationLabelTag, r.tested]],
@@ -1309,16 +1373,70 @@ const FIBER_COLORS = [
   ['Slate','#64748b'], ['White','#e5e7eb'], ['Red','#dc2626'], ['Black','#111827'],
   ['Yellow','#eab308'], ['Violet','#7c3aed'], ['Rose','#e11d48'], ['Aqua','#06b6d4']
 ];
+/* every fibre in the closure, laid out in the 12-fibre trays a splicer
+   actually works in, coloured to the EIA/TIA-598 code */
 function spliceFiberMap(used, total) {
-  const cells = [];
-  for (let i = 0; i < total; i++) {
-    const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
-    const on = i < used;
-    cells.push(`<span title="Fibre ${i+1} · ${fname} · ${on?'spliced':'unspliced'}"
-      style="display:inline-block;width:14px;height:14px;border-radius:50%;margin:3px;
-      background:${on?hex:'transparent'};border:2px solid ${hex}"></span>`);
+  const trays = Math.max(1, Math.ceil(total / 12));
+  const rows = [];
+  for (let t = 0; t < trays; t++) {
+    const cells = [];
+    for (let i = 0; i < 12; i++) {
+      const idx = t * 12 + i;
+      if (idx >= total) break;
+      const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
+      const on = idx < used;
+      cells.push(`<span title="Fibre ${idx + 1} · ${fname} · ${on ? 'spliced' : 'free'}"
+        style="width:100%;aspect-ratio:1;border-radius:50%;background:${on ? hex : 'transparent'};border:2.5px solid ${hex}"></span>`);
+    }
+    rows.push(`<div class="row vw-items-center vw-gap-sm">
+      <span class="vw-label" style="width:2rem;flex-shrink:0;font-size:0.625rem">T${t + 1}</span>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:7px;flex:1;max-width:460px">${cells.join('')}</div>
+    </div>`);
   }
-  return `<div style="display:flex;flex-wrap:wrap;max-width:100%">${cells.join('')}</div>`;
+  return `<div class="stack-s" style="gap:8px;margin-top:var(--vw-space-md)">${rows.join('')}</div>`;
+}
+const SPLICE_BUDGET = 0.15;
+/* the closure's cable entries, itemised — the Housing card states how many of
+   the ports are used, this is what actually occupies them: a feeder in from
+   each side of the span, plus any drop/branch taken off at this point. */
+function spliceEntryList(r, d) {
+  const used = parseInt(String(d.cableEntries).split(' ')[0], 10) || 2;
+  const drops = Math.max(0, used - 2);
+  const rows = [
+    passiveRecordRow({ badge:'A', tone:'sky', active:true, title:`A-side feeder · ${r.span}`,
+      sub:`${d.total}F through · trays 1–${d.trayCount}`, chipLabel:'Through', chipTone:'info' }),
+    passiveRecordRow({ badge:'B', tone:'sky', active:true, title:`B-side feeder · ${r.span}`,
+      sub:`${d.total}F through · trays 1–${d.trayCount}`, chipLabel:'Through', chipTone:'info' })
+  ];
+  for (let i = 0; i < drops; i++) {
+    rows.push(passiveRecordRow({ badge:`D${i + 1}`, tone:'purple', active: d.used > 0,
+      title:`Drop / branch ${i + 1}`,
+      sub: d.used ? `${d.used}F spliced out · tray ${1 + i}` : 'Port fitted, not yet spliced',
+      chipLabel: d.used ? 'Branched' : 'Idle', chipTone: d.used ? 'purple' : 'neutral' }));
+  }
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">${rows.join('')}</div>`;
+}
+/* a splicer logs a loss reading per fusion, not just a closure average — this
+   is that record, derived deterministically around the closure's mean so the
+   per-fibre figures and the headline mean always agree. */
+function spliceRecordGrid(r, d) {
+  if (!d.used) return `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;margin-top:var(--vw-space-md)">
+    No fusions recorded yet — this closure is staged but not spliced.</div>`;
+  const mean = parseFloat(r.loss);
+  const rows = Array.from({ length: d.used }, (_, i) => {
+    const [fname, hex] = FIBER_COLORS[i % FIBER_COLORS.length];
+    const jitter = (nint(r.n, 500 + i, 0, 10) - 5) / 100;
+    const loss = Math.max(0.01, +((isNaN(mean) ? 0.08 : mean) + jitter).toFixed(2));
+    const over = loss > SPLICE_BUDGET;
+    return `<div class="row vw-gap-sm vw-items-center" style="padding:8px 12px;border-radius:var(--vw-radius-md);
+      background:${cv(over?'red':'slate',50)};border:1px solid ${cv(over?'red':'slate',over?100:200)}">
+      <span style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:${hex};border:2px solid ${hex}"></span>
+      <span class="vw-value mono" style="font-size:0.75rem;width:2.5rem;flex-shrink:0">F${i + 1}</span>
+      <span class="vw-card-metric-label-sub grow" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fname)}</span>
+      <span class="vw-value num" style="font-size:0.75rem;flex-shrink:0;color:${cv(over?'red':'emerald',700)}">${loss.toFixed(2)} dB</span>
+    </div>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--vw-space-sm);margin-top:var(--vw-space-md)">${rows}</div>`;
 }
 function buildSpliceDetail(r, site) {
   const s = r.n;
@@ -1329,7 +1447,13 @@ function buildSpliceDetail(r, site) {
     used: parts[0], total: parts[1],
     installDate: `${pad2(day)}-${month}-${year}`,
     createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)],
-    remarks: `Splice point on ${r.span}`
+    remarks: `Splice point on ${r.span}`,
+    sealType: nint(s, 40, 0, 1) ? 'Heat-shrink sleeve' : 'Mechanical gel seal',
+    trayCount: Math.max(1, Math.ceil(parts[1] / 12)),
+    cableEntries: `${1 + nint(s, 41, 1, 3)} of ${4 + nint(s, 42, 0, 2)}`,
+    reEntries: String(nint(s, 43, 0, 3)),
+    mounting: /aerial/i.test(r.housing) ? 'Pole-mounted bracket' : /manhole/i.test(r.housing) ? 'Chamber wall bracket' : 'Direct buried, marker tape',
+    ingressRating: nint(s, 44, 0, 1) ? 'IP68' : 'IP67'
   };
 }
 function viewSpliceDetail() {
@@ -1371,14 +1495,14 @@ function viewSpliceDetail() {
     <div style="margin-top:var(--vw-space-lg)">
       ${passiveKpiStrip([
         ['Closure capacity', `${d.total}F`, 'sky'],
-        ['Spliced', String(d.used), 'emerald'],
-        ['Free', String(free), 'purple'],
+        ['Spliced', String(d.used), 'purple'],
+        ['Free', String(free), 'slate'],
         ['Mean loss', r.loss, overBudget ? 'red' : 'emerald']
       ])}
     </div>
     ${passiveChartSplit(
       `<div class="stack" style="align-items:center;gap:var(--vw-space-lg)">
-        ${passiveDonutBlock([{ n:'Spliced', c:d.used, tone:'emerald' }, { n:'Free', c:free, tone:'slate' }], d.total, `${pct}%`, 'spliced', 150)}
+        ${passiveDonutBlock([{ n:'Spliced', c:d.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], d.total, `${pct}%`, 'spliced', 180)}
         <div style="width:100%">
           <div class="row vw-justify-between vw-items-baseline">
             <span class="vw-label">Loss vs 0.15 dB budget</span>
@@ -1391,14 +1515,31 @@ function viewSpliceDetail() {
         </div>
       </div>`,
       trayList)}
-    ${passiveDiagramNote(`<div style="width:300px">${spliceFiberMap(d.used, d.total)}</div>`,
-      `Fibre splice map · ${d.total}F`,
-      'Every fibre in the closure, coloured to the EIA/TIA-598 code — filled circles are spliced through, outlines are free for future work.',
-      `${free} fibre${free===1?'':'s'} free${free ? ' — spare capacity for later drops without re-entering the closure.' : ' — closure is fully spliced.'}`)}`);
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm(`Fibre splice map · ${d.total}F`, 'Coloured to the EIA/TIA-598 code and grouped into 12-fibre trays — filled circles are spliced through, outlines are free')}
+      ${spliceFiberMap(d.used, d.total)}
+      <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free} fibre${free===1?'':'s'} free${free ? ' — spare capacity for later drops without re-entering the closure.' : ' — closure is fully spliced.'}</p>
+    </div>
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm('Splice record', `Measured loss on each spliced fibre against the ${SPLICE_BUDGET.toFixed(2)} dB per-splice budget`)}
+      ${spliceRecordGrid(r, d)}
+    </div>
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm('Cable entries', `${esc(d.cableEntries)} entry ports in use on this ${esc(r.type)} closure`)}
+      ${spliceEntryList(r, d)}
+    </div>`);
 
   const photosCard = passivePhotosCard(
     [['Splice tray', mediaIllustrationSpliceTray, r.surveyed], ['Closure housing', mediaIllustrationCableBundle, r.surveyed], ['Closure label', mediaIllustrationLabelTag, r.surveyed]],
     r.surveyed);
+
+  const additionalInfoCard = card(`${headSm('Housing & access')}
+    <div style="margin-top:var(--vw-space-md)">
+      ${odfDetailRows([
+        ['Seal type', d.sealType], ['Ingress rating', d.ingressRating], ['Mounting', d.mounting],
+        ['Splice trays', `${d.trayCount} × 12F`], ['Cable entries used', d.cableEntries], ['Re-entries logged', d.reEntries]
+      ])}
+    </div>`);
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Splice closure', sub:`Splice closure · ${site.name} · on ${r.span}`,
@@ -1410,7 +1551,7 @@ function viewSpliceDetail() {
         { k:'Housing', v:r.housing, s:'', t:'amber' },
         { k:'Last surveyed', v:r.surveyed, s:'', t:'slate' }
       ]})}
-    ${passiveTwoCol(`${detailsCard}${photosCard}`, spliceCard)}
+    ${passiveTwoCol(`${detailsCard}${additionalInfoCard}${photosCard}`, spliceCard)}
   </div>`;
 }
 
@@ -1425,19 +1566,49 @@ function buildCordDetail(r) {
     remarks: `${r.type} jumper, ${r.a} to ${r.b}`
   };
 }
-function cordConnectionDiagram(r) {
+/* the jumper drawn end to end across the full width of its card — an endpoint
+   panel at each side, the cable run between them carrying the measured loss */
+function cordConnectionDiagram(r, connType) {
   const lossNum = parseFloat(r.loss);
   const tone = isNaN(lossNum) ? 'slate' : lossNum <= 0.3 ? 'emerald' : 'amber';
-  return `<div class="row vw-items-center" style="margin-top:var(--vw-space-md)">
-    <div class="vw-card-child grow" style="padding:var(--vw-space-md);text-align:center">
-      <span class="vw-label">A end</span><br><span class="vw-value mono">${esc(r.a)}</span>
+  const endPanel = (side, label, port) => `<div class="vw-card-child" style="flex:1 1 0;min-width:0;padding:var(--vw-space-lg);text-align:center">
+      <span class="vw-label">${side}</span>
+      <div class="vw-value mono" style="font-size:0.9375rem;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(label)}</div>
+      <div class="vw-card-metric-label-sub" style="margin-top:2px">${esc(port)}</div>
+    </div>`;
+  return `<div class="row vw-items-center vw-gap-md" style="margin-top:var(--vw-space-lg)">
+    ${endPanel('A end', r.a, `${connType} connector pair`)}
+    <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:120px">
+      <span class="vw-card-metric-label-sub">${esc(r.len)} jumper</span>
+      <div class="row vw-items-center" style="gap:0;width:100%">
+        <span style="width:9px;height:9px;border-radius:50%;background:${cv(tone,500)};flex-shrink:0"></span>
+        <div style="flex:1;height:3px;background:${cv(tone,400)}"></div>
+        <span style="width:9px;height:9px;border-radius:50%;background:${cv(tone,500)};flex-shrink:0"></span>
+      </div>
+      <span class="vw-value num" style="font-size:0.875rem;font-weight:600;color:${cv(tone,700)}">${esc(r.loss)}</span>
     </div>
-    <div style="flex:0 0 auto;padding:0 14px;display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div style="width:56px;height:2px;background:${cv(tone,400)}"></div>
-      <span class="vw-card-metric-label-sub num" style="color:${cv(tone,700)}">${r.loss}</span>
+    ${endPanel('B end', r.b, `${connType} connector pair`)}
+  </div>`;
+}
+
+/* where the measured loss actually goes — two connector pairs plus the cable
+   run, against the remaining headroom, as one budget bar */
+function cordLossBar(connLoss, cableLoss, lossNum, budget) {
+  if (isNaN(lossNum)) return `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center;margin-top:var(--vw-space-md)">Not yet measured — no loss breakdown available.</div>`;
+  const segs = [
+    ['A-end connectors', connLoss, 'sky'],
+    ['Cable run', Math.max(0, cableLoss), 'purple'],
+    ['B-end connectors', connLoss, 'cyan'],
+    ['Headroom', Math.max(0, budget - lossNum), 'slate']
+  ];
+  const pctOf = v => Math.max(0, v / budget * 100);
+  return `<div style="margin-top:var(--vw-space-md)">
+    <div class="row" style="gap:3px;height:26px;width:100%">
+      ${segs.map(([n, v, t]) => `<div title="${esc(n)} · ${v.toFixed(2)} dB" style="width:${pctOf(v).toFixed(1)}%;background:${cv(t, t==='slate'?200:400)};
+        border-radius:var(--vw-radius-xs);min-width:2px"></div>`).join('')}
     </div>
-    <div class="vw-card-child grow" style="padding:var(--vw-space-md);text-align:center">
-      <span class="vw-label">B end</span><br><span class="vw-value mono">${esc(r.b)}</span>
+    <div class="legend" style="margin-top:var(--vw-space-sm)">
+      ${segs.map(([n, v, t]) => `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t==='slate'?200:400)}"></span>${esc(n)} ${v.toFixed(2)} dB</span>`).join('')}
     </div>
   </div>`;
 }
@@ -1479,18 +1650,24 @@ function viewCordDetail() {
       ${passiveKpiStrip([
         ['Length', r.len, 'sky'],
         ['Connector', r.type.split(' ')[0], 'purple'],
-        ['Insertion loss', r.loss, lossTone],
-        ['Budget used', isNaN(lossNum) ? '—' : `${lossPct}%`, lossTone]
+        ['Headroom', headroom === null ? '—' : `${headroom.toFixed(2)} dB`, 'slate'],
+        ['Insertion loss', r.loss, lossTone]
       ])}
     </div>
     ${passiveChartSplit(
-      passiveDonutBlock([{ n:'Used', c:lossPct, tone:lossTone }, { n:'Headroom', c:Math.max(0,100-lossPct), tone:'slate' }], 100, `${lossPct}%`, 'of budget', 150),
+      passiveDonutBlock([{ n:'Used', c:lossPct, tone:lossTone }, { n:'Headroom', c:Math.max(0,100-lossPct), tone:'slate' }], 100, `${lossPct}%`, 'of budget', 180),
       budgetList)}
-    ${passiveDiagramNote(`<div style="width:300px">${cordConnectionDiagram(r)}</div>`,
-      'End-to-end connection',
-      'What this jumper physically bridges — the A-end port, the cable run, and the B-end port, with the measured loss across the pair.',
-      headroom === null ? 'Not yet measured — schedule an insertion-loss test at the next survey.'
-        : `${headroom.toFixed(2)} dB headroom remaining${lossPct > 90 ? ' — at budget, replace or re-terminate this cord.' : ' against the link budget.'}`)}`);
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm('Loss contribution', `Where the ${lossBudget.toFixed(2)} dB budget goes — two connector pairs plus the cable run`)}
+      ${cordLossBar(connLoss, cableLoss, lossNum, lossBudget)}
+    </div>
+    <div style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)}">
+      ${headSm('End-to-end connection', 'What this jumper physically bridges, with the measured loss across the pair')}
+      ${cordConnectionDiagram(r, r.type.split(' ')[0])}
+      <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${headroom === null
+        ? 'Not yet measured — schedule an insertion-loss test at the next survey.'
+        : `${headroom.toFixed(2)} dB headroom remaining${lossPct > 90 ? ' — at budget, replace or re-terminate this cord.' : ' against the link budget.'}`}</p>
+    </div>`);
 
   const photosCard = passivePhotosCard(
     [['Connector close-up', mediaIllustrationConnectorEnd, r.surveyed], ['Cable label', mediaIllustrationLabelTag, r.surveyed]],
@@ -1520,9 +1697,24 @@ function buildDuctDetail(r) {
     used: parts[0], total: parts[1],
     installDate: `${pad2(day)}-${month}-${year}`,
     createdBy: ODF_STAFF[nint(s, 7, 0, ODF_STAFF.length - 1)],
-    remarks: `Duct route between ${r.a} and ${r.b}`
+    remarks: `Duct route between ${r.a} and ${r.b}`,
+    material: 'HDPE (PE100)',
+    wallClass: nint(s, 60, 0, 1) ? 'SN8 / PN10' : 'SN6 / PN8',
+    installMethod: ['Open-cut trench', 'Directional drill (HDD)', 'Mole / thrust bore'][nint(s, 61, 0, 2)],
+    coverDepth: `${(0.9 + nint(s, 62, 0, 6) / 10).toFixed(1)} m`,
+    jointType: nint(s, 63, 0, 1) ? 'Push-fit coupler' : 'Electrofusion joint',
+    markerTape: `${300 + nint(s, 64, 0, 2) * 50} mm above crown`,
+    coilLength: `${[250, 500, 1000][nint(s, 65, 0, 2)]} m`,
+    chambers: String(2 + nint(s, 66, 0, 4))
   };
 }
+/* Real sub-ducts inside a bore are colour-coded so a crew can tell which one
+   they're rodding or pulling through — so each way carries its own identity
+   colour here, shared between the ring diagram and the way list so the two
+   cross-reference. Occupancy is carried by fill + chip, not by hue. */
+const DUCT_WAY_TONES = ['orange', 'sky', 'emerald', 'rose', 'violet', 'cyan', 'amber', 'slate'];
+const ductWayTone = i => DUCT_WAY_TONES[i % DUCT_WAY_TONES.length];
+
 /* A real duct cross-section: numbered sub-ducts packed in a ring inside the
    outer HDPE bore wall, not a plain left-aligned row of circles — the shape
    a field crew would actually recognise from the drawing. */
@@ -1535,11 +1727,12 @@ function ductCrossSection(used, total) {
     const angle = (i / total) * Math.PI * 2 - Math.PI / 2;
     const x = cx + ringR * Math.cos(angle), y = cy + ringR * Math.sin(angle);
     const on = i < used;
+    const wt = ductWayTone(i);
     return `<g>
-      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${wayR}" fill="${on?cv('purple',100):'#fff'}"
-        stroke="${on?cv('purple',500):cv('slate',300)}" stroke-width="${on?3:2}"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${wayR}" fill="${on?cv(wt,100):'#fff'}"
+        stroke="${cv(wt,on?500:400)}" stroke-width="${on?3:2}"/>
       <text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="600"
-        fill="${on?cv('purple',700):cv('gray',400)}">${i+1}</text>
+        fill="${cv(wt,on?700:600)}">${i+1}</text>
     </g>`;
   }).join('');
   return `<svg viewBox="0 0 ${S} ${S}" style="width:100%;max-width:${S}px;height:auto;display:block"
@@ -1583,7 +1776,8 @@ function viewDuctDetail() {
   const wayList = Array.from({ length: d.total }, (_, i) => {
     const on = i < d.used;
     return passiveRecordRow({
-      badge: String(i + 1), tone: 'purple', active: on, title: `Way ${i + 1}`,
+      badge: String(i + 1), tone: ductWayTone(i), active: on, keepTone: true,
+      title: `Way ${i + 1}`,
       sub: on ? `Primary OFC route · pulled ${d.installDate}` : `Spare — ${r.bore} bore`,
       chipLabel: on ? 'Occupied' : 'Free', chipTone: on ? 'purple' : 'neutral'
     });
@@ -1595,16 +1789,28 @@ function viewDuctDetail() {
       ${passiveKpiStrip([
         ['Total ways', String(d.total), 'sky'],
         ['Occupied', String(d.used), 'purple'],
-        ['Free', String(free), 'emerald'],
+        ['Free', String(free), 'slate'],
         ['Utilisation', `${fillPct}%`, fillPct > 85 ? 'red' : fillPct > 60 ? 'amber' : 'emerald']
       ])}
     </div>
     ${passiveChartSplit(
-      passiveDonutBlock([{ n:'Occupied', c:d.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], d.total, `${fillPct}%`, 'occupied', 150),
+      passiveDonutBlock([{ n:'Occupied', c:d.used, tone:'purple' }, { n:'Free', c:free, tone:'slate' }], d.total, `${fillPct}%`, 'occupied', 180),
       wayList)}
-    ${passiveDiagramNote(ductCrossSection(d.used, d.total), `Bore layout · ${r.bore}`,
-      'Sub-ducts packed inside the outer bore wall, numbered to match the way list above — filled circles are occupied, outlines are free.',
-      `${free} free way${free===1?'':'s'} — capacity for ${free} more cable pull${free===1?'':'s'} without opening new duct.`)}`);
+    <div class="row-t vw-gap-lg" style="margin-top:var(--vw-space-xl);padding-top:var(--vw-space-lg);border-top:1px solid ${cv('slate',100)};align-items:flex-start">
+      <div style="flex:0 0 auto">${ductCrossSection(d.used, d.total)}</div>
+      <div class="grow" style="min-width:0">
+        <span class="vw-value" style="font-weight:600">Bore layout &amp; construction · ${esc(r.bore)}</span>
+        <p class="vw-card-description" style="margin-top:2px">Sub-ducts packed inside the outer bore wall, numbered and coloured to match the way list above — filled circles are occupied, outlines are free.</p>
+        <div class="site-meta" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:var(--vw-space-md)">
+          ${[['Material', d.material], ['Bore', r.bore], ['Wall class', d.wallClass],
+             ['Install method', d.installMethod], ['Depth of cover', d.coverDepth], ['Joint type', d.jointType],
+             ['Marker tape', d.markerTape], ['Coil length', d.coilLength], ['Chambers on route', d.chambers]]
+            .map(([k, v]) => `<div class="meta-cell" style="padding:9px 0;border-top:1px solid ${cv('slate',100)}">
+              <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
+        </div>
+        <p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-md)">${free} free way${free===1?'':'s'} — capacity for ${free} more cable pull${free===1?'':'s'} without opening new duct.</p>
+      </div>
+    </div>`);
 
   const photosCard = passivePhotosCard(
     [['Duct route (trench)', mediaIllustrationTrench, r.surveyed],
@@ -1703,70 +1909,114 @@ function buildFiberSpanDetail(r) {
 }
 
 function fiberStages(r, d) {
-  const survey = { status:'DONE', tone:'success' };
-  const permitBad = d.rag === 'Red' || d.rag === 'Amber';
-  const permit = { status: permitBad ? 'WARN' : 'DONE', tone: permitBad ? 'error' : 'success' };
-  const civil = { status: d.phase === 'Plan' ? 'PENDING' : d.phase === 'Build' ? 'ACTIVE' : 'DONE',
-    tone: d.phase === 'Plan' ? 'neutral' : d.phase === 'Build' ? 'info' : 'success' };
-  /* zero closures logged doesn't mean splicing hasn't happened — a short
-     direct span can legitimately need none. Only read as not-yet-started
-     while the span is still mid-build with nothing logged; once it's Live
-     (or a closure is on record), the stage is done unless the loss on
-     record is actually over budget. */
-  const splicingBad = d.closures.length > 0 && d.worstLoss > 0.15;
-  const splicingStarted = d.phase === 'Live' || d.closures.length > 0;
-  const splicing = { status: !splicingStarted ? 'PENDING' : splicingBad ? 'WARN' : 'DONE',
-    tone: !splicingStarted ? 'neutral' : splicingBad ? 'error' : 'success' };
-  const otdrStage = { status: d.phase === 'Live' ? 'DONE' : 'PENDING', tone: d.phase === 'Live' ? 'success' : 'neutral' };
-  const turnup = { status: d.phase === 'Live' && r.st === 'In service' ? 'DONE' : 'PENDING',
-    tone: d.phase === 'Live' && r.st === 'In service' ? 'success' : 'neutral' };
   const leadDays = nint(r.n, 17, 20, 70);
   const chambers = nint(r.n, 18, 2, 4);
+  const permitRef = `ROW-${String(nint(r.n, 16, 1, 99999)).padStart(5, '0')}`;
 
-  return [
-    { key:'survey', n:'Feasibility & route survey', sub:`RAN backhaul · ${r.len}`, by:'Survey · GIS team',
-      when:`${d.installDate} 09:30`, quote:'Route surveyed, chainage fixed & design approved', ...survey,
+  /* What each stage's own evidence says, before any sequencing. `done` is
+     whether that stage actually closed; `issue` is whether its evidence is
+     out of spec. They are separate because a stage can be finished but out
+     of budget (splicing) or unfinished because it is still under review
+     (permits). */
+  const permitCleared = d.rag !== 'Red' && d.rag !== 'Amber';
+  const civilDone = d.phase === 'Live';
+  /* zero closures logged doesn't mean splicing hasn't happened — a short
+     direct span can legitimately need none */
+  const splicingDone = d.phase === 'Live' || d.closures.length > 0;
+  const splicingOver = d.closures.length > 0 && d.worstLoss > 0.15;
+  const otdrDone = d.phase === 'Live';
+  const turnupDone = d.phase === 'Live' && r.st === 'In service';
+
+  const defs = [
+    { key:'survey', n:'Feasibility & route survey', sub:`RAN backhaul · ${r.len}`,
+      done:true, issue:false, owner:'Survey · GIS team', at:`${d.installDate} 09:30`,
+      okQuote:'Route surveyed, chainage fixed & design approved',
       data:[['Route length', r.len], ['Fibre count', `${d.totalC}F`], ['Install method', d.installMethod], ['Buried %', `${d.buriedPct}%`]],
-      checks:['Field / drone route walk', 'Chainage & BoQ fixed', 'Design (HLD/LLD) approved'], checked:[true, true, true] },
-    { key:'permit', n:'RoW / wayleave permits', sub:'Municipal Corp', by:'RoW / liaison', when:`${d.installDate} 16:40`,
-      quote: permit.status === 'WARN' ? `At risk — ${leadDays}d lead past on-air` : 'Permit cleared on schedule', ...permit,
-      data:[['Authority', 'Municipal Corp'], ['Permit', `ROW-${String(nint(r.n, 16, 1, 99999)).padStart(5, '0')}`],
-        ['Status', permit.status === 'WARN' ? 'Under review' : 'Cleared'], ['Lead time', `${leadDays}d`]],
-      checks:['Application filed', 'Fees paid & clearance', 'Reinstatement bond lodged'], checked:[true, true, true] },
+      checks:['Field / drone route walk', 'Chainage & BoQ fixed', 'Design (HLD/LLD) approved'], ticksWhenOpen:3 },
+
+    { key:'permit', n:'RoW / wayleave permits', sub:'Municipal Corp',
+      done: permitCleared, issue: !permitCleared, owner:'RoW / liaison', at:`${d.installDate} 16:40`,
+      okQuote:'Permit cleared on schedule', badQuote:`At risk — ${leadDays}d lead past on-air`,
+      data:[['Authority', 'Municipal Corp'], ['Permit', permitRef],
+        ['Status', permitCleared ? 'Cleared' : 'Under review'], ['Lead time', `${leadDays}d`]],
+      /* the paperwork is all lodged even while the authority is still
+         reviewing — that is why these stay ticked on an open permit */
+      checks:['Application filed', 'Fees paid & clearance', 'Reinstatement bond lodged'], ticksWhenOpen:3 },
+
     { key:'civil', n:'Civil — trenching / duct / cable pull', sub:d.installMethod,
-      by: civil.status === 'PENDING' ? '—' : 'Civil contractor',
-      when: civil.status === 'ACTIVE' ? 'in progress' : civil.status === 'DONE' ? `${d.installDate} 12:00` : 'not started',
-      quote: civil.status === 'ACTIVE' ? 'Trenching under way' : civil.status === 'DONE' ? 'Cable pulled and as-built captured' : 'Awaiting permit clearance',
-      ...civil, data:[['Method', d.installMethod], ['Buried %', `${d.buriedPct}%`], ['Chambers / MH', String(chambers)], ['Cable', d.cableType]],
-      checks:['Trench depth / cover ≥ 1.0 m', 'Duct integrity (mandrel)', 'Cable pulled & as-built'],
-      checked: civil.status === 'DONE' ? [true, true, true] : civil.status === 'ACTIVE' ? [true, true, false] : [false, false, false] },
+      done: civilDone, issue:false, owner:'Civil contractor', at:`${d.installDate} 12:00`,
+      okQuote:'Cable pulled and as-built captured', openQuote:'Trenching under way',
+      data:[['Method', d.installMethod], ['Buried %', `${d.buriedPct}%`], ['Chambers / MH', String(chambers)], ['Cable', d.cableType]],
+      checks:['Trench depth / cover ≥ 1.0 m', 'Duct integrity (mandrel)', 'Cable pulled & as-built'], ticksWhenOpen:2 },
+
     { key:'splicing', n:'Splicing & closure sealing', sub:`${d.closures.length} closure(s)`,
-      by: d.closures.length ? ODF_STAFF[nint(r.n, 19, 0, ODF_STAFF.length - 1)] : splicingStarted ? 'Field QA' : '—',
-      when: d.closures.length ? `${d.installDate} 12:00` : splicingStarted ? r.otdr : 'pending civil',
-      quote: splicing.status === 'WARN' ? `${d.closures.length} closure(s) over 0.15 dB — re-splice`
-        : splicing.status === 'DONE' ? (d.closures.length ? 'All closures within loss budget' : 'No mid-span closures required on this route')
-        : 'No closures logged yet', ...splicing,
+      done: splicingDone, issue: splicingOver,
+      owner: d.closures.length ? ODF_STAFF[nint(r.n, 19, 0, ODF_STAFF.length - 1)] : 'Field QA',
+      at: d.closures.length ? `${d.installDate} 12:00` : r.otdr,
+      okQuote: d.closures.length ? 'All closures within loss budget' : 'No mid-span closures required on this route',
+      badQuote: `${d.closures.length} closure(s) over 0.15 dB — re-splice`,
+      openQuote: 'Splicing in progress',
       data:[['Closures', String(d.closures.length)], ['Avg splice loss', d.closures.length ? `${d.avgSpliceLoss.toFixed(2)} dB` : '—'],
         ['Worst splice loss', d.worstLossLabel], ['Budget', 'over 0.15 dB']],
-      checks:['Splice loss < 0.15 dB', 'Tray dressing & bend radius', 'Closure pressure-sealed'],
-      checked: splicing.status === 'DONE' ? [true, true, true] : [false, false, false] },
-    { key:'otdr', n:'OTDR / ATP acceptance', sub: d.phase === 'Live' ? 'accepted' : 'pending test window',
-      by: d.phase === 'Live' ? ODF_STAFF[nint(r.n, 20, 0, ODF_STAFF.length - 1)] : '—',
-      when: d.phase === 'Live' ? r.otdr : 'pending',
-      quote: d.phase === 'Live' ? 'Both directions within loss budget' : 'Awaiting splicing completion', ...otdrStage,
-      data:[['Traces', d.phase === 'Live' ? String(d.totalC * 2) : '0'], ['Pass rate', `${d.otdrPass}%`],
+      checks:['Splice loss < 0.15 dB', 'Tray dressing & bend radius', 'Closure pressure-sealed'], ticksWhenOpen:1,
+      /* finished but out of budget: the trays are dressed and the closure is
+         sealed, it is the loss reading that fails */
+      flaggedChecked:[false, true, true] },
+
+    { key:'otdr', n:'OTDR / ATP acceptance', sub: otdrDone ? 'accepted' : 'pending test window',
+      done: otdrDone, issue:false, owner: ODF_STAFF[nint(r.n, 20, 0, ODF_STAFF.length - 1)], at: r.otdr,
+      okQuote:'Both directions within loss budget', openQuote:'Test window open, traces being captured',
+      data:[['Traces', otdrDone ? String(d.totalC * 2) : '0'], ['Pass rate', `${d.otdrPass}%`],
         ['Worst dB/km', r.att], ['Wavelengths', '1310 / 1550 nm']],
-      checks:['Both directions captured', 'Within link-loss budget', 'No failing events'],
-      checked: otdrStage.status === 'DONE' ? [true, true, true] : [false, false, false] },
-    { key:'turnup', n:'Service turn-up (RFS)', sub: turnup.status === 'DONE' ? 'live' : 'pending turn-up',
-      by: turnup.status === 'DONE' ? ODF_STAFF[nint(r.n, 21, 0, ODF_STAFF.length - 1)] : '—',
-      when: turnup.status === 'DONE' ? r.otdr : 'pending',
-      quote: turnup.status === 'DONE' ? 'All gates green — handed over' : 'Awaiting OTDR acceptance', ...turnup,
-      data:[['State', turnup.status === 'DONE' ? 'Live' : 'Pending'], ['Cores live', `${d.usedC}/${d.totalC}`],
-        ['RFS', turnup.status === 'DONE' ? r.otdr : '—'], ['Handover pack', turnup.status === 'DONE' ? 'Signed' : '—']],
-      checks:['All gates green', 'NMS / assurance onboarded', 'Handover pack signed'],
-      checked: turnup.status === 'DONE' ? [true, true, true] : [false, false, false] }
+      checks:['Both directions captured', 'Within link-loss budget', 'No failing events'], ticksWhenOpen:1 },
+
+    { key:'turnup', n:'Service turn-up (RFS)', sub: turnupDone ? 'live' : 'pending turn-up',
+      done: turnupDone, issue:false, owner: ODF_STAFF[nint(r.n, 21, 0, ODF_STAFF.length - 1)], at: r.otdr,
+      okQuote:'All gates green — handed over', openQuote:'Handover pack being assembled',
+      data:[['State', turnupDone ? 'Live' : 'Pending'], ['Cores live', `${d.usedC}/${d.totalC}`],
+        ['RFS', turnupDone ? r.otdr : '—'], ['Handover pack', turnupDone ? 'Signed' : '—']],
+      checks:['All gates green', 'NMS / assurance onboarded', 'Handover pack signed'], ticksWhenOpen:0 }
   ];
+
+  /* ── sequence the lifecycle ──────────────────────────────────────────
+     An OSP build is strictly gated: you cannot trench before the wayleave
+     clears, and you cannot accept a span whose splices are out of budget.
+     So a stage only opens once everything before it closed cleanly. The
+     first stage that is not cleanly done is the one in play — WARN if its
+     own evidence is bad, ACTIVE if it is simply under way — and every
+     stage after it reads PENDING, blocked on that stage by name. Without
+     this, stages were computed independently and the strip could show
+     Civil ACTIVE while the permit above it was still WARN. */
+  let blockedBy = null;
+  return defs.map(st => {
+    let status, tone, quote, checked;
+    if (blockedBy) {
+      status = 'PENDING'; tone = 'neutral'; quote = `Blocked — awaiting ${blockedBy}`;
+      checked = st.checks.map(() => false);
+    } else if (st.done) {
+      /* the stage closed. A quality flag (an out-of-budget splice, say) shows
+         WARN but does NOT hold the chain — the work is finished, so later
+         stages legitimately proceeded. Only an unfinished stage blocks. */
+      status = st.issue ? 'WARN' : 'DONE';
+      tone = st.issue ? 'error' : 'success';
+      quote = st.issue ? (st.badQuote || st.okQuote) : st.okQuote;
+      checked = st.issue ? (st.flaggedChecked || st.checks.map(() => true)) : st.checks.map(() => true);
+    } else {
+      /* not finished: this is the stage in play, and everything after it is
+         blocked on it — you cannot trench before the wayleave clears. */
+      status = st.issue ? 'WARN' : 'ACTIVE';
+      tone = st.issue ? 'error' : 'info';
+      quote = st.issue ? (st.badQuote || st.okQuote) : (st.openQuote || st.okQuote);
+      checked = st.checks.map((_, i) => i < st.ticksWhenOpen);
+      blockedBy = st.n;
+    }
+    return {
+      key: st.key, n: st.n, sub: st.sub, status, tone, quote, data: st.data, checks: st.checks,
+      by: status === 'PENDING' ? '—' : st.owner,
+      when: status === 'PENDING' ? 'pending' : status === 'ACTIVE' ? 'in progress' : st.at,
+      checked, open: status !== 'DONE'
+    };
+  });
 }
 
 /* ── Overview snapshot: KPI row, a fault banner when one applies, and
@@ -1958,7 +2208,7 @@ function fiberPhysicalTab(r, d) {
       ${cb.spareCount} spare fibre${cb.spareCount===1?'':'s'} — headroom for ~${svcEstimate} more service${svcEstimate===1?'':'s'} at a typical 4-fibre allocation</p>`);
 
   const photoCard = card(`${headSm('Photos')}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,168px));gap:var(--vw-space-md);margin-top:var(--vw-space-md)">
       ${mediaTile(mediaIllustrationCableCrossSection(), 'Cable cross-section', d.installDate, false)}
       ${mediaTile(mediaIllustrationLabelTag(), 'Drum / reel label', d.installDate, false)}
     </div>`);
@@ -1973,7 +2223,7 @@ function fiberPhysicalTab(r, d) {
           <span class="vw-label">${esc(k)}</span><span class="vw-value" style="margin-top:2px">${esc(v)}</span></div>`).join('')}
     </div>`);
 
-  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vw-space-lg);align-items:start">
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vw-space-lg);align-items:stretch">
     ${detailsCard}
     ${utilCard}
     ${photoCard}
@@ -2471,7 +2721,7 @@ function viewFiberDetail() {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--vw-space-md)">
           ${stages.map((st, i) => fiberStageCard(st, i)).join('')}
         </div>`)}
-      <div class="row-t" style="align-items:start">
+      <div class="row-t" style="align-items:stretch">
         ${fiberActivityTeaser(stages)}
         ${fiberDocsTeaser(d)}
       </div>`

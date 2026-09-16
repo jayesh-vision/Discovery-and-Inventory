@@ -9,7 +9,11 @@ type Item = { key: string; label: string } | { group: string; label: string; chi
 const RAIL: { section: string; items: Item[] }[] = [
   { section: 'Discovery and reconciliation', items: [
     { key: 'insights', label: 'Insights' }, { key: 'jobs', label: 'Scan jobs' },
-    { key: 'targets', label: 'Scan targets' }, { key: 'reconcile', label: 'Reconciliation' } ] },
+    { key: 'targets', label: 'Scan targets' },
+    { group: 'recon', label: 'Reconciliation', children: [
+      { key: 'reconcile', label: 'Overview' }, { key: 'reconcilejobs', label: 'Jobs' },
+      { key: 'reconcileresults', label: 'Results' }, { key: 'reconcileexceptions', label: 'Exceptions' },
+      { key: 'rules', label: 'Rules' } ] } ] },
   { section: 'Inventory', items: [
     { key: 'location', label: 'Location' },
     { group: 'res', label: 'Resources', children: [
@@ -32,7 +36,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
   const { pathname } = useLocation();
   const nav = useNavigate();
   const active = activeRailKey(pathname);
-  const [open, setOpen] = useState<Record<string, boolean>>({ res: true, con: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ res: true, con: true, recon: true });
   useEffect(() => {
     /* a child that is active keeps its group open */
     for (const sec of RAIL) for (const it of sec.items)

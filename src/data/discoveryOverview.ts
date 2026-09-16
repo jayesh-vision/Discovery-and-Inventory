@@ -95,23 +95,25 @@ export const ADAPTER_ROWS: AdapterRow[] = [
 ];
 
 /* ── Collector health ─────────────────────────────────────────────────── */
-export interface CollectorRow { name: string; targets: number; p95: string; checkin: string; status: 'Online' | 'High latency' }
+export interface CollectorRow { name: string; domain: DomainKey; targets: number; p95: string; checkin: string; status: 'Online' | 'High latency' }
 export const COLLECTOR_ROWS: CollectorRow[] = [
-  { name: 'Collector-East', targets: 3204, p95: '8.88s', checkin: '12s ago', status: 'Online' },
-  { name: 'Collector-West', targets: 2898, p95: '4.81s', checkin: '8s ago', status: 'High latency' },
-  { name: 'Collector-Central', targets: 3418, p95: '8.94s', checkin: '15s ago', status: 'Online' },
-  { name: 'Collector-Transport', targets: 2678, p95: '1.02s', checkin: '22s ago', status: 'Online' }
+  { name: 'Collector-West', domain: 'RAN', targets: 3204, p95: '8.88s', checkin: '12s ago', status: 'High latency' },
+  { name: 'Collector-East', domain: 'Core', targets: 2898, p95: '4.81s', checkin: '8s ago', status: 'Online' },
+  { name: 'Collector-Central', domain: 'IPMPLS', targets: 3418, p95: '8.94s', checkin: '15s ago', status: 'Online' },
+  { name: 'Collector-Transport', domain: 'Transport', targets: 2678, p95: '1.02s', checkin: '22s ago', status: 'Online' }
 ];
 
 /* ── Failures by root cause ───────────────────────────────────────────── */
-export interface RootCauseFailure { cause: string; targets: number; examples: string[]; action: string; tag: 'AUTH' | 'NET' | 'FGP' }
+export interface RootCauseFailure { cause: string; domain: DomainKey; targets: number; examples: string[]; action: string; tag: 'AUTH' | 'NET' | 'FGP' }
 export const ROOT_CAUSE_FAILURES: RootCauseFailure[] = [
-  { cause: 'One credential rotation, not 18 incidents', targets: 18,
+  { cause: 'One credential rotation, not 18 incidents', domain: 'Transport', targets: 18,
     examples: ['TL1-Transport-Legacy-04', 'PE-Core-Backup-02'], action: 'Re-sync vault profile', tag: 'AUTH' },
-  { cause: 'Unreachable — 30 behind a degraded collector', targets: 42,
+  { cause: 'Unreachable — 30 behind a degraded collector', domain: 'RAN', targets: 42,
     examples: ['10.44.12.87', '10.212.6.140'], action: 'Health-check Collector-West', tag: 'NET' },
-  { cause: 'Answered SNMP, matched no fingerprint', targets: 8,
-    examples: ['gNB-Legacy-889'], action: 'Send to fingerprint review', tag: 'FGP' }
+  { cause: 'Answered SNMP, matched no fingerprint', domain: 'RAN', targets: 8,
+    examples: ['gNB-Legacy-889'], action: 'Send to fingerprint review', tag: 'FGP' },
+  { cause: 'NRF heartbeat gap, subscription not renewed', domain: 'Core', targets: 6,
+    examples: ['BLR-UPF-CORE-05', 'BLR-AMF-CORE-02'], action: 'Restart NRF subscription', tag: 'NET' }
 ];
 
 /* ── Reconciliation cycles, most recent per domain ───────────────────── */
@@ -139,22 +141,23 @@ export const MATCH_TOTAL_NOTE = '11,959 matched · 147 open across six classes';
 
 /* ── Discrepancy types ────────────────────────────────────────────────── */
 export type DiscrepancyCategory = 'EXISTENCE' | 'ATTRIBUTE' | 'RELATIONSHIP' | 'FRESHNESS';
-export interface DiscrepancyTypeRow { label: string; category: DiscrepancyCategory; domain: DomainKey; count: number }
+export type AgeBand = '<1h' | '1-24h' | '1-7d' | '7-30d' | '>30d';
+export interface DiscrepancyTypeRow { label: string; category: DiscrepancyCategory; domain: DomainKey; count: number; ageBand: AgeBand }
 export const DISCREPANCY_TYPES: DiscrepancyTypeRow[] = [
-  { label: 'Undocumented wavelength', category: 'EXISTENCE', domain: 'Transport', count: 42 },
-  { label: 'PCI value ≠ record', category: 'ATTRIBUTE', domain: 'RAN', count: 18 },
-  { label: 'New / unregistered cell', category: 'EXISTENCE', domain: 'RAN', count: 14 },
-  { label: 'Neighbour relation drift', category: 'RELATIONSHIP', domain: 'RAN', count: 12 },
-  { label: 'NE registration mismatch', category: 'ATTRIBUTE', domain: 'Core', count: 12 },
-  { label: 'Decommissioned record on file', category: 'EXISTENCE', domain: 'IPMPLS', count: 12 },
-  { label: 'Antenna parameter drift', category: 'ATTRIBUTE', domain: 'RAN', count: 8 },
-  { label: 'ROADM setpoint drift', category: 'ATTRIBUTE', domain: 'Transport', count: 6 },
-  { label: 'Interface admin state ≠ record', category: 'ATTRIBUTE', domain: 'IPMPLS', count: 5 },
-  { label: 'Record with no live peer', category: 'EXISTENCE', domain: 'Core', count: 4 },
-  { label: 'Core config drift', category: 'ATTRIBUTE', domain: 'Core', count: 4 },
-  { label: 'Topology gap (LLDP)', category: 'RELATIONSHIP', domain: 'Transport', count: 4 },
-  { label: 'Stale, past re-verify window', category: 'FRESHNESS', domain: 'IPMPLS', count: 4 },
-  { label: 'VLAN/LAG membership', category: 'RELATIONSHIP', domain: 'Transport', count: 2 }
+  { label: 'Undocumented wavelength', category: 'EXISTENCE', domain: 'Transport', count: 52, ageBand: '<1h' },
+  { label: 'PCI value ≠ record', category: 'ATTRIBUTE', domain: 'RAN', count: 18, ageBand: '1-7d' },
+  { label: 'New / unregistered cell', category: 'EXISTENCE', domain: 'RAN', count: 14, ageBand: '1-7d' },
+  { label: 'Neighbour relation drift', category: 'RELATIONSHIP', domain: 'RAN', count: 12, ageBand: '1-24h' },
+  { label: 'NE registration mismatch', category: 'ATTRIBUTE', domain: 'Core', count: 12, ageBand: '1-24h' },
+  { label: 'Decommissioned record on file', category: 'EXISTENCE', domain: 'IPMPLS', count: 2, ageBand: '1-24h' },
+  { label: 'Antenna parameter drift', category: 'ATTRIBUTE', domain: 'RAN', count: 8, ageBand: '7-30d' },
+  { label: 'ROADM setpoint drift', category: 'ATTRIBUTE', domain: 'Transport', count: 6, ageBand: '>30d' },
+  { label: 'Interface admin state ≠ record', category: 'ATTRIBUTE', domain: 'IPMPLS', count: 5, ageBand: '7-30d' },
+  { label: 'Record with no live peer', category: 'EXISTENCE', domain: 'Core', count: 4, ageBand: '1-24h' },
+  { label: 'Core config drift', category: 'ATTRIBUTE', domain: 'Core', count: 4, ageBand: '1-24h' },
+  { label: 'Topology gap (LLDP)', category: 'RELATIONSHIP', domain: 'Transport', count: 4, ageBand: '1-24h' },
+  { label: 'Stale, past re-verify window', category: 'FRESHNESS', domain: 'IPMPLS', count: 4, ageBand: '1-24h' },
+  { label: 'VLAN/LAG membership', category: 'RELATIONSHIP', domain: 'Transport', count: 2, ageBand: '7-30d' }
 ];
 
 /* ── Backlog, last 30 days ────────────────────────────────────────────── */
@@ -168,29 +171,58 @@ export const BACKLOG_AUTORESOLVED = Array.from({ length: 30 }, (_, i) => wave(i,
 BACKLOG_DETECTED[29] = 135;
 BACKLOG_AUTORESOLVED[29] = 82;
 
-export interface AgeBucket { bucket: string; count: number }
+export interface AgeBucket { bucket: string; band: AgeBand; count: number }
 export const BACKLOG_AGE: AgeBucket[] = [
-  { bucket: '< 1h', count: 53 },
-  { bucket: '1–24h', count: 41 },
-  { bucket: '1–7d', count: 32 },
-  { bucket: '7–30d', count: 15 },
-  { bucket: '> 30d', count: 6 }
+  { bucket: '< 1h', band: '<1h', count: 52 },
+  { bucket: '1–24h', band: '1-24h', count: 42 },
+  { bucket: '1–7d', band: '1-7d', count: 32 },
+  { bucket: '7–30d', band: '7-30d', count: 15 },
+  { bucket: '> 30d', band: '>30d', count: 6 }
 ];
+/* every one of the 147 DISCREPANCY_TYPES units is aged into exactly one of
+   these five buckets, so "click an age bucket, see its items" shows real,
+   matching rows rather than a filter with nothing behind it */
+(() => {
+  BACKLOG_AGE.forEach(b => {
+    const sum = DISCREPANCY_TYPES.filter(t => t.ageBand === b.band).reduce((a, t) => a + t.count, 0);
+    if (sum !== b.count) throw new Error(`discoveryOverview: age band ${b.band} sums to ${sum}, BACKLOG_AGE says ${b.count}`);
+  });
+})();
 
 /* ── Trust by domain and region ──────────────────────────────────────── */
 export interface DomainTrustRow { domain: DomainKey; inScope: number; unverified: number | null; inSync: number; trustIndexPct: number; open: number; mttrHours: number; touchlessPct: number }
 export const DOMAIN_TRUST_ROWS: DomainTrustRow[] = [
   { domain: 'RAN', inScope: 8450, unverified: 38, inSync: 8360, trustIndexPct: 98.93, open: 52, mttrHours: 4.2, touchlessPct: 65 },
   { domain: 'Transport', inScope: 2180, unverified: 30, inSync: 2086, trustIndexPct: 95.69, open: 64, mttrHours: 19.4, touchlessPct: 53 },
-  { domain: 'Core', inScope: 340, unverified: null, inSync: 320, trustIndexPct: 94.12, open: 28, mttrHours: 6.8, touchlessPct: 61 },
+  { domain: 'Core', inScope: 340, unverified: null, inSync: 320, trustIndexPct: 94.12, open: 20, mttrHours: 6.8, touchlessPct: 61 },
   { domain: 'IPMPLS', inScope: 1284, unverified: null, inSync: 1193, trustIndexPct: 99.09, open: 11, mttrHours: 2.1, touchlessPct: 75 }
 ];
-/* the footer row restates the page-level hero KPIs, not a sum of the four
-   visible domains above — those add to a different, department-level total
-   (12,254 in scope, 155 open) that the trust index and touchless figures
-   were never scoped to, so "All domains" pulls from the same constants the
-   Inventory trust cards and Backlog use instead of re-deriving them */
+/* the footer row restates the page-level hero KPIs, not re-derived from the
+   four visible domains above. `open` (147) is the one figure that IS an
+   exact sum of the domain rows (52+64+20+11) — it's also the same 147 the
+   hero KPI, DISCREPANCY_TYPES and REGION_DISCREPANCY all foot to, checked
+   below. `inScope` (12,174) does NOT sum from the domain rows (12,254) —
+   that's a wider, department-level population (includes assets no single
+   domain job scope claims) the trust index and touchless figures were never
+   computed over, so it's kept as its own constant rather than forced to
+   match a sum it was never meant to equal. */
 export const DOMAIN_TRUST_TOTAL = { inScope: '12,174', unverified: '68', inSync: '11,959', trustIndexPct: '98.23%', open: '147', mttrHours: '9.6h', touchlessPct: '60.7%' };
+(() => {
+  const openSum = DOMAIN_TRUST_ROWS.reduce((a, d) => a + d.open, 0);
+  if (openSum !== 147) throw new Error(`discoveryOverview: domain open counts sum to ${openSum}, not 147`);
+})();
+/* every widget on this page that claims a per-domain slice of the 147 open
+   backlog — this table, DISCREPANCY_TYPES, and the region heatmap — must
+   foot to the same four numbers, or "click a domain, see its items"
+   silently shows the wrong count */
+(() => {
+  const byDomain: Record<DomainKey, number> = { RAN: 0, Core: 0, Transport: 0, IPMPLS: 0 };
+  DISCREPANCY_TYPES.forEach(t => { byDomain[t.domain] += t.count; });
+  (['RAN', 'Core', 'Transport', 'IPMPLS'] as DomainKey[]).forEach(d => {
+    const want = DOMAIN_TRUST_ROWS.find(r => r.domain === d)!.open;
+    if (byDomain[d] !== want) throw new Error(`discoveryOverview: DISCREPANCY_TYPES ${d} sums to ${byDomain[d]}, domain trust says ${want}`);
+  });
+})();
 
 /* ── Executive view ───────────────────────────────────────────────────── */
 
@@ -277,5 +309,12 @@ export const REGION_DISCREPANCY: RegionHeatRow[] = [
   { region: 'West', drift: { RAN: 19, Transport: 25, Core: 8, IPMPLS: 5 } },
   { region: 'Southeast', drift: { RAN: 13, Transport: 17, Core: 5, IPMPLS: 3 } },
   { region: 'Northeast', drift: { RAN: 9, Transport: 11, Core: 4, IPMPLS: 2 } },
-  { region: 'Midwest', drift: { RAN: 11, Transport: 11, Core: 2, IPMPLS: 2 } }
+  { region: 'Midwest', drift: { RAN: 11, Transport: 11, Core: 3, IPMPLS: 1 } }
 ];
+(() => {
+  (['RAN', 'Core', 'Transport', 'IPMPLS'] as DomainKey[]).forEach(d => {
+    const sum = REGION_DISCREPANCY.reduce((a, r) => a + r.drift[d], 0);
+    const want = DOMAIN_TRUST_ROWS.find(r => r.domain === d)!.open;
+    if (sum !== want) throw new Error(`discoveryOverview: REGION_DISCREPANCY ${d} sums to ${sum}, domain trust says ${want}`);
+  });
+})();

@@ -2,20 +2,54 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { StackedBars, RampBars, Sparkline, MultiLineChart } from '../components/charts';
+import { Drawer } from '../components/Drawer';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   ADAPTER_ROWS, COLLECTOR_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
   MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
   BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey
+  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey,
+  type DiscoveryJobRow, type AdapterRow, type CollectorRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
 import { domainToUrl } from './DomainDevices';
+
+/* one drawer, five possible row shapes — simpler than five parallel
+   useState hooks for what is, on screen, always exactly one open panel */
+type DrawerState =
+  | { kind: 'job'; row: DiscoveryJobRow }
+  | { kind: 'adapter'; row: AdapterRow }
+  | { kind: 'collector'; row: CollectorRow }
+  | { kind: 'failure'; row: RootCauseFailure }
+  | { kind: 'cycle'; row: ReconcileCycleRow };
+
+function drawerTitle(d: DrawerState): string {
+  switch (d.kind) {
+    case 'job': return `${DOMAIN_LABEL[d.row.domain]} discovery job`;
+    case 'adapter': return d.row.adapter;
+    case 'collector': return d.row.name;
+    case 'failure': return d.row.cause;
+    case 'cycle': return `${DOMAIN_LABEL[d.row.domain]} reconciliation cycle`;
+  }
+}
+function drawerSub(d: DrawerState): string {
+  return d.kind === 'adapter' ? d.row.domains.map(x => DOMAIN_LABEL[x]).join(' · ') : DOMAIN_LABEL[d.row.domain];
+}
 
 /* RAN, Transport, Core, IP/MPLS — the display order every legend and table
    on this page uses. DOMAIN_HEX itself keeps its own key order (it's
    shared with the Reconciliation page), so this is defined locally rather
    than read off Object.keys(DOMAIN_HEX). */
 const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
+
+/* Match outcome → the Discrepancy details screen's own category filter.
+   "Matched" has nothing to drill into (it's the healthy population, not a
+   discrepancy), so it's the one tile with no entry here and stays inert. */
+const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
+  'Attribute mismatch': 'ATTRIBUTE',
+  'Extra — no record': 'EXISTENCE',
+  'Relationship drift': 'RELATIONSHIP',
+  'Missing — no live peer': 'EXISTENCE'
+};
 
 const DomainDot = ({ domain }: { domain: DomainKey }) => (
   <span className="row vw-items-center" style={{ gap: '8px' }}>
@@ -56,6 +90,21 @@ function SectionTitle({ children }: { children: ReactNode }) {
   return <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--vw-color-gray-900)' }}>{children}</div>;
 }
 
+/* the hero card's own delta reads "▲ 0.41 pt vs 7 days ago · target 99.00%" —
+   split off the leading arrow + figure and color it by direction (▲ green,
+   ▼ red), leaving the rest of the sentence in the page's usual muted tone */
+function TrustDelta({ sub }: { sub: string }) {
+  const m = /^([▲▼])\s*([^\s]+(?:\s+[a-z.]+)?)\s*(.*)$/.exec(sub);
+  if (!m) return <span className="vw-card-metric-label-sub">{sub}</span>;
+  const [, arrow, figure, rest] = m;
+  const up = arrow === '▲';
+  return (
+    <span className="vw-card-metric-label-sub">
+      <span style={{ color: up ? cv('emerald', 600) : cv('red', 600), fontWeight: 600 }}>{arrow} {figure}</span>{' '}{rest}
+    </span>
+  );
+}
+
 /* inline mini meter beside a percentage — used for adapter success rate,
    job coverage and trust index, the same idiom the Reconciliation page
    uses for scan % */
@@ -87,14 +136,18 @@ function heatShade(v: number, max: number) {
   const r = v / max;
   return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
 }
-function HeatPill({ v, max = REGION_HEAT_MAX }: { v: number; max?: number }) {
+function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
+  v: number; region: string; domain: DomainKey; onOpen: (d: DomainKey) => void; max?: number;
+}) {
   const shade = heatShade(v, max);
   return (
     <td style={{ padding: '4px' }}>
-      <div className="num" style={{
-        padding: '13px 8px', borderRadius: '10px', textAlign: 'center', fontSize: '1rem',
-        background: cv('blue', shade), color: shade >= 500 ? 'var(--vw-color-white)' : cv('blue', 900), fontWeight: 600
-      }}>{v}</div>
+      <button className="num is-drill" title={`${region} · ${DOMAIN_LABEL[domain]} · ${v} open — view ${DOMAIN_LABEL[domain]} devices`}
+        onClick={() => onOpen(domain)}
+        style={{
+          display: 'block', width: '100%', padding: '13px 8px', borderRadius: '10px', textAlign: 'center', fontSize: '1rem', border: 0,
+          background: cv('blue', shade), color: shade >= 500 ? 'var(--vw-color-white)' : cv('blue', 900), fontWeight: 600, cursor: 'pointer'
+        }}>{v}</button>
     </td>
   );
 }
@@ -103,8 +156,29 @@ export default function Insights() {
   const nav = useNavigate();
   const openDomain = (d: DomainKey) => nav(`/discovery/insights/domain/${domainToUrl(d)}`);
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
-  const [objView, setObjView] = useState<'chart' | 'table'>('chart');
-  const [backlogView, setBacklogView] = useState<'chart' | 'table'>('chart');
+  const [drawer, setDrawer] = useState<DrawerState | null>(null);
+  /* the row's own fix action is a real local acknowledgement, not a fake
+     network round-trip — the button records that it was requested and
+     disables, the same honest "no backend" idiom used everywhere else in
+     this app rather than a toast claiming a system it did something */
+  const [requested, setRequested] = useState<Record<string, boolean>>({});
+  const toDiscrepancies = (params: Record<string, string> = {}) => {
+    const p = new URLSearchParams(params);
+    nav(`/discovery/insights/discrepancies${p.toString() ? '?' + p.toString() : ''}`);
+  };
+  /* the 3 non-hero KPI tiles each have one real, meaningful destination;
+     "Inventory trust index" itself stays a plain figure — there's no single
+     drill-down it names the way the other three do */
+  const KPI_TARGET: Partial<Record<string, () => void>> = {
+    'Discovery coverage': () => nav('/discovery/targets'),
+    'Open discrepancy backlog': () => toDiscrepancies(),
+    'Mean time to reconcile': () => openDomain('Transport')
+  };
+  const KPI_HINT: Record<string, string> = {
+    'Discovery coverage': 'View Scan targets',
+    'Open discrepancy backlog': 'View all open discrepancies',
+    'Mean time to reconcile': 'View Transport, the current outlier'
+  };
   const objDays = objRange === '7d' ? OBJECTS_DAILY_DAYS.slice(-7) : OBJECTS_DAILY_DAYS;
   const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
@@ -119,20 +193,26 @@ export default function Insights() {
           <div className="eyebrow">{TRUST_METRICS[0].label}</div>
           <div className="num" style={{ fontSize: '2.75rem', fontWeight: 700, marginTop: '6px', lineHeight: 1 }}>{TRUST_METRICS[0].value}</div>
           <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-            <span className="vw-card-metric-label-sub">{TRUST_METRICS[0].sub}</span>
+            <TrustDelta sub={TRUST_METRICS[0].sub} />
           </div>
         </Card>
         <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-          {TRUST_METRICS.slice(1).map(m => (
-            <Card key={m.label} style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="eyebrow">{m.label}</div>
-              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
-              <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
-              <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
-                <Sparkline values={m.trend} hex={m.tone === 'up' ? 'var(--vw-color-emerald-500)' : 'var(--vw-color-slate-400)'} />
-              </div>
-            </Card>
-          ))}
+          {TRUST_METRICS.slice(1).map(m => {
+            const to = KPI_TARGET[m.label];
+            const Wrap = to ? 'button' : 'div';
+            return (
+              <Wrap key={m.label} className={`vw-card-section${to ? ' is-drill' : ''}`}
+                style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
+                <div className="eyebrow">{m.label}</div>
+                <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, marginTop: '4px', lineHeight: 1.1 }}>{m.value}</div>
+                <div className="vw-card-metric-label-sub" style={{ marginTop: '4px' }}>{m.sub}</div>
+                <div style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
+                  <Sparkline values={m.trend} hex="var(--vw-color-blue-500)" />
+                </div>
+              </Wrap>
+            );
+          })}
         </div>
       </div>
 
@@ -146,7 +226,9 @@ export default function Insights() {
           <table className="mtbl">
             <thead><tr><th>Domain · adapters</th><th>Schedule</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>Coverage</th><th>Last → next run</th></tr></thead>
             <tbody>{DISCOVERY_JOB_ROWS.map(j => (
-              <tr key={j.domain}>
+              <tr key={j.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'job', row: j })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'job', row: j }); } }}
+                aria-label={`View ${DOMAIN_LABEL[j.domain]} discovery job details`}>
                 <td>
                   <DomainDot domain={j.domain} />
                   <div className="cell-sub">{j.protocols}</div>
@@ -168,32 +250,20 @@ export default function Insights() {
           </table>
         </Card>
 
-        <Card>
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="row vw-justify-between vw-items-start">
             <div>
               <span className="vw-card-title-sm">New items discovered per day</span>
               <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last {objRange === '7d' ? '7' : '14'} days · {objTotal} items · {objToday} today</div>
             </div>
             <div className="tabbar" style={{ marginBottom: 0, flexShrink: 0 }}>
-              <button className={`tab${objRange === '7d' && objView === 'chart' ? ' is-on' : ''}`} onClick={() => { setObjRange('7d'); setObjView('chart'); }}>7d</button>
-              <button className={`tab${objRange === '14d' && objView === 'chart' ? ' is-on' : ''}`} onClick={() => { setObjRange('14d'); setObjView('chart'); }}>14d</button>
-              <button className={`tab${objView === 'table' ? ' is-on' : ''}`} onClick={() => setObjView('table')}>Table</button>
+              <button className={`tab${objRange === '7d' ? ' is-on' : ''}`} onClick={() => setObjRange('7d')}>7d</button>
+              <button className={`tab${objRange === '14d' ? ' is-on' : ''}`} onClick={() => setObjRange('14d')}>14d</button>
             </div>
           </div>
-          {objView === 'chart' ? (
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={230} />
-          ) : (
-            <table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
-              <thead><tr><th>Day</th>{OBJECTS_DAILY_SERIES.map(s => <th key={s.k} style={{ textAlign: 'right' }}>{s.n}</th>)}<th style={{ textAlign: 'right' }}>Total</th></tr></thead>
-              <tbody>{objDays.map((d, i) => (
-                <tr key={d}>
-                  <td>{d}</td>
-                  {objValues[i].map((v, si) => <td key={si} className="num" style={{ textAlign: 'right' }}>{v}</td>)}
-                  <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{objValues[i].reduce((a, b) => a + b, 0)}</td>
-                </tr>))}
-              </tbody>
-            </table>
-          )}
+          </div>
         </Card>
       </div>
 
@@ -205,7 +275,9 @@ export default function Insights() {
           <table className="mtbl">
             <thead><tr><th>Adapter</th><th>Domains</th><th style={{ textAlign: 'right' }}>Endpoints</th><th style={{ textAlign: 'right' }}>Success</th><th>Status</th></tr></thead>
             <tbody>{ADAPTER_ROWS.map(a => (
-              <tr key={a.adapter}>
+              <tr key={a.adapter} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'adapter', row: a })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'adapter', row: a }); } }}
+                aria-label={`View ${a.adapter} adapter details`}>
                 <td>
                   <span className="vw-value">{a.adapter}</span>
                   <div className="cell-sub">{a.proto}</div>
@@ -219,21 +291,26 @@ export default function Insights() {
           </table>
         </Card>
 
-        <Card>
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Collector health</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Targets, p95 poll latency and check-in</div>
-          <table className="mtbl">
-            <thead><tr><th>Collector</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
-            <tbody>{COLLECTOR_ROWS.map(c => (
-              <tr key={c.name}>
-                <td className="vw-value">{c.name}</td>
-                <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
-                <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
-                <td className="cell-sub">{c.checkin}</td>
-                <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
-              </tr>))}
-            </tbody>
-          </table>
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <table className="mtbl">
+              <thead><tr><th>Collector</th><th>Domain</th><th style={{ textAlign: 'right' }}>Targets</th><th style={{ textAlign: 'right' }}>p95 latency</th><th>Check-in</th><th>Status</th></tr></thead>
+              <tbody>{COLLECTOR_ROWS.map(c => (
+                <tr key={c.name} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'collector', row: c })}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'collector', row: c }); } }}
+                  aria-label={`View ${c.name} collector details`}>
+                  <td className="vw-value">{c.name}</td>
+                  <td><DomainDot domain={c.domain} /></td>
+                  <td className="num" style={{ textAlign: 'right' }}>{c.targets.toLocaleString('en-IN')}</td>
+                  <td className="num" style={{ textAlign: 'right', color: c.status === 'High latency' ? cv('amber', 700) : undefined, fontWeight: c.status === 'High latency' ? 600 : undefined }}>{c.p95}</td>
+                  <td className="cell-sub">{c.checkin}</td>
+                  <td><Chip tone={c.status === 'Online' ? 'success' : 'warning'}>{c.status}</Chip></td>
+                </tr>))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
 
@@ -246,8 +323,13 @@ export default function Insights() {
         <div>
           {ROOT_CAUSE_FAILURES.map(f => {
             const extra = f.targets - f.examples.length;
+            const acted = !!requested[f.cause];
             return (
-              <div key={f.cause} className="row vw-items-center" style={{ gap: '12px', padding: '11px 0', borderTop: '1px solid var(--vw-color-slate-100)' }}>
+              <div key={f.cause} className="row vw-items-center is-click" tabIndex={0}
+                style={{ gap: '12px', padding: '11px 0', borderTop: '1px solid var(--vw-color-slate-100)', cursor: 'pointer' }}
+                onClick={() => setDrawer({ kind: 'failure', row: f })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'failure', row: f }); } }}
+                aria-label={`View details for ${f.cause}`}>
                 <span className="mono" style={{
                   width: 28, height: 28, borderRadius: '7px', flexShrink: 0, marginTop: '1px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -255,7 +337,10 @@ export default function Insights() {
                   fontSize: '0.625rem', fontWeight: 600
                 }}>{f.tag}</span>
                 <div className="grow" style={{ minWidth: 0 }}>
-                  <div className="vw-value" style={{ fontSize: '0.9375rem', fontWeight: 600 }}>{f.cause}</div>
+                  <div className="row vw-items-center" style={{ gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[f.domain], flexShrink: 0 }} />
+                    <div className="vw-value" style={{ fontSize: '0.9375rem', fontWeight: 600 }}>{f.cause}</div>
+                  </div>
                   <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
                     {f.examples.map(ex => <span key={ex} className="mono" style={{ fontSize: '0.6875rem', color: 'var(--vw-color-gray-600)', background: 'var(--vw-color-slate-100)', borderRadius: '4px', padding: '2px 7px' }}>{ex}</span>)}
                     {extra > 0 && <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--vw-color-gray-600)', background: 'var(--vw-color-slate-100)', borderRadius: '4px', padding: '2px 7px' }}>+{extra} more</span>}
@@ -263,7 +348,10 @@ export default function Insights() {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                   <Chip tone="neutral">{f.targets} targets</Chip>
-                  <button className="nst-btn nst-btn--xs nst-btn--ghost">{f.action}</button>
+                  <button className={`nst-btn nst-btn--xs${acted ? '' : ' nst-btn--ghost'}`} disabled={acted}
+                    onClick={e => { e.stopPropagation(); setRequested(r => ({ ...r, [f.cause]: true })); }}>
+                    {acted ? '✓ Requested' : f.action}
+                  </button>
                 </div>
               </div>
             );
@@ -282,12 +370,18 @@ export default function Insights() {
           background: 'var(--vw-color-slate-200)',
           borderTop: '1px solid var(--vw-color-slate-200)', marginTop: 'var(--vw-space-md)'
         }}>
-          {MATCH_OUTCOME.slice(0, 5).map((t, i) => (
-            <div key={t.label} style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px' }}>
-              <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
-              <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>{t.label}</div>
-            </div>
-          ))}
+          {MATCH_OUTCOME.slice(0, 5).map((t, i) => {
+            const category = MATCH_OUTCOME_CATEGORY[t.label];
+            const Tile = category ? 'button' : 'div';
+            return (
+              <Tile key={t.label} className={category ? 'is-drill' : undefined}
+                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%' }}
+                {...(category ? { onClick: () => toDiscrepancies({ category }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
+                <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
+                <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>{t.label}</div>
+              </Tile>
+            );
+          })}
         </div>
       </Card>
 
@@ -341,7 +435,7 @@ export default function Insights() {
               return (
                 <tr key={r.region}>
                   <td className="vw-value" style={{ fontWeight: 600 }}>{r.region}</td>
-                  {DOMAIN_KEYS.map(k => <HeatPill key={k} v={r.drift[k]} />)}
+                  {DOMAIN_KEYS.map(k => <HeatPill key={k} v={r.drift[k]} region={r.region} domain={k} onOpen={openDomain} />)}
                   <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{open}</td>
                 </tr>
               );
@@ -360,56 +454,37 @@ export default function Insights() {
       <SectionTitle>Backlog</SectionTitle>
       <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
         <Card>
-          <div className="row vw-justify-between vw-items-start">
-            <div>
-              <span className="vw-card-title-sm">Detected vs auto-resolved, per day</span>
-              <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 30 days</div>
-            </div>
-            <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ flexShrink: 0 }}
-              onClick={() => setBacklogView(v => v === 'chart' ? 'table' : 'chart')}>{backlogView === 'chart' ? 'Table' : 'Chart'}</button>
-          </div>
-          {backlogView === 'chart' ? (
-            <MultiLineChart labels={BACKLOG_DAYS} height={230} format={v => v.toLocaleString('en-IN')}
-              series={[
-                { n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED },
-                { n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }
-              ]}
-              detail={i => {
-                const det = BACKLOG_DETECTED[i], auto = BACKLOG_AUTORESOLVED[i], eng = det - auto;
-                const rate = det ? (auto / det * 100).toFixed(1) : '0.0';
-                return (
-                  <>
-                    <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-blue-500)' }} />Detected<span className="grow" /><span className="num">{det}</span></div>
-                    <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-emerald-500)' }} />Auto-resolved<span className="grow" /><span className="num">{auto}</span></div>
-                    <div className="ch-tip-r">To engineers<span className="grow" /><span className="num">{eng}</span></div>
-                    <div className="ch-tip-r ch-tip-t">Automation rate<span className="grow" /><span className="num">{rate}%</span></div>
-                  </>
-                );
-              }} />
-          ) : (
-            <div className="scroll-x" style={{ maxHeight: 230, overflowY: 'auto', marginTop: 'var(--vw-space-sm)' }}>
-              <table className="mtbl">
-                <thead><tr><th>Day</th><th style={{ textAlign: 'right' }}>Detected</th><th style={{ textAlign: 'right' }}>Auto-resolved</th><th style={{ textAlign: 'right' }}>Automation rate</th></tr></thead>
-                <tbody>{BACKLOG_DAYS.map((d, i) => (
-                  <tr key={d}>
-                    <td>{d}</td>
-                    <td className="num" style={{ textAlign: 'right' }}>{BACKLOG_DETECTED[i]}</td>
-                    <td className="num" style={{ textAlign: 'right' }}>{BACKLOG_AUTORESOLVED[i]}</td>
-                    <td className="num" style={{ textAlign: 'right' }}>{(BACKLOG_AUTORESOLVED[i] / BACKLOG_DETECTED[i] * 100).toFixed(1)}%</td>
-                  </tr>))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <span className="vw-card-title-sm">Detected vs auto-resolved, per day</span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 30 days</div>
+          <MultiLineChart labels={BACKLOG_DAYS} height={230} format={v => v.toLocaleString('en-IN')}
+            series={[
+              { n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED },
+              { n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }
+            ]}
+            detail={i => {
+              const det = BACKLOG_DETECTED[i], auto = BACKLOG_AUTORESOLVED[i], eng = det - auto;
+              const rate = det ? (auto / det * 100).toFixed(1) : '0.0';
+              return (
+                <>
+                  <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-blue-500)' }} />Detected<span className="grow" /><span className="num">{det}</span></div>
+                  <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-emerald-500)' }} />Auto-resolved<span className="grow" /><span className="num">{auto}</span></div>
+                  <div className="ch-tip-r">To engineers<span className="grow" /><span className="num">{eng}</span></div>
+                  <div className="ch-tip-r ch-tip-t">Automation rate<span className="grow" /><span className="num">{rate}%</span></div>
+                </>
+              );
+            }} />
         </Card>
 
-        <Card>
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Age of open discrepancies</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>
             {BACKLOG_AGE.reduce((a, b) => a + b.count, 0)} open · {backlogOlder} older than 7d · oldest 41d
           </div>
-          <RampBars height={230}
-            buckets={BACKLOG_AGE.map((b, i) => ({ label: b.bucket, count: b.count, hex: AGE_RAMP[i] }))} />
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <RampBars height={230}
+              buckets={BACKLOG_AGE.map((b, i) => ({ label: b.bucket, count: b.count, hex: AGE_RAMP[i], hint: 'Click to view these items' }))}
+              onBucketClick={i => toDiscrepancies({ age: BACKLOG_AGE[i].band })} />
+          </div>
         </Card>
       </div>
 
@@ -426,7 +501,9 @@ export default function Insights() {
             ))}
           </div>
           {DISCREPANCY_TYPES.map(r => (
-            <div key={r.label} className="row vw-items-center" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0' }}>
+            <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
+              title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
+              onClick={() => toDiscrepancies({ q: r.label })}>
               <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
                 <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
@@ -436,16 +513,19 @@ export default function Insights() {
                 <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} />
               </span>
               <span className="num" style={{ width: '2.5rem', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{r.count}</span>
-            </div>
+            </button>
           ))}
         </Card>
 
-        <Card>
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Reconciliation cycles</span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
-          <div>
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             {RECONCILE_CYCLE_ROWS.map((c, i) => (
-              <div key={c.domain} style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
+              <div key={c.domain} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'cycle', row: c }); } }}
+                aria-label={`View ${DOMAIN_LABEL[c.domain]} cycle details`}
+                style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
                 <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{c.when}</span>
                 <span style={{ position: 'relative', alignSelf: 'stretch' }}>
                   <span style={{ position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%', background: DOMAIN_HEX[c.domain], boxShadow: '0 0 0 3px var(--vw-color-white)' }} />
@@ -481,6 +561,70 @@ export default function Insights() {
           </div>
         </Card>
       </div>
+
+      <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
+        sub={drawer ? drawerSub(drawer) : undefined}>
+        {drawer?.kind === 'job' && (
+          <div className="kv">
+            <div><span className="k">Adapters</span><span className="v">{drawer.row.protocols}</span></div>
+            <div><span className="k">Schedule</span><span className="v">{drawer.row.schedule}</span></div>
+            <div><span className="k">Targets</span><span className="v">{drawer.row.targets.toLocaleString('en-IN')}</span></div>
+            <div><span className="k">Coverage</span><span className="v">{drawer.row.coveragePct}%</span></div>
+            <div><span className="k">Status</span><span className="v">{drawer.row.status}</span></div>
+            <div><span className="k">Last run</span><span className="v">{drawer.row.lastRun}</span></div>
+            <div><span className="k">Next run</span><span className="v">{drawer.row.nextRun}</span></div>
+          </div>
+        )}
+        {drawer?.kind === 'adapter' && (
+          <div className="kv">
+            <div><span className="k">Protocol</span><span className="v">{drawer.row.proto}</span></div>
+            <div><span className="k">Domains</span><span className="v">{drawer.row.domains.map(d => DOMAIN_LABEL[d]).join(', ')}</span></div>
+            <div><span className="k">Endpoints</span><span className="v">{drawer.row.endpoints}</span></div>
+            <div><span className="k">Success rate</span><span className="v">{drawer.row.successPct}%</span></div>
+            <div><span className="k">Status</span><span className="v">{drawer.row.status}</span></div>
+          </div>
+        )}
+        {drawer?.kind === 'collector' && (
+          <div className="kv">
+            <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[drawer.row.domain]}</span></div>
+            <div><span className="k">Targets</span><span className="v">{drawer.row.targets.toLocaleString('en-IN')}</span></div>
+            <div><span className="k">p95 latency</span><span className="v">{drawer.row.p95}</span></div>
+            <div><span className="k">Check-in</span><span className="v">{drawer.row.checkin}</span></div>
+            <div><span className="k">Status</span><span className="v">{drawer.row.status}</span></div>
+          </div>
+        )}
+        {drawer?.kind === 'failure' && (
+          <>
+            <div className="kv">
+              <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[drawer.row.domain]}</span></div>
+              <div><span className="k">Affected targets</span><span className="v">{drawer.row.targets}</span></div>
+              <div><span className="k">Root cause</span><span className="v">{drawer.row.tag}</span></div>
+            </div>
+            <div className="vw-card-metric-label-sub" style={{ marginTop: 'var(--vw-space-md)' }}>Examples</div>
+            <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+              {drawer.row.examples.map(ex => <span key={ex} className="mono" style={{ fontSize: '0.75rem', color: 'var(--vw-color-gray-600)', background: 'var(--vw-color-slate-100)', borderRadius: '4px', padding: '2px 8px' }}>{ex}</span>)}
+            </div>
+            <div className="row" style={{ gap: '8px', marginTop: 'var(--vw-space-lg)' }}>
+              <button className="nst-btn nst-btn--sm" onClick={() => openDomain(drawer.row.domain)}>View {DOMAIN_LABEL[drawer.row.domain]} devices</button>
+              <button className={`nst-btn nst-btn--sm${requested[drawer.row.cause] ? '' : ' nst-btn--ghost'}`} disabled={!!requested[drawer.row.cause]}
+                onClick={() => setRequested(r => ({ ...r, [drawer.row.cause]: true }))}>
+                {requested[drawer.row.cause] ? '✓ Requested' : drawer.row.action}
+              </button>
+            </div>
+          </>
+        )}
+        {drawer?.kind === 'cycle' && (
+          <div className="kv">
+            <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[drawer.row.domain]}</span></div>
+            <div><span className="k">Completed</span><span className="v">{drawer.row.when}</span></div>
+            <div><span className="k">Records scanned</span><span className="v">{drawer.row.scanned.toLocaleString('en-IN')}</span></div>
+            <div><span className="k">Drifted</span><span className="v">{drawer.row.drifted}</span></div>
+            <div><span className="k">Auto-resolved</span><span className="v">{drawer.row.autoResolved}</span></div>
+            <div><span className="k">To queue</span><span className="v">{drawer.row.queue}</span></div>
+            <div><span className="k">Automated</span><span className="v">{drawer.row.touchlessPct}%</span></div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
