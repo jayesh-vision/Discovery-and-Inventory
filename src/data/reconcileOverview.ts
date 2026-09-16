@@ -127,9 +127,16 @@ export const DISTRIBUTION: UseCaseRow[] = DISCREPANCY_TYPES.map(t => ({ label: t
 export const DISTRIBUTION_TOTAL = DISTRIBUTION.reduce((a, r) => a + r.count, 0);
 
 /* same event as Insights' RECONCILE_CYCLE_ROWS — "found"/"resolved" are that
-   row's drifted/autoResolved fields under this page's own naming */
+   row's drifted/autoResolved fields under this page's own naming. Insights
+   now keeps 2 older cycles behind each domain's latest as real history, so
+   this can't map the whole array 1:1 any more — .find() picks each domain's
+   first (i.e. newest, since the array is sorted newest-first) row only. */
 export interface CycleActivity { domain: DomainKey; scanned: number; found: number; resolved: number }
-export const CYCLE_ACTIVITY: CycleActivity[] = RECONCILE_CYCLE_ROWS.map(c => ({ domain: c.domain, scanned: c.scanned, found: c.drifted, resolved: c.autoResolved }));
+const CYCLE_ACTIVITY_ORDER: DomainKey[] = ['IPMPLS', 'Core', 'RAN', 'Transport'];
+export const CYCLE_ACTIVITY: CycleActivity[] = CYCLE_ACTIVITY_ORDER.map(domain => {
+  const c = RECONCILE_CYCLE_ROWS.find(r => r.domain === domain)!;
+  return { domain, scanned: c.scanned, found: c.drifted, resolved: c.autoResolved };
+});
 
 export interface QuickLink { title: string; sub: string; icon: 'workbench' | 'scan' | 'rules' }
 const ACTIVE_RULE_COUNT = RULES.filter(r => r.status === 'Active' || r.status === 'Executing').length;
