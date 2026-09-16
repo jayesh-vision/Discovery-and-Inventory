@@ -167,13 +167,13 @@ function heatShade(v: number, max: number) {
   return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
 }
 function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
-  v: number; region: string; domain: DomainKey; onOpen: (d: DomainKey) => void; max?: number;
+  v: number; region: string; domain: DomainKey; onOpen: (d: DomainKey, region?: string) => void; max?: number;
 }) {
   const shade = heatShade(v, max);
   return (
     <td style={{ padding: '4px' }}>
-      <button className="num is-drill" title={`${region} · ${DOMAIN_LABEL[domain]} · ${v} open — view ${DOMAIN_LABEL[domain]} devices`}
-        onClick={() => onOpen(domain)}
+      <button className="num is-drill" title={`${region} · ${DOMAIN_LABEL[domain]} · ${v} open — view ${DOMAIN_LABEL[domain]} devices in ${region}`}
+        onClick={() => onOpen(domain, region)}
         style={{
           display: 'block', width: '100%', padding: '13px 8px', borderRadius: '10px', textAlign: 'center', fontSize: '1rem', border: 0,
           background: cv('blue', shade), color: shade >= 500 ? 'var(--vw-color-white)' : cv('blue', 900), fontWeight: 600, cursor: 'pointer'
@@ -184,7 +184,8 @@ function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
 
 export default function Insights() {
   const nav = useNavigate();
-  const openDomain = (d: DomainKey) => nav(`/discovery/insights/domain/${domainToUrl(d)}`);
+  const openDomain = (d: DomainKey, region?: string) =>
+    nav(`/discovery/insights/domain/${domainToUrl(d)}${region ? `?region=${encodeURIComponent(region)}` : ''}`);
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
   /* the row's own fix action is a real local acknowledgement, not a fake

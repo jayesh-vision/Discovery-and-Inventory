@@ -141,12 +141,20 @@ export default function Reconcile() {
       </div>
 
       <div>
-        <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+        {/* CYCLE_OUTCOME grew from 5 classes to 7 (MATCH_OUTCOME now backs
+            it), and a fixed 5-column CSS grid reserves a cell for every
+            multiple of 5 regardless of how many cards actually exist — 7
+            cards in 5 columns left the last row's other 3 cells sitting
+            empty. flex-wrap instead: a full row of 5 sizes exactly like
+            the grid did (five 20%-basis cards, no room left to grow), but
+            a short last row's cards grow to fill the leftover width
+            instead of leaving it blank. */}
+        <div className="vw-gap-md" style={{ display: 'flex', flexWrap: 'wrap' }}>
           {CYCLE_OUTCOME.map(t => {
             const tone = OUTCOME_TONE_COLOR[t.tone];
             return (
               <div key={t.label} className={`vw-card-section vw-card--accent vw-card--${t.tone}`}
-                style={{ paddingTop: 'calc(var(--vw-space-lg) + 3px)' }}>
+                style={{ paddingTop: 'calc(var(--vw-space-lg) + 3px)', flex: '1 1 20%', minWidth: '180px' }}>
                 <div className="vw-card-accent" style={{ background: cv(tone, 500) }} />
                 <div className="row vw-items-center" style={{ gap: '10px', marginBottom: '6px' }}>
                   <OutcomeIcon icon={t.icon} tone={tone} />
