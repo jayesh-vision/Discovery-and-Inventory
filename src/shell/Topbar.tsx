@@ -39,13 +39,14 @@ export default function Topbar() {
 
   /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
      shallower to drill back to from here, so there's no real trail to show.
-     Scan jobs and Scan targets are the same case from the crumb's own shape:
-     routes.ts gives both a single-segment crumb with no " · " parent, so the
-     chain below is always empty and this would render as a lone, unclickable
-     line of text — a second page title, not a navigation aid. (The target
-     *detail* page keeps its breadcrumb — "Scan targets · Target" is a real
-     two-segment trail back to the list.) */
-  if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'jobs' || s.key === 'targets') {
+     Scan jobs and Scan targets sit one level under Insights instead (their
+     crumb is "Insights · Scan jobs"/"Insights · Scan targets") — same shape
+     as Domain devices and Discrepancies below, so they need no special case
+     here; the chain/leaf logic further down renders their trail like any
+     other Insights child, and the target *detail* page's own three-segment
+     crumb extends that same trail one level further ("Insights · Scan
+     targets · Target") without needing a cross-section ?from= at all. */
+  if (s.key === 'insights' || s.key === 'reconcile') {
     return null;
   }
   /* Every other sidebar-rail landing page has the same "second page title"
