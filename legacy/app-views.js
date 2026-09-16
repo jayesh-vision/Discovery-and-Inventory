@@ -379,9 +379,9 @@ function jobNextIn(j) {
 }
 
 /* targets carried per collector node, busiest first */
-function collectorLoad() {
+function collectorLoad(jobs = JOBS) {
   const load = {};
-  JOBS.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
+  jobs.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
   return Object.entries(load).sort((a, b) => b[1] - a[1]);
 }
 
@@ -398,28 +398,32 @@ function viewJobs() {
   const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
   const rows = gridApply('jobs', JOBS.filter(test));
 
-  const onDemand = JOBS.filter(j => cadenceH(j.sched) === null).length;
-  const weekly   = JOBS.filter(j => /^Weekly/i.test(j.sched)).length;
-  const held     = JOBS.filter(jobHeld).length;
-  const live     = JOBS.length - onDemand - held;      /* the three partition the whole */
-  const running  = JOBS.filter(jobRunning).length;
-  const errors   = JOBS.filter(jobErrors).length;
-  const attention = JOBS.filter(jobAttention).length;
+  /* every summary card below reads the same domain/filter-scoped rows the
+     table shows, not the whole fleet — otherwise "Total jobs" (and the
+     cards beside it) would still count every domain's jobs while a Domain
+     filter narrows the table to just one of them */
+  const onDemand = rows.filter(j => cadenceH(j.sched) === null).length;
+  const weekly   = rows.filter(j => /^Weekly/i.test(j.sched)).length;
+  const held     = rows.filter(jobHeld).length;
+  const live     = rows.length - onDemand - held;      /* the three partition the whole */
+  const running  = rows.filter(jobRunning).length;
+  const errors   = rows.filter(jobErrors).length;
+  const attention = rows.filter(jobAttention).length;
   /* named in the same order the reasons are ranked, so the parts sum to the card */
   const reasons = JOB_REASONS
-    .map(([label, test]) => [label, JOBS.filter(j => jobReason(j) === label && test(j)).length])
+    .map(([label, test]) => [label, rows.filter(j => jobReason(j) === label && test(j)).length])
     .filter(([, c]) => c > 0).map(([label, c]) => `${n(c)} ${label}`).join(' · ');
 
-  const due = JOBS.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
+  const due = rows.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
     .sort((a, b) => a.h - b.h)[0];
-  const load = collectorLoad();
+  const load = collectorLoad(rows);
 
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
+      ${kpi('Total jobs', n(rows.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
       ${due
         ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1],
             `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
@@ -574,12 +578,21 @@ function viewTargets() {
   const segs = [['All','All'],['success','Success'],['partial','Partial'],['failed','Failed']];
   const activeKey = normFilterKey.toLowerCase();
 
+  /* the failed/partial chips beside the grid describe what's actually in
+     `rows` below them — they used to read static DL.runFail/DL.runPartial
+     ledger figures that never moved with the Domain filter, the quick
+     tabs, or search, so a Domain-narrowed table still bragged about every
+     domain's failures. Same fix for the "of N" grand total: TARGETS.length,
+     not DL.targets (a stale figure from an earlier, differently-sized seed). */
+  const failedShown = rows.filter(t => getScanTargetStatus(t) === 'Failed').length;
+  const partialShown = rows.filter(t => getScanTargetStatus(t) === 'Partial').length;
+
   return `<div class="page">
     ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
     ${drillBar()}
     ${card(`
-      ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        `${chip(`${n(DL.runFail)} failed`,'error')}${chip(`${n(DL.runPartial)} partial`,'warning')}
+      ${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets,
+        `${chip(`${n(failedShown)} failed`,'error')}${chip(`${n(partialShown)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
         [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },

@@ -1523,7 +1523,12 @@ REPORTS.push(
     const oem = oems[i % oems.length];
     const model = pick(MODELS_BY_OEM[oem]);
     const circle = CIRCLES[i % CIRCLES.length];
-    const job = JOBS[i % JOBS.length].id;
+    /* the target's domain always follows the job that scanned it — never a
+       fixed guess — so a target of a RAN/Core/Transport job is never
+       mislabeled into the IPMPLS bucket the rest of this generator defaults
+       to */
+    const jobRow = JOBS[i % JOBS.length];
+    const job = jobRow.id;
     /* unreachable / timed-out targets never got far enough to answer the
        device collector, so nothing about them is known yet */
     const known = reason !== 'unreach' && reason !== 'timeout';
@@ -1532,7 +1537,7 @@ REPORTS.push(
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
       circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
-      fresh: 1 + i % 18, job, domain: 'IPMPLS',
+      fresh: 1 + i % 18, job, domain: jobRow.domain,
       ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
     });
   });
@@ -1544,13 +1549,14 @@ REPORTS.push(
     const circle = CIRCLES[(i + 5) % CIRCLES.length];
     const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
     const model = pick(MODELS_BY_OEM[oem]);
-    const job = JOBS[(i + 3) % JOBS.length].id;
+    const jobRow = JOBS[(i + 3) % JOBS.length];
+    const job = jobRow.id;
     TARGETS.push({
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
-      fresh: 1 + i % 12, job, domain: 'IPMPLS',
+      fresh: 1 + i % 12, job, domain: jobRow.domain,
       ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
       out: 'Rogue', chip: 'pink', isNew: true
     });

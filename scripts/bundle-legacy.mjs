@@ -75,12 +75,12 @@ patch(`  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle
 patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class="\${TGT_FILTER===k?'is-on':''}" data-tgt-filter="\${k}">\${l}</button>\`).join('')}</div>\`)}
     \${drillBar()}
     \${card(\`
-      \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets,
-        \`\${chip(\`\${n(DL.runFail)} failed\`,'error')}\${chip(\`\${n(DL.runPartial)} partial\`,'warning')}
+      \${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets,
+        \`\${chip(\`\${n(failedShown)} failed\`,'error')}\${chip(\`\${n(partialShown)} partial\`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>\`, [], 'targets')}`,
 `    \${drillBar()}
     \${card(\`
-      \${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}`, 'targets quick filter in grid bar');
+      \${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}`, 'targets quick filter in grid bar');
 patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`,
       `  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`, 'run-now icon');
 

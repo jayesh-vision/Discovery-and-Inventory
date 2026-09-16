@@ -1737,7 +1737,12 @@ REPORTS.push(
     const oem = oems[i % oems.length];
     const model = pick(MODELS_BY_OEM[oem]);
     const circle = CIRCLES[i % CIRCLES.length];
-    const job = JOBS[i % JOBS.length].id;
+    /* the target's domain always follows the job that scanned it — never a
+       fixed guess — so a target of a RAN/Core/Transport job is never
+       mislabeled into the IPMPLS bucket the rest of this generator defaults
+       to */
+    const jobRow = JOBS[i % JOBS.length];
+    const job = jobRow.id;
     /* unreachable / timed-out targets never got far enough to answer the
        device collector, so nothing about them is known yet */
     const known = reason !== 'unreach' && reason !== 'timeout';
@@ -1746,7 +1751,7 @@ REPORTS.push(
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
       circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
-      fresh: 1 + i % 18, job, domain: 'IPMPLS',
+      fresh: 1 + i % 18, job, domain: jobRow.domain,
       ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
     });
   });
@@ -1758,13 +1763,14 @@ REPORTS.push(
     const circle = CIRCLES[(i + 5) % CIRCLES.length];
     const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
     const model = pick(MODELS_BY_OEM[oem]);
-    const job = JOBS[(i + 3) % JOBS.length].id;
+    const jobRow = JOBS[(i + 3) % JOBS.length];
+    const job = jobRow.id;
     TARGETS.push({
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
-      fresh: 1 + i % 12, job, domain: 'IPMPLS',
+      fresh: 1 + i % 12, job, domain: jobRow.domain,
       ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
       out: 'Rogue', chip: 'pink', isNew: true
     });
@@ -2016,6 +2022,12 @@ function getLegacyFieldValue(r, field) {
       return String(r.st);
     }
     if (r.status) return String(r.status);
+    /* JOBS rows carry their run status as `.state` ('Completed', 'Completed
+       with errors', 'Running', 'No adapter') rather than `.st` — without
+       this branch the Status filter fell through to a whole-row substring
+       search, which also let "Completed" silently match "Completed with
+       errors" (see the `exact` check below, which now covers this field too) */
+    if (r.state) return String(r.state);
     if (r.outcome) return String(r.outcome);
     if (r.result) return String(r.result);
     if (r.res) return String(r.res);
@@ -2033,6 +2045,18 @@ function getLegacyFieldValue(r, field) {
 
   if (f === 'domain' && r.domain && typeof DOMAIN_META !== 'undefined' && DOMAIN_META[r.domain]) {
     return DOMAIN_META[r.domain].n;
+  }
+
+  /* Scan Targets' Age filter options ('Under 24 h', '1 – 7 days', ...) never
+     appear verbatim in a target row — only the raw `.fresh` hour count does
+     — so without this bucketing the filter always matched nothing. Same
+     boundaries freshChip() already renders the Age column with (24h/7d/30d),
+     so the filter option a reader picks always matches what the column shows. */
+  if (f === 'age' && typeof r.fresh === 'number') {
+    if (r.fresh < 24) return 'Under 24 h';
+    if (r.fresh < 168) return '1 – 7 days';
+    if (r.fresh < 720) return '7 – 30 days';
+    return 'Over 30 days';
   }
 
   for (const [k, v] of Object.entries(r)) {
@@ -2068,11 +2092,12 @@ function gridApply(key, rows) {
       if (!v) continue;
       const fieldVal = getLegacyFieldValue(r, field).toLowerCase();
       if (fieldVal) {
-        /* "RAN" is a substring of "Transport" — a categorical field like
-           Domain, whose options are a fixed enum rather than free text,
-           needs an exact match or a domain filter for RAN silently pulls in
-           every Transport row too */
-        const exact = field.toLowerCase() === 'domain';
+        /* "RAN" is a substring of "Transport", and "Completed" is a prefix
+           of "Completed with errors" — categorical fields like Domain and
+           Status, whose options are a fixed enum rather than free text,
+           need an exact match or filtering one option silently pulls in
+           any other option whose text contains it */
+        const exact = field.toLowerCase() === 'domain' || field.toLowerCase() === 'status';
         if (exact ? fieldVal !== v : !fieldVal.includes(v)) return false;
       } else {
         if (!text.includes(v)) return false;
@@ -3100,9 +3125,9 @@ function jobNextIn(j) {
 }
 
 /* targets carried per collector node, busiest first */
-function collectorLoad() {
+function collectorLoad(jobs = JOBS) {
   const load = {};
-  JOBS.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
+  jobs.forEach(j => { load[j.collector] = (load[j.collector] || 0) + j.targets; });
   return Object.entries(load).sort((a, b) => b[1] - a[1]);
 }
 
@@ -3119,28 +3144,32 @@ function viewJobs() {
   const test = JOB_TESTS[JOB_FILTER] || JOB_TESTS.All;
   const rows = gridApply('jobs', JOBS.filter(test));
 
-  const onDemand = JOBS.filter(j => cadenceH(j.sched) === null).length;
-  const weekly   = JOBS.filter(j => /^Weekly/i.test(j.sched)).length;
-  const held     = JOBS.filter(jobHeld).length;
-  const live     = JOBS.length - onDemand - held;      /* the three partition the whole */
-  const running  = JOBS.filter(jobRunning).length;
-  const errors   = JOBS.filter(jobErrors).length;
-  const attention = JOBS.filter(jobAttention).length;
+  /* every summary card below reads the same domain/filter-scoped rows the
+     table shows, not the whole fleet — otherwise "Total jobs" (and the
+     cards beside it) would still count every domain's jobs while a Domain
+     filter narrows the table to just one of them */
+  const onDemand = rows.filter(j => cadenceH(j.sched) === null).length;
+  const weekly   = rows.filter(j => /^Weekly/i.test(j.sched)).length;
+  const held     = rows.filter(jobHeld).length;
+  const live     = rows.length - onDemand - held;      /* the three partition the whole */
+  const running  = rows.filter(jobRunning).length;
+  const errors   = rows.filter(jobErrors).length;
+  const attention = rows.filter(jobAttention).length;
   /* named in the same order the reasons are ranked, so the parts sum to the card */
   const reasons = JOB_REASONS
-    .map(([label, test]) => [label, JOBS.filter(j => jobReason(j) === label && test(j)).length])
+    .map(([label, test]) => [label, rows.filter(j => jobReason(j) === label && test(j)).length])
     .filter(([, c]) => c > 0).map(([label, c]) => `${n(c)} ${label}`).join(' · ');
 
-  const due = JOBS.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
+  const due = rows.map(j => ({ j, h: jobNextIn(j) })).filter(x => x.h !== null && x.h >= 0)
     .sort((a, b) => a.h - b.h)[0];
-  const load = collectorLoad();
+  const load = collectorLoad(rows);
 
   return `<div class="page">
 
     ${drillBar()}
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${kpi('Total jobs', n(JOBS.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
+      ${kpi('Total jobs', n(rows.length), `${n(live)} on a live schedule (${n(weekly)} weekly) · ${n(onDemand)} on demand · ${n(held)} held`, 'sky')}
       ${due
         ? kpi('Next run', /(\d{1,2}:\d{2})/.exec(due.j.next)[1],
             `${due.j.id} · ${due.j.next} · ${n(due.j.targets)} targets`, 'cyan')
@@ -3295,10 +3324,19 @@ function viewTargets() {
   const segs = [['All','All'],['success','Success'],['partial','Partial'],['failed','Failed']];
   const activeKey = normFilterKey.toLowerCase();
 
+  /* the failed/partial chips beside the grid describe what's actually in
+     `rows` below them — they used to read static DL.runFail/DL.runPartial
+     ledger figures that never moved with the Domain filter, the quick
+     tabs, or search, so a Domain-narrowed table still bragged about every
+     domain's failures. Same fix for the "of N" grand total: TARGETS.length,
+     not DL.targets (a stale figure from an earlier, differently-sized seed). */
+  const failedShown = rows.filter(t => getScanTargetStatus(t) === 'Failed').length;
+  const partialShown = rows.filter(t => getScanTargetStatus(t) === 'Partial').length;
+
   return `<div class="page">
     ${drillBar()}
     ${card(`
-      ${gridBar(rows.length, n(DL.targets), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
+      ${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
       ${table(
         [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
