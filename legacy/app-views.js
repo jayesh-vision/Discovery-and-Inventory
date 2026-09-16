@@ -618,7 +618,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('View transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
+        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -909,7 +909,7 @@ function recTable() {
         r.inv && r.net && r.diff.length
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
         : !r.inv
-          ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
+          ? [A('Open the run transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(r.ne)}` })]
         : !r.net
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
           : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}

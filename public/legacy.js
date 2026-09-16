@@ -3574,7 +3574,7 @@ function viewTargets() {
             chainOf(t.ch)
           ];
         }), '',
-        i => [A('View transcript', { v:'target', l:`Transcript · ${rows[i].host}`, q:`host=${encodeURIComponent(rows[i].host)}` })])}
+        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -3865,7 +3865,7 @@ function recTable() {
         r.inv && r.net && r.diff.length
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
         : !r.inv
-          ? [A('Open the run transcript', { v:'target', l:`Transcript · ${r.ne}` })]
+          ? [A('Open the run transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(r.ne)}` })]
         : !r.net
           ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
           : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}
@@ -12452,10 +12452,14 @@ function drillTo(view, label, q) {
      "from" from whatever got it there originally) — losing the query
      there would silently re-break "back returns to the exact drilled list"
      for that case. */
+  const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
+    ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const fromName = (curDrill && curDrill.q
-    ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : null) || inheritedFrom || crumbName;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const fromName = curDrillFrom
+    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
+    || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);

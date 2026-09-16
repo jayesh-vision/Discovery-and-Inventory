@@ -87,28 +87,57 @@ export default function Topbar() {
     ? SCREENS.find(x => x.crumb === fromCrumb || x.crumb.toLowerCase() === fromCrumb.toLowerCase())
     : undefined;
   const ownParts = s.crumb.split(' · ');
-  const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
   const leaf = ownParts[ownParts.length - 1];
 
-  const segs: { label: string; to: string | null }[] = chain.map((label, i) => {
-    const base = targetFor(chain.slice(0, i + 1).join(' · '));
-    const isOriginLeaf = !!origin && i === chain.length - 1;
-    return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
-  });
-  /* A drilled screen with no " · " parent of its own (Location, today) would
-     otherwise lose its only ancestor: the drill label below replaces the
-     leaf outright, and the chain above is empty, so there'd be nothing left
-     to click back to the screen's own base view. Every other drilled screen
-     already has a real chain segment ahead of its leaf, so this only ever
-     fires for that empty-chain case. */
-  if (drill && !chain.length) {
-    segs.push({ label: leaf, to: pathname });
+  let segs: { label: string; to: string | null }[] = [];
+
+  const fromParams = new URLSearchParams(fromQuery);
+  const originDrill = fromParams.get('drill');
+  const grandOriginCrumb = fromParams.get('from');
+  const grandCrumbClean = grandOriginCrumb ? grandOriginCrumb.split('?')[0] : null;
+  const grandOrigin = grandCrumbClean
+    ? SCREENS.find(x => x.crumb === grandCrumbClean || x.crumb.toLowerCase() === grandCrumbClean.toLowerCase())
+    : undefined;
+
+  if (origin && (originDrill || grandOrigin)) {
+    /* Origin was mid-drill and/or had its own origin (e.g. Scan jobs > Targets in DSC-SOUTH-CORE > Transcript).
+       Expand grandparents and preserve the drilled parent with its full query so back returns to that exact list. */
+    if (grandOrigin) {
+      const grandChain = grandOrigin.crumb.split(' · ');
+      grandChain.forEach((lbl, i) => {
+        const base = targetFor(grandChain.slice(0, i + 1).join(' · '));
+        segs.push({ label: lbl, to: base });
+      });
+    }
+    const originLabel = originDrill || origin.crumb.split(' · ').pop() || origin.crumb;
+    const originBase = targetFor(origin.crumb);
+    segs.push({
+      label: originLabel,
+      to: originBase ? (fromQuery ? `${originBase}?${fromQuery}` : originBase) : null
+    });
+  } else {
+    const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
+    segs = chain.map((label, i) => {
+      const base = targetFor(chain.slice(0, i + 1).join(' · '));
+      const isOriginLeaf = !!origin && i === chain.length - 1;
+      return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
+    });
+    /* A drilled screen with no " · " parent of its own (Location, today) would
+       otherwise lose its only ancestor: the drill label below replaces the
+       leaf outright, and the chain above is empty, so there'd be nothing left
+       to click back to the screen's own base view. */
+    if (drill && !chain.length) {
+      segs.push({ label: leaf, to: pathname });
+    }
   }
-  /* A drill label is always the more specific replacement for the screen's
-     static leaf ("View" → "Virtual element details · NTSON3435004",
-     "Lifecycle operation" → "Lifecycle operation · NTSON3435004") — show one
-     final segment, not the generic leaf followed by the specific one. */
-  segs.push(drill ? { label: drill, to: null } : { label: leaf, to: null });
+
+  /* When on detail/transcript, display just "Transcript" without duplicating the device
+     name already prominent in the page header. */
+  let finalLeafLabel = drill || leaf;
+  if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
+    finalLeafLabel = 'Transcript';
+  }
+  segs.push({ label: finalLeafLabel, to: null });
 
   return (
     <nav className="topbar" aria-label="Breadcrumb">

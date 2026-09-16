@@ -94,10 +94,14 @@ function drillTo(view, label, q) {
      "from" from whatever got it there originally) — losing the query
      there would silently re-break "back returns to the exact drilled list"
      for that case. */
+  const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
+    ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const fromName = (curDrill && curDrill.q
-    ? `${crumbName}?${curDrill.q}${curDrill.label ? `&drill=${curDrill.label}` : ''}`
-    : null) || inheritedFrom || crumbName;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const fromName = curDrillFrom
+    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
+    || inheritedFrom || crumbName;
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
