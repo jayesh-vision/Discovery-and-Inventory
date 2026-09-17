@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, StatStrip } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
+import { legacyPath } from '../routes';
 import {
   DISCREPANCY_TYPES, DOMAIN_HEX, DOMAIN_LABEL, type DiscrepancyTypeRow, type DomainKey,
   type DiscrepancyCategory, type AgeBand
@@ -32,6 +33,14 @@ export default function DiscrepancyDetails() {
   const urlCategory = isCategory(sp.get('category')) ? sp.get('category') as DiscrepancyCategory : undefined;
   const urlAge = isAgeBand(sp.get('age')) ? sp.get('age') as AgeBand : undefined;
   const urlQ = sp.get('q') ?? '';
+  /* this screen's own crumb is hardcoded "Insights · Discrepancies" (it's
+     normally only reached from Insights) — but it can also be reached
+     from Reconciliation now, which names itself via ?from=. Carrying that
+     same origin on to Domain devices below keeps a 3-hop chain
+     (Reconciliation → Discrepancies → Domain devices) pointing back the
+     way the reader actually came, the same inherited-origin idea the
+     legacy drillTo() already uses for its own multi-hop jumps. */
+  const from = sp.get('from');
 
   const [query, setQuery] = useState(urlQ);
   const [filters, setFilters] = useState<Record<string, string>>(() => {
@@ -97,7 +106,8 @@ export default function DiscrepancyDetails() {
               <div><span className="k">Open count</span><span className="v">{open.count}</span></div>
             </div>
             <div style={{ marginTop: 'var(--vw-space-lg)' }}>
-              <button className="nst-btn nst-btn--sm" onClick={() => nav(`/discovery/insights/domain/${domainToUrl(open.domain)}`)}>
+              <button className="nst-btn nst-btn--sm"
+                onClick={() => nav(legacyPath('domaindevices', from ? { from } : null, { domain: domainToUrl(open.domain) }))}>
                 View {DOMAIN_LABEL[open.domain]} devices
               </button>
             </div>

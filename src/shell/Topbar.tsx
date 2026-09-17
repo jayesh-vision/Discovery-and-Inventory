@@ -60,8 +60,17 @@ export default function Topbar() {
     return null;
   }
 
+  const screenForCrumb = (prefix: string) => {
+    const p = prefix.toLowerCase();
+    return SCREENS.find(x =>
+      x.crumb.toLowerCase() === p ||
+      x.key.toLowerCase() === p ||
+      x.crumb.split(' · ').pop()?.toLowerCase() === p
+    );
+  };
+
   const targetFor = (prefix: string): string | null => {
-    const t = SCREENS.find(x => x.crumb === prefix || x.crumb.toLowerCase() === prefix.toLowerCase());
+    const t = screenForCrumb(prefix);
     if (!t) return null;
     let path = t.path;
     const mergedParams: Record<string, string> = { ...params };
@@ -73,59 +82,61 @@ export default function Topbar() {
     return path.includes(':') ? null : path;
   };
 
-  /* A jump made while the origin screen was itself mid-drill (Location's
-     "All locations" list, say) carries that state as "<crumb>?<query>" —
-     see drillTo() in app-router.js. Split it back apart: the crumb still
-     resolves the origin screen, the query is spliced onto that screen's own
-     segment below so its link returns to the exact list the reader left,
-     not the screen's plain default view. */
-  const fromQMark = from ? from.indexOf('?') : -1;
-  const fromCrumb = fromQMark >= 0 ? from!.slice(0, fromQMark) : from;
-  const fromQuery = fromQMark >= 0 ? from!.slice(fromQMark + 1) : '';
-
-  const origin = fromCrumb && fromCrumb.toLowerCase() !== s.crumb.toLowerCase()
-    ? SCREENS.find(x => x.crumb === fromCrumb || x.crumb.toLowerCase() === fromCrumb.toLowerCase())
-    : undefined;
   const ownParts = s.crumb.split(' · ');
   const leaf = ownParts[ownParts.length - 1];
 
   let segs: { label: string; to: string | null }[] = [];
 
-  const fromParams = new URLSearchParams(fromQuery);
-  const originDrill = fromParams.get('drill');
-  const grandOriginCrumb = fromParams.get('from');
-  const grandCrumbClean = grandOriginCrumb ? grandOriginCrumb.split('?')[0] : null;
-  const grandOrigin = grandCrumbClean
-    ? SCREENS.find(x => x.crumb === grandCrumbClean || x.crumb.toLowerCase() === grandCrumbClean.toLowerCase())
-    : undefined;
+  /* Unwind nested cross-section jumps (e.g. Insights -> Jobs [RAN] -> Targets in DSC-RAN-BLR -> Transcript) */
+  interface OriginHop {
+    crumb: string;
+    query: string;
+    drill: string | null;
+    from: string | null;
+  }
 
-  if (origin && (originDrill || grandOrigin)) {
-    /* Origin was mid-drill and/or had its own origin (e.g. Scan jobs > Targets in DSC-SOUTH-CORE > Transcript).
-       Expand grandparents and preserve the drilled parent with its full query so back returns to that exact list. */
-    if (grandOrigin) {
-      const grandChain = grandOrigin.crumb.split(' · ');
-      grandChain.forEach((lbl, i) => {
-        const base = targetFor(grandChain.slice(0, i + 1).join(' · '));
-        segs.push({ label: lbl, to: base });
-      });
+  const hops: OriginHop[] = [];
+  let currFrom: string | null = from;
+  while (currFrom && hops.length < 5) {
+    const qMark = currFrom.indexOf('?');
+    const crumb = qMark >= 0 ? currFrom.slice(0, qMark) : currFrom;
+    const query = qMark >= 0 ? currFrom.slice(qMark + 1) : '';
+    const queryParams = new URLSearchParams(query);
+    const hopDrill = queryParams.get('drill');
+    const nextFrom = queryParams.get('from');
+    hops.push({ crumb, query, drill: hopDrill, from: nextFrom });
+    currFrom = nextFrom;
+  }
+
+  if (hops.length > 0) {
+    const ancestors = hops.slice().reverse();
+    for (const hop of ancestors) {
+      const originScreen = screenForCrumb(hop.crumb);
+      if (originScreen && originScreen.crumb.toLowerCase() === s.crumb.toLowerCase()) continue;
+      const parts = originScreen ? originScreen.crumb.split(' · ') : [hop.crumb];
+      if (parts.length > 1) {
+        for (let i = 0; i < parts.length - 1; i++) {
+          const base = targetFor(parts.slice(0, i + 1).join(' · '));
+          if (segs.length === 0 || segs[segs.length - 1].label !== parts[i]) {
+            segs.push({ label: parts[i], to: base });
+          }
+        }
+      }
+      const label = hop.drill || parts[parts.length - 1];
+      const base = targetFor(originScreen?.crumb || hop.crumb);
+      const to = base ? (hop.query ? `${base}?${hop.query}` : base) : null;
+      if (segs.length === 0 || segs[segs.length - 1].label !== label) {
+        segs.push({ label, to });
+      } else {
+        segs[segs.length - 1] = { label, to };
+      }
     }
-    const originLabel = originDrill || origin.crumb.split(' · ').pop() || origin.crumb;
-    const originBase = targetFor(origin.crumb);
-    segs.push({
-      label: originLabel,
-      to: originBase ? (fromQuery ? `${originBase}?${fromQuery}` : originBase) : null
-    });
   } else {
-    const chain = origin ? origin.crumb.split(' · ') : ownParts.slice(0, -1);
+    const chain = ownParts.slice(0, -1);
     segs = chain.map((label, i) => {
       const base = targetFor(chain.slice(0, i + 1).join(' · '));
-      const isOriginLeaf = !!origin && i === chain.length - 1;
-      return { label, to: base && isOriginLeaf && fromQuery ? `${base}?${fromQuery}` : base };
+      return { label, to: base };
     });
-    /* A drilled screen with no " · " parent of its own (Location, today) would
-       otherwise lose its only ancestor: the drill label below replaces the
-       leaf outright, and the chain above is empty, so there'd be nothing left
-       to click back to the screen's own base view. */
     if (drill && !chain.length) {
       segs.push({ label: leaf, to: pathname });
     }
@@ -137,7 +148,11 @@ export default function Topbar() {
   if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
     finalLeafLabel = 'Transcript';
   }
-  segs.push({ label: finalLeafLabel, to: null });
+  if (segs.length > 0 && segs[segs.length - 1].label === finalLeafLabel) {
+    segs[segs.length - 1] = { label: finalLeafLabel, to: null };
+  } else {
+    segs.push({ label: finalLeafLabel, to: null });
+  }
 
   return (
     <nav className="topbar" aria-label="Breadcrumb">

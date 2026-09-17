@@ -163,10 +163,15 @@ const TARGETS = [
     ch: ['ok','ok','ok','ok','ok','na'], out: 'Rogue', chip: 'pink' },
   { ip: '172.31.70.12', host: 'BLR-GNB-T3800-014', oem: 'Nokia', model: 'AirScale gNB',
     circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
-    ch: ['ok','ok','ok','na','na','na'], out: 'Exact match', chip: 'success' },
+    /* 5-long — RAN's own collector chain (Device/Radio/Neighbours/Config/
+       Service), not the 6-slot Device/Hardware/LLDP/OSPF/BGP/Service shape
+       every row used before domain-specific transcripts existed */
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
   { ip: '10.10.4.21', host: 'BLR-AMF-CORE-02', oem: 'Nokia', model: 'AMF-CN',
     circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 5, job: 'DSC-CORE-NRF', domain: 'Core',
-    ch: ['ok','ok','na','na','na','ok'], out: 'Exact match', chip: 'success' }
+    /* 5-long — Core's own collector chain (Device/Registration/Interfaces/
+       Session/Dependencies) */
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' }
 ];
 /* each row's `sync` above was a hand-typed date that only agreed with its
    own `fresh` (hours-ago) the moment this file was written, then quietly
@@ -247,14 +252,26 @@ const txSerial = seed => `${String.fromCharCode(65+nint(seed,720,0,25))}${String
    TGT_REASON vocabulary the Scan Targets list already shows on that row,
    so the reason named in the transcript always matches the reason chip
    the reader clicked through from. */
+/* `proto` is optional and only ever passed for a non-Transport domain (see
+   txStepsFor()) — every Transport call site still calls these with just
+   `ip`, so Transport's own failure text is byte-for-byte what it always
+   was. When a domain does pass its failing step's protocol, a non-SNMP one
+   gets its own wording instead of borrowing SNMP's. */
 const TX_FAIL = {
   unreach: ip => ({ res: `Timeout: No Response from ${ip}\n0 of 3 ICMP echo replies received`,
     reason: 'HOST_UNREACHABLE', action: 'Confirm the gateway route and any ACL on the collector subnet; retry once the network path is confirmed.' }),
-  timeout: ip => ({ res: `Timeout: No Response from ${ip}`,
+  timeout: (ip, proto) => ({
+    res: (!proto || proto.toUpperCase().includes('SNMP')) ? `Timeout: No Response from ${ip}` : `Timeout: No response from ${ip} via ${proto}`,
     reason: 'SNMP_TIMEOUT', action: 'Retry at 8,000 ms on the next pass; escalate to the circle NOC after three consecutive timeouts.' }),
-  auth:    ip => ({ res: `snmpget: Authentication failure (incorrect password, community or key) for ${ip}`,
+  auth: (ip, proto) => ({
+    res: (!proto || proto.toUpperCase().includes('SNMP'))
+      ? `snmpget: Authentication failure (incorrect password, community or key) for ${ip}`
+      : `Authentication rejected for ${ip} via ${proto} — credential invalid or expired`,
     reason: 'AUTH_FAILED', action: 'Verify the credential profile is current and bound to this device; rotate it if expired.' }),
-  parse:   ip => ({ res: `Response received from ${ip}, but it did not match the expected MIB structure — an unsupported CLI banner or encoding broke the fact parser`,
+  parse: (ip, proto) => ({
+    res: (!proto || proto.toUpperCase().includes('SNMP'))
+      ? `Response received from ${ip}, but it did not match the expected MIB structure — an unsupported CLI banner or encoding broke the fact parser`
+      : `Response received from ${ip}, but it did not match the expected ${proto} structure — an unsupported payload shape broke the fact parser`,
     reason: 'PARSE_ERROR', action: 'Capture the raw payload and add a parser rule for this response shape.' }),
   adapter: ip => ({ res: `sysObjectID reported by ${ip} has no registered adapter`,
     reason: 'NO_ADAPTER', action: 'Add an adapter for this OEM / model pair, or leave unsupported until vendor coverage is prioritised.' }),
@@ -525,6 +542,208 @@ const ADJACENCY = [
   { proto: 'BGP',  c: 4,  ok: 4,  chg: 'no change', tone: 'purple' },
   { proto: 'L3VPN', c: 14, ok: 13, chg: '1 RT added', tone: 'emerald' }
 ];
+
+/* ── domain-specific discovery flows ──────────────────────
+   Transport's transcript (TRANSCRIPT.steps / COLLECTORS / ADJACENCY above)
+   is the original, unchanged reference — a router/switch pipeline that
+   walks LLDP → OSPF → BGP → L3VPN. RAN discovers radio/cell configuration,
+   not routing; Core discovers NF registration and session state, not
+   chassis hardware; IP/MPLS keeps a routing-protocol shape like Transport's
+   but swaps physical/LLDP discovery for the label/VPN stack its own domain
+   actually runs. Each domain therefore gets its own step COUNT too — RAN
+   and Core have five collectors behind Reachability, Transport and IP/MPLS
+   have six — not a forced seven everywhere. */
+const RAN_COLLECTORS = [
+  { k: 'device', n: 'Device', proto: 'SNMP v2c', icon: 'chip',
+    what: 'sysObjectID, sysDescr, sysName, sector count → gNodeB/eNodeB identity',
+    writes: 'Creates or matches the RAN network-element record', ok: 1980, fail: 42, na: 0, order: 1 },
+  { k: 'radio', n: 'Radio/Cell', proto: 'NETCONF', icon: 'box',
+    what: 'PCI, TAC, band, bandwidth and tx power per cell/sector',
+    writes: 'Cell configuration records, one per sector', ok: 1904, fail: 58, na: 18, order: 2 },
+  { k: 'neighbours', n: 'Neighbours', proto: 'X2/Xn ANR', icon: 'link',
+    what: 'Automatic neighbour relations and PCI collision check',
+    writes: 'Neighbour-cell relationship records', ok: 1822, fail: 61, na: 97, order: 3 },
+  { k: 'config', n: 'Configuration', proto: 'NETCONF', icon: 'route',
+    what: 'Antenna azimuth, tilt and RRC parameters per sector',
+    writes: 'Antenna/RRC configuration attributes', ok: 1740, fail: 38, na: 202, order: 4 },
+  { k: 'service', n: 'Service', proto: 'NETCONF', icon: 'layers',
+    what: 'Active RRC-connected UE contexts and cell service state',
+    writes: 'Cell service state and active-session count', ok: 1611, fail: 22, na: 367, order: 5 }
+];
+const CORE_COLLECTORS = [
+  { k: 'device', n: 'Device', proto: 'REST (NRF)', icon: 'chip',
+    what: 'nfInstanceId, nfType, nfStatus → network-function identity',
+    writes: 'Creates or matches the NF record', ok: 336, fail: 4, na: 0, order: 1 },
+  { k: 'registration', n: 'NF Registration', proto: 'REST (NRF)', icon: 'link',
+    what: 'Heartbeat timer, registration age, active NRF subscriptions',
+    writes: 'Registration and subscription attributes', ok: 330, fail: 6, na: 4, order: 2 },
+  { k: 'interfaces', n: 'Interfaces', proto: 'NETCONF', icon: 'box',
+    what: 'N2/N3/N4 reference-point interface status',
+    writes: 'Interface up/down state per reference point', ok: 322, fail: 8, na: 10, order: 3 },
+  { k: 'session', n: 'Session/Service', proto: 'REST', icon: 'route',
+    what: 'Active PDU sessions and service profiles',
+    writes: 'PDU-session and service-profile counts', ok: 318, fail: 5, na: 17, order: 4 },
+  { k: 'dependencies', n: 'Dependencies', proto: 'REST (NRF)', icon: 'globe',
+    what: 'The other NFs this one depends on (AMF → SMF → UPF, say)',
+    writes: 'NF-to-NF dependency links', ok: 305, fail: 3, na: 32, order: 5 }
+];
+const IPMPLS_COLLECTORS = [
+  { k: 'device', n: 'Device', proto: 'SNMP v2c', icon: 'chip',
+    what: 'sysObjectID, sysDescr, sysName, uptime → identity and OEM',
+    writes: 'Creates or matches the network-element record', ok: 1198, fail: 65, na: 0, order: 1 },
+  { k: 'interfaces', n: 'Interfaces', proto: 'SNMP IF-MIB', icon: 'box',
+    what: 'Interface table: admin/oper status, IP addressing',
+    writes: 'Interface inventory and IP address records', ok: 1140, fail: 40, na: 21, order: 2 },
+  { k: 'routing', n: 'Routing', proto: 'SNMP OSPF-MIB', icon: 'route',
+    what: 'IGP adjacencies, areas, router IDs, neighbour states',
+    writes: 'Logical routing links, area membership', ok: 1052, fail: 33, na: 106, order: 3 },
+  { k: 'mpls', n: 'MPLS/LDP', proto: 'SNMP MPLS-LDP-MIB', icon: 'link',
+    what: 'LDP peer sessions and label bindings',
+    writes: 'LDP peer and label-binding records', ok: 968, fail: 28, na: 198, order: 4 },
+  { k: 'bgp', n: 'BGP', proto: 'SNMP BGP4-MIB', icon: 'globe',
+    what: 'Peer table, local and remote AS, session state',
+    writes: 'Logical peering links, AS topology', ok: 604, fail: 21, na: 458, order: 5 },
+  { k: 'vpn', n: 'VPN/Service', proto: 'NETCONF', icon: 'layers',
+    what: 'VRF, route distinguisher, route targets, attachment interfaces',
+    writes: 'L3VPN / L2VPN service instances and their endpoints', ok: 1102, fail: 31, na: 151, order: 6 }
+];
+const COLLECTORS_BY_DOMAIN = { Transport: COLLECTORS, RAN: RAN_COLLECTORS, Core: CORE_COLLECTORS, IPMPLS: IPMPLS_COLLECTORS };
+/* how long a target row's own ch[] must be for its domain — RAN/Core run
+   5 collectors behind Reachability, Transport/IP/MPLS run 6 */
+const CH_LEN_BY_DOMAIN = { Transport: COLLECTORS.length, RAN: RAN_COLLECTORS.length, Core: CORE_COLLECTORS.length, IPMPLS: IPMPLS_COLLECTORS.length };
+/* truncates a 6-slot ch[] pattern down to a shorter domain's own length —
+   'fail' always leads and 'na' always trails in every pattern already used
+   in this file, so dropping slots off the end never changes what the
+   pattern means, just how many collectors it covers */
+const chForDomain = (arr, domain) => arr.slice(0, CH_LEN_BY_DOMAIN[domain] || arr.length);
+
+/* Reachability + that domain's own collectors, in the same {k,n,proto,
+   state,ms,bytes,req,res,wrote} shape TRANSCRIPT.steps already uses —
+   {{ip}}/{{host}}/{{oem}}/{{model}} are filled in by txStepsFor() per
+   target, the same idea as Transport's own literal-IP substitution but
+   generalised so it isn't tied to one hardcoded demo address. */
+const TRANSCRIPT_BY_DOMAIN = {
+  Transport: TRANSCRIPT.steps,
+  RAN: [
+    { k: 'reach', n: 'Reachability', proto: 'ICMP', state: 'ok', ms: 30, bytes: 168,
+      req: 'ping -c 3 -W 2 {{ip}}',
+      res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.028/0.033/0.041/0.004 ms',
+      wrote: 'reachable = true' },
+    { k: 'device', n: 'Device', proto: 'SNMP v2c', state: 'ok', ms: 180, bytes: 320,
+      req: 'snmpget -v2c -c ro-ran-v1 {{ip}} sysObjectID.0 sysDescr.0 sysName.0',
+      res: 'sysObjectID.0 = OID: .1.3.6.1.4.1.94.1.21.1.3 (RAN gNodeB)\nsysDescr.0   = "5G gNodeB, 3 sectors, band n78"\nsysName.0    = "{{host}}"',
+      wrote: 'oem = {{oem}} (derived) · model = {{model}} · sector count = 3' },
+    { k: 'radio', n: 'Radio/Cell', proto: 'NETCONF', state: 'ok', ms: 460, bytes: 2140,
+      req: '<rpc><get><filter><cell-config/></filter></get></rpc>',
+      res: 'Cell 1: PCI=312, TAC=10234, band=n78, bandwidth=100MHz, txPower=43dBm\nCell 2: PCI=487, TAC=10234, band=n78, bandwidth=100MHz, txPower=43dBm\nCell 3: PCI=126, TAC=10234, band=n78, bandwidth=100MHz, txPower=43dBm',
+      wrote: '3 cells configured · PCI 312/487/126 · band n78' },
+    { k: 'neighbours', n: 'Neighbours', proto: 'X2/Xn ANR', state: 'ok', ms: 610, bytes: 1480,
+      req: 'get-neighbor-relations --cell-group={{host}}',
+      res: '14 neighbour relations reported · 12 confirmed via ANR · 2 pending measurement',
+      wrote: '14 neighbour relations · no PCI collision detected' },
+    { k: 'config', n: 'Configuration', proto: 'NETCONF', state: 'ok', ms: 390, bytes: 960,
+      req: '<rpc><get-config><antenna-config/></get-config></rpc>',
+      res: 'Sector 1: azimuth=45°, tilt=6°\nSector 2: azimuth=165°, tilt=4°\nSector 3: azimuth=285°, tilt=5°',
+      wrote: 'Antenna azimuth/tilt recorded for 3 sectors' },
+    { k: 'service', n: 'Service', proto: 'NETCONF', state: 'ok', ms: 340, bytes: 780,
+      req: '<rpc><get><filter><active-ue-sessions/></filter></get></rpc>',
+      res: '142 active UE contexts · 128 RRC-connected · 14 idle',
+      wrote: '142 active sessions · cell service state = in-service' }
+  ],
+  Core: [
+    { k: 'reach', n: 'Reachability', proto: 'ICMP', state: 'ok', ms: 28, bytes: 168,
+      req: 'ping -c 3 -W 2 {{ip}}',
+      res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.022/0.027/0.035/0.004 ms',
+      wrote: 'reachable = true' },
+    { k: 'device', n: 'Device', proto: 'REST (NRF)', state: 'ok', ms: 90, bytes: 410,
+      req: 'GET /nnrf-disc/v1/nf-instances?nf-type=AMF&target-nf-instance-id={{host}}',
+      res: '{"nfInstanceId":"{{host}}","nfType":"AMF","nfStatus":"REGISTERED","plmnList":[{"mcc":"404","mnc":"10"}]}',
+      wrote: 'nfType = AMF · nfStatus = REGISTERED' },
+    { k: 'registration', n: 'NF Registration', proto: 'REST (NRF)', state: 'ok', ms: 75, bytes: 260,
+      req: 'GET /nnrf-nfm/v1/nf-instances/{{host}}',
+      res: 'heartBeatTimer=30 · registeredSince=2026-08-01T04:12:00Z · nrfSubscriptions=4',
+      wrote: '4 active NRF subscriptions' },
+    { k: 'interfaces', n: 'Interfaces', proto: 'NETCONF', state: 'ok', ms: 210, bytes: 540,
+      req: '<rpc><get><filter><interfaces/></filter></get></rpc>',
+      res: 'N2 (to gNodeB): up\nN3 (to UPF): up\nN4 (to SMF): up',
+      wrote: '3 core reference-point interfaces verified (N2/N3/N4)' },
+    { k: 'session', n: 'Session/Service', proto: 'REST', state: 'ok', ms: 160, bytes: 980,
+      req: 'GET /nsmf-pdusession/v1/pdu-sessions?supi={{host}}',
+      res: '1,204 active PDU sessions · avg throughput 3.2 Gbps',
+      wrote: '1,204 active PDU sessions' },
+    { k: 'dependencies', n: 'Dependencies', proto: 'REST (NRF)', state: 'ok', ms: 130, bytes: 320,
+      req: 'GET /nnrf-disc/v1/nf-instances?requester-nf-instance-id={{host}}',
+      res: 'Depends on: UPF-01, UPF-02, SMF-01',
+      wrote: '3 dependent network functions mapped' }
+  ],
+  IPMPLS: [
+    { k: 'reach', n: 'Reachability', proto: 'ICMP', state: 'ok', ms: 32, bytes: 192,
+      req: 'ping -c 3 -W 2 {{ip}}',
+      res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.029/0.034/0.042/0.005 ms',
+      wrote: 'reachable = true' },
+    { k: 'device', n: 'Device', proto: 'SNMP v2c', state: 'ok', ms: 198, bytes: 452,
+      req: 'snmpget -v2c -c ro-inband-v3 {{ip}} sysObjectID.0 sysDescr.0 sysName.0 sysUpTime.0',
+      res: 'sysObjectID.0 = OID: {{oid}}\nsysDescr.0   = "{{sysdescr}}"\nsysName.0    = "{{host}}"\nsysUpTime.0  = 298114400  (34d 12h 6m)',
+      wrote: 'oem = {{oem}} (derived from OID) · model = {{model}} · sysName · uptime' },
+    { k: 'interfaces', n: 'Interfaces', proto: 'SNMP IF-MIB', state: 'ok', ms: 380, bytes: 5240,
+      req: 'snmpwalk -v2c -c ro-inband-v3 {{ip}} 1.3.6.1.2.1.2.2.1  (ifTable)',
+      res: 'ifDescr.1 = "ge-0/0/0"  ifOperStatus.1 = up(1)\nifDescr.2 = "ge-0/0/1"  ifOperStatus.2 = up(1)\n… 16 more interfaces',
+      wrote: '18 interfaces · 16 up, 2 admin-down' },
+    { k: 'routing', n: 'Routing', proto: 'SNMP OSPF-MIB', state: 'ok', ms: 920, bytes: 1840,
+      req: 'snmpwalk -v2c -c ro-inband-v3 {{ip}} 1.3.6.1.2.1.14.10.1  (ospfNbrTable)',
+      res: 'ospfNbrRtrId.10.255.0.1.0 = 10.255.0.1   state full(8)\n… 7 more adjacencies, area 0.0.0.10',
+      wrote: '8 IGP adjacencies · area 0.0.0.10 membership' },
+    { k: 'mpls', n: 'MPLS/LDP', proto: 'SNMP MPLS-LDP-MIB', state: 'ok', ms: 760, bytes: 2260,
+      req: 'snmpwalk -v2c -c ro-inband-v3 {{ip}} 1.3.6.1.2.1.10.166.4  (mplsLdpPeerTable)',
+      res: 'mplsLdpPeerLabelDistMethod.1 = downstreamUnsolicited(2)\n… 6 LDP peer sessions, 420 label bindings',
+      wrote: '6 LDP peers · 420 label bindings' },
+    { k: 'bgp', n: 'BGP', proto: 'SNMP BGP4-MIB', state: 'ok', ms: 640, bytes: 980,
+      req: 'snmpwalk -v2c -c ro-inband-v3 {{ip}} 1.3.6.1.2.1.15.3.1  (bgpPeerTable)',
+      res: 'bgpPeerState.10.255.1.2 = established(6)   remoteAs 24186\n… 2 more peers',
+      wrote: '3 peering links · local AS 24186' },
+    { k: 'vpn', n: 'VPN/Service', proto: 'NETCONF', state: 'ok', ms: 880, bytes: 18400,
+      req: '<rpc><get-configuration><configuration><routing-instances/></configuration></get-configuration></rpc>',
+      res: 'instance MPLS-CORE-VRF1   type vrf   rd 24186:2001\n  interface ge-0/0/2.100\ninstance L2CKT-RING4      type l2vpn  rd 24186:3004\n… 11 more instances',
+      wrote: '9 L3VPN + 4 L2VPN instances · 13 total' }
+  ]
+};
+
+/* "Objects discovered" categories per domain — Transport's stays ADJACENCY,
+   unchanged; the others name what that domain's own collectors above
+   actually write, so the widget never shows LLDP/OSPF/BGP/L3VPN for a
+   domain that doesn't run those protocols. */
+const OBJECTS_BY_DOMAIN = {
+  Transport: ADJACENCY,
+  RAN: [
+    { proto: 'Cells', c: 3, ok: 3, chg: 'no change', tone: 'sky' },
+    { proto: 'Neighbours', c: 14, ok: 12, chg: '2 pending ANR', tone: 'cyan' },
+    { proto: 'Antenna sectors', c: 3, ok: 3, chg: 'no change', tone: 'purple' },
+    { proto: 'Active sessions', c: 142, ok: 142, chg: '8 more than last run', tone: 'emerald' }
+  ],
+  Core: [
+    { proto: 'NRF subscriptions', c: 4, ok: 4, chg: 'no change', tone: 'sky' },
+    { proto: 'Interfaces', c: 3, ok: 3, chg: 'no change', tone: 'cyan' },
+    { proto: 'PDU sessions', c: 1204, ok: 1198, chg: '6 draining', tone: 'purple' },
+    { proto: 'Dependent NFs', c: 3, ok: 3, chg: 'no change', tone: 'emerald' }
+  ],
+  IPMPLS: [
+    { proto: 'Interfaces', c: 18, ok: 16, chg: '2 admin-down', tone: 'sky' },
+    { proto: 'IGP adjacencies', c: 8, ok: 8, chg: 'no change', tone: 'cyan' },
+    { proto: 'LDP peers', c: 6, ok: 6, chg: 'no change', tone: 'indigo' },
+    { proto: 'BGP peers', c: 3, ok: 3, chg: 'no change', tone: 'purple' },
+    { proto: 'VPN instances', c: 13, ok: 13, chg: '1 added', tone: 'emerald' }
+  ]
+};
+/* Transport's is its exact original sentence ("19 LLDP neighbours · 12 OSPF
+   adjacencies · ..."), preserved word-for-word rather than derived generically
+   from OBJECTS_BY_DOMAIN.Transport's short labels; the other three read
+   naturally in the same style. */
+const OBJECTS_SUB_BY_DOMAIN = {
+  Transport: '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances',
+  RAN: '3 cells · 14 neighbour relations · 3 antenna sectors · 142 active sessions',
+  Core: '4 NRF subscriptions · 3 core interfaces · 1,204 PDU sessions · 3 dependent NFs',
+  IPMPLS: '18 interfaces · 8 IGP adjacencies · 6 LDP peers · 3 BGP peers · 13 VPN instances'
+};
 
 /* ── field provenance for the sample record ─────────────── */
 const PROV = [
@@ -1751,7 +1970,7 @@ REPORTS.push(
       host, oem: known ? oem : '—', model: known ? model : '—',
       circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
       fresh: 1 + i % 18, job, domain: jobRow.domain,
-      ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason
+      ch: chForDomain(['fail', 'na', 'na', 'na', 'na', 'na'], jobRow.domain), out: 'Missing', chip: 'error', reason
     });
   });
 
@@ -1770,7 +1989,7 @@ REPORTS.push(
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
       fresh: 1 + i % 12, job, domain: jobRow.domain,
-      ch: i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'],
+      ch: chForDomain(i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'], jobRow.domain),
       out: 'Rogue', chip: 'pink', isNew: true
     });
   }

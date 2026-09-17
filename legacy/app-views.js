@@ -466,13 +466,21 @@ function viewJobs() {
 
 /* ══ 3 · SCAN TARGETS ═════════════════════════════════════ */
 const SEG_CLS = { ok: 's-ok', fail: 's-fail', na: 's-na', skip: 's-skip' };
-function chainOf(arr) {
+/* `domain` picks which collector family names this chain's segments — a
+   RAN target's chain reads Dev/Rad/Nei/Cfg/Ser, not the router-shaped
+   Dev/Har/LLD/OSP/BGP/Ser every domain showed before per-domain transcripts
+   existed. Falls back to Transport's COLLECTORS when domain is missing, so
+   any caller that hasn't been updated to pass one still renders exactly as
+   before. */
+function chainOf(arr, domain) {
+  const fam = COLLECTORS_BY_DOMAIN[domain] || COLLECTORS;
   let failed = false;
   return `<span class="chain">${arr.map((v, i) => {
     if (v === 'fail') failed = true;
     const eff = (v === 'na' && failed) ? 'skip' : v;
     const label = { ok: 'passed', fail: 'failed', skip: 'skipped', na: 'not applicable' }[eff];
-    return `<span class="chain-seg ${SEG_CLS[eff]}" title="${COLLECTORS[i].n}: ${label}">${COLLECTORS[i].n.slice(0, 3)}</span>`;
+    const c = fam[i] || fam[fam.length - 1];
+    return `<span class="chain-seg ${SEG_CLS[eff]}" title="${c.n}: ${label}">${c.n.slice(0, 3)}</span>`;
   }).join('')}</span>`;
 }
 function freshChip(h) {
@@ -615,10 +623,14 @@ function viewTargets() {
             `<span class="num">${t.sync}</span>`,
             freshChip(t.fresh),
             displayReason,
-            chainOf(t.ch)
+            chainOf(t.ch, t.domain)
           ];
         }), '',
-        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host)}` })])}
+        /* an unresolved target (host '—') is not a usable identifier — many
+           rows share it — so this passes the row's own ip instead, which
+           targetOf() now checks first; an identified target still passes
+           its real host, unchanged */
+        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host === '—' ? rows[i].ip : rows[i].host)}` })])}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -638,31 +650,54 @@ function viewTargets() {
 let TARGET_ID = TRANSCRIPT.host;
 let TXRUN = 4412, TXSTEP = 0;
 
+/* 109 targets across every domain never got far enough to answer with a
+   hostname (an unreach/timeout failure), so they all share the same literal
+   host value '—' — matching by host alone made every one of them resolve
+   to whichever '—' row happens to come first in TARGETS, regardless of
+   which row was actually clicked (its real domain, ch[], failure reason,
+   all silently swapped out for that first row's). ip is always unique, so
+   it's checked first; the host match stays for identified targets and for
+   old links that still carry a real hostname. */
 function targetOf(id) {
-  return TARGETS.find(t => t.host === id) || null;
+  return TARGETS.find(t => t.ip === id) || TARGETS.find(t => t.host === id) || null;
 }
 
 /* TRANSCRIPT.steps[0] is Reachability, which has no entry of its own in a
-   target row's ch[] — ch[] lines up 1:1 with COLLECTORS (Device, Hardware,
-   LLDP, OSPF, BGP, Service) starting at steps[1]. A target's own `reason`
-   (the same code the Scan Targets list already shows as a chip) says which
-   kind of failure actually happened; the first 'fail' in the chain gets
-   that reason, everything after it is skipped, matching chainOf()'s own
-   fail-then-skip convention in the list above. */
+   target row's ch[] — ch[] lines up 1:1 with that domain's own collector
+   family (COLLECTORS_BY_DOMAIN[rec.domain]) starting at steps[1]. A
+   target's own `reason` (the same code the Scan Targets list already shows
+   as a chip) says which kind of failure actually happened; the first
+   'fail' in the chain gets that reason, everything after it is skipped,
+   matching chainOf()'s own fail-then-skip convention in the list above.
+
+   Transport (rec.domain === 'Transport', or missing — the illustrative
+   demo record has no domain of its own) runs the ORIGINAL code path
+   unchanged, byte-for-byte: same literal-IP substitution, same Device/
+   Hardware enrichment. Every other domain runs its own TRANSCRIPT_BY_DOMAIN
+   template through a generic {{ip}}/{{host}}/{{oem}}/{{model}} substitution
+   instead, since those templates were authored for that mechanism rather
+   than one hardcoded demo address. */
 function txStepsFor(rec) {
   const ip = rec.ip, host = rec.host, oem = rec.oem, model = rec.model, seed = rec.host !== '—' ? rec.host : rec.ip;
-  const base = TRANSCRIPT.steps.map(x => ({ ...x }));
+  const domain = rec.domain || 'Transport';
+  const isTransport = domain === 'Transport';
+  const base = (TRANSCRIPT_BY_DOMAIN[domain] || TRANSCRIPT.steps).map(x => ({ ...x }));
   const ch = rec.ch || [];
   const reachFails = rec.reason === 'unreach';
   let stopped = reachFails;
+  const fill = s => s.replace(/\{\{ip\}\}/g, ip).replace(/\{\{host\}\}/g, host === '—' ? ip : host)
+    .replace(/\{\{oem\}\}/g, oem || 'Unknown').replace(/\{\{model\}\}/g, model || '—');
 
   return base.map((step, i) => {
     if (i === 0) {
-      if (!reachFails) return { ...step, req: `ping -c 3 -W 2 ${ip}`,
-        res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.031/0.036/0.044/0.005 ms',
-        wrote: 'reachable = true' };
+      if (!reachFails) {
+        if (isTransport) return { ...step, req: `ping -c 3 -W 2 ${ip}`,
+          res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.031/0.036/0.044/0.005 ms',
+          wrote: 'reachable = true' };
+        return { ...step, req: fill(step.req), res: fill(step.res), wrote: fill(step.wrote) };
+      }
       const f = TX_FAIL.unreach(ip);
-      return { ...step, state: 'fail', ms: 2000, bytes: 0, req: `ping -c 3 -W 2 ${ip}`,
+      return { ...step, state: 'fail', ms: 2000, bytes: 0, req: isTransport ? `ping -c 3 -W 2 ${ip}` : fill(step.req),
         res: f.res, wrote: 'nothing — previous routing data retained', reason: f.reason, action: f.action };
     }
 
@@ -679,10 +714,27 @@ function txStepsFor(rec) {
     }
     if (chState === 'fail') {
       stopped = true;
-      const f = (TX_FAIL[rec.reason] || TX_FAIL.timeout)(ip);
+      /* Transport's own call never passed a protocol before — kept exactly
+         that way so its failure wording can't change. Every other domain
+         passes its failing step's own protocol, so e.g. a RAN Radio/Cell
+         timeout reads "via NETCONF", not a borrowed SNMP message. */
+      const f = isTransport ? (TX_FAIL[rec.reason] || TX_FAIL.timeout)(ip) : (TX_FAIL[rec.reason] || TX_FAIL.timeout)(ip, step.proto);
       return { ...step, state: 'fail', ms: 3000, bytes: 0,
-        req: step.req.replace(/172\.31\.33\.100/g, ip),
+        req: isTransport ? step.req.replace(/172\.31\.33\.100/g, ip) : fill(step.req),
         res: f.res, wrote: 'nothing — previous data retained', reason: f.reason, action: f.action };
+    }
+
+    if (!isTransport) {
+      /* passed — this domain's own template, filled in with this target's
+         own identity rather than a placeholder */
+      let res = fill(step.res);
+      if (domain === 'IPMPLS' && step.k === 'device') {
+        /* IP/MPLS shares Transport's SNMP device-identification model, so
+           it earns the same realistic per-OEM OID/sysDescr Transport's
+           Device step already derives, rather than a static placeholder */
+        res = `sysObjectID.0 = OID: ${TX_OID[oem] || '.1.3.6.1.4.1.0.0.0.0'}\nsysDescr.0   = "${txSysDescr(oem, model, seed)}"\nsysName.0    = "${host === '—' ? ip : host}"\nsysUpTime.0  = ${nint(seed,730,80000000,500000000)}  (${nint(seed,731,10,90)}d ${nint(seed,732,0,23)}h ${nint(seed,733,0,59)}m)`;
+      }
+      return { ...step, req: fill(step.req), res, wrote: fill(step.wrote) };
     }
 
     /* passed — same realistic payload shape as the sample, with this
@@ -802,13 +854,25 @@ function viewTarget() {
      shared example content either way, only the header identity changes */
   const rec = targetOf(TARGET_ID);
   const T = rec ? { host: rec.host, ip: rec.ip, job: rec.job, circle: rec.circle } : TRANSCRIPT;
-  const aMax = Math.max(...ADJACENCY.map(a => a.c));
+  const domain = rec ? rec.domain : 'Transport';
+  const objects = OBJECTS_BY_DOMAIN[domain] || ADJACENCY;
+  const aMax = Math.max(...objects.map(a => a.c));
   /* the transcript strip below is the one place that already knows, per
      step, whether this target actually passed — reading the count back off
      it (rather than a second hardcoded "7 of 7") is what keeps this tile
-     from claiming a clean run for a target the transcript shows failing */
+     from claiming a clean run for a target the transcript shows failing.
+     The step names and total also come from the same list, so a RAN target
+     shows "Reachability · Device · Radio/Cell · Neighbours · Configuration
+     · Service" and "of 6", never Transport's names or count. */
   const txStepsNow = txSteps();
   const passedCount = txStepsNow.filter(s => s.state === 'ok').length;
+  const stepCount = txStepsNow.length;
+  const stepNames = txStepsNow.map(s => s.n).join(' · ');
+  const objectsTotal = objects.reduce((a, o) => a + o.c, 0);
+  /* Transport's exact original sentence, preserved word-for-word (its
+     ADJACENCY entries only carry the short "LLDP"/"OSPF" label, not the
+     fuller "neighbours"/"adjacencies" noun this sentence uses) */
+  const objectsSub = OBJECTS_SUB_BY_DOMAIN[domain] || objects.map(o => `${n(o.c)} ${o.proto}`).join(' · ');
   const freshLabel = h => h < 1 ? 'just now' : h < 24 ? `${h}h ago` : h < 720 ? `${Math.round(h / 24)}d ago` : `${Math.round(h / 720)}mo ago`;
   return `<div class="page">
     ${pageHead(`${T.host}`,
@@ -817,8 +881,8 @@ function viewTarget() {
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${kpi('Last discovery', rec ? freshLabel(rec.fresh) : '3h ago', rec ? rec.sync : relativeTimestamp(3), 'sky')}
-      ${kpi('Steps passed', `${passedCount} of 7`, 'Reachability · Device · Hardware · LLDP · OSPF · BGP · Service', passedCount === 7 ? 'cyan' : passedCount === 0 ? 'red' : 'amber')}
-      ${kpi('Discovered objects', '49', '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances', 'purple')}
+      ${kpi('Steps passed', `${passedCount} of ${stepCount}`, stepNames, passedCount === stepCount ? 'cyan' : passedCount === 0 ? 'red' : 'amber')}
+      ${kpi('Discovered objects', n(objectsTotal), objectsSub, 'purple')}
     </div>
 
     <div class="row-t" style="align-items:stretch">
@@ -828,19 +892,22 @@ function viewTarget() {
           /* the newest run matches the "Last discovery · 3h ago" KPI above it
              exactly, and each older run keeps its original gap from the one
              before it (~30h, then ~24h, ~24h) — so the whole table reads as
-             real recent history, not a fixed snapshot that ages every day */
+             real recent history, not a fixed snapshot that ages every day.
+             The "N of 7" text is shared illustrative history, so its
+             denominator is corrected to this domain's real step count
+             rather than always claiming Transport's seven. */
           RUN_HISTORY.map((r, i) => [
             `<span class="mono">#${r.run}</span>`,
             `<span class="num">${agoStamp([180, 1980, 3420, 4860][i] ?? 180 + i * 1440, true)}</span>`,
             `<span class="num">${r.dur}</span>`,
-            r.steps, chip(r.out, r.chip),
+            r.steps.replace(/of \d+/, `of ${stepCount}`), chip(r.out, r.chip),
             `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
           ]))}
         </div>`, 'grow')}
 
       ${card(`${headSm('Objects discovered')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
-          ${ADJACENCY.map(a => `
+          ${objects.map(a => `
             <div class="stack-x" style="gap:2px">
               <div class="hbar" style="grid-template-columns:4rem 1fr 2.5rem">
                 <span class="vw-label">${a.proto}</span>

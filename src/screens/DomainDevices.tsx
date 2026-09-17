@@ -30,6 +30,12 @@ export default function DomainDevices() {
   const [justScanned, setJustScanned] = useState(false);
 
   const base = useMemo(() => (domain ? domainDevices(domain, region ?? undefined) : []), [domain, region]);
+  /* base is already region-filtered when a region is active, so counting
+     it directly is what makes the Open/Unverified stat cards agree with
+     the list below instead of quoting the domain-wide row.open/
+     row.unverified regardless of which region is showing */
+  const openCount = base.filter(d => d.status === 'Open').length;
+  const unverifiedCount = base.filter(d => d.status === 'Unverified').length;
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter(d => {
@@ -72,13 +78,13 @@ export default function DomainDevices() {
 
       <StatStrip cells={[
         { k: 'In scope', v: row.inScope.toLocaleString('en-IN'), s: 'assets tracked in this domain', t: 'sky' },
-        { k: 'Open', v: String(row.open), s: 'discrepancies to action', t: 'red' },
-        { k: 'Unverified', v: row.unverified !== null ? String(row.unverified) : '—', s: 'not yet scanned this cycle', t: 'amber' },
+        { k: 'Open', v: String(openCount), s: region ? `discrepancies to action in ${region}` : 'discrepancies to action', t: 'red' },
+        { k: 'Unverified', v: row.unverified !== null ? String(unverifiedCount) : '—', s: region ? `not yet scanned this cycle in ${region}` : 'not yet scanned this cycle', t: 'amber' },
         { k: 'Trust index', v: `${row.trustIndexPct}%`, s: `MTTR ${row.mttrHours}h · ${row.touchlessPct}% automated`, t: 'emerald' }
       ]} />
       {region && (
         <p className="vw-card-metric-label-sub" style={{ margin: '4px 0 0' }}>
-          The figures above are {DOMAIN_LABEL[domain]}-wide; the list below is filtered to {region} only.
+          In scope and Trust index are {DOMAIN_LABEL[domain]}-wide (no per-region figure exists for either); Open and Unverified above match the {region} list exactly.
         </p>
       )}
 

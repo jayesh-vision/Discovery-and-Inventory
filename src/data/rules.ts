@@ -69,7 +69,9 @@ export const RULES: Rule[] = [
   {
     id: 'RUL-RAN-001', name: 'gNodeB identity match', domain: 'RAN',
     description: 'Matches a discovered gNodeB to its RAN asset-register record by cell identity and PCI.',
-    source: 'Network · SNMP v2c/v3', target: 'Inventory · RAN asset register', ruleType: 'Identity match',
+    /* Cell ID comes off the Device collector (SNMP v2c); PCI is a Radio/Cell
+       fact, discovered over NETCONF — this rule genuinely spans both */
+    source: 'Network · SNMP v2c + NETCONF', target: 'Inventory · RAN asset register', ruleType: 'Identity match',
     priority: 'High', status: 'Active', origin: 'Manual',
     owner: 'Harish Kumar', reviewer: 'Anjali Verma', approver: 'Rohan Mehta', executor: 'Meera Nair', exceptionReviewer: 'Priya Iyer',
     createdBy: 'Harish Kumar', createdDate: '02-Jul-2026', lastUpdated: '01-Sep-2026 09:05', lastExecution: '01-Sep-2026 09:05',
@@ -92,7 +94,9 @@ export const RULES: Rule[] = [
   {
     id: 'RUL-RAN-002', name: 'Antenna parameter drift', domain: 'RAN',
     description: 'Flags a live antenna azimuth/tilt reading that differs from the planned engineering record beyond tolerance.',
-    source: 'Network · SNMP v2c/v3', target: 'Inventory · RAN asset register', ruleType: 'Attribute comparison',
+    /* azimuth/tilt are Configuration-collector facts, discovered over
+       NETCONF only — this rule never touches the Device collector's SNMP */
+    source: 'Network · NETCONF', target: 'Inventory · RAN asset register', ruleType: 'Attribute comparison',
     priority: 'Medium', status: 'Review', origin: 'AI-suggested',
     owner: 'Meera Nair', reviewer: 'Anjali Verma', approver: 'Rohan Mehta', executor: 'Meera Nair', exceptionReviewer: 'Priya Iyer',
     createdBy: 'Meera Nair', createdDate: '28-Aug-2026', lastUpdated: '30-Aug-2026 11:20', lastExecution: null,
@@ -116,14 +120,21 @@ export const RULES: Rule[] = [
     executions: [{ at: '01-Sep-2026 09:02', matched: 322, exceptions: 18, durationMs: 8100 }]
   },
   {
-    id: 'RUL-CORE-002', name: 'Core config drift', domain: 'Core',
-    description: 'Compares a live NF configuration checksum to the last approved baseline.',
-    source: 'Network · NETCONF', target: 'Inventory · NF registry', ruleType: 'Attribute comparison',
+    /* was "Core config drift" comparing a "config checksum" to a "baseline
+       checksum" — a router/switch running-config-vs-golden-config concept
+       that has no analogue in a 5GC NF's own discovery model (CORE_COLLECTORS
+       never produces a config file or checksum for anything). Redefined
+       around the NF profile fact the Device/NF Registration collectors
+       actually report — a serving PLMN/slice assignment drifting from what
+       inventory has on record — which is a real Core reconciliation concern. */
+    id: 'RUL-CORE-002', name: 'NF profile drift', domain: 'Core',
+    description: 'Compares a live NF\'s registered PLMN/slice assignment (from its NRF profile) to the value recorded in inventory.',
+    source: 'Network · REST (NRF)', target: 'Inventory · NF registry', ruleType: 'Attribute comparison',
     priority: 'Medium', status: 'Draft', origin: 'Manual',
     owner: 'Gaurav Shukla', reviewer: 'Sanjay Bhatt', approver: 'Rohan Mehta', executor: 'Vikram Rao', exceptionReviewer: 'Gaurav Shukla',
     createdBy: 'Gaurav Shukla', createdDate: '05-Sep-2026', lastUpdated: '05-Sep-2026', lastExecution: null,
-    conditions: [cond('c1', 'Config checksum', 'Not equals', 'Baseline checksum')],
-    expectedImpact: 'Would close the 4 open "Core config drift" items currently tracked manually.',
+    conditions: [cond('c1', 'Serving PLMN (MCC/MNC)', 'Not equals', 'Recorded PLMN (MCC/MNC)')],
+    expectedImpact: 'Would close the 4 open "NF profile drift" items currently tracked manually.',
     approvalHistory: [],
     activity: [{ at: '05-Sep-2026', by: 'Gaurav Shukla', event: 'Rule created' }],
     executions: []
@@ -145,27 +156,43 @@ export const RULES: Rule[] = [
     executions: [{ at: '19-Nov-2025 04:00', matched: 61, exceptions: 42, durationMs: 12400 }]
   },
   {
+    /* was still keyed on "Wavelength (nm)" over "SNMP + TL1" — the exact
+       capability its own expectedImpact says it exists to work WITHOUT.
+       Transport's baseline collectors (kept unchanged) already surface an
+       equivalent signal without TL1: Hardware reports every optical
+       module/SFP physically seated in the chassis, and Service reports
+       every VRF/route-instance actually provisioned — a module present
+       with no matching service instance is the same "live, undocumented"
+       fact RUL-TRN-001 caught via TL1, detected a different way. */
     id: 'RUL-TRN-002', name: 'Undocumented wavelength sweep', domain: 'Transport',
-    description: 'Flags a live, in-service wavelength with no matching service record at all.',
-    source: 'Network · SNMP + TL1', target: 'Inventory · Transport asset register', ruleType: 'Existence check',
+    description: 'Flags a live, in-service optical module (SFP/transceiver) with no matching service record at all.',
+    source: 'Network · NETCONF', target: 'Inventory · Transport asset register', ruleType: 'Existence check',
     priority: 'High', status: 'Review', origin: 'AI-suggested',
     owner: 'Priya Iyer', reviewer: 'Anjali Verma', approver: 'Rohan Mehta', executor: 'Priya Iyer', exceptionReviewer: 'Harish Kumar',
     createdBy: 'Priya Iyer', createdDate: '01-Sep-2026', lastUpdated: '02-Sep-2026 10:00', lastExecution: null,
-    conditions: [cond('c1', 'Wavelength (nm)', 'Not equals', 'null')],
-    expectedImpact: 'Suggested by the platform after the RUL-TRN-001 suspension left wavelength drift undetected for 10+ months — closes the same gap without needing the TL1 adapter.',
+    conditions: [cond('c1', 'Optical module present', 'Equals', 'true', 'AND'), cond('c2', 'Service instance', 'Equals', 'null')],
+    expectedImpact: 'Suggested by the platform after the RUL-TRN-001 suspension left wavelength drift undetected for 10+ months — closes the same gap by reading Hardware/Service facts the baseline collectors already gather, without needing the TL1 adapter.',
     approvalHistory: [{ at: '02-Sep-2026 10:00', by: 'Priya Iyer', action: 'Submitted for review' }],
     activity: [{ at: '01-Sep-2026', by: 'AI suggestion engine', event: 'Rule suggested from repeated Transport exception pattern' }, { at: '02-Sep-2026 10:00', by: 'Priya Iyer', event: 'Submitted for review' }],
     executions: []
   },
   {
-    id: 'RUL-IPM-001', name: 'PE router LLDP topology match', domain: 'IPMPLS',
-    description: 'Matches a discovered LLDP adjacency between two PE routers to the planned link record.',
-    source: 'Network · LLDP/CDP', target: 'Inventory · Links', ruleType: 'Relationship match',
+    /* was "PE router LLDP topology match" over LLDP/CDP — a leftover from
+       before IPMPLS had its own discovery flow. LLDP only exists in
+       Transport's (kept-unchanged) collector table; IPMPLS's own flow
+       (Device → Interfaces → Routing → MPLS/LDP → BGP → VPN/Service) has no
+       LLDP step at all. Redefined around the MPLS/LDP collector IPMPLS
+       actually runs — an LDP peer session is the real per-link adjacency
+       fact this domain discovers, so it's the correct analogue to the old
+       "match two port ends" concept. */
+    id: 'RUL-IPM-001', name: 'PE router LDP peer match', domain: 'IPMPLS',
+    description: 'Matches a discovered LDP peer session between two PE routers to the planned link record.',
+    source: 'Network · SNMP MPLS-LDP-MIB', target: 'Inventory · Links', ruleType: 'Relationship match',
     priority: 'Medium', status: 'Active', origin: 'Manual',
     owner: 'Rohan Mehta', reviewer: 'Sanjay Bhatt', approver: 'Rohan Mehta', executor: 'Sanjay Bhatt', exceptionReviewer: 'Anjali Verma',
     createdBy: 'Rohan Mehta', createdDate: '20-Mar-2026', lastUpdated: '01-Sep-2026 09:19', lastExecution: '01-Sep-2026 09:19',
-    conditions: [cond('c1', 'Local port', 'Equals', 'Planned A-end port', 'AND'), cond('c2', 'Remote port', 'Equals', 'Planned Z-end port')],
-    expectedImpact: 'Backbone rule for connectivity accuracy — every topology gap on Links traces back to this rule not yet matching a link.',
+    conditions: [cond('c1', 'LDP peer address', 'Equals', 'Planned LDP peer address', 'AND'), cond('c2', 'Label space ID', 'Equals', 'Planned label space ID')],
+    expectedImpact: 'Backbone rule for connectivity accuracy — every topology gap on Links traces back to this rule not yet matching an LDP peer session.',
     approvalHistory: [{ at: '21-Mar-2026', by: 'Sanjay Bhatt', action: 'Approved' }],
     activity: [{ at: '01-Sep-2026 09:19', by: 'scheduler', event: 'Run completed — 1,204 scanned, 12 drifted, 9 auto-resolved' }],
     executions: [{ at: '01-Sep-2026 09:19', matched: 1193, exceptions: 12, durationMs: 6200 }]

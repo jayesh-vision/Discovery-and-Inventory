@@ -122,7 +122,15 @@ function applyDrillQuery(view, q, label) {
       if (decoded !== TARGET_ID) { TARGET_ID = decoded; TXRUN = 4412; TXSTEP = 0; }
     }
   }
-  if (view === 'jobs')      { JOB_FILTER = p.filter || 'All'; }
+  if (view === 'jobs') {
+    JOB_FILTER = p.filter || 'All';
+    /* a domain row on Insights' "Discovery jobs" table names one domain's
+       whole job fleet — this seeds the grid's own existing Domain filter
+       (the same one the funnel icon's filter panel already offers) rather
+       than inventing a second, parallel filter mechanism */
+    gridOf('jobs').filters = p.domain ? { Domain: decodeURIComponent(p.domain) } : {};
+    gridOf('jobs').search = '';
+  }
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
     else if (p.tab && PHY_TABS.some(x => x.k === p.tab)) TAB.phy = p.tab;
@@ -232,7 +240,7 @@ function clearDrill() {
   if (!d) return;
   if (d.view === 'reconcile') { NE_FILTER = 'All'; REC_CIRCLE = null; }
   if (d.view === 'targets')   { TGT_FILTER = 'All'; TGT_REASON_FILTER = null; }
-  if (d.view === 'jobs')      { JOB_FILTER = 'All'; }
+  if (d.view === 'jobs')      { JOB_FILTER = 'All'; gridOf('jobs').filters = {}; gridOf('jobs').search = ''; }
   if (d.view === 'physical')  { PHY_OEM = null; PHY_SRC = null; PHY_VER = null; }
   if (d.view === 'location')  { LOC_ST = null; LOC_CAT = null; LOC_STATE = null; LOC_REGION = null; LOC_TYPEGRP = null; LOC_GROUP = null; }
   if (d.view === 'links')     { LINK_NE_FILTER = null; }
