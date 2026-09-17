@@ -13161,11 +13161,7 @@ function applyDrillQuery(view, q, label) {
        (the same one the funnel icon's filter panel already offers) rather
        than inventing a second, parallel filter mechanism */
     gridOf('jobs').filters = p.domain ? { Domain: decodeURIComponent(p.domain) } : {};
-    /* ?job= narrows further to exactly one row (the job id is unique, so a
-       search for it can only ever match that one job) — used when the
-       reader should land on a single specific job, not that domain's
-       whole fleet */
-    gridOf('jobs').search = p.job ? decodeURIComponent(p.job) : '';
+    gridOf('jobs').search = '';
   }
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;

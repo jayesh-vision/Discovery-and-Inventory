@@ -40,17 +40,6 @@ function drawerSub(d: DrawerState): string {
    than read off Object.keys(DOMAIN_HEX). */
 const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
 
-/* the one job Scan jobs opens to for each domain's "Discovery jobs" row —
-   that row is a rollup of several real jobs (legacy/app-data.js's JOBS),
-   not one record, so there's no single job it can literally mean; this
-   names the domain's main one rather than landing on its whole fleet.
-   Transport's pick is deliberate, not just "the first one": DSC-DWDM-RING
-   is the one Transport job actually in "No adapter" state, matching this
-   row's own "Credential warning" status — the other picks are each
-   domain's largest/original job. */
-const PRIMARY_JOB_ID: Record<DomainKey, string> = {
-  RAN: 'DSC-RAN-BLR', Core: 'DSC-CORE-NRF', Transport: 'DSC-DWDM-RING', IPMPLS: 'DSC-SOUTH-CORE'
-};
 
 /* Match outcome → the Discrepancy details screen's own category filter.
    "Matched" has nothing to drill into (it's the healthy population, not a
@@ -208,16 +197,12 @@ export default function Insights() {
     const p = new URLSearchParams(params);
     nav(`/discovery/insights/discrepancies${p.toString() ? '?' + p.toString() : ''}`);
   };
-  /* opens Scan jobs narrowed to this domain's one named job (see
-     PRIMARY_JOB_ID) rather than a drawer repeating the row's own numbers,
-     or a filtered list of every job the domain runs. Scan jobs' own crumb
-     has no Insights parent, so — same cross-section-jump idiom
-     PhysicalResources.tsx already uses for Site info/Node view — this
-     names its origin via drill/from so the reader still gets a real
-     "Insights > {job}" trail back, instead of landing with no way up. */
+  /* opens Scan jobs filtered to this domain's fleet. Scan jobs' own crumb
+     has no Insights parent, so this names its origin via drill/from so the
+     reader gets a real "Insights > {domain}" trail back. */
   const toJobs = (d: DomainKey) => {
-    const jobId = PRIMARY_JOB_ID[d];
-    nav(legacyPath('jobs', { label: jobId, from: 'Insights', q: `domain=${DOMAIN_LABEL[d]}&job=${jobId}` }));
+    const domainLabel = DOMAIN_LABEL[d];
+    nav(legacyPath('jobs', { label: domainLabel, from: 'Insights', q: `domain=${domainLabel}` }));
   };
   /* the 3 non-hero KPI tiles each have one real, meaningful destination;
      "Inventory trust index" itself stays a plain figure — there's no single
