@@ -458,7 +458,7 @@ function viewJobs() {
             : `<span class="vw-card-metric-label-sub">${j.next}</span>${
                 jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
         ]), 'job-table',
-        i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:'tgt=All' }),
+        i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:`tgt=All&job=${encodeURIComponent(rows[i].id)}` }),
               ])}`)}
 
   </div>`;
@@ -574,10 +574,22 @@ const TGT_REASON = { unreach: 'Host unreachable', timeout: 'SNMP timeout', auth:
 const TGT_REASON_CHIP = { unreach: 'purple', timeout: 'cyan', auth: 'pink', adapter: 'warning', parse: 'info', dupip: 'neutral' };
 
 let TGT_REASON_FILTER = null;
+let TGT_JOB_FILTER = null;
 function viewTargets() {
   const normFilterKey = String(TGT_FILTER || 'All').trim();
   const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
-  const filteredTargets = TARGETS.filter(test).filter(t => {
+  let activeJob = TGT_JOB_FILTER;
+  if (!activeJob && typeof DRILL !== 'undefined' && DRILL && DRILL.view === 'targets' && DRILL.label) {
+    const m = DRILL.label.match(/Targets in ([A-Za-z0-9_-]+)/i);
+    if (m) activeJob = m[1].trim();
+  }
+
+  let baseTargets = TARGETS;
+  if (activeJob) {
+    baseTargets = baseTargets.filter(t => t.job === activeJob);
+  }
+
+  const filteredTargets = baseTargets.filter(test).filter(t => {
     if (!TGT_REASON_FILTER) return true;
     const r = getFailureReason(t);
     return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
@@ -590,7 +602,7 @@ function viewTargets() {
      `rows` below them — they used to read static DL.runFail/DL.runPartial
      ledger figures that never moved with the Domain filter, the quick
      tabs, or search, so a Domain-narrowed table still bragged about every
-     domain's failures. Same fix for the "of N" grand total: TARGETS.length,
+     domain's failures. Same fix for the "of N" grand total: baseTargets.length,
      not DL.targets (a stale figure from an earlier, differently-sized seed). */
   const failedShown = rows.filter(t => getScanTargetStatus(t) === 'Failed').length;
   const partialShown = rows.filter(t => getScanTargetStatus(t) === 'Partial').length;
@@ -599,7 +611,7 @@ function viewTargets() {
     ${pageBar(`<div class="seg">${segs.map(([k,l]) => `<button class="${TGT_FILTER===k?'is-on':''}" data-tgt-filter="${k}">${l}</button>`).join('')}</div>`)}
     ${drillBar()}
     ${card(`
-      ${gridBar(rows.length, n(TARGETS.length), 'Gateway IP, hostname, serial', FS.targets,
+      ${gridBar(rows.length, n(baseTargets.length), 'Gateway IP, hostname, serial', FS.targets,
         `${chip(`${n(failedShown)} failed`,'error')}${chip(`${n(partialShown)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(

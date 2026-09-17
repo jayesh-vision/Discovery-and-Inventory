@@ -161,16 +161,35 @@ const TARGETS = [
   { ip: '172.31.35.207', host: 'DEL-N540X-SPARE', oem: 'Cisco', model: 'NCS-540',
     circle: 'Delhi', sync: '01-Sep-2026 03:00', fresh: 9, job: 'DSC-DEL-EDGE', domain: 'IPMPLS',
     ch: ['ok','ok','ok','ok','ok','na'], out: 'Rogue', chip: 'pink' },
+  { ip: '10.51.22.21', host: 'BLR-SOUTH-GNB-021', oem: 'Nokia', model: 'AirScale 5G',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
   { ip: '172.31.70.12', host: 'BLR-GNB-T3800-014', oem: 'Nokia', model: 'AirScale gNB',
     circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
-    /* 5-long — RAN's own collector chain (Device/Radio/Neighbours/Config/
-       Service), not the 6-slot Device/Hardware/LLDP/OSPF/BGP/Service shape
-       every row used before domain-specific transcripts existed */
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.44.18.14', host: 'PUN-HNJW-C3-ENB-014', oem: 'Nokia', model: 'AirScale',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.44.19.7', host: 'INDR-AREA-001-ENB-07', oem: 'Nokia', model: 'AirScale',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.44.22.31', host: 'CHE-ERIC-ENB-031', oem: 'Ericsson', model: 'Baseband 6630',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.51.23.9', host: 'DEL-CENTRAL-GNB-009', oem: 'Nokia', model: 'AirScale 5G',
+    circle: 'Delhi', sync: '01-Sep-2026 09:04', fresh: 4, job: 'DSC-RAN-DEL', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.51.26.18', host: 'VJA-ERIC-GNB-018', oem: 'Ericsson', model: 'AIR 6449',
+    circle: 'Telangana', sync: '01-Sep-2026 09:02', fresh: 4, job: 'DSC-RAN-HYD', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.51.27.27', host: 'PUN-HUAWEI-GNB-027', oem: 'Huawei', model: 'AAU5613',
+    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 4, job: 'DSC-RAN-MUM', domain: 'RAN',
+    ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
+  { ip: '10.44.24.45', host: 'AHM-HUAWEI-ENB-045', oem: 'Huawei', model: 'BTS3900',
+    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 4, job: 'DSC-RAN-MUM', domain: 'RAN',
     ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' },
   { ip: '10.10.4.21', host: 'BLR-AMF-CORE-02', oem: 'Nokia', model: 'AMF-CN',
     circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 5, job: 'DSC-CORE-NRF', domain: 'Core',
-    /* 5-long — Core's own collector chain (Device/Registration/Interfaces/
-       Session/Dependencies) */
     ch: ['ok','ok','ok','ok','ok'], out: 'Exact match', chip: 'success' }
 ];
 /* each row's `sync` above was a hand-typed date that only agreed with its
@@ -1222,16 +1241,17 @@ const PHY = {
     { st:'none', name:'DEL-EDC-SRV-07',  ip:'172.31.71.07', model:'PowerEdge R760', os:'RHEL 9.2', sn:'DPE7601144', oem:'DELL', loc:'DEL-279',  s:'m', stock:'deployed', v:null }
   ],
   dwdm: [
-    { st:'none', name:'WR-ADVA-FSP3000-01', ip:'172.31.47.144', model:'FSP 3000', os:'ONMSi 21.1', sn:'ADV3000-8841', oem:'ADVA', loc:'MUM-011', s:'m', stock:'deployed', v:null },
-    { st:'none', name:'WR-ADVA-FSP3000-02', ip:'172.31.47.145', model:'FSP 3000', os:'ONMSi 21.1', sn:'ADV3000-8842', oem:'ADVA', loc:'PUN-014', s:'m', stock:'deployed', v:null }
+    { st:'ok', name:'WR-ADVA-FSP3000-01', ip:'172.31.47.144', model:'FSP 3000', os:'ONMSi 21.1', sn:'ADV3000-8841', oem:'ADVA', loc:'MUM-011', s:'m', stock:'deployed', v:null },
+    { st:'ok', name:'WR-ADVA-FSP3000-02', ip:'172.31.47.145', model:'FSP 3000', os:'ONMSi 21.1', sn:'ADV3000-8842', oem:'ADVA', loc:'PUN-014', s:'m', stock:'deployed', v:null }
   ],
   enodeb: [
-    { st:'none', name:'PUN-HNJW-C3-ENB-014', ip:'10.44.18.14', model:'AirScale', os:'21B', sn:'NOK-ENB-014', oem:'NOKIA', loc:'PUN-014', s:'e', stock:'deployed', v:null },
-    { st:'none', name:'INDR-AREA-001-ENB-07', ip:'10.44.19.7', model:'AirScale', os:'21B', sn:'NOK-ENB-007', oem:'NOKIA', loc:'INDR-275', s:'e', stock:'deployed', v:null }
+    { st:'ok', name:'PUN-HNJW-C3-ENB-014', ip:'10.44.18.14', model:'AirScale', os:'21B', sn:'NOK-ENB-014', oem:'NOKIA', loc:'PUN-014', s:'e', stock:'deployed', v:null },
+    { st:'ok', name:'INDR-AREA-001-ENB-07', ip:'10.44.19.7', model:'AirScale', os:'21B', sn:'NOK-ENB-007', oem:'NOKIA', loc:'INDR-275', s:'e', stock:'deployed', v:null }
   ],
   gnodeb: [
-    { st:'none', name:'BLR-SOUTH-GNB-021', ip:'10.51.22.21', model:'AirScale 5G', os:'23A', sn:'NOK-GNB-021', oem:'NOKIA', loc:'BGLK-277', s:'e', stock:'deployed', v:null },
-    { st:'none', name:'DEL-CENTRAL-GNB-009', ip:'10.51.23.9', model:'AirScale 5G', os:'23A', sn:'NOK-GNB-009', oem:'NOKIA', loc:'DEL-279', s:'e', stock:'deployed', v:null }
+    { st:'ok', name:'BLR-SOUTH-GNB-021', ip:'10.51.22.21', model:'AirScale 5G', os:'23A', sn:'NOK-GNB-021', oem:'NOKIA', loc:'BGLK-277', s:'e', stock:'deployed', v:null },
+    { st:'ok', name:'BLR-GNB-T3800-014', ip:'172.31.70.12', model:'AirScale gNB', os:'23B', sn:'NOK-GNB-3800', oem:'NOKIA', loc:'BGLK-277', s:'e', stock:'deployed', v:null },
+    { st:'ok', name:'DEL-CENTRAL-GNB-009', ip:'10.51.23.9', model:'AirScale 5G', os:'23A', sn:'NOK-GNB-009', oem:'NOKIA', loc:'DEL-279', s:'e', stock:'deployed', v:null }
   ]
 };
 
@@ -1936,35 +1956,53 @@ REPORTS.push(
   const pad2 = v => String(v).padStart(2, '0');
   const flatten = mix => mix.flatMap(([k, c]) => Array(c).fill(k));
 
-  const MODELS_BY_OEM = {
-    Juniper:  ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
-    Cisco:    ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
-    Nokia:    ['7750', '7750 SR-7'],
-    Adva:     ['FSP 3000'],
-    Edgecore: ['AS7712-32X']
+  const MODELS_BY_DOMAIN = {
+    RAN: {
+      Nokia: ['AirScale 5G', 'AirScale', 'AirScale gNB'],
+      Ericsson: ['AIR 6449', 'Baseband 6630'],
+      Huawei: ['AAU5613', 'BTS3900']
+    },
+    Core: {
+      Nokia: ['AMF-CN', 'UPF-CN', 'SMF-CN', 'NRF-CN'],
+      Ericsson: ['Cloud Core']
+    },
+    Transport: {
+      Adva: ['FSP 3000'],
+      Ciena: ['6500-T12'],
+      Nokia: ['1830 PSS-32']
+    },
+    IPMPLS: {
+      Juniper: ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
+      Cisco: ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
+      Nokia: ['7750', '7750 SR-7'],
+      Adva: ['FSP 3000'],
+      Edgecore: ['AS7712-32X']
+    }
   };
-  const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
+  const ROLE_BY_DOMAIN = {
+    RAN: ['GNB', 'ENB', 'BBU', 'RRU'],
+    Core: ['AMF', 'UPF', 'SMF', 'NRF'],
+    Transport: ['DWDM', 'ROADM', 'OTN', 'MUX'],
+    IPMPLS: ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG']
+  };
 
   /* one row per unit of runFail, split across reasons exactly as DROPS states;
      the 5 hand-written failures above already carry one of each but dupip, so
      the generated share is trimmed by one apiece to land on 175 in total */
   const reasons = flatten([['unreach', 67], ['timeout', 40], ['auth', 32], ['adapter', 17], ['parse', 8], ['dupip', 6]]);
-  const oems = flatten([['Juniper', 96], ['Cisco', 63], ['Nokia', 8], ['Adva', 5], ['Edgecore', 3]]);
 
   reasons.forEach((reason, i) => {
-    const oem = oems[i % oems.length];
-    const model = pick(MODELS_BY_OEM[oem]);
     const circle = CIRCLES[i % CIRCLES.length];
-    /* the target's domain always follows the job that scanned it — never a
-       fixed guess — so a target of a RAN/Core/Transport job is never
-       mislabeled into the IPMPLS bucket the rest of this generator defaults
-       to */
     const jobRow = JOBS[i % JOBS.length];
     const job = jobRow.id;
-    /* unreachable / timed-out targets never got far enough to answer the
-       device collector, so nothing about them is known yet */
+    const dom = jobRow.domain || 'IPMPLS';
+    const domModels = MODELS_BY_DOMAIN[dom] || MODELS_BY_DOMAIN.IPMPLS;
+    const domOems = Object.keys(domModels);
+    const oem = pick(domOems);
+    const model = pick(domModels[oem]);
+    const role = pick(ROLE_BY_DOMAIN[dom] || ROLE_BY_DOMAIN.IPMPLS);
     const known = reason !== 'unreach' && reason !== 'timeout';
-    const host = known ? `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${pick(ROLE)}-${pad2(10 + i % 88)}` : '—';
+    const host = known ? `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${role}-${pad2(10 + i % 88)}` : '—';
     TARGETS.push({
       ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
       host, oem: known ? oem : '—', model: known ? model : '—',
@@ -1979,13 +2017,17 @@ REPORTS.push(
      same shape, so the rest follow suit */
   for (let i = 0; i < 66; i++) {
     const circle = CIRCLES[(i + 5) % CIRCLES.length];
-    const oem = pick(['Juniper', 'Juniper', 'Cisco', 'Cisco', 'Nokia']);
-    const model = pick(MODELS_BY_OEM[oem]);
     const jobRow = JOBS[(i + 3) % JOBS.length];
     const job = jobRow.id;
+    const dom = jobRow.domain || 'IPMPLS';
+    const domModels = MODELS_BY_DOMAIN[dom] || MODELS_BY_DOMAIN.IPMPLS;
+    const domOems = Object.keys(domModels);
+    const oem = pick(domOems);
+    const model = pick(domModels[oem]);
+    const role = dom === 'RAN' ? (i % 2 === 0 ? 'GNB' : 'ENB') : 'NEW';
     TARGETS.push({
       ip: `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
-      host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-NEW-${pad2(50 + i % 48)}`,
+      host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${role}-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),
       fresh: 1 + i % 12, job, domain: jobRow.domain,

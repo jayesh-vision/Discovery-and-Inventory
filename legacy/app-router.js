@@ -110,7 +110,15 @@ function applyDrillQuery(view, q, label) {
   const p = {};
   (q || '').split('&').filter(Boolean).forEach(kv => { const i = kv.indexOf('='); p[kv.slice(0, i)] = kv.slice(i + 1); });
   if (view === 'reconcile') { NE_FILTER = p.ne || 'All'; REC_CIRCLE = p.circle || null; }
-  if (view === 'targets')   { TGT_FILTER = p.tgt || 'All'; TGT_REASON_FILTER = p.reason || null; }
+  if (view === 'targets')   {
+    TGT_FILTER = p.tgt || 'All';
+    TGT_REASON_FILTER = p.reason || null;
+    TGT_JOB_FILTER = p.job ? decodeURIComponent(p.job).trim() : null;
+    if (!TGT_JOB_FILTER && label) {
+      const m = label.match(/Targets in ([A-Za-z0-9_-]+)/i);
+      if (m) TGT_JOB_FILTER = m[1].trim();
+    }
+  }
   if (view === 'target') {
     /* the row action carries ?host=; a bare label (e.g. a direct URL arrival
        whose q was dropped) still names the target as "Transcript · <host>" */
