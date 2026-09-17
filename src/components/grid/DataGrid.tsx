@@ -392,6 +392,19 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
     p.onFilterChange?.(values);
   };
 
+  /* Only when search is uncontrolled: a parent that passes searchValue/onSearch
+     owns clearing its own query on a scope change (e.g. DomainDevices resets
+     `query` itself). One that doesn't — Physical Resources, Inactive Inventory —
+     relies entirely on this component's own state, so switching tabs (a new
+     resetKey) left a stale search string and filter values pointed at rows
+     that no longer exist under the new tab, reading as "grid won't refresh". */
+  useEffect(() => {
+    if (p.onSearch) return;
+    setInternalSearch('');
+    setInternalFilters({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.resetKey]);
+
   const filteredRows = useMemo(() => {
     return p.rows.filter(row => filterDataRow(row, searchQuery, internalFilters));
   }, [p.rows, searchQuery, internalFilters]);

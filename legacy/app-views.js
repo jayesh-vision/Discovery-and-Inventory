@@ -3435,29 +3435,41 @@ let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or 
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
-   as the Links page's node-linking diagram, badge and all, except an L3VPN
-   attachment's left node is the service itself (a cloud glyph, not a
-   device) — an L2VPN attachment is a point-to-point circuit between two
-   router ports, not a routed service boundary, so it keeps the plain
-   router icon both ends already had. The right node is the router it
-   lands on either way: the wire carries a small clickable label (copies
-   the source interface), not a floating card that would sit on top of the
-   line, and the rest of the detail lives in the field grid below instead. */
+   as the Links page's node-linking diagram. An L3VPN attachment's left
+   node is the service itself (a cloud glyph, not a device) — nothing to
+   open, so it stays a plain `.is-static` node like the Links diagram's own
+   read-only endpoints. An L2VPN attachment is a real point-to-point circuit
+   between two router ports, so both ends are real PHY.router-or-synthesised
+   elements (nodeRecord() — see viewResource() — always resolves *some*
+   deterministic, stable record for a name even when it's not one of the
+   curated PHY samples, so this never lands on a wrong router's data). Every
+   real node, and the wire (the source interface's own router), drills to
+   'resource' the same way every other row-level "View details" already
+   does in this app (data-drill, not the raw data-res shortcut) — that's
+   what makes drillTo() record Services as the origin, so the breadcrumb
+   reads "Services > <router>" instead of Physical Resources' own default
+   trail, and the breadcrumb/back both actually return to this dialog's
+   list instead of a page the reader never opened. */
 function svcDiagram(r, tab) {
   const svcLabel = `${r.name}_${r.erp}`;
+  const nodeBtn = name => `<button class="linkdiagram-node"${dA({ v: 'resource', l: name, q: `name=${encodeURIComponent(name)}` })} title="View ${esc(name)}">
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(name)}">${esc(name)}</span>
+    </button>`;
+  const srcNode = tab === 'l3vpn'
+    ? `<span class="linkdiagram-node is-static">
+        <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+        <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
+      </span>`
+    : nodeBtn(r.ne);
+  const dstName = tab === 'l3vpn' ? r.ne : r.dstNe;
   return `<div class="linkdiagram-canvas">
-    <span class="linkdiagram-node" style="cursor:default">
-      <span class="linkdiagram-icon">${nodeThumb(tab === 'l3vpn' ? 'cloud' : 'router')}</span>
-      <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
-    </span>
-    <button class="linkdiagram-wire" data-copy="${esc(r.ifc)}"
-      title="Copy source interface: ${esc(r.ifc)}" aria-label="Copy source interface: ${esc(r.ifc)}">
+    ${srcNode}
+    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.ne, q: `name=${encodeURIComponent(r.ne)}` })}
+      title="View ${esc(r.ne)}" aria-label="View ${esc(r.ne)}, source interface ${esc(r.ifc)}">
       <span class="linkdiagram-wire-badge">${esc(r.ifc)}</span>
     </button>
-    <span class="linkdiagram-node" style="cursor:default;width:auto;max-width:14rem">
-      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
-      <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(r.ne)}">${esc(r.ne)}</span>
-    </span>
+    ${nodeBtn(dstName)}
   </div>`;
 }
 
@@ -3466,14 +3478,21 @@ function svcDiagram(r, tab) {
    src/dst NE-IP-interface row shape, so this one function renders all
    six instead of six near-duplicate bespoke tables. Only the column
    labels vary per type (SVC_P2P_COLS). */
+/* Source/Destination each collapse NE + IP + interface into one cell (NE
+   name on top, IP · interface as its muted mono sub-line) — the same
+   name-over-sub-line shape every other grid in the app already uses for a
+   device (Physical Resources' Name/IP column, Domain devices' device
+   column). Six skinny mono columns side by side read as a wall of near-
+   identical text with no anchor; L3VPN/L2VPN never had that problem since
+   each of their NEs is only ever named once per row. Full detail (every
+   field split out) is still one click away in the View drawer. */
 function svcP2PTable(t, rows) {
   const cols = SVC_P2P_COLS[t] || { name: 'Name', ref: 'Reference ID' };
-  return table([{t:'Status'},{t:cols.name},{t:'Source NE'},{t:'Source IP'},{t:'Source interface'},
-                {t:'Destination NE'},{t:'Destination IP'},{t:'Destination interface'},{t:cols.ref}],
+  return table([{t:'Status'},{t:cols.name},{t:'Source'},{t:'Destination'},{t:cols.ref}],
     rows.map(s => [
       chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`,
-      `<span class="mono">${s.srcNe}</span>`, `<span class="mono">${s.srcIp}</span>`, `<span class="mono">${s.srcIfc}</span>`,
-      `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstIfc}</span>`,
+      `<span class="vw-value">${s.srcNe}</span><span class="cell-sub mono">${s.srcIp} · ${s.srcIfc}</span>`,
+      `<span class="vw-value">${s.dstNe}</span><span class="cell-sub mono">${s.dstIp} · ${s.dstIfc}</span>`,
       `<span class="mono">${s.erp}</span>`
     ]), '',
     i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
@@ -3498,11 +3517,11 @@ function svcViewDialog() {
           <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
             <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
           </div>
-          ${detailFieldGrid([
-            ['Source NE', r.srcNe], ['Source IP', r.srcIp], ['Source interface', r.srcIfc],
-            ['Destination NE', r.dstNe], ['Destination IP', r.dstIp], ['Destination interface', r.dstIfc],
-            [cols.ref, r.erp]
+          ${renderSectionedGrid([
+            { title: 'Source', fields: [['Source NE', r.srcNe], ['Source IP', r.srcIp], ['Source interface', r.srcIfc]] },
+            { title: 'Destination', fields: [['Destination NE', r.dstNe], ['Destination IP', r.dstIp], ['Destination interface', r.dstIfc]] }
           ])}
+          ${detailFieldGrid([[cols.ref, r.erp]])}
         </div>
       </div>`;
   }
@@ -3548,8 +3567,10 @@ function viewServices() {
 
     ${card(`
       <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
-      ${tabs(domainTabs, t, 'svc')}
-      ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services, '',
+      ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services,
+        `<div class="tabbar tabbar--detail">
+          ${domainTabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" data-tab="svc:${x.k}">${x.n}</button>`).join('')}
+        </div>`,
         [], 'services')}
       ${t === 'l2vpn'
         ? table([{t:'Status', plain:true},{t:'Name'},{t:'VC ID'},{t:'Source IP address'},{t:'Source NE'},{t:'Source interface'},
