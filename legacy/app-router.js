@@ -681,18 +681,26 @@ document.addEventListener('click', e => {
     const [g, k] = tb.dataset.tab.split(':');
     TAB[g] = k;
     if (g === 'phy') {
+      gridOf('physical').search = '';
+      gridOf('physical').filters = {};
       go('physical', { label: `${k} in inventory`, q: `cls=${k}` });
       return;
     }
     if (g === 'link') {
+      gridOf('links').search = '';
+      gridOf('links').filters = {};
       go('links', { label: `${k} links`, q: `tab=${k}` });
       return;
     }
     if (g === 'pas') {
+      gridOf('passive').search = '';
+      gridOf('passive').filters = {};
       go('passive', { label: `${k} passive`, q: `tab=${k}` });
       return;
     }
     if (g === 'svc') {
+      gridOf('services').search = '';
+      gridOf('services').filters = {};
       go('services', { label: `${k} services`, q: `tab=${k}` });
       return;
     }

@@ -59,8 +59,8 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
   ]
 };
 
-const PAD_LOC = ['BGLK-277','DEL-279','INDR-275','VJA-118','CHE-118','MAS-041','PUN-162','HYD-093','KOL-204','AHM-131'];
-const PAD_ST: RecState[] = ['ok','ok','drift','ok','stale','ok','drift','ok','none','ok'];
+const PAD_LOC = ['BGLK-277', 'DEL-279', 'INDR-275', 'VJA-118', 'CHE-118', 'MAS-041', 'PUN-162', 'HYD-093', 'KOL-204', 'AHM-131'];
+const PAD_ST: RecState[] = ['ok', 'ok', 'drift', 'ok', 'stale', 'ok', 'drift', 'ok', 'none', 'ok'];
 
 /* one small deterministic generator so a rebuild never reshuffles the grid */
 const lcg = (seed: number) => { let x = seed; return () => (x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; };
@@ -75,14 +75,16 @@ function grow(cls: NeClass, seeds: NeRow[]): NeRow[] {
     while (have < target) {
       const k = out.length;
       const base = seeds[Math.floor(r() * seeds.length)];
-      out.push({ ...base,
+      out.push({
+        ...base,
         st: planned ? 'none' : PAD_ST[k % PAD_ST.length],
-        name: `${PAD_LOC[k % PAD_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${['P','PE','AGG','ACC','ER'][k % 5]}-${String(20 + k)}`,
+        name: `${PAD_LOC[k % PAD_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${['P', 'PE', 'AGG', 'ACC', 'ER'][k % 5]}-${String(20 + k)}`,
         ip: planned ? `192.168.${20 + k % 9}.${11 + k}` : `172.31.${64 + (k * 5) % 60}.${12 + (k * 23) % 240}`,
         sn: base.sn.replace(/[0-9]{3}$/, String(200 + k * 7)) + String.fromCharCode(65 + k % 26),
         loc: PAD_LOC[k % PAD_LOC.length],
         stock,
-        v: planned ? null : [3, 6, 11, 640][k % 4] });
+        v: planned ? null : [3, 6, 11, 640][k % 4]
+      });
       have++;
     }
   }
@@ -108,8 +110,8 @@ export const isActive = (s: string): s is ActiveStock => (ACTIVE_STATES as strin
    one still left at [0, 0]. */
 export const portsOf = (cls: NeClass, i: number): [number, number] =>
   cls === 'router' ? [36, 22 - (i % 5)] : cls === 'switch' ? [48, 30 + (i % 9)]
-  : cls === 'enodeb' ? [6, 4 + (i % 3)] : cls === 'gnodeb' ? [8, 5 + (i % 4)]
-  : cls === 'dwdm' ? [24, 14 + (i % 8)] : [0, 0];
+    : cls === 'enodeb' ? [6, 4 + (i % 3)] : cls === 'gnodeb' ? [8, 5 + (i % 4)]
+      : cls === 'dwdm' ? [24, 14 + (i % 8)] : [0, 0];
 
 const COMPLIANCE: Record<string, 'ok' | 'behind' | 'unknown'> = {
   'MX960': 'behind', 'NCS-540': 'ok', 'ACX2200': 'ok', 'MX204': 'behind',

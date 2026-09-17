@@ -117,6 +117,7 @@ export default function PhysicalResources() {
             fixed width and ellipsis-truncated (full text on hover) so it
             can't force the whole table to scroll horizontally. */}
         <DataGrid<Row>
+          key={cls}
           columns={[{ t: 'Status', w: '9%' }, { t: 'Name / IP', w: '16%' }, { t: 'Model / Vendor', w: '12%' }, { t: 'OS version', w: '8%' },
             { t: 'Serial number', w: '10%' }, { t: 'Region', w: '6%' }, { t: 'Ports', r: true, w: '7%' }, { t: 'Location', w: '11%' },
             { t: 'System description', w: '20%' }]}

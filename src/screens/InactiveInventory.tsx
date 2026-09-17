@@ -52,6 +52,7 @@ export default function InactiveInventory() {
           active={cls} onChange={setCls} />
 
         <DataGrid<ArchiveRow>
+          key={cls}
           columns={[{ t: 'Name' }, { t: 'Model / Vendor' }, { t: 'Serial number' }, { t: 'Last IP / location' },
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}
           rows={rows} total={total} rowKey={r => r.sn} resetKey={cls}
