@@ -39,22 +39,23 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'none', name: 'DEL-EDC-SRV-07', ip: '172.31.71.07', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null }
   ],
   dwdm: [
-    { st: 'none', name: 'WR-ADVA-FSP3000-01', ip: '172.31.47.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'WR-ADVA-FSP3000-02', ip: '172.31.47.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'HYD-CIENA-6500-01', ip: '172.31.93.12', model: '6500-T12', os: '11.5.0', sn: 'CIENA6500HYD01', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'KOL-NOKIA-1830PSS-01', ip: '172.31.204.19', model: '1830 PSS-32', os: 'R21.6', sn: 'NOK1830KOL01', oem: 'NOKIA', loc: 'KOL-204', s: 'm', stock: 'deployed', v: null }
+    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.47.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.47.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.93.12', model: '6500-T12', os: '11.5.0', sn: 'CIENA6500HYD01', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'KOL-NOKIA-1830PSS-01', ip: '172.31.204.19', model: '1830 PSS-32', os: 'R21.6', sn: 'NOK1830KOL01', oem: 'NOKIA', loc: 'KOL-204', s: 'm', stock: 'deployed', v: null }
   ],
   enodeb: [
-    { st: 'none', name: 'PUN-HNJW-C3-ENB-014', ip: '10.44.18.14', model: 'AirScale', os: '21B', sn: 'NOK-ENB-014', oem: 'NOKIA', loc: 'PUN-014', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'INDR-AREA-001-ENB-07', ip: '10.44.19.7', model: 'AirScale', os: '21B', sn: 'NOK-ENB-007', oem: 'NOKIA', loc: 'INDR-275', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'CHE-ERIC-ENB-031', ip: '10.44.22.31', model: 'Baseband 6630', os: 'L23B', sn: 'ERIC-ENB-031', oem: 'ERICSSON', loc: 'CHE-118', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'AHM-HUAWEI-ENB-045', ip: '10.44.24.45', model: 'BTS3900', os: 'V100R020C10', sn: 'HW-ENB-045', oem: 'HUAWEI', loc: 'AHM-131', s: 'e', stock: 'deployed', v: null }
+    { st: 'ok', name: 'PUN-HNJW-C3-ENB-014', ip: '10.44.18.14', model: 'AirScale', os: '21B', sn: 'NOK-ENB-014', oem: 'NOKIA', loc: 'PUN-014', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'INDR-AREA-001-ENB-07', ip: '10.44.19.7', model: 'AirScale', os: '21B', sn: 'NOK-ENB-007', oem: 'NOKIA', loc: 'INDR-275', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'CHE-ERIC-ENB-031', ip: '10.44.22.31', model: 'Baseband 6630', os: 'L23B', sn: 'ERIC-ENB-031', oem: 'ERICSSON', loc: 'CHE-118', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'AHM-HUAWEI-ENB-045', ip: '10.44.24.45', model: 'BTS3900', os: 'V100R020C10', sn: 'HW-ENB-045', oem: 'HUAWEI', loc: 'AHM-131', s: 'e', stock: 'deployed', v: null }
   ],
   gnodeb: [
-    { st: 'none', name: 'BLR-SOUTH-GNB-021', ip: '10.51.22.21', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-021', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'DEL-CENTRAL-GNB-009', ip: '10.51.23.9', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-009', oem: 'NOKIA', loc: 'DEL-279', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'VJA-ERIC-GNB-018', ip: '10.51.26.18', model: 'AIR 6449', os: 'L23B', sn: 'ERIC-GNB-018', oem: 'ERICSSON', loc: 'VJA-118', s: 'e', stock: 'deployed', v: null },
-    { st: 'none', name: 'PUN-HUAWEI-GNB-027', ip: '10.51.27.27', model: 'AAU5613', os: 'V100R020C10', sn: 'HW-GNB-027', oem: 'HUAWEI', loc: 'PUN-162', s: 'e', stock: 'deployed', v: null }
+    { st: 'ok', name: 'BLR-SOUTH-GNB-021', ip: '10.51.22.21', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-021', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'BLR-GNB-T3800-014', ip: '172.31.70.12', model: 'AirScale gNB', os: '23B', sn: 'NOK-GNB-3800', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'DEL-CENTRAL-GNB-009', ip: '10.51.23.9', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-009', oem: 'NOKIA', loc: 'DEL-279', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'VJA-ERIC-GNB-018', ip: '10.51.26.18', model: 'AIR 6449', os: 'L23B', sn: 'ERIC-GNB-018', oem: 'ERICSSON', loc: 'VJA-118', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'PUN-HUAWEI-GNB-027', ip: '10.51.27.27', model: 'AAU5613', os: 'V100R020C10', sn: 'HW-GNB-027', oem: 'HUAWEI', loc: 'PUN-162', s: 'e', stock: 'deployed', v: null }
   ]
 };
 
