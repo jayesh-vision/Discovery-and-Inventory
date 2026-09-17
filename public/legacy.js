@@ -412,7 +412,7 @@ const TARGETS = [
     ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'Missing', chip: 'error', reason: 'unreach'
   },
   {
-    ip: '172.31.41.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024',
+    ip: '172.31.31.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024',
     circle: 'Karnataka', sync: '01-Sep-2026 08:44', fresh: 4, job: 'DSC-SOUTH-CORE', domain: 'IPMPLS',
     ch: ['ok', 'ok', 'ok', 'ok', 'na', 'na'], out: 'Rogue', chip: 'pink', isNew: true
   },
@@ -740,7 +740,7 @@ const MISSING_ROWS = [
 
 const ROGUE_ROWS = [
   {
-    ip: '172.31.41.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024', circle: 'Karnataka',
+    ip: '172.31.31.212', host: 'BLR-ACX7024-UNREG-01', oem: 'Juniper', model: 'ACX7024', circle: 'Karnataka',
     first: '18-Aug-2026', nb: 'BGLK-277-T-CHR-01 Gi0/0/4', why: 'Answers SNMP, no master record, no workorder', sev: 'error'
   },
   {
@@ -841,46 +841,46 @@ const GAPS = [
 /* ── scan jobs ──────────────────────────────────────────── */
 const JOBS = [
   {
-    id: 'DSC-SOUTH-CORE', domain: 'IPMPLS', site: 'Karnataka · south core', scope: '172.31.31.0/24 · 172.31.33.0/24',
+    id: 'DSC-SOUTH-CORE', domain: 'IPMPLS', site: 'Karnataka · south core', scope: '172.31.31.0/24 · 172.31.34.255/24',
     collector: 'clr-blr-02', cred: 'ro-inband-v3', sched: 'Every 6 h', next: 'today 15:00',
     last: '01-Sep-2026 09:10', dur: '13 m 44 s', targets: 412, clean: 355, partial: 43, fail: 14,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-INDR-ACCESS', domain: 'IPMPLS', site: 'Madhya Pradesh · Indore access', scope: '172.31.39.0/24 · 172.31.41.0/24',
+    id: 'DSC-INDR-ACCESS', domain: 'IPMPLS', site: 'Madhya Pradesh · Indore access', scope: '172.31.35.0/24 · 172.31.41.255/24',
     collector: 'clr-indr-01', cred: 'ro-inband-v3', sched: 'Daily 02:00', next: 'tomorrow 02:00',
     last: '01-Sep-2026 02:00', dur: '41 m 02 s', targets: 388, clean: 289, partial: 62, fail: 37,
     state: 'Completed with errors', chip: 'warning'
   },
   {
-    id: 'DSC-DEL-EDGE', domain: 'IPMPLS', site: 'Delhi · edge', scope: '172.31.35.0/24',
+    id: 'DSC-DEL-EDGE', domain: 'IPMPLS', site: 'Delhi · edge', scope: '172.31.42.0/24 · 172.31.49.255/24',
     collector: 'clr-del-01', cred: 'ro-oob-v2', sched: 'Daily 03:00', next: 'tomorrow 03:00',
     last: '01-Sep-2026 03:00', dur: '22 m 18 s', targets: 341, clean: 305, partial: 32, fail: 4,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-AP-ACCESS', domain: 'IPMPLS', site: 'Andhra Pradesh · access', scope: '172.31.49.0/24 · 172.31.53.0/24',
+    id: 'DSC-AP-ACCESS', domain: 'IPMPLS', site: 'Andhra Pradesh · access', scope: '172.31.50.0/24 · 172.31.59.255/24',
     collector: 'clr-vzg-01', cred: 'ro-inband-v3', sched: 'Daily 02:30', next: 'held',
     last: '01-Sep-2026 02:30', dur: '58 m 11 s', targets: 356, clean: 241, partial: 44, fail: 71,
     state: 'Completed with errors', chip: 'error'
   },
   {
-    id: 'DSC-ODI-ACCESS', domain: 'IPMPLS', site: 'Odisha · access', scope: '172.31.61.0/24',
+    id: 'DSC-ODI-ACCESS', domain: 'IPMPLS', site: 'Odisha · access', scope: '172.31.60.0/24 · 172.31.69.255/24',
     collector: 'clr-bbs-01', cred: 'ro-inband-v3', sched: 'Daily 02:30', next: 'tomorrow 02:30',
     last: '31-Aug-2026 02:30', dur: '19 m 46 s', targets: 264, clean: 214, partial: 33, fail: 17,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-TN-ACCESS', domain: 'IPMPLS', site: 'Tamil Nadu · access', scope: '172.31.34.0/24 · 172.31.38.0/24',
+    id: 'DSC-TN-ACCESS', domain: 'IPMPLS', site: 'Tamil Nadu · access', scope: '172.31.70.0/24 · 172.31.74.255/24',
     collector: 'clr-mas-01', cred: 'ro-inband-v3', sched: 'Weekly Sun 02:00', next: 'Sun 02:00',
     last: '03-Aug-2026 02:14', dur: '24 m 09 s', targets: 285, clean: 246, partial: 30, fail: 9,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-DWDM-RING', domain: 'Transport', site: 'Maharashtra · transport ring', scope: '172.31.47.0/24 · 172.31.48.0/24',
+    id: 'DSC-DWDM-RING', domain: 'Transport', site: 'Maharashtra · transport ring', scope: '172.31.75.0/24 · 172.31.79.0/24',
     collector: 'clr-blr-02', cred: 'ro-optical-v3', sched: 'Weekly Sun 04:00', next: 'Sun 04:00',
     last: '19-Nov-2025 04:00', dur: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18,
-    state: 'No adapter', chip: 'neutral'
+    state: 'No adapter', chip: 'neutral' 
   },
   {
     id: 'DSC-LAB-SEED', domain: 'IPMPLS', site: 'Lab · CNOC', scope: 'Seed 192.168.10.235 · depth 3',
@@ -892,10 +892,10 @@ const JOBS = [
 
 /* grown to a twelve-row sample */
 JOBS.push(...[
-  ['DSC-WEST-EDGE', 'Maharashtra · west edge', '172.31.41.0/24', 'clr-pun-01', 'ro-inband-v3', 'Every 12 h', 'today 21:00', '01-Sep-2026 09:00', '9 m 12 s', 268, 231, 29, 8, 'Completed', 'success', 'IPMPLS'],
-  ['DSC-EAST-AGG', 'West Bengal · aggregation', '172.31.87.0/24', 'clr-kol-01', 'ro-inband-v3', 'Daily', 'tomorrow 02:00', '01-Sep-2026 02:00', '11 m 40 s', 196, 164, 24, 8, 'Completed', 'success', 'IPMPLS'],
-  ['DSC-NORTH-ACCESS', 'Delhi NCR · access', '172.31.35.0/24', 'clr-del-02', 'ro-oob-v3', 'Every 6 h', 'today 18:00', '01-Sep-2026 12:04', '7 m 02 s', 324, 289, 26, 9, 'Completed', 'success', 'IPMPLS'],
-  ['DSC-DWDM-OPTICAL', 'All circles · optical layer', '172.31.47.0/24', 'clr-blr-03', 'netconf-optical', 'Weekly', '05-Sep-2026 01:00', '29-Aug-2026 01:00', '21 m 18 s', 78, 61, 12, 5, 'Completed', 'success', 'Transport']
+  ['DSC-WEST-EDGE', 'Maharashtra · west edge', '172.31.80.0/24 · 172.31.84.0/24', 'clr-pun-01', 'ro-inband-v3', 'Every 12 h', 'today 21:00', '01-Sep-2026 09:00', '9 m 12 s', 268, 231, 29, 8, 'Completed', 'success', 'IPMPLS'],
+  ['DSC-EAST-AGG', 'West Bengal · aggregation', '172.31.85.0/24 · 172.31.89.0/24', 'clr-kol-01', 'ro-inband-v3', 'Daily', 'tomorrow 02:00', '01-Sep-2026 02:00', '11 m 40 s', 196, 164, 24, 8, 'Completed', 'success', 'IPMPLS'],
+  ['DSC-NORTH-ACCESS', 'Delhi NCR · access', '172.31.90.0/24 · 172.31.95.255/24', 'clr-del-02', 'ro-oob-v3', 'Every 6 h', 'today 18:00', '01-Sep-2026 12:04', '7 m 02 s', 324, 289, 26, 9, 'Completed', 'success', 'IPMPLS'],
+  ['DSC-DWDM-OPTICAL', 'All circles · optical layer', '172.31.96.0/24 · 172.31.105.255/24', 'clr-blr-03', 'netconf-optical', 'Weekly', '05-Sep-2026 01:00', '29-Aug-2026 01:00', '21 m 18 s', 78, 61, 12, 5, 'Completed', 'success', 'Transport']
 ].map(a => ({
   id: a[0], site: a[1], scope: a[2], collector: a[3], cred: a[4], sched: a[5], next: a[6],
   last: a[7], dur: a[8], targets: a[9], clean: a[10], partial: a[11], fail: a[12], state: a[13], chip: a[14], domain: a[15]
@@ -1348,7 +1348,7 @@ const NE_RECON = [
     inv: { oem: 'JUNIPER', model: 'ACX2200', os: '21.2R3-S8.5', sn: 'PJ0215230412' }, net: null, diff: []
   },
   {
-    ne: 'BLR-ACX7024-UNREG-01', ip: '172.31.41.212', circle: 'Karnataka', rule: 'no record matched', out: 'Only on network', chip: 'pink', ver: '4 h ago',
+    ne: 'BLR-ACX7024-UNREG-01', ip: '172.31.31.212', circle: 'Karnataka', rule: 'no record matched', out: 'Only on network', chip: 'pink', ver: '4 h ago',
     inv: null, net: { oem: 'JUNIPER', model: 'ACX7024', os: '23.2R1-S2.6', sn: 'FL2423AN0918' }, diff: []
   },
   {
