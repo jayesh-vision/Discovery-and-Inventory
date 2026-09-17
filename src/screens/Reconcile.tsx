@@ -120,22 +120,6 @@ export default function Reconcile() {
 
   return (
     <div className="page">
-      <div className="row vw-gap-md" style={{ flexWrap: 'wrap' }}>
-        {QUICK_LINKS.map(q => (
-          <button key={q.title} className="vw-card-section row vw-items-center is-drill" style={{ gap: '12px', flex: '1 1 220px' }}
-            onClick={() => nav(QUICK_LINK_TARGET[q.icon])}>
-            <span style={{
-              width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: cv('blue', 50), color: cv('blue', 600), fontSize: '1.125rem'
-            }}>{QUICK_LINK_GLYPH[q.icon]}</span>
-            <span>
-              <div className="vw-value" style={{ fontWeight: 600 }}>{q.title}</div>
-              <div className="vw-card-metric-label-sub">{q.sub}</div>
-            </span>
-          </button>
-        ))}
-      </div>
-
       <SectionTitle>Match outcome</SectionTitle>
       <Card>
         <span className="vw-card-title-sm">Match classes<InfoTip text={CARD_DEF['Match classes']} label="What match classes shows" /></span>
@@ -340,6 +324,22 @@ export default function Reconcile() {
             </div>
           </div>
         </Card>
+      </div>
+
+      <div className="row vw-gap-md" style={{ flexWrap: 'wrap' }}>
+        {QUICK_LINKS.map(q => (
+          <button key={q.title} className="vw-card-section row vw-items-center is-drill" style={{ gap: '12px', flex: '1 1 220px' }}
+            onClick={() => nav(QUICK_LINK_TARGET[q.icon])}>
+            <span style={{
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: cv('blue', 50), color: cv('blue', 600), fontSize: '1.125rem'
+            }}>{QUICK_LINK_GLYPH[q.icon]}</span>
+            <span>
+              <div className="vw-value" style={{ fontWeight: 600 }}>{q.title}</div>
+              <div className="vw-card-metric-label-sub">{q.sub}</div>
+            </span>
+          </button>
+        ))}
       </div>
 
       <Drawer open={!!cycle} onClose={() => setCycle(null)} title={cycle ? `${DOMAIN_LABEL[cycle.domain]} reconciliation cycle` : ''}

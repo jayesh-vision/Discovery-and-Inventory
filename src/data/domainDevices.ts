@@ -55,12 +55,30 @@ DOMAIN_TRUST_ROWS.forEach(row => {
      of which region was clicked, so every cell for a domain landed on the
      same list. One entry per region, repeated to match that cell's own
      count, lines this roster up with the heatmap exactly (their sums
-     already have to agree — see discoveryOverview.ts's own self-check).
-     Unverified devices have no equivalent per-region figure anywhere in the
-     app to match against, so they take the same proportional split as the
-     open ones rather than an invented, unverifiable one. */
+     already have to agree — see discoveryOverview.ts's own self-check). */
   const regionsForOpen = REGION_DISCREPANCY.flatMap(r => Array(r.drift[row.domain]).fill(r.region));
-  const regionFor = (i: number) => regionsForOpen[i % regionsForOpen.length];
+
+  /* Unverified devices have no equivalent per-region figure anywhere in
+     the app, so they're split across regions in proportion to each
+     region's own share of this domain's open backlog. That has to be a
+     real proportional split (largest-remainder rounding to land on the
+     exact total), not `i % regionsForOpen.length` — regionsForOpen lists
+     one region's whole block before the next's, so indexing into it that
+     way dumped nearly every unverified device into whichever region
+     happens to sort first (e.g. Transport's 30 unverified came out
+     West 25 / Southeast 5 / Northeast 0 / Midwest 0, though West is only
+     25 of Transport's 64 open, 39% — nowhere near 83%). */
+  const unverifiedTotal = row.unverified ?? 0;
+  const shares = REGION_DISCREPANCY.map(r => {
+    const exact = unverifiedTotal * r.drift[row.domain] / (regionsForOpen.length || 1);
+    return { region: r.region, n: Math.floor(exact), rem: exact - Math.floor(exact) };
+  });
+  const leftover = unverifiedTotal - shares.reduce((a, s) => a + s.n, 0);
+  [...shares].sort((a, b) => b.rem - a.rem).slice(0, leftover).forEach(s => { s.n++; });
+  const regionsForUnverified = shares.flatMap(s => Array(s.n).fill(s.region));
+
+  const regionFor = (status: DeviceStatus, i: number) =>
+    status === 'Open' ? regionsForOpen[i] : regionsForUnverified[i];
 
   const mk = (status: DeviceStatus, i: number): DomainDevice => {
     const pre = prefixes[Math.floor(rnd() * prefixes.length)];
@@ -70,7 +88,7 @@ DOMAIN_TRUST_ROWS.forEach(row => {
       name: `${pre}-${num}`,
       ip: `10.${Math.floor(rnd() * 223) + 1}.${Math.floor(rnd() * 255)}.${Math.floor(rnd() * 255)}`,
       domain: row.domain,
-      region: regionFor(i),
+      region: regionFor(status, i),
       status,
       issue: status === 'Open' ? nextIssue(i) : 'Not yet verified this cycle',
       lastScan: pick(SCANS)
