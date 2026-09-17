@@ -1,26 +1,72 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chip, cv } from '../components/ui';
-import { Tip } from '../components/charts';
-import type { ColorTone } from '../data/ledger';
+import { Card, Chip, cv, InfoTip } from '../components/ui';
+import { RampBars, MultiLineChart } from '../components/charts';
+import { Drawer } from '../components/Drawer';
+import { legacyPath } from '../routes';
 import {
-  CYCLE_OUTCOME, DOMAIN_COVERAGE, DISCREPANCY_BY_DOMAIN, REGION_HEALTH, REGION_DOMAINS,
-  DISTRIBUTION, DISTRIBUTION_TOTAL, CYCLE_ACTIVITY, QUICK_LINKS,
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey, type QuickLink
-} from '../data/reconcileOverview';
+  MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
+  BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
+  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey, type ReconcileCycleRow
+} from '../data/discoveryOverview';
+import { QUICK_LINKS, type QuickLink } from '../data/reconcileOverview';
+import { domainToUrl } from './DomainDevices';
+
+/* Domain devices and Discrepancy details are owned by Insights (their
+   crumb is hardcoded "Insights · …", since that's normally the only
+   place they're reached from) — reached from here instead, that crumb
+   would still say "Insights", so the breadcrumb's own back-link would
+   silently take a reader to the wrong screen instead of back to this
+   page. legacyPath's `from` names this page's own crumb explicitly, the
+   same origin-override every other cross-section jump in this app uses
+   (see PhysicalResources.tsx's FROM constant) — Topbar reads it and
+   shows the reader's real origin instead of the destination's default. */
+const FROM = 'Reconciliation';
+
+/* This page used to carry its own, differently-shaped dashboard (coverage
+   table, a donut, a muted region-heat table, a cycle-activity list) built
+   against reconcileOverview.ts's older data. It duplicated — with
+   different numbers in places — what Insights' own "RECONCILIATION"
+   module already covers more completely. Replaced with that same
+   section's content (ported, not imported, so nothing here can change
+   Insights' own behaviour) so the dedicated Reconciliation page and
+   Insights' reconciliation module agree, instead of showing two
+   different pictures of the same backlog. Quick Links (the one part of
+   the old page with no equivalent on Insights) stays as-is. */
 
 const QUICK_LINK_TARGET: Record<QuickLink['icon'], string> = {
   workbench: '/discovery/reconcile/results', scan: '/discovery/reconcile/jobs', rules: '/discovery/reconcile/rules'
 };
 const QUICK_LINK_GLYPH: Record<QuickLink['icon'], string> = { workbench: '⊞', scan: '◎', rules: '⚖' };
 
-const OUTCOME_TONE_COLOR = {
-  success: 'emerald', warning: 'amber', orange: 'orange', error: 'red', purple: 'purple'
-} as const;
+const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
 
-/* health-score direction: higher is better, so red sits below the low
-   threshold rather than above a usage-ratio's high one */
-const healthTone = (pct: number): 'red' | 'amber' | 'emerald' => (pct < 90 ? 'red' : pct < 95 ? 'amber' : 'emerald');
+const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
+  'Attribute mismatch': 'ATTRIBUTE',
+  'Extra — no record': 'EXISTENCE',
+  'Relationship drift': 'RELATIONSHIP',
+  'Missing — no live peer': 'EXISTENCE'
+};
+const MATCH_OUTCOME_DEF: Record<string, string> = {
+  'Matched': 'The record’s identity, attributes and relationships all agree with the live network — no reconciliation action needed.',
+  'Attribute mismatch': 'The record exists and its identity matches, but one or more attribute values differ from what the live network reports.',
+  'Extra — no record': 'The live network reports an object that has no corresponding record in inventory.',
+  'Relationship drift': 'The record exists but its relationships — neighbours, parent/child links — no longer match what the live network reports.',
+  'Missing — no live peer': 'Inventory has a record for this object, but the live network no longer reports it.'
+};
+const CARD_DEF: Record<string, string> = {
+  'Match classes': 'How reconciliation classified every compared record last cycle — matched, or one of the ways a record can disagree with the live network.',
+  'By domain': 'Inventory trust broken down by domain — in-scope, in-sync, and the open backlog and repair time each domain is carrying.',
+  'Open discrepancies by region': 'Where the open discrepancy backlog is concentrated geographically, one cell per region × domain.',
+  'Detected vs auto-resolved, per day': 'New discrepancies found each day, and how many were closed automatically by policy without an engineer.',
+  'Age of open discrepancies': 'How long the currently open discrepancies have sat unresolved — the older the bucket, the more attention it likely needs.',
+  'Open items by type': 'The open backlog broken down by the specific kind of discrepancy, so the most common failure patterns stand out.',
+  'Reconciliation cycles': 'The last few completed reconciliation runs for each domain, newest first, and what’s scheduled to run next.'
+};
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--vw-color-gray-900)' }}>{children}</div>;
+}
 
 const DomainDot = ({ domain }: { domain: DomainKey }) => (
   <span className="row vw-items-center" style={{ gap: '8px' }}>
@@ -29,99 +75,49 @@ const DomainDot = ({ domain }: { domain: DomainKey }) => (
   </span>
 );
 
-/* label / proportional bar / value — a ranking list, not a usage meter, so
-   the fill is sized against the list's own max rather than a fixed total */
-function RankBar({ label, count, max, hex, labelWidth = '8.5rem' }: {
-  label: string; count: number; max: number; hex: string; labelWidth?: string;
-}) {
+function PctBar({ pct, hex }: { pct: number; hex: string }) {
   return (
-    <div className="hbar" style={{ gridTemplateColumns: `${labelWidth} 1fr 3rem` }}>
-      <span className="vw-value">{label}</span>
-      <span className="hbar-track" style={{ height: '0.625rem' }}>
-        <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(count / max * 100).toFixed(1)}%`, background: hex }} />
+    <span className="num row vw-items-center" style={{ gap: '8px', justifyContent: 'flex-end' }}>
+      {pct % 1 === 0 ? pct : pct.toFixed(2)}%
+      <span className="hbar-track" style={{ width: '3.5rem', height: '6px' }}>
+        <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${pct}%`, background: hex }} />
       </span>
-      <span className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{count}</span>
-    </div>
-  );
-}
-
-/* thin inline meter for a table cell, scaled down so it can sit beside a
-   number without dominating the row */
-function MiniBar({ pct, hex }: { pct: number; hex: string }) {
-  return (
-    <span className="hbar-track" style={{ display: 'inline-block', width: '4.5rem', height: '5px', verticalAlign: 'middle', marginLeft: '8px' }}>
-      <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${pct}%`, background: hex }} />
     </span>
   );
 }
 
-/* a full pie (no hole), with the share written on any wedge wide enough to
-   hold it, so the picture reads without a legend lookup */
-interface PieSlice { k: string; n: string; c: number; hex: string }
-function Pie({ slices, total, size = 180 }: { slices: PieSlice[]; total: number; size?: number }) {
-  const [hov, setHov] = useState<{ k: string; x: number; y: number } | null>(null);
-  const R = 100, C = 110;
-  let a = -Math.PI / 2;
-  const P = (rad: number, t: number) => [C + rad * Math.cos(t), C + rad * Math.sin(t)];
-  const arcs = slices.map(s => {
-    const span = (s.c / total) * Math.PI * 2, a0 = a, a1 = a + span; a = a1;
-    const [x0, y0] = P(R, a0), [x1, y1] = P(R, a1), [lx, ly] = P(R * 0.62, (a0 + a1) / 2);
-    const pct = s.c / total * 100;
-    return { ...s, pct, lx, ly, d: `M${C} ${C}L${x0} ${y0}A${R} ${R} 0 ${span > Math.PI ? 1 : 0} 1 ${x1} ${y1}Z` };
-  });
-  const cur = hov ? arcs.find(x => x.k === hov.k) : null;
-  return (
-    <div className="ch-donut" style={{ flexShrink: 0 }} onMouseLeave={() => setHov(null)}>
-      <svg viewBox="0 0 220 220" width={size} height={size} role="img" aria-label="Open discrepancies by domain">
-        {arcs.map(s => (
-          <g key={s.k} onMouseEnter={e => setHov({ k: s.k, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ k: s.k, x: e.clientX, y: e.clientY })}>
-            <path d={s.d} fill={s.hex} stroke="var(--vw-color-white)" strokeWidth="2" opacity={hov && hov.k !== s.k ? 0.4 : 1} />
-            {s.pct >= 8 && (
-              <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="central"
-                style={{ fill: 'var(--vw-color-white)', fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}>{Math.round(s.pct)}%</text>
-            )}
-          </g>
-        ))}
-      </svg>
-      {hov && cur && (
-        <Tip x={hov.x} y={hov.y}>
-          <div className="ch-tip-r"><span className="ch-dot" style={{ background: cur.hex }} />{cur.n}<span className="grow" /><span className="num">{cur.c} · {cur.pct.toFixed(0)}%</span></div>
-        </Tip>
-      )}
-    </div>
-  );
-}
-
-/* heat tint for a region × domain drift cell, scaled to the hottest cell */
-const heatStyle = (v: number, max: number): CSSProperties => {
+const AGE_RAMP = [cv('blue', 200), cv('blue', 300), cv('blue', 400), cv('blue', 500), cv('blue', 700)];
+const REGION_HEAT_STEPS = [50, 100, 200, 300, 400, 500, 600] as const;
+const REGION_HEAT_MAX = Math.max(...REGION_DISCREPANCY.flatMap(r => Object.values(r.drift)));
+function heatShade(v: number, max: number) {
   const r = v / max;
-  const shade = r > 0.75 ? 300 : r > 0.5 ? 200 : r > 0.25 ? 100 : r > 0 ? 50 : 0;
-  return {
-    background: shade ? cv('red', shade) : 'var(--vw-color-slate-50)',
-    color: shade >= 200 ? cv('red', 900) : 'var(--vw-color-gray-800)',
-    fontWeight: shade >= 200 ? 600 : 400, textAlign: 'center', borderRadius: 'var(--vw-radius-xs)'
-  };
-};
-
-function OutcomeIcon({ icon, tone }: { icon: string; tone: string }) {
+  return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
+}
+function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
+  v: number; region: string; domain: DomainKey; onOpen: (d: DomainKey, region?: string) => void; max?: number;
+}) {
+  const shade = heatShade(v, max);
   return (
-    <span style={{
-      width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: cv(tone, 50), color: cv(tone, 600), fontSize: '1rem', flexShrink: 0
-    }}>{icon}</span>
+    <td style={{ padding: '4px' }}>
+      <button className="num is-drill" title={`${region} · ${DOMAIN_LABEL[domain]} · ${v} open — view ${DOMAIN_LABEL[domain]} devices in ${region}`}
+        onClick={() => onOpen(domain, region)}
+        style={{
+          display: 'block', width: '100%', padding: '13px 8px', borderRadius: '10px', textAlign: 'center', fontSize: '1rem', border: 0,
+          background: cv('blue', shade), color: shade >= 500 ? 'var(--vw-color-white)' : cv('blue', 900), fontWeight: 600, cursor: 'pointer'
+        }}>{v}</button>
+    </td>
   );
 }
-
-const DISCREPANCY_TOTAL = DISCREPANCY_BY_DOMAIN.reduce((a, d) => a + d.count, 0);
-const COVERAGE_SUM = DOMAIN_COVERAGE.reduce(
-  (a, d) => ({ inScope: a.inScope + d.inScope, scanned: a.scanned + d.scanned, inSync: a.inSync + d.inSync, drifted: a.drifted + d.drifted }),
-  { inScope: 0, scanned: 0, inSync: 0, drifted: 0 });
-const REGION_HEAT_MAX = Math.max(...REGION_HEALTH.flatMap(r => REGION_DOMAINS.map(k => r.drift[k])));
-/* 500-weight swatches read pale as text; the same hue one step darker */
-const DOMAIN_TONE: Record<DomainKey, ColorTone> = { RAN: 'purple', Core: 'fuchsia', Transport: 'orange', IPMPLS: 'sky' };
 
 export default function Reconcile() {
   const nav = useNavigate();
+  const openDomain = (d: DomainKey, region?: string) =>
+    nav(legacyPath('domaindevices', { from: FROM, q: region ? `region=${encodeURIComponent(region)}` : '' }, { domain: domainToUrl(d) }));
+  const toDiscrepancies = (params: Record<string, string> = {}) =>
+    nav(legacyPath('discrepancydetails', { from: FROM, q: new URLSearchParams(params).toString() }, {}));
+  const [cycle, setCycle] = useState<ReconcileCycleRow | null>(null);
+  const backlogOlder = BACKLOG_AGE.slice(3).reduce((a, b) => a + b.count, 0);
+
   return (
     <div className="page">
       <div className="row vw-gap-md" style={{ flexWrap: 'wrap' }}>
@@ -140,188 +136,226 @@ export default function Reconcile() {
         ))}
       </div>
 
-      <div>
-        {/* CYCLE_OUTCOME grew from 5 classes to 7 (MATCH_OUTCOME now backs
-            it), and a fixed 5-column CSS grid reserves a cell for every
-            multiple of 5 regardless of how many cards actually exist — 7
-            cards in 5 columns left the last row's other 3 cells sitting
-            empty. flex-wrap instead: a full row of 5 sizes exactly like
-            the grid did (five 20%-basis cards, no room left to grow), but
-            a short last row's cards grow to fill the leftover width
-            instead of leaving it blank. */}
-        <div className="vw-gap-md" style={{ display: 'flex', flexWrap: 'wrap' }}>
-          {CYCLE_OUTCOME.map(t => {
-            const tone = OUTCOME_TONE_COLOR[t.tone];
+      <SectionTitle>Match outcome</SectionTitle>
+      <Card>
+        <span className="vw-card-title-sm">Match classes<InfoTip text={CARD_DEF['Match classes']} label="What match classes shows" /></span>
+        <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{MATCH_TOTAL_NOTE}</div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '1px',
+          background: 'var(--vw-color-slate-200)',
+          borderTop: '1px solid var(--vw-color-slate-200)', marginTop: 'var(--vw-space-md)'
+        }}>
+          {MATCH_OUTCOME.slice(0, 5).map((t, i) => {
+            const category = MATCH_OUTCOME_CATEGORY[t.label];
+            const Tile = category ? 'button' : 'div';
             return (
-              <div key={t.label} className={`vw-card-section vw-card--accent vw-card--${t.tone}`}
-                style={{ paddingTop: 'calc(var(--vw-space-lg) + 3px)', flex: '1 1 20%', minWidth: '180px' }}>
-                <div className="vw-card-accent" style={{ background: cv(tone, 500) }} />
-                <div className="row vw-items-center" style={{ gap: '10px', marginBottom: '6px' }}>
-                  <OutcomeIcon icon={t.icon} tone={tone} />
-                  <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700, color: cv(tone, 700), lineHeight: 1.1 }}>{t.value}</div>
+              <Tile key={t.label} className={category ? 'is-drill' : undefined}
+                style={{ background: i === 0 ? 'var(--vw-color-slate-50)' : 'var(--vw-color-white)', padding: '12px 18px', textAlign: 'left', display: 'block', width: '100%', border: 0 }}
+                {...(category ? { onClick: () => toDiscrepancies({ category }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
+                <div className="num" style={{ fontSize: 'var(--vw-font-value-lg)', fontWeight: 700 }}>{t.value.toLocaleString('en-IN')}</div>
+                <div className="vw-value" style={{ marginTop: '3px', fontWeight: 600 }}>
+                  {t.label}
+                  {MATCH_OUTCOME_DEF[t.label] && <InfoTip text={MATCH_OUTCOME_DEF[t.label]} label={`What ${t.label.toLowerCase()} means`} />}
                 </div>
-                <div className="vw-value" style={{ fontWeight: 600 }}>{t.label}</div>
-                <div className="vw-card-metric-label-sub" style={{ marginTop: '3px' }}>{t.description}</div>
-              </div>
+              </Tile>
             );
           })}
         </div>
-      </div>
-
-      <div className="vw-grid vw-grid-cols-2 vw-gap-md">
-      <Card style={{ display: 'flex', flexDirection: 'column' }}>
-        <span className="vw-card-title-sm">Coverage by domain</span>
-        <table className="mtbl">
-          <thead><tr><th>Domain</th><th>In scope</th><th>Scanned</th><th>In sync</th><th>Drifted</th><th>Last scan</th><th>Next scan</th></tr></thead>
-          <tbody>{DOMAIN_COVERAGE.map(d => (
-            <tr key={d.domain} className="is-click" onClick={() => nav(`/discovery/reconcile/results?domain=${d.domain}`)}>
-              <td><DomainDot domain={d.domain} /></td>
-              <td className="num">{d.inScope.toLocaleString('en-IN')}</td>
-              <td className="num">
-                {d.scanned.toLocaleString('en-IN')} ({d.scannedPct})
-                <MiniBar pct={d.scanned / d.inScope * 100} hex={DOMAIN_HEX[d.domain]} />
-              </td>
-              <td className="num">{d.inSync.toLocaleString('en-IN')}</td>
-              <td className="num" style={{ color: cv('red', 600), fontWeight: 600 }}>{d.drifted}</td>
-              <td>{d.lastScan}</td>
-              <td>{d.nextScan}</td>
-            </tr>))}
-          </tbody>
-        </table>
-        <div className="vw-card-metric-label-sub" style={{ marginTop: 'auto', paddingTop: 'var(--vw-space-sm)' }}>
-          All domains · {COVERAGE_SUM.inScope.toLocaleString('en-IN')} in scope · {COVERAGE_SUM.scanned.toLocaleString('en-IN')} scanned
-          ({(COVERAGE_SUM.scanned / COVERAGE_SUM.inScope * 100).toFixed(1)}%) · {COVERAGE_SUM.inSync.toLocaleString('en-IN')} in sync · {COVERAGE_SUM.drifted} drifted
-        </div>
       </Card>
 
-      <Card style={{ display: 'flex', flexDirection: 'column' }}>
-        <span className="vw-card-title-sm">Distribution, all use cases · {DISTRIBUTION_TOTAL} open</span>
-        <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Bar colour is the domain — see legend</div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', marginTop: 'var(--vw-space-sm)' }}>
-          {DISTRIBUTION.map(u => (
-            <RankBar key={u.label} label={u.label} count={u.count} max={DISTRIBUTION[0].count} hex={DOMAIN_HEX[u.domain]} labelWidth="13rem" />
-          ))}
-        </div>
-        <div className="row" style={{ gap: 'var(--vw-space-lg)', marginTop: 'var(--vw-space-sm)', flexWrap: 'wrap' }}>
-          {DISCREPANCY_BY_DOMAIN.map(d => (
-            <span key={d.domain} className="row vw-items-center vw-card-metric-label-sub" style={{ gap: '6px' }}>
-              <span style={{ width: 9, height: 9, borderRadius: 2, background: DOMAIN_HEX[d.domain] }} />
-              {DOMAIN_LABEL[d.domain]} · {d.count}
-            </span>
-          ))}
-        </div>
-      </Card>
-      </div>
-
-      <div className="vw-grid vw-grid-cols-2 vw-gap-md">
-        {/* the row's height comes from the heat table on the right, so this
-            card stretches its content to meet it: the pie centres vertically
-            and the legend rows spread down the full column */}
+      <SectionTitle>Trust by domain and region</SectionTitle>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)' }}>
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="vw-card-title-sm">Open discrepancies by domain · {DISCREPANCY_TOTAL} open</span>
-          <div className="row vw-items-center" style={{ gap: 'var(--vw-space-xl)', marginTop: 'var(--vw-space-sm)', flex: 1 }}>
-            <Pie size={240} total={DISCREPANCY_TOTAL}
-              slices={DISCREPANCY_BY_DOMAIN.map(d => ({ k: d.domain, n: DOMAIN_LABEL[d.domain], c: d.count, hex: DOMAIN_HEX[d.domain] }))} />
-            <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', alignSelf: 'stretch' }}>
-              {DISCREPANCY_BY_DOMAIN.map(d => {
-                /* DISTRIBUTION is sorted by count, so the first row in this
-                   domain is its biggest single cause */
-                const top = DISTRIBUTION.find(u => u.domain === d.domain);
-                const cycle = CYCLE_ACTIVITY.find(c => c.domain === d.domain)!;
-                return (
-                  <div key={d.domain} style={{ padding: '10px 0', borderTop: '1px solid var(--vw-color-slate-100)' }}>
-                    <div className="row vw-items-center" style={{ gap: '8px' }}>
-                      <span style={{ width: 9, height: 9, borderRadius: 2, background: DOMAIN_HEX[d.domain], flexShrink: 0 }} />
-                      <span className="vw-value grow" style={{ fontWeight: 600 }}>{DOMAIN_LABEL[d.domain]}</span>
-                      <span className="num" style={{ fontWeight: 700 }}>{d.count}</span>
-                      <span className="vw-card-metric-label-sub" style={{ width: '2.75rem', textAlign: 'right' }}>{Math.round(d.count / DISCREPANCY_TOTAL * 100)}%</span>
-                    </div>
-                    <div className="vw-card-metric-label-sub" style={{ marginLeft: '17px', marginTop: '2px' }}>
-                      Top cause: {top?.label} ({top?.count}) · {cycle.resolved} resolved this cycle
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <span className="vw-card-title-sm">By domain<InfoTip text={CARD_DEF['By domain']} label="What this table shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Trust index scale 90–100%</div>
+          <table className="mtbl">
+            <thead><tr><th>Domain</th><th style={{ textAlign: 'right' }}>In scope</th><th style={{ textAlign: 'right' }}>Unverified</th><th style={{ textAlign: 'right' }}>In sync</th><th style={{ textAlign: 'right' }}>Trust index</th><th style={{ textAlign: 'right' }}>Open</th><th style={{ textAlign: 'right' }}>MTTR</th><th style={{ textAlign: 'right' }}>Automated</th></tr></thead>
+            <tbody>{DOMAIN_TRUST_ROWS.map(d => (
+              <tr key={d.domain} className="is-click" tabIndex={0} onClick={() => openDomain(d.domain)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDomain(d.domain); } }}
+                aria-label={`View ${DOMAIN_LABEL[d.domain]} domain devices`}>
+                <td><DomainDot domain={d.domain} /></td>
+                <td className="num" style={{ textAlign: 'right' }}>{d.inScope.toLocaleString('en-IN')}</td>
+                <td className="num" style={{ textAlign: 'right' }}>{d.unverified ?? '–'}</td>
+                <td className="num" style={{ textAlign: 'right' }}>{d.inSync.toLocaleString('en-IN')}</td>
+                <td style={{ textAlign: 'right' }}><PctBar pct={d.trustIndexPct} hex={DOMAIN_HEX[d.domain]} /></td>
+                <td className="num" style={{ textAlign: 'right', color: cv('red', 600), fontWeight: 600 }}>{d.open}</td>
+                <td className="num" style={{ textAlign: 'right' }}>{d.mttrHours}h</td>
+                <td className="num" style={{ textAlign: 'right' }}>{d.touchlessPct}%</td>
+              </tr>))}
+            </tbody>
+            <tfoot><tr>
+              <td className="vw-value" style={{ fontWeight: 600 }}>All domains</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.inScope}</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.unverified}</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.inSync}</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.trustIndexPct} <span className="vw-card-metric-label-sub">target 99%</span></td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: cv('red', 600) }}>{DOMAIN_TRUST_TOTAL.open}</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.mttrHours}</td>
+              <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.touchlessPct}</td>
+            </tr></tfoot>
+          </table>
         </Card>
 
-        <Card>
-          <span className="vw-card-title-sm">Region health, all 4 domains</span>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Open discrepancies per region and domain — darker is more drift</div>
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="vw-card-title-sm">Open discrepancies by region<InfoTip text={CARD_DEF['Open discrepancies by region']} label="What this heatmap shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {REGION_DISCREPANCY.reduce((a, r) => a + Object.values(r.drift).reduce((x, y) => x + y, 0), 0)} open</div>
           <table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
             <thead>
               <tr>
-                <th>Region</th><th>Health</th>
-                {REGION_DOMAINS.map(k => <th key={k} style={{ textAlign: 'center' }}>{DOMAIN_LABEL[k]}</th>)}
-                <th style={{ textAlign: 'right' }}>Open</th>
+                <th className="eyebrow">Region</th>
+                {DOMAIN_KEYS.map(k => <th key={k} className="eyebrow" style={{ textAlign: 'center' }}>{DOMAIN_LABEL[k]}</th>)}
+                <th className="eyebrow" style={{ textAlign: 'right' }}>Open</th>
               </tr>
             </thead>
-            <tbody>{REGION_HEALTH.map(r => {
-              const open = REGION_DOMAINS.reduce((a, k) => a + r.drift[k], 0);
-              const t = healthTone(r.pct);
+            <tbody>{REGION_DISCREPANCY.map(r => {
+              const open = Object.values(r.drift).reduce((a, b) => a + b, 0);
               return (
                 <tr key={r.region}>
-                  <td className="vw-value" style={{ fontWeight: 500 }}>{r.region}</td>
-                  <td><Chip tone={t === 'red' ? 'error' : t === 'amber' ? 'warning' : 'success'} strong>{r.pct.toFixed(1)}%</Chip></td>
-                  {REGION_DOMAINS.map(k => <td key={k} className="num" style={heatStyle(r.drift[k], REGION_HEAT_MAX)}>{r.drift[k]}</td>)}
+                  <td className="vw-value" style={{ fontWeight: 600 }}>{r.region}</td>
+                  {DOMAIN_KEYS.map(k => <HeatPill key={k} v={r.drift[k]} region={r.region} domain={k} onOpen={openDomain} />)}
                   <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{open}</td>
                 </tr>
               );
             })}</tbody>
           </table>
+          <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: 'var(--vw-space-md)' }}>
+            <span className="vw-card-metric-label-sub">0</span>
+            <div className="row" style={{ gap: '3px' }}>
+              {REGION_HEAT_STEPS.map(s => <span key={s} style={{ width: '20px', height: '14px', borderRadius: '3px', background: cv('blue', s), flexShrink: 0 }} />)}
+            </div>
+            <span className="vw-card-metric-label-sub">{REGION_HEAT_MAX}+ open</span>
+          </div>
         </Card>
       </div>
 
-      <Card>
-        <span className="vw-card-title-sm">Reconciliation cycle activity</span>
-        <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Most recent cycle per domain, newest first</div>
-        {/* a timeline, not cards: each cycle is an event with a time, and the
-            spine puts the four domains in the order they actually ran */}
-        <div style={{ marginTop: 'var(--vw-space-sm)' }}>
-          {CYCLE_ACTIVITY.map(c => {
-            const open = c.found - c.resolved, rate = Math.round(c.resolved / c.found * 100);
-            const when = DOMAIN_COVERAGE.find(d => d.domain === c.domain)!.lastScan;
-            return (
-              <div key={c.domain} style={{ display: 'grid', gridTemplateColumns: '6.5rem 26px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'start', padding: '12px 0' }}>
-                <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '3px' }}>{when}</span>
+      <SectionTitle>Backlog</SectionTitle>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
+        <Card>
+          <span className="vw-card-title-sm">Detected vs auto-resolved, per day<InfoTip text={CARD_DEF['Detected vs auto-resolved, per day']} label="What this chart shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 30 days</div>
+          <MultiLineChart labels={BACKLOG_DAYS} height={230} format={v => v.toLocaleString('en-IN')}
+            series={[
+              { n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED },
+              { n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }
+            ]}
+            detail={i => {
+              const det = BACKLOG_DETECTED[i], auto = BACKLOG_AUTORESOLVED[i], eng = det - auto;
+              const rate = det ? (auto / det * 100).toFixed(1) : '0.0';
+              return (
+                <>
+                  <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-blue-500)' }} />Detected<span className="grow" /><span className="num">{det}</span></div>
+                  <div className="ch-tip-r"><span className="ch-dot" style={{ background: 'var(--vw-color-emerald-500)' }} />Auto-resolved<span className="grow" /><span className="num">{auto}</span></div>
+                  <div className="ch-tip-r">To engineers<span className="grow" /><span className="num">{eng}</span></div>
+                  <div className="ch-tip-r ch-tip-t">Automation rate<span className="grow" /><span className="num">{rate}%</span></div>
+                </>
+              );
+            }} />
+        </Card>
+
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="vw-card-title-sm">Age of open discrepancies<InfoTip text={CARD_DEF['Age of open discrepancies']} label="What this chart shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>
+            {BACKLOG_AGE.reduce((a, b) => a + b.count, 0)} open · {backlogOlder} older than 7d · oldest 41d
+          </div>
+          <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <RampBars height={230}
+              buckets={BACKLOG_AGE.map((b, i) => ({ label: b.bucket, count: b.count, hex: AGE_RAMP[i], hint: 'Click to view these items' }))}
+              onBucketClick={i => toDiscrepancies({ age: BACKLOG_AGE[i].band })} />
+          </div>
+        </Card>
+      </div>
+
+      <SectionTitle>Discrepancy types and reconciliation cycles</SectionTitle>
+      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
+        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
+          <span className="vw-card-title-sm">Open items by type<InfoTip text={CARD_DEF['Open items by type']} label="What this list shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0)} open</div>
+          <div className="row" style={{ gap: 'var(--vw-space-lg)', margin: 'var(--vw-space-sm) 0', flexWrap: 'wrap', flexShrink: 0 }}>
+            {DOMAIN_KEYS.map(d => (
+              <span key={d} className="row vw-items-center vw-card-metric-label-sub" style={{ gap: '6px' }}>
+                <span style={{ width: 9, height: 9, borderRadius: 2, background: DOMAIN_HEX[d] }} />{DOMAIN_LABEL[d]}
+              </span>
+            ))}
+          </div>
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+            {DISCREPANCY_TYPES.map(r => (
+              <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
+                title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
+                onClick={() => toDiscrepancies({ q: r.label })}>
+                <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
+                  <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+                </span>
+                <span className="vw-card-metric-label-sub" style={{ width: '6rem', flexShrink: 0 }}>{r.category}</span>
+                <span className="hbar-track grow" style={{ height: '0.75rem' }}>
+                  <span className="hbar-fill" style={{ display: 'block', height: '100%', width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} />
+                </span>
+                <span className="num" style={{ width: '2.5rem', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{r.count}</span>
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
+          <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 3 cycles per domain, newest first</div>
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+            {RECONCILE_CYCLE_ROWS.map((c, i) => (
+              <div key={`${c.domain}-${c.when}`} className="is-click" tabIndex={0} onClick={() => setCycle(c)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCycle(c); } }}
+                aria-label={`View ${DOMAIN_LABEL[c.domain]} cycle details`}
+                style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
+                <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{c.when}</span>
                 <span style={{ position: 'relative', alignSelf: 'stretch' }}>
-                  <span style={{ position: 'absolute', left: 6, top: 4, width: 12, height: 12, borderRadius: '50%', background: DOMAIN_HEX[c.domain], boxShadow: '0 0 0 2px var(--vw-color-white)' }} />
-                  <span style={{ position: 'absolute', left: 11, top: 18, bottom: -24, width: 2, background: 'var(--vw-color-slate-200)' }} />
+                  <span style={{ position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%', background: DOMAIN_HEX[c.domain], boxShadow: '0 0 0 3px var(--vw-color-white)' }} />
+                  {i < RECONCILE_CYCLE_ROWS.length - 1 && <span style={{ position: 'absolute', left: 10, top: 16, bottom: -22, width: 1, background: 'var(--vw-color-slate-200)' }} />}
                 </span>
                 <div style={{ minWidth: 0 }}>
-                  <div className="vw-value">
-                    <b style={{ color: cv(DOMAIN_TONE[c.domain], 700) }}>{DOMAIN_LABEL[c.domain]}</b> reconciliation cycle completed
-                    <span className="vw-card-metric-label-sub"> · {c.scanned.toLocaleString('en-IN')} records scanned, {c.found} drifted from inventory</span>
-                  </div>
+                  <div className="vw-value"><b style={{ color: cv('gray', 800) }}>{DOMAIN_LABEL[c.domain]}</b> cycle complete · {c.scanned.toLocaleString('en-IN')} records scanned</div>
                   <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                    <Chip tone="warning">{c.found} drifted</Chip>
-                    <Chip tone="success">{c.resolved} auto-resolved</Chip>
-                    <Chip tone={open ? 'orange' : 'neutral'}>{open} still open</Chip>
+                    <Chip tone="neutral">{c.drifted} drifted</Chip>
+                    <Chip tone="neutral">{c.autoResolved} auto-resolved</Chip>
+                    <Chip tone="neutral">{c.queue} to queue</Chip>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', paddingLeft: 'var(--vw-space-md)', paddingRight: 'var(--vw-space-sm)' }}>
-                  <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(rate >= 60 ? 'emerald' : 'amber', 700), lineHeight: 1.1 }}>{rate}%</div>
-                  <div className="vw-card-metric-label-sub">resolved</div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(c.touchlessPct >= 60 ? 'emerald' : 'amber', 700), lineHeight: 1.1 }}>{c.touchlessPct}%</div>
+                  <div className="vw-card-metric-label-sub">automated</div>
                 </div>
               </div>
-            );
-          })}
-          {/* the one scheduled (not continuous) domain closes the timeline
-              with what happens next */}
-          {DOMAIN_COVERAGE.filter(d => d.nextScan !== 'Continuous').map(d => (
-            <div key={d.domain} style={{ display: 'grid', gridTemplateColumns: '6.5rem 26px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'start', padding: '12px 0', borderTop: '1px dashed var(--vw-color-slate-200)' }}>
-              <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '3px' }}>{d.nextScan}</span>
-              <span style={{ position: 'relative', alignSelf: 'stretch' }}>
-                <span style={{ position: 'absolute', left: 6, top: 4, width: 12, height: 12, borderRadius: '50%', background: 'var(--vw-color-white)', border: `2px solid ${DOMAIN_HEX[d.domain]}`, boxSizing: 'border-box' }} />
-              </span>
-              <div className="vw-card-metric-label-sub" style={{ paddingTop: '3px' }}>
-                Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[d.domain]}</b> nightly scan — {d.inScope - d.scanned} unscanned assets will be retried
-              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)', flexShrink: 0 }}>
+            <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
+            <span style={{ position: 'relative', alignSelf: 'stretch' }}>
+              <span style={{
+                position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%',
+                background: 'var(--vw-color-white)', border: `2px solid ${DOMAIN_HEX[RECONCILE_NEXT.domain]}`, boxSizing: 'border-box'
+              }} />
+            </span>
+            <div className="vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>
+              Next: <b style={{ color: 'var(--vw-color-gray-800)' }}>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> {RECONCILE_NEXT.note}
+              · {RECONCILE_NEXT.unverified} unverified retried · {RECONCILE_NEXT.inScope.toLocaleString('en-IN')} in scope · in {RECONCILE_NEXT.eta}
             </div>
-          ))}
-        </div>
-      </Card>
+          </div>
+        </Card>
+      </div>
+
+      <Drawer open={!!cycle} onClose={() => setCycle(null)} title={cycle ? `${DOMAIN_LABEL[cycle.domain]} reconciliation cycle` : ''}
+        sub={cycle ? DOMAIN_LABEL[cycle.domain] : undefined}>
+        {cycle && (
+          <div className="kv">
+            <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[cycle.domain]}</span></div>
+            <div><span className="k">Completed</span><span className="v">{cycle.when}</span></div>
+            <div><span className="k">Records scanned</span><span className="v">{cycle.scanned.toLocaleString('en-IN')}</span></div>
+            <div><span className="k">Drifted</span><span className="v">{cycle.drifted}</span></div>
+            <div><span className="k">Auto-resolved</span><span className="v">{cycle.autoResolved}</span></div>
+            <div><span className="k">To queue</span><span className="v">{cycle.queue}</span></div>
+            <div><span className="k">Automated</span><span className="v">{cycle.touchlessPct}%</span></div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
