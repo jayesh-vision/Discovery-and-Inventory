@@ -7613,8 +7613,13 @@ const odfGallery = (d, r) => photoGalleryDialog({ photos: d.photos, art: odfPhot
 /* Back lives in the breadcrumb alone (src/shell/Topbar.tsx already links
    every ancestor of this screen's own crumb chain) — a second "Back" button
    here would just be two controls doing the same thing, so this only ever
-   renders the record header, the stat strip and the tab bar. */
-function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, dot, badges, meta }) {
+   renders the record header, the stat strip and the tab bar.
+
+   The tab bar appears only where there is more than one tab to choose
+   between, which today means Fiber spans — it passes its own `tabsHtml`.
+   Every other passive page is a single Overview, and a lone pill is a
+   control that cannot do anything, so they render no bar at all. */
+function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, strip, tabsHtml, dot, badges, meta }) {
   return `<div class="page-head pv-head">
       <div class="stack-x" style="max-width:70ch">
         <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
@@ -7630,8 +7635,8 @@ function passiveDetailChrome({ name, kind, sub, cells, cards, tiles, tabsHtml, d
           <span class="vw-value" style="font-size:0.8125rem;font-weight:500">${esc(v)}</span></span>
       </span>`).join('')}</div>` : ''}
     </div>
-    ${tiles ? statTileRow(tiles) : cards ? statCardGrid(cards) : statStrip(cells)}
-    ${tabsHtml || `<div class="section-tabs"><button class="stab is-on">Overview</button></div>`}`;
+    ${strip || (tiles ? statTileRow(tiles) : cards ? statCardGrid(cards) : statStrip(cells))}
+    ${tabsHtml || ''}`;
 }
 
 /* ═══ the record header, as a row of icon tiles ═══
@@ -7964,8 +7969,26 @@ const RK_ICONS = {
   shield: `<path d="M12 3.2 19 6v6.1c0 4.4-2.9 7.9-7 8.9-4.1-1-7-4.5-7-8.9V6Z"/><path d="m9 12 2.2 2.2L15.2 10"/>`,
   history: `<path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4.5V9h4.5"/><path d="M12 8.2V12l2.8 1.8"/>`,
   cal: `<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`,
-  infoc: `<circle cx="12" cy="12" r="9"/><path d="M12 11.2v4.6M12 8.2h.01"/>`
+  infoc: `<circle cx="12" cy="12" r="9"/><path d="M12 11.2v4.6M12 8.2h.01"/>`,
+  layers: `<path d="M12 3 3 7.5 12 12l9-4.5L12 3Z"/><path d="m3 12 9 4.5L21 12"/><path d="m3 16.5 9 4.5 9-4.5"/>`,
+  scissors: `<circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><path d="M20 4 8.2 15.8M20 20 8.2 8.2"/>`,
+  dashed: `<circle cx="12" cy="12" r="8" stroke-dasharray="3.2 3.2"/>`,
+  pie: `<path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/>`
 };
+/* a card heading carrying a one-line description under its title, plus an
+   optional pill on the right */
+const rkHeadSub = (tone, key, title, sub, right = '') => `<div class="row vw-justify-between vw-items-start" style="gap:var(--vw-space-md)">
+    <span class="row vw-items-center" style="gap:var(--vw-space-md);min-width:0">
+      <span class="rk-hic rk-hic--lg" style="background:${cv(tone,50)};color:${cv(tone,600)}">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[key] || ''}</svg></span>
+      <span class="stack-x" style="min-width:0">
+        <span class="vw-card-title-sm">${title}</span>
+        <span class="vw-card-description">${esc(sub)}</span>
+      </span>
+    </span>${right}
+  </div>`;
+const rkPill = (tone, text) => `<span class="sp-pill" style="background:${cv(tone,50)};color:${cv(tone,700)}">${esc(text)}</span>`;
 
 /* the roster stores dates as "14-Oct-2022" strings; the lifecycle card needs
    to do arithmetic on them — how long in service, when the next survey falls */
@@ -8492,6 +8515,74 @@ function spliceLossChart(read, budget) {
 }
 const SPLICE_BAR_TONES = ['sky', 'amber', 'emerald', 'rose', 'slate', 'violet'];
 
+/* ── the Splice closure header, as a connected strip ──────
+   Five tinted cards linked by a dot-and-rail, each shaped around what its own
+   figure is: a spec with a badge, a ratio as a ring, a reading with its trend,
+   and two dated facts. Bespoke to this page — Racks keeps the plain tile row. */
+const SHDR_ICONS = {
+  dome: `<path d="M6 20V11a6 6 0 0 1 12 0v9Z"/><path d="M4 20h16M9 20v-6M15 20v-6"/>`,
+  box: `<path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="M4 7l8 4 8-4M12 11v10"/>`,
+  cal: `<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`,
+  clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`
+};
+const shdrIcon = (tone, key, size = 26) => `<span class="shdr-ic" style="background:${cv(tone,100)};color:${cv(tone,600)}">
+  <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7"
+    stroke-linecap="round" stroke-linejoin="round">${SHDR_ICONS[key] || ''}</svg></span>`;
+
+/* a ring showing one ratio, with the raw figure in the middle */
+function shdrRing(pct, label, tone, size = 92) {
+  const sw = 10, rad = size / 2 - sw / 2 - 1, C = 2 * Math.PI * rad;
+  const on = C * Math.max(0, Math.min(100, pct)) / 100;
+  return `<svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px;flex-shrink:0;display:block">
+    <circle cx="${size/2}" cy="${size/2}" r="${rad}" fill="none" stroke="${cv('slate',100)}" stroke-width="${sw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${rad}" fill="none" stroke="${cv(tone,400)}" stroke-width="${sw}"
+      stroke-linecap="round" stroke-dasharray="${on.toFixed(1)} ${(C - on).toFixed(1)}"
+      transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="${size/2}" y="${size/2 - 1}" text-anchor="middle" font-size="16" font-weight="600"
+      fill="${cv('gray',900)}" font-family="Poppins,sans-serif">${esc(label)}</text>
+    <text x="${size/2}" y="${size/2 + 15}" text-anchor="middle" font-size="11"
+      fill="${cv('gray',500)}" font-family="Poppins,sans-serif">${Math.round(pct)}%</text>
+  </svg>`;
+}
+/* a filled sparkline; the last point is the record's real figure */
+function shdrSpark(values, tone) {
+  const W = 260, H = 54, lo = Math.min(...values), hi = Math.max(...values);
+  const span = hi - lo || 1;
+  const pt = (v, i) => [(i / (values.length - 1)) * W, H - 6 - ((v - lo) / span) * (H - 14)];
+  const pts = values.map(pt);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const end = pts[pts.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="shdr-spark" aria-hidden="true">
+    <path d="${line} L${W} ${H} L0 ${H} Z" fill="${cv(tone,100)}" opacity="0.55"/>
+    <path d="${line}" fill="none" stroke="${cv(tone,500)}" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${end[0].toFixed(1)}" cy="${end[1].toFixed(1)}" r="3.5" fill="${cv(tone,500)}"
+      vector-effect="non-scaling-stroke"/>
+  </svg>`;
+}
+/* A six-reading history for the closure's mean loss, ending on the figure the
+   record actually holds. statcSeries cannot be reused here: it rounds to two
+   decimals internally, which at 0.04 dB collapses the whole series onto one or
+   two values and reports a 0% trend. This keeps full precision and only rounds
+   for display. Direction follows the record's own state — a healthy closure
+   has come down off a higher first reading, a degraded one has drifted up —
+   so the arrow never contradicts the status badge beside it. */
+function spliceLossTrend(r, mean) {
+  const improving = r.chip === 'success';
+  const swing = 0.08 + nint(r.n, 612, 0, 24) / 100;      /* 8%–32% */
+  const start = mean * (improving ? 1 + swing : Math.max(0.5, 1 - swing));
+  const series = Array.from({ length: 6 }, (_, i) => {
+    if (i === 5) return mean;
+    const base = start + (mean - start) * (i / 5);
+    const jitter = ((nint(r.n, 620 + i, 0, 100) - 50) / 100) * mean * 0.12;
+    return Math.max(0.001, base + jitter);
+  });
+  return { series, delta: Math.round((mean - series[0]) / series[0] * 100) };
+}
+const shdrLink = tone => `<span class="shdr-link" aria-hidden="true"><i style="background:${cv(tone,400)}"></i></span>`;
+const shdrCard = (tone, inner, cls = '') => `<div class="${`shdr-c ${cls}`.trim()}"
+  style="background:linear-gradient(135deg, ${cv(tone,25)} 0%, var(--vw-color-white) 65%)">${inner}</div>`;
+
 function viewSpliceDetail() {
   const rows = PASSIVE.splice;
   const r = rows.find(x => x.n === SPLICE_ID) || rows[0];
@@ -8506,14 +8597,6 @@ function viewSpliceDetail() {
      reads the same way on both pages. */
   const USED_TONE = 'emerald', FREE_TONE = 'sky';
 
-  /* trays fill in order, so the per-tray counts add up to the record's own
-     "fibres spliced" figure rather than to an independent guess */
-  const trays = Array.from({ length: d.trayCount }, (_, i) => {
-    const capIn = Math.min(12, d.total - i * 12);
-    const inTray = Math.max(0, Math.min(capIn, d.used - i * 12));
-    return { i: i + 1, capIn, used: inTray, free: capIn - inTray };
-  });
-
   const detailsCard = card(`${rkHead('sky', 'info', 'Equipment details')}
     <div class="odf-fill-body" style="margin-top:var(--vw-space-md)">
       ${odfDetailRows([
@@ -8524,31 +8607,40 @@ function viewSpliceDetail() {
       ])}
     </div>`, 'odf-fill');
 
-  const statusCard = card(`${rkHead(USED_TONE, 'splice', 'Splice status')}
-    <div class="odf-fill-body rk-util">
+  /* the three headline figures, shown under the allocation bar they break down */
+  const fibreMinis = `<div class="sp-minis">
+    ${[['layers', 'sky', 'Total capacity', `${d.total}F`], ['scissors', USED_TONE, 'Spliced', `${d.used}F`],
+       ['dashed', FREE_TONE, 'Available', `${free}F`]].map(([ic, tone, k, v]) => `<div class="sp-mini"
+      style="background:${cv(tone,25)};border-color:${cv(tone,100)}">
+      <span class="sp-mini-ic" style="background:${cv(tone,50)};color:${cv(tone,600)}">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[ic]}</svg></span>
+      <span class="stack-x" style="min-width:0">
+        <span class="vw-card-metric-label">${k}</span>
+        <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${v}</span>
+      </span>
+    </div>`).join('')}
+  </div>`;
+
+  const statusCard = card(`${rkHeadSub(USED_TONE, 'pie', 'Splice status', 'Spliced vs available fibers',
+      rkPill(FREE_TONE, `${d.used} of ${d.total} spliced`))}
+    <div class="odf-fill-body rk-util rk-util--center">
       <div class="rk-util-top">
-        ${donut([{ n:'Spliced', c:d.used, tone:USED_TONE }, { n:'Free', c:free, tone:FREE_TONE }], d.total, `${pct}%`, 'Spliced', 190)}
+        ${donut([{ n:'Spliced', c:d.used, tone:USED_TONE }, { n:'Available', c:free, tone:FREE_TONE }], d.total, `${pct}%`, 'Spliced', 230)}
         <div class="stack-s grow" style="min-width:0">
-          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md)">
-            <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,400)}"></span>Spliced</span>
-            <span class="vw-value num" style="font-weight:600">${d.used} <span class="vw-card-metric-label-sub">(${pct}%)</span></span>
+          <div class="sp-leg">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,500)}"></span>Spliced fibers</span>
+            <span class="vw-value num"><b>${d.used}</b> <span class="vw-card-metric-label-sub">(${pct}%)</span></span>
           </div>
-          <div class="row vw-justify-between vw-items-center" style="gap:var(--vw-space-md);margin-top:var(--vw-space-sm)">
-            <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,400)}"></span>Free</span>
-            <span class="vw-value num" style="font-weight:600">${free} <span class="vw-card-metric-label-sub">(${100 - pct}%)</span></span>
+          <div class="sp-leg">
+            <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,400)}"></span>Available fibers</span>
+            <span class="vw-value num"><b>${free}</b> <span class="vw-card-metric-label-sub">(${100 - pct}%)</span></span>
           </div>
-          <span class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">${d.used} of ${d.total} fibres spliced</span>
+          <div class="sp-leg sp-leg--total">
+            <span class="vw-label">Total capacity</span>
+            <span class="vw-value num"><b>${d.total}F</b></span>
+          </div>
         </div>
-      </div>
-      <div class="rk-minis rk-minis-3">
-        ${[['list', 'slate', 'Total capacity', `${d.total}F`], ['splice', USED_TONE, 'Spliced', `${d.used}F`],
-           ['box', FREE_TONE, 'Free', `${free}F`]].map(([ic, tone, k, v]) => `<div class="vw-card-child rk-mini">
-          ${rkIcon(tone, ic)}
-          <span class="stack-x" style="min-width:0">
-            <span class="vw-card-metric-label">${k}</span>
-            <span class="vw-value num" style="font-size:1.125rem;font-weight:600">${v}</span>
-          </span>
-        </div>`).join('')}
       </div>
     </div>`, 'odf-fill');
 
@@ -8580,50 +8672,27 @@ function viewSpliceDetail() {
           No loss reading recorded for this closure${r.st === 'Faulty' ? ' — it is flagged faulty and awaiting a survey.' : '.'}</div>`}
     </div>`, 'odf-fill');
 
-  const traysCard = card(`${rkHead('purple', 'list', 'Splice trays',
-      `<span class="vw-card-metric-label-sub">${d.trayCount} × 12F</span>`)}
-    <div class="odf-fill-body" style="margin-top:var(--vw-space-md);overflow-x:auto">
-      <table class="rk-table">
-        <thead><tr><th>Tray</th><th>Fibers spliced</th><th>Housing</th><th class="ta-r">Status</th></tr></thead>
-        <tbody>
-          ${trays.map(t => `<tr>
-            <td style="font-weight:600">Tray ${t.i}</td>
-            <td class="num">${t.used} of ${t.capIn}</td>
-            <td>${esc(r.housing)}</td>
-            <td class="ta-r">${chip(t.used === 0 ? 'Unspliced' : t.free === 0 ? 'Full' : `${t.free} free`,
-              t.used === 0 ? 'neutral' : t.free === 0 ? 'warning' : 'success')}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`, 'odf-fill');
-
-  /* Same split as the donut above, so it carries the same two colours — the
-     bar is a second reading of one figure, not a different measurement. */
-  const allocCard = card(`${rkHead(FREE_TONE, 'chart', 'Fiber allocation')}
+  /* Same split as the donut beside it, so it carries the same two colours —
+     this bar is a second reading of one figure, not a different measurement.
+     A segment's label sits inside it only when the segment is wide enough to
+     hold the text; below that the legend underneath still carries both
+     numbers, so nothing is lost when a closure is 2% or 98% spliced. */
+  const barSeg = (w, tone, shade, label) => `<span style="width:${w}%;background:${cv(tone,shade)}">${
+    w >= 10 ? `<b>${label}</b>` : ''}</span>`;
+  const allocCard = card(`${rkHeadSub('violet', 'layers', 'Fiber allocation', 'Distribution of fibers in this closure',
+      rkPill('slate', `Total: ${d.total}F`))}
     <div class="odf-fill-body rk-dist">
       <div>
-        <div class="rk-distlabels">
-          <span style="width:${pct}%">${d.used}F (${pct}%)</span>
-          <span style="width:${100 - pct}%">${free}F (${100 - pct}%)</span>
+        <div class="sp-bar">
+          ${barSeg(pct, USED_TONE, 500, `${d.used}F (${pct}%)`)}
+          ${barSeg(100 - pct, FREE_TONE, 400, `${free}F (${100 - pct}%)`)}
         </div>
-        <div class="rk-distbar">
-          <span style="width:${pct}%;background:${cv(USED_TONE,400)}"></span>
-          <span style="width:${100 - pct}%;background:${cv(FREE_TONE,300)}"></span>
-        </div>
-        <div class="legend" style="margin-top:var(--vw-space-md)">
-          <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,400)}"></span>Spliced fibers</span>
-          <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,300)}"></span>Available fibers</span>
+        <div class="legend" style="margin-top:var(--vw-space-lg)">
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(USED_TONE,500)}"></span>Spliced fibers</span>
+          <span class="legend-i"><span class="legend-sw" style="background:${cv(FREE_TONE,400)}"></span>Available fibers</span>
         </div>
       </div>
-      <div class="rk-note" style="background:${cv(free ? 'emerald' : 'amber', 25)};border-color:${cv(free ? 'emerald' : 'amber', 100)}">
-        ${rkIcon(free ? 'emerald' : 'amber', 'check')}
-        <span class="stack-x" style="min-width:0">
-          <span class="vw-value" style="font-weight:600;font-size:0.8125rem">Capacity headroom</span>
-          <span class="vw-card-metric-label-sub">${free
-            ? `${free}F available across ${d.trayCount} tray${d.trayCount === 1 ? '' : 's'}`
-            : 'every fibre in this closure is spliced'}</span>
-        </span>
-      </div>
+      ${fibreMinis}
     </div>`, 'odf-fill');
 
   const photoTiles = (from, to) => d.photos.slice(from, to).map((p, k) => {
@@ -8674,22 +8743,95 @@ function viewSpliceDetail() {
      beside it does. */
   const overview = `
     <div class="rk-row rk-row-wide">${detailsCard}${lossCard}</div>
-    <div class="rk-row rk-row-3">${traysCard}${allocCard}${statusCard}</div>
+    <div class="rk-row rk-row-half">${allocCard}${statusCard}</div>
     <div class="rk-row rk-row-1">${lifecycleCard}</div>
     <div class="rk-row rk-row-1">${photosCard}</div>`;
+
+  /* ── header strip ── */
+  const lossTone = overBudget ? 'red' : 'emerald';
+  /* The roster holds one loss figure per closure and no survey history, so the
+     spark is generated from the record's own seed with its LAST point pinned to
+     the real reading — the same contract statCardGrid documents for the ODF
+     header. The shape is illustrative; the endpoint is true. */
+  const lossTrend = read ? spliceLossTrend(r, read.mean) : null;
+  /* how long ago the survey was — real arithmetic on a real date */
+  const surveyedOn2 = parseDmy(r.surveyed);
+  const daysAgo = surveyedOn2 ? Math.round((new Date() - surveyedOn2) / 86400000) : null;
+  const agoLabel = daysAgo === null ? '—'
+    : daysAgo < 0 ? `in ${Math.abs(daysAgo)} day${Math.abs(daysAgo) === 1 ? '' : 's'}`
+    : daysAgo === 0 ? 'today'
+    : daysAgo < 30 ? `${daysAgo} day${daysAgo === 1 ? '' : 's'} ago`
+    : `${Math.round(daysAgo / 30)} month${Math.round(daysAgo / 30) === 1 ? '' : 's'} ago`;
+  const HOUSING_TAG = { Buried:'Underground', Aerial:'Overhead', Manhole:'Chamber' };
+
+  const headerStrip = `<div class="shdr">
+    ${shdrCard('purple', `
+      ${shdrIcon('purple', 'dome')}
+      <span class="stack-x" style="min-width:0">
+        <span class="shdr-k">Type</span>
+        <span class="shdr-v">${esc(r.type)}</span>
+        <span class="shdr-chip" style="background:${cv('purple',50)};color:${cv('purple',700)}">Splice closure</span>
+      </span>`)}
+    ${shdrLink('purple')}
+    ${shdrCard('slate', `
+      <span class="stack-x" style="width:100%;min-width:0">
+        <span class="shdr-k">Fibers spliced</span>
+        <span class="row vw-items-center" style="gap:var(--vw-space-md);margin-top:6px">
+          ${shdrRing(pct, `${d.used} / ${d.total}`, USED_TONE)}
+          <span class="stack-x grow" style="min-width:0">
+            <span class="shdr-leg"><span class="legend-sw" style="background:${cv(USED_TONE,400)}"></span>
+              Spliced<b class="num">${d.used}</b></span>
+            <span class="shdr-leg"><span class="legend-sw" style="background:${cv('slate',300)}"></span>
+              Remaining<b class="num">${free}</b></span>
+            <span class="row vw-items-center" style="gap:var(--vw-space-sm);margin-top:6px">
+              <span class="hbar-track shdr-bar"><span class="hbar-fill" style="display:block;width:${pct}%;background:${cv(USED_TONE,400)}"></span></span>
+              <span class="shdr-pct num">${pct}%</span>
+            </span>
+          </span>
+        </span>
+      </span>`)}
+    ${shdrLink(USED_TONE)}
+    ${shdrCard(lossTone, `
+      <span class="stack-x" style="width:100%;min-width:0">
+        <span class="row vw-justify-between vw-items-start" style="gap:var(--vw-space-sm)">
+          <span class="stack-x" style="min-width:0">
+            <span class="shdr-k">Mean splice loss</span>
+            <span class="shdr-v">${esc(r.loss)}</span>
+          </span>
+          ${lossTrend ? `<span class="stack-x shdr-trend" style="text-align:right">
+            <span style="color:${cv(lossTrend.delta <= 0 ? 'emerald' : 'red',600)};font-weight:600">
+              ${lossTrend.delta <= 0 ? '↓' : '↑'} ${Math.abs(lossTrend.delta)}%</span>
+            <span class="shdr-sub">vs first reading</span>
+          </span>` : ''}
+        </span>
+        ${lossTrend ? shdrSpark(lossTrend.series, lossTone) : ''}
+      </span>`, 'shdr-c--spark')}
+    ${shdrLink(lossTone)}
+    ${shdrCard('amber', `
+      ${shdrIcon('amber', 'box')}
+      <span class="stack-x" style="min-width:0">
+        <span class="shdr-k">Housing</span>
+        <span class="shdr-v">${esc(r.housing)}</span>
+        <span class="shdr-chip" style="background:${cv('amber',50)};color:${cv('amber',700)}">${esc(HOUSING_TAG[r.housing] || r.housing)}</span>
+      </span>`)}
+    ${shdrLink('amber')}
+    ${shdrCard('sky', `
+      ${shdrIcon('sky', 'cal')}
+      <span class="stack-x" style="min-width:0">
+        <span class="shdr-k">Last surveyed</span>
+        <span class="shdr-v">${esc(r.surveyed)}</span>
+        <span class="shdr-chip" style="background:${cv('sky',50)};color:${cv('sky',700)}">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">${SHDR_ICONS.clock}</svg>${esc(agoLabel)}</span>
+      </span>`)}
+  </div>`;
 
   return `<div class="page">
     ${passiveDetailChrome({ name:r.n, kind:'Splice closure',
       sub:`Splice closure · ${site.name} · on ${r.span}`,
       badges: [{ label:'Splice closure', tone:'info' }, { label:r.st, tone:r.chip }],
       meta: [['Last updated', d.lastModified]],
-      tiles: [
-        { k:'Type',             v:r.type,     t:'purple',  i:'dome' },
-        { k:'Fibers spliced',   v:r.fibers,   t:'violet',  i:'splice', pct },
-        { k:'Mean splice loss', v:r.loss,     t:overBudget ? 'red' : 'emerald', i:'gauge' },
-        { k:'Housing',          v:r.housing,  t:'amber',   i:'home' },
-        { k:'Last surveyed',    v:r.surveyed, t:'sky',     i:'cal' }
-      ] })}
+      strip: headerStrip })}
     ${overview}
     ${SPLICE_GALLERY === null ? '' : photoGalleryDialog({
       photos: d.photos, art: splicePhotoArt, idx: SPLICE_GALLERY, record: r.n,
