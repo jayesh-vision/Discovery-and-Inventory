@@ -7,7 +7,7 @@ declare global {
   interface Window {
     __nsLegacy?: {
       go: (k: string) => void;
-      applyDrillQuery: (view: string, q: string) => void;
+      applyDrillQuery: (view: string, q: string, label?: string | null) => void;
       setDrill: (d: unknown) => void;
       setParams: (k: string, p: Record<string, string>) => void;
       setCollapsed: (on: boolean) => void;
