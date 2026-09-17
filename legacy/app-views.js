@@ -2672,24 +2672,32 @@ function viewVirtual() {
         const wholeTypeOn = typeOn && !gf['Status'];
         /* matches the accent-strip treatment every other KPI-style card in
            the app already carries (see kpi() and the Discovery stat tiles) —
-           these four were still plain white boxes with no accent at all. */
+           these four were still plain white boxes with no accent at all.
+           Header now carries an at-a-glance failed/clear badge (the number
+           by itself, buried in a legend row below, was easy to miss), and
+           the donut sits beside its legend in one row instead of above a
+           separate 2-column grid — same filter click targets either way,
+           data-cardfilter untouched. */
         return card(`
           <div class="vw-card-accent" style="background:${cv(v.tone,400)}"></div>
-          <div class="row vw-justify-between vw-items-center">
+          <div class="row vw-justify-between vw-items-center" style="margin-bottom:var(--vw-space-md)">
             <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0;font-weight:600;font-size:inherit;color:inherit;text-align:left"
               data-cardfilter="virtual|${esc(v.n)}|">
               <span class="vw-card-title-sm">${v.n}</span>
             </button>
+            ${failedCount > 0 ? chip(`⚠ ${failedCount} failed`, 'error') : chip('✓ No failures', 'success')}
+          </div>
+          <div class="row vw-gap-md vw-items-center">
             <button class="nst-btn nst-btn--ghost vnf-type-title${wholeTypeOn ? ' is-on' : ''}" style="padding:0"
               data-cardfilter="virtual|${esc(v.n)}|">
-              ${donut(segs, totalCount, n(totalCount), 'NFs', 76)}
+              ${donut(segs, totalCount, `${readyCount}/${totalCount}`, 'ready', 104)}
             </button>
-          </div>
-          <div class="vw-grid vw-grid-cols-2 vw-gap-sm" style="margin-top:var(--vw-space-sm)">
-            ${segs.map(s => `<button class="row vw-justify-between vnf-legend-row${typeOn && gf['Status'] === s.n ? ' is-on' : ''}"
-              data-cardfilter="virtual|${esc(v.n)}|${esc(s.n)}">
-              <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
-              <span class="vw-value num">${s.c}</span></button>`).join('')}
+            <div class="stack-x grow" style="gap:2px">
+              ${segs.map(s => `<button class="row vw-justify-between vnf-legend-row${typeOn && gf['Status'] === s.n ? ' is-on' : ''}"
+                data-cardfilter="virtual|${esc(v.n)}|${esc(s.n)}">
+                <span class="legend-i"><span class="legend-sw" style="background:${cv(s.tone,400)}"></span>${s.n}</span>
+                <span class="vw-value num">${s.c}</span></button>`).join('')}
+            </div>
           </div>`, 'vw-card--accent', 'padding-top:calc(var(--vw-space-lg) + 3px)');
       }).join('')}
     </div>
