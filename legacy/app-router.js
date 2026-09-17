@@ -195,7 +195,11 @@ function applyDrillQuery(view, q, label) {
     const targetRes = p.name || (label ? label.trim() : null);
     if (targetRes) {
       RES_ID = decodeURIComponent(targetRes).trim();
-      RES_TAB = 'overview';
+      /* most arrivals (row actions, breadcrumb) land on Overview same as
+         always; an explicit ?tab= (Node linking's wire, drilling straight to
+         the interface a link's own Source/Destination NE carries) opens
+         directly on that tab instead */
+      RES_TAB = RES_TABS.some(t => t.k === p.tab) ? p.tab : 'overview';
       RES_ENB_TAB = 'cell';
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';

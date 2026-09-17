@@ -1966,12 +1966,14 @@ const LINKS = {
     { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.33.100', sif: 'Te0/0/12', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.33.102', dif: 'Te0/0/12.SI.612', name: 'BB:NDLS-PSA 10G', v: 3 },
     { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.33.100', sif: 'Gi0/0/0.SI.14', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.33.103', dif: 'Gi0/0/10', name: '—', v: 3 },
     { st: 'up', sne: 'Kalindi-J1.1K-DU-T4-NR', sip: '172.31.35.151', sif: 'ge-0/1/1', dne: 'Janki-J1.1K-DU-T4-NR', dip: '172.31.35.152', dif: 'ge-0/1/0', name: 'BB:to Kalindi', v: 5 },
-    { st: 'down', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sip: '172.31.35.81', sif: 'xe-0/3/1', dne: 'CCRAS-JANAKPURI-N540X', dip: '172.31.35.82', dif: 'TenGigE0/0/0/18', name: '—', v: 168 }
+    { st: 'down', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sip: '172.31.35.81', sif: 'xe-0/3/1', dne: 'CCRAS-JANAKPURI-N540X', dip: '172.31.35.82', dif: 'TenGigE0/0/0/18', name: '—', v: 168,
+      reason: 'Physical layer down — no light detected on optic, since 6d ago' }
   ],
   ospf: [
     { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.33.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-SR', dip: '172.31.33.101', dif: 'full(8)', name: 'IGP backbone', v: 3 },
     { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.33.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-ER', dip: '172.31.33.109', dif: 'full(8)', name: 'IGP backbone', v: 3 },
-    { st: 'down', sne: 'MAS-N7750-BNG-R-T1-SR', sip: '172.31.33.130', sif: 'area 0.0.0.1', dne: 'MAS-N7750-BNG-R-T1-NR', dip: '172.31.33.131', dif: 'down(1)', name: 'IGP south', v: 6264 }
+    { st: 'down', sne: 'MAS-N7750-BNG-R-T1-SR', sip: '172.31.33.130', sif: 'area 0.0.0.1', dne: 'MAS-N7750-BNG-R-T1-NR', dip: '172.31.33.131', dif: 'down(1)', name: 'IGP south', v: 6264,
+      reason: 'Neighbor adjacency lost — dead timer expired, since 9h ago' }
   ],
   bgp: [
     { st: 'established', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.33.100', sif: 'AS 24186', dne: 'BGLK-ASR9010-PE-T1', dip: '172.31.53.252', dif: 'established(6)', name: 'iBGP RR', v: 3 },
@@ -2055,18 +2057,32 @@ const VNF_PAD = [
 ];
 VNFS.push(...VNF_PAD);
 
+/* Node linking's dialog shows *why* a down/non-established link is down —
+   only ever set when the row's own st isn't a healthy one, so an Up/
+   Established row's dialog just omits the field (isFilled) rather than
+   showing a reason for something that isn't actually failing. */
+const LLDP_DOWN_REASONS = ['Physical layer down — no light detected on optic', 'Interface administratively down at the remote end',
+  'Cable fault — link flapping detected', 'SFP module fault — diagnostics failed'];
+const OSPF_DOWN_REASONS = ['Neighbor adjacency lost — dead timer expired', 'Area ID mismatch with neighbor',
+  'MTU mismatch — adjacency stuck in ExStart', 'Authentication failure with neighbor'];
+const ISIS_DOWN_REASONS = ['Adjacency down — hello timer expired', 'Level mismatch with neighbor (L1 vs L2)', 'Interface down at the remote end'];
+const BGP_DOWN_REASONS = { idle: 'Session administratively shut down', active: 'TCP connection failed — peer unreachable',
+  connect: 'Waiting for TCP handshake — peer not responding' };
+
 LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({
   ...r, st: i % 5 === 4 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
   dne: PAD_NE[(i + 5) % PAD_NE.length], dip: PAD_IP(i + 30), dif: PAD_IF[(i + 3) % PAD_IF.length],
   name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
-  v: [3, 5, 8, 26][i % 4]
+  v: [3, 5, 8, 26][i % 4],
+  reason: i % 5 === 4 ? LLDP_DOWN_REASONS[i % LLDP_DOWN_REASONS.length] : undefined
 }));
 LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({
   ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
   dne: PAD_NE[(i + 7) % PAD_NE.length], dip: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
-  name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3]
+  name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3],
+  reason: i % 6 === 5 ? OSPF_DOWN_REASONS[i % OSPF_DOWN_REASONS.length] : undefined
 }));
 LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
@@ -2074,13 +2090,15 @@ LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
     ...r, st,
     sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `AS ${24186 + (i % 2 ? 0 : 9498)}`,
     dne: PAD_NE[(i + 11) % PAD_NE.length], dip: PAD_IP(i + 11), dif: `${st}(${st === 'established' ? 6 : 1})`,
-    name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3]
+    name: i % 2 ? 'iBGP RR' : 'eBGP peer', v: [3, 4, 9][i % 3],
+    reason: BGP_DOWN_REASONS[st]
   };
 });
 LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({
   ...r, st: i % 6 === 5 ? 'down' : 'up',
   sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: i % 3 ? 'L2' : 'L1L2',
-  dne: PAD_NE[(i + 4) % PAD_NE.length], dip: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3]
+  dne: PAD_NE[(i + 4) % PAD_NE.length], dip: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3],
+  reason: i % 6 === 5 ? ISIS_DOWN_REASONS[i % ISIS_DOWN_REASONS.length] : undefined
 }));
 
 SERVICES.l3vpn = padList(SERVICES.l3vpn, 12, (r, i) => ({
@@ -6991,10 +7009,13 @@ const LINK_ST = {
 const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 'down'], bgp: ['established', 'idle', 'active', 'connect'] };
 
 /* Source and destination as two nodes on a wire, the way a topology tool
-   draws one link — replaces the old "Open source element / Open destination
-   element" pair of row actions with a single canvas-style view: the nodes
-   and the wire are themselves the controls (open the element / copy the
-   link name) rather than separate buttons bolted on below. */
+   draws one link. The nodes stay read-only labels (see .is-static) — this
+   dialog has no per-node drill target of its own, same as the Links
+   diagram's endpoints always were. The wire is the one real control: it
+   used to just copy the link name, but that's also the one thing here with
+   an actual destination — the Source NE's own Interfaces tab, where the
+   Source Interface this link reports (r.sif) lives — so a click now opens
+   that instead. */
 function linkDiagram(r) {
   const node = label => `<div class="linkdiagram-node is-static">
     <span class="linkdiagram-icon">${nodeThumb('router')}</span>
@@ -7003,8 +7024,8 @@ function linkDiagram(r) {
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
     ${node(r.sne)}
-    <button class="linkdiagram-wire" data-copy="${esc(linkName)}"
-      title="Copy link name: ${esc(linkName)}" aria-label="Copy link name: ${esc(linkName)}">
+    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}&tab=ifaces` })}
+      title="Open ${esc(r.sne)} · Interfaces" aria-label="Open ${esc(r.sne)}'s Interfaces tab">
       <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
     </button>
     ${node(r.dne)}
@@ -7027,12 +7048,14 @@ function linkViewDialog() {
         <button class="fp-x" data-linkclose="1" aria-label="Close">${IC_X}</button>
       </div>
       <div class="linkview-body">
-        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:${r.reason ? '4px' : 'var(--vw-space-md)'}">
           <span class="vw-card-description">${protoLabel} link</span>${chip(stLabel, stTone)}
         </div>
+        ${r.reason ? `<p class="vw-card-metric-label-sub" style="margin:0 0 var(--vw-space-md)">${esc(r.reason)}</p>` : ''}
         ${linkDiagram(r)}
         ${detailFieldGrid([
           ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
+          ...(r.reason ? [['Reason', r.reason]] : []),
           ['Source NE', r.sne], ['Source IP', r.sip],
           ['Destination NE', r.dne], ['Destination IP', r.dip]
         ])}
@@ -13895,7 +13918,11 @@ function applyDrillQuery(view, q, label) {
     const targetRes = p.name || (label ? label.trim() : null);
     if (targetRes) {
       RES_ID = decodeURIComponent(targetRes).trim();
-      RES_TAB = 'overview';
+      /* most arrivals (row actions, breadcrumb) land on Overview same as
+         always; an explicit ?tab= (Node linking's wire, drilling straight to
+         the interface a link's own Source/Destination NE carries) opens
+         directly on that tab instead */
+      RES_TAB = RES_TABS.some(t => t.k === p.tab) ? p.tab : 'overview';
       RES_ENB_TAB = 'cell';
       RES_SW_TAB = 'hardware';
       RES_DW_TAB = 'hardware';

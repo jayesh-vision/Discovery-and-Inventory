@@ -3331,10 +3331,13 @@ const LINK_ST = {
 const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 'down'], bgp: ['established', 'idle', 'active', 'connect'] };
 
 /* Source and destination as two nodes on a wire, the way a topology tool
-   draws one link — replaces the old "Open source element / Open destination
-   element" pair of row actions with a single canvas-style view: the nodes
-   and the wire are themselves the controls (open the element / copy the
-   link name) rather than separate buttons bolted on below. */
+   draws one link. The nodes stay read-only labels (see .is-static) — this
+   dialog has no per-node drill target of its own, same as the Links
+   diagram's endpoints always were. The wire is the one real control: it
+   used to just copy the link name, but that's also the one thing here with
+   an actual destination — the Source NE's own Interfaces tab, where the
+   Source Interface this link reports (r.sif) lives — so a click now opens
+   that instead. */
 function linkDiagram(r) {
   const node = label => `<div class="linkdiagram-node is-static">
     <span class="linkdiagram-icon">${nodeThumb('router')}</span>
@@ -3343,8 +3346,8 @@ function linkDiagram(r) {
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
     ${node(r.sne)}
-    <button class="linkdiagram-wire" data-copy="${esc(linkName)}"
-      title="Copy link name: ${esc(linkName)}" aria-label="Copy link name: ${esc(linkName)}">
+    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}&tab=ifaces` })}
+      title="Open ${esc(r.sne)} · Interfaces" aria-label="Open ${esc(r.sne)}'s Interfaces tab">
       <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
     </button>
     ${node(r.dne)}
@@ -3367,12 +3370,14 @@ function linkViewDialog() {
         <button class="fp-x" data-linkclose="1" aria-label="Close">${IC_X}</button>
       </div>
       <div class="linkview-body">
-        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
+        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:${r.reason ? '4px' : 'var(--vw-space-md)'}">
           <span class="vw-card-description">${protoLabel} link</span>${chip(stLabel, stTone)}
         </div>
+        ${r.reason ? `<p class="vw-card-metric-label-sub" style="margin:0 0 var(--vw-space-md)">${esc(r.reason)}</p>` : ''}
         ${linkDiagram(r)}
         ${detailFieldGrid([
           ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
+          ...(r.reason ? [['Reason', r.reason]] : []),
           ['Source NE', r.sne], ['Source IP', r.sip],
           ['Destination NE', r.dne], ['Destination IP', r.dip]
         ])}
