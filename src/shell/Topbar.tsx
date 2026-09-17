@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS } from '../routes';
+import { reportDefById } from '../data/reports';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -62,11 +63,13 @@ export default function Topbar() {
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase();
-    return SCREENS.find(x =>
+    const matches = (x: typeof SCREENS[number]) =>
       x.crumb.toLowerCase() === p ||
       x.key.toLowerCase() === p ||
-      x.crumb.split(' · ').pop()?.toLowerCase() === p
-    );
+      x.crumb.split(' · ').pop()?.toLowerCase() === p;
+    /* two modules can own a screen with the same crumb (both have "Reports");
+       the one in the reader's own module wins */
+    return SCREENS.find(x => matches(x) && x.module === s.module) ?? SCREENS.find(matches);
   };
 
   const targetFor = (prefix: string): string | null => {
@@ -147,6 +150,9 @@ export default function Topbar() {
   let finalLeafLabel = drill || leaf;
   if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
     finalLeafLabel = 'Transcript';
+  }
+  if (s.key === 'discoveryreport' || s.key === 'inventoryreport') {
+    finalLeafLabel = reportDefById(params.id ?? '')?.name ?? finalLeafLabel;
   }
   if (segs.length > 0 && segs[segs.length - 1].label === finalLeafLabel) {
     segs[segs.length - 1] = { label: finalLeafLabel, to: null };

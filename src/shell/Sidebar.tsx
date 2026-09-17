@@ -13,7 +13,8 @@ const RAIL: { section: string; items: Item[] }[] = [
     { group: 'recon', label: 'Reconciliation', children: [
       { key: 'reconcile', label: 'Overview' }, { key: 'reconcilejobs', label: 'Jobs' },
       { key: 'reconcileresults', label: 'Results' }, { key: 'reconcileexceptions', label: 'Exceptions' },
-      { key: 'rules', label: 'Rules' } ] } ] },
+      { key: 'rules', label: 'Rules' } ] },
+    { key: 'discoveryreports', label: 'Reports' } ] },
   { section: 'Inventory', items: [
     { key: 'location', label: 'Location' },
     { group: 'res', label: 'Resources', children: [

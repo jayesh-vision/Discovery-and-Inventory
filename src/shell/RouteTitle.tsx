@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SCREENS } from '../routes';
+import { reportDefById } from '../data/reports/catalog';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -13,7 +14,8 @@ export default function RouteTitle() {
   const { pathname } = useLocation();
   useEffect(() => {
     const s = screenFor(pathname);
-    document.title = s ? `${s.crumb} · ${s.module}` : 'NetSingularity';
+    const report = s && (s.key === 'discoveryreport' || s.key === 'inventoryreport') ? reportDefById(pathname.split('/').pop() ?? '') : undefined;
+    document.title = report ? `Reports · ${report.name} · ${s!.module}` : s ? `${s.crumb} · ${s.module}` : 'NetSingularity';
   }, [pathname]);
   return null;
 }

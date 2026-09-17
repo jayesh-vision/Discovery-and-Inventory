@@ -16,9 +16,10 @@ host menu item is an iframe pointing at it:
 | --- | --- |
 | Insights | `/discovery/insights` |
 | Scan jobs · Scan targets · Reconciliation | `/discovery/jobs` · `/discovery/targets` · `/discovery/reconcile` |
+| Reports (Discovery and reconciliation) | `/discovery/reports` |
 | Location | `/inventory/location` |
 | Physical · Virtual · Passive | `/inventory/physical` · `/inventory/virtual` · `/inventory/passive` |
-| Links · Services · Reports | `/inventory/links` · `/inventory/services` · `/inventory/reports` |
+| Links · Services · Reports (Inventory) | `/inventory/links` · `/inventory/services` · `/inventory/reports` |
 | Inactive inventory | `/inventory/inactive` |
 
 Drill-downs stay inside the iframe and the breadcrumb links back to the list
@@ -75,7 +76,8 @@ prototype's own renderer through a bridge.
 | Site details · Site equipment tab | React — `src/screens/SiteEquipment.tsx`, framing `public/cable-view/` |
 | Scan jobs, Scan targets, Reconciliation | legacy bridge |
 | Location, Site details (NE / Capex / Opex tabs), Node view | legacy bridge |
-| Virtual Resources, Passive Infrastructure, Links, Services, Reports, Element | legacy bridge |
+| Reports (both modules) and each report | React — `src/screens/reports/` (content: `src/data/reports/`) |
+| Virtual Resources, Passive Infrastructure, Links, Services, Element | legacy bridge |
 
 `src/routes.ts` is the single registry: sidebar, breadcrumb, routes and the
 bridge all read it. A screen with a `component` is React; one marked `legacy`

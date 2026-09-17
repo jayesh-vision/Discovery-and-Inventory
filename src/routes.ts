@@ -15,6 +15,8 @@ import ReconciliationExceptions from './screens/ReconciliationExceptions';
 import RulesList from './screens/RulesList';
 import RuleDefinition from './screens/RuleDefinition';
 import RuleDetails from './screens/RuleDetails';
+import { DiscoveryReports, InventoryReports } from './screens/reports/ReportsLanding';
+import { DiscoveryReportView, InventoryReportView } from './screens/reports/ReportView';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -59,6 +61,9 @@ export const SCREENS: Screen[] = [
     crumb: 'Reconciliation · Rules · Edit rule', rail: 'rules', component: RuleDefinition },
   { key: 'ruledetails', path: '/discovery/reconcile/rules/:id', module: 'Discovery and reconciliation',
     crumb: 'Reconciliation · Rules · Rule details', rail: 'rules', component: RuleDetails },
+  { key: 'discoveryreports', path: '/discovery/reports', module: 'Discovery and reconciliation', crumb: 'Reports', component: DiscoveryReports },
+  { key: 'discoveryreport', path: '/discovery/reports/:id', module: 'Discovery and reconciliation',
+    crumb: 'Reports · Report', rail: 'discoveryreports', component: DiscoveryReportView },
 
   { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Home', legacy: true },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', legacy: true },
@@ -86,7 +91,8 @@ export const SCREENS: Screen[] = [
   { key: 'links',     path: '/inventory/links',     module: 'Inventory', crumb: 'Connectivity · Links', legacy: true },
   { key: 'services',  path: '/inventory/services',  module: 'Inventory', crumb: 'Services', legacy: true },
   { key: 'inactive',  path: '/inventory/inactive',  module: 'Inventory', crumb: 'Inactive inventory', component: InactiveInventory },
-  { key: 'reports',   path: '/inventory/reports',   module: 'Inventory', crumb: 'Reports', legacy: true }
+  { key: 'reports',   path: '/inventory/reports',   module: 'Inventory', crumb: 'Reports', component: InventoryReports },
+  { key: 'inventoryreport', path: '/inventory/reports/:id', module: 'Inventory', crumb: 'Reports · Report', rail: 'reports', component: InventoryReportView }
 ];
 
 export const screenByKey = (k: string) => SCREENS.find(s => s.key === k);

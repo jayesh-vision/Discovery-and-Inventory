@@ -23,3 +23,6 @@ export const SIDE_ICONS: Record<string, string> = {
 export const CHEV = `<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 export const SIDE_GRID = `<span class="side-grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>`;
 export const SIDE_CHEVRON = `<svg class="side-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6 9 12l6 6"/></svg>`;
+
+/* Discovery and reconciliation's Reports shares Inventory's report glyph */
+SIDE_ICONS.discoveryreports = SIDE_ICONS.reports;
