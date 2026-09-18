@@ -184,8 +184,12 @@ function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
 
 export default function Insights() {
   const nav = useNavigate();
-  const openDomain = (d: DomainKey, region?: string) =>
-    nav(`/discovery/insights/domain/${domainToUrl(d)}${region ? `?region=${encodeURIComponent(region)}` : ''}`);
+  const openDomain = (d: DomainKey, region?: string, issue?: string) => {
+    const q = new URLSearchParams();
+    if (region) q.set('region', region);
+    if (issue) q.set('issue', issue);
+    nav(`/discovery/insights/domain/${domainToUrl(d)}${q.toString() ? `?${q.toString()}` : ''}`);
+  };
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
   /* the row's own fix action is a real local acknowledgement, not a fake
@@ -388,6 +392,16 @@ export default function Insights() {
         </div>
       </Card>
 
+      {/* RECONCILIATION module disabled here on purpose — Reconcile.tsx now
+         shows this same content (Match outcome, Trust by domain and region,
+         Backlog, Discrepancy types, Reconciliation cycles) as its own page,
+         so this page's copy is redundant. Kept intact, not deleted: a plain
+         JSX comment wrapper cannot be used because this subtree contains its
+         own inner JSX comment further down (comment markers in JS/JSX cannot
+         nest), so `false &&` is the safe way to disable a block this size
+         without touching what's inside it. Flip to `true`, or delete the
+         `false && ( ... )` wrapper, to bring the section back. */}
+      {false && (<>
       <ModuleDivider num="II" label="RECONCILIATION" />
 
       <SectionTitle>Match outcome</SectionTitle>
@@ -540,8 +554,8 @@ export default function Insights() {
           <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
             {DISCREPANCY_TYPES.map(r => (
               <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
-                title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
-                onClick={() => toDiscrepancies({ q: r.label })}>
+                title={`View the ${r.count} ${DOMAIN_LABEL[r.domain]} devices with ${r.label.toLowerCase()}`}
+                onClick={() => openDomain(r.domain, undefined, r.label)}>
                 <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
                   <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
@@ -631,6 +645,7 @@ export default function Insights() {
           </div>
         </Card>
       </div>
+      </>)}
 
       <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
         sub={drawer ? drawerSub(drawer) : undefined}>

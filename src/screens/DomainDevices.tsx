@@ -20,6 +20,13 @@ export default function DomainDevices() {
      read as "wrong data" no matter which cell was actually clicked */
   const region = searchParams.get('region');
   const clearRegion = () => setSearchParams(p => { const n = new URLSearchParams(p); n.delete('region'); return n; });
+  /* set when reached by clicking one row of Reconciliation's "Open items by
+     type" list — same idea as region above: without this filter every type
+     row landed on the same undifferentiated domain roster no matter which
+     type was clicked */
+  const issue = searchParams.get('issue');
+  const clearIssue = () => setSearchParams(p => { const n = new URLSearchParams(p); n.delete('issue'); return n; });
+  const scopeLabel = [region, issue].filter(Boolean).join(' · ');
 
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -29,7 +36,7 @@ export default function DomainDevices() {
   const [showRaw, setShowRaw] = useState(false);
   const [justScanned, setJustScanned] = useState(false);
 
-  const base = useMemo(() => (domain ? domainDevices(domain, region ?? undefined) : []), [domain, region]);
+  const base = useMemo(() => (domain ? domainDevices(domain, region ?? undefined, issue ?? undefined) : []), [domain, region, issue]);
   /* base is already region-filtered when a region is active, so counting
      it directly is what makes the Open/Unverified stat cards agree with
      the list below instead of quoting the domain-wide row.open/
@@ -72,19 +79,21 @@ export default function DomainDevices() {
     <div className="page">
       <div className="row vw-items-center" style={{ gap: '10px', marginBottom: 'var(--vw-space-sm)' }}>
         <span style={{ width: 11, height: 11, borderRadius: '50%', background: hex, flexShrink: 0 }} />
-        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>{DOMAIN_LABEL[domain]} devices{region ? ` · ${region}` : ''}</span>
-        {region && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearRegion}>Clear region · show all</button>}
+        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>{DOMAIN_LABEL[domain]} devices{scopeLabel ? ` · ${scopeLabel}` : ''}</span>
+        {region && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearRegion}>Clear region</button>}
+        {issue && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearIssue}>Clear type</button>}
+        {(region || issue) && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={() => setSearchParams(p => { const n = new URLSearchParams(p); n.delete('region'); n.delete('issue'); return n; })}>Show all</button>}
       </div>
 
       <StatStrip cells={[
         { k: 'In scope', v: row.inScope.toLocaleString('en-IN'), s: 'assets tracked in this domain', t: 'sky' },
-        { k: 'Open', v: String(openCount), s: region ? `discrepancies to action in ${region}` : 'discrepancies to action', t: 'red' },
-        { k: 'Unverified', v: row.unverified !== null ? String(unverifiedCount) : '—', s: region ? `not yet scanned this cycle in ${region}` : 'not yet scanned this cycle', t: 'amber' },
+        { k: 'Open', v: String(openCount), s: scopeLabel ? `discrepancies to action in ${scopeLabel}` : 'discrepancies to action', t: 'red' },
+        { k: 'Unverified', v: row.unverified !== null ? String(unverifiedCount) : '—', s: scopeLabel ? `not yet scanned this cycle in ${scopeLabel}` : 'not yet scanned this cycle', t: 'amber' },
         { k: 'Trust index', v: `${row.trustIndexPct}%`, s: `MTTR ${row.mttrHours}h · ${row.touchlessPct}% automated`, t: 'emerald' }
       ]} />
-      {region && (
+      {scopeLabel && (
         <p className="vw-card-metric-label-sub" style={{ margin: '4px 0 0' }}>
-          In scope and Trust index are {DOMAIN_LABEL[domain]}-wide (no per-region figure exists for either); Open and Unverified above match the {region} list exactly.
+          In scope and Trust index are {DOMAIN_LABEL[domain]}-wide (no per-{region && issue ? 'region/type' : region ? 'region' : 'type'} figure exists for either); Open and Unverified above match the {scopeLabel} list exactly.
         </p>
       )}
 
@@ -92,7 +101,7 @@ export default function DomainDevices() {
         <DataGrid<DomainDevice>
           columns={[{ t: 'Device' }, { t: 'Status' }, { t: 'Issue' }, { t: 'Last scan' }]}
           rows={rows} total={rows.length} rowKey={d => d.id}
-          resetKey={`${domain}|${region}|${query}|${JSON.stringify(filters)}`}
+          resetKey={`${domain}|${region}|${issue}|${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Device, IP, issue"
           filters={[{ n: 'Status', o: ['Open', 'Unverified'] }]}
           onSearch={setQuery} searchValue={query} onFilterChange={setFilters}
@@ -107,7 +116,7 @@ export default function DomainDevices() {
         <div className="vw-card-footer-divider">
           <span className="vw-card-description">
             {base.filter(d => d.status === 'Open').length} open · {base.filter(d => d.status === 'Unverified').length} unverified
-            {region ? ` in ${region}` : ''} are listed here; the rest are in sync with nothing to action.
+            {scopeLabel ? ` in ${scopeLabel}` : ''} are listed here; the rest are in sync with nothing to action.
           </span>
         </div>
       </Card>

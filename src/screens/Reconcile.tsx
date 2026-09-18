@@ -111,8 +111,12 @@ function HeatPill({ v, region, domain, onOpen, max = REGION_HEAT_MAX }: {
 
 export default function Reconcile() {
   const nav = useNavigate();
-  const openDomain = (d: DomainKey, region?: string) =>
-    nav(legacyPath('domaindevices', { from: FROM, q: region ? `region=${encodeURIComponent(region)}` : '' }, { domain: domainToUrl(d) }));
+  const openDomain = (d: DomainKey, region?: string, issue?: string) => {
+    const q = new URLSearchParams();
+    if (region) q.set('region', region);
+    if (issue) q.set('issue', issue);
+    nav(legacyPath('domaindevices', { from: FROM, q: q.toString() }, { domain: domainToUrl(d) }));
+  };
   const toDiscrepancies = (params: Record<string, string> = {}) =>
     nav(legacyPath('discrepancydetails', { from: FROM, q: new URLSearchParams(params).toString() }, {}));
   const [cycle, setCycle] = useState<ReconcileCycleRow | null>(null);
@@ -265,8 +269,8 @@ export default function Reconcile() {
           <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
             {DISCREPANCY_TYPES.map(r => (
               <button key={r.label} className="row vw-items-center is-drill" style={{ gap: 'var(--vw-space-sm)', padding: '6px 0', width: '100%', textAlign: 'left', border: 0, background: 'none' }}
-                title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
-                onClick={() => toDiscrepancies({ q: r.label })}>
+                title={`View the ${r.count} ${DOMAIN_LABEL[r.domain]} devices with ${r.label.toLowerCase()}`}
+                onClick={() => openDomain(r.domain, undefined, r.label)}>
                 <span className="row vw-items-center" style={{ gap: '7px', width: '13.5rem', flexShrink: 0, minWidth: 0 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} />
                   <span className="vw-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>

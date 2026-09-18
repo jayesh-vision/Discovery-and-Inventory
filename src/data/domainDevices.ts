@@ -47,7 +47,17 @@ DOMAIN_TRUST_ROWS.forEach(row => {
   const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
   const prefixes = PREFIX[row.domain];
   const issues = DISCREPANCY_TYPES.filter(d => d.domain === row.domain);
-  const nextIssue = (i: number) => (issues.length ? issues[i % issues.length].label : 'Attribute mismatch');
+  /* Reconciliation's "Open items by type" names, per type, exactly how many
+     of this domain's OPEN devices carry it (discoveryOverview.ts's own
+     self-check already proves these counts sum to row.open) — one entry per
+     type, repeated to match that type's own count, is what lines this
+     roster up with the number a reader just clicked. `i % issues.length`
+     cycling (the previous approach) instead gives every type roughly the
+     same share regardless of its real count — clicking "Undocumented
+     wavelength · 52" landed on a roster with far fewer than 52 matching
+     devices, the exact region/i%length bug already fixed above for
+     regionsForOpen. */
+  const issuesForOpen = issues.length ? issues.flatMap(t => Array(t.count).fill(t.label)) : [];
 
   /* Insights' "Open discrepancies by region" heatmap names, per cell, how
      many of this domain's OPEN devices sit in that region (REGION_DISCREPANCY)
@@ -90,7 +100,7 @@ DOMAIN_TRUST_ROWS.forEach(row => {
       domain: row.domain,
       region: regionFor(status, i),
       status,
-      issue: status === 'Open' ? nextIssue(i) : 'Not yet verified this cycle',
+      issue: status === 'Open' ? (issuesForOpen[i] ?? 'Attribute mismatch') : 'Not yet verified this cycle',
       lastScan: pick(SCANS)
     };
   };
@@ -99,10 +109,11 @@ DOMAIN_TRUST_ROWS.forEach(row => {
   for (let i = 0; i < (row.unverified ?? 0); i++) DOMAIN_DEVICES.push(mk('Unverified', i));
 });
 
-/* `region` is the heatmap-cell drill: omitted, this is the same
+/* `region` is the heatmap-cell drill, `issue` is the "Open items by type"
+   row drill — both optional and independent; omitted, this is the same
    whole-domain roster it always was. */
-export const domainDevices = (domain: DomainKey, region?: string) =>
-  DOMAIN_DEVICES.filter(d => d.domain === domain && (!region || d.region === region));
+export const domainDevices = (domain: DomainKey, region?: string, issue?: string) =>
+  DOMAIN_DEVICES.filter(d => d.domain === domain && (!region || d.region === region) && (!issue || d.issue === issue));
 
 /* roster self-check: every device this page lists must foot to the counts
    the domain's own summary row and Insights quote */
@@ -122,5 +133,11 @@ export const domainDevices = (domain: DomainKey, region?: string) =>
       const count = domainDevices(d, r.region).filter(x => x.status === 'Open').length;
       if (count !== r.drift[d]) throw new Error(`domain devices: ${r.region}/${d} open ${count} ≠ ${r.drift[d]}`);
     });
+  });
+  /* and "Open items by type"'s own count must match this roster's
+     issue-filtered open count exactly — same reason */
+  DISCREPANCY_TYPES.forEach(t => {
+    const count = domainDevices(t.domain, undefined, t.label).filter(x => x.status === 'Open').length;
+    if (count !== t.count) throw new Error(`domain devices: ${t.domain}/${t.label} open ${count} ≠ ${t.count}`);
   });
 })();
