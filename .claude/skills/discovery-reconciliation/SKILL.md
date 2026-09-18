@@ -252,10 +252,13 @@ server does not auto-rebuild `public/legacy.js`), `npm run test`.
 
 # Common Pitfalls
 
-- **Domain-blind content on a domain-organized page**: `COLLECTOR_ROWS` and
-  `ROOT_CAUSE_FAILURES` (`discoveryOverview.ts`) carry a `domain` field —
+- **Domain-blind content on a domain-organized page**: `ADAPTER_ROWS` and
+  `ROOT_CAUSE_FAILURES` (`discoveryOverview.ts`) carry domain fields —
   don't add a new row without one, and don't render them without a domain
-  tag/dot when every sibling card on Insights has one.
+  tag/dot when every sibling card on Insights has one. (`COLLECTOR_ROWS` is
+  still defined there but no longer rendered on Insights — the Collector
+  health card was removed in favour of showing Failures by root cause
+  beside Discovery adapters.)
 - **`ch[]` length mismatches**: a hand-written `TARGETS` row for a 5-collector
   domain (RAN/Core) needs a 5-element `ch[]`, not 6 — use `chForDomain()`
   rather than hardcoding length.

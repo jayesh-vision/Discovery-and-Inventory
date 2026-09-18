@@ -228,12 +228,19 @@ export function MultiLineChart({ labels, series, height = 220, format, detail }:
           const d = s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i)} ${y(v)}`).join(' ');
           return <path key={s.n} d={d} fill="none" stroke={s.hex} strokeWidth="2" strokeLinejoin="round" />;
         })}
-        {labels.map((lab, i) => (i % step !== 0 && i !== n - 1) ? null : (
-          <g key={i} onMouseEnter={e => setHov({ i, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ i, x: e.clientX, y: e.clientY })}>
-            <rect x={x(i) - (W - padL - padR) / n / 2} y={padT} width={(W - padL - padR) / n} height={H - padT - padB} fill="transparent" />
-            <text x={x(i)} y={H - 10} textAnchor="middle" className="ch-axis">{lab}</text>
-          </g>
-        ))}
+        {labels.map((lab, i) => {
+          /* the last label always draws; a stepped label that would land
+             right beside it (within half a step) is dropped so the two never
+             overprint ("1 days ago" on top of "Today") */
+          const stepped = i % step === 0 && (n - 1 - i) >= step / 2;
+          const show = stepped || i === n - 1;
+          return (
+            <g key={i} onMouseEnter={e => setHov({ i, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ i, x: e.clientX, y: e.clientY })}>
+              <rect x={x(i) - (W - padL - padR) / n / 2} y={padT} width={(W - padL - padR) / n} height={H - padT - padB} fill="transparent" />
+              {show && <text x={x(i)} y={H - 10} textAnchor={i === n - 1 ? 'end' : 'middle'} className="ch-axis">{lab}</text>}
+            </g>
+          );
+        })}
         {series.map(s => s.values.map((v, i) => (
           <circle key={`${s.n}-${i}`} cx={x(i)} cy={y(v)} r={hov?.i === i ? 4 : 0} fill={s.hex}
             style={{ pointerEvents: 'none', transition: 'r .1s' }} />
