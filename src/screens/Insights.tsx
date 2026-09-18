@@ -78,7 +78,7 @@ const CARD_DEF: Record<string, string> = {
   'Detected vs auto-resolved, per day': 'New discrepancies found each day, and how many were closed automatically by policy without an engineer.',
   'Age of open discrepancies': 'How long the currently open discrepancies have sat unresolved — the older the bucket, the more attention it likely needs.',
   'Open items by type': 'The open backlog broken down by the specific kind of discrepancy, so the most common failure patterns stand out.',
-  'Reconciliation cycles': 'The last few completed reconciliation runs for each domain, newest first, and what’s scheduled to run next.'
+  'Reconciliation cycles': 'Each domain’s last 3 completed reconciliation runs, trended oldest to newest, plus what’s scheduled to run next.'
 };
 
 const DomainDot = ({ domain }: { domain: DomainKey }) => (
@@ -558,32 +558,63 @@ export default function Insights() {
 
         <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
           <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 3 cycles per domain, newest first</div>
-          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
-            {RECONCILE_CYCLE_ROWS.map((c, i) => (
-              <div key={`${c.domain}-${c.when}`} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'cycle', row: c })}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDrawer({ kind: 'cycle', row: c }); } }}
-                aria-label={`View ${DOMAIN_LABEL[c.domain]} cycle details`}
-                style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr auto', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0' }}>
-                <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{c.when}</span>
-                <span style={{ position: 'relative', alignSelf: 'stretch' }}>
-                  <span style={{ position: 'absolute', left: 6, top: 4, width: 9, height: 9, borderRadius: '50%', background: DOMAIN_HEX[c.domain], boxShadow: '0 0 0 3px var(--vw-color-white)' }} />
-                  {i < RECONCILE_CYCLE_ROWS.length - 1 && <span style={{ position: 'absolute', left: 10, top: 16, bottom: -22, width: 1, background: 'var(--vw-color-slate-200)' }} />}
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <div className="vw-value"><b style={{ color: cv('gray', 800) }}>{DOMAIN_LABEL[c.domain]}</b> cycle complete · {c.scanned.toLocaleString('en-IN')} records scanned</div>
-                  <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                    <Chip tone="neutral">{c.drifted} drifted</Chip>
-                    <Chip tone="neutral">{c.autoResolved} auto-resolved</Chip>
-                    <Chip tone="neutral">{c.queue} to queue</Chip>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Latest cycle per domain · trend across its last 3 runs</div>
+          {/* space-between over 4 fixed domain blocks, rather than a plain
+              stack, so the leftover height below this card's much shorter
+              new content (vs. the 12-row version this replaced) spreads out
+              as breathing room between domains instead of collecting into
+              one dead gap above the "Next" footer — this card still shares
+              its sibling's fixed 620px height for row alignment. */}
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            {DOMAIN_KEYS.map((d, di) => {
+              /* RECONCILE_CYCLE_ROWS is one global feed sorted newest-first
+                 across all domains — grouping by domain here (rather than
+                 leaving the reader to pick this domain's 3 rows out of the
+                 12 interleaved ones by eye) is what actually makes "last 3
+                 cycles per domain" verifiable at a glance. */
+              const cycles = RECONCILE_CYCLE_ROWS.filter(c => c.domain === d); // newest → oldest, 3 rows
+              const latest = cycles[0];
+              const oldestToNewest = [...cycles].reverse();
+              const delta = latest.touchlessPct - oldestToNewest[0].touchlessPct;
+              return (
+                <div key={d} style={{ padding: '13px 0', borderTop: di ? '1px solid var(--vw-color-slate-100)' : undefined }}>
+                  <div className="row vw-items-center vw-justify-between">
+                    <DomainDot domain={d} />
+                    <div className="row vw-items-center" style={{ gap: '10px' }}>
+                      <Sparkline values={oldestToNewest.map(c => c.touchlessPct)} height={22} hex={DOMAIN_HEX[d]} />
+                      <span className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(latest.touchlessPct >= 60 ? 'emerald' : 'amber', 700), minWidth: '3.4rem', textAlign: 'right' }}>
+                        {latest.touchlessPct}%
+                      </span>
+                      {delta !== 0 && (
+                        <span className="num" style={{ fontSize: '0.75rem', fontWeight: 600, color: cv(delta > 0 ? 'emerald' : 'red', 600), minWidth: '2.6rem' }}>
+                          {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}pt
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ marginTop: '6px' }}>
+                    {latest.scanned.toLocaleString('en-IN')} scanned · {latest.drifted} drifted · {latest.autoResolved} auto-resolved · {latest.queue} to queue
+                  </div>
+                  <div className="row" style={{ gap: '6px', marginTop: '9px', flexWrap: 'wrap' }}>
+                    {oldestToNewest.map((c, i) => {
+                      const isLatest = i === oldestToNewest.length - 1;
+                      return (
+                        <button key={c.when} className="mono is-click" onClick={() => setDrawer({ kind: 'cycle', row: c })}
+                          title={`View ${DOMAIN_LABEL[d]} cycle detail · ${c.when}`}
+                          style={{
+                            fontSize: '0.6875rem', padding: '3px 10px', borderRadius: '999px', cursor: 'pointer',
+                            background: 'var(--vw-color-slate-50)', color: 'var(--vw-color-gray-700)',
+                            border: `1px solid ${isLatest ? DOMAIN_HEX[d] : 'var(--vw-color-slate-200)'}`,
+                            fontWeight: isLatest ? 700 : 500
+                          }}>
+                          {c.when} · {c.touchlessPct}%
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div className="num" style={{ fontSize: 'var(--vw-font-value-md)', fontWeight: 700, color: cv(c.touchlessPct >= 60 ? 'emerald' : 'amber', 700), lineHeight: 1.1 }}>{c.touchlessPct}%</div>
-                  <div className="vw-card-metric-label-sub">automated</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '4.5rem 20px 1fr', columnGap: 'var(--vw-space-sm)', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px dashed var(--vw-color-slate-200)', flexShrink: 0 }}>
             <span className="mono vw-card-metric-label-sub" style={{ paddingTop: '2px' }}>{RECONCILE_NEXT.at}</span>
