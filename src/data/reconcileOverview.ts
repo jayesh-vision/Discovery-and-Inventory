@@ -15,7 +15,7 @@
    two different answers to "how many discrepancies are open in Transport." */
 
 import {
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey,
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_ORDER, type DomainKey,
   MATCH_OUTCOME, DOMAIN_TRUST_ROWS, RECONCILE_CYCLE_ROWS, DISCOVERY_JOB_ROWS, DISCREPANCY_TYPES
 } from './discoveryOverview';
 import { RULES } from './rules';
@@ -55,9 +55,8 @@ export interface DomainCoverage {
   domain: DomainKey; inScope: number; scanned: number; scannedPct: string;
   inSync: number; drifted: number; lastScan: string; nextScan: string;
 }
-/* display order kept identical to the array this replaced */
-const COVERAGE_ORDER: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
-export const DOMAIN_COVERAGE: DomainCoverage[] = COVERAGE_ORDER.map(domain => {
+/* in DOMAIN_ORDER: IP/MPLS directly under Transport */
+export const DOMAIN_COVERAGE: DomainCoverage[] = DOMAIN_ORDER.map(domain => {
   const trust = DOMAIN_TRUST_ROWS.find(r => r.domain === domain)!;
   const cycle = RECONCILE_CYCLE_ROWS.find(r => r.domain === domain)!;
   const job = DISCOVERY_JOB_ROWS.find(r => r.domain === domain)!;
@@ -109,7 +108,7 @@ export const REGION_HEALTH: RegionHealth[] = (() => {
     drift: { RAN: cols.RAN[i], Core: cols.Core[i], Transport: cols.Transport[i], IPMPLS: cols.IPMPLS[i] }
   }));
 })();
-export const REGION_DOMAINS: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
+export const REGION_DOMAINS: DomainKey[] = DOMAIN_ORDER;
 (() => {
   REGION_DOMAINS.forEach(d => {
     const sum = REGION_HEALTH.reduce((a, r) => a + r.drift[d], 0);

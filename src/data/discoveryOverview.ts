@@ -11,6 +11,48 @@
 import type { ColorTone } from './ledger';
 
 export type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';
+
+/* ── Domain hierarchy ─────────────────────────────────────────────────
+   The domain model is a tree, not a flat list:
+
+     RAN
+     Core
+     Transport
+       └── IP/MPLS
+
+   IP/MPLS is a packet-transport technology and sits UNDER Transport — it is
+   not a fourth sibling domain. `IPMPLS` stays the stable leaf key every
+   record, URL and persisted rule already carries (renaming it would force a
+   localStorage migration and a URL redirect for nothing); the hierarchy is
+   expressed by DOMAIN_PARENT and read through the helpers below, so every
+   filter, dropdown, table and route agrees on the same tree. A domain
+   filter set to a parent (Transport) matches its children (IP/MPLS) too —
+   domainMatches() is the one place that rule lives. */
+export const DOMAIN_PARENT: Partial<Record<DomainKey, DomainKey>> = { IPMPLS: 'Transport' };
+/* display order: parents first, each child immediately after its parent, so
+   a domain list reads as the tree above wherever it is rendered */
+export const DOMAIN_ORDER: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
+export const TOP_DOMAINS: DomainKey[] = DOMAIN_ORDER.filter(d => !DOMAIN_PARENT[d]);
+export const domainChildren = (d: DomainKey): DomainKey[] => DOMAIN_ORDER.filter(k => DOMAIN_PARENT[k] === d);
+/* root → leaf, e.g. IPMPLS → ['Transport', 'IPMPLS'] */
+export const domainPath = (d: DomainKey): DomainKey[] => {
+  const p = DOMAIN_PARENT[d];
+  return p ? [...domainPath(p), d] : [d];
+};
+export const domainDepth = (d: DomainKey) => domainPath(d).length - 1;
+/* does a record tagged `row` fall under the domain `filter`? Equal, or
+   `filter` is an ancestor of `row` — so Transport ⊇ IP/MPLS. */
+export const domainMatches = (row: DomainKey, filter: DomainKey) => domainPath(row).includes(filter);
+export const isDomainKey = (v: unknown): v is DomainKey => typeof v === 'string' && DOMAIN_ORDER.includes(v as DomainKey);
+/* URL segments, parents first: /domain/transport/ipmpls */
+export const domainSlugs = (d: DomainKey) => domainPath(d).map(k => k.toLowerCase());
+/* the route + params for a domain's device roster — a sub-domain nests under
+   its parent's segment (see SCREENS 'domaindevices' / 'subdomaindevices') */
+export const domainRoute = (d: DomainKey): { key: 'domaindevices' | 'subdomaindevices'; params: Record<string, string> } => {
+  const [domain, sub] = domainSlugs(d);
+  return sub ? { key: 'subdomaindevices', params: { domain, sub } } : { key: 'domaindevices', params: { domain } };
+};
+
 /* purple+fuchsia read as near-identical at a glance, and orange doubles as
    a status color elsewhere on this page — reusing it for a plain domain
    label made a neutral category look like a warning. These four are spaced
@@ -25,7 +67,69 @@ export const DOMAIN_HEX: Record<DomainKey, string> = {
   Transport: 'var(--vw-color-teal-400)',
   IPMPLS: 'var(--vw-color-pink-400)'
 };
+/* short name — chart legends, column headers, anywhere the parent is
+   already evident from position (the row directly beneath Transport) */
 export const DOMAIN_LABEL: Record<DomainKey, string> = { RAN: 'RAN', Core: 'Core', Transport: 'Transport', IPMPLS: 'IP/MPLS' };
+/* full path — tables, drawers, forms, exports: "Transport · IP/MPLS" */
+export const DOMAIN_FULL_LABEL: Record<DomainKey, string> = Object.fromEntries(
+  DOMAIN_ORDER.map(d => [d, domainPath(d).map(k => DOMAIN_LABEL[k]).join(' · ')])
+) as Record<DomainKey, string>;
+/* the parent's name, for a tag that wants to render it muted before the leaf */
+export const domainParentLabel = (d: DomainKey) => (DOMAIN_PARENT[d] ? DOMAIN_LABEL[DOMAIN_PARENT[d]!] : undefined);
+
+/* ── Filters and dropdowns ──────────────────────────────────────────────
+   Every domain <select> in the app — DataGrid filter panels, the Rule
+   Definition form, the legacy Scan Jobs/Targets filter panel — lists the
+   tree with children indented beneath their parent:
+     RAN / Core / Transport /    └ IP/MPLS
+   The option VALUE is the short label (what a screen compares against);
+   only the visible text is indented. */
+export interface DomainOption { v: string; l: string; key: DomainKey; depth: number }
+export const domainOptionLabel = (d: DomainKey) => {
+  const depth = domainDepth(d);
+  return depth ? `${' '.repeat(depth * 3)}└ ${DOMAIN_LABEL[d]}` : DOMAIN_LABEL[d];
+};
+export const DOMAIN_OPTIONS: DomainOption[] = DOMAIN_ORDER.map(d => ({ v: DOMAIN_LABEL[d], l: domainOptionLabel(d), key: d, depth: domainDepth(d) }));
+
+/* resolves anything a domain might arrive as — the key ('IPMPLS'), a short
+   or full label ('IP/MPLS', 'Transport · IP/MPLS'), an indented option
+   label, a URL slug ('ipmpls') — case-insensitively; undefined when it is
+   none of those. */
+export function parseDomainKey(v: unknown): DomainKey | undefined {
+  if (typeof v !== 'string') return undefined;
+  const s = v.replace(/[ \s└]+/g, ' ').trim().toLowerCase();
+  if (!s) return undefined;
+  return DOMAIN_ORDER.find(d =>
+    d.toLowerCase() === s || DOMAIN_LABEL[d].toLowerCase() === s || DOMAIN_FULL_LABEL[d].toLowerCase() === s
+  );
+}
+/* the one predicate every Domain filter uses: no filter → everything; a
+   filter → records in that domain OR any of its sub-domains. */
+export function domainFilterMatches(rowDomain: unknown, filterValue: string | null | undefined): boolean {
+  if (!filterValue || !filterValue.trim()) return true;
+  const want = parseDomainKey(filterValue);
+  const have = parseDomainKey(rowDomain);
+  if (!want || !have) return false;
+  return domainMatches(have, want);
+}
+
+/* the tree must be well-formed before anything reads it: every parent is a
+   known top-level domain (one level deep, no cycles), and DOMAIN_ORDER
+   lists every key exactly once with each child directly after its parent
+   — a mis-ordered list would render IP/MPLS as a sibling again. */
+(() => {
+  const keys = Object.keys(DOMAIN_LABEL) as DomainKey[];
+  keys.forEach(k => { if (!DOMAIN_ORDER.includes(k)) throw new Error(`discoveryOverview: DOMAIN_ORDER is missing ${k}`); });
+  if (new Set(DOMAIN_ORDER).size !== keys.length) throw new Error('discoveryOverview: DOMAIN_ORDER must list every domain exactly once');
+  (Object.entries(DOMAIN_PARENT) as [DomainKey, DomainKey][]).forEach(([child, parent]) => {
+    if (!DOMAIN_ORDER.includes(parent)) throw new Error(`discoveryOverview: ${child} names unknown parent ${parent}`);
+    if (DOMAIN_PARENT[parent]) throw new Error(`discoveryOverview: ${parent} cannot be both a parent and a child`);
+    if (parent === child) throw new Error(`discoveryOverview: ${child} cannot be its own parent`);
+    const pi = DOMAIN_ORDER.indexOf(parent), ci = DOMAIN_ORDER.indexOf(child);
+    const between = DOMAIN_ORDER.slice(pi + 1, ci);
+    if (ci < pi || between.some(k => DOMAIN_PARENT[k] !== parent)) throw new Error(`discoveryOverview: ${child} must follow its parent ${parent} in DOMAIN_ORDER`);
+  });
+})();
 
 /* ── Inventory trust hero row ─────────────────────────────────────────── */
 export interface TrustMetric { label: string; value: string; sub: string; trend: number[]; hero?: boolean; tone?: 'up' | 'down' }
@@ -62,16 +166,13 @@ export const DISCOVERY_JOB_ROWS: DiscoveryJobRow[] = [
 
 /* ── New objects discovered per day, last 14 days ────────────────────── */
 export const OBJECTS_DAILY_DAYS = Array.from({ length: 14 }, (_, i) => (i === 13 ? 'Today' : `-${13 - i}d`));
-export const OBJECTS_DAILY_SERIES = [
-  { k: 'ran', n: 'RAN', hex: DOMAIN_HEX.RAN },
-  { k: 'transport', n: 'Transport', hex: DOMAIN_HEX.Transport },
-  { k: 'core', n: 'Core', hex: DOMAIN_HEX.Core },
-  { k: 'ipmpls', n: 'IP/MPLS', hex: DOMAIN_HEX.IPMPLS }
-];
-/* one row per day, values ordered [ran, transport, core, ipmpls] */
+/* one series per domain, in DOMAIN_ORDER (so the legend reads as the tree:
+   IP/MPLS directly after Transport) */
+export const OBJECTS_DAILY_SERIES = DOMAIN_ORDER.map(d => ({ k: d.toLowerCase(), n: DOMAIN_LABEL[d], hex: DOMAIN_HEX[d], domain: d }));
+/* one row per day, values ordered [ran, core, transport, ipmpls] */
 export const OBJECTS_DAILY_VALUES: number[][] = [
-  [7, 4, 2, 2], [9, 5, 3, 2], [6, 3, 2, 1], [11, 6, 4, 3], [8, 4, 3, 2], [10, 5, 3, 3], [13, 7, 4, 3],
-  [9, 5, 3, 2], [12, 6, 4, 3], [8, 4, 2, 2], [14, 8, 5, 4], [10, 5, 3, 3], [6, 3, 2, 1], [9, 4, 3, 2]
+  [7, 2, 4, 2], [9, 3, 5, 2], [6, 2, 3, 1], [11, 4, 6, 3], [8, 3, 4, 2], [10, 3, 5, 3], [13, 4, 7, 3],
+  [9, 3, 5, 2], [12, 4, 6, 3], [8, 2, 4, 2], [14, 5, 8, 4], [10, 3, 5, 3], [6, 2, 3, 1], [9, 3, 4, 2]
 ];
 
 /* ── Coverage funnel ──────────────────────────────────────────────────── */
@@ -205,12 +306,23 @@ export const BACKLOG_AGE: AgeBucket[] = [
 
 /* ── Trust by domain and region ──────────────────────────────────────── */
 export interface DomainTrustRow { domain: DomainKey; inScope: number; unverified: number | null; inSync: number; trustIndexPct: number; open: number; mttrHours: number; touchlessPct: number }
+/* rows in DOMAIN_ORDER, so IP/MPLS sits directly under Transport wherever
+   this table is rendered as-is */
 export const DOMAIN_TRUST_ROWS: DomainTrustRow[] = [
   { domain: 'RAN', inScope: 8450, unverified: 38, inSync: 8360, trustIndexPct: 98.93, open: 52, mttrHours: 4.2, touchlessPct: 65 },
-  { domain: 'Transport', inScope: 2180, unverified: 30, inSync: 2086, trustIndexPct: 95.69, open: 64, mttrHours: 19.4, touchlessPct: 53 },
   { domain: 'Core', inScope: 340, unverified: null, inSync: 320, trustIndexPct: 94.12, open: 20, mttrHours: 6.8, touchlessPct: 61 },
+  { domain: 'Transport', inScope: 2180, unverified: 30, inSync: 2086, trustIndexPct: 95.69, open: 64, mttrHours: 19.4, touchlessPct: 53 },
   { domain: 'IPMPLS', inScope: 1284, unverified: null, inSync: 1193, trustIndexPct: 99.09, open: 11, mttrHours: 2.1, touchlessPct: 75 }
 ];
+/* every per-domain table must be authored in DOMAIN_ORDER (and cover every
+   domain once) — a child that lands away from its parent would render as a
+   sibling again */
+const assertDomainOrder = (name: string, rows: { domain: DomainKey }[]) => {
+  const got = rows.map(r => r.domain);
+  if (got.length !== DOMAIN_ORDER.length || got.some((d, i) => d !== DOMAIN_ORDER[i])) throw new Error(`discoveryOverview: ${name} must list every domain once, in DOMAIN_ORDER (got ${got.join(', ')})`);
+};
+assertDomainOrder('DOMAIN_TRUST_ROWS', DOMAIN_TRUST_ROWS);
+assertDomainOrder('DISCOVERY_JOB_ROWS', DISCOVERY_JOB_ROWS);
 /* the footer row restates the page-level hero KPIs, not re-derived from the
    four visible domains above. `open` (147) is the one figure that IS an
    exact sum of the domain rows (52+64+20+11) — it's also the same 147 the
@@ -232,7 +344,7 @@ export const DOMAIN_TRUST_TOTAL = { inScope: '12,174', unverified: '68', inSync:
 (() => {
   const byDomain: Record<DomainKey, number> = { RAN: 0, Core: 0, Transport: 0, IPMPLS: 0 };
   DISCREPANCY_TYPES.forEach(t => { byDomain[t.domain] += t.count; });
-  (['RAN', 'Core', 'Transport', 'IPMPLS'] as DomainKey[]).forEach(d => {
+  DOMAIN_ORDER.forEach(d => {
     const want = DOMAIN_TRUST_ROWS.find(r => r.domain === d)!.open;
     if (byDomain[d] !== want) throw new Error(`discoveryOverview: DISCREPANCY_TYPES ${d} sums to ${byDomain[d]}, domain trust says ${want}`);
   });
@@ -326,7 +438,7 @@ export const REGION_DISCREPANCY: RegionHeatRow[] = [
   { region: 'Midwest', drift: { RAN: 11, Transport: 11, Core: 3, IPMPLS: 1 } }
 ];
 (() => {
-  (['RAN', 'Core', 'Transport', 'IPMPLS'] as DomainKey[]).forEach(d => {
+  DOMAIN_ORDER.forEach(d => {
     const sum = REGION_DISCREPANCY.reduce((a, r) => a + r.drift[d], 0);
     const want = DOMAIN_TRUST_ROWS.find(r => r.domain === d)!.open;
     if (sum !== want) throw new Error(`discoveryOverview: REGION_DISCREPANCY ${d} sums to ${sum}, domain trust says ${want}`);

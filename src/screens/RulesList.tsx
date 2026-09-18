@@ -1,20 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chip, StatStrip } from '../components/ui';
+import { Card, Chip, DomainDot, StatStrip } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import {
-  RULES, RULE_LIFECYCLE, STATUS_TONE, PRIORITY_TONE, DOMAIN_HEX, DOMAIN_LABEL,
-  type Rule, type DomainKey
+  RULES, RULE_LIFECYCLE, STATUS_TONE, PRIORITY_TONE, type Rule
 } from '../data/rules';
+import { DOMAIN_LABEL, DOMAIN_OPTIONS, DOMAIN_ORDER, TOP_DOMAINS, domainChildren, domainFilterMatches } from '../data/discoveryOverview';
 
-const DOMAINS: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
-
-const DomainDot = ({ domain }: { domain: DomainKey }) => (
-  <span className="row vw-items-center" style={{ gap: '8px' }}>
-    <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[domain], flexShrink: 0 }} />
-    {DOMAIN_LABEL[domain]}
-  </span>
-);
+/* "RAN · Core · Transport › IP/MPLS" — the tree, read left to right */
+const DOMAIN_TREE_TEXT = TOP_DOMAINS.map(d => [d, ...domainChildren(d)].map(k => DOMAIN_LABEL[k]).join(' › ')).join(' · ');
 
 const ORIGIN_LABEL: Record<Rule['origin'], string> = { Manual: 'Manual', 'Auto-generated': 'Auto-generated', 'AI-suggested': 'AI-suggested' };
 
@@ -27,7 +21,7 @@ export default function RulesList() {
     const q = query.trim().toLowerCase();
     return RULES.filter(r => {
       if (q && !(r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.source.toLowerCase().includes(q) || r.target.toLowerCase().includes(q))) return false;
-      if (filters.Domain && DOMAIN_LABEL[r.domain] !== filters.Domain) return false;
+      if (!domainFilterMatches(r.domain, filters.Domain)) return false;
       if (filters.Status && r.status !== filters.Status) return false;
       if (filters.Priority && r.priority !== filters.Priority) return false;
       return true;
@@ -43,7 +37,7 @@ export default function RulesList() {
         { k: 'Rules', v: String(RULES.length), s: 'across every domain', t: 'sky' },
         { k: 'Active', v: String(active), s: 'active or currently executing', t: 'emerald' },
         { k: 'Awaiting review', v: String(awaitingReview), s: awaitingReview ? 'need a reviewer’s decision' : 'nothing waiting', t: 'amber' },
-        { k: 'Domains covered', v: `${new Set(RULES.map(r => r.domain)).size} of 4`, s: 'RAN · Core · Transport · IP/MPLS', t: 'purple' }
+        { k: 'Domains covered', v: `${new Set(RULES.map(r => r.domain)).size} of ${DOMAIN_ORDER.length}`, s: DOMAIN_TREE_TEXT, t: 'purple' }
       ]} />
 
       <Card>
@@ -54,7 +48,7 @@ export default function RulesList() {
           resetKey={`${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Rule name, ID, source, target"
           filters={[
-            { n: 'Domain', o: DOMAINS.map(d => DOMAIN_LABEL[d]) },
+            { n: 'Domain', o: DOMAIN_OPTIONS },
             { n: 'Status', o: [...RULE_LIFECYCLE] },
             { n: 'Priority', o: ['High', 'Medium', 'Low'] }
           ]}

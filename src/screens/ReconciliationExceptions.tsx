@@ -1,23 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, StatStrip } from '../components/ui';
+import { Card, Chip, DomainDot, Mono, StatStrip } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
 import {
-  RECONCILE_EXCEPTIONS, EXCEPTION_TONE, SLA_TONE, DISPOSITIONS, DOMAIN_HEX, DOMAIN_LABEL,
-  type ReconcileException, type DomainKey
+  RECONCILE_EXCEPTIONS, EXCEPTION_TONE, SLA_TONE, DISPOSITIONS, type ReconcileException
 } from '../data/reconciliationOps';
+import { DOMAIN_FULL_LABEL, DOMAIN_OPTIONS, domainFilterMatches } from '../data/discoveryOverview';
 import { ruleById } from '../data/rules';
 
-const DOMAINS: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
 const STATES = ['Rogue', 'Drifted', 'Missing', 'Duplicate', 'Unclaimed', 'No adapter'];
-
-const DomainDot = ({ domain }: { domain: DomainKey }) => (
-  <span className="row vw-items-center" style={{ gap: '8px' }}>
-    <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[domain], flexShrink: 0 }} />
-    {DOMAIN_LABEL[domain]}
-  </span>
-);
 
 export default function ReconciliationExceptions() {
   const nav = useNavigate();
@@ -42,7 +34,7 @@ export default function ReconciliationExceptions() {
     return RECONCILE_EXCEPTIONS.filter(e => {
       if (urlRuleId && e.ruleId !== urlRuleId) return false;
       if (q && !(e.subject.toLowerCase().includes(q) || e.id.toLowerCase().includes(q))) return false;
-      if (filters.Domain && DOMAIN_LABEL[e.domain] !== filters.Domain) return false;
+      if (!domainFilterMatches(e.domain, filters.Domain)) return false;
       if (filters.State && e.state !== filters.State) return false;
       return true;
     });
@@ -84,7 +76,7 @@ export default function ReconciliationExceptions() {
           rows={rows} total={rows.length} rowKey={e => e.id}
           resetKey={`${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Exception ID, subject"
-          filters={[{ n: 'Domain', o: DOMAINS.map(d => DOMAIN_LABEL[d]) }, { n: 'State', o: STATES }]}
+          filters={[{ n: 'Domain', o: DOMAIN_OPTIONS }, { n: 'State', o: STATES }]}
           onSearch={setQuery} onFilterChange={setFilters}
           onRowClick={setOpen}
           renderRow={e => [
@@ -101,7 +93,7 @@ export default function ReconciliationExceptions() {
       </Card>
 
       <Drawer open={!!open} onClose={() => setOpen(null)} title={open?.id ?? ''}
-        sub={open ? `${DOMAIN_LABEL[open.domain]} · ${open.subject}` : undefined}>
+        sub={open ? `${DOMAIN_FULL_LABEL[open.domain]} · ${open.subject}` : undefined}>
         {open && (
           <>
             <Chip tone={EXCEPTION_TONE[open.state]}>{resolved[open.id] ? 'Resolved' : open.state}</Chip>

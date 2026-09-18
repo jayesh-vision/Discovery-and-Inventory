@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chip, cv, InfoTip } from '../components/ui';
+import { Card, Chip, cv, DomainDot, InfoTip } from '../components/ui';
 import { RampBars, MultiLineChart } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import { legacyPath } from '../routes';
 import {
   MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
   BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey, type ReconcileCycleRow
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, domainRoute, type DomainKey, type ReconcileCycleRow
 } from '../data/discoveryOverview';
 import { QUICK_LINKS, type QuickLink } from '../data/reconcileOverview';
-import { domainToUrl } from './DomainDevices';
 
 /* Domain devices and Discrepancy details are owned by Insights (their
    crumb is hardcoded "Insights · …", since that's normally the only
@@ -39,7 +38,8 @@ const QUICK_LINK_TARGET: Record<QuickLink['icon'], string> = {
 };
 const QUICK_LINK_GLYPH: Record<QuickLink['icon'], string> = { workbench: '⊞', scan: '◎', rules: '⚖' };
 
-const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
+/* the domain tree's own order — IP/MPLS directly after Transport */
+const DOMAIN_KEYS: DomainKey[] = DOMAIN_ORDER;
 
 const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
   'Attribute mismatch': 'ATTRIBUTE',
@@ -67,13 +67,6 @@ const CARD_DEF: Record<string, string> = {
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--vw-color-gray-900)' }}>{children}</div>;
 }
-
-const DomainDot = ({ domain }: { domain: DomainKey }) => (
-  <span className="row vw-items-center" style={{ gap: '8px' }}>
-    <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[domain], flexShrink: 0 }} />
-    {DOMAIN_LABEL[domain]}
-  </span>
-);
 
 function PctBar({ pct, hex }: { pct: number; hex: string }) {
   return (
@@ -115,7 +108,8 @@ export default function Reconcile() {
     const q = new URLSearchParams();
     if (region) q.set('region', region);
     if (issue) q.set('issue', issue);
-    nav(legacyPath('domaindevices', { from: FROM, q: q.toString() }, { domain: domainToUrl(d) }));
+    const r = domainRoute(d);
+    nav(legacyPath(r.key, { from: FROM, q: q.toString() }, r.params));
   };
   const toDiscrepancies = (params: Record<string, string> = {}) =>
     nav(legacyPath('discrepancydetails', { from: FROM, q: new URLSearchParams(params).toString() }, {}));
@@ -152,11 +146,11 @@ export default function Reconcile() {
       </Card>
 
       <SectionTitle>Trust by domain and region</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)' }}>
+      <div className="rc-grid rc-grid--trust">
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">By domain<InfoTip text={CARD_DEF['By domain']} label="What this table shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Trust index scale 90–100%</div>
-          <table className="mtbl">
+          <div className="scroll-x"><table className="mtbl">
             <thead><tr><th>Domain</th><th style={{ textAlign: 'right' }}>In scope</th><th style={{ textAlign: 'right' }}>Unverified</th><th style={{ textAlign: 'right' }}>In sync</th><th style={{ textAlign: 'right' }}>Trust index</th><th style={{ textAlign: 'right' }}>Open</th><th style={{ textAlign: 'right' }}>MTTR</th><th style={{ textAlign: 'right' }}>Automated</th></tr></thead>
             <tbody>{DOMAIN_TRUST_ROWS.map(d => (
               <tr key={d.domain} className="is-click" tabIndex={0} onClick={() => openDomain(d.domain)}
@@ -182,13 +176,14 @@ export default function Reconcile() {
               <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.mttrHours}</td>
               <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{DOMAIN_TRUST_TOTAL.touchlessPct}</td>
             </tr></tfoot>
-          </table>
+          </table></div>
         </Card>
 
         <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Open discrepancies by region<InfoTip text={CARD_DEF['Open discrepancies by region']} label="What this heatmap shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {REGION_DISCREPANCY.reduce((a, r) => a + Object.values(r.drift).reduce((x, y) => x + y, 0), 0)} open</div>
-          <table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
+          {/* the heat table scrolls inside its card below ~900px instead of widening the page */}
+          <div className="scroll-x"><table className="mtbl" style={{ marginTop: 'var(--vw-space-sm)' }}>
             <thead>
               <tr>
                 <th className="eyebrow">Region</th>
@@ -206,7 +201,7 @@ export default function Reconcile() {
                 </tr>
               );
             })}</tbody>
-          </table>
+          </table></div>
           <div className="row vw-items-center" style={{ gap: '8px', marginTop: 'auto', paddingTop: 'var(--vw-space-md)' }}>
             <span className="vw-card-metric-label-sub">0</span>
             <div className="row" style={{ gap: '3px' }}>
@@ -218,7 +213,7 @@ export default function Reconcile() {
       </div>
 
       <SectionTitle>Backlog</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
+      <div className="rc-grid rc-grid--backlog">
         <Card>
           <span className="vw-card-title-sm">Detected vs auto-resolved, per day<InfoTip text={CARD_DEF['Detected vs auto-resolved, per day']} label="What this chart shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 30 days</div>
@@ -255,8 +250,8 @@ export default function Reconcile() {
       </div>
 
       <SectionTitle>Discrepancy types and reconciliation cycles</SectionTitle>
-      <div className="vw-grid vw-gap-md" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
+      <div className="rc-grid rc-grid--types">
+        <Card className="rc-tall" style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Open items by type<InfoTip text={CARD_DEF['Open items by type']} label="What this list shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>All domains · {DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0)} open</div>
           <div className="row" style={{ gap: 'var(--vw-space-lg)', margin: 'var(--vw-space-sm) 0', flexWrap: 'wrap', flexShrink: 0 }}>
@@ -285,7 +280,7 @@ export default function Reconcile() {
           </div>
         </Card>
 
-        <Card style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
+        <Card className="rc-tall" style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-title-sm">Reconciliation cycles<InfoTip text={CARD_DEF['Reconciliation cycles']} label="What this timeline shows" /></span>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>Last 3 cycles per domain, newest first</div>
           <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
@@ -300,7 +295,7 @@ export default function Reconcile() {
                   {i < RECONCILE_CYCLE_ROWS.length - 1 && <span style={{ position: 'absolute', left: 10, top: 16, bottom: -22, width: 1, background: 'var(--vw-color-slate-200)' }} />}
                 </span>
                 <div style={{ minWidth: 0 }}>
-                  <div className="vw-value"><b style={{ color: cv('gray', 800) }}>{DOMAIN_LABEL[c.domain]}</b> cycle complete · {c.scanned.toLocaleString('en-IN')} records scanned</div>
+                  <div className="vw-value"><b style={{ color: cv('gray', 800) }}>{DOMAIN_FULL_LABEL[c.domain]}</b> cycle complete · {c.scanned.toLocaleString('en-IN')} records scanned</div>
                   <div className="row" style={{ gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                     <Chip tone="neutral">{c.drifted} drifted</Chip>
                     <Chip tone="neutral">{c.autoResolved} auto-resolved</Chip>
@@ -347,10 +342,10 @@ export default function Reconcile() {
       </div>
 
       <Drawer open={!!cycle} onClose={() => setCycle(null)} title={cycle ? `${DOMAIN_LABEL[cycle.domain]} reconciliation cycle` : ''}
-        sub={cycle ? DOMAIN_LABEL[cycle.domain] : undefined}>
+        sub={cycle ? DOMAIN_FULL_LABEL[cycle.domain] : undefined}>
         {cycle && (
           <div className="kv">
-            <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[cycle.domain]}</span></div>
+            <div><span className="k">Domain</span><span className="v"><DomainDot domain={cycle.domain} /></span></div>
             <div><span className="k">Completed</span><span className="v">{cycle.when}</span></div>
             <div><span className="k">Records scanned</span><span className="v">{cycle.scanned.toLocaleString('en-IN')}</span></div>
             <div><span className="k">Drifted</span><span className="v">{cycle.drifted}</span></div>

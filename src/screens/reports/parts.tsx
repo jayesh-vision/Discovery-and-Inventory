@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Chip, InfoTip, cv } from '../../components/ui';
+import { Chip, InfoTip, cv, DomainDot as UiDomainDot } from '../../components/ui';
 import { Against, Cycles, KpiCard, Segments } from '../../components/KpiCard';
 import { Donut, MultiLineChart, ProjectionChart, RampBars, Sparkline, StackedBars } from '../../components/charts';
 import { legacyPath } from '../../routes';
-import { DOMAIN_HEX, DOMAIN_LABEL, type DomainKey } from '../../data/discoveryOverview';
+import { isDomainKey } from '../../data/discoveryOverview';
 import {
   type CellValue, type Column, type Finding, type Kpi, type Link, type ReportContent, type ReportDef, type Visual,
   AUDIENCES, cellText, fmtValue, sum
@@ -23,12 +23,15 @@ export function useReportNav() {
 export const reportPath = (d: ReportDef) => `/${d.module}/reports/${d.id}`;
 
 /* ── atoms ── */
-export const DomainDot = ({ domain }: { domain: string }) => (
-  <span className="row vw-items-center vw-nowrap" style={{ gap: 8 }}>
-    <span className="rpt-dot" style={{ background: DOMAIN_HEX[domain as DomainKey] ?? cv('slate', 400) }} />
-    {DOMAIN_LABEL[domain as DomainKey] ?? domain}
-  </span>
-);
+/* a known domain renders the shared tag (sub-domains show their parent:
+   "Transport · IP/MPLS"); anything else falls back to a plain grey dot */
+export const DomainDot = ({ domain }: { domain: string }) => isDomainKey(domain)
+  ? <UiDomainDot domain={domain} />
+  : (
+    <span className="row vw-items-center vw-nowrap" style={{ gap: 8 }}>
+      <span className="rpt-dot" style={{ background: cv('slate', 400) }} />{domain}
+    </span>
+  );
 
 export const AUDIENCE_GLYPH: Record<(typeof AUDIENCES)[number], string> = {
   Leadership: '◆', Operations: '◎', Finance: '$', Planning: '▦', Engineering: '⚙', Governance: '⚖'

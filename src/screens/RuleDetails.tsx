@@ -4,9 +4,10 @@ import { Card, Chip, cv, Mono, StatStrip, TabBar } from '../components/ui';
 import { Lifecycle, type LifecycleStage } from '../components/Lifecycle';
 import { Timeline } from '../components/Timeline';
 import {
-  ruleById, RULE_LIFECYCLE, STATUS_TONE, STATUS_NEXT, PRIORITY_TONE, DOMAIN_HEX, DOMAIN_LABEL, persistRules,
+  ruleById, RULE_LIFECYCLE, STATUS_TONE, STATUS_NEXT, PRIORITY_TONE, DOMAIN_HEX, persistRules,
   type RuleStatus
 } from '../data/rules';
+import { DOMAIN_FULL_LABEL } from '../data/discoveryOverview';
 import { exceptionsForRule, EXCEPTION_TONE, SLA_TONE } from '../data/reconciliationOps';
 import type { ChipTone } from '../data/ledger';
 
@@ -99,7 +100,7 @@ export default function RuleDetails() {
             }} />
             <div>
               <div style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-.01em' }}>{rule.name}</div>
-              <div className="vw-card-metric-label-sub mono" style={{ marginTop: '3px' }}>{rule.id} · {DOMAIN_LABEL[rule.domain]} · {rule.ruleType}</div>
+              <div className="vw-card-metric-label-sub mono" style={{ marginTop: '3px' }}>{rule.id} · {DOMAIN_FULL_LABEL[rule.domain]} · {rule.ruleType}</div>
             </div>
           </div>
           <div className="row" style={{ gap: '8px' }}>

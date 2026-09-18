@@ -1850,6 +1850,22 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .vcard:hover { border-color: var(--vw-color-slate-400); }
 
 /* small ranking tables */
+/* ── Reconciliation overview: the two-column card rows ──────────────
+   Column ratios used to be inline styles, which no media query can reach;
+   below 1024px the pairs stack so a table or chart never gets a half-width
+   card to squeeze into (the same collapse Insights' .ix-grid does). The
+   fixed-height pair (types list / cycles timeline) drops its fixed height
+   when stacked, so neither card hides rows behind an inner scrollbar. */
+.rc-grid { display: grid; gap: var(--vw-space-md); }
+.rc-grid--trust { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.rc-grid--backlog { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.rc-grid--types { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.rc-tall { height: 620px; }
+@media (max-width: 1024px) {
+  .rc-grid--trust, .rc-grid--backlog, .rc-grid--types { grid-template-columns: 1fr; }
+  .rc-tall { height: auto; min-height: 0; }
+}
+
 .mtbl { width: 100%; border-collapse: collapse; margin-top: var(--vw-space-md); }
 .mtbl th { text-align: left; font-size: var(--vw-font-size-xs); font-weight: 400; color: var(--vw-color-gray-500);
   padding: 8px var(--vw-space-sm); background: var(--vw-color-slate-50); }
@@ -2193,6 +2209,10 @@ details[open] > summary .vw-tx-chevron {
 .ov-drawer-body { padding: var(--vw-space-lg); overflow-y: auto; flex: 1; }
 
 /* a compact key/value list, for a record's own fields inside the drawer */
+/* a sub-domain's parent, muted in front of its name: "Transport · IP/MPLS"
+   (DomainDot in components/ui.tsx, the Domain devices title) */
+.dom-parent { color: var(--vw-color-slate-500); font-weight: 400; }
+
 .kv { display: flex; flex-direction: column; }
 .kv > div { display: flex; justify-content: space-between; gap: var(--vw-space-md);
   padding: 7px 0; border-top: 1px solid var(--vw-color-slate-100); font-size: 0.8125rem; }

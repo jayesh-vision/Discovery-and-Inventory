@@ -6,6 +6,7 @@
    files, no report can disagree with Insights or Reconciliation either. */
 
 import type { ChipTone, ColorTone } from '../ledger';
+import { DOMAIN_FULL_LABEL, isDomainKey } from '../discoveryOverview';
 
 export type ReportModule = 'discovery' | 'inventory';
 export const MODULE_LABEL: Record<ReportModule, string> = {
@@ -150,10 +151,10 @@ export const TONE_HEX: Record<ChipTone, string> = {
 };
 
 /* ── one cell → display text, shared by the grid, the PDF and the documents ── */
-const DOMAIN_NAMES: Record<string, string> = { RAN: 'RAN', Core: 'Core', Transport: 'Transport', IPMPLS: 'IP/MPLS' };
 export function cellText(v: CellValue | undefined, col: Column): string {
   if (v === null || v === undefined || v === '') return '—';
-  if (col.fmt === 'domain') return DOMAIN_NAMES[String(v)] ?? String(v);
+  /* the full path ("Transport · IP/MPLS") — exports and facets carry the hierarchy */
+  if (col.fmt === 'domain') return (isDomainKey(v) ? DOMAIN_FULL_LABEL[v] : undefined) ?? String(v);
   if (typeof v === 'number' && col.fmt && !['text', 'mono', 'chip', 'domain', 'date'].includes(col.fmt)) return fmtValue(v, col.fmt as Fmt);
   return String(v);
 }

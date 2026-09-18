@@ -6,13 +6,40 @@ const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
    Insights/Reconciliation screens' DOMAIN_HEX/DOMAIN_LABEL (src/data/
    discoveryOverview.ts), so a domain reads the same colour everywhere,
    legacy screens included. */
+/* The domain model is a tree, the same one src/data/discoveryOverview.ts
+   declares (DOMAIN_PARENT): IP/MPLS is a packet-transport technology UNDER
+   Transport, not a fourth sibling —
+     RAN · Core · Transport └ IP/MPLS
+   `parent` carries that here; domainDot() renders the parent muted in front
+   of a sub-domain ("Transport · IP/MPLS"), DOMAIN_FILTER_OPTIONS lists the
+   tree indented in every Domain filter, and domainFilterMatch() makes a
+   Transport filter keep IP/MPLS rows. */
 const DOMAIN_META = {
   RAN:       { n: 'RAN',      hex: cv('blue', 400) },
   Core:      { n: 'Core',     hex: cv('violet', 400) },
   Transport: { n: 'Transport',hex: cv('teal', 400) },
-  IPMPLS:    { n: 'IP/MPLS',  hex: cv('pink', 400) }
+  IPMPLS:    { n: 'IP/MPLS',  hex: cv('pink', 400), parent: 'Transport' }
 };
-const domainDot = d => `<span class="row" style="align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${DOMAIN_META[d]?.hex || cv('gray',400)};flex-shrink:0"></span>${DOMAIN_META[d]?.n || d}</span>`;
+/* display order: each sub-domain directly after its parent */
+const DOMAIN_ORDER = ['RAN', 'Core', 'Transport', 'IPMPLS'];
+/* filter-panel options — {v, l} when the visible text is indented under a
+   parent; the value stays the plain name a filter compares against */
+const DOMAIN_FILTER_OPTIONS = DOMAIN_ORDER.map(k => DOMAIN_META[k].parent
+  ? { v: DOMAIN_META[k].n, l: `   └ ${DOMAIN_META[k].n}` }
+  : DOMAIN_META[k].n);
+/* does a row tagged `key` fall under the Domain filter value `name`
+   (case-insensitive short name)? Equal, or `name` is its parent. */
+const domainFilterMatch = (key, name) => {
+  const m = DOMAIN_META[key];
+  if (!m) return false;
+  const want = String(name).trim().toLowerCase();
+  return m.n.toLowerCase() === want || (!!m.parent && DOMAIN_META[m.parent].n.toLowerCase() === want);
+};
+const domainDot = d => {
+  const m = DOMAIN_META[d];
+  const parent = m && m.parent ? `<span style="color:${cv('slate',500)};font-weight:400">${DOMAIN_META[m.parent].n} · </span>` : '';
+  return `<span class="row" style="align-items:center;gap:8px;flex-wrap:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:${m?.hex || cv('gray',400)};flex-shrink:0"></span><span>${parent}${m?.n || d}</span></span>`;
+};
 const pad2 = v => String(v).padStart(2, '0');
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function getLiveDateSync(h = 9, m = 10) {
