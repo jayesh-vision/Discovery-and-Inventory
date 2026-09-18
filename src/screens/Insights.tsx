@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cv, InfoTip } from '../components/ui';
-import { StackedBars, RampBars, Sparkline, MultiLineChart } from '../components/charts';
+import { StackedBars, Sparkline, BandChart } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHeader, Seg, type Tone } from '../components/ops';
 import { legacyPath } from '../routes';
@@ -489,12 +489,15 @@ export default function Insights() {
         <SectionHeader title="Backlog" description="Whether the platform is closing discrepancies faster than the network raises them — and how old what’s left has become." />
         <div className="ix-grid" style={{ ['--cols' as string]: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
           <Panel title="Detected vs auto-resolved, per day" info={CARD_DEF['Detected vs auto-resolved, per day']} className="ix-chart"
-            description={<span className="ix-stats"><span>Last 30 days</span><span>today <b>{BACKLOG_DETECTED[29]}</b> detected</span><span><b>{BACKLOG_AUTORESOLVED[29]}</b> auto-resolved</span><span><b>{(BACKLOG_AUTORESOLVED[29] / BACKLOG_DETECTED[29] * 100).toFixed(0)}%</b> automation</span></span>}>
-            <MultiLineChart labels={BACKLOG_DAYS} height={230} format={v => n(v)}
-              series={[
-                { n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED },
-                { n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }
-              ]}
+            description={<span className="ix-stats"><span>Last 30 days</span><span>today <b>{BACKLOG_DETECTED[29]}</b> detected</span><span><b>{BACKLOG_AUTORESOLVED[29]}</b> auto-resolved</span><span><b>{BACKLOG_DETECTED[29] - BACKLOG_AUTORESOLVED[29]}</b> to engineers</span><span><b>{(BACKLOG_AUTORESOLVED[29] / BACKLOG_DETECTED[29] * 100).toFixed(0)}%</b> automation</span></span>}
+            right={<span className="ix-legend">
+              <span><i style={{ background: 'var(--vw-color-blue-500)' }} />Detected</span>
+              <span><i style={{ background: 'var(--vw-color-emerald-500)' }} />Auto-resolved</span>
+              <span><i className="is-band" />To engineers</span>
+            </span>}>
+            <BandChart labels={BACKLOG_DAYS} height={236} format={v => n(v)}
+              upper={{ n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED }}
+              lower={{ n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }}
               detail={i => {
                 const det = BACKLOG_DETECTED[i], auto = BACKLOG_AUTORESOLVED[i], eng = det - auto;
                 const rate = det ? (auto / det * 100).toFixed(1) : '0.0';
@@ -509,12 +512,24 @@ export default function Insights() {
               }} />
           </Panel>
 
-          <Panel title="Age of open discrepancies" info={CARD_DEF['Age of open discrepancies']} className="ix-chart is-plain"
-            description={<><b>{BACKLOG_AGE.reduce((a, b) => a + b.count, 0)}</b> open · <b>{backlogOlder}</b> older than 7d · oldest 41d · click a bar to view its items</>}>
-            <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <RampBars height={230}
-                buckets={BACKLOG_AGE.map((b, i) => ({ label: b.bucket, count: b.count, hex: AGE_RAMP[i], hint: 'Click to view these items' }))}
-                onBucketClick={i => toDiscrepancies({ age: BACKLOG_AGE[i].band })} />
+          <Panel title="Age of open discrepancies" info={CARD_DEF['Age of open discrepancies']}
+            description={<><b>{openTotal}</b> open · <b>{backlogOlder}</b> older than 7d · oldest 41d · click a band to view its items</>}>
+            {/* one row per age band, bars on a shared scale, the two bands
+                past the 7-day line set apart — that line is where an open
+                item stops being "in progress" and starts being a backlog */}
+            <div className="ix-age">
+              {BACKLOG_AGE.map((b, i) => (
+                <div key={b.band} style={{ display: 'contents' }}>
+                  {i === 3 && <div className="ix-age-div"><span>Older than 7 days</span></div>}
+                  <button type="button" className="ix-age-row" title={`View the ${b.count} items open ${b.bucket}`}
+                    onClick={() => toDiscrepancies({ age: b.band })}>
+                    <span className="ix-age-l">{b.bucket}</span>
+                    <span className="ix-age-t"><span className="ix-age-f" style={{ width: `${(b.count / BACKLOG_AGE[0].count * 100).toFixed(1)}%`, background: AGE_RAMP[i] }} /></span>
+                    <span className="ix-age-n num">{b.count}</span>
+                    <span className="ix-age-s num">{(b.count / openTotal * 100).toFixed(0)}%</span>
+                  </button>
+                </div>
+              ))}
             </div>
           </Panel>
         </div>

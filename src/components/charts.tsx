@@ -261,6 +261,82 @@ export function MultiLineChart({ labels, series, height = 220, format, detail }:
   );
 }
 
+/* ── band chart: an upper and a lower series, with the gap between them
+   filled ─────────────────────────────────────────────────────────────
+   For "detected vs auto-resolved": the lower series is what automation
+   closed (filled), the band above it is what reached an engineer — the
+   gap IS the story, so it's drawn, not left for the reader to infer.
+   Nice round axis ticks, a crosshair on hover, and each line's current
+   value printed at its end so the chart answers "where are we today"
+   without a tooltip. No legend of its own — the panel header carries it. */
+export interface BandSeries { n: string; hex: string; values: number[] }
+function niceTop(max: number, ticks = 3) {
+  const raw = Math.max(1, (max * 1.08) / ticks);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  return { step, top: Math.ceil((max * 1.08) / step) * step };
+}
+export function BandChart({ labels, upper, lower, height = 230, format, detail }: {
+  labels: string[]; upper: BandSeries; lower: BandSeries; height?: number; format: (v: number) => string; detail?: (i: number) => ReactNode;
+}) {
+  const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
+  const W = 1000, H = height, padL = 46, padR = 62, padT = 14, padB = 30;
+  const n = labels.length;
+  const { step, top } = niceTop(Math.max(...upper.values, ...lower.values));
+  const y = (v: number) => padT + (H - padT - padB) * (1 - v / top);
+  const x = (i: number) => padL + (W - padL - padR) * (n === 1 ? 0.5 : i / (n - 1));
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
+  const line = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const dUp = line(upper.values), dLo = line(lower.values);
+  const areaLo = `${dLo} L${x(n - 1).toFixed(1)} ${y(0)} L${x(0).toFixed(1)} ${y(0)} Z`;
+  const band = `${dUp} ${lower.values.map((_, i) => `L${x(n - 1 - i).toFixed(1)} ${y(lower.values[n - 1 - i]).toFixed(1)}`).join(' ')} Z`;
+  const xStep = Math.max(1, Math.round(n / 7));
+  const last = n - 1;
+  return (
+    <div className="ch-wrap" onMouseLeave={() => setHov(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label={`${upper.n} against ${lower.n}, per day`}>
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className="ch-grid" />
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="ch-axis">{format(t)}</text>
+          </g>
+        ))}
+        <path d={band} fill={upper.hex} opacity=".07" />
+        <path d={areaLo} fill={lower.hex} opacity=".12" />
+        <path d={dUp} fill="none" stroke={upper.hex} strokeWidth="2" strokeLinejoin="round" />
+        <path d={dLo} fill="none" stroke={lower.hex} strokeWidth="2" strokeLinejoin="round" />
+        {hov && <line x1={x(hov.i)} x2={x(hov.i)} y1={padT} y2={H - padB} stroke="var(--vw-color-slate-300)" strokeWidth="1" strokeDasharray="3 3" style={{ pointerEvents: 'none' }} />}
+        {[upper, lower].map(s => (
+          <g key={s.n}>
+            <circle cx={x(last)} cy={y(s.values[last])} r="4" fill={s.hex} stroke="var(--vw-color-white)" strokeWidth="2" />
+            <text x={x(last) + 10} y={y(s.values[last]) + 5} className="ch-lab" style={{ fill: s.hex, fontSize: 15 }}>{format(s.values[last])}</text>
+            {hov && hov.i !== last && <circle cx={x(hov.i)} cy={y(s.values[hov.i])} r="4" fill={s.hex} stroke="var(--vw-color-white)" strokeWidth="2" style={{ pointerEvents: 'none' }} />}
+          </g>
+        ))}
+        {labels.map((lab, i) => {
+          const stepped = i % xStep === 0 && (last - i) >= xStep / 2;
+          const show = stepped || i === last;
+          return (
+            <g key={i} onMouseEnter={e => setHov({ i, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ i, x: e.clientX, y: e.clientY })}>
+              <rect x={x(i) - (W - padL - padR) / n / 2} y={padT} width={(W - padL - padR) / n} height={H - padT - padB} fill="transparent" />
+              {show && <text x={x(i)} y={H - 8} textAnchor={i === last ? 'end' : 'middle'} className="ch-axis">{lab}</text>}
+            </g>
+          );
+        })}
+      </svg>
+      {hov && (
+        <Tip x={hov.x} y={hov.y}>
+          <div className="ch-tip-h">{labels[hov.i]}</div>
+          {detail ? detail(hov.i) : [upper, lower].map(s => (
+            <div key={s.n} className="ch-tip-r"><span className="ch-dot" style={{ background: s.hex }} />{s.n}<span className="grow" /><span className="num">{format(s.values[hov.i])}</span></div>
+          ))}
+        </Tip>
+      )}
+    </div>
+  );
+}
+
 /* ── measured history + dashed run-rate projection ─────────────
    A solid line for what happened, a dashed continuation of the same slope
    for where it's headed, and a horizontal target line to show when (if
