@@ -230,13 +230,13 @@ export default function Insights() {
     <div className="page ix">
       {/* ── page header ─────────────────────────────────────────── */}
       <div className="ix-head">
-        <div>
+        {/* <div>
           <div className="ix-eyebrow">Discovery and reconciliation</div>
           <h1 className="ix-title">Insights</h1>
           <div className="ix-desc">
             How much of the estate discovery reaches, how much of it reconciliation trusts, and what stands between today’s figure and the target.
           </div>
-        </div>
+        </div> */}
         <div className="ix-context" aria-label="Page context">
           <span className="ix-ctx">{Ic.layers(14)}<b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
           <span className="ix-ctx">{Ic.clock(14)}Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
@@ -385,12 +385,13 @@ export default function Insights() {
           </Panel>
         </div>
       </section>
-
+      {/* commnet out too line number 389 to 624 */}
+      {/*
       <ModuleRule num="II" label="Reconciliation" meta={<>
         <b>{n(MATCH_OUTCOME[0].value)}</b> matched · <b>{openTotal}</b> open · <b>{RECONCILE_CYCLE_ROWS.length}</b> cycles logged
       </>} />
 
-      {/* ── match outcome ────────────────────────────────────────── */}
+      [-- match outcome --]
       <section className="ix-section">
         <SectionHeader title="Match outcome" description="How the last reconciliation pass classified every compared record." />
         <Panel title="Match classes" info={CARD_DEF['Match classes']} description={MATCH_TOTAL_NOTE} flush>
@@ -413,7 +414,7 @@ export default function Insights() {
         </Panel>
       </section>
 
-      {/* ── trust by domain and region ───────────────────────────── */}
+      [-- trust by domain and region --]
       <section className="ix-section">
         <SectionHeader title="Trust by domain and region" description="Which domain and which region is carrying the open backlog — and how long each takes to repair it." />
         <div className="ix-grid is-wide" style={{ ['--cols' as string]: 'minmax(0, 1.35fr) minmax(0, 1fr)' }}>
@@ -486,7 +487,7 @@ export default function Insights() {
         </div>
       </section>
 
-      {/* ── backlog ──────────────────────────────────────────────── */}
+      [-- backlog --]
       <section className="ix-section">
         <SectionHeader title="Backlog" description="Whether the platform is closing discrepancies faster than the network raises them — and how old what’s left has become." />
         <div className="ix-grid" style={{ ['--cols' as string]: 'minmax(0, 1.55fr) minmax(0, 1fr)' }}>
@@ -516,9 +517,9 @@ export default function Insights() {
 
           <Panel title="Age of open discrepancies" info={CARD_DEF['Age of open discrepancies']}
             description={<><b>{openTotal}</b> open · <b>{backlogOlder}</b> older than 7d · oldest 41d · click a band to view its items</>}>
-            {/* one row per age band, bars on a shared scale, the two bands
+            [-- one row per age band, bars on a shared scale, the two bands
                 past the 7-day line set apart — that line is where an open
-                item stops being "in progress" and starts being a backlog */}
+                item stops being "in progress" and starts being a backlog --]
             <div className="ix-age">
               {BACKLOG_AGE.map((b, i) => (
                 <div key={b.band} style={{ display: 'contents' }}>
@@ -537,17 +538,17 @@ export default function Insights() {
         </div>
       </section>
 
-      {/* ── discrepancy types + cycles ───────────────────────────── */}
+      [-- discrepancy types + cycles --]
       <section className="ix-section">
         <SectionHeader title="Discrepancy types and reconciliation cycles" description="The specific kinds of drift in the backlog, and how each domain’s recent reconciliation runs have been going." />
         <div className="ix-grid" style={{ ['--cols' as string]: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
           <Panel title="Open items by type" info={CARD_DEF['Open items by type']} tall
             description={<>All domains · <b>{openTotal}</b> open · ranked by count</>}
             right={<span className="ix-doms">{DOMAIN_KEYS.map(d => <Dom key={d} domain={d} sm muted />)}</span>}>
-            {/* the two panels in this row hold very differently-sized content
+            [-- the two panels in this row hold very differently-sized content
                 (a fixed 14-row list vs. four domain blocks) — a shared fixed
                 height with this list scrolling internally keeps both panel
-                edges aligned regardless of how either side's data grows */}
+                edges aligned regardless of how either side's data grows --]
             <div className="ix-bars" style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
               {DISCREPANCY_TYPES.map(r => (
                 <button key={r.label} type="button" className="ix-bar" title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
@@ -563,13 +564,13 @@ export default function Insights() {
 
           <Panel title="Reconciliation cycles" info={CARD_DEF['Reconciliation cycles']} tall
             description="Latest cycle per domain · trend across its last 3 runs · click a run for detail">
-            {/* RECONCILE_CYCLE_ROWS is one global feed sorted newest-first
+            [-- RECONCILE_CYCLE_ROWS is one global feed sorted newest-first
                across all domains — grouping by domain here (rather than
                leaving the reader to pick this domain's 3 rows out of the 12
                interleaved ones by eye) is what makes "last 3 cycles per
                domain" verifiable at a glance. space-between spreads the
                panel's spare height between the four blocks as breathing
-               room instead of one gap above the footer. */}
+               room instead of one gap above the footer. --]
             <div className="ix-cycles">
               {DOMAIN_KEYS.map(d => {
                 const cycles = RECONCILE_CYCLE_ROWS.filter(c => c.domain === d); // newest → oldest
@@ -583,9 +584,9 @@ export default function Insights() {
                       <Dom domain={d} />
                       <span className="ix-secondary">latest {latest.when}</span>
                     </div>
-                    {/* the three runs as bars on one shared scale, each labelled
+                    [-- the three runs as bars on one shared scale, each labelled
                         with its own figure — history you can read, not a
-                        sparkline to squint at; the newest run is the solid bar */}
+                        sparkline to squint at; the newest run is the solid bar --]
                     <div className="ix-runs" role="group" aria-label={`${DOMAIN_LABEL[d]} — automated share of the last 3 runs`}>
                       {oldestToNewest.map((c, i) => {
                         const isLatest = i === oldestToNewest.length - 1;
@@ -621,6 +622,7 @@ export default function Insights() {
           </Panel>
         </div>
       </section>
+      */} 
 
       <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
         sub={drawer ? drawerSub(drawer) : undefined}>

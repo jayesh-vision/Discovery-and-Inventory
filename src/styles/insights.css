@@ -33,19 +33,19 @@
 .ix :focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 
 /* ── page header ──────────────────────────────────────────────────────── */
-.ix-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--vw-space-lg) var(--vw-space-2xl); flex-wrap: wrap;
+.ix-head { display: flex; align-items: center; width: 100%;
   padding-bottom: var(--vw-space-lg); border-bottom: 1px solid var(--ix-border); }
 .ix-head > div:first-child { min-width: 0; flex: 1 1 22rem; }
 .ix-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ix-muted); }
 .ix-title { font-size: clamp(1.25rem, 1rem + 0.9vw, 1.5rem); font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--ix-text); margin: 4px 0 0; }
 .ix-desc { font-size: 13px; color: var(--ix-muted); margin-top: 6px; max-width: 68ch; line-height: 1.5; }
-.ix-context { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--vw-space-xs); flex-shrink: 0; }
-.ix-ctx { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--ix-border);
-  border-radius: 8px; background: var(--vw-color-white); font-size: 12px; color: var(--ix-body); white-space: nowrap; box-shadow: var(--ix-shadow); }
+.ix-context { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--vw-space-lg); width: 100%; }
+.ix-ctx { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--ix-border);
+  border-radius: 8px; background: var(--vw-color-white); font-size: 12px; color: var(--ix-body); white-space: nowrap; box-shadow: var(--ix-shadow); min-width: 0; }
 .ix-ctx > svg { color: var(--ix-faint); flex-shrink: 0; }
 .ix-ctx b { font-weight: 600; color: var(--ix-text); }
 .ix-ctx .ix-dom { font-size: 12px; }
-.ix-ctx-domains { gap: 12px; }
+.ix-ctx-domains { gap: 12px; justify-content: center; }
 
 /* ── sections ─────────────────────────────────────────────────────────── */
 .ix-section { display: flex; flex-direction: column; gap: var(--vw-space-md); }
