@@ -831,6 +831,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute && el.hasAttribute('data-filterval')) {
     const [key, field] = el.dataset.filterval.split('|');
     gridOf(key).filters[field] = el.value;
+    if (el.classList && el.classList.contains('fp-sel')) el.classList.toggle('is-placeholder', !el.value);
     return; /* applied on "Apply filters", not per keystroke */
   }
   if (el.classList && el.classList.contains('ox-hd')) {
@@ -856,6 +857,7 @@ document.addEventListener('change', e => {
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
     gridOf(key).filters[field] = e.target.value;
+    if (e.target.classList && e.target.classList.contains('fp-sel')) e.target.classList.toggle('is-placeholder', !e.target.value);
     return;
   }
   const c = e.target.classList;
