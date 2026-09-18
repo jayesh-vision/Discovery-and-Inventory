@@ -388,6 +388,16 @@ export default function Insights() {
         </div>
       </Card>
 
+      {/* RECONCILIATION module disabled here on purpose — Reconcile.tsx now
+         shows this same content (Match outcome, Trust by domain and region,
+         Backlog, Discrepancy types, Reconciliation cycles) as its own page,
+         so this page's copy is redundant. Kept intact, not deleted: a plain
+         JSX comment wrapper cannot be used because this subtree contains its
+         own inner JSX comment further down (comment markers in JS/JSX cannot
+         nest), so `false &&` is the safe way to disable a block this size
+         without touching what's inside it. Flip to `true`, or delete the
+         `false && ( ... )` wrapper, to bring the section back. */}
+      {false && (<>
       <ModuleDivider num="II" label="RECONCILIATION" />
 
       <SectionTitle>Match outcome</SectionTitle>
@@ -600,6 +610,7 @@ export default function Insights() {
           </div>
         </Card>
       </div>
+      </>)}
 
       <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
         sub={drawer ? drawerSub(drawer) : undefined}>
