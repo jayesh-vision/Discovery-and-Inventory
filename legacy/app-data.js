@@ -2007,7 +2007,12 @@ SERVICES.x2xn = padList(SERVICES.x2xn, 10, (r, i) => ({
   srcNe: RAN_ENB[i % RAN_ENB.length], srcIp: `10.4${i % 5}.${18 + i}.${14 + i}`,
   dstNe: RAN_ENB[(i + 2) % RAN_ENB.length], dstIp: `10.4${(i + 2) % 5}.${18 + i}.${7 + i}`,
   name: `${i % 2 ? 'X2' : 'Xn'}:${RAN_ENB[i % RAN_ENB.length].slice(0, 3)}-${RAN_ENB[(i + 2) % RAN_ENB.length].slice(0, 3)}`,
-  erp: `${i % 2 ? 'X2' : 'XN'}-${3010 + i}`, v: [3, 5, 8][i % 3]
+  /* +1, not +i alone: the first padded row lands at i = the 2 hand-written
+     seeds' own length, so a bare 3010+i recomputes the seed's own X2-3011/
+     XN-3012 verbatim — a real, user-facing duplicate-ID bug (confirmed via
+     a full-table audit), not a hypothetical one. The same fix pattern
+     applies to otn/trunk just below. */
+  erp: `${i % 2 ? 'X2' : 'XN'}-${3011 + i}`, v: [3, 5, 8][i % 3]
 }));
 
 /* Wavelength — a provisioned circuit on a live ROADM/DWDM shelf, the
@@ -2035,7 +2040,8 @@ SERVICES.otn = [
 SERVICES.otn = padList(SERVICES.otn, 10, (r, i) => ({
   ...r,
   st: i % 5 === 4 ? 'Down' : 'Up', chip: i % 5 === 4 ? 'error' : 'success',
-  srcIfc: `OT-1/${1 + i}`, dstIfc: `OT-1/${1 + i}`, name: `OTN-MUM-PUN-W${12 + i}`, erp: `OTN-${7000 + i}`, v: [10, 14][i % 2]
+  srcIfc: `OT-1/${1 + i}`, dstIfc: `OT-1/${1 + i}`, name: `OTN-MUM-PUN-W${12 + i}`,
+  erp: `OTN-${7001 + i}`, v: [10, 14][i % 2]
 }));
 
 /* Trunk — Transport's third element type in the domain device roster
@@ -2049,13 +2055,19 @@ SERVICES.trunk = [
   { st: 'Up', chip: 'success', name: 'TRUNK-BLR-01-02', srcNe: 'BLR-PE-TRK-01', srcIp: '172.31.95.11', srcIfc: 'trk0', dstNe: 'BLR-PE-TRK-02', dstIp: '172.31.95.12', dstIfc: 'trk0', erp: 'TRK-8001', v: 5 },
   { st: 'Up', chip: 'success', name: 'TRUNK-DEL-PUN', srcNe: 'DEL-PE-TRK-01', srcIp: '172.31.96.11', srcIfc: 'trk0', dstNe: 'PUN-PE-TRK-01', dstIp: '172.31.96.12', dstIfc: 'trk0', erp: 'TRK-8002', v: 5 }
 ];
+/* the first padded row lands at i = 2 (the 2 hand-written seeds' own
+   length) — PE_TRK_NODES[2 % 4]/[3 % 4] is exactly DEL-PE-TRK-01/
+   PUN-PE-TRK-01, i.e. seed row 2's own pairing, so a bare i/(i+1) here
+   reproduced that whole seed row (name, NE pair and erp alike) verbatim.
+   Confirmed via a full-table audit; +1 on every index below is the fix,
+   matching x2xn/otn just above. */
 SERVICES.trunk = padList(SERVICES.trunk, 10, (r, i) => ({
   ...r,
   st: i % 6 === 5 ? 'Down' : 'Up', chip: i % 6 === 5 ? 'error' : 'success',
-  srcNe: PE_TRK_NODES[i % PE_TRK_NODES.length], srcIp: `172.31.9${5 + (i % 2)}.${11 + i}`,
-  dstNe: PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length], dstIp: `172.31.9${5 + ((i + 1) % 2)}.${12 + i}`,
-  name: `TRUNK-${PE_TRK_NODES[i % PE_TRK_NODES.length].split('-PE-TRK-')[0]}-${PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length].split('-PE-TRK-')[0]}`,
-  erp: `TRK-${8000 + i}`, v: [3, 5, 9][i % 3]
+  srcNe: PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length], srcIp: `172.31.9${5 + ((i + 1) % 2)}.${11 + i}`,
+  dstNe: PE_TRK_NODES[(i + 2) % PE_TRK_NODES.length], dstIp: `172.31.9${5 + ((i + 2) % 2)}.${12 + i}`,
+  name: `TRUNK-${PE_TRK_NODES[(i + 1) % PE_TRK_NODES.length].split('-PE-TRK-')[0]}-${PE_TRK_NODES[(i + 2) % PE_TRK_NODES.length].split('-PE-TRK-')[0]}`,
+  erp: `TRK-${8001 + i}`, v: [3, 5, 9][i % 3]
 }));
 
 /* APN/DNN — the subscriber session terminating at UPF's N6 boundary
