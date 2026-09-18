@@ -34,13 +34,36 @@ export function Tip({ x, y, children }: { x: number; y: number; children: ReactN
 
 const fmt = (v: number) => v.toLocaleString('en-IN');
 
+/* ── fluid sizing ───────────────────────────────────────────
+   The charts draw in a 1000-unit-wide viewBox and let the browser scale
+   the whole picture to the container — fine on a desktop, but on a phone
+   that scales the text and the height down with it (a 236px chart becomes
+   an 80px strip of 6px labels). A chart passed `fluid` measures its
+   container instead and draws in real pixels: labels stay their CSS size,
+   the height stays what was asked for, and label density adapts to the
+   width actually available. Opt-in, so the other screens are unchanged. */
+function useFluidWidth(enabled?: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(0);
+  useLayoutEffect(() => {
+    if (!enabled || !ref.current) return;
+    const el = ref.current;
+    setW(Math.round(el.getBoundingClientRect().width));
+    const ro = new ResizeObserver(entries => setW(Math.round(entries[0].contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [enabled]);
+  return [ref, w] as const;
+}
+
 /* ── stacked daily bars ─────────────────────────────────── */
 export interface Series { k: string; n: string; hex: string }
-export function StackedBars({ days, series, values, height = 240 }: {
-  days: string[]; series: Series[]; values: number[][]; height?: number;
+export function StackedBars({ days, series, values, height = 240, fluid }: {
+  days: string[]; series: Series[]; values: number[][]; height?: number; fluid?: boolean;
 }) {
   const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
-  const W = 1000, H = height, padL = 44, padB = 34, padT = 12;
+  const [wrapRef, measured] = useFluidWidth(fluid);
+  const W = fluid && measured ? measured : 1000, H = height, padL = 44, padB = 34, padT = 12;
   const totals = values.map(v => v.reduce((a, b) => a + b, 0));
   const max = Math.max(...totals);
   /* a "nice" step sized to roughly 4 ticks over the actual max, rather than
@@ -55,8 +78,13 @@ export function StackedBars({ days, series, values, height = 240 }: {
   const y = (v: number) => padT + (H - padT - padB) * (1 - v / top);
   const slot = (W - padL) / days.length, bw = Math.min(40, slot * 0.34);
   const ticks = Array.from({ length: top / step + 1 }, (_, i) => i * step);
+  /* when slots get narrower than a label, print every other one; the last
+     always prints, and a stepped label that would sit right beside it is
+     dropped so the two never overprint */
+  const every = slot < 34 ? 2 : 1, last = days.length - 1;
+  const showLabel = (i: number) => i === last || (i % every === 0 && last - i >= every);
   return (
-    <div className="ch-wrap" onMouseLeave={() => setHov(null)}>
+    <div className="ch-wrap" ref={wrapRef} onMouseLeave={() => setHov(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label="Discovered devices per day">
         {ticks.map(t => (
           <g key={t}>
@@ -76,7 +104,7 @@ export function StackedBars({ days, series, values, height = 240 }: {
                 return <rect key={s.k} x={cx - bw / 2} y={y0} width={bw} height={h} rx={si === series.length - 1 ? 4 : 0}
                   fill={s.hex} opacity={hov && hov.i !== i ? 0.45 : 1} />;
               })}
-              <text x={cx} y={H - 10} textAnchor="middle" className="ch-axis">{d}</text>
+              {showLabel(i) && <text x={i === last ? cx + slot / 2 : cx} y={H - 10} textAnchor={i === last ? 'end' : 'middle'} className="ch-axis">{d}</text>}
             </g>
           );
         })}
@@ -277,11 +305,12 @@ function niceTop(max: number, ticks = 3) {
   const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
   return { step, top: Math.ceil((max * 1.08) / step) * step };
 }
-export function BandChart({ labels, upper, lower, height = 230, format, detail }: {
-  labels: string[]; upper: BandSeries; lower: BandSeries; height?: number; format: (v: number) => string; detail?: (i: number) => ReactNode;
+export function BandChart({ labels, upper, lower, height = 230, format, detail, fluid }: {
+  labels: string[]; upper: BandSeries; lower: BandSeries; height?: number; format: (v: number) => string; detail?: (i: number) => ReactNode; fluid?: boolean;
 }) {
   const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
-  const W = 1000, H = height, padL = 46, padR = 62, padT = 14, padB = 30;
+  const [wrapRef, measured] = useFluidWidth(fluid);
+  const W = fluid && measured ? measured : 1000, H = height, padL = 46, padR = 56, padT = 14, padB = 30;
   const n = labels.length;
   const { step, top } = niceTop(Math.max(...upper.values, ...lower.values));
   const y = (v: number) => padT + (H - padT - padB) * (1 - v / top);
@@ -291,10 +320,11 @@ export function BandChart({ labels, upper, lower, height = 230, format, detail }
   const dUp = line(upper.values), dLo = line(lower.values);
   const areaLo = `${dLo} L${x(n - 1).toFixed(1)} ${y(0)} L${x(0).toFixed(1)} ${y(0)} Z`;
   const band = `${dUp} ${lower.values.map((_, i) => `L${x(n - 1 - i).toFixed(1)} ${y(lower.values[n - 1 - i]).toFixed(1)}`).join(' ')} Z`;
-  const xStep = Math.max(1, Math.round(n / 7));
+  /* one x label per ~80px of drawable width, never fewer than 2 */
+  const xStep = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - padL - padR) / 80))));
   const last = n - 1;
   return (
-    <div className="ch-wrap" onMouseLeave={() => setHov(null)}>
+    <div className="ch-wrap" ref={wrapRef} onMouseLeave={() => setHov(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label={`${upper.n} against ${lower.n}, per day`}>
         {ticks.map(t => (
           <g key={t}>
@@ -310,7 +340,7 @@ export function BandChart({ labels, upper, lower, height = 230, format, detail }
         {[upper, lower].map(s => (
           <g key={s.n}>
             <circle cx={x(last)} cy={y(s.values[last])} r="4" fill={s.hex} stroke="var(--vw-color-white)" strokeWidth="2" />
-            <text x={x(last) + 10} y={y(s.values[last]) + 5} className="ch-lab" style={{ fill: s.hex, fontSize: 15 }}>{format(s.values[last])}</text>
+            <text x={x(last) + 9} y={y(s.values[last]) + 5} className="ch-lab ch-end" style={{ fill: s.hex }}>{format(s.values[last])}</text>
             {hov && hov.i !== last && <circle cx={x(hov.i)} cy={y(s.values[hov.i])} r="4" fill={s.hex} stroke="var(--vw-color-white)" strokeWidth="2" style={{ pointerEvents: 'none' }} />}
           </g>
         ))}

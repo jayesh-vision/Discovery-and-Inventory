@@ -1,8 +1,25 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { ChipTone, ColorTone } from '../data/ledger';
+import { DOMAIN_HEX, DOMAIN_LABEL, domainParentLabel, type DomainKey } from '../data/discoveryOverview';
 
 /* design-system colour ramp, read from the CSS variables the bundle defines */
 export const cv = (tone: ColorTone | string, shade: number) => `var(--vw-color-${tone}-${shade})`;
+
+/* ── domain identity: colour dot + name ─────────────────────────────────
+   The one domain tag every Discovery & Reconciliation grid/drawer uses. A
+   sub-domain renders its parent muted in front of it ("Transport · IP/MPLS")
+   so the hierarchy is visible in any row, filtered list or drawer — not
+   only when the parent row happens to sit directly above. `short` drops the
+   parent for places where position already shows it. */
+export function DomainDot({ domain, short, size = 8 }: { domain: DomainKey; short?: boolean; size?: number }) {
+  const parent = short ? undefined : domainParentLabel(domain);
+  return (
+    <span className="row vw-items-center vw-nowrap" style={{ gap: '8px' }}>
+      <span style={{ width: size, height: size, borderRadius: '50%', background: DOMAIN_HEX[domain], flexShrink: 0 }} />
+      <span>{parent && <span className="dom-parent">{parent} · </span>}{DOMAIN_LABEL[domain]}</span>
+    </span>
+  );
+}
 
 export function Chip({ tone, strong, children }: { tone: ChipTone; strong?: boolean; children: ReactNode }) {
   return <span className={`vw-chip vw-chip--${tone}${strong ? ' is-strong' : ''}`}>{children}</span>;

@@ -22,14 +22,33 @@ a new cross-link between a job/result/exception and a rule.
 
 # Domain Overview
 
-Four domains, one taxonomy, defined once in `src/data/discoveryOverview.ts`
+One taxonomy, a **tree**, defined once in `src/data/discoveryOverview.ts`
 and re-exported by every other data file so labels/colors never drift:
 
-```ts
-type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';
-DOMAIN_LABEL: IPMPLS → 'IP/MPLS', others identity.
-DOMAIN_HEX:   RAN blue · Core violet · Transport teal · IPMPLS pink.
+```text
+RAN
+Core
+Transport
+  └── IP/MPLS        ← a sub-domain of Transport, NOT a fourth sibling
 ```
+
+```ts
+type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';   // leaf keys, stable (URLs, localStorage)
+DOMAIN_PARENT = { IPMPLS: 'Transport' };                     // the hierarchy lives here
+DOMAIN_ORDER  = ['RAN', 'Core', 'Transport', 'IPMPLS'];      // child directly after parent — use this, never a local array
+DOMAIN_LABEL:      IPMPLS → 'IP/MPLS' (short: legends, column headers)
+DOMAIN_FULL_LABEL: IPMPLS → 'Transport · IP/MPLS' (tables, drawers, exports)
+DOMAIN_HEX:   RAN blue · Core violet · Transport teal · IPMPLS pink.
+domainMatches(row, filter) / domainFilterMatches(row, value): Transport ⊇ IP/MPLS
+DOMAIN_OPTIONS: the <select> list, sub-domain indented ('   └ IP/MPLS'); parseDomainKey() accepts key/label/full/slug
+domainRoute(d): 'domaindevices' or 'subdomaindevices' (/domain/transport/ipmpls)
+```
+
+Rendering: `DomainDot` (`src/components/ui.tsx`) everywhere outside Insights,
+`DomainTag parent=` (`ops.tsx`) inside it; legacy uses `domainDot()` /
+`DOMAIN_FILTER_OPTIONS` / `domainFilterMatch()` (`legacy/app-helpers.js`).
+A Domain filter set to Transport must keep IP/MPLS rows — `DataGrid` and the
+legacy `gridApply` both enforce this; never compare `DOMAIN_LABEL[x] !== value`.
 
 **Before touching domain-specific content** (a rule's conditions, a
 transcript step, a discrepancy type), read `[[references/domain-model.md]]`'s
@@ -280,8 +299,11 @@ server does not auto-rebuild `public/legacy.js`), `npm run test`.
   `DISCREPANCY_TYPES` (discoveryOverview.ts) and/or `RECONCILE_EXCEPTIONS`
   (reconciliationOps.ts), with a real `ruleId` back-reference — don't leave
   it unlinked.
-- **Adding a whole new telecom domain** → add to `DomainKey`, `DOMAIN_HEX`,
-  `DOMAIN_LABEL` (discoveryOverview.ts), then its own `*_COLLECTORS` +
+- **Adding a whole new telecom domain (or sub-domain)** → add to `DomainKey`,
+  `DOMAIN_HEX`, `DOMAIN_LABEL`, `DOMAIN_ORDER` (child right after its parent)
+  and, for a sub-domain, `DOMAIN_PARENT` (discoveryOverview.ts) — the
+  import-time tree check and `tests/unit/domain-hierarchy.test.mjs` fail
+  otherwise; mirror it in `legacy/app-helpers.js` `DOMAIN_META`; then its own `*_COLLECTORS` +
   `TRANSCRIPT_BY_DOMAIN`/`OBJECTS_BY_DOMAIN` entries (legacy/app-data.js) —
   this is a large, cross-cutting change; scope it explicitly before starting.
 - **Changing Insights layout/cards** → check first whether the card reads

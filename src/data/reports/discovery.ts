@@ -10,7 +10,7 @@ import {
   DOMAIN_TRUST_TOTAL, GAP_ACTIONS, GAP_START_PCT, GAP_TARGET_AFTER, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES,
   OBJECTS_DAILY_VALUES, PLATFORM_OUTPUT, RECONCILE_CYCLE_ROWS, REGION_DISCREPANCY, HEATMAP_REGIONS, RISK_REGISTER,
   ROOT_CAUSE_FAILURES, TIME_TO_TARGET, TRAJECTORY_DAYS, TRAJECTORY_MEASURED, TRAJECTORY_PROJECTION,
-  TRAJECTORY_PROJECTION_DAYS, TRAJECTORY_TARGET, TRUST_METRICS, type DomainKey
+  TRAJECTORY_PROJECTION_DAYS, TRAJECTORY_TARGET, TRUST_METRICS, DOMAIN_ORDER, domainRoute, type DomainKey
 } from '../discoveryOverview';
 import {
   DISPOSITIONS, EXCEPTION_TONE, JOB_STATUS_TONE, RECONCILE_EXCEPTIONS, RECONCILE_JOBS, SLA_TONE,
@@ -21,13 +21,15 @@ import {
   type ReportBuilder, TONE_HEX, countBy, fmtNum, fmtUsd, lowerFirst, pct, r1, sum
 } from './model';
 
-const DOMAINS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
+/* the domain tree's own order — IP/MPLS directly after Transport */
+const DOMAINS: DomainKey[] = DOMAIN_ORDER;
 const trustOf = (d: DomainKey) => DOMAIN_TRUST_ROWS.find(r => r.domain === d)!;
 const TRUST = TRUST_METRICS[0], COVERAGE = TRUST_METRICS[1], BACKLOG = TRUST_METRICS[2], MTTR = TRUST_METRICS[3];
 const last = (a: number[]) => a[a.length - 1];
 const prev = (a: number[]) => a[a.length - 2];
 const cycleLabels = (n: number) => Array.from({ length: n }, (_, i) => (i === n - 1 ? 'Latest' : `${n - 1 - i} back`));
-const domainLink = (d: DomainKey) => ({ key: 'domaindevices', params: { domain: d.toLowerCase() } });
+/* a sub-domain links to its nested route (/domain/transport/ipmpls) */
+const domainLink = (d: DomainKey) => domainRoute(d);
 
 /* ── DR-01 Inventory trust executive report ─────────────────── */
 const trustExecutive: ReportBuilder = () => {
@@ -204,7 +206,7 @@ const exceptions: ReportBuilder = () => {
       { tone: 'info', title: `Oldest exception: ${oldest} days`, detail: 'Anything over a year old should be re-validated before it is worked — the network may have moved on.' }
     ],
     kpis: [
-      { title: 'Open exceptions', definition: 'Reconciliation results that need a human decision.', value: ex.length, fmt: 'num', of: 'across 4 domains', tone: 'slate',
+      { title: 'Open exceptions', definition: 'Reconciliation results that need a human decision.', value: ex.length, fmt: 'num', of: 'across every domain', tone: 'slate',
         delta: { text: `${states.length} exception states`, better: null },
         visual: { kind: 'segments', parts: states.map(([s, n]) => ({ n: s, c: n, hex: TONE_HEX[EXCEPTION_TONE[s as keyof typeof EXCEPTION_TONE]] })), total: ex.length } },
       { title: 'Past SLA', definition: 'Exceptions not dispositioned within their resolution window.', value: breached.length, fmt: 'num', of: `${atRisk.length} more at risk`, tone: 'red',

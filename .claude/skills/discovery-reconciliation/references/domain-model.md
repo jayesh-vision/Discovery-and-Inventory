@@ -3,13 +3,32 @@
 ## Domain taxonomy (`src/data/discoveryOverview.ts`)
 
 ```ts
-type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';
+type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';        // leaf keys — stable identifiers
+DOMAIN_PARENT: Partial<Record<DomainKey, DomainKey>> = { IPMPLS: 'Transport' };   // the tree
+DOMAIN_ORDER:  DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];               // child right after parent
+TOP_DOMAINS:   ['RAN', 'Core', 'Transport']
 DOMAIN_HEX:   RAN → blue-400, Core → violet-400, Transport → teal-400, IPMPLS → pink-400 (CSS var refs)
-DOMAIN_LABEL: IPMPLS → 'IP/MPLS', all others → identity
+DOMAIN_LABEL:      IPMPLS → 'IP/MPLS', all others → identity           (short)
+DOMAIN_FULL_LABEL: IPMPLS → 'Transport · IP/MPLS', others → identity   (path)
+domainChildren(d) · domainPath(d) · domainDepth(d) · domainParentLabel(d)
+domainMatches(row, filter)            // row === filter, or filter is an ancestor of row
+domainFilterMatches(rowDomain, value) // the one Domain-filter predicate (value may be key/label/full/slug; '' → true)
+parseDomainKey(v)                     // 'IPMPLS' | 'IP/MPLS' | 'Transport · IP/MPLS' | '   └ IP/MPLS' | 'ipmpls' → 'IPMPLS'
+DOMAIN_OPTIONS: { v: 'IP/MPLS', l: '   └ IP/MPLS', key, depth }[]      // every domain <select>
+domainSlugs(d) → ['transport', 'ipmpls'];  domainRoute(d) → { key: 'subdomaindevices', params: { domain, sub } }
 ```
-Re-exported unchanged by `reconcileOverview.ts`, `reconciliationOps.ts`, and
-`rules.ts` — always import `DomainKey`/`DOMAIN_HEX`/`DOMAIN_LABEL` from one of
-these, never redefine it locally.
+The tree is validated at import time (parent exists, one level deep, no
+cycles, `DOMAIN_ORDER` complete and parent-then-child) and every per-domain
+table (`DOMAIN_TRUST_ROWS`, `DISCOVERY_JOB_ROWS`) must be authored in
+`DOMAIN_ORDER`. Re-exported unchanged by `reconcileOverview.ts`,
+`reconciliationOps.ts`, and `rules.ts` — always import from one of these,
+never redefine a domain list locally.
+
+Routes: `/discovery/insights/domain/:domain` (top-level) and
+`/discovery/insights/domain/:domain/:sub` (sub-domain — `subdomaindevices`);
+the flat `/domain/ipmpls` still resolves and redirects to the nested URL.
+Legacy mirror: `legacy/app-helpers.js` `DOMAIN_META[k].parent`,
+`DOMAIN_FILTER_OPTIONS`, `domainFilterMatch()`, `domainDot()`.
 
 ## Collector families (`legacy/app-data.js`)
 

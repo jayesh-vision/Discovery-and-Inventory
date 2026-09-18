@@ -14,3 +14,6 @@ tests/*.png
 tsconfig.app.tsbuildinfo
 .vercel
 .env*
+
+# vite transpile cache used by tests/unit (node --test)
+tests/unit/.vite-cache/

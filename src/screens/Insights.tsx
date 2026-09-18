@@ -10,10 +10,9 @@ import {
   ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
   MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
   BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
-  DOMAIN_HEX, DOMAIN_LABEL, type DomainKey, type TrustMetric,
-  type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, TOP_DOMAINS, domainParentLabel, domainRoute,
+  type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
-import { domainToUrl } from './DomainDevices';
 
 /* one drawer, three possible row shapes — simpler than three parallel
    useState hooks for what is, on screen, always exactly one open panel */
@@ -26,18 +25,18 @@ function drawerTitle(d: DrawerState): string {
   switch (d.kind) {
     case 'adapter': return d.row.adapter;
     case 'failure': return d.row.cause;
-    case 'cycle': return `${DOMAIN_LABEL[d.row.domain]} reconciliation cycle`;
+    case 'cycle': return `${DOMAIN_FULL_LABEL[d.row.domain]} reconciliation cycle`;
   }
 }
 function drawerSub(d: DrawerState): string {
-  return d.kind === 'adapter' ? d.row.domains.map(x => DOMAIN_LABEL[x]).join(' · ') : DOMAIN_LABEL[d.row.domain];
+  return d.kind === 'adapter' ? d.row.domains.map(x => DOMAIN_FULL_LABEL[x]).join(', ') : DOMAIN_FULL_LABEL[d.row.domain];
 }
 
-/* RAN, Transport, Core, IP/MPLS — the one display order every table, legend
-   and heatmap on this page uses, so a reader never meets the four domains in
-   a different sequence from one card to the next. DOMAIN_HEX keeps its own
-   key order (it's shared with the Reconciliation page), so this is local. */
-const DOMAIN_KEYS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
+/* RAN, Core, Transport, IP/MPLS — the domain tree's own order (DOMAIN_ORDER:
+   a sub-domain directly after its parent), the one sequence every table,
+   legend and heatmap on this page uses, so a reader never meets the domains
+   in a different order from one card to the next. */
+const DOMAIN_KEYS: DomainKey[] = DOMAIN_ORDER;
 const byDomain = <T extends { domain: DomainKey }>(rows: T[]) =>
   [...rows].sort((a, b) => DOMAIN_KEYS.indexOf(a.domain) - DOMAIN_KEYS.indexOf(b.domain));
 const n = (v: number) => v.toLocaleString('en-IN');
@@ -93,8 +92,9 @@ const FAIL_CAT: Record<RootCauseFailure['tag'], { label: string; tone: Tone; ico
   FGP: { label: 'Fingerprint', tone: 'info', icon: Ic.finger(17) }
 };
 
+/* a sub-domain carries its parent, muted, in front: "Transport · IP/MPLS" */
 const Dom = ({ domain, sm, muted }: { domain: DomainKey; sm?: boolean; muted?: boolean }) =>
-  <DomainTag hex={DOMAIN_HEX[domain]} label={DOMAIN_LABEL[domain]} sm={sm} muted={muted} />;
+  <DomainTag hex={DOMAIN_HEX[domain]} label={DOMAIN_LABEL[domain]} parent={domainParentLabel(domain)} sm={sm} muted={muted} />;
 
 /* ── KPI hero cards ────────────────────────────────────────────────────
    Everything shown is read off TRUST_METRICS: the value, its trend, and the
@@ -178,8 +178,10 @@ const cycleBarPx = (pct: number) => Math.round(8 + (pct - CYCLE_LO) / (CYCLE_HI 
 
 export default function Insights() {
   const nav = useNavigate();
-  const openDomain = (d: DomainKey, region?: string) =>
-    nav(`/discovery/insights/domain/${domainToUrl(d)}${region ? `?region=${encodeURIComponent(region)}` : ''}`);
+  const openDomain = (d: DomainKey, region?: string) => {
+    const r = domainRoute(d);
+    nav(legacyPath(r.key, region ? { q: `region=${encodeURIComponent(region)}` } : null, r.params));
+  };
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
   /* the row's own fix action is a real local acknowledgement, not a fake
@@ -236,7 +238,7 @@ export default function Insights() {
           </div>
         </div>
         <div className="ix-context" aria-label="Page context">
-          <span className="ix-ctx">{Ic.layers(14)}<b>{DOMAIN_KEYS.length}</b> domains · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
+          <span className="ix-ctx">{Ic.layers(14)}<b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
           <span className="ix-ctx">{Ic.clock(14)}Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
           <span className="ix-ctx">{Ic.calendar(14)}Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
           <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key">
@@ -323,7 +325,7 @@ export default function Insights() {
             description={<span className="ix-stats"><span>Last {objRange === '7d' ? 7 : 14} days</span><span><b>{objTotal}</b> new items</span><span><b>{objToday}</b> today</span><span>avg <b>{(objTotal / objDays.length).toFixed(1)}</b>/day</span></span>}
             right={<Seg label="Range" value={objRange} onChange={setObjRange} options={[{ k: '7d', n: '7d' }, { k: '14d', n: '14d' }]} />}>
             <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={236} />
+              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={236} fluid />
             </div>
           </Panel>
         </div>
@@ -495,7 +497,7 @@ export default function Insights() {
               <span><i style={{ background: 'var(--vw-color-emerald-500)' }} />Auto-resolved</span>
               <span><i className="is-band" />To engineers</span>
             </span>}>
-            <BandChart labels={BACKLOG_DAYS} height={236} format={v => n(v)}
+            <BandChart labels={BACKLOG_DAYS} height={236} format={v => n(v)} fluid
               upper={{ n: 'Discrepancies detected', hex: 'var(--vw-color-blue-500)', values: BACKLOG_DETECTED }}
               lower={{ n: 'Auto-resolved by policy', hex: 'var(--vw-color-emerald-500)', values: BACKLOG_AUTORESOLVED }}
               detail={i => {
@@ -625,7 +627,7 @@ export default function Insights() {
         {drawer?.kind === 'adapter' && (
           <div className="kv">
             <div><span className="k">Protocol</span><span className="v">{drawer.row.proto}</span></div>
-            <div><span className="k">Domains</span><span className="v">{drawer.row.domains.map(d => DOMAIN_LABEL[d]).join(', ')}</span></div>
+            <div><span className="k">Domains</span><span className="v">{drawer.row.domains.map(d => DOMAIN_FULL_LABEL[d]).join(', ')}</span></div>
             <div><span className="k">Endpoints</span><span className="v">{drawer.row.endpoints}</span></div>
             <div><span className="k">Success rate</span><span className="v">{drawer.row.successPct}%</span></div>
             <div><span className="k">Status</span><span className="v"><Pill tone={drawer.row.status === 'Healthy' ? 'success' : 'warning'}>{drawer.row.status}</Pill></span></div>
@@ -634,7 +636,7 @@ export default function Insights() {
         {drawer?.kind === 'failure' && (
           <>
             <div className="kv">
-              <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[drawer.row.domain]}</span></div>
+              <div><span className="k">Domain</span><span className="v"><Dom domain={drawer.row.domain} /></span></div>
               <div><span className="k">Affected targets</span><span className="v">{drawer.row.targets}</span></div>
               <div><span className="k">Root cause</span><span className="v">{FAIL_CAT[drawer.row.tag].label} · {drawer.row.tag}</span></div>
             </div>
@@ -653,7 +655,7 @@ export default function Insights() {
         )}
         {drawer?.kind === 'cycle' && (
           <div className="kv">
-            <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[drawer.row.domain]}</span></div>
+            <div><span className="k">Domain</span><span className="v"><Dom domain={drawer.row.domain} /></span></div>
             <div><span className="k">Completed</span><span className="v">{drawer.row.when}</span></div>
             <div><span className="k">Records scanned</span><span className="v">{n(drawer.row.scanned)}</span></div>
             <div><span className="k">Drifted</span><span className="v">{drawer.row.drifted}</span></div>

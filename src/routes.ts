@@ -41,6 +41,11 @@ export const SCREENS: Screen[] = [
     crumb: 'Insights · Discovered devices', rail: 'insights', component: DiscoveredDevices },
   { key: 'domaindevices', path: '/discovery/insights/domain/:domain', module: 'Discovery and reconciliation',
     crumb: 'Insights · Domain devices', rail: 'insights', component: DomainDevices },
+  /* a sub-domain nests under its parent's segment — /domain/transport/ipmpls
+     — the same tree the data model declares (DOMAIN_PARENT); the flat
+     /domain/ipmpls still resolves and redirects here */
+  { key: 'subdomaindevices', path: '/discovery/insights/domain/:domain/:sub', module: 'Discovery and reconciliation',
+    crumb: 'Insights · Domain devices', rail: 'insights', component: DomainDevices },
   { key: 'discrepancydetails', path: '/discovery/insights/discrepancies', module: 'Discovery and reconciliation',
     crumb: 'Insights · Discrepancies', rail: 'insights', component: DiscrepancyDetails },
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },

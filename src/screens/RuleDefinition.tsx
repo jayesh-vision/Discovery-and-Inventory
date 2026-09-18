@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card } from '../components/ui';
 import {
-  RULES, MOCK_USERS, OPERATORS, DOMAIN_LABEL, ruleById, persistRules,
+  RULES, MOCK_USERS, OPERATORS, ruleById, persistRules,
   type Condition, type DomainKey, type Operator, type Rule, type RulePriority
 } from '../data/rules';
+import { DOMAIN_OPTIONS } from '../data/discoveryOverview';
 
-const DOMAINS: DomainKey[] = ['RAN', 'Core', 'Transport', 'IPMPLS'];
 const newId = (domain: DomainKey) => {
   const prefix = domain === 'IPMPLS' ? 'IPM' : domain.slice(0, 3).toUpperCase();
   const n = RULES.filter(r => r.id.startsWith(`RUL-${prefix}-`)).length + 1;
@@ -95,7 +95,8 @@ export default function RuleDefinition() {
           <Field label="Rule name"><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. gNodeB identity match" /></Field>
           <Field label="Domain">
             <Select value={domain} onChange={e => setDomain(e.target.value as DomainKey)}>
-              {DOMAINS.map(d => <option key={d} value={d}>{DOMAIN_LABEL[d]}</option>)}
+              {/* the domain tree: a sub-domain is indented under its parent */}
+              {DOMAIN_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.l}</option>)}
             </Select>
           </Field>
           <Field label="Source"><Input value={source} onChange={e => setSource(e.target.value)} placeholder="e.g. Network · SNMP v2c/v3" /></Field>

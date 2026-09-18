@@ -1,19 +1,41 @@
-import { useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, StatStrip, Sub } from '../components/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Card, Chip, DomainDot, Mono, StatStrip, Sub } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
-import { DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_TRUST_ROWS, type DomainKey } from '../data/discoveryOverview';
+import {
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_PARENT, DOMAIN_TRUST_ROWS, domainSlugs, parseDomainKey, type DomainKey
+} from '../data/discoveryOverview';
 import { domainDevices, type DomainDevice } from '../data/domainDevices';
 
-const URL_TO_DOMAIN: Record<string, DomainKey> = { ran: 'RAN', transport: 'Transport', core: 'Core', ipmpls: 'IPMPLS' };
-export const domainToUrl = (d: DomainKey) => d.toLowerCase();
+/* URL form of a domain, parents first: 'transport/ipmpls' (see domainSlugs) */
+export const domainToUrl = (d: DomainKey) => domainSlugs(d).join('/');
+
+/* /domain/:domain[/:sub] → the domain it names, or undefined.
+   A sub-domain must sit under its own parent (/transport/ipmpls); the
+   flat pre-hierarchy /ipmpls still resolves so old links keep working —
+   the screen then rewrites the URL to the nested form. */
+function domainFromUrl(domain?: string, sub?: string): DomainKey | undefined {
+  const top = parseDomainKey(domain);
+  if (!top) return undefined;
+  if (!sub) return top;
+  const child = parseDomainKey(sub);
+  return child && DOMAIN_PARENT[child] === top ? child : undefined;
+}
 
 export default function DomainDevices() {
-  const { domain: urlDomain } = useParams();
+  const { domain: urlDomain, sub: urlSub } = useParams();
+  const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const domain = urlDomain ? URL_TO_DOMAIN[urlDomain.toLowerCase()] : undefined;
+  const domain = domainFromUrl(urlDomain, urlSub);
   const row = domain ? DOMAIN_TRUST_ROWS.find(d => d.domain === domain) : undefined;
+  /* a sub-domain reached through the flat legacy slug (/domain/ipmpls) is
+     moved to its nested address (/domain/transport/ipmpls) — one canonical
+     URL per domain, and the breadcrumb/rail logic keys off the nested one */
+  useEffect(() => {
+    if (!domain || urlSub || !DOMAIN_PARENT[domain]) return;
+    nav({ pathname: `/discovery/insights/domain/${domainToUrl(domain)}`, search: searchParams.toString() ? `?${searchParams}` : '' }, { replace: true });
+  }, [domain, urlSub, nav, searchParams]);
   /* set only when this screen was reached by clicking one cell of Insights'
      "Open discrepancies by region" heatmap — otherwise every region cell
      for a domain landed on the exact same undifferentiated roster, which
@@ -74,19 +96,23 @@ export default function DomainDevices() {
   }
 
   const hex = DOMAIN_HEX[domain];
+  const parent = DOMAIN_PARENT[domain];
 
   return (
     <div className="page">
-      <div className="row vw-items-center" style={{ gap: '10px', marginBottom: 'var(--vw-space-sm)' }}>
+      <div className="row vw-items-center" style={{ gap: '10px', marginBottom: 'var(--vw-space-sm)', flexWrap: 'wrap' }}>
         <span style={{ width: 11, height: 11, borderRadius: '50%', background: hex, flexShrink: 0 }} />
-        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>{DOMAIN_LABEL[domain]} devices{scopeLabel ? ` · ${scopeLabel}` : ''}</span>
+        <span style={{ fontSize: '1.375rem', fontWeight: 600 }}>
+          {/* a sub-domain's title names its parent first: "Transport · IP/MPLS devices" */}
+          {parent && <span className="dom-parent">{DOMAIN_LABEL[parent]} · </span>}{DOMAIN_LABEL[domain]} devices{scopeLabel ? ` · ${scopeLabel}` : ''}
+        </span>
         {region && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearRegion}>Clear region</button>}
         {issue && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={clearIssue}>Clear type</button>}
         {(region || issue) && <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={() => setSearchParams(p => { const n = new URLSearchParams(p); n.delete('region'); n.delete('issue'); return n; })}>Show all</button>}
       </div>
 
       <StatStrip cells={[
-        { k: 'In scope', v: row.inScope.toLocaleString('en-IN'), s: 'assets tracked in this domain', t: 'sky' },
+        { k: 'In scope', v: row.inScope.toLocaleString('en-IN'), s: parent ? `assets tracked in this ${DOMAIN_LABEL[parent]} sub-domain` : 'assets tracked in this domain', t: 'sky' },
         { k: 'Open', v: String(openCount), s: scopeLabel ? `discrepancies to action in ${scopeLabel}` : 'discrepancies to action', t: 'red' },
         { k: 'Unverified', v: row.unverified !== null ? String(unverifiedCount) : '—', s: scopeLabel ? `not yet scanned this cycle in ${scopeLabel}` : 'not yet scanned this cycle', t: 'amber' },
         { k: 'Trust index', v: `${row.trustIndexPct}%`, s: `MTTR ${row.mttrHours}h · ${row.touchlessPct}% automated`, t: 'emerald' }
@@ -122,12 +148,12 @@ export default function DomainDevices() {
       </Card>
 
       <Drawer open={!!open} onClose={closeDevice} title={open?.name ?? ''}
-        sub={open ? `${DOMAIN_LABEL[open.domain]} · ${open.region} · ${open.ip}` : undefined}>
+        sub={open ? `${DOMAIN_FULL_LABEL[open.domain]} · ${open.region} · ${open.ip}` : undefined}>
         {open && (
           <>
             <Chip tone={open.status === 'Open' ? 'error' : 'warning'}>{open.status}</Chip>
             <div className="kv" style={{ marginTop: 'var(--vw-space-md)' }}>
-              <div><span className="k">Domain</span><span className="v">{DOMAIN_LABEL[open.domain]}</span></div>
+              <div><span className="k">Domain</span><span className="v"><DomainDot domain={open.domain} /></span></div>
               <div><span className="k">Region</span><span className="v">{open.region}</span></div>
               <div><span className="k">Address</span><span className="v"><Mono>{open.ip}</Mono></span></div>
               <div><span className="k">Last scan</span><span className="v">{justScanned ? 'Just now' : open.lastScan}</span></div>

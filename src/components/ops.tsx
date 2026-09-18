@@ -75,10 +75,10 @@ export function Panel({ title, description, info, infoLabel, right, flush, tall,
 }
 
 /* ── domain identity: a colour dot and the name, never the colour alone ─ */
-export function DomainTag({ hex, label, sm, muted }: { hex: string; label: string; sm?: boolean; muted?: boolean }) {
+export function DomainTag({ hex, label, parent, sm, muted }: { hex: string; label: string; parent?: string; sm?: boolean; muted?: boolean }) {
   return (
     <span className={`ix-dom${sm ? ' is-sm' : ''}${muted ? ' is-muted' : ''}`}>
-      <i style={{ background: hex }} />{label}
+      <i style={{ background: hex }} />{parent && <span className="ix-dom-p">{parent} · </span>}{label}
     </span>
   );
 }

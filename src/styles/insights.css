@@ -20,8 +20,12 @@
   --ix-radius: 12px;
   --ix-shadow: 0 1px 2px rgba(15, 23, 42, .04);
   --ix-ease: 160ms cubic-bezier(.2, 0, 0, 1);
-  gap: var(--vw-space-2xl);
-  padding: var(--vw-space-2xl) var(--vw-space-3xl) var(--vw-space-4xl);
+  /* fluid rhythm: 16px page padding and gaps on a phone, growing to 32/24 on
+     a wide desktop, with no step in between to land on */
+  --ix-pad: clamp(16px, 1.6vw + 6px, 32px);
+  --ix-gap: clamp(16px, 0.9vw + 8px, 24px);
+  gap: var(--ix-gap);
+  padding: var(--ix-pad) var(--ix-pad) calc(var(--ix-pad) + 8px);
   color: var(--ix-text);
   font-size: 13px;
 }
@@ -29,10 +33,11 @@
 .ix :focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 
 /* ── page header ──────────────────────────────────────────────────────── */
-.ix-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--vw-space-2xl);
+.ix-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--vw-space-lg) var(--vw-space-2xl); flex-wrap: wrap;
   padding-bottom: var(--vw-space-lg); border-bottom: 1px solid var(--ix-border); }
+.ix-head > div:first-child { min-width: 0; flex: 1 1 22rem; }
 .ix-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ix-muted); }
-.ix-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--ix-text); margin: 4px 0 0; }
+.ix-title { font-size: clamp(1.25rem, 1rem + 0.9vw, 1.5rem); font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--ix-text); margin: 4px 0 0; }
 .ix-desc { font-size: 13px; color: var(--ix-muted); margin-top: 6px; max-width: 68ch; line-height: 1.5; }
 .ix-context { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--vw-space-xs); flex-shrink: 0; }
 .ix-ctx { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--ix-border);
@@ -49,23 +54,26 @@
 .ix-sh-d { font-size: 12px; color: var(--ix-muted); margin-top: 2px; }
 .ix-sh-r { display: flex; align-items: center; gap: var(--vw-space-xs); font-size: 12px; color: var(--ix-muted); }
 
-.ix-module { display: flex; align-items: center; gap: var(--vw-space-md); margin-top: var(--vw-space-xs); }
+.ix-module { display: flex; align-items: center; gap: var(--vw-space-xs) var(--vw-space-md); margin-top: var(--vw-space-xs); flex-wrap: wrap; }
 .ix-module-n { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--vw-color-blue-600); }
 .ix-module-l { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ix-text); }
 .ix-module-rule { flex: 1; height: 1px; background: var(--ix-border); }
-.ix-module-meta { font-size: 12px; color: var(--ix-muted); white-space: nowrap; }
+.ix-module-meta { font-size: 12px; color: var(--ix-muted); }
 .ix-module-meta b { font-weight: 600; color: var(--ix-body); }
 
-.ix-grid { display: grid; gap: var(--vw-space-lg); grid-template-columns: var(--cols, 1fr); align-items: stretch; }
+.ix-grid { display: grid; gap: var(--ix-gap); grid-template-columns: var(--cols, 1fr); align-items: stretch; }
 .ix-grid > * { min-width: 0; }
 
 /* ── panel ────────────────────────────────────────────────────────────── */
 .ix-panel { background: var(--vw-color-white); border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
   box-shadow: var(--ix-shadow); display: flex; flex-direction: column; min-width: 0; }
 .ix-panel.is-tall { height: 524px; }
-.ix-panel-h { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-lg);
+/* the header's right slot (a legend, a range toggle) wraps under the title
+   when the panel is narrow, rather than squeezing the title into a column */
+.ix-panel-h { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-xs) var(--vw-space-lg); flex-wrap: wrap;
   padding: 14px var(--vw-space-lg) 0; }
-.ix-panel-hl { min-width: 0; }
+.ix-panel-hl { min-width: 0; flex: 1 1 14rem; }
+.ix-panel-r { margin-left: auto; }
 .ix-panel-t { font-size: 14px; font-weight: 600; color: var(--ix-text); display: flex; align-items: center; line-height: 1.3; }
 .ix-panel-d { font-size: 12px; color: var(--ix-muted); margin-top: 3px; line-height: 1.4; }
 .ix-panel-d b { font-weight: 600; color: var(--ix-body); }
@@ -105,6 +113,8 @@
 .ix-dom.is-sm { font-size: 12px; font-weight: 500; color: var(--ix-body); }
 .ix-dom.is-sm i { width: 7px; height: 7px; }
 .ix-dom.is-muted { color: var(--ix-muted); font-weight: 400; }
+/* a sub-domain's parent, muted in front of it: "Transport · IP/MPLS" */
+.ix-dom-p { color: var(--ix-muted); font-weight: 400; }
 .ix-doms { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
 .ix-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px;
@@ -154,8 +164,14 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-kpi-l { display: flex; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
   color: var(--vw-color-gray-600); white-space: nowrap; }
 .ix-kpi-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; row-gap: 4px; }
-.ix-kpi-v { font-size: 2rem; font-weight: 600; letter-spacing: -.02em; line-height: 1; color: var(--ix-text); font-variant-numeric: tabular-nums; }
-.ix-kpi.is-hero .ix-kpi-v { font-size: 2.5rem; }
+.ix-kpi-v { font-size: clamp(1.75rem, 1.4rem + 0.6vw, 2rem); font-weight: 600; letter-spacing: -.02em; line-height: 1; color: var(--ix-text); font-variant-numeric: tabular-nums; }
+.ix-kpi.is-hero .ix-kpi-v { font-size: clamp(2rem, 1.5rem + 1vw, 2.5rem); }
+/* each card measures itself: below ~380px of card the pill goes under the
+   label on every card alike, so neighbours in a row never misalign */
+.ix-kpi { container-type: inline-size; }
+@container (max-width: 328px) {
+  .ix-kpi-top { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
 .ix-kpi-u { font-size: 14px; font-weight: 500; color: var(--ix-muted); }
 .ix-kpi-sub { font-size: 12.5px; color: var(--vw-color-gray-600); line-height: 1.45; }
 .ix-kpi-foot { margin-top: auto; padding-top: 6px; display: flex; flex-direction: column; gap: 8px; }
@@ -168,14 +184,14 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 /* ── charts, tuned to the page ────────────────────────────────────────── */
 .ix-chart .ch-wrap { margin-top: 4px; }
 .ix-chart .ch-grid { stroke: var(--ix-hair); stroke-dasharray: 3 5; }
-/* SVG units: the 1000-wide viewBox scales to a half-width panel at ~0.7×,
-   so 15 here lands at 10–12px on screen instead of an unreadable 7 */
-.ix-chart .ch-axis { font-size: 15px; fill: var(--ix-faint); }
-.ix-chart.is-plain .ch-axis { font-size: 20px; }   /* the narrowest chart scales furthest */
+/* the charts here draw fluid (real pixels, see charts.tsx), so these are
+   true on-screen sizes at every width */
+.ix-chart .ch-axis { font-size: 11px; fill: var(--ix-faint); }
+.ix-chart .ch-lab { font-size: 13px; }
+.ix-chart .ch-svg { height: auto; }
 .ix-chart .ch-svg rect { transition: opacity var(--ix-ease); }
-.ix-chart .ch-legend { justify-content: flex-start; gap: 16px; margin-top: 8px; padding-left: 44px; font-size: 12px; color: var(--vw-color-gray-600); }
+.ix-chart .ch-legend { justify-content: flex-start; gap: 8px 16px; flex-wrap: wrap; margin-top: 8px; padding-left: 44px; font-size: 12px; color: var(--vw-color-gray-600); }
 .ix-chart .ch-dot { width: 8px; height: 8px; }
-.ix-chart.is-plain .ch-legend { padding-left: 0; }
 .ix-stats { display: flex; align-items: baseline; gap: 14px; font-size: 12px; color: var(--ix-muted); flex-wrap: wrap; }
 .ix-stats b { font-size: 13px; font-weight: 600; color: var(--ix-text); font-variant-numeric: tabular-nums; }
 
@@ -269,12 +285,19 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 .ix-cycle { display: grid; grid-template-columns: 8.5rem auto minmax(0, 1fr) 7rem; align-items: center; gap: var(--vw-space-lg);
   padding: 10px 0; border-top: 1px solid var(--ix-hair); }
 .ix-cycle:first-child { border-top: 0; }
+/* (selectors carry the .ix-cycle parent so they outrank the base rules
+   declared further down, whatever the source order) */
 @container (max-width: 740px) {
   /* stacked: [domain ········ automated %] / [run bars] / [latest-run stats] */
   .ix-cycle { grid-template-columns: minmax(0, 1fr) auto; row-gap: 10px; }
-  .ix-cycle-pct { grid-row: 1; grid-column: 2; }
-  .ix-runs, .ix-cycle-stats { grid-column: 1 / -1; }
-  .ix-cycle-stats { flex-wrap: wrap; gap: var(--vw-space-lg) var(--vw-space-xl); }
+  .ix-cycle .ix-cycle-pct { grid-row: 1; grid-column: 2; }
+  .ix-cycle .ix-runs, .ix-cycle .ix-cycle-stats { grid-column: 1 / -1; }
+  .ix-cycle .ix-cycle-stats { flex-wrap: wrap; gap: var(--vw-space-lg) var(--vw-space-xl); }
+}
+@container (max-width: 420px) {
+  /* a phone-width panel: the four latest-run figures as a 2×2 grid rather
+     than three on one line and an orphan on the next */
+  .ix-cycle .ix-cycle-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px var(--vw-space-lg); }
 }
 .ix-runs { display: flex; align-items: flex-end; gap: 8px; }
 .ix-runbar { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 46px; padding: 2px 0 0; border: 0;
@@ -324,26 +347,43 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
      fixed size allows — grow rather than hide domains behind a scrollbar */
   .ix-panel.is-tall { height: auto; min-height: 524px; }
 }
-@media (max-width: 1000px) {
-  .ix-table th, .ix-table td { padding-left: 10px; padding-right: 10px; }
-}
+/* ≤1280 laptop: one column; tall panels release their shared fixed height */
 @media (max-width: 1280px) {
-  .ix { padding: var(--vw-space-xl) var(--vw-space-2xl) var(--vw-space-3xl); }
   .ix-grid { grid-template-columns: 1fr !important; }
-  .ix-panel.is-tall { height: auto; }
-  .ix-head { flex-direction: column; align-items: flex-start; }
-  .ix-context { justify-content: flex-start; }
+  .ix-panel.is-tall { height: auto; min-height: 0; }
+  /* the context chips take their own line under the title block, left-aligned */
+  .ix-context { flex: 1 1 100%; justify-content: flex-start; }
 }
-@media (max-width: 760px) {
-  .ix { padding: var(--vw-space-lg); gap: var(--vw-space-xl); }
+/* ≤1024 tablet: tables that must scroll do so inside their panel, and pin
+   their identity column so a row never loses its name mid-scroll */
+@media (max-width: 1024px) {
+  .ix-table th, .ix-table td { padding-left: 10px; padding-right: 10px; }
+  .ix-table th:first-child, .ix-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--vw-color-white);
+    box-shadow: inset -1px 0 0 var(--ix-hair); padding-left: var(--vw-space-lg); }
+  .ix-table tr.is-click:hover td:first-child { background: var(--ix-soft); }
+  .ix-table tfoot td:first-child { background: var(--ix-soft); }
+}
+/* <768 phone: everything single-column; list rows fold their trailing
+   figures/actions under the text instead of squeezing beside it */
+@media (max-width: 767px) {
   .ix-kpis { grid-template-columns: 1fr; }
-  .ix-kpi.is-hero .ix-kpi-v, .ix-kpi-v { font-size: 1.75rem; }
+  .ix-sh-t { font-size: 15px; }
   .ix-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ix-tile.is-hero { grid-column: 1 / -1; }
   .ix-table { font-size: 12px; }
-  .ix-table th, .ix-table td { padding-left: var(--vw-space-md); padding-right: var(--vw-space-md); }
-  .ix-panel-b.is-flush { overflow-x: auto; }
-  .ix-fail { grid-template-columns: 34px minmax(0, 1fr); }
-  .ix-fail-r { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .ix-fail { grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; }
+  .ix-fail-r { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 10px; }
   .ix-bar { grid-template-columns: minmax(0, 1fr) 2.6rem; }
   .ix-bar-c, .ix-bar-t { display: none; }
+  .ix-module-meta { flex-basis: 100%; }
+  .ix-chart .ch-legend { padding-left: 0; }
+}
+/* ≤480 small phone: tighter insets so content, not chrome, gets the width */
+@media (max-width: 480px) {
+  .ix-ctx { padding: 5px 8px; font-size: 11.5px; gap: 6px; }
+  .ix-ctx-domains { gap: 8px; }
+  .ix-kpi { padding: 14px 14px 12px 16px; }
+  .ix-panel-h, .ix-panel-b, .ix-fail { padding-left: 14px; padding-right: 14px; }
+  .ix-table th:first-child, .ix-table td:first-child { padding-left: 14px; }
+  .ix-legend-ramp { padding-left: 14px !important; padding-right: 14px !important; }
 }

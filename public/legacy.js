@@ -8,13 +8,40 @@ const cv  = (t, s) => `var(--vw-color-${t}-${s})`;
    Insights/Reconciliation screens' DOMAIN_HEX/DOMAIN_LABEL (src/data/
    discoveryOverview.ts), so a domain reads the same colour everywhere,
    legacy screens included. */
+/* The domain model is a tree, the same one src/data/discoveryOverview.ts
+   declares (DOMAIN_PARENT): IP/MPLS is a packet-transport technology UNDER
+   Transport, not a fourth sibling —
+     RAN · Core · Transport └ IP/MPLS
+   `parent` carries that here; domainDot() renders the parent muted in front
+   of a sub-domain ("Transport · IP/MPLS"), DOMAIN_FILTER_OPTIONS lists the
+   tree indented in every Domain filter, and domainFilterMatch() makes a
+   Transport filter keep IP/MPLS rows. */
 const DOMAIN_META = {
   RAN:       { n: 'RAN',      hex: cv('blue', 400) },
   Core:      { n: 'Core',     hex: cv('violet', 400) },
   Transport: { n: 'Transport',hex: cv('teal', 400) },
-  IPMPLS:    { n: 'IP/MPLS',  hex: cv('pink', 400) }
+  IPMPLS:    { n: 'IP/MPLS',  hex: cv('pink', 400), parent: 'Transport' }
 };
-const domainDot = d => `<span class="row" style="align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${DOMAIN_META[d]?.hex || cv('gray',400)};flex-shrink:0"></span>${DOMAIN_META[d]?.n || d}</span>`;
+/* display order: each sub-domain directly after its parent */
+const DOMAIN_ORDER = ['RAN', 'Core', 'Transport', 'IPMPLS'];
+/* filter-panel options — {v, l} when the visible text is indented under a
+   parent; the value stays the plain name a filter compares against */
+const DOMAIN_FILTER_OPTIONS = DOMAIN_ORDER.map(k => DOMAIN_META[k].parent
+  ? { v: DOMAIN_META[k].n, l: `   └ ${DOMAIN_META[k].n}` }
+  : DOMAIN_META[k].n);
+/* does a row tagged `key` fall under the Domain filter value `name`
+   (case-insensitive short name)? Equal, or `name` is its parent. */
+const domainFilterMatch = (key, name) => {
+  const m = DOMAIN_META[key];
+  if (!m) return false;
+  const want = String(name).trim().toLowerCase();
+  return m.n.toLowerCase() === want || (!!m.parent && DOMAIN_META[m.parent].n.toLowerCase() === want);
+};
+const domainDot = d => {
+  const m = DOMAIN_META[d];
+  const parent = m && m.parent ? `<span style="color:${cv('slate',500)};font-weight:400">${DOMAIN_META[m.parent].n} · </span>` : '';
+  return `<span class="row" style="align-items:center;gap:8px;flex-wrap:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:${m?.hex || cv('gray',400)};flex-shrink:0"></span><span>${parent}${m?.n || d}</span></span>`;
+};
 const pad2 = v => String(v).padStart(2, '0');
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function getLiveDateSync(h = 9, m = 10) {
@@ -3059,6 +3086,11 @@ function gridApply(key, rows) {
            Status, whose options are a fixed enum rather than free text,
            need an exact match or filtering one option silently pulls in
            any other option whose text contains it */
+        if (field.toLowerCase() === 'domain' && r.domain && typeof domainFilterMatch === 'function') {
+          /* Domain is a tree: 'Transport' keeps its IP/MPLS sub-domain rows */
+          if (!domainFilterMatch(r.domain, v)) return false;
+          continue;
+        }
         const exact = field.toLowerCase() === 'domain' || field.toLowerCase() === 'status';
         if (exact ? fieldVal !== v : !fieldVal.includes(v)) return false;
       } else {
@@ -3190,7 +3222,8 @@ function filterPanel(spec, key = '') {
         ${f.o
           ? `<span class="nst-select-shell"><select class="nst-input fp-sel" data-filterval="${key}|${esc(f.n)}">
                <option value=""${val ? '' : ' selected'}></option>
-               ${f.o.map(o => `<option${o === val ? ' selected' : ''}>${o}</option>`).join('')}</select></span>`
+               ${f.o.map(o => { const ov = typeof o === 'string' ? o : o.v, ol = typeof o === 'string' ? o : o.l;
+                 return `<option value="${esc(ov)}"${ov === val ? ' selected' : ''}>${ol}</option>`; }).join('')}</select></span>`
           : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
         ${f.h ? `<span class="fp-hint">${f.h}</span>` : ''}
       </div>
@@ -3296,14 +3329,14 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
-             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
+             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
-             { n:'Domain', o:['RAN','Core','Transport','IP/MPLS'] },
+             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],

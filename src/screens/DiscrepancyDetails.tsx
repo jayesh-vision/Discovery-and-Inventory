@@ -1,35 +1,26 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, StatStrip } from '../components/ui';
+import { Card, Chip, DomainDot, StatStrip } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
 import { legacyPath } from '../routes';
 import {
-  DISCREPANCY_TYPES, DOMAIN_HEX, DOMAIN_LABEL, type DiscrepancyTypeRow, type DomainKey,
-  type DiscrepancyCategory, type AgeBand
+  DISCREPANCY_TYPES, DOMAIN_FULL_LABEL, DOMAIN_LABEL, DOMAIN_OPTIONS, domainFilterMatches, domainRoute, parseDomainKey,
+  type DiscrepancyTypeRow, type DiscrepancyCategory, type AgeBand
 } from '../data/discoveryOverview';
-import { domainToUrl } from './DomainDevices';
 
-const DOMAINS: DomainKey[] = ['RAN', 'Transport', 'Core', 'IPMPLS'];
 const CATEGORIES: DiscrepancyCategory[] = ['EXISTENCE', 'ATTRIBUTE', 'RELATIONSHIP', 'FRESHNESS'];
 const AGE_BANDS: AgeBand[] = ['<1h', '1-24h', '1-7d', '7-30d', '>30d'];
 const AGE_LABEL: Record<AgeBand, string> = { '<1h': '< 1h', '1-24h': '1–24h', '1-7d': '1–7d', '7-30d': '7–30d', '>30d': '> 30d' };
 
-const isDomain = (v: string | null): v is DomainKey => !!v && (DOMAINS as string[]).includes(v);
 const isCategory = (v: string | null): v is DiscrepancyCategory => !!v && (CATEGORIES as string[]).includes(v);
 const isAgeBand = (v: string | null): v is AgeBand => !!v && (AGE_BANDS as string[]).includes(v);
-
-const DomainDot = ({ domain }: { domain: DomainKey }) => (
-  <span className="row vw-items-center" style={{ gap: '8px' }}>
-    <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[domain], flexShrink: 0 }} />
-    {DOMAIN_LABEL[domain]}
-  </span>
-);
 
 export default function DiscrepancyDetails() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
-  const urlDomain = isDomain(sp.get('domain')) ? sp.get('domain') as DomainKey : undefined;
+  /* ?domain= accepts the key, either label or the URL slug (see parseDomainKey) */
+  const urlDomain = parseDomainKey(sp.get('domain'));
   const urlCategory = isCategory(sp.get('category')) ? sp.get('category') as DiscrepancyCategory : undefined;
   const urlAge = isAgeBand(sp.get('age')) ? sp.get('age') as AgeBand : undefined;
   const urlQ = sp.get('q') ?? '';
@@ -56,7 +47,7 @@ export default function DiscrepancyDetails() {
     const q = query.trim().toLowerCase();
     return DISCREPANCY_TYPES.filter(r => {
       if (q && !r.label.toLowerCase().includes(q)) return false;
-      if (filters.Domain && DOMAIN_LABEL[r.domain] !== filters.Domain) return false;
+      if (!domainFilterMatches(r.domain, filters.Domain)) return false;
       if (filters.Category && r.category !== filters.Category) return false;
       if (filters.Age && AGE_LABEL[r.ageBand] !== filters.Age) return false;
       return true;
@@ -79,7 +70,7 @@ export default function DiscrepancyDetails() {
           resetKey={`${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Discrepancy type"
           filters={[
-            { n: 'Domain', o: DOMAINS.map(d => DOMAIN_LABEL[d]) },
+            { n: 'Domain', o: DOMAIN_OPTIONS },
             { n: 'Category', o: CATEGORIES },
             { n: 'Age', o: AGE_BANDS.map(a => AGE_LABEL[a]) }
           ]}
@@ -96,7 +87,7 @@ export default function DiscrepancyDetails() {
       </Card>
 
       <Drawer open={!!open} onClose={() => setOpen(null)} title={open?.label ?? ''}
-        sub={open ? `${DOMAIN_LABEL[open.domain]} · ${open.category}` : undefined}>
+        sub={open ? `${DOMAIN_FULL_LABEL[open.domain]} · ${open.category}` : undefined}>
         {open && (
           <>
             <div className="kv">
@@ -107,7 +98,7 @@ export default function DiscrepancyDetails() {
             </div>
             <div style={{ marginTop: 'var(--vw-space-lg)' }}>
               <button className="nst-btn nst-btn--sm"
-                onClick={() => nav(legacyPath('domaindevices', from ? { from } : null, { domain: domainToUrl(open.domain) }))}>
+                onClick={() => { const r = domainRoute(open.domain); nav(legacyPath(r.key, from ? { from } : null, r.params)); }}>
                 View {DOMAIN_LABEL[open.domain]} devices
               </button>
             </div>

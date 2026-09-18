@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
+import { domainFilterMatches, isDomainKey } from '../../data/discoveryOverview';
 
 /* ── types ──────────────────────────────────────────────── */
 /** w: optional column width (e.g. '18%') — a grid with few, short columns
@@ -9,7 +10,13 @@ import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
     column behaves exactly as before (content-sized, auto-distributed). */
 export interface Column { t: string; r?: boolean; w?: string }
 export interface Action { l: string; onClick?: () => void; danger?: boolean; primary?: boolean }
-export interface FilterField { n: string; o?: string[]; h?: string }
+/* a select option: a plain string, or {v, l} when the visible text differs
+   from the value (the Domain tree indents sub-domains: value 'IP/MPLS',
+   label '   └ IP/MPLS') */
+export type FilterOption = string | { v: string; l: string };
+export const optValue = (o: FilterOption) => (typeof o === 'string' ? o : o.v);
+export const optLabel = (o: FilterOption) => (typeof o === 'string' ? o : o.l);
+export interface FilterField { n: string; o?: FilterOption[]; h?: string }
 
 export interface DataGridProps<Row> {
   columns: Column[];
@@ -84,7 +91,7 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
           {f.o
             ? <span className="nst-select-shell"><select className="nst-input fp-sel" value={values[f.n] ?? ''} onChange={e => setField(e.target.value)}>
                 <option value="" />
-                {f.o.map(o => <option key={o}>{o}</option>)}
+                {f.o.map(o => <option key={optValue(o)} value={optValue(o)}>{optLabel(o)}</option>)}
               </select></span>
             : <span className="nst-input-shell"><input className="nst-input" placeholder="Contains…" value={values[f.n] ?? ''} onChange={e => setField(e.target.value)} /></span>}
           {f.h && <span className="fp-hint">{f.h}</span>}
@@ -352,6 +359,15 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
   for (const [field, fVal] of activeFilters) {
     const val = fVal.trim().toLowerCase();
     if (!val) continue;
+
+    /* Domain is a tree, not free text: 'Transport' must keep IP/MPLS rows
+       (a sub-domain of Transport), and 'IP/MPLS' must find rows whose key
+       is 'IPMPLS' — a substring test does neither, so the domain predicate
+       decides, the same way the legacy grid's Domain filter does. */
+    if (field.toLowerCase() === 'domain' && r && typeof r === 'object' && isDomainKey(r.domain)) {
+      if (!domainFilterMatches(r.domain, val)) return false;
+      continue;
+    }
 
     let matchFound = false;
     if (r && typeof r === 'object') {
