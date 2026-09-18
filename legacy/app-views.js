@@ -3499,7 +3499,7 @@ function svcP2PTable(t, rows) {
       `<span class="vw-value">${s.srcNe}</span><span class="cell-sub mono">${s.srcIp} · ${s.srcIfc}</span>`,
       `<span class="vw-value">${s.dstNe}</span><span class="cell-sub mono">${s.dstIp} · ${s.dstIfc}</span>`,
       `<span class="mono">${s.erp}</span>`
-    ]), 'chip-sm',
+    ]), 'chip-lg',
     i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
     i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }));
 }
@@ -3573,8 +3573,9 @@ function viewServices() {
     ${card(`
       <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services,
-        `<div class="tabbar tabbar--detail">
-          ${domainTabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" data-tab="svc:${x.k}">${x.n}</button>`).join('')}
+        `<div class="tabbar tabbar--chip" role="tablist" aria-label="Service type">
+          ${domainTabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" role="tab" aria-selected="${x.k === t}"
+            data-tab="svc:${x.k}">${x.n}</button>`).join('')}
         </div>`,
         [], 'services')}
       ${t === 'l2vpn'
@@ -3592,7 +3593,7 @@ function viewServices() {
                 adminChip, operChip,
                 `<span class="mono">L2:${s.erp}</span>`
               ];
-            }), 'chip-sm',
+            }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : t === 'l3vpn'
@@ -3601,7 +3602,7 @@ function viewServices() {
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-            ]), 'chip-sm',
+            ]), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : svcP2PTable(t, rows)}`)}
