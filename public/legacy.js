@@ -1852,7 +1852,7 @@ const PHY = {
   ],
   server: [
     { st: 'none', name: 'BGLK-CDC-SRV-01', ip: '172.31.70.11', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XYZ', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '172.31.70.12', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '172.31.70.14', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
     { st: 'none', name: 'DEL-EDC-SRV-07', ip: '172.31.71.07', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null }
   ],
   dwdm: [
@@ -1877,10 +1877,53 @@ const PHY = {
 const PHY_LOC = ['BGLK-277', 'DEL-279', 'INDR-275', 'VJA-118', 'CHE-118', 'MAS-041', 'PUN-162', 'HYD-093', 'KOL-204', 'AHM-131'];
 const PHY_ST = ['ok', 'ok', 'drift', 'ok', 'stale', 'ok', 'drift', 'ok', 'none', 'ok'];
 const PHY_STK = ['deployed', 'deployed', 'deployed', 'instore', 'deployed', 'planned', 'deployed', 'faulty', 'planned', 'deployed'];
+const LEGACY_CLASS_ROLES = {
+  router: ['P', 'PE', 'AGG', 'ACC', 'ER'],
+  switch: ['SW', 'ACC-SW', 'AGG-SW', 'CORE-SW', 'DIST'],
+  server: ['SRV', 'NFV', 'K8S', 'HOST', 'COMPUTE'],
+  dwdm: ['ROADM', 'DWDM', 'OTN', 'MUX', 'AMP'],
+  enodeb: ['ENB', '4G-CELL', 'LTE', 'BBU', 'NODE'],
+  gnodeb: ['GNB', '5G-NR', 'gNodeB', 'AAU', 'DU']
+};
+const legacyUsedIps = new Set();
+Object.keys(PHY).forEach(c => PHY[c].forEach(s => legacyUsedIps.add(s.ip)));
+function legacyNextIp(c, idx, isPlanned) {
+  let offset = idx;
+  while (true) {
+    let candidate = '';
+    if (isPlanned) {
+      const subnets = { router: 11, switch: 12, server: 13, dwdm: 14, enodeb: 15, gnodeb: 16 };
+      const sub = subnets[c] || 11;
+      const o3 = Math.floor(offset / 240);
+      const o4 = 10 + (offset % 240);
+      candidate = '192.168.' + (sub + o3) + '.' + o4;
+    } else {
+      if (c === 'enodeb') {
+        candidate = '10.44.' + (30 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      } else if (c === 'gnodeb') {
+        candidate = '10.51.' + (30 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      } else if (c === 'server') {
+        candidate = '10.10.' + (10 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      } else if (c === 'dwdm') {
+        candidate = '172.31.' + (160 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      } else if (c === 'switch') {
+        candidate = '172.31.' + (120 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      } else {
+        candidate = '172.31.' + (100 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
+      }
+    }
+    if (!legacyUsedIps.has(candidate)) {
+      legacyUsedIps.add(candidate);
+      return candidate;
+    }
+    offset++;
+  }
+}
 Object.keys(PHY).forEach(cls => {
   const live = PHY[cls].filter(r => r.stock !== 'decomm');
   const arch = PHY[cls].filter(r => r.stock === 'decomm');
   const out = live.slice();
+  const roles = LEGACY_CLASS_ROLES[cls] || ['NODE'];
   for (let i = 0; out.length < 12; i++) {
     const base = live[i % live.length], k = out.length;
     const stock = PHY_STK[k % PHY_STK.length];
@@ -1888,8 +1931,8 @@ Object.keys(PHY).forEach(cls => {
     out.push({
       ...base,
       st: planned ? 'none' : PHY_ST[k % PHY_ST.length],
-      name: `${PHY_LOC[k % PHY_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${['P', 'PE', 'AGG', 'ACC', 'ER'][k % 5]}-${String(20 + k)}`,
-      ip: planned ? `192.168.${20 + k % 9}.${11 + k}` : `172.31.${64 + (k * 5) % 60}.${12 + (k * 23) % 240}`,
+      name: `${PHY_LOC[k % PHY_LOC.length].split('-')[0]}-${base.model.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()}-${roles[k % roles.length]}-${String(20 + k)}`,
+      ip: legacyNextIp(cls, k, planned),
       sn: base.sn.replace(/[0-9]{3}$/, String(200 + k * 7)) + String.fromCharCode(65 + k % 26),
       loc: PHY_LOC[k % PHY_LOC.length],
       stock,
@@ -3228,11 +3271,14 @@ function filterPanel(spec, key = '') {
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
         ${f.o
-          ? `<span class="nst-select-shell"><select class="nst-input fp-sel" data-filterval="${key}|${esc(f.n)}">
-               <option value=""${val ? '' : ' selected'}></option>
-               ${f.o.map(o => { const ov = typeof o === 'string' ? o : o.v, ol = typeof o === 'string' ? o : o.l;
-                 return `<option value="${esc(ov)}"${ov === val ? ' selected' : ''}>${ol}</option>`; }).join('')}</select></span>`
-          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
+          ? `<span class="nst-select-shell"><select class="nst-input fp-sel${val ? '' : ' is-placeholder'}" data-filterval="${key}|${esc(f.n)}" placeholder="${esc(f.n)}">
+               <option value=""${val ? '' : ' selected'}>${esc(f.n)}</option>
+               ${f.o.map(o => {
+                 const ov = (typeof o === 'object' && o !== null) ? o.v : o;
+                 const ol = (typeof o === 'object' && o !== null) ? (o.l || o.v) : o;
+                 return `<option value="${esc(ov)}"${ov === val ? ' selected' : ''}>${esc(ol)}</option>`;
+               }).join('')}</select></span>`
+          : `<span class="nst-input-shell"><input class="nst-input" placeholder="${esc(f.n)}" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
         ${f.h ? `<span class="fp-hint">${f.h}</span>` : ''}
       </div>
     </div>
@@ -14669,6 +14715,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute && el.hasAttribute('data-filterval')) {
     const [key, field] = el.dataset.filterval.split('|');
     gridOf(key).filters[field] = el.value;
+    if (el.classList && el.classList.contains('fp-sel')) el.classList.toggle('is-placeholder', !el.value);
     return; /* applied on "Apply filters", not per keystroke */
   }
   if (el.classList && el.classList.contains('ox-hd')) {
@@ -14694,6 +14741,7 @@ document.addEventListener('change', e => {
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
     gridOf(key).filters[field] = e.target.value;
+    if (e.target.classList && e.target.classList.contains('fp-sel')) e.target.classList.toggle('is-placeholder', !e.target.value);
     return;
   }
   const c = e.target.classList;

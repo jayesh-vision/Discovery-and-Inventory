@@ -240,11 +240,14 @@ function filterPanel(spec, key = '') {
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
         ${f.o
-          ? `<span class="nst-select-shell"><select class="nst-input fp-sel" data-filterval="${key}|${esc(f.n)}">
-               <option value=""${val ? '' : ' selected'}></option>
-               ${f.o.map(o => { const ov = typeof o === 'string' ? o : o.v, ol = typeof o === 'string' ? o : o.l;
-                 return `<option value="${esc(ov)}"${ov === val ? ' selected' : ''}>${ol}</option>`; }).join('')}</select></span>`
-          : `<span class="nst-input-shell"><input class="nst-input" placeholder="Contains…" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
+          ? `<span class="nst-select-shell"><select class="nst-input fp-sel${val ? '' : ' is-placeholder'}" data-filterval="${key}|${esc(f.n)}" placeholder="${esc(f.n)}">
+               <option value=""${val ? '' : ' selected'}>${esc(f.n)}</option>
+               ${f.o.map(o => {
+                 const ov = (typeof o === 'object' && o !== null) ? o.v : o;
+                 const ol = (typeof o === 'object' && o !== null) ? (o.l || o.v) : o;
+                 return `<option value="${esc(ov)}"${ov === val ? ' selected' : ''}>${esc(ol)}</option>`;
+               }).join('')}</select></span>`
+          : `<span class="nst-input-shell"><input class="nst-input" placeholder="${esc(f.n)}" data-filterval="${key}|${esc(f.n)}" value="${esc(val)}"></span>`}
         ${f.h ? `<span class="fp-hint">${f.h}</span>` : ''}
       </div>
     </div>

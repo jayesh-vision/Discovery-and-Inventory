@@ -96,11 +96,11 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
         <div className="fpanel-ctl">
           <span className="fp-label">{f.n}</span>
           {f.o
-            ? <span className="nst-select-shell"><select className="nst-input fp-sel" value={values[f.n] ?? ''} onChange={e => setField(e.target.value)}>
-                <option value="" />
+            ? <span className="nst-select-shell"><select className={`nst-input fp-sel${values[f.n] ? '' : ' is-placeholder'}`} value={values[f.n] ?? ''} onChange={e => setField(e.target.value)}>
+                <option value="">{f.n}</option>
                 {f.o.map(o => <option key={optValue(o)} value={optValue(o)}>{optLabel(o)}</option>)}
               </select></span>
-            : <span className="nst-input-shell"><input className="nst-input" placeholder="Contains…" value={values[f.n] ?? ''} onChange={e => setField(e.target.value)} /></span>}
+            : <span className="nst-input-shell"><input className="nst-input" placeholder={f.n} value={values[f.n] ?? ''} onChange={e => setField(e.target.value)} /></span>}
           {f.h && <span className="fp-hint">{f.h}</span>}
         </div>
       </div>

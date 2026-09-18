@@ -337,26 +337,12 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
   .ix-table th:last-child, .ix-table td:last-child { padding-right: var(--vw-space-lg); }
   .ix-table .ix-mark { display: none; }
 }
-@media (max-width: 1500px) {
+/* ≤1024 tablet: 2-column KPIs, single-column panels, tables scroll inside panel */
+@media (max-width: 1024px) {
   .ix-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* two-panel rows split evenly (a 1.25:1 split starves the six-column
-     table on the right); the widest tables (7–8 columns) take the full row */
-  .ix-grid { grid-template-columns: 1fr 1fr; }
-  .ix-grid.is-wide { grid-template-columns: 1fr; }
-  /* at half width the cycle rows stack and need more height than the shared
-     fixed size allows — grow rather than hide domains behind a scrollbar */
-  .ix-panel.is-tall { height: auto; min-height: 524px; }
-}
-/* ≤1280 laptop: one column; tall panels release their shared fixed height */
-@media (max-width: 1280px) {
   .ix-grid { grid-template-columns: 1fr !important; }
   .ix-panel.is-tall { height: auto; min-height: 0; }
-  /* the context chips take their own line under the title block, left-aligned */
   .ix-context { flex: 1 1 100%; justify-content: flex-start; }
-}
-/* ≤1024 tablet: tables that must scroll do so inside their panel, and pin
-   their identity column so a row never loses its name mid-scroll */
-@media (max-width: 1024px) {
   .ix-table th, .ix-table td { padding-left: 10px; padding-right: 10px; }
   .ix-table th:first-child, .ix-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--vw-color-white);
     box-shadow: inset -1px 0 0 var(--ix-hair); padding-left: var(--vw-space-lg); }

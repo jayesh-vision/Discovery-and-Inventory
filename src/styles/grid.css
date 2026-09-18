@@ -115,6 +115,16 @@
 .fp-hint { font-size: 0.6875rem; color: var(--vw-color-gray-400); }
 .nst-select-shell { display: block; }
 .fp-sel { width: 100%; }
+.fp-sel.is-placeholder,
+.fp-sel:has(option[value=""]:checked) {
+  color: var(--vw-color-gray-400);
+}
+.fp-sel option {
+  color: var(--vw-color-gray-900);
+}
+.fp-sel option[value=""] {
+  color: var(--vw-color-gray-400);
+}
 .fpanel-ctl .nst-input, .fpanel-ctl select { min-height: 40px; border-radius: var(--vw-radius-md); }
 .fpanel-foot {
   display: flex; align-items: center; gap: var(--vw-space-sm);
