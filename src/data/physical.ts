@@ -12,12 +12,12 @@ export interface NeRow {
    scroll through instead of stopping after one page of generated filler. */
 export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
   router: [
-    { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.33.100', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
+    { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.42.100', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
     { st: 'ok', name: 'VZG-N540X-PE-T4-NR', ip: '172.31.53.186', model: 'NCS-540', os: '7.9.2', sn: 'FW488AS342W', oem: 'CISCO', loc: 'VJA-118', s: 'd', stock: 'deployed', v: 10 },
     { st: 'drift', name: 'CHE-J2.2K-PE-T4-ER', ip: '172.31.61.140', model: 'ACX2200', os: '21.2R3-S8.5', sn: 'PJ0215230255', oem: 'JUNIPER', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 3 },
     { st: 'drift', name: 'ET-J960-P-T1-WR', ip: '172.31.31.97', model: 'MX960', os: '21.4R3-S5.5', sn: 'JN1234C25AFA', oem: 'JUNIPER', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 },
     { st: 'drift', name: 'SP-CNOC-LAB-J204-PE-T3-NR1', ip: '172.31.86.61', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 },
-    { st: 'stale', name: 'CHE-920-WIFI-R2', ip: '172.31.38.43', model: 'ASR920', os: '17.6.4', sn: 'CAT2034U1PP', oem: 'CISCO', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 720 },
+    { st: 'stale', name: 'CHE-920-WIFI-R2', ip: '172.31.70.43', model: 'ASR920', os: '17.6.4', sn: 'CAT2034U1PP', oem: 'CISCO', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 720 },
     { st: 'miss', name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', model: '7750', os: '—', sn: 'JS123CC2EAFA', oem: 'NOKIA', loc: 'MAS-041', s: 'd', stock: 'faulty', v: 6264 },
     { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '192.168.1.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
     { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
@@ -39,8 +39,8 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'none', name: 'DEL-EDC-SRV-07', ip: '172.31.71.07', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null }
   ],
   dwdm: [
-    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.47.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.47.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.75.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.75.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
     { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.93.12', model: '6500-T12', os: '11.5.0', sn: 'CIENA6500HYD01', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null },
     { st: 'ok', name: 'KOL-NOKIA-1830PSS-01', ip: '172.31.204.19', model: '1830 PSS-32', os: 'R21.6', sn: 'NOK1830KOL01', oem: 'NOKIA', loc: 'KOL-204', s: 'm', stock: 'deployed', v: null }
   ],

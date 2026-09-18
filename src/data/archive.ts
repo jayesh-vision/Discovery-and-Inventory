@@ -10,7 +10,7 @@ export interface ArchiveRow {
 const DECOMM_SEEDS: Record<InactiveTab, ArchiveRow[]> = {
   router: [
     { name: 'MAS-J960-P-R2-T1-SR', ip: '172.31.31.140', model: 'MX960', sn: 'JN1231A55AFB', oem: 'JUNIPER', loc: 'MAS-041', why: 'Replaced under CR-8802', on: '14-Jun-2026', by: 'Anjali Verma', wo: 'WO-2026-4412', zombie: false },
-    { name: 'DEL-N540X-SPARE', ip: '172.31.35.207', model: 'NCS-540', sn: 'CAT2077U1XX', oem: 'CISCO', loc: 'DEL-279', why: 'End of life', on: '02-May-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4188', zombie: true },
+    { name: 'DEL-N540X-SPARE', ip: '172.31.42.207', model: 'NCS-540', sn: 'CAT2077U1XX', oem: 'CISCO', loc: 'DEL-279', why: 'End of life', on: '02-May-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4188', zombie: true },
     { name: 'INDR-ASR920-R7', ip: '172.31.38.77', model: 'ASR920', sn: 'CAT2034U7RR', oem: 'CISCO', loc: 'INDR-275', why: 'Faulty, returned to OEM', on: '11-Feb-2026', by: 'Amit Sharma', wo: 'WO-2026-3901', zombie: false },
     { name: 'VZG-7750-BNG-02', ip: '172.31.49.202', model: '7750', sn: 'NSN7750VZG022', oem: 'NOKIA', loc: 'VJA-118', why: 'Capacity migration', on: '08-Jan-2026', by: 'Sai Krishna', wo: 'WO-2026-3644', zombie: true },
     { name: 'CHE-MX204-EDGE-11', ip: '172.31.61.88', model: 'MX204', sn: 'JN1188C21DDA', oem: 'JUNIPER', loc: 'CHE-118', why: 'Site consolidation', on: '22-Nov-2025', by: 'Harish Kumar', wo: 'WO-2025-9120', zombie: false }
