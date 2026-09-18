@@ -22,7 +22,7 @@ const HW_TREE = [
 
 /* Interfaces — first-class, estate-searchable */
 const IFACES = [
-  { n:'xe-0/0/1',  desc:'BB:NDLS-PSA 10G',       admin:'up',   oper:'up',   sp:'10G', mtu:9192, ip:'172.31.33.100/30', vlan:'—',    nb:'PSA-C920-WIFI1-T4-ER', util:62, chg:'47 d', rx:'−4.2' },
+  { n:'xe-0/0/1',  desc:'BB:NDLS-PSA 10G',       admin:'up',   oper:'up',   sp:'10G', mtu:9192, ip:'172.31.42.100/30', vlan:'—',    nb:'PSA-C920-WIFI1-T4-ER', util:62, chg:'47 d', rx:'−4.2' },
   { n:'xe-0/0/4',  desc:'BB:NDLS-Kalindi 10G',   admin:'up',   oper:'up',   sp:'10G', mtu:9192, ip:'172.31.33.104/30', vlan:'—',    nb:'Kalindi-J1.1K-DU-T4-NR', util:44, chg:'47 d', rx:'−9.8' },
   { n:'xe-0/0/7',  desc:'BB:NDLS-Janki 10G',     admin:'up',   oper:'up',   sp:'10G', mtu:9192, ip:'172.31.33.108/30', vlan:'—',    nb:'Janki-J1.1K-DU-T4-NR', util:71, chg:'47 d', rx:'−5.5' },
   { n:'xe-0/0/9',  desc:'CGDA customer handoff', admin:'up',   oper:'up',   sp:'10G', mtu:1514, ip:'—',                vlan:'100',  nb:'—',                    util:18, chg:'12 d', rx:'−4.9' },

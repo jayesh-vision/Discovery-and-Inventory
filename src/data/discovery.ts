@@ -124,8 +124,8 @@ export const ATTENTION: AttentionRow[] = [
   { name: 'PUN-MX204-AGG-07', ip: '172.31.106.37', region: 'West', vendor: 'Juniper', model: 'MX204', reason: 'parse', last: getLiveDateStr(8, 40) },
   { name: 'HYD-NCS540-PE-T4', ip: '172.31.132.7', region: 'South', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 36) },
   { name: 'JAI-MX204-PE-T2', ip: '172.31.101.115', region: 'North', vendor: 'Juniper', model: 'MX204', reason: 'auth', last: getLiveDateStr(8, 31) },
-  { name: 'CHE-920-WIFI-R2', ip: '172.31.38.43', region: 'South', vendor: 'Cisco', model: 'ASR920', reason: 'timeout', last: getLiveDateStr(8, 27) },
-  { name: 'DEL-N540X-SPARE', ip: '172.31.35.207', region: 'North', vendor: 'Cisco', model: 'NCS-540', reason: 'dupip', last: getLiveDateStr(8, 22) }
+  { name: 'CHE-920-WIFI-R2', ip: '172.31.70.43', region: 'South', vendor: 'Cisco', model: 'ASR920', reason: 'timeout', last: getLiveDateStr(8, 27) },
+  { name: 'DEL-N540X-SPARE', ip: '172.31.42.207', region: 'North', vendor: 'Cisco', model: 'NCS-540', reason: 'dupip', last: getLiveDateStr(8, 22) }
 ];
 
 /* ── geo: identified devices per state, split by class ─────── */
