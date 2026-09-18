@@ -37,7 +37,15 @@ function agoStamp(minsAgo, withSeconds) {
   const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${withSeconds ? ':' + pad2(d.getSeconds()) : ''}`;
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${time}`;
 }
-const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
+/* title="" gives every chip a native tooltip fallback of its own label —
+   needed now that grid chips are sized to a per-column tier (see the
+   .tbl-wrap chip-width rules in shell.css) rather than their own text, so a
+   label longer than its tier's longest expected value ellipsis-truncates
+   instead of stretching the box; the full text stays reachable on hover.
+   esc() here (unlike the plain ${t} in the chip's own text below) matters
+   because this one lands inside an HTML attribute, where a stray quote in
+   the label would otherwise break out of it. */
+const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}" title="${esc(t)}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;
 const head = (t, d) =>
@@ -7198,13 +7206,13 @@ function svcDiagram(r, tab) {
    field split out) is still one click away in the View drawer. */
 function svcP2PTable(t, rows) {
   const cols = SVC_P2P_COLS[t] || { name: 'Name', ref: 'Reference ID' };
-  return table([{t:'Status'},{t:cols.name},{t:'Source'},{t:'Destination'},{t:cols.ref}],
+  return table([{t:'Status', plain:true},{t:cols.name},{t:'Source'},{t:'Destination'},{t:cols.ref}],
     rows.map(s => [
       chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`,
       `<span class="vw-value">${s.srcNe}</span><span class="cell-sub mono">${s.srcIp} · ${s.srcIfc}</span>`,
       `<span class="vw-value">${s.dstNe}</span><span class="cell-sub mono">${s.dstIp} · ${s.dstIfc}</span>`,
       `<span class="mono">${s.erp}</span>`
-    ]), '',
+    ]), 'chip-sm',
     i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
     i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }));
 }
@@ -7297,16 +7305,16 @@ function viewServices() {
                 adminChip, operChip,
                 `<span class="mono">L2:${s.erp}</span>`
               ];
-            }), '',
+            }), 'chip-sm',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : t === 'l3vpn'
-        ? table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+        ? table([{t:'Status', plain:true},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-            ]), '',
+            ]), 'chip-sm',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : svcP2PTable(t, rows)}`)}
@@ -7602,20 +7610,39 @@ function nbrViewDialog() {
 function resNbrs() {
   const rows = NBRS[NBR_TAB] || [];
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
+  /* the protocol switcher — LLDP/OSPF/BGP/ISIS — as a real WAI-ARIA tablist:
+     a <nav> landmark naming what it's a list of, role="tablist" on the pill
+     row itself, and each button a role="tab" carrying aria-selected +
+     aria-controls + a roving tabindex (only the active tab is in the
+     normal tab order, same pattern a native OS tab strip uses) rather than
+     a plain row of divs a screen reader has no way to announce as tabs.
+     Visually this reuses .tabbar--detail — the compact, rounded, bordered
+     pill-tab style already established for the VNF detail screen and the
+     Services sub-tab row — instead of the plain underline .tabbar every
+     *other* first-level tab bar in this app uses; a protocol switcher
+     nested a level below Neighbours reads as a "detail" tab already, the
+     same relationship those two existing uses have to their own parent. */
+  const panelId = `nbrpanel-${NBR_TAB}`;
   return card(`
-    <div class="tabbar">${NBR_TABS.map(t=>`<button class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
-    <div class="nst-table-toolbar row vw-justify-between" style="margin:var(--vw-space-md) 0">
-      <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-      <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
-    </div>
-    ${rows.length ? table([{t:'State'},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
-             {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
-      rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
-        `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
-        `<span class="mono">${r.rip}</span>`, r.seen]), '', null,
-      i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
-      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}`) + nbrViewDialog();
+    <nav aria-label="Protocols">
+      <div class="tabbar tabbar--detail" role="tablist">${NBR_TABS.map(t=>`<button role="tab" id="nbrtab-${t.k}"
+        aria-selected="${t.k===NBR_TAB}" aria-controls="nbrpanel-${t.k}" tabindex="${t.k===NBR_TAB?'0':'-1'}"
+        class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
+    </nav>
+    <div id="${panelId}" role="tabpanel" aria-labelledby="nbrtab-${NBR_TAB}" style="margin-top:var(--vw-space-md)">
+      <div class="nst-table-toolbar row vw-justify-between" style="margin-bottom:var(--vw-space-md)">
+        <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
+        <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
+      </div>
+      ${rows.length ? table([{t:'State', plain:true},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
+               {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
+        rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
+          `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
+          `<span class="mono">${r.rip}</span>`, r.seen]), 'chip-lg', null,
+        i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
+             No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}
+    </div>`) + nbrViewDialog();
 }
 
 /* the exact same "Service linking" dialog the top-level Services page opens

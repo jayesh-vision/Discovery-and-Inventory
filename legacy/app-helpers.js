@@ -35,7 +35,15 @@ function agoStamp(minsAgo, withSeconds) {
   const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${withSeconds ? ':' + pad2(d.getSeconds()) : ''}`;
   return `${pad2(d.getDate())}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()} ${time}`;
 }
-const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}">${t}</span>`;
+/* title="" gives every chip a native tooltip fallback of its own label —
+   needed now that grid chips are sized to a per-column tier (see the
+   .tbl-wrap chip-width rules in shell.css) rather than their own text, so a
+   label longer than its tier's longest expected value ellipsis-truncates
+   instead of stretching the box; the full text stays reachable on hover.
+   esc() here (unlike the plain ${t} in the chip's own text below) matters
+   because this one lands inside an HTML attribute, where a stray quote in
+   the label would otherwise break out of it. */
+const chip = (t, v, strong) => `<span class="vw-chip vw-chip--${v}${strong?' is-strong':''}" title="${esc(t)}">${t}</span>`;
 const card = (inner, cls = '', style = '') =>
   `<section class="vw-card-section ${cls}"${style?` style="${style}"`:''}>${inner}</section>`;
 const head = (t, d) =>

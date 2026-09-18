@@ -2381,6 +2381,80 @@ details[open] > summary .vw-tx-chevron {
   border-top: 1px solid var(--vw-color-slate-200); padding-top: 10px; }
 .rpt-print-table, .rpt-print-note { display: none; }
 
+/* ── Rule details: premium polish, additive only ──────────
+   New, uniquely-scoped classes for RuleDetails.tsx's own tiles/cards — never
+   touches .vw-card-section or any other shared rule, so nothing else in the
+   app can be affected by this block. Inline styles can't express :hover, so
+   the lift/glow on interaction lives here instead. */
+.rul-hero {
+  box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 12px 32px -16px rgba(15,23,42,.18);
+  transition: box-shadow .2s ease;
+}
+.rul-resp-card { transition: box-shadow .15s ease, border-color .15s ease; }
+.rul-resp-card:hover { border-color: var(--vw-color-slate-300) !important; box-shadow: 0 4px 14px -8px rgba(15,23,42,.16); }
+.rul-step-dot { transition: transform .15s ease, box-shadow .15s ease; }
+.rul-resp-card:hover .rul-step-dot { transform: scale(1.08); }
+
+/* Lifecycle.tsx's own horizontal stage rail — one column per stage,
+   wrapping onto a second row on a narrow viewport rather than overflowing.
+   Reuses .step-dot as-is for the circle (shared with legacy's VNF rail);
+   everything else here is new and only Lifecycle.tsx references it. */
+.rul-lc-rail { display: flex; flex-wrap: wrap; gap: var(--vw-space-lg) 0; }
+.rul-lc-stage { flex: 1 1 10rem; min-width: 9rem; padding-right: var(--vw-space-md); }
+.rul-lc-node-row { display: flex; align-items: center; }
+.rul-lc-line { flex: 1 1 auto; height: 2px; margin-left: 6px; }
+
+/* ── Grid status chips: uniform size, additive only ────────
+   .vw-chip (ds-bundle.css) auto-sizes to its own label, so "Up" and
+   "Relationship drift" render as very different widths/heights in the same
+   column, which reads as an uneven grid. Scoped to .tbl-wrap — the shared
+   wrapper every grid already uses, DataGrid (src/components/grid/DataGrid.tsx)
+   and every legacy <table class="nst-table"> alike — so a chip outside a
+   grid (a header badge, a drawer field, a KPI card) is untouched.
+   Excludes .st-td (the leading Status/State column's own full-width pill,
+   an existing, deliberate, different "uniform" treatment already applied
+   consistently down that one column) so the two rules never fight.
+
+   Width comes in four tiers, not one fixed number for every grid — a grid
+   whose longest label is "Failed" doesn't need the same box as one whose
+   longest is "Completed with errors". 'md' (96px) is the bare class' own
+   default, so a grid nobody has audited yet keeps behaving close to how it
+   did before the tiers existed; DataGrid's chipWidth prop (or a legacy
+   table's own tbl-wrap--chip-* wrapper) opts a specific grid into sm/lg/xl
+   once its real label set has actually been checked.
+   Every value here — width per tier, height, padding, and now font-size
+   too — has been cut hard on purpose. Truncation is an accepted trade-off
+   at this size (title="<full label>" on Chip/chip() covers it on hover),
+   so there was no floor left to protect; the previous few passes were
+   trimming the box around the text without also shrinking the text itself,
+   which is why they kept reading as "still big" despite each one being a
+   real cut from the last. */
+.tbl-wrap td:not(.st-td) .vw-chip {
+  box-sizing: border-box;
+  width: 52px;
+  height: 18px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+.tbl-wrap--chip-sm td:not(.st-td) .vw-chip { width: 42px; }
+.tbl-wrap--chip-lg td:not(.st-td) .vw-chip { width: 68px; }
+.tbl-wrap--chip-xl td:not(.st-td) .vw-chip { width: 90px; }
+/* legacy table() helper has no wrapper-div class of its own to hook (see
+   its `cls` param, app-helpers.js) — it lands on <table> itself instead, so
+   the same tiers repeat scoped to that element */
+.nst-table.chip-sm td:not(.st-td) .vw-chip { width: 42px; }
+.nst-table.chip-lg td:not(.st-td) .vw-chip { width: 68px; }
+.nst-table.chip-xl td:not(.st-td) .vw-chip { width: 90px; }
+
 @media print {
   @page { size: A4; margin: 12mm; }
   html, body { background: #fff !important; }

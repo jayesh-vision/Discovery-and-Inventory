@@ -5,7 +5,18 @@ import type { ChipTone, ColorTone } from '../data/ledger';
 export const cv = (tone: ColorTone | string, shade: number) => `var(--vw-color-${tone}-${shade})`;
 
 export function Chip({ tone, strong, children }: { tone: ChipTone; strong?: boolean; children: ReactNode }) {
-  return <span className={`vw-chip vw-chip--${tone}${strong ? ' is-strong' : ''}`}>{children}</span>;
+  /* grid chips are now sized to a per-column tier, not to their own text
+     (see the .tbl-wrap chip-width rules in shell.css) — a label longer
+     than its tier's longest expected value ellipsis-truncates instead of
+     stretching the box, so the native title tooltip is the fallback that
+     keeps the full text reachable on hover. Only set for plain-string
+     labels; a chip built from JSX children skips it rather than stringify
+     something that isn't text. */
+  return (
+    <span className={`vw-chip vw-chip--${tone}${strong ? ' is-strong' : ''}`} title={typeof children === 'string' ? children : undefined}>
+      {children}
+    </span>
+  );
 }
 
 export function Card({ children, className = '', style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {

@@ -48,8 +48,8 @@ export default function RulesList() {
 
       <Card>
         <DataGrid<Rule>
-          columns={[{ t: 'Rule' }, { t: 'Domain' }, { t: 'Source · target' }, { t: 'Type' }, { t: 'Status' },
-            { t: 'Owner · reviewer' }, { t: 'Last updated' }, { t: 'Last execution' }, { t: 'Priority' }]}
+          columns={[{ t: 'Rule', w: '19%' }, { t: 'Domain', w: '9%' }, { t: 'Source · target', w: '16%' }, { t: 'Type', w: '10%' }, { t: 'Status', w: '9%' },
+            { t: 'Owner · reviewer', w: '13%' }, { t: 'Last updated', w: '9%' }, { t: 'Last execution', w: '9%' }, { t: 'Priority', w: '6%' }]}
           rows={rows} total={rows.length} rowKey={r => r.id}
           resetKey={`${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Rule name, ID, source, target"

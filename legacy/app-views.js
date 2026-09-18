@@ -3493,13 +3493,13 @@ function svcDiagram(r, tab) {
    field split out) is still one click away in the View drawer. */
 function svcP2PTable(t, rows) {
   const cols = SVC_P2P_COLS[t] || { name: 'Name', ref: 'Reference ID' };
-  return table([{t:'Status'},{t:cols.name},{t:'Source'},{t:'Destination'},{t:cols.ref}],
+  return table([{t:'Status', plain:true},{t:cols.name},{t:'Source'},{t:'Destination'},{t:cols.ref}],
     rows.map(s => [
       chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`,
       `<span class="vw-value">${s.srcNe}</span><span class="cell-sub mono">${s.srcIp} · ${s.srcIfc}</span>`,
       `<span class="vw-value">${s.dstNe}</span><span class="cell-sub mono">${s.dstIp} · ${s.dstIfc}</span>`,
       `<span class="mono">${s.erp}</span>`
-    ]), '',
+    ]), 'chip-sm',
     i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
     i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }));
 }
@@ -3592,16 +3592,16 @@ function viewServices() {
                 adminChip, operChip,
                 `<span class="mono">L2:${s.erp}</span>`
               ];
-            }), '',
+            }), 'chip-sm',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : t === 'l3vpn'
-        ? table([{t:'Status'},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
+        ? table([{t:'Status', plain:true},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
             rows.map(s => [
               chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
               `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
               `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-            ]), '',
+            ]), 'chip-sm',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : svcP2PTable(t, rows)}`)}

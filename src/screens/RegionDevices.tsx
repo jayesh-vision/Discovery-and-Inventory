@@ -57,7 +57,7 @@ export default function RegionDevices() {
   return (
     <div className="page">
       <Card>
-        <DataGrid<RegionDevice>
+        <DataGrid<RegionDevice> chipWidth="sm"
           columns={[{ t: 'Status' }, { t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'State' },
             { t: 'Vendor' }, { t: 'Model' }, { t: 'Failure reason' }, { t: 'Last attempt' }]}
           rows={rows} total={rows.length} rowKey={(d, i) => `${d.name}-${i}`}

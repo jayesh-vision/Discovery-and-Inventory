@@ -44,6 +44,13 @@ export interface DataGridProps<Row> {
       never opens somewhere its own menu doesn't already offer. Pass this
       explicitly for a grid with no per-row menu at all. */
   onRowClick?: (row: Row, i: number) => void;
+  /** status-chip column width tier, sized to this grid's own longest
+      possible chip label rather than one width for every grid in the app —
+      'sm' (~80px, e.g. "Answered"/"Failed"), 'md' (~108px, the default —
+      e.g. "Unverified"), 'lg' (~150px, e.g. "Not discovered"), 'xl' (~190px,
+      e.g. "Completed with errors"). Omit it for the 'md' default, which
+      matches every grid's prior fixed-width behaviour exactly. */
+  chipWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
@@ -439,7 +446,7 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
       <Toolbar showing={Math.min(count, filteredRows.length)} total={filteredRows.length} placeholder={p.searchPlaceholder}
         filters={p.filters} extra={p.extra} gridActions={p.gridActions} onTriggerRefresh={handleTriggerRefresh}
         onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} wrap={wrap} />
-      <div className="tbl-wrap" ref={wrap}>
+      <div className={`tbl-wrap${p.chipWidth && p.chipWidth !== 'md' ? ` tbl-wrap--chip-${p.chipWidth}` : ''}`} ref={wrap}>
         {isRefreshing && (
           <div className="grid-loader-overlay" role="status" aria-label="Refreshing data">
             <div className="grid-spinner" />
