@@ -751,6 +751,20 @@ document.addEventListener('click', e => {
   const nef = e.target.closest('[data-ne-filter]');
   if (nef) { NE_FILTER = nef.dataset.neFilter; go('reconcile'); return; }
 
+  const or = e.target.closest('[data-ospf-range]');
+  if (or) {
+    OSPF_RANGE = or.dataset.ospfRange;
+    go('links', { label: 'ospf links', q: 'tab=ospf' });
+    return;
+  }
+
+  const lr = e.target.closest('[data-lldp-range]');
+  if (lr) {
+    LLDP_RANGE = lr.dataset.lldpRange;
+    go('links', { label: 'lldp links', q: 'tab=lldp' });
+    return;
+  }
+
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 

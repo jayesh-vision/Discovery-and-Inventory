@@ -1055,6 +1055,8 @@ function viewReconcile() {
 
 
 let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
+let LLDP_RANGE = 'today';
+let OSPF_RANGE = 'today';
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
@@ -3392,6 +3394,97 @@ function viewLinks() {
      protocol actually reports — lldp/ospf/isis never see Established, bgp
      never sees Up */
   const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
+  const isLldp = t === 'lldp';
+  const isOspf = t === 'ospf';
+
+  const lldpCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Destination NE' },
+    { t: 'Source interface ifalias' },
+    { t: 'Destination interface' },
+    { t: 'Link name' },
+    { t: 'Destination IP address' },
+    { t: 'Link Id' }
+  ];
+
+  const ospfCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Source OSPF IP' },
+    { t: 'Source OSPF IfIndex' },
+    { t: 'Source interface Ifhighspeed' },
+    { t: 'Source Interface Ifalias' },
+    { t: 'Destination IP address' },
+    { t: 'Destination NE' },
+    { t: 'Destination interface' },
+    { t: 'Destination OSPF IP' },
+    { t: 'Destination interface Ifhighspeed' },
+    { t: 'Link ID' },
+    { t: 'Area ID' }
+  ];
+
+  const defaultCols = [
+    { t: 'Status' },
+    { t: 'Source NE' },
+    { t: 'Source IP' },
+    { t: 'Destination NE' },
+    { t: 'Destination IP' },
+    { t: 'Link name' }
+  ];
+
+  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : defaultCols;
+
+  const tableRows = rows.map(r => {
+    if (isLldp) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        r.sAlias ? `<span class="cell-sub" title="${esc(r.sAlias)}">${esc(r.sAlias)}</span>` : '—',
+        `<span class="mono">${r.dif || '—'}</span>`,
+        r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : esc(r.name || '—'),
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="mono">${r.linkId || '—'}</span>`
+      ];
+    }
+    if (isOspf) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="mono">${r.sOspfIp || '—'}</span>`,
+        `<span class="num">${r.sIfIndex !== undefined ? r.sIfIndex : '—'}</span>`,
+        r.sSpeed || '—',
+        r.sAlias ? `<span class="cell-sub" title="${esc(r.sAlias)}">${esc(r.sAlias)}</span>` : '—',
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        `<span class="mono">${r.dif || '—'}</span>`,
+        `<span class="mono">${r.dOspfIp || '—'}</span>`,
+        r.dSpeed || '—',
+        `<span class="mono">${r.linkId || '—'}</span>`,
+        `<span class="mono">${r.areaId || '—'}</span>`
+      ];
+    }
+    return [
+      chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
+      `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
+      `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
+      r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
+    ];
+  });
+
+  const searchPlaceholder = isLldp
+    ? 'Link name, Source interface, Destination interface'
+    : isOspf
+    ? 'Source OSPF IP, Destination IP address, Destination OSPF IP'
+    : 'Source IP, source NE, destination NE, destination IP';
+
+  const linkExtra = '';
+
   return `<div class="page">
 
     ${drillBar()}
@@ -3416,16 +3509,9 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
+      ${gridBar(rows.length, n(meta.c), searchPlaceholder, linkFS, linkExtra,
         [], 'links')}
-      ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
-               {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
-        rows.map(r => [
-          chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
-          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
-          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
-          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
-        ]), '',
+      ${table(tableCols, tableRows, '',
         i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
         i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}
