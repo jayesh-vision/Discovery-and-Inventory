@@ -3341,18 +3341,20 @@ const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 
    Source Interface this link reports (r.sif) lives — so a click now opens
    that instead. */
 function linkDiagram(r) {
-  const node = label => `<div class="linkdiagram-node is-static">
-    <span class="linkdiagram-icon">${nodeThumb('router')}</span>
-    <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
-  </div>`;
+  const node = (label, role) => `
+    <button class="linkdiagram-node"${dA({ v: 'resource', l: label, q: `name=${encodeURIComponent(label)}` })}
+      title="Open ${esc(label)} · View details" aria-label="Open ${role} element ${esc(label)} details">
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
+    </button>`;
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
-    ${node(r.sne)}
+    ${node(r.sne, 'Source')}
     <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}&tab=ifaces` })}
       title="Open ${esc(r.sne)} · Interfaces" aria-label="Open ${esc(r.sne)}'s Interfaces tab">
       <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
     </button>
-    ${node(r.dne)}
+    ${node(r.dne, 'Destination')}
   </div>`;
 }
 

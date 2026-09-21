@@ -67,6 +67,7 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
+  LINK_VIEW = null;
   const crumbName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
   /* the reader may already be mid-drill on CURRENT (Location's "All
      locations" list, say) — a plain single-segment crumb like "Location"
