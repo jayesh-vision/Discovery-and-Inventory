@@ -111,11 +111,14 @@ export function ReportKpi({ kpi }: { kpi: Kpi }) {
 const fmtNumShort = (x: number) => (x >= 10000 ? `${(x / 1000).toFixed(1)}k` : x.toLocaleString('en-IN'));
 
 /* ── findings ── */
+/* 400, matching every chart/bar/segment fill elsewhere in this feature
+   (src/data/reports/*.ts) rather than the punchier 500 this accent stripe
+   used to be the one place still on. */
 const FINDING_META: Record<Finding['tone'], { label: string; tone: 'error' | 'warning' | 'success' | 'info'; hex: string }> = {
-  crit: { label: 'Critical', tone: 'error', hex: cv('red', 500) },
-  warn: { label: 'Warning', tone: 'warning', hex: cv('amber', 500) },
-  good: { label: 'Positive', tone: 'success', hex: cv('emerald', 500) },
-  info: { label: 'Note', tone: 'info', hex: cv('sky', 500) }
+  crit: { label: 'Critical', tone: 'error', hex: cv('red', 400) },
+  warn: { label: 'Warning', tone: 'warning', hex: cv('amber', 400) },
+  good: { label: 'Positive', tone: 'success', hex: cv('emerald', 400) },
+  info: { label: 'Note', tone: 'info', hex: cv('sky', 400) }
 };
 export function FindingCard({ f }: { f: Finding }) {
   const m = FINDING_META[f.tone];

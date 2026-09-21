@@ -615,7 +615,7 @@ function viewTargets() {
         `${chip(`${n(failedShown)} failed`,'error')}${chip(`${n(partialShown)} partial`,'warning')}
          <button class="nst-btn nst-btn--filled nst-btn--sm js-ack">Run now</button>`, [], 'targets')}
       ${table(
-        [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
+        [{ t: 'Status', plain:true }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
@@ -637,7 +637,7 @@ function viewTargets() {
             displayReason,
             chainOf(t.ch, t.domain)
           ];
-        }), '',
+        }), 'chip-auto',
         /* an unresolved target (host '—') is not a usable identifier — many
            rows share it — so this passes the row's own ip instead, which
            targetOf() now checks first; an identified target still passes
@@ -914,7 +914,7 @@ function viewTarget() {
             `<span class="num">${r.dur}</span>`,
             r.steps.replace(/of \d+/, `of ${stepCount}`), chip(r.out, r.chip),
             `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
-          ]))}
+          ]), 'chip-auto')}
         </div>`, 'grow')}
 
       ${card(`${headSm('Objects discovered')}
@@ -1002,7 +1002,7 @@ function recTable() {
     <div class="stock-bar" style="border-bottom:0;padding-bottom:var(--vw-space-sm)">
       ${chips.map(([k,l]) => `<button class="stock-chip${NE_FILTER===k?' is-on':''}" data-ne-filter="${k}">${l}</button>`).join('')}
     </div>
-    <div class="tbl-wrap"><table class="nst-table rec-table">
+    <div class="tbl-wrap"><table class="nst-table rec-table chip-auto">
       <thead><tr>
         <th>Result</th><th>Network element</th>
         ${REC_FIELDS.map(([,l]) => `<th>${l}</th>`).join('')}
@@ -1136,7 +1136,7 @@ function viewHome() {
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
-        ]), '',
+        ]), 'chip-auto',
         i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               siteA(PHY.router[i].loc)])}`)}
@@ -2067,7 +2067,7 @@ function viewSite() {
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
-      ${rows.length ? table(cols, rows.map(cell), '',
+      ${rows.length ? table(cols, rows.map(cell), 'chip-auto',
         /* no "Site info" here — every row on this tab already belongs to
            the site this whole page is showing, so that action would only
            ever reopen the page the reader is already on */
@@ -2252,7 +2252,7 @@ function capexSection(l, neCount) {
           `${chip(st.n, st.chip)}<br><span class="vw-card-metric-label-sub num">${r.dt}</span>`,
           r.ne === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="vw-card-metric-label-sub">${r.ne}</span>`
         ];
-      }))}
+      }), 'chip-auto')}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Last updated ${cx.updated}.</span>
       <span class="row vw-gap-xl">
@@ -2437,7 +2437,7 @@ function viewPhysical() {
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
             src(r.s)
           ];
-        }), '',
+        }), 'chip-auto',
         i => rows[i].stock === 'decomm'
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
@@ -2737,12 +2737,12 @@ function viewVirtual() {
           </div>`;
         })(),
         [], 'virtual')}
-      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
+      ${table([{t:'Status', plain:true},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
         rows.map(v => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
-        ]), '',
+        ]), 'chip-auto',
         /* every row — Planned included — can still view its own details;
            only "Lifecycle operation" needs an instantiated NF, so that one
            action stays off a Planned row's menu */
@@ -3418,14 +3418,14 @@ function viewLinks() {
       ${tabs(LINK_TABS, t, 'link')}
       ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
         [], 'links')}
-      ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
+      ${table([{t:'Status', plain:true},{t:'Source NE'},{t:'Source IP'},
                {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
         rows.map(r => [
           chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
           `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
           `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
-        ]), '',
+        ]), 'chip-auto',
         i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
         i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}

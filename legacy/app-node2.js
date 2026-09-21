@@ -1146,7 +1146,7 @@ function nodeAlertsRouter(N) {
             .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
-                       `<span class="vw-card-description">${r[5]}</span>`]), '',
+                       `<span class="vw-card-description">${r[5]}</span>`]), 'chip-auto',
             () => [])}
       </div>
 
@@ -1186,7 +1186,7 @@ function nodeVlans(N) {
         `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="vw-card-metric-label-sub">${v.bw}</span>
           <span class="hbar-track" style="width:3.5rem;height:7px"><span class="hbar-fill"
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
-      ]), '',
+      ]), 'chip-auto',
       () => [])}
     <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="vw-card-metric-label-sub num">${n(tot)} MAC addresses learned</span>
@@ -1407,7 +1407,7 @@ function nodeAlertsDwdm(N) {
           `<span class="mono">${esc(a.entity)}</span>`,
           `<span class="vw-card-description">${esc(a.evidence)}</span>`,
           `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
-        ]), '', () => [])}`
+        ]), 'chip-auto', () => [])}`
       : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
           <span class="vw-card-description">No open incidents for this element.</span></div>`}
   `);
@@ -1580,7 +1580,7 @@ function nodeConfigEnodeb(N) {
               chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
               c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
               '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
-            ]), '', () => [])}
+            ]), 'chip-auto', () => [])}
         </div>`)}
       </div>
       ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}

@@ -51,7 +51,7 @@ export default function InactiveInventory() {
           tabs={INACTIVE_TABS.map(x => ({ k: x.k, n: x.n, count: 0, title: `Decommissioned ${x.n.toLowerCase()} records` }))}
           active={cls} onChange={setCls} />
 
-        <DataGrid<ArchiveRow> chipWidth="lg"
+        <DataGrid<ArchiveRow> chipWidth="auto"
           key={cls}
           columns={[{ t: 'Name' }, { t: 'Model / Vendor' }, { t: 'Serial number' }, { t: 'Last IP / location' },
             { t: 'Decommissioned' }, { t: 'Reason' }, { t: 'Authorised by' }, { t: 'Discovery' }]}

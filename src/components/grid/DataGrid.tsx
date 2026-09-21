@@ -8,7 +8,12 @@ import { domainFilterMatches, isDomainKey } from '../../data/discoveryOverview';
     across whichever columns the browser judges most "flexible", which
     reads as inconsistent gaps rather than even spacing. Omit it and a
     column behaves exactly as before (content-sized, auto-distributed). */
-export interface Column { t: string; r?: boolean; w?: string }
+/** plain: opts a column named Status/State/Outcome/Result/Stock state out of
+    the automatic full-width pill treatment (the legacy table() helper's own
+    escape hatch, e.g. for a short fixed vocabulary like "Up"/"Down" where
+    stretching the chip across the whole column reads as oversized rather
+    than as the intended full-width status summary). */
+export interface Column { t: string; r?: boolean; w?: string; plain?: boolean }
 export interface Action { l: string; onClick?: () => void; danger?: boolean; primary?: boolean }
 /* a select option: a plain string, or {v, l} when the visible text differs
    from the value (the Domain tree indents sub-domains: value 'IP/MPLS',
@@ -53,11 +58,16 @@ export interface DataGridProps<Row> {
   onRowClick?: (row: Row, i: number) => void;
   /** status-chip column width tier, sized to this grid's own longest
       possible chip label rather than one width for every grid in the app —
-      'sm' (~80px, e.g. "Answered"/"Failed"), 'md' (~108px, the default —
-      e.g. "Unverified"), 'lg' (~150px, e.g. "Not discovered"), 'xl' (~190px,
-      e.g. "Completed with errors"). Omit it for the 'md' default, which
-      matches every grid's prior fixed-width behaviour exactly. */
-  chipWidth?: 'sm' | 'md' | 'lg' | 'xl';
+      'sm' (42px, e.g. "Up"/"Failed"), 'md' (52px, the default — e.g.
+      "Active"/"Rogue"), 'lg' (68px, e.g. "Degraded"), 'xl' (90px, e.g.
+      "Not discovered"). Pass 'auto' instead of a tier for a column whose
+      vocabulary is free text or just too wide for any fixed number to fit
+      without either clipping the long values or wasting space around the
+      short ones (e.g. "Completed with errors", "Attribute mismatch") — it
+      drops the fixed width so each chip sizes to its own label. Omit the
+      prop entirely for the 'md' default, which matches every grid's prior
+      fixed-width behaviour exactly. */
+  chipWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'auto';
 }
 
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
@@ -491,7 +501,7 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
               return (
                 <tr key={key} className={openInfo ? 'is-click' : undefined} onClick={openInfo ? () => openInfo() : undefined}>
                   {cells.map((c, i) => {
-                    const cls = [p.columns[i]?.r ? 't-right num' : '', i === 0 && STATUS_COL.test(p.columns[0].t) ? 'st-td' : '']
+                    const cls = [p.columns[i]?.r ? 't-right num' : '', i === 0 && !p.columns[0].plain && STATUS_COL.test(p.columns[0].t) ? 'st-td' : '']
                       .filter(Boolean).join(' ');
                     return <td key={i} className={cls || undefined}>{c}</td>;
                   })}

@@ -46,7 +46,7 @@ export default function Topbar() {
   /* Every other sidebar-rail landing page has the same "second page title"
      problem as the four above, just in one of two shapes: a single-segment
      crumb with no " · " parent at all (Location, Services, Inactive
-     inventory, Scan jobs, Scan targets), or a " · " parent ("Resources", "Connectivity") that isn't
+     inventory, Scan jobs, Scan targets, Reports), or a " · " parent ("Resources", "Connectivity") that isn't
      itself a real, clickable screen (Virtual/Physical/Passive Resources,
      Links) — routes.ts has no screen whose crumb is exactly "Resources" or
      "Connectivity" for targetFor() to resolve. Either way, undrilled, the
@@ -54,10 +54,12 @@ export default function Topbar() {
      these stay suppressed the same way Location does — up to the point a
      reader actually drills into something (a KPI card, a donut segment),
      at which point the drill branch further down gives the trail a real
-     destination to name. */
+     destination to name. Reports' own detail page (discoveryreport/
+     inventoryreport) is unaffected — its crumb is "Reports · Report", a
+     real two-segment chain, so it never hits this branch. */
   if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
     || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
-    || s.key === 'jobs' || s.key === 'targets') && !drill) {
+    || s.key === 'jobs' || s.key === 'targets' || s.key === 'reports' || s.key === 'discoveryreports') && !drill) {
     return null;
   }
 

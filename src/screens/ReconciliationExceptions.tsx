@@ -71,7 +71,7 @@ export default function ReconciliationExceptions() {
       ]} />
 
       <Card>
-        <DataGrid<ReconcileException>
+        <DataGrid<ReconcileException> chipWidth="auto"
           columns={[{ t: 'Exception' }, { t: 'State' }, { t: 'Domain' }, { t: 'Subject' }, { t: 'Owner' }, { t: 'Age', r: true }, { t: 'SLA' }, { t: 'Next action' }]}
           rows={rows} total={rows.length} rowKey={e => e.id}
           resetKey={`${query}|${JSON.stringify(filters)}`}

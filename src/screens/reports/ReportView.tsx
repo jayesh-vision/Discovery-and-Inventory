@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { Card, Chip, InfoTip } from '../../components/ui';
 import { DataGrid } from '../../components/grid/DataGrid';
 import {
@@ -18,7 +18,6 @@ const STATE_BANNER = { Stale: 'warning', Running: 'info', Failed: 'error' } as c
    about it and the record-level detail, then how every figure was derived. */
 export function ReportView({ module }: { module: ReportModule }) {
   const { id = '' } = useParams();
-  const nav = useNavigate();
   const go = useReportNav();
   const def = reportDefById(id);
   const content = useMemo(() => (def ? buildReport(def) : null), [def]);
@@ -30,8 +29,11 @@ export function ReportView({ module }: { module: ReportModule }) {
 
   return (
     <div className="page rpt-page">
+      {/* back navigation lives in the breadcrumb above the page (Topbar) —
+          this toolbar used to duplicate it with its own "All reports" link
+          back to the same place; removed rather than kept as a second,
+          redundant way to do the same thing. */}
       <div className="rpt-toolbar rpt-noprint">
-        <button className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(`/${module}/reports`)}>← All {MODULE_LABEL[module].toLowerCase()} reports</button>
         <span className="grow" />
         <ExportMenu def={def} content={content} withPrint label="Download report" />
       </div>

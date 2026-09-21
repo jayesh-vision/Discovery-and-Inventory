@@ -40,7 +40,10 @@ const FEATURE: Record<ReportModule, { id: string; visual: string }> = {
   discovery: { id: 'DR-01', visual: 'Trust index — measured and projected' },
   inventory: { id: 'IN-01', visual: 'Active elements by class' }
 };
-const ACCENT: Partial<Record<ColorTone, string>> = { red: cv('red', 500), amber: cv('amber', 500) };
+/* 400, not 500 — every chart/bar/segment fill in src/data/reports/*.ts
+   already uses cv(tone, 400); these tile accents were the one place in the
+   whole feature still on the punchier 500 shade. */
+const ACCENT: Partial<Record<ColorTone, string>> = { red: cv('red', 400), amber: cv('amber', 400) };
 
 function HeadlineTile({ spec }: { spec: TileSpec }) {
   const nav = useNavigate();
@@ -206,8 +209,8 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
       <Card>
         <span className="vw-card-title-sm">Recent report runs<InfoTip text="Report files generated for this module — scheduled, automated and ad hoc — with their status." /></span>
         <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>Generated files for {MODULE_LABEL[module].toLowerCase()}</div>
-        <DataGrid<ReportRun>
-          columns={[{ t: 'Status', w: '12%' }, { t: 'Report name', w: '28%' }, { t: 'Type' }, { t: 'Generated' }, { t: 'Frequency' }, { t: 'Creator' }, { t: 'Created on' }, { t: 'Size', r: true }]}
+        <DataGrid<ReportRun> chipWidth="auto"
+          columns={[{ t: 'Status', w: '12%', plain: true }, { t: 'Report name', w: '28%' }, { t: 'Type' }, { t: 'Generated' }, { t: 'Frequency' }, { t: 'Creator' }, { t: 'Created on' }, { t: 'Size', r: true }]}
           rows={runs} total={runs.length} rowKey={r => r.name} searchPlaceholder="Report name, type, creator"
           filters={[{ n: 'Status', o: ['Completed', 'Failed', 'Pending'] }, { n: 'Type', o: [...new Set(runs.map(r => r.type))] }, { n: 'Frequency', o: [...new Set(runs.map(r => r.frequency))] }]}
           renderRow={r => [

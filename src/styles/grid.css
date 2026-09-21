@@ -210,10 +210,15 @@
 .nst-table td select.nst-input { min-width: 9rem; }
 .tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }
 
-/* a first column of Status / State / Outcome / Result is a full-width pill */
+/* a first column of Status / State / Outcome / Result is a full-width pill.
+   font-size already matched the row (0.875rem, same as .vw-value), but at
+   the base .vw-chip weight (400) it still read as visibly smaller next to
+   a 500-weight name/link — same size, less visual weight. Sized a clear
+   step past that column's own weight/size, not just even with it, so the
+   difference reads unmistakably rather than needing a pixel ruler. */
 .st-td > .vw-chip {
   display: flex; width: 100%; min-width: 7rem; justify-content: center;
-  padding-top: 7px; padding-bottom: 7px; font-size: 0.875rem; border-radius: var(--vw-radius-full);
+  padding-top: 8px; padding-bottom: 8px; font-size: 0.9375rem; font-weight: 600; border-radius: var(--vw-radius-full);
 }
 
 /* the action column is the last cell of the row, not a column of its own */

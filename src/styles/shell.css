@@ -1986,14 +1986,14 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }
 .kpi3-of { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-600); flex-basis: 100%; }
-.kpi3-vis { margin-top: 2px; }
+.kpi3-vis { margin-top: 2px; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; }
 .kpi3-seg { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--vw-color-slate-100); gap: 2px; }
 .kpi3-seg > span { display: block; height: 100%; }
-.kpi3-seg-l { display: flex; gap: 6px; white-space: nowrap; overflow: hidden; margin-top: 6px; font-size: var(--vw-font-size-xs); color: var(--vw-color-gray-600); }
+.kpi3-seg-l { display: flex; flex-wrap: wrap; gap: 6px; row-gap: 4px; margin-top: 6px; font-size: var(--vw-font-size-xs); color: var(--vw-color-gray-600); }
 .kpi3-sep { margin: 0 4px 0 0; color: var(--vw-color-gray-400); }
 .kpi3-seg-l i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
 .kpi3-seg-l b { font-weight: 500; color: var(--vw-color-gray-800); }
-.kpi3-cyc { display: flex; align-items: flex-end; gap: 4px; height: 48px; position: relative; padding-bottom: 16px; }
+.kpi3-cyc { display: flex; align-items: flex-end; gap: 4px; height: 64px; position: relative; padding-bottom: 16px; }
 .kpi3-cyc-b { flex: 1 1 0; border-radius: 3px 3px 0 0; background: var(--vw-color-slate-200); cursor: default; transition: background .12s; }
 .kpi3-cyc-b.is-cur { background: var(--kpi-accent); }
 .kpi3-cyc-b.is-hov { background: var(--vw-color-slate-400); }
@@ -2316,8 +2316,12 @@ details[open] > summary .vw-tx-chevron {
   border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 0.8125rem; color: var(--vw-color-gray-700); cursor: pointer; }
 .rpt-filter .num { color: var(--vw-color-gray-500); font-size: 0.75rem; }
 .rpt-filter:hover { border-color: var(--vw-color-slate-300); background: var(--vw-color-slate-50); }
-.rpt-filter.is-on { background: var(--vw-color-blue-700); border-color: var(--vw-color-blue-700); color: var(--vw-color-white); }
-.rpt-filter.is-on .num, .rpt-filter.is-on span[aria-hidden] { color: rgba(255,255,255,.8); }
+/* a soft selected pill — the same formula as .tabbar--chip .tab.is-on
+   (the Services service-type toggle) — rather than a solid blue-700 fill,
+   which read as noticeably brighter than every other "selected" control in
+   the app's own theme. */
+.rpt-filter.is-on { background: var(--vw-color-blue-50); border-color: var(--vw-color-blue-200); color: var(--vw-color-blue-700); }
+.rpt-filter.is-on .num, .rpt-filter.is-on span[aria-hidden] { color: var(--vw-color-blue-600); }
 .rpt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: var(--vw-space-md); }
 .rpt-card { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; background: var(--vw-color-white);
   border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg); cursor: pointer; transition: border-color .15s, box-shadow .15s; min-width: 0; }
@@ -2480,14 +2484,30 @@ details[open] > summary .vw-tx-chevron {
   line-height: 1;
 }
 .tbl-wrap--chip-sm td:not(.st-td) .vw-chip { width: 42px; }
-.tbl-wrap--chip-lg td:not(.st-td) .vw-chip { width: 68px; }
+.tbl-wrap--chip-lg td:not(.st-td) .vw-chip { width: 68px; height: 24px; font-size: 0.8125rem; }
 .tbl-wrap--chip-xl td:not(.st-td) .vw-chip { width: 90px; }
+/* for a column whose real values are free-text descriptions rather than a
+   short fixed vocabulary (e.g. a provenance/history "Source" column: "Scope"
+   next to "Derived · sysObjectID" next to "Workorder WO-2291") — no fixed
+   tier ever fits both ends of that range without either clipping the long
+   ones or wasting space around the short ones, so this tier drops the fixed
+   width instead of adding a wider number that would just move the ceiling. */
+/* a fixed-width box was earlier squeezed down to a tiny 11px/4px (font/
+   padding) to leave a fixed 42-90px box enough room for its text; chip-auto
+   never fights a fixed width for space, so there's no reason to inherit
+   that squeeze — sized to read like the rest of the row (.mono is 13px,
+   .vw-value 14px) instead of visibly smaller than the cells beside it. */
+.tbl-wrap--chip-auto td:not(.st-td) .vw-chip { width: auto; max-width: none; height: 24px; padding: 0 14px; font-size: 0.8125rem; }
 /* legacy table() helper has no wrapper-div class of its own to hook (see
    its `cls` param, app-helpers.js) — it lands on <table> itself instead, so
    the same tiers repeat scoped to that element */
 .nst-table.chip-sm td:not(.st-td) .vw-chip { width: 42px; }
-.nst-table.chip-lg td:not(.st-td) .vw-chip { width: 68px; }
+/* chip-lg's only current users (Services' P2P/L2VPN/L3VPN Status column —
+   the one fixed-width tier still in play after the chip-auto rollout) had
+   the same too-small-next-to-its-row font as chip-auto did; same fix. */
+.nst-table.chip-lg td:not(.st-td) .vw-chip { width: 68px; height: 24px; font-size: 0.8125rem; }
 .nst-table.chip-xl td:not(.st-td) .vw-chip { width: 90px; }
+.nst-table.chip-auto td:not(.st-td) .vw-chip { width: auto; max-width: none; height: 24px; padding: 0 14px; font-size: 0.8125rem; }
 
 @media print {
   @page { size: A4; margin: 12mm; }

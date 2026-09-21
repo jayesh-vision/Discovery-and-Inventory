@@ -258,7 +258,7 @@ export default function RuleDetails() {
           )}
 
           {tab === 'execution' && (
-            <div className="tbl-wrap">
+            <div className="tbl-wrap tbl-wrap--chip-auto">
               <table className="mtbl">
                 <thead><tr><th>Status</th><th>Run</th><th style={{ textAlign: 'right' }}>Matched</th><th style={{ textAlign: 'right' }}>Exceptions</th><th style={{ textAlign: 'right' }}>Duration</th></tr></thead>
                 <tbody>
@@ -279,7 +279,7 @@ export default function RuleDetails() {
           )}
 
           {tab === 'exceptions' && (
-            <div className="tbl-wrap">
+            <div className="tbl-wrap tbl-wrap--chip-auto">
               <table className="mtbl">
                 <thead><tr><th>Exception</th><th>State</th><th>Subject</th><th>Owner</th><th>SLA</th><th>Next action</th></tr></thead>
                 <tbody>

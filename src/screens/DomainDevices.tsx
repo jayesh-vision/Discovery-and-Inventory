@@ -124,7 +124,7 @@ export default function DomainDevices() {
       )}
 
       <Card>
-        <DataGrid<DomainDevice>
+        <DataGrid<DomainDevice> chipWidth="auto"
           columns={[{ t: 'Device' }, { t: 'Status' }, { t: 'Issue' }, { t: 'Last scan' }]}
           rows={rows} total={rows.length} rowKey={d => d.id}
           resetKey={`${domain}|${region}|${issue}|${query}|${JSON.stringify(filters)}`}

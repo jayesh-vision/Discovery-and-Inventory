@@ -41,7 +41,7 @@ export default function RulesList() {
       ]} />
 
       <Card>
-        <DataGrid<Rule>
+        <DataGrid<Rule> chipWidth="auto"
           columns={[{ t: 'Rule', w: '19%' }, { t: 'Domain', w: '9%' }, { t: 'Source · target', w: '16%' }, { t: 'Type', w: '10%' }, { t: 'Status', w: '9%' },
             { t: 'Owner · reviewer', w: '13%' }, { t: 'Last updated', w: '9%' }, { t: 'Last execution', w: '9%' }, { t: 'Priority', w: '6%' }]}
           rows={rows} total={rows.length} rowKey={r => r.id}

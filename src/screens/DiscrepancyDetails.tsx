@@ -64,7 +64,7 @@ export default function DiscrepancyDetails() {
         { k: 'Shown here', v: String(shown), s: `${rows.length} of ${DISCREPANCY_TYPES.length} discrepancy types`, t: 'purple' }
       ]} />
       <Card>
-        <DataGrid<DiscrepancyTypeRow> chipWidth="lg"
+        <DataGrid<DiscrepancyTypeRow> chipWidth="auto"
           columns={[{ t: 'Discrepancy type' }, { t: 'Domain' }, { t: 'Category' }, { t: 'Age' }, { t: 'Count', r: true }]}
           rows={rows} total={rows.reduce((a, r) => a + r.count, 0)} rowKey={r => r.label}
           resetKey={`${query}|${JSON.stringify(filters)}`}

@@ -116,9 +116,9 @@ export default function PhysicalResources() {
             a real SNMP sysDescr-length banner (see sysDescrOf) — capped to a
             fixed width and ellipsis-truncated (full text on hover) so it
             can't force the whole table to scroll horizontally. */}
-        <DataGrid<Row> chipWidth="lg"
+        <DataGrid<Row> chipWidth="auto"
           key={cls}
-          columns={[{ t: 'Status', w: '9%' }, { t: 'Name / IP', w: '16%' }, { t: 'Model / Vendor', w: '12%' }, { t: 'OS version', w: '8%' },
+          columns={[{ t: 'Status', w: '9%', plain: true }, { t: 'Name / IP', w: '16%' }, { t: 'Model / Vendor', w: '12%' }, { t: 'OS version', w: '8%' },
             { t: 'Serial number', w: '10%' }, { t: 'Region', w: '6%' }, { t: 'Ports', r: true, w: '7%' }, { t: 'Location', w: '11%' },
             { t: 'System description', w: '20%' }]}
           rows={rows} total={total} rowKey={r => r.name}

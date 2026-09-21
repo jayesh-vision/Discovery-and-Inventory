@@ -4419,7 +4419,7 @@ function viewTargets() {
     ${card(`
       ${gridBar(rows.length, n(baseTargets.length), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
       ${table(
-        [{ t: 'Status' }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
+        [{ t: 'Status', plain:true }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
@@ -4441,7 +4441,7 @@ function viewTargets() {
             displayReason,
             chainOf(t.ch, t.domain)
           ];
-        }), '',
+        }), 'chip-auto',
         /* an unresolved target (host '—') is not a usable identifier — many
            rows share it — so this passes the row's own ip instead, which
            targetOf() now checks first; an identified target still passes
@@ -4718,7 +4718,7 @@ function viewTarget() {
             `<span class="num">${r.dur}</span>`,
             r.steps.replace(/of \d+/, `of ${stepCount}`), chip(r.out, r.chip),
             `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
-          ]))}
+          ]), 'chip-auto')}
         </div>`, 'grow')}
 
       ${card(`${headSm('Objects discovered')}
@@ -4806,7 +4806,7 @@ function recTable() {
     <div class="stock-bar" style="border-bottom:0;padding-bottom:var(--vw-space-sm)">
       ${chips.map(([k,l]) => `<button class="stock-chip${NE_FILTER===k?' is-on':''}" data-ne-filter="${k}">${l}</button>`).join('')}
     </div>
-    <div class="tbl-wrap"><table class="nst-table rec-table">
+    <div class="tbl-wrap"><table class="nst-table rec-table chip-auto">
       <thead><tr>
         <th>Result</th><th>Network element</th>
         ${REC_FIELDS.map(([,l]) => `<th>${l}</th>`).join('')}
@@ -4940,7 +4940,7 @@ function viewHome() {
         PHY.router.slice(0,6).map(r => [
           rst(r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
           `<span class="mono">${r.model}</span>`, `<span class="mono">${r.sn}</span>`, r.oem, `<span class="mono">${r.loc}</span>`, src(r.s)
-        ]), '',
+        ]), 'chip-auto',
         i => [A('Node view', { v:'node', l:`${nodeClassName('router')} · ${PHY.router[i].name}`, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               A('View details', { v:'resource', l:PHY.router[i].name, q:`name=${encodeURIComponent(PHY.router[i].name)}` }),
               siteA(PHY.router[i].loc)])}`)}
@@ -5871,7 +5871,7 @@ function viewSite() {
       : SITE_SECTION === 'opex' ? opexSection(l, tot) : card(`
       <div class="tabbar">${counts.map(t=>`<button class="tab${t.k===SITE_TAB?' is-on':''}" data-sitetab="${t.k}">${t.n}</button>`).join('')}</div>
       ${gridBar(rows.length, rows.length, 'Name, IP address, serial', FS.site, '', [], 'site')}
-      ${rows.length ? table(cols, rows.map(cell), '',
+      ${rows.length ? table(cols, rows.map(cell), 'chip-auto',
         /* no "Site info" here — every row on this tab already belongs to
            the site this whole page is showing, so that action would only
            ever reopen the page the reader is already on */
@@ -6056,7 +6056,7 @@ function capexSection(l, neCount) {
           `${chip(st.n, st.chip)}<br><span class="vw-card-metric-label-sub num">${r.dt}</span>`,
           r.ne === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="vw-card-metric-label-sub">${r.ne}</span>`
         ];
-      }))}
+      }), 'chip-auto')}
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
       <span class="vw-card-description">Last updated ${cx.updated}.</span>
       <span class="row vw-gap-xl">
@@ -6241,7 +6241,7 @@ function viewPhysical() {
             eosChip(r.model), `<span class="mono">${r.loc}</span>`,
             src(r.s)
           ];
-        }), '',
+        }), 'chip-auto',
         i => rows[i].stock === 'decomm'
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
@@ -6541,12 +6541,12 @@ function viewVirtual() {
           </div>`;
         })(),
         [], 'virtual')}
-      ${table([{t:'Status'},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
+      ${table([{t:'Status', plain:true},{t:'NF name'},{t:'Type'},{t:'Network service'},{t:'Subcloud'},{t:'Technology'},{t:'Host'},{t:'Source'}],
         rows.map(v => [
           chip(v.st, v.chip), `<span class="vw-value">${v.nf}</span>`, `<span class="mono">${v.type}</span>`,
           `<span class="mono">${v.svc}</span>`, `<span class="mono">${v.sub}</span>`, v.tech,
           v.host === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${v.host}</span>`, src(v.s)
-        ]), '',
+        ]), 'chip-auto',
         /* every row — Planned included — can still view its own details;
            only "Lifecycle operation" needs an instantiated NF, so that one
            action stays off a Planned row's menu */
@@ -7222,14 +7222,14 @@ function viewLinks() {
       ${tabs(LINK_TABS, t, 'link')}
       ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
         [], 'links')}
-      ${table([{t:'Status'},{t:'Source NE'},{t:'Source IP'},
+      ${table([{t:'Status', plain:true},{t:'Source NE'},{t:'Source IP'},
                {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
         rows.map(r => [
           chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
           `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
           `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
           r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
-        ]), '',
+        ]), 'chip-auto',
         i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
         i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}
@@ -7545,7 +7545,7 @@ function resOverview() {
         `<span class="vw-value mono"${p.ok?'':` style="color:${cv('gray',400)}"`}>${p.v}</span>`,
         chip(p.src, p.src.startsWith('Derived')?'cyan':p.src.includes('collector')?'success'
           :p.src.startsWith('Workorder')?'purple':p.src.startsWith('Manual')?'neutral'
-          :p.src.startsWith('Scope')?'info':'error')]), '',
+          :p.src.startsWith('Scope')?'info':'error')]), 'chip-auto',
         i => [])}
       </div>`, 'grow')}
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
@@ -7580,11 +7580,11 @@ function resHardware() {
     </div>
     ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
       HW_TREE.map(h => [
-        `<span class="hw-node" style="padding-left:${h.d*1.25}rem">
+        `<span class="hw-node">
            <span class="hw-ic">${HW_ICON[h.k]}</span><span class="vw-value">${h.n}</span></span>`,
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
-        `<span class="vw-card-description">${h.info}</span>`]), '',
+        `<span class="vw-card-description">${h.info}</span>`]), 'chip-auto',
         i => [])}`);
 }
 
@@ -7636,7 +7636,7 @@ function resIfaces() {
           `<button class="${IF_FILTER===k?'is-on':''}" data-iffilter="${k}">${n2}</button>`).join('')}
       </div>
     </div>
-    ${rows.length ? table([{t:'Status'},{t:'Interface'},{t:'Description'},{t:'Speed'},{t:'IP / VLAN'},
+    ${rows.length ? table([{t:'Status', plain:true},{t:'Interface'},{t:'Description'},{t:'Speed'},{t:'IP / VLAN'},
              {t:'Utilisation',r:true},{t:'Optical Rx'},{t:'Neighbour'},{t:'Last change'}],
       rows.map(i => [
         st(i), `<span class="vw-value mono">${i.n}</span>`,
@@ -7646,7 +7646,7 @@ function resIfaces() {
           <span class="hbar-fill" style="display:block;width:${i.util}%;background:${cv(i.util>70?'amber':'emerald',400)}"></span></span>${i.util}%</span>` : '—',
         i.rx === '—' ? '—' : `<span class="mono"${(parseFloat(i.rx) < -9 || i.rx === 'no signal') ? ' style="color:' + cv('red',700) + '"' : ''}>${i.rx}${i.rx==='no signal'?'':' dBm'}</span>`,
         i.nb === '—' ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="vw-card-metric-label-sub">${i.nb}</span>`,
-        i.chg]))
+        i.chg]), 'chip-auto')
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`}`)}`;
 }
 
@@ -7721,7 +7721,7 @@ function resNbrs() {
                {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
         rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
           `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
-          `<span class="mono">${r.rip}</span>`, r.seen]), 'chip-lg', null,
+          `<span class="mono">${r.rip}</span>`, r.seen]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}
@@ -7772,9 +7772,9 @@ function resSvcs() {
       <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
     </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
-    ${rows.length ? table([{t:'Status'},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
+    ${rows.length ? table([{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
       rows.map(s => [chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
-        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), '', null,
+        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
            No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
@@ -7789,7 +7789,7 @@ function resAlarms() {
     ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
-        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), '',
+        a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), 'chip-auto',
         () => [])}`);
 }
 
@@ -7827,7 +7827,7 @@ function resHistory() {
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
-          :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), '',
+          :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), 'chip-auto',
         () => [])}`);
 }
 
@@ -7855,15 +7855,15 @@ function viewEnodebResource(N) {
   const body = tab === 'links'
     ? card(table([{ t: 'Link types' }, { t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
         allLinks.map(x => [chip(x.type, linkTone(x.type)), `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto, `${x.util}%`, n(x.users), x.growth, x.created, x.modified]),
-        '', () => []))
+        'chip-auto', () => []))
     : tab === 'config'
     ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
         E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), '12-May-2026', '12-May-2026']),
-        '', () => []))
-    : card(table([{ t: 'Status' }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
+        'chip-auto', () => []))
+    : card(table([{ t: 'Status', plain:true }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
         E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
           `B${c.band}`, String(c.health), String(c.alarms), String(c.users), `${c.prb}%`, c.bw, String(c.sinr)]),
-        '', () => []));
+        'chip-auto', () => []));
 
   return `<div class="page">
     ${pageHead(N.name, `eNodeB · ${r.loc} · ${E.siteType}`)}
@@ -7967,11 +7967,11 @@ function viewSwitchResource(N) {
   const body = tab === 'ifall'
     ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
         D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, `<span class="mono">${i.ifalias}</span>`]),
-        '', () => []))
+        'chip-auto', () => []))
     : tab === 'ifdown'
     ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
         downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, `<span class="mono">${i.ifalias}</span>`, i.bw]),
-        '', () => []))
+        'chip-auto', () => []))
     : tab === 'lldp'
     ? card(table([{ t: 'Source NE' }, { t: 'Source IP address' }, { t: 'Source interface' }, { t: 'Destination IP address' }, { t: 'Destination NE' }, { t: 'Destination interface' }, { t: 'Link name' }, { t: 'Ifalias' }],
         D.lldp.map(l => [l.srcNe, `<span class="mono">${l.srcIp}</span>`, l.srcIf, `<span class="mono">${l.dstIp}</span>`, l.dstNe, l.dstIf, l.link, `<span class="mono">${l.ifalias}</span>`]),
@@ -8097,11 +8097,11 @@ function viewDwdmResource(N) {
   const body = tab === 'ifall'
     ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
         D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`]),
-        '', () => []))
+        'chip-auto', () => []))
     : tab === 'ifdown'
     ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
         downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`, i.ifhigh]),
-        '', () => []))
+        'chip-auto', () => []))
     : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
         D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
         '', () => []));
@@ -10544,7 +10544,7 @@ function fiberCoresTab(r, d) {
           const circuit = `CKT-${nint(r.n, 210 + i, 10000, 99999)}`;
           const path = `${r.a} P${nint(r.n, 220 + i, 1, 24)} → ${r.b} P${nint(r.n, 230 + i, 1, 24)}`;
           return [`<span class="mono">F${i+1}</span>`, fname, chip(svc, 'info'), `<span class="mono">${circuit}</span>`, `<span class="mono">${path}</span>`];
-        }), '', () => [])}
+        }), 'chip-auto', () => [])}
     </div>
     ${shownLive < liveCount ? `<p class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-sm)">+${liveCount - shownLive} more live strand${liveCount-shownLive===1?'':'s'} not itemised here</p>` : ''}`)
     : '';
@@ -10613,7 +10613,7 @@ function fiberConnectivityTab(r, d) {
   const svcCard = card(`${headSm('Services carried')}
     <p class="vw-card-description" style="margin-top:2px">Logical services riding this physical span</p>
     <div style="margin-top:var(--vw-space-md)">
-      ${table([{t:'Status'},{t:'Type'},{t:'Service'},{t:'Bandwidth'},{t:'Customer / SLA'}], svcRows, '', () => [])}
+      ${table([{t:'Status', plain:true},{t:'Type'},{t:'Service'},{t:'Bandwidth'},{t:'Customer / SLA'}], svcRows, 'chip-auto', () => [])}
     </div>`);
 
   return `${termCard}${svcCard}${card(`${headSm(`Splice closures · ${d.closures.length}`)}
@@ -13347,7 +13347,7 @@ function nodeAlertsRouter(N) {
             .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
                        `<span class="num">${r[2]}</span>`, r[3],
                        chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
-                       `<span class="vw-card-description">${r[5]}</span>`]), '',
+                       `<span class="vw-card-description">${r[5]}</span>`]), 'chip-auto',
             () => [])}
       </div>
 
@@ -13387,7 +13387,7 @@ function nodeVlans(N) {
         `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="vw-card-metric-label-sub">${v.bw}</span>
           <span class="hbar-track" style="width:3.5rem;height:7px"><span class="hbar-fill"
             style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
-      ]), '',
+      ]), 'chip-auto',
       () => [])}
     <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="vw-card-metric-label-sub num">${n(tot)} MAC addresses learned</span>
@@ -13608,7 +13608,7 @@ function nodeAlertsDwdm(N) {
           `<span class="mono">${esc(a.entity)}</span>`,
           `<span class="vw-card-description">${esc(a.evidence)}</span>`,
           `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
-        ]), '', () => [])}`
+        ]), 'chip-auto', () => [])}`
       : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
           <span class="vw-card-description">No open incidents for this element.</span></div>`}
   `);
@@ -13781,7 +13781,7 @@ function nodeConfigEnodeb(N) {
               chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
               c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
               '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
-            ]), '', () => [])}
+            ]), 'chip-auto', () => [])}
         </div>`)}
       </div>
       ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}

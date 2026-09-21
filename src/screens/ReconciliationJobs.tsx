@@ -23,7 +23,7 @@ export default function ReconciliationJobs() {
   return (
     <div className="page">
       <Card>
-        <DataGrid<ReconcileJob> chipWidth="xl"
+        <DataGrid<ReconcileJob> chipWidth="auto"
           columns={[{ t: 'Job' }, { t: 'Domain' }, { t: 'Source · target' }, { t: 'Scan type' }, { t: 'Schedule' },
             { t: 'Last run · duration' }, { t: 'Next run' }, { t: 'Result' }]}
           rows={rows} total={rows.length} rowKey={j => j.id}

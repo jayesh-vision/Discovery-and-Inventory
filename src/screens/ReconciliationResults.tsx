@@ -33,7 +33,7 @@ export default function ReconciliationResults() {
   return (
     <div className="page">
       <Card>
-        <DataGrid<ReconcileResult> chipWidth="xl"
+        <DataGrid<ReconcileResult> chipWidth="auto"
           columns={[{ t: 'Network element' }, { t: 'Domain' }, { t: 'Outcome' }, { t: 'Mismatched fields' }, { t: 'Verified' }, { t: 'Rule' }]}
           rows={rows} total={rows.length} rowKey={r => r.id}
           resetKey={`${query}|${JSON.stringify(filters)}`}
