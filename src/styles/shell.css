@@ -1830,6 +1830,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
   min-width: 11rem; padding: var(--vw-space-sm) var(--vw-space-md);
   background: var(--vw-color-gray-900); color: var(--vw-color-white); border-radius: var(--vw-radius-md);
   font-size: var(--vw-font-size-sm); box-shadow: 0 8px 24px rgba(15, 23, 42, .25); }
+.ch-tip.is-left { transform: translate(calc(-100% - 14px), -50%); }
 .ch-tip-h { font-weight: 500; margin-bottom: 4px; }
 .ch-tip-dim { color: var(--vw-color-gray-400); font-weight: 400; }
 .ch-tip-r { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
@@ -1978,10 +1979,11 @@ a.side-item.active:not(.is-active) { background: transparent; }
   background: none; padding: 0; color: var(--vw-color-gray-500);
   display: inline-flex; align-items: center; justify-content: center; cursor: help; flex-shrink: 0; }
 .info-tip-btn:hover, .info-tip-btn[aria-expanded="true"] { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
-.info-tip-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 17rem; max-width: 70vw;
+.info-tip-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 100; width: 17.5rem; max-width: 75vw;
   padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
-  border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
-  font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; }
+  border-radius: var(--vw-radius-md); font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13px; line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
+  font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none; }
 .kpi3-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; row-gap: 2px; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }
@@ -2508,6 +2510,37 @@ details[open] > summary .vw-tx-chevron {
 .nst-table.chip-lg td:not(.st-td) .vw-chip { width: 68px; height: 24px; font-size: 0.8125rem; }
 .nst-table.chip-xl td:not(.st-td) .vw-chip { width: 90px; }
 .nst-table.chip-auto td:not(.st-td) .vw-chip { width: auto; max-width: none; height: 24px; padding: 0 14px; font-size: 0.8125rem; }
+
+/* Range Toggle Pills (Today / Overall) */
+.range-pills, .ospf-range-pills {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 9999px;
+  gap: 2px;
+}
+.range-pill, .ospf-range-pill {
+  padding: 4px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 7px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.25;
+}
+.range-pill:hover, .ospf-range-pill:hover {
+  color: #0f172a;
+}
+.range-pill.is-on, .ospf-range-pill.is-on {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #38bdf8;
+  font-weight: 600;
+}
 
 @media print {
   @page { size: A4; margin: 12mm; }

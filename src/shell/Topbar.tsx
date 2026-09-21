@@ -59,7 +59,7 @@ export default function Topbar() {
      real two-segment chain, so it never hits this branch. */
   if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
     || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
-    || s.key === 'jobs' || s.key === 'targets' || s.key === 'reports' || s.key === 'discoveryreports') && !drill) {
+    || s.key === 'jobs' || s.key === 'targets' || s.key === 'reports' || s.key === 'discoveryreports') && !drill && !from) {
     return null;
   }
 

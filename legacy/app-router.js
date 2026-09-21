@@ -67,6 +67,7 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
+  LINK_VIEW = null;
   const crumbName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
   /* the reader may already be mid-drill on CURRENT (Location's "All
      locations" list, say) — a plain single-segment crumb like "Location"
@@ -466,15 +467,51 @@ document.addEventListener('click', e => {
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fo) {
+    const k = fo.dataset.filteropen;
+    FILTER_OPEN = !FILTER_OPEN;
+    if (FILTER_OPEN && k) {
+      const spec = (typeof FS !== 'undefined' && FS[k]) || [];
+      const activeEntry = Object.entries(gridOf(k).filters).find(([fName, val]) => Boolean(val) && (k !== 'jobs' || fName !== 'Domain'));
+      if (activeEntry) {
+        const foundIdx = spec.findIndex(s => s.n === activeEntry[0]);
+        FILTER_FIELD = foundIdx >= 0 ? foundIdx : 0;
+      } else {
+        FILTER_FIELD = 0;
+      }
+    } else {
+      FILTER_FIELD = 0;
+    }
+    KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
   const fr = e.target.closest('[data-filterreset]');
-  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fr) {
+    const k = fr.dataset.filterreset;
+    const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+    gridOf(k).filters = dom ? { Domain: dom } : {};
+    FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fa = e.target.closest('[data-filterapply]');
   if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
-  if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  if (ff) {
+    const raw = ff.dataset.filterfield;
+    let k = '', idx = 0;
+    if (raw && raw.includes('|')) {
+      [k, idx] = raw.split('|');
+      idx = Number(idx);
+    } else {
+      idx = Number(raw);
+    }
+    FILTER_FIELD = idx;
+    if (k) {
+      const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+      gridOf(k).filters = dom ? { Domain: dom } : {};
+    }
+    go(CURRENT); return;
+  }
   /* the chip row's own "+N More" (built by layoutStockChips(), not any
      view's template) opens a popup listing every filter this grid has
      applied; its own backdrop/X close it the same way a kebab menu does */
@@ -715,6 +752,20 @@ document.addEventListener('click', e => {
   const nef = e.target.closest('[data-ne-filter]');
   if (nef) { NE_FILTER = nef.dataset.neFilter; go('reconcile'); return; }
 
+  const or = e.target.closest('[data-ospf-range]');
+  if (or) {
+    OSPF_RANGE = or.dataset.ospfRange;
+    go('links', { label: 'ospf links', q: 'tab=ospf' });
+    return;
+  }
+
+  const lr = e.target.closest('[data-lldp-range]');
+  if (lr) {
+    LLDP_RANGE = lr.dataset.lldpRange;
+    go('links', { label: 'lldp links', q: 'tab=lldp' });
+    return;
+  }
+
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 
@@ -830,7 +881,9 @@ document.addEventListener('input', e => {
   }
   if (el.hasAttribute && el.hasAttribute('data-filterval')) {
     const [key, field] = el.dataset.filterval.split('|');
-    gridOf(key).filters[field] = el.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (el.value) gridOf(key).filters[field] = el.value;
     if (el.classList && el.classList.contains('fp-sel')) el.classList.toggle('is-placeholder', !el.value);
     return; /* applied on "Apply filters", not per keystroke */
   }
@@ -856,7 +909,9 @@ document.addEventListener('change', e => {
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
-    gridOf(key).filters[field] = e.target.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (e.target.value) gridOf(key).filters[field] = e.target.value;
     if (e.target.classList && e.target.classList.contains('fp-sel')) e.target.classList.toggle('is-placeholder', !e.target.value);
     return;
   }

@@ -1,15 +1,13 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cv, InfoTip } from '../components/ui';
-import { StackedBars, Sparkline, BandChart } from '../components/charts';
+import { StackedBars, Sparkline } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHeader, Seg, type Tone } from '../components/ops';
 import { legacyPath } from '../routes';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
-  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
-  MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
-  BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
+  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT, DOMAIN_TRUST_TOTAL,
   DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, TOP_DOMAINS, domainParentLabel, domainRoute,
   type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
@@ -45,22 +43,7 @@ const TONE_HEX: Record<Tone, string> = {
   success: cv('emerald', 500), warning: cv('amber', 500), critical: cv('red', 500), info: cv('blue', 500), neutral: cv('slate', 400)
 };
 
-/* Match outcome → the Discrepancy details screen's own category filter.
-   "Matched" has nothing to drill into (it's the healthy population, not a
-   discrepancy), so it's the one tile with no entry here and stays inert. */
-const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
-  'Attribute mismatch': 'ATTRIBUTE',
-  'Extra — no record': 'EXISTENCE',
-  'Relationship drift': 'RELATIONSHIP',
-  'Missing — no live peer': 'EXISTENCE'
-};
-const MATCH_OUTCOME_DEF: Record<string, string> = {
-  'Matched': 'The record’s identity, attributes and relationships all agree with the live network — no reconciliation action needed.',
-  'Attribute mismatch': 'The record exists and its identity matches, but one or more attribute values differ from what the live network reports.',
-  'Extra — no record': 'The live network reports an object that has no corresponding record in inventory.',
-  'Relationship drift': 'The record exists but its relationships — neighbours, parent/child links — no longer match what the live network reports.',
-  'Missing — no live peer': 'Inventory has a record for this object, but the live network no longer reports it.'
-};
+
 
 /* one-sentence explanations for the ⓘ beside a KPI or card title —
    plain language, never repeating the numbers already on screen */
@@ -153,28 +136,12 @@ function TargetBar({ value, target, min, max, hex, higherIsBetter, format }: {
         <span className="ix-target-f" style={{ width: pos(value), background: hex }} />
         <span className="ix-target-m" style={{ left: pos(target) }} title={`target ${format(target)}`} />
       </span>
-      <span>target <b>{format(target)}</b>{higherIsBetter ? '' : ' or less'}</span>
+      <span>target <b>{format(target)}</b>{!higherIsBetter && <span className="ix-target-note"> or less</span>}</span>
     </div>
   );
 }
 
-/* region × domain drift cell — a solid block on one blue intensity scale:
-   the thing compared across a row is severity, not which domain it is */
-const REGION_HEAT_STEPS = [50, 100, 200, 300, 400, 500, 600] as const;
-const REGION_HEAT_MAX = Math.max(...REGION_DISCREPANCY.flatMap(r => Object.values(r.drift)));
-function heatShade(v: number, max: number) {
-  const r = v / max;
-  return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
-}
-/* age histogram — one shade per bucket, oldest the darkest */
-const AGE_RAMP = [cv('blue', 200), cv('blue', 300), cv('blue', 400), cv('blue', 500), cv('blue', 700)];
 
-/* reconciliation-run bars share one scale across every domain (a 53% run is
-   visibly shorter than a 75% one), floored just under the lowest run so a
-   3-point move within a domain still shows */
-const CYCLE_PCTS = RECONCILE_CYCLE_ROWS.map(c => c.touchlessPct);
-const CYCLE_LO = Math.min(...CYCLE_PCTS) - 6, CYCLE_HI = Math.max(...CYCLE_PCTS) + 2;
-const cycleBarPx = (pct: number) => Math.round(8 + (pct - CYCLE_LO) / (CYCLE_HI - CYCLE_LO) * 40);
 
 export default function Insights() {
   const nav = useNavigate();
@@ -200,15 +167,21 @@ export default function Insights() {
     const domainLabel = DOMAIN_LABEL[d];
     nav(legacyPath('jobs', { label: domainLabel, from: 'Insights', q: `domain=${domainLabel}` }));
   };
-  /* the 3 non-hero KPI tiles each have one real, meaningful destination;
-     "Inventory trust index" itself stays a plain figure — there's no single
-     drill-down it names the way the other three do */
+  /* Each of the four headline KPI tiles opens its respective drill-down listing */
+  const toDevices = () => {
+    nav('/discovery/insights/devices?from=Insights');
+  };
+  const toTargets = () => {
+    nav(legacyPath('targets', { label: 'Scan targets', from: 'Insights' }));
+  };
   const KPI_TARGET: Partial<Record<string, () => void>> = {
-    'Discovery coverage': () => nav('/discovery/targets'),
+    'Inventory trust index': () => toDevices(),
+    'Discovery coverage': () => toTargets(),
     'Open discrepancy backlog': () => toDiscrepancies(),
     'Mean time to reconcile': () => openDomain('Transport')
   };
   const KPI_HINT: Record<string, string> = {
+    'Inventory trust index': 'View all devices in inventory',
     'Discovery coverage': 'View Scan targets',
     'Open discrepancy backlog': 'View all open discrepancies',
     'Mean time to reconcile': 'View Transport, the current outlier'
@@ -217,11 +190,8 @@ export default function Insights() {
   const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
   const objToday = OBJECTS_DAILY_VALUES[OBJECTS_DAILY_VALUES.length - 1].reduce((a, b) => a + b, 0);
-  const backlogOlder = BACKLOG_AGE.slice(3).reduce((a, b) => a + b.count, 0);
   const failedTargets = ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0);
-  const openTotal = DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0);
   const lastCycle = RECONCILE_CYCLE_ROWS[0];
-  const mttrMax = Math.max(...DOMAIN_TRUST_ROWS.map(d => d.mttrHours));
   const onKey = (fn: () => void) => (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
   };
@@ -238,10 +208,21 @@ export default function Insights() {
           </div>
         </div> */}
         <div className="ix-context" aria-label="Page context">
-          <span className="ix-ctx">{Ic.layers(14)}<b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
-          <span className="ix-ctx">{Ic.clock(14)}Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
-          <span className="ix-ctx">{Ic.calendar(14)}Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
-          <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key">
+          <span className="ix-ctx" title={`${TOP_DOMAINS.length} domains · ${DOMAIN_KEYS.length - TOP_DOMAINS.length} sub-domains · ${DOMAIN_TRUST_TOTAL.inScope} assets in scope`}>
+            {Ic.layers(14)}
+            <span className="ix-ctx-text">
+              <b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub<span className="ix-ctx-long">-domain</span> · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> <span className="ix-ctx-long">assets </span>in scope
+            </span>
+          </span>
+          <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
+            {Ic.clock(14)}
+            <span className="ix-ctx-text">Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
+          </span>
+          <span className="ix-ctx" title={`Next ${DOMAIN_LABEL[RECONCILE_NEXT.domain]} at ${RECONCILE_NEXT.at} · in ${RECONCILE_NEXT.eta}`}>
+            {Ic.calendar(14)}
+            <span className="ix-ctx-text">Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
+          </span>
+          <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key" title="Domains: RAN, Core, Transport, IP/MPLS">
             {DOMAIN_KEYS.map(d => <Dom key={d} domain={d} sm />)}
           </span>
         </div>
@@ -261,9 +242,10 @@ export default function Insights() {
             return (
               <Wrap key={m.label} className={`ix-kpi${m.hero ? ' is-hero' : ''}`}
                 style={{ ['--ix-accent' as string]: hex }}
-                {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
+                {...(to ? { onClick: to, type: 'button' as const, 'aria-label': KPI_HINT[m.label] } : {})}>
                 <div className="ix-kpi-top">
-                  <span className="ix-kpi-l">{m.label}
+                  <span className="ix-kpi-l">
+                    <span className="ix-kpi-lt" title={m.label}>{m.label}</span>
                     {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
                   </span>
                   <Pill tone={r.tone}>{r.status}</Pill>
@@ -273,7 +255,7 @@ export default function Insights() {
                   {m.hero && hero.delta && <Delta dir={hero.delta.up ? 'up' : 'down'} good={hero.delta.up}>{hero.delta.figure}</Delta>}
                   {!m.hero && r.delta !== undefined && r.delta !== 0 && (
                     <Delta dir={r.delta > 0 ? 'up' : 'down'} good={r.higherIsBetter ? r.delta > 0 : r.delta < 0}>
-                      {n(+Math.abs(r.delta).toFixed(2))}{r.deltaUnit} vs trend start
+                      {n(+Math.abs(r.delta).toFixed(2))}{r.deltaUnit} <span className="ix-delta-note">vs trend start</span>
                     </Delta>
                   )}
                 </div>

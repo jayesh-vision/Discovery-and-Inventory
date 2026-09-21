@@ -2046,18 +2046,154 @@ const LINK_TABS = [
    all; that's fixed below by naming the peer NE and moving its IP to dip. */
 const LINKS = {
   lldp: [
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Gi0/0/1', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.101', dif: 'Gi0/0/1', name: 'BB:NDLS-PSA 1G', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Te0/0/12', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.102', dif: 'Te0/0/12.SI.612', name: 'BB:NDLS-PSA 10G', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Gi0/0/0.SI.14', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.103', dif: 'Gi0/0/10', name: '—', v: 3 },
-    { st: 'up', sne: 'Kalindi-J1.1K-DU-T4-NR', sip: '172.31.35.151', sif: 'ge-0/1/1', dne: 'Janki-J1.1K-DU-T4-NR', dip: '172.31.35.152', dif: 'ge-0/1/0', name: 'BB:to Kalindi', v: 5 },
-    { st: 'down', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sip: '172.31.35.81', sif: 'xe-0/3/1', dne: 'CCRAS-JANAKPURI-N540X', dip: '172.31.35.82', dif: 'TenGigE0/0/0/18', name: '—', v: 168,
-      reason: 'Physical layer down — no light detected on optic, since 6d ago' }
+    {
+      st: 'up', sip: '172.31.47.96', sne: 'OFB-HQ-J7020-PE-T3-ER', sif: 'et-0/0/5',
+      dne: 'HWH_NKG-J960-PE-R1-T1-ER', sAlias: 'BB:T4:10G:HWH_NKG-J960(1)', dif: 'xe-7/2/0',
+      name: 'BB:T4:10G:HWH_NKG-J960', dip: '172.31.31.56', linkId: 'LLDP:140499201790', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.56', sne: 'HWH_NKG-J960-PE-R1-T1-ER', sif: 'xe-7/2/0',
+      dne: 'OFB-HQ-J7020-PE-T3-ER', sAlias: 'BB:T4:10G:HWH_NKG-J960(2)', dif: 'et-0/0/5',
+      name: 'BB:T4:10G:HWH_NKG-J960', dip: '172.31.47.96', linkId: 'LLDP:140499201790', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.42', sne: 'NCR-DIV-AGC-J1.1K-R2-T4', sif: 'ge-0/1/0',
+      dne: 'AGC-N540-T1-NR', sAlias: 'BB:Railnet Upgradation-1G', dif: 'GigabitEthernet0/0/0/15',
+      name: 'BB:T4:1G:AGC-C540-NR', dip: '172.31.46.243', linkId: 'LLDP:11251788244003', v: 5
+    },
+    {
+      st: 'up', sip: '172.31.49.104', sne: 'VM-J7024-PE-T3-SR', sif: 'et-0/0/1:1',
+      dne: 'CGL-N540-T3-SR', sAlias: 'BB:Bundle link for ae2(1)', dif: 'Bundle-Ether2',
+      name: 'BB:T3:40G:CGL-C540-SR', dip: '172.31.47.198', linkId: 'LLDP:167448839210', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.53.174', sne: 'JU-J7024-PE-T4-NR', sif: 'et-0/0/18',
+      dne: 'MJ-NCS-540-PE-T3-NR', sAlias: 'BB:Bundle link for ae2(2)', dif: 'Bundle-Ether1',
+      name: 'BB:T3:20G:MJ-C540-NR', dip: '172.31.32.221', linkId: 'LLDP:198273645012', v: 4
+    },
+    {
+      st: 'up', sip: '172.31.33.47', sne: 'ROK-BNG-J204-PE-T3-NR', sif: 'xe-0/1/4',
+      dne: 'JHL-N540-T3-NR', sAlias: 'BB: ROK Tejas DWDM(1)', dif: 'TenGigE0/0/0/1',
+      name: 'BB: ROK Tejas DWDM 10G', dip: '172.31.47.202', linkId: 'LLDP:892019485710', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.154', sne: 'NCR-HQ-ALD-J2.2K-R2-T4', sif: 'xe-0/3/1',
+      dne: 'NCR-HQ-PRYJ-J2.2K-R1-T4', sAlias: 'BB:Railnet Upgradation-10G', dif: 'xe-0/3/0',
+      name: 'BB:Railnet Upgradation', dip: '172.31.41.155', linkId: 'LLDP:918237465019', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.154', sne: 'NCR-HQ-ALD-J2.2K-R2-T4', sif: 'xe-0/3/0',
+      dne: 'ALD-J104-P-T3-NR', sAlias: 'BB:NCR-HQ-ALD-ACX(1)', dif: 'xe-2/0/0',
+      name: 'BB:ALD-J104 10G', dip: '172.31.34.88', linkId: 'LLDP:928374650192', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'Gi0/0/1',
+      dne: 'PSA-C920-WIFI1-T4-ER', sAlias: 'BB:NDLS-PSA-WIFI', dif: 'Gi0/0/1',
+      name: 'BB:NDLS-PSA 1G', dip: '172.31.42.101', linkId: 'LLDP:140499201880', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'Te0/0/12',
+      dne: 'PSA-C920-WIFI1-T4-ER', sAlias: 'BB:NDLS-PSA-10G-Trunk', dif: 'Te0/0/12.SI.612',
+      name: 'BB:NDLS-PSA 10G', dip: '172.31.42.102', linkId: 'LLDP:140499201881', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.35.151', sne: 'Kalindi-J1.1K-DU-T4-NR', sif: 'ge-0/1/1',
+      dne: 'Janki-J1.1K-DU-T4-NR', sAlias: 'BB:Kalindi-Janki-Access', dif: 'ge-0/1/0',
+      name: 'BB:to Kalindi', dip: '172.31.35.152', linkId: 'LLDP:11251788299101', v: 5
+    },
+    {
+      st: 'down', sip: '172.31.35.81', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sif: 'xe-0/3/1',
+      dne: 'CCRAS-JANAKPURI-N540X', sAlias: 'BB:Janakpuri-Interconnect', dif: 'TenGigE0/0/0/18',
+      name: 'BB:Janakpuri-CCRAS 10G', dip: '172.31.35.82', linkId: 'LLDP:167448839955', v: 168,
+      reason: 'Physical layer down — no light detected on optic, since 6d ago'
+    }
   ],
   ospf: [
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-SR', dip: '172.31.42.101', dif: 'full(8)', name: 'IGP backbone', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-ER', dip: '172.31.42.109', dif: 'full(8)', name: 'IGP backbone', v: 3 },
-    { st: 'down', sne: 'MAS-N7750-BNG-R-T1-SR', sip: '172.31.33.130', sif: 'area 0.0.0.1', dne: 'MAS-N7750-BNG-R-T1-NR', dip: '172.31.33.131', dif: 'down(1)', name: 'IGP south', v: 6264,
-      reason: 'Neighbor adjacency lost — dead timer expired, since 9h ago' }
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.90',
+      sOspfIp: '172.31.234.250', sIfIndex: 972, sSpeed: '1 Gbps', sAlias: 'BB:NDLS-RPF_Panchkuiya',
+      dip: '172.31.46.156', dne: 'RPF_PANCHKUIYA-J1.1K-PE-T4', dif: 'ge-0/1/2.90',
+      dOspfIp: '172.31.234.251', dSpeed: '1 Gbps', linkId: 'OSPF:85321538511', areaId: '0.0.6.153',
+      name: 'BB:NDLS-RPF 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/4.0',
+      sOspfIp: '172.31.237.28', sIfIndex: 49940, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(1)',
+      dip: '172.31.53.150', dne: 'DSC-IP-Estate-N540X-PE-T3', dif: 'TenGigE0/0/0/20',
+      dOspfIp: '172.31.237.29', dSpeed: '10 Gbps', linkId: 'OSPF:167246339259', areaId: '0.0.6.53',
+      name: 'BB:NDLS-DSC 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.99',
+      sOspfIp: '172.31.241.244', sIfIndex: 763, sSpeed: '10 Gbps', sAlias: 'BB:T3:10G:NDLS-J204-NR(2)',
+      dip: '172.31.53.8', dne: 'GGN-N540-T3-NR', dif: 'TenGigE0/0/0/1',
+      dOspfIp: '172.31.241.245', dSpeed: '10 Gbps', linkId: 'OSPF:90913048666', areaId: '0.0.0.0',
+      name: 'BB:NDLS-GGN 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/3.699',
+      sOspfIp: '172.31.128.239', sIfIndex: 944, sSpeed: '10 Gbps', sAlias: 'BB:T3:10G:NDLS-J204-NR(3)',
+      dip: '172.31.53.122', dne: 'OLD-DLI-N540L-PE-T3-NR', dif: 'TenGigE0/0/0/11.699',
+      dOspfIp: '172.31.128.238', dSpeed: '10 Gbps', linkId: 'OSPF:89726377572', areaId: '0.0.0.0',
+      name: 'BB:NDLS-OLDDLI 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.174',
+      sOspfIp: '172.31.70.235', sIfIndex: 884, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(4)',
+      dip: '172.31.35.15', dne: 'Satyawati-J1.1K-DU-T4-NR', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.70.234', dSpeed: '10 Gbps', linkId: 'OSPF:86971776684', areaId: '0.0.6.92',
+      name: 'BB:NDLS-SATYA 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.173',
+      sOspfIp: '172.31.70.232', sIfIndex: 883, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(3)',
+      dip: '172.31.35.25', dne: 'LAXMI_BAI-J1.1K-DU-T4-NR', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.70.233', dSpeed: '1 Gbps', linkId: 'OSPF:121767499126', areaId: '0.0.6.92',
+      name: 'BB:NDLS-LAXMI 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.299',
+      sOspfIp: '172.31.191.178', sIfIndex: 774, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(2)',
+      dip: '172.31.46.121', dne: 'RLDA-J2.2K-T4-NR', dif: 'ge-0/1/0.0',
+      dOspfIp: '172.31.191.179', dSpeed: '1 Gbps', linkId: 'OSPF:85320848662', areaId: '0.0.4.106',
+      name: 'BB:NDLS-RLDA 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'ae8.0',
+      sOspfIp: '172.31.191.171', sIfIndex: 624, sSpeed: '20 Gbps', sAlias: 'BB:LC:20G:NDLS-J204-NR',
+      dip: '172.31.31.2', dne: 'NDLS-J960-P_R1-T1-NR', dif: 'ae8.0',
+      dOspfIp: '172.31.191.170', dSpeed: '20 Gbps', linkId: 'OSPF:86968573685', areaId: '0.0.0.0',
+      name: 'BB:NDLS-LAG 20G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.988',
+      sOspfIp: '172.31.138.161', sIfIndex: 908, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(1)',
+      dip: '172.31.46.143', dne: 'OFMR-J2.2K-PE-T4-NR', dif: 'ge-0/2/1.0',
+      dOspfIp: '172.31.138.160', dSpeed: '1 Gbps', linkId: 'OSPF:86632353703', areaId: '0.0.4.51',
+      name: 'BB:NDLS-OFMR 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/0.99',
+      sOspfIp: '172.31.245.118', sIfIndex: 1629, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(5)',
+      dip: '172.31.53.250', dne: 'BGLK-ASR9010-PE-T1', dif: 'TenGigE0/0/0/4',
+      dOspfIp: '172.31.245.119', dSpeed: '10 Gbps', linkId: 'OSPF:86632490114', areaId: '0.0.0.0',
+      name: 'BB:NDLS-BGLK 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'xe-0/2/1.10',
+      sOspfIp: '172.31.140.210', sIfIndex: 1042, sSpeed: '10 Gbps', sAlias: 'BB:T1:10G:NDLS-VZG',
+      dip: '172.31.53.186', dne: 'VZG-N540X-PE-T4-NR', dif: 'TenGigE0/1/0/1',
+      dOspfIp: '172.31.140.211', dSpeed: '10 Gbps', linkId: 'OSPF:87102451001', areaId: '0.0.0.0',
+      name: 'BB:NDLS-VZG 10G', v: 3
+    },
+    {
+      st: 'down', sip: '172.31.33.130', sne: 'MAS-N7750-BNG-R-T1-SR', sif: 'xe-1/1/2.0',
+      sOspfIp: '172.31.142.15', sIfIndex: 1108, sSpeed: '10 Gbps', sAlias: 'BB:T1:10G:MAS-CHE',
+      dip: '172.31.61.140', dne: 'CHE-J2.2K-PE-T4-ER', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.142.16', dSpeed: '10 Gbps', linkId: 'OSPF:87102451009', areaId: '0.0.0.1',
+      name: 'BB:MAS-CHE 10G', v: 6264,
+      reason: 'Neighbor adjacency lost — dead timer expired, since 9h ago'
+    }
   ],
   bgp: [
     { st: 'established', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'AS 24186', dne: 'BGLK-ASR9010-PE-T1', dip: '172.31.53.252', dif: 'established(6)', name: 'iBGP RR', v: 3 },
@@ -2153,20 +2289,18 @@ const ISIS_DOWN_REASONS = ['Adjacency down — hello timer expired', 'Level mism
 const BGP_DOWN_REASONS = { idle: 'Session administratively shut down', active: 'TCP connection failed — peer unreachable',
   connect: 'Waiting for TCP handshake — peer not responding' };
 
-LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({
-  ...r, st: i % 5 === 4 ? 'down' : 'up',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
-  dne: PAD_NE[(i + 5) % PAD_NE.length], dip: PAD_IP(i + 30), dif: PAD_IF[(i + 3) % PAD_IF.length],
-  name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
-  v: [3, 5, 8, 26][i % 4],
-  reason: i % 5 === 4 ? LLDP_DOWN_REASONS[i % LLDP_DOWN_REASONS.length] : undefined
+LINKS.lldp = padList(LINKS.lldp, 16, (r, i) => ({
+  ...r,
+  sAlias: r.sAlias || `BB:T4:10G:${(r.sne || PAD_NE[i % PAD_NE.length]).slice(0, 10)}`,
+  linkId: r.linkId || `LLDP:${140499201000 + i * 192837}`
 }));
-LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({
-  ...r, st: i % 6 === 5 ? 'down' : 'up',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
-  dne: PAD_NE[(i + 7) % PAD_NE.length], dip: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
-  name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3],
-  reason: i % 6 === 5 ? OSPF_DOWN_REASONS[i % OSPF_DOWN_REASONS.length] : undefined
+LINKS.ospf = padList(LINKS.ospf, 16, (r, i) => ({
+  ...r,
+  sIfIndex: r.sIfIndex || (700 + i * 37),
+  sSpeed: r.sSpeed || (i % 2 === 0 ? '10 Gbps' : '1 Gbps'),
+  dSpeed: r.dSpeed || (i % 2 === 0 ? '10 Gbps' : '1 Gbps'),
+  linkId: r.linkId || `OSPF:${85320000000 + i * 1049283}`,
+  areaId: r.areaId || (i % 3 === 0 ? '0.0.0.0' : `0.0.6.${100 + i * 7}`)
 }));
 LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
@@ -3239,7 +3373,7 @@ function kebabCell(items, gid, i) {
    rather than competing with extra's own controls for the left side. */
 function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '', filterChips = '') {
   const st = gridOf(key);
-  const activeFilters = Object.values(st.filters).filter(Boolean).length;
+  const activeFilters = Object.entries(st.filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain')).length;
   return `<div class="grid-bar">
     <span class="vw-card-description grid-count">${showing === null
       ? `<span class="num">${total}</span> records` : `Showing ${showing} of ${total}`}</span>
@@ -3278,7 +3412,7 @@ function filterPanel(spec, key = '') {
     <div class="fpanel-body">
       <div class="fpanel-nav">
         ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}${gridOf(key).filters[x.n] ? ' has-value' : ''}"
-          data-filterfield="${i}">${x.n}</button>`).join('')}
+          data-filterfield="${key}|${i}">${x.n}</button>`).join('')}
       </div>
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
@@ -3348,7 +3482,7 @@ function layoutStockChips() {
    applied — field and value both live in gridOf(key).filters already, so
    nothing view-specific is needed here. */
 function chipsModal(key) {
-  const active = Object.entries(gridOf(key).filters).filter(([, v]) => v);
+  const active = Object.entries(gridOf(key).filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'));
   return `<div class="drawer-overlay" data-chipsmodalclose="1"></div>
     <div class="chips-modal" role="dialog" aria-label="Selected filters">
       <div class="chips-modal-head">
@@ -3375,7 +3509,7 @@ function chipsModal(key) {
    row, via the shared .stock-chips/data-chipsrow markup. */
 function activeFilterChips(key) {
   const filters = gridOf(key).filters;
-  const chips = Object.entries(filters).filter(([, v]) => v)
+  const chips = Object.entries(filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'))
     .map(([field, value]) => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(field)}: ${esc(value)}
       <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`)
     .join('');
@@ -3395,14 +3529,12 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
@@ -4859,6 +4991,8 @@ function viewReconcile() {
 
 
 let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
+let LLDP_RANGE = 'today';
+let OSPF_RANGE = 'today';
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
 let INACT_CLS = 'router';
 let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
@@ -7143,18 +7277,20 @@ const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 
    Source Interface this link reports (r.sif) lives — so a click now opens
    that instead. */
 function linkDiagram(r) {
-  const node = label => `<div class="linkdiagram-node is-static">
-    <span class="linkdiagram-icon">${nodeThumb('router')}</span>
-    <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
-  </div>`;
+  const node = (label, role) => `
+    <button class="linkdiagram-node"${dA({ v: 'resource', l: label, q: `name=${encodeURIComponent(label)}` })}
+      title="Open ${esc(label)} · View details" aria-label="Open ${role} element ${esc(label)} details">
+      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+      <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
+    </button>`;
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
-    ${node(r.sne)}
+    ${node(r.sne, 'Source')}
     <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}&tab=ifaces` })}
       title="Open ${esc(r.sne)} · Interfaces" aria-label="Open ${esc(r.sne)}'s Interfaces tab">
       <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
     </button>
-    ${node(r.dne)}
+    ${node(r.dne, 'Destination')}
   </div>`;
 }
 
@@ -7196,6 +7332,97 @@ function viewLinks() {
      protocol actually reports — lldp/ospf/isis never see Established, bgp
      never sees Up */
   const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
+  const isLldp = t === 'lldp';
+  const isOspf = t === 'ospf';
+
+  const lldpCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Destination NE' },
+    { t: 'Source interface ifalias' },
+    { t: 'Destination interface' },
+    { t: 'Link name' },
+    { t: 'Destination IP address' },
+    { t: 'Link Id' }
+  ];
+
+  const ospfCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Source OSPF IP' },
+    { t: 'Source OSPF IfIndex' },
+    { t: 'Source interface Ifhighspeed' },
+    { t: 'Source Interface Ifalias' },
+    { t: 'Destination IP address' },
+    { t: 'Destination NE' },
+    { t: 'Destination interface' },
+    { t: 'Destination OSPF IP' },
+    { t: 'Destination interface Ifhighspeed' },
+    { t: 'Link ID' },
+    { t: 'Area ID' }
+  ];
+
+  const defaultCols = [
+    { t: 'Status', plain: true },
+    { t: 'Source NE' },
+    { t: 'Source IP' },
+    { t: 'Destination NE' },
+    { t: 'Destination IP' },
+    { t: 'Link name' }
+  ];
+
+  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : defaultCols;
+
+  const tableRows = rows.map(r => {
+    if (isLldp) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        r.sAlias ? `<span class="cell-sub" title="${esc(r.sAlias)}">${esc(r.sAlias)}</span>` : '—',
+        `<span class="mono">${r.dif || '—'}</span>`,
+        r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : esc(r.name || '—'),
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="mono">${r.linkId || '—'}</span>`
+      ];
+    }
+    if (isOspf) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="mono">${r.sOspfIp || '—'}</span>`,
+        `<span class="num">${r.sIfIndex !== undefined ? r.sIfIndex : '—'}</span>`,
+        r.sSpeed || '—',
+        r.sAlias ? `<span class="cell-sub" title="${esc(r.sAlias)}">${esc(r.sAlias)}</span>` : '—',
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        `<span class="mono">${r.dif || '—'}</span>`,
+        `<span class="mono">${r.dOspfIp || '—'}</span>`,
+        r.dSpeed || '—',
+        `<span class="mono">${r.linkId || '—'}</span>`,
+        `<span class="mono">${r.areaId || '—'}</span>`
+      ];
+    }
+    return [
+      chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
+      `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
+      `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
+      r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
+    ];
+  });
+
+  const searchPlaceholder = isLldp
+    ? 'Link name, Source interface, Destination interface'
+    : isOspf
+    ? 'Source OSPF IP, Destination IP address, Destination OSPF IP'
+    : 'Source IP, source NE, destination NE, destination IP';
+
+  const linkExtra = '';
+
   return `<div class="page">
 
     ${drillBar()}
@@ -7220,16 +7447,9 @@ function viewLinks() {
 
     ${card(`
       ${tabs(LINK_TABS, t, 'link')}
-      ${gridBar(rows.length, n(meta.c), 'Source IP, source NE, destination NE, destination IP', linkFS, '',
+      ${gridBar(rows.length, n(meta.c), searchPlaceholder, linkFS, linkExtra,
         [], 'links')}
-      ${table([{t:'Status', plain:true},{t:'Source NE'},{t:'Source IP'},
-               {t:'Destination NE'},{t:'Destination IP'},{t:'Link name'}],
-        rows.map(r => [
-          chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
-          `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
-          `<span class="vw-value">${r.dne}</span>`, `<span class="mono">${r.dip}</span>`,
-          r.name === '—' ? `<span style="color:${cv('gray',400)}">unnamed</span>` : r.name
-        ]), 'chip-auto',
+      ${table(tableCols, tableRows, 'chip-auto',
         i => [{ l: 'View link', linkview: `${t}:${LINKS[t].indexOf(rows[i])}` }],
         i => ({ class: 'is-click', 'data-linkview': `${t}:${LINKS[t].indexOf(rows[i])}` }))}`)}
     ${linkViewDialog()}
@@ -14032,6 +14252,7 @@ function exportNearestTable(btn, kind) {
 let DRILL_PENDING = null;
 function drillTo(view, label, q) {
   if (!VIEWS[view]) return;
+  LINK_VIEW = null;
   const crumbName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
   /* the reader may already be mid-drill on CURRENT (Location's "All
      locations" list, say) — a plain single-segment crumb like "Location"
@@ -14463,15 +14684,51 @@ document.addEventListener('click', e => {
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fo) {
+    const k = fo.dataset.filteropen;
+    FILTER_OPEN = !FILTER_OPEN;
+    if (FILTER_OPEN && k) {
+      const spec = (typeof FS !== 'undefined' && FS[k]) || [];
+      const activeEntry = Object.entries(gridOf(k).filters).find(([fName, val]) => Boolean(val) && (k !== 'jobs' || fName !== 'Domain'));
+      if (activeEntry) {
+        const foundIdx = spec.findIndex(s => s.n === activeEntry[0]);
+        FILTER_FIELD = foundIdx >= 0 ? foundIdx : 0;
+      } else {
+        FILTER_FIELD = 0;
+      }
+    } else {
+      FILTER_FIELD = 0;
+    }
+    KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
   const fr = e.target.closest('[data-filterreset]');
-  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fr) {
+    const k = fr.dataset.filterreset;
+    const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+    gridOf(k).filters = dom ? { Domain: dom } : {};
+    FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fa = e.target.closest('[data-filterapply]');
   if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
-  if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  if (ff) {
+    const raw = ff.dataset.filterfield;
+    let k = '', idx = 0;
+    if (raw && raw.includes('|')) {
+      [k, idx] = raw.split('|');
+      idx = Number(idx);
+    } else {
+      idx = Number(raw);
+    }
+    FILTER_FIELD = idx;
+    if (k) {
+      const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+      gridOf(k).filters = dom ? { Domain: dom } : {};
+    }
+    go(CURRENT); return;
+  }
   /* the chip row's own "+N More" (built by layoutStockChips(), not any
      view's template) opens a popup listing every filter this grid has
      applied; its own backdrop/X close it the same way a kebab menu does */
@@ -14712,6 +14969,20 @@ document.addEventListener('click', e => {
   const nef = e.target.closest('[data-ne-filter]');
   if (nef) { NE_FILTER = nef.dataset.neFilter; go('reconcile'); return; }
 
+  const or = e.target.closest('[data-ospf-range]');
+  if (or) {
+    OSPF_RANGE = or.dataset.ospfRange;
+    go('links', { label: 'ospf links', q: 'tab=ospf' });
+    return;
+  }
+
+  const lr = e.target.closest('[data-lldp-range]');
+  if (lr) {
+    LLDP_RANGE = lr.dataset.lldpRange;
+    go('links', { label: 'lldp links', q: 'tab=lldp' });
+    return;
+  }
+
   const tgf = e.target.closest('[data-tgt-filter]');
   if (tgf) { TGT_FILTER = tgf.dataset.tgtFilter; go('targets'); return; }
 
@@ -14822,7 +15093,9 @@ document.addEventListener('input', e => {
   }
   if (el.hasAttribute && el.hasAttribute('data-filterval')) {
     const [key, field] = el.dataset.filterval.split('|');
-    gridOf(key).filters[field] = el.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (el.value) gridOf(key).filters[field] = el.value;
     if (el.classList && el.classList.contains('fp-sel')) el.classList.toggle('is-placeholder', !el.value);
     return; /* applied on "Apply filters", not per keystroke */
   }
@@ -14848,7 +15121,9 @@ document.addEventListener('change', e => {
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
-    gridOf(key).filters[field] = e.target.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (e.target.value) gridOf(key).filters[field] = e.target.value;
     if (e.target.classList && e.target.classList.contains('fp-sel')) e.target.classList.toggle('is-placeholder', !e.target.value);
     return;
   }

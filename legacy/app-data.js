@@ -1797,18 +1797,154 @@ const LINK_TABS = [
    all; that's fixed below by naming the peer NE and moving its IP to dip. */
 const LINKS = {
   lldp: [
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Gi0/0/1', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.101', dif: 'Gi0/0/1', name: 'BB:NDLS-PSA 1G', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Te0/0/12', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.102', dif: 'Te0/0/12.SI.612', name: 'BB:NDLS-PSA 10G', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'Gi0/0/0.SI.14', dne: 'PSA-C920-WIFI1-T4-ER', dip: '172.31.42.103', dif: 'Gi0/0/10', name: '—', v: 3 },
-    { st: 'up', sne: 'Kalindi-J1.1K-DU-T4-NR', sip: '172.31.35.151', sif: 'ge-0/1/1', dne: 'Janki-J1.1K-DU-T4-NR', dip: '172.31.35.152', dif: 'ge-0/1/0', name: 'BB:to Kalindi', v: 5 },
-    { st: 'down', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sip: '172.31.35.81', sif: 'xe-0/3/1', dne: 'CCRAS-JANAKPURI-N540X', dip: '172.31.35.82', dif: 'TenGigE0/0/0/18', name: '—', v: 168,
-      reason: 'Physical layer down — no light detected on optic, since 6d ago' }
+    {
+      st: 'up', sip: '172.31.47.96', sne: 'OFB-HQ-J7020-PE-T3-ER', sif: 'et-0/0/5',
+      dne: 'HWH_NKG-J960-PE-R1-T1-ER', sAlias: 'BB:T4:10G:HWH_NKG-J960(1)', dif: 'xe-7/2/0',
+      name: 'BB:T4:10G:HWH_NKG-J960', dip: '172.31.31.56', linkId: 'LLDP:140499201790', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.56', sne: 'HWH_NKG-J960-PE-R1-T1-ER', sif: 'xe-7/2/0',
+      dne: 'OFB-HQ-J7020-PE-T3-ER', sAlias: 'BB:T4:10G:HWH_NKG-J960(2)', dif: 'et-0/0/5',
+      name: 'BB:T4:10G:HWH_NKG-J960', dip: '172.31.47.96', linkId: 'LLDP:140499201790', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.42', sne: 'NCR-DIV-AGC-J1.1K-R2-T4', sif: 'ge-0/1/0',
+      dne: 'AGC-N540-T1-NR', sAlias: 'BB:Railnet Upgradation-1G', dif: 'GigabitEthernet0/0/0/15',
+      name: 'BB:T4:1G:AGC-C540-NR', dip: '172.31.46.243', linkId: 'LLDP:11251788244003', v: 5
+    },
+    {
+      st: 'up', sip: '172.31.49.104', sne: 'VM-J7024-PE-T3-SR', sif: 'et-0/0/1:1',
+      dne: 'CGL-N540-T3-SR', sAlias: 'BB:Bundle link for ae2(1)', dif: 'Bundle-Ether2',
+      name: 'BB:T3:40G:CGL-C540-SR', dip: '172.31.47.198', linkId: 'LLDP:167448839210', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.53.174', sne: 'JU-J7024-PE-T4-NR', sif: 'et-0/0/18',
+      dne: 'MJ-NCS-540-PE-T3-NR', sAlias: 'BB:Bundle link for ae2(2)', dif: 'Bundle-Ether1',
+      name: 'BB:T3:20G:MJ-C540-NR', dip: '172.31.32.221', linkId: 'LLDP:198273645012', v: 4
+    },
+    {
+      st: 'up', sip: '172.31.33.47', sne: 'ROK-BNG-J204-PE-T3-NR', sif: 'xe-0/1/4',
+      dne: 'JHL-N540-T3-NR', sAlias: 'BB: ROK Tejas DWDM(1)', dif: 'TenGigE0/0/0/1',
+      name: 'BB: ROK Tejas DWDM 10G', dip: '172.31.47.202', linkId: 'LLDP:892019485710', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.154', sne: 'NCR-HQ-ALD-J2.2K-R2-T4', sif: 'xe-0/3/1',
+      dne: 'NCR-HQ-PRYJ-J2.2K-R1-T4', sAlias: 'BB:Railnet Upgradation-10G', dif: 'xe-0/3/0',
+      name: 'BB:Railnet Upgradation', dip: '172.31.41.155', linkId: 'LLDP:918237465019', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.154', sne: 'NCR-HQ-ALD-J2.2K-R2-T4', sif: 'xe-0/3/0',
+      dne: 'ALD-J104-P-T3-NR', sAlias: 'BB:NCR-HQ-ALD-ACX(1)', dif: 'xe-2/0/0',
+      name: 'BB:ALD-J104 10G', dip: '172.31.34.88', linkId: 'LLDP:928374650192', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'Gi0/0/1',
+      dne: 'PSA-C920-WIFI1-T4-ER', sAlias: 'BB:NDLS-PSA-WIFI', dif: 'Gi0/0/1',
+      name: 'BB:NDLS-PSA 1G', dip: '172.31.42.101', linkId: 'LLDP:140499201880', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'Te0/0/12',
+      dne: 'PSA-C920-WIFI1-T4-ER', sAlias: 'BB:NDLS-PSA-10G-Trunk', dif: 'Te0/0/12.SI.612',
+      name: 'BB:NDLS-PSA 10G', dip: '172.31.42.102', linkId: 'LLDP:140499201881', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.35.151', sne: 'Kalindi-J1.1K-DU-T4-NR', sif: 'ge-0/1/1',
+      dne: 'Janki-J1.1K-DU-T4-NR', sAlias: 'BB:Kalindi-Janki-Access', dif: 'ge-0/1/0',
+      name: 'BB:to Kalindi', dip: '172.31.35.152', linkId: 'LLDP:11251788299101', v: 5
+    },
+    {
+      st: 'down', sip: '172.31.35.81', sne: 'SBI_JANAKPURI-J2.2K-PE-T4', sif: 'xe-0/3/1',
+      dne: 'CCRAS-JANAKPURI-N540X', sAlias: 'BB:Janakpuri-Interconnect', dif: 'TenGigE0/0/0/18',
+      name: 'BB:Janakpuri-CCRAS 10G', dip: '172.31.35.82', linkId: 'LLDP:167448839955', v: 168,
+      reason: 'Physical layer down — no light detected on optic, since 6d ago'
+    }
   ],
   ospf: [
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-SR', dip: '172.31.42.101', dif: 'full(8)', name: 'IGP backbone', v: 3 },
-    { st: 'up', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'area 0.0.0.0', dne: 'NDLS-J960-P_R1-T1-ER', dip: '172.31.42.109', dif: 'full(8)', name: 'IGP backbone', v: 3 },
-    { st: 'down', sne: 'MAS-N7750-BNG-R-T1-SR', sip: '172.31.33.130', sif: 'area 0.0.0.1', dne: 'MAS-N7750-BNG-R-T1-NR', dip: '172.31.33.131', dif: 'down(1)', name: 'IGP south', v: 6264,
-      reason: 'Neighbor adjacency lost — dead timer expired, since 9h ago' }
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.90',
+      sOspfIp: '172.31.234.250', sIfIndex: 972, sSpeed: '1 Gbps', sAlias: 'BB:NDLS-RPF_Panchkuiya',
+      dip: '172.31.46.156', dne: 'RPF_PANCHKUIYA-J1.1K-PE-T4', dif: 'ge-0/1/2.90',
+      dOspfIp: '172.31.234.251', dSpeed: '1 Gbps', linkId: 'OSPF:85321538511', areaId: '0.0.6.153',
+      name: 'BB:NDLS-RPF 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/4.0',
+      sOspfIp: '172.31.237.28', sIfIndex: 49940, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(1)',
+      dip: '172.31.53.150', dne: 'DSC-IP-Estate-N540X-PE-T3', dif: 'TenGigE0/0/0/20',
+      dOspfIp: '172.31.237.29', dSpeed: '10 Gbps', linkId: 'OSPF:167246339259', areaId: '0.0.6.53',
+      name: 'BB:NDLS-DSC 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.99',
+      sOspfIp: '172.31.241.244', sIfIndex: 763, sSpeed: '10 Gbps', sAlias: 'BB:T3:10G:NDLS-J204-NR(2)',
+      dip: '172.31.53.8', dne: 'GGN-N540-T3-NR', dif: 'TenGigE0/0/0/1',
+      dOspfIp: '172.31.241.245', dSpeed: '10 Gbps', linkId: 'OSPF:90913048666', areaId: '0.0.0.0',
+      name: 'BB:NDLS-GGN 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/3.699',
+      sOspfIp: '172.31.128.239', sIfIndex: 944, sSpeed: '10 Gbps', sAlias: 'BB:T3:10G:NDLS-J204-NR(3)',
+      dip: '172.31.53.122', dne: 'OLD-DLI-N540L-PE-T3-NR', dif: 'TenGigE0/0/0/11.699',
+      dOspfIp: '172.31.128.238', dSpeed: '10 Gbps', linkId: 'OSPF:89726377572', areaId: '0.0.0.0',
+      name: 'BB:NDLS-OLDDLI 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.174',
+      sOspfIp: '172.31.70.235', sIfIndex: 884, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(4)',
+      dip: '172.31.35.15', dne: 'Satyawati-J1.1K-DU-T4-NR', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.70.234', dSpeed: '10 Gbps', linkId: 'OSPF:86971776684', areaId: '0.0.6.92',
+      name: 'BB:NDLS-SATYA 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.173',
+      sOspfIp: '172.31.70.232', sIfIndex: 883, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(3)',
+      dip: '172.31.35.25', dne: 'LAXMI_BAI-J1.1K-DU-T4-NR', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.70.233', dSpeed: '1 Gbps', linkId: 'OSPF:121767499126', areaId: '0.0.6.92',
+      name: 'BB:NDLS-LAXMI 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/5.299',
+      sOspfIp: '172.31.191.178', sIfIndex: 774, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(2)',
+      dip: '172.31.46.121', dne: 'RLDA-J2.2K-T4-NR', dif: 'ge-0/1/0.0',
+      dOspfIp: '172.31.191.179', dSpeed: '1 Gbps', linkId: 'OSPF:85320848662', areaId: '0.0.4.106',
+      name: 'BB:NDLS-RLDA 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'ae8.0',
+      sOspfIp: '172.31.191.171', sIfIndex: 624, sSpeed: '20 Gbps', sAlias: 'BB:LC:20G:NDLS-J204-NR',
+      dip: '172.31.31.2', dne: 'NDLS-J960-P_R1-T1-NR', dif: 'ae8.0',
+      dOspfIp: '172.31.191.170', dSpeed: '20 Gbps', linkId: 'OSPF:86968573685', areaId: '0.0.0.0',
+      name: 'BB:NDLS-LAG 20G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/7.988',
+      sOspfIp: '172.31.138.161', sIfIndex: 908, sSpeed: '1 Gbps', sAlias: 'BB:T4:1G:NDLS-J204-NR(1)',
+      dip: '172.31.46.143', dne: 'OFMR-J2.2K-PE-T4-NR', dif: 'ge-0/2/1.0',
+      dOspfIp: '172.31.138.160', dSpeed: '1 Gbps', linkId: 'OSPF:86632353703', areaId: '0.0.4.51',
+      name: 'BB:NDLS-OFMR 1G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/0.99',
+      sOspfIp: '172.31.245.118', sIfIndex: 1629, sSpeed: '10 Gbps', sAlias: 'BB:T4:10G:NDLS-J204-NR(5)',
+      dip: '172.31.53.250', dne: 'BGLK-ASR9010-PE-T1', dif: 'TenGigE0/0/0/4',
+      dOspfIp: '172.31.245.119', dSpeed: '10 Gbps', linkId: 'OSPF:86632490114', areaId: '0.0.0.0',
+      name: 'BB:NDLS-BGLK 10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'xe-0/2/1.10',
+      sOspfIp: '172.31.140.210', sIfIndex: 1042, sSpeed: '10 Gbps', sAlias: 'BB:T1:10G:NDLS-VZG',
+      dip: '172.31.53.186', dne: 'VZG-N540X-PE-T4-NR', dif: 'TenGigE0/1/0/1',
+      dOspfIp: '172.31.140.211', dSpeed: '10 Gbps', linkId: 'OSPF:87102451001', areaId: '0.0.0.0',
+      name: 'BB:NDLS-VZG 10G', v: 3
+    },
+    {
+      st: 'down', sip: '172.31.33.130', sne: 'MAS-N7750-BNG-R-T1-SR', sif: 'xe-1/1/2.0',
+      sOspfIp: '172.31.142.15', sIfIndex: 1108, sSpeed: '10 Gbps', sAlias: 'BB:T1:10G:MAS-CHE',
+      dip: '172.31.61.140', dne: 'CHE-J2.2K-PE-T4-ER', dif: 'ge-0/1/1.0',
+      dOspfIp: '172.31.142.16', dSpeed: '10 Gbps', linkId: 'OSPF:87102451009', areaId: '0.0.0.1',
+      name: 'BB:MAS-CHE 10G', v: 6264,
+      reason: 'Neighbor adjacency lost — dead timer expired, since 9h ago'
+    }
   ],
   bgp: [
     { st: 'established', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'AS 24186', dne: 'BGLK-ASR9010-PE-T1', dip: '172.31.53.252', dif: 'established(6)', name: 'iBGP RR', v: 3 },
@@ -1904,20 +2040,18 @@ const ISIS_DOWN_REASONS = ['Adjacency down — hello timer expired', 'Level mism
 const BGP_DOWN_REASONS = { idle: 'Session administratively shut down', active: 'TCP connection failed — peer unreachable',
   connect: 'Waiting for TCP handshake — peer not responding' };
 
-LINKS.lldp = padList(LINKS.lldp, 12, (r, i) => ({
-  ...r, st: i % 5 === 4 ? 'down' : 'up',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: PAD_IF[i % PAD_IF.length],
-  dne: PAD_NE[(i + 5) % PAD_NE.length], dip: PAD_IP(i + 30), dif: PAD_IF[(i + 3) % PAD_IF.length],
-  name: `BB:${PAD_NE[i % PAD_NE.length].slice(0, 4)}-${PAD_NE[(i + 5) % PAD_NE.length].slice(0, 4)}`,
-  v: [3, 5, 8, 26][i % 4],
-  reason: i % 5 === 4 ? LLDP_DOWN_REASONS[i % LLDP_DOWN_REASONS.length] : undefined
+LINKS.lldp = padList(LINKS.lldp, 16, (r, i) => ({
+  ...r,
+  sAlias: r.sAlias || `BB:T4:10G:${(r.sne || PAD_NE[i % PAD_NE.length]).slice(0, 10)}`,
+  linkId: r.linkId || `LLDP:${140499201000 + i * 192837}`
 }));
-LINKS.ospf = padList(LINKS.ospf, 10, (r, i) => ({
-  ...r, st: i % 6 === 5 ? 'down' : 'up',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: `area 0.0.0.${i % 3}`,
-  dne: PAD_NE[(i + 7) % PAD_NE.length], dip: PAD_IP(i + 7), dif: i % 6 === 5 ? 'down(1)' : 'full(8)',
-  name: i % 3 === 0 ? 'IGP backbone' : 'IGP south', v: [3, 6, 11][i % 3],
-  reason: i % 6 === 5 ? OSPF_DOWN_REASONS[i % OSPF_DOWN_REASONS.length] : undefined
+LINKS.ospf = padList(LINKS.ospf, 16, (r, i) => ({
+  ...r,
+  sIfIndex: r.sIfIndex || (700 + i * 37),
+  sSpeed: r.sSpeed || (i % 2 === 0 ? '10 Gbps' : '1 Gbps'),
+  dSpeed: r.dSpeed || (i % 2 === 0 ? '10 Gbps' : '1 Gbps'),
+  linkId: r.linkId || `OSPF:${85320000000 + i * 1049283}`,
+  areaId: r.areaId || (i % 3 === 0 ? '0.0.0.0' : `0.0.6.${100 + i * 7}`)
 }));
 LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
