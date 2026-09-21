@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Chip, DomainDot, StatStrip } from '../components/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Card, Chip, DomainDot, StatStrip, Sub } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
-import { Drawer } from '../components/Drawer';
-import { legacyPath } from '../routes';
 import {
-  DISCREPANCY_TYPES, DOMAIN_FULL_LABEL, DOMAIN_LABEL, DOMAIN_OPTIONS, domainFilterMatches, domainRoute, parseDomainKey,
-  type DiscrepancyTypeRow, type DiscrepancyCategory, type AgeBand
+  DISCREPANCY_TYPES, DOMAIN_LABEL, DOMAIN_OPTIONS, domainFilterMatches, parseDomainKey,
+  type DiscrepancyCategory, type AgeBand
 } from '../data/discoveryOverview';
+import { DOMAIN_DEVICES, type DomainDevice } from '../data/domainDevices';
 
 const CATEGORIES: DiscrepancyCategory[] = ['EXISTENCE', 'ATTRIBUTE', 'RELATIONSHIP', 'FRESHNESS'];
 const AGE_BANDS: AgeBand[] = ['<1h', '1-24h', '1-7d', '7-30d', '>30d'];
@@ -15,96 +14,111 @@ const AGE_LABEL: Record<AgeBand, string> = { '<1h': '< 1h', '1-24h': '1–24h', 
 
 const isCategory = (v: string | null): v is DiscrepancyCategory => !!v && (CATEGORIES as string[]).includes(v);
 const isAgeBand = (v: string | null): v is AgeBand => !!v && (AGE_BANDS as string[]).includes(v);
+const normAge = (s?: string) => (s ?? '').replace(/[–—\s]/g, '-').toLowerCase();
+
+interface DiscrepancyDeviceRow extends DomainDevice {
+  category: DiscrepancyCategory;
+  ageBand: AgeBand;
+}
+
+const typeByLabel = new Map(DISCREPANCY_TYPES.map(t => [t.label, t]));
 
 export default function DiscrepancyDetails() {
-  const nav = useNavigate();
   const [sp] = useSearchParams();
   /* ?domain= accepts the key, either label or the URL slug (see parseDomainKey) */
   const urlDomain = parseDomainKey(sp.get('domain'));
   const urlCategory = isCategory(sp.get('category')) ? sp.get('category') as DiscrepancyCategory : undefined;
   const urlAge = isAgeBand(sp.get('age')) ? sp.get('age') as AgeBand : undefined;
   const urlQ = sp.get('q') ?? '';
-  /* this screen's own crumb is hardcoded "Insights · Discrepancies" (it's
-     normally only reached from Insights) — but it can also be reached
-     from Reconciliation now, which names itself via ?from=. Carrying that
-     same origin on to Domain devices below keeps a 3-hop chain
-     (Reconciliation → Discrepancies → Domain devices) pointing back the
-     way the reader actually came, the same inherited-origin idea the
-     legacy drillTo() already uses for its own multi-hop jumps. */
-  const from = sp.get('from');
 
-  const [query, setQuery] = useState(urlQ);
-  const [filters, setFilters] = useState<Record<string, string>>(() => {
+  const defaultFilters = useMemo(() => {
     const f: Record<string, string> = {};
     if (urlDomain) f.Domain = DOMAIN_LABEL[urlDomain];
     if (urlCategory) f.Category = urlCategory;
     if (urlAge) f.Age = AGE_LABEL[urlAge];
     return f;
-  });
-  const [open, setOpen] = useState<DiscrepancyTypeRow | null>(null);
+  }, [urlDomain, urlCategory, urlAge]);
+
+  const [query, setQuery] = useState(urlQ);
+  const [filters, setFilters] = useState<Record<string, string>>(defaultFilters);
+
+  /* Whenever the URL params change (or when navigating to the screen), reset filters & query */
+  useEffect(() => {
+    setFilters(defaultFilters);
+    setQuery(urlQ);
+  }, [defaultFilters, urlQ]);
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    if (!newFilters || Object.keys(newFilters).length === 0) {
+      setFilters(defaultFilters);
+    } else {
+      setFilters(newFilters);
+    }
+  };
+
+  const allOpenDevices = useMemo<DiscrepancyDeviceRow[]>(() => {
+    return DOMAIN_DEVICES
+      .filter(d => d.status === 'Open')
+      .map(d => {
+        const t = typeByLabel.get(d.issue);
+        return {
+          ...d,
+          category: t?.category ?? 'EXISTENCE',
+          ageBand: t?.ageBand ?? '<1h'
+        };
+      });
+  }, []);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return DISCREPANCY_TYPES.filter(r => {
-      if (q && !r.label.toLowerCase().includes(q)) return false;
-      if (!domainFilterMatches(r.domain, filters.Domain)) return false;
-      if (filters.Category && r.category !== filters.Category) return false;
-      if (filters.Age && AGE_LABEL[r.ageBand] !== filters.Age) return false;
+    return allOpenDevices.filter(d => {
+      if (q && !(d.name.toLowerCase().includes(q) || d.ip.includes(q) || d.issue.toLowerCase().includes(q) || d.region.toLowerCase().includes(q))) return false;
+      if (!domainFilterMatches(d.domain, filters.Domain)) return false;
+      if (filters.Category && d.category !== filters.Category) return false;
+      if (filters.Age && normAge(AGE_LABEL[d.ageBand]) !== normAge(filters.Age) && normAge(d.ageBand) !== normAge(filters.Age)) return false;
       return true;
     });
-  }, [query, filters]);
+  }, [allOpenDevices, query, filters]);
 
-  const total = DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0);
-  const shown = rows.reduce((a, r) => a + r.count, 0);
+  const total = allOpenDevices.length;
+  const shown = rows.length;
 
   return (
     <div className="page">
       <StatStrip cells={[
         { k: 'Open discrepancies', v: String(total), s: 'across every domain', t: 'sky' },
-        { k: 'Shown here', v: String(shown), s: `${rows.length} of ${DISCREPANCY_TYPES.length} discrepancy types`, t: 'purple' }
+        { k: 'Shown here', v: String(shown), s: `${shown} of ${total} open discrepancies`, t: 'purple' }
       ]} />
       <Card>
-        <DataGrid<DiscrepancyTypeRow> chipWidth="auto"
-          columns={[{ t: 'Discrepancy type' }, { t: 'Domain' }, { t: 'Category' }, { t: 'Age' }, { t: 'Count', r: true }]}
-          rows={rows} total={rows.reduce((a, r) => a + r.count, 0)} rowKey={r => r.label}
+        <DataGrid<DiscrepancyDeviceRow> chipWidth="auto"
+          columns={[
+            { t: 'Device' },
+            { t: 'Discrepancy type' },
+            { t: 'Domain' },
+            { t: 'Category' },
+            { t: 'Age' },
+            { t: 'Last scan' }
+          ]}
+          rows={rows} total={rows.length} rowKey={d => d.id}
           resetKey={`${query}|${JSON.stringify(filters)}`}
-          searchPlaceholder="Discrepancy type"
+          searchPlaceholder="Device, IP, discrepancy type..."
           filters={[
             { n: 'Domain', o: DOMAIN_OPTIONS },
             { n: 'Category', o: CATEGORIES },
             { n: 'Age', o: AGE_BANDS.map(a => AGE_LABEL[a]) }
           ]}
-          onSearch={setQuery} searchValue={query} onFilterChange={setFilters}
-          onRowClick={setOpen}
-          renderRow={r => [
-            <span className="vw-value">{r.label}</span>,
-            <DomainDot domain={r.domain} />,
-            <Chip tone="neutral">{r.category}</Chip>,
-            <span className="vw-card-metric-label-sub">{AGE_LABEL[r.ageBand]}</span>,
-            <span className="num" style={{ fontWeight: 600 }}>{r.count}</span>
+          onSearch={setQuery} searchValue={query} onFilterChange={handleFilterChange}
+          renderRow={d => [
+            <><span className="vw-value">{d.name}</span><Sub mono>{d.ip}</Sub></>,
+            <span className="vw-value">{d.issue}</span>,
+            <DomainDot domain={d.domain} />,
+            <Chip tone="neutral">{d.category}</Chip>,
+            <span className="vw-card-metric-label-sub">{AGE_LABEL[d.ageBand]}</span>,
+            <span className="num">{d.lastScan}</span>
           ]}
         />
       </Card>
-
-      <Drawer open={!!open} onClose={() => setOpen(null)} title={open?.label ?? ''}
-        sub={open ? `${DOMAIN_FULL_LABEL[open.domain]} · ${open.category}` : undefined}>
-        {open && (
-          <>
-            <div className="kv">
-              <div><span className="k">Domain</span><span className="v"><DomainDot domain={open.domain} /></span></div>
-              <div><span className="k">Category</span><span className="v">{open.category}</span></div>
-              <div><span className="k">Age</span><span className="v">{AGE_LABEL[open.ageBand]}</span></div>
-              <div><span className="k">Open count</span><span className="v">{open.count}</span></div>
-            </div>
-            <div style={{ marginTop: 'var(--vw-space-lg)' }}>
-              <button className="nst-btn nst-btn--sm"
-                onClick={() => { const r = domainRoute(open.domain); nav(legacyPath(r.key, from ? { from } : null, r.params)); }}>
-                View {DOMAIN_LABEL[open.domain]} devices
-              </button>
-            </div>
-          </>
-        )}
-      </Drawer>
     </div>
   );
 }
+

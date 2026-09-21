@@ -58,6 +58,11 @@ export default function DomainDevices() {
   const [showRaw, setShowRaw] = useState(false);
   const [justScanned, setJustScanned] = useState(false);
 
+  useEffect(() => {
+    setQuery('');
+    setFilters({});
+  }, [domain, region, issue]);
+
   const base = useMemo(() => (domain ? domainDevices(domain, region ?? undefined, issue ?? undefined) : []), [domain, region, issue]);
   /* base is already region-filtered when a region is active, so counting
      it directly is what makes the Open/Unverified stat cards agree with

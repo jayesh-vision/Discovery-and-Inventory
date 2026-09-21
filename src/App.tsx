@@ -1,8 +1,17 @@
-import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import RouteTitle from './shell/RouteTitle';
 import Topbar from './shell/Topbar';
 import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
+
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname, search]);
+  return null;
+}
 
 /* The screens are embedded in the host application as iframes, one route per
    menu item; the host owns the header and the left navigation, so this shell
@@ -14,6 +23,7 @@ const Router = import.meta.env.VITE_ROUTER === 'hash' ? HashRouter : BrowserRout
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="app is-embedded">
         <main className="grow">
           <RouteTitle />

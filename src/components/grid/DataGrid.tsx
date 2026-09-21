@@ -84,13 +84,33 @@ function useOutsideClose(open: boolean, close: () => void) {
   return ref;
 }
 
-function FilterPanel({ fields, onClose, onApply, onReset }: {
-  fields: FilterField[]; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset: () => void;
+function FilterPanel({ fields, activeFilters, onClose, onApply, onReset }: {
+  fields: FilterField[]; activeFilters?: Record<string, string>; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset: () => void;
 }) {
-  const [fi, setFi] = useState(0);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const activeFieldIndex = fields.findIndex(f => activeFilters && Boolean(activeFilters[f.n]));
+  const [fi, setFi] = useState(activeFieldIndex >= 0 ? activeFieldIndex : 0);
+  const [values, setValues] = useState<Record<string, string>>(() => (activeFilters ? { ...activeFilters } : {}));
   const f = fields[Math.min(fi, fields.length - 1)];
-  const setField = (v: string) => setValues(prev => ({ ...prev, [f.n]: v }));
+
+  /* When switching filter tab, reset every time to default */
+  const handleTabClick = (i: number) => {
+    if (i !== fi) {
+      setFi(i);
+      setValues({});
+      onReset();
+    }
+  };
+
+  /* When selecting a filter value, keep only that filter (resetting others) */
+  const setField = (v: string) => {
+    if (!v) {
+      setValues({});
+      onReset();
+    } else {
+      setValues({ [f.n]: v });
+    }
+  };
+
   return (
     <div className="fpanel" role="dialog" aria-label="Filters">
       <div className="fpanel-head">
@@ -100,7 +120,7 @@ function FilterPanel({ fields, onClose, onApply, onReset }: {
       <div className="fpanel-body">
         <div className="fpanel-nav">
           {fields.map((x, i) => (
-            <button key={x.n} className={`fp-f${i === fi ? ' is-on' : ''}${values[x.n] ? ' has-value' : ''}`} onClick={() => setFi(i)}>{x.n}</button>
+            <button key={x.n} className={`fp-f${i === fi ? ' is-on' : ''}${values[x.n] ? ' has-value' : ''}`} onClick={() => handleTabClick(i)}>{x.n}</button>
           ))}
         </div>
         <div className="fpanel-ctl">
@@ -186,10 +206,11 @@ function MenuItem({ a, onDone, onTriggerRefresh }: { a: Action; onDone: () => vo
   );
 }
 
-function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onTriggerRefresh, onSearch, searchValue, onFilterChange, wrap }: {
+function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onTriggerRefresh, onSearch, searchValue, onFilterChange, activeFilters, wrap }: {
   showing: number; total: number; placeholder: string; filters?: FilterField[];
   extra?: ReactNode; gridActions?: Action[]; onTriggerRefresh: (r?: DOMRect) => void; onSearch?: (q: string) => void;
-  searchValue?: string; onFilterChange?: (values: Record<string, string>) => void; wrap: React.RefObject<HTMLDivElement | null>;
+  searchValue?: string; onFilterChange?: (values: Record<string, string>) => void;
+  activeFilters?: Record<string, string>; wrap: React.RefObject<HTMLDivElement | null>;
 }) {
   const [menu, setMenu] = useState(false);
   const [filter, setFilter] = useState(false);
@@ -212,7 +233,8 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onT
         <div ref={filterRef} style={{ display: 'contents' }}>
           <button className={`icon-btn${filter ? ' is-on' : ''}`} onClick={() => { setFilter(v => !v); setMenu(false); }}
             aria-label="Filters" aria-expanded={filter}><IcFilter /></button>
-          {filter && <FilterPanel fields={filters?.length ? filters : [{ n: 'Status', o: ['On-air', 'Planned'] }]} onClose={closeFilter}
+          {filter && <FilterPanel fields={filters?.length ? filters : [{ n: 'Status', o: ['On-air', 'Planned'] }]}
+            activeFilters={activeFilters} onClose={closeFilter}
             onApply={values => onFilterChange?.(values)} onReset={() => onFilterChange?.({})} />}
         </div>
         <div ref={menuRef} style={{ display: 'contents' }}>
@@ -432,15 +454,15 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
      resetKey) left a stale search string and filter values pointed at rows
      that no longer exist under the new tab, reading as "grid won't refresh". */
   useEffect(() => {
-    if (p.onSearch) return;
-    setInternalSearch('');
+    if (!p.onSearch) setInternalSearch('');
     setInternalFilters({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.resetKey]);
 
   const filteredRows = useMemo(() => {
-    return p.rows.filter(row => filterDataRow(row, searchQuery, internalFilters));
-  }, [p.rows, searchQuery, internalFilters]);
+    if (p.onSearch && p.onFilterChange) return p.rows;
+    return p.rows.filter(row => filterDataRow(row, p.onSearch ? '' : searchQuery, p.onFilterChange ? {} : internalFilters));
+  }, [p.rows, p.onSearch, p.onFilterChange, searchQuery, internalFilters]);
 
   const span = p.columns.length + (p.rowActions ? 1 : 0);
   const { visible, count, more, next, sentinel, wrap, loadMore } = useInfinite<Row>(filteredRows, p.resetKey ?? filteredRows);
@@ -471,7 +493,7 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
       {/* the toolbar counts what is on screen, so the page size is visible without scrolling */}
       <Toolbar showing={Math.min(count, filteredRows.length)} total={filteredRows.length} placeholder={p.searchPlaceholder}
         filters={p.filters} extra={p.extra} gridActions={p.gridActions} onTriggerRefresh={handleTriggerRefresh}
-        onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} wrap={wrap} />
+        onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} activeFilters={internalFilters} wrap={wrap} />
       <div className={`tbl-wrap${p.chipWidth && p.chipWidth !== 'md' ? ` tbl-wrap--chip-${p.chipWidth}` : ''}`} ref={wrap}>
         {isRefreshing && (
           <div className="grid-loader-overlay" role="status" aria-label="Refreshing data">
