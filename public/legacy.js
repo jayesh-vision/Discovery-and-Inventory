@@ -427,7 +427,7 @@ const TAXONOMY = [
 const CH = { ok: 'ok', fail: 'fail', na: 'na', run: 'run', wait: 'wait' };
 const TARGETS = [
   {
-    ip: '192.168.10.235', host: 'SP-CNOC-LAB-J204-PE-T3-NR1', oem: 'Juniper', model: 'MX204',
+    ip: '172.31.86.61', host: 'SP-CNOC-LAB-J204-PE-T3-NR1', oem: 'Juniper', model: 'MX204',
     circle: 'Karnataka', sync: '01-Sep-2026 09:19', fresh: 3, job: 'DSC-LAB-SEED', domain: 'IPMPLS',
     ch: ['ok', 'ok', 'ok', 'fail', 'na', 'na'], out: 'Drifted', chip: 'warning', reason: 'timeout'
   },
@@ -467,12 +467,12 @@ const TARGETS = [
     ch: ['ok', 'ok', 'ok', 'na', 'na', 'na'], out: 'Rogue', chip: 'pink', isNew: true
   },
   {
-    ip: '172.31.75.144', host: 'WR-ADVA-FSP3000-01', oem: 'Adva', model: 'FSP 3000',
+    ip: '172.31.175.144', host: 'WR-ADVA-FSP3000-01', oem: 'Adva', model: 'FSP 3000',
     circle: 'Maharashtra', sync: '19-Nov-2025 04:00', fresh: 6960, job: 'DSC-DWDM-RING', domain: 'Transport',
     ch: ['fail', 'na', 'na', 'na', 'na', 'na'], out: 'No adapter', chip: 'neutral', reason: 'adapter'
   },
   {
-    ip: '172.31.93.12', host: 'HYD-CIENA-6500-01', oem: 'Ciena', model: '6500-T12',
+    ip: '172.31.193.12', host: 'HYD-CIENA-6500-01', oem: 'Ciena', model: '6500-T12',
     circle: 'Delhi', sync: '01-Sep-2026 01:30', fresh: 9, job: 'DSC-TRANSPORT-DEL', domain: 'Transport',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
@@ -497,7 +497,7 @@ const TARGETS = [
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
-    ip: '172.31.70.12', host: 'BLR-GNB-T3800-014', oem: 'Nokia', model: 'AirScale gNB',
+    ip: '10.51.20.14', host: 'BLR-GNB-T3800-014', oem: 'Nokia', model: 'AirScale gNB',
     circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
@@ -557,18 +557,18 @@ TARGETS.forEach(t => { t.sync = relativeTimestamp(t.fresh); });
 
 /* ── run transcript, one target, all six collectors ─────── */
 const TRANSCRIPT = {
-  ip: '172.31.33.100', host: 'NDLS-J960-P_R1-T1-NR', job: 'DSC-DEL-EDGE',
+  ip: '172.31.42.100', host: 'NDLS-J960-P_R1-T1-NR', job: 'DSC-DEL-EDGE',
   started: '01-Sep-2026 09:10:02 IST', total: '6.42 s', collector: 'clr-del-01', cred: 'ro-inband-v3',
   steps: [
     {
       k: 'reach', n: 'Reachability', proto: 'ICMP', state: 'ok', ms: 34, bytes: 192,
-      req: 'ping -c 3 -W 2 172.31.33.100',
+      req: 'ping -c 3 -W 2 172.31.42.100',
       res: '3 packets transmitted, 3 received, 0% packet loss\nrtt min/avg/max/mdev = 0.031/0.036/0.044/0.005 ms',
       wrote: 'reachable = true'
     },
     {
       k: 'device', n: 'Device', proto: 'SNMP v3', state: 'ok', ms: 212, bytes: 486,
-      req: 'snmpget -v3 -l authPriv -u ro-inband-v3 172.31.33.100 \\\n  sysObjectID.0 sysDescr.0 sysName.0 sysUpTime.0',
+      req: 'snmpget -v3 -l authPriv -u ro-inband-v3 172.31.42.100 \\\n  sysObjectID.0 sysDescr.0 sysName.0 sysUpTime.0',
       res: 'sysObjectID.0 = OID: .1.3.6.1.4.1.2636.1.1.1.2.57\nsysDescr.0   = "Juniper Networks, Inc. mx960 internet router, kernel JUNOS 21.2R3-S8.5"\nsysName.0    = "NDLS-J960-P_R1-T1-NR"\nsysUpTime.0  = 412834500  (47d 18h 12m)',
       wrote: 'oem = JUNIPER (derived from OID .2636) · model = MX960 · sysName · uptime'
     },
@@ -580,14 +580,14 @@ const TRANSCRIPT = {
     },
     {
       k: 'lldp', n: 'LLDP', proto: 'SNMP LLDP-MIB', state: 'ok', ms: 640, bytes: 8842,
-      req: 'snmpwalk -v3 -u ro-inband-v3 172.31.33.100 \\\n  1.0.8802.1.1.2.1.4.1.1  (lldpRemTable)',
+      req: 'snmpwalk -v3 -u ro-inband-v3 172.31.42.100 \\\n  1.0.8802.1.1.2.1.4.1.1  (lldpRemTable)',
       res: 'lldpRemSysName.1.5.1  = "PSA-C920-WIFI1-T4-ER"   port Gi0/0/1\nlldpRemSysName.1.9.1  = "PSA-C920-WIFI1-T4-ER"   port Te0/0/12.SI.612\n… 17 more neighbours',
       wrote: '19 adjacency links · 18 matched to existing links, 1 new'
     },
     {
       k: 'ospf', n: 'OSPF', proto: 'SNMP OSPF-MIB', state: 'ok', ms: 1980, bytes: 3204,
-      req: 'snmpwalk -v3 -u ro-inband-v3 172.31.33.100 \\\n  1.3.6.1.2.1.14.10.1  (ospfNbrTable)',
-      res: 'ospfNbrRtrId.172.31.33.101.0 = 172.31.33.101   state full(8)\nospfNbrRtrId.172.31.33.109.0 = 172.31.33.109   state full(8)\n… 10 more adjacencies, area 0.0.0.0',
+      req: 'snmpwalk -v3 -u ro-inband-v3 172.31.42.100 \\\n  1.3.6.1.2.1.14.10.1  (ospfNbrTable)',
+      res: 'ospfNbrRtrId.172.31.42.101.0 = 172.31.42.101   state full(8)\nospfNbrRtrId.172.31.42.109.0 = 172.31.42.109   state full(8)\n… 10 more adjacencies, area 0.0.0.0',
       wrote: '12 logical routing links · area 0.0.0.0 membership'
     },
     {
@@ -726,7 +726,7 @@ const DRIFT_ROWS = [
     master: '21.2R3-S9.21', network: '21.4R3-S5.5', src: 'sysDescr', conf: 'Exact', age: '3 h'
   },
   {
-    asset: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', field: 'Model name',
+    asset: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', field: 'Model name',
     master: 'QuantaMesh BMS T3048-LY9', network: 'EX4300-48P', src: 'chassis inventory', conf: 'Exact', age: '5 h'
   },
   {
@@ -917,13 +917,13 @@ const JOBS = [
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-DWDM-RING', domain: 'Transport', site: 'Maharashtra · transport ring', scope: '172.31.75.0/24 · 172.31.79.255/24',
+    id: 'DSC-DWDM-RING', domain: 'Transport', site: 'Maharashtra · transport ring', scope: '172.31.175.0/24 · 172.31.179.255/24',
     collector: 'clr-blr-02', cred: 'ro-optical-v3', sched: 'Weekly Sun 04:00', next: 'Sun 04:00',
     last: '19-Nov-2025 04:00', dur: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18,
     state: 'No adapter', chip: 'neutral'
   },
   {
-    id: 'DSC-LAB-SEED', domain: 'IPMPLS', site: 'Lab · CNOC', scope: 'Seed 192.168.10.235 · depth 3',
+    id: 'DSC-LAB-SEED', domain: 'IPMPLS', site: 'Lab · CNOC', scope: 'Seed 172.31.86.61 · depth 3',
     collector: 'clr-lab-01', cred: 'lab-rw-v2', sched: 'On demand', next: '—',
     last: '01-Sep-2026 09:19', dur: '02 m 07 s', targets: 86, clean: 60, partial: 21, fail: 5,
     state: 'Running', chip: 'info'
@@ -935,7 +935,7 @@ JOBS.push(...[
   ['DSC-WEST-EDGE', 'Maharashtra · west edge', '172.31.80.0/24 · 172.31.84.0/24', 'clr-pun-01', 'ro-inband-v3', 'Every 12 h', 'today 21:00', '01-Sep-2026 09:00', '9 m 12 s', 268, 231, 29, 8, 'Completed', 'success', 'IPMPLS'],
   ['DSC-EAST-AGG', 'West Bengal · aggregation', '172.31.85.0/24 · 172.31.89.0/24', 'clr-kol-01', 'ro-inband-v3', 'Daily', 'tomorrow 02:00', '01-Sep-2026 02:00', '11 m 40 s', 196, 164, 24, 8, 'Completed', 'success', 'IPMPLS'],
   ['DSC-NORTH-ACCESS', 'Delhi NCR · access', '172.31.90.0/24 · 172.31.95.255/24', 'clr-del-02', 'ro-oob-v3', 'Every 6 h', 'today 18:00', '01-Sep-2026 12:04', '7 m 02 s', 324, 289, 26, 9, 'Completed', 'success', 'IPMPLS'],
-  ['DSC-DWDM-OPTICAL', 'All circles · optical layer', '172.31.96.0/24 · 172.31.105.255/24', 'clr-blr-03', 'netconf-optical', 'Weekly', '05-Sep-2026 01:00', '29-Aug-2026 01:00', '21 m 18 s', 78, 61, 12, 5, 'Completed', 'success', 'Transport']
+  ['DSC-DWDM-OPTICAL', 'All circles · optical layer', '172.31.180.0/24 · 172.31.189.255/24', 'clr-blr-03', 'netconf-optical', 'Weekly', '05-Sep-2026 01:00', '29-Aug-2026 01:00', '21 m 18 s', 78, 61, 12, 5, 'Completed', 'success', 'Transport']
 ].map(a => ({
   id: a[0], site: a[1], scope: a[2], collector: a[3], cred: a[4], sched: a[5], next: a[6],
   last: a[7], dur: a[8], targets: a[9], clean: a[10], partial: a[11], fail: a[12], state: a[13], chip: a[14], domain: a[15]
@@ -995,19 +995,19 @@ JOBS.push(
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-TRANSPORT-BLR', site: 'Karnataka · transport ring', scope: '172.31.90.0/24 · 172.31.91.0/24',
+    id: 'DSC-TRANSPORT-BLR', site: 'Karnataka · transport ring', scope: '172.31.162.0/24 · 172.31.165.0/24',
     collector: 'clr-blr-06', cred: 'ro-optical-v3', sched: 'Nightly 01:00', next: 'tomorrow 01:00', domain: 'Transport',
     last: '01-Sep-2026 01:00', dur: '15 m 40 s', targets: 650, clean: 598, partial: 41, fail: 11,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-TRANSPORT-DEL', site: 'Delhi · transport ring', scope: '172.31.92.0/24 · 172.31.93.0/24',
+    id: 'DSC-TRANSPORT-DEL', site: 'Delhi · transport ring', scope: '172.31.166.0/24 · 172.31.169.0/24',
     collector: 'clr-del-06', cred: 'ro-optical-v3', sched: 'Nightly 01:30', next: 'tomorrow 01:30', domain: 'Transport',
     last: '01-Sep-2026 01:30', dur: '13 m 58 s', targets: 600, clean: 561, partial: 30, fail: 9,
     state: 'Completed', chip: 'success'
   },
   {
-    id: 'DSC-TRANSPORT-CHE', site: 'Tamil Nadu · transport ring', scope: '172.31.94.0/24 · 172.31.95.0/24',
+    id: 'DSC-TRANSPORT-CHE', site: 'Tamil Nadu · transport ring', scope: '172.31.170.0/24 · 172.31.174.0/24',
     collector: 'clr-mas-02', cred: 'ro-optical-v3', sched: 'Nightly 02:00', next: 'tomorrow 02:00', domain: 'Transport',
     last: '01-Sep-2026 02:00', dur: '16 m 12 s', targets: 676, clean: 612, partial: 47, fail: 17,
     state: 'Completed', chip: 'success'
@@ -1365,7 +1365,7 @@ const NE_RECON = [
     net: { oem: 'JUNIPER', model: 'MX960', os: '21.4R3-S5.5', sn: 'JN1234C25AFA' }, diff: ['os']
   },
   {
-    ne: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', circle: 'Karnataka', rule: 'Serial', out: 'Differ', chip: 'warning', ver: '5 h ago',
+    ne: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', circle: 'Karnataka', rule: 'Serial', out: 'Differ', chip: 'warning', ver: '5 h ago',
     inv: { oem: 'JUNIPER', model: 'QuantaMesh T3048-LY9', os: '3.2.0.4', sn: 'QCT3048NDD11A01' },
     net: { oem: 'JUNIPER', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01' }, diff: ['model']
   },
@@ -1819,8 +1819,9 @@ const PHY = {
     { st: 'drift', name: 'SP-CNOC-LAB-J204-PE-T3-NR1', ip: '172.31.86.61', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 },
     { st: 'stale', name: 'CHE-920-WIFI-R2', ip: '172.31.70.43', model: 'ASR920', os: '17.6.4', sn: 'CAT2034U1PP', oem: 'CISCO', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 720 },
     { st: 'miss', name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', model: '7750', os: '—', sn: 'JS123CC2EAFA', oem: 'NOKIA', loc: 'MAS-041', s: 'd', stock: 'faulty', v: 6264 },
-    { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '192.168.1.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
-    { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
+    { st: 'drift', name: 'ODI-ACX2200-PE-T4', ip: '172.31.61.10', model: 'ACX2200', os: '21.4R3-S5.5', sn: 'JUNACX2200ODI', oem: 'JUNIPER', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 31 },
+    { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '172.31.100.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
+    { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
     { st: 'ok', name: 'WKR-J7024-PE-T4-WR', ip: '172.31.62.11', model: 'ACX7024', os: '23.2R1-S2.6', sn: 'FL2423AN0050', oem: 'JUNIPER', loc: 'WKR-204', s: 'd', stock: 'deployed', v: 5 },
     {
       st: 'none', name: 'MAS-J960-P-R2-T1-SR', ip: '172.31.31.140', model: 'MX960', os: '21.2R3-S8.4', sn: 'JN1231A55AFB', oem: 'JUNIPER', loc: 'MAS-041', s: 'm', stock: 'decomm', v: null,
@@ -1851,23 +1852,28 @@ const PHY = {
     }
   ],
   server: [
-    { st: 'none', name: 'BGLK-CDC-SRV-01', ip: '172.31.70.11', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XYZ', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '172.31.70.14', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'DEL-EDC-SRV-07', ip: '172.31.71.07', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null }
+    { st: 'none', name: 'BGLK-CDC-SRV-01', ip: '10.10.1.11', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XYZ', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '10.10.1.14', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'DEL-EDC-SRV-07', ip: '10.10.2.7', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'BLR-AMF-CORE-02', ip: '10.10.4.21', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKCORE022026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 }
   ],
   dwdm: [
-    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.75.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.75.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.93.12', model: '6500-T12', os: 'SAOS 10.9', sn: 'CIE6500-2214', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null }
+    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.175.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.175.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.193.12', model: '6500-T12', os: 'SAOS 10.9', sn: 'CIE6500-2214', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null }
   ],
   enodeb: [
     { st: 'ok', name: 'PUN-HNJW-C3-ENB-014', ip: '10.44.18.14', model: 'AirScale', os: '21B', sn: 'NOK-ENB-014', oem: 'NOKIA', loc: 'PUN-014', s: 'e', stock: 'deployed', v: null },
-    { st: 'ok', name: 'INDR-AREA-001-ENB-07', ip: '10.44.19.7', model: 'AirScale', os: '21B', sn: 'NOK-ENB-007', oem: 'NOKIA', loc: 'INDR-275', s: 'e', stock: 'deployed', v: null }
+    { st: 'ok', name: 'INDR-AREA-001-ENB-07', ip: '10.44.19.7', model: 'AirScale', os: '21B', sn: 'NOK-ENB-007', oem: 'NOKIA', loc: 'INDR-275', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'CHE-ERIC-ENB-031', ip: '10.44.22.31', model: 'Baseband 6630', os: 'L23B', sn: 'ERIC-ENB-031', oem: 'ERICSSON', loc: 'CHE-118', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'AHM-HUAWEI-ENB-045', ip: '10.44.24.45', model: 'BTS3900', os: 'V100R020C10', sn: 'HW-ENB-045', oem: 'HUAWEI', loc: 'AHM-131', s: 'e', stock: 'deployed', v: null }
   ],
   gnodeb: [
     { st: 'ok', name: 'BLR-SOUTH-GNB-021', ip: '10.51.22.21', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-021', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
-    { st: 'ok', name: 'BLR-GNB-T3800-014', ip: '172.31.70.12', model: 'AirScale gNB', os: '23B', sn: 'NOK-GNB-3800', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
-    { st: 'ok', name: 'DEL-CENTRAL-GNB-009', ip: '10.51.23.9', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-009', oem: 'NOKIA', loc: 'DEL-279', s: 'e', stock: 'deployed', v: null }
+    { st: 'ok', name: 'BLR-GNB-T3800-014', ip: '10.51.20.14', model: 'AirScale gNB', os: '23B', sn: 'NOK-GNB-3800', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'DEL-CENTRAL-GNB-009', ip: '10.51.23.9', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-009', oem: 'NOKIA', loc: 'DEL-279', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'VJA-ERIC-GNB-018', ip: '10.51.26.18', model: 'AIR 6449', os: 'L23B', sn: 'ERIC-GNB-018', oem: 'ERICSSON', loc: 'VJA-118', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'PUN-HUAWEI-GNB-027', ip: '10.51.27.27', model: 'AAU5613', os: 'V100R020C10', sn: 'HW-GNB-027', oem: 'HUAWEI', loc: 'PUN-162', s: 'e', stock: 'deployed', v: null }
   ]
 };
 
@@ -1892,11 +1898,31 @@ function legacyNextIp(c, idx, isPlanned) {
   while (true) {
     let candidate = '';
     if (isPlanned) {
-      const subnets = { router: 11, switch: 12, server: 13, dwdm: 14, enodeb: 15, gnodeb: 16 };
-      const sub = subnets[c] || 11;
-      const o3 = Math.floor(offset / 240);
-      const o4 = 10 + (offset % 240);
-      candidate = '192.168.' + (sub + o3) + '.' + o4;
+      if (c === 'enodeb') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '10.44.' + o3 + '.' + o4;
+      } else if (c === 'gnodeb') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '10.51.' + o3 + '.' + o4;
+      } else if (c === 'server') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '10.10.' + o3 + '.' + o4;
+      } else if (c === 'dwdm') {
+        const o3 = 190 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '172.31.' + o3 + '.' + o4;
+      } else if (c === 'switch') {
+        const o3 = 135 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '172.31.' + o3 + '.' + o4;
+      } else {
+        const o3 = 105 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = '172.31.' + o3 + '.' + o4;
+      }
     } else {
       if (c === 'enodeb') {
         candidate = '10.44.' + (30 + Math.floor(offset / 240)) + '.' + (10 + (offset % 240));
@@ -2161,7 +2187,7 @@ const LINKS = {
     {
       st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'ae8.0',
       sOspfIp: '172.31.191.171', sIfIndex: 624, sSpeed: '20 Gbps', sAlias: 'BB:LC:20G:NDLS-J204-NR',
-      dip: '172.31.31.2', dne: 'NDLS-J960-P_R1-T1-NR', dif: 'ae8.0',
+      dip: '172.31.42.100', dne: 'NDLS-J960-P_R1-T1-NR', dif: 'ae8.0',
       dOspfIp: '172.31.191.170', dSpeed: '20 Gbps', linkId: 'OSPF:86968573685', areaId: '0.0.0.0',
       name: 'BB:NDLS-LAG 20G', v: 3
     },
@@ -2690,16 +2716,16 @@ const SITE_TABS = [{ k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, {
 const SITE_NE = {
   'BGLK-277': {
     router: [
-      { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.31.189', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', rack: 'A · U42-43', s: 'd', v: 3 },
+      { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.42.100', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', rack: 'A · U42-43', s: 'd', v: 3 },
       { st: 'ok', name: 'PSA-C920-WIFI1-T4-ER', ip: '172.31.38.41', model: 'ASR920', os: '17.6.3', sn: 'CAT2034U1SR', oem: 'CISCO', rack: 'A · U18', s: 'd', v: 3 },
       { st: 'drift', name: 'ET-J960-P-T1-WR', ip: '172.31.31.97', model: 'MX960', os: '21.4R3-S5.5', sn: 'JN1234C25AFA', oem: 'JUNIPER', rack: 'B · U30-31', s: 'd', v: 3 },
-      { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '192.168.1.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', rack: 'C · U12', s: 'p', v: null },
-      { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', rack: 'C · U16', s: 'p', v: null },
+      { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '172.31.100.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', rack: 'C · U12', s: 'p', v: null },
+      { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', rack: 'C · U16', s: 'p', v: null },
       { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NRIZIW', ip: '172.31.63.20', model: 'NCS-540', os: '7.9.2', sn: 'FW488AS342W', oem: 'CISCO', rack: 'D · U04', s: 'd', v: 3 },
       { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NRIZ', ip: '172.31.86.61', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U06', s: 'd', v: 3 },
-      { st: 'dup', name: '2SP-CNOC-LAB-J204-PE-T3-NR', ip: '192.168.10.56', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U08', s: 'd', v: 3 },
-      { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NR11', ip: '192.168.11.169', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U10', s: 'd', v: 3 },
-      { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NR1', ip: '192.168.11.142', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U12', s: 'd', v: 3 },
+      { st: 'dup', name: '2SP-CNOC-LAB-J204-PE-T3-NR', ip: '172.31.86.56', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U08', s: 'd', v: 3 },
+      { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NR11', ip: '172.31.86.169', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U10', s: 'd', v: 3 },
+      { st: 'dup', name: 'SP-CNOC-LAB-J204-PE-T3-NR1', ip: '172.31.86.61', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', rack: 'D · U12', s: 'd', v: 3 },
       { st: 'ok', name: 'BGLK-J7024-PE-T4-WR', ip: '172.31.62.11', model: 'ACX7024', os: '23.2R1-S2.6', sn: 'FL2423AN0050', oem: 'JUNIPER', rack: 'B · U08', s: 'd', v: 5 },
       { st: 'stale', name: 'BGLK-C920-WIFI2-T4-ER', ip: '172.31.38.44', model: 'ASR920', os: '17.6.4', sn: 'CAT2034U1PQ', oem: 'CISCO', rack: 'A · U20', s: 'd', v: 864 }
     ],
@@ -2713,12 +2739,12 @@ const SITE_NE = {
       { st: 'ok', name: 'KA-BGLK-277-T-CHR-09', ip: '172.31.31.209', model: 'C9400-LC-48T', mac: 'A4:B1:C2:D3:E4:F5', sn: 'CHRSW-909090', tmpl: '24A-NE-ZTP - 1.0', oem: 'CISCO', s: 'd', v: 6 }
     ],
     dwdm: [
-      { st: 'none', name: 'BGLK-KA-OADM-100', ip: '172.31.31.148', type: 'OADM', oem: 'JUNIPER', sw: '21.5.1', shelf: 'OT-1 · slot 4', sn: 'ADV277100', s: 'm', v: null },
-      { st: 'none', name: 'BGLK-KA-ILA-101', ip: '100.64.32.27', type: 'ILA', oem: 'ADVA', sw: '21.5.1', shelf: 'OT-1 · slot 6', sn: 'ADV277101', s: 'm', v: null },
-      { st: 'none', name: 'BGLK-KA-GNE-202', ip: '172.31.41.202', type: 'GNE', oem: 'ADVA', sw: '21.5.1', shelf: 'OT-2 · slot 1', sn: 'ADV277202', s: 'm', v: null },
-      { st: 'none', name: 'BGLK-KA-OADM-201', ip: '172.31.41.201', type: 'OADM', oem: 'JUNIPER', sw: '21.5.1', shelf: 'OT-2 · slot 3', sn: 'ADV277201', s: 'm', v: null },
-      { st: 'none', name: 'BGLK-KA-ILA-203', ip: '192.168.1.1', type: 'ILA', oem: 'JUNIPER', sw: '16.3.2', shelf: 'OT-2 · slot 5', sn: 'ADV277203', s: 'm', v: null },
-      { st: 'none', name: 'BGLK-KA-ILA-204', ip: '172.16.0.5', type: 'ILA', oem: 'JUNIPER', sw: '21.1.1', shelf: 'OT-2 · slot 7', sn: 'ADV277204', s: 'm', v: null }
+      { st: 'none', name: 'BGLK-KA-OADM-100', ip: '172.31.161.148', type: 'OADM', oem: 'JUNIPER', sw: '21.5.1', shelf: 'OT-1 · slot 4', sn: 'ADV277100', s: 'm', v: null },
+      { st: 'none', name: 'BGLK-KA-ILA-101', ip: '172.31.161.101', type: 'ILA', oem: 'ADVA', sw: '21.5.1', shelf: 'OT-1 · slot 6', sn: 'ADV277101', s: 'm', v: null },
+      { st: 'none', name: 'BGLK-KA-GNE-202', ip: '172.31.161.202', type: 'GNE', oem: 'ADVA', sw: '21.5.1', shelf: 'OT-2 · slot 1', sn: 'ADV277202', s: 'm', v: null },
+      { st: 'none', name: 'BGLK-KA-OADM-201', ip: '172.31.161.201', type: 'OADM', oem: 'JUNIPER', sw: '21.5.1', shelf: 'OT-2 · slot 3', sn: 'ADV277201', s: 'm', v: null },
+      { st: 'none', name: 'BGLK-KA-ILA-203', ip: '172.31.161.203', type: 'ILA', oem: 'JUNIPER', sw: '16.3.2', shelf: 'OT-2 · slot 5', sn: 'ADV277203', s: 'm', v: null },
+      { st: 'none', name: 'BGLK-KA-ILA-204', ip: '172.31.161.204', type: 'ILA', oem: 'JUNIPER', sw: '21.1.1', shelf: 'OT-2 · slot 7', sn: 'ADV277204', s: 'm', v: null }
     ]
   }
 };
@@ -2756,7 +2782,7 @@ function siteNE(id, ne, disc) {
   const DWDM_TYPES = ['OADM', 'ILA', 'GNE'];
   const mkD = (i) => ({
     st: 'none', name: `${id}-OADM-${String(100 + i * 20)}`,
-    ip: `172.31.${90 + (i % 9)}.${20 + i * 7}`,
+    ip: `172.31.${160 + (i % 38)}.${20 + i * 7}`,
     type: DWDM_TYPES[i % DWDM_TYPES.length], oem: i % 2 ? 'ADVA' : 'JUNIPER', sw: '21.5.1',
     shelf: `OT-${i + 1} · slot ${3 + i * 2}`, sn: `ADV${id.replace(/[^0-9]/g, '').padStart(3, '0')}${100 + i * 20}`,
     s: 'm', v: null
@@ -2893,7 +2919,7 @@ REPORTS.push(
 
   /* Transport/IPMPLS jobs' scope is a real IP range ("172.31.75.0/24 ·
      172.31.79.255/24", i.e. the 3rd octet spans 75–79) or a seed address
-     ("Seed 192.168.10.235 · depth 3") — a generated target assigned to one
+     ("Seed 172.31.86.61 · depth 3") — a generated target assigned to one
      of these jobs has to land inside it, the same way a real scan would
      never report a device outside the range it was told to sweep. RAN/Core
      scope reads as a technology + site label ("gNodeB/eNodeB · Bengaluru-
@@ -2929,8 +2955,20 @@ REPORTS.push(
     const role = pick(ROLE_BY_DOMAIN[dom] || ROLE_BY_DOMAIN.IPMPLS);
     const known = reason !== 'unreach' && reason !== 'timeout';
     const host = known ? `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${role}-${pad2(10 + i % 88)}` : '—';
+    let targetIp = scopeIpFor(jobRow, i);
+    if (!targetIp) {
+      if (dom === 'RAN') {
+        targetIp = role === 'ENB' ? `10.44.${10 + (i * 7) % 80}.${20 + (i * 13) % 230}` : `10.51.${10 + (i * 7) % 80}.${20 + (i * 13) % 230}`;
+      } else if (dom === 'Core') {
+        targetIp = `10.10.${10 + (i * 7) % 80}.${20 + (i * 13) % 230}`;
+      } else if (dom === 'Transport') {
+        targetIp = `172.31.${160 + (i * 7) % 38}.${20 + (i * 13) % 230}`;
+      } else {
+        targetIp = `172.31.${100 + (i * 7) % 40}.${20 + (i * 13) % 230}`;
+      }
+    }
     TARGETS.push({
-      ip: scopeIpFor(jobRow, i) || `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
+      ip: targetIp,
       host, oem: known ? oem : '—', model: known ? model : '—',
       circle: circle.n, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
       fresh: 1 + i % 18, job, domain: jobRow.domain,
@@ -2951,8 +2989,20 @@ REPORTS.push(
     const oem = pick(domOems);
     const model = pick(domModels[oem]);
     const role = dom === 'RAN' ? (i % 2 === 0 ? 'GNB' : 'ENB') : 'NEW';
+    let rogueIp = scopeIpFor(jobRow, i);
+    if (!rogueIp) {
+      if (dom === 'RAN') {
+        rogueIp = role === 'ENB' ? `10.44.${30 + (i * 9) % 50}.${30 + (i * 17) % 210}` : `10.51.${30 + (i * 9) % 50}.${30 + (i * 17) % 210}`;
+      } else if (dom === 'Core') {
+        rogueIp = `10.10.${30 + (i * 9) % 50}.${30 + (i * 17) % 210}`;
+      } else if (dom === 'Transport') {
+        rogueIp = `172.31.${160 + (i * 9) % 38}.${30 + (i * 17) % 210}`;
+      } else {
+        rogueIp = `172.31.${100 + (i * 9) % 40}.${30 + (i * 17) % 210}`;
+      }
+    }
     TARGETS.push({
-      ip: scopeIpFor(jobRow, i) || `172.31.${140 + (i * 9) % 110}.${30 + (i * 17) % 210}`,
+      ip: rogueIp,
       host: `${circle.c}-${model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase()}-${role}-${pad2(50 + i % 48)}`,
       oem, model, circle: circle.n,
       sync: getLiveDateSync(1 + i % 8, (i * 19) % 60),

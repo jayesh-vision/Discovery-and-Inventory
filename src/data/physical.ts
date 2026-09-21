@@ -19,8 +19,9 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'drift', name: 'SP-CNOC-LAB-J204-PE-T3-NR1', ip: '172.31.86.61', model: 'MX204', os: '21.4R3-S5.5', sn: 'FW488AS342W', oem: 'JUNIPER', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 },
     { st: 'stale', name: 'CHE-920-WIFI-R2', ip: '172.31.70.43', model: 'ASR920', os: '17.6.4', sn: 'CAT2034U1PP', oem: 'CISCO', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 720 },
     { st: 'miss', name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', model: '7750', os: '—', sn: 'JS123CC2EAFA', oem: 'NOKIA', loc: 'MAS-041', s: 'd', stock: 'faulty', v: 6264 },
-    { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '192.168.1.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
-    { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '192.168.1.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
+    { st: 'drift', name: 'ODI-ACX2200-PE-T4', ip: '172.31.61.10', model: 'ACX2200', os: '21.4R3-S5.5', sn: 'JUNACX2200ODI', oem: 'JUNIPER', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 31 },
+    { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '172.31.100.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
+    { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
     { st: 'ok', name: 'WKR-J7024-PE-T4-WR', ip: '172.31.62.11', model: 'ACX7024', os: '23.2R1-S2.6', sn: 'FL2423AN0050', oem: 'JUNIPER', loc: 'WKR-204', s: 'd', stock: 'deployed', v: 5 },
     { st: 'ok', name: 'HYD-HUAWEI-NE40E-12', ip: '172.31.94.12', model: 'NE40E', os: 'V800R021C10', sn: 'HWNE40EHYD12', oem: 'HUAWEI', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 4 },
     { st: 'drift', name: 'BLR-ACX7024-UNREG-01', ip: '172.31.31.212', model: 'ACX7024', os: '21.4R3-S5.5', sn: 'JUNNREG012026', oem: 'JUNIPER', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
@@ -35,7 +36,7 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'drift', name: 'CG-ACX220-NEW-77', ip: '172.31.82.229', model: 'ACX2200', os: '21.4R3-S5.5', sn: 'JUN0NEW772026', oem: 'JUNIPER', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'UK-7750-NEW-92', ip: '172.31.35.244', model: '7750', os: 'TiMOS-B-24.10.R6', sn: 'NOK0NEW922026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'DL-7750-NEW-93', ip: '172.31.45.21', model: '7750', os: 'TiMOS-B-24.10.R6', sn: 'NOK0NEW932026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'MP-7750SR-NEW-50', ip: '192.168.10.154', model: '7750 SR-7', os: 'TiMOS-B-24.10.R6', sn: 'NOKRNEW502026', oem: 'NOKIA', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'MP-7750SR-NEW-50', ip: '172.31.84.154', model: '7750 SR-7', os: 'TiMOS-B-24.10.R6', sn: 'NOKRNEW502026', oem: 'NOKIA', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'CG-7750SR-NEW-51', ip: '172.31.84.123', model: '7750 SR-7', os: 'TiMOS-B-24.10.R6', sn: 'NOKRNEW512026', oem: 'NOKIA', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'JH-FSP300-NEW-52', ip: '172.31.85.140', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW522026', oem: 'ADVA', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'WB-7750-NEW-53', ip: '172.31.93.157', model: '7750', os: 'TiMOS-B-24.10.R6', sn: 'NOK0NEW532026', oem: 'NOKIA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
@@ -53,11 +54,11 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'drift', name: 'INDR-C9300-TEMP', ip: '172.31.39.144', model: 'C9300-48UXM', os: '17.9.4', sn: 'CIS00TEMP2026', oem: 'CISCO', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'UP-C9400L-NEW-50', ip: '172.31.50.10', model: 'C9400-LC-48T', os: '17.9.4', sn: 'CISLNEW502026', oem: 'CISCO', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'BR-AS7712-NEW-51', ip: '172.31.61.27', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW512026', oem: 'EDGECORE', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'MP-C93004-NEW-54', ip: '192.168.10.62', model: 'C9300-48UXM', os: '17.9.4', sn: 'CIS4NEW542026', oem: 'CISCO', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'MP-C93004-NEW-54', ip: '172.31.124.62', model: 'C9300-48UXM', os: '17.9.4', sn: 'CIS4NEW542026', oem: 'CISCO', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'WB-AS7712-NEW-57', ip: '172.31.91.129', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW572026', oem: 'EDGECORE', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'DL-AS7712-NEW-71', ip: '172.31.47.127', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW712026', oem: 'EDGECORE', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'AS-AS7712-NEW-74', ip: '172.31.74.178', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW742026', oem: 'EDGECORE', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'MP-AS7712-NEW-76', ip: '192.168.10.108', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW762026', oem: 'EDGECORE', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'MP-AS7712-NEW-76', ip: '172.31.124.108', model: 'AS7712-32X', os: 'SONiC 202311', sn: 'EDG2NEW762026', oem: 'EDGECORE', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'JH-C9400L-NEW-78', ip: '172.31.88.246', model: 'C9400-LC-48T', os: '17.9.4', sn: 'CISLNEW782026', oem: 'CISCO', loc: 'INDR-275', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'WB-EX4300-NEW-79', ip: '172.31.95.23', model: 'EX4300-48P', os: '21.4R3-S5.5', sn: 'JUN0NEW792026', oem: 'JUNIPER', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
     { st: 'drift', name: 'HR-C93004-NEW-91', ip: '172.31.32.227', model: 'C9300-48UXM', os: '17.9.4', sn: 'CIS4NEW912026', oem: 'CISCO', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
@@ -67,65 +68,65 @@ export const PHY_SEEDS: Record<NeClass, NeRow[]> = {
     { st: 'drift', name: 'HR-C93004-NEW-65', ip: '172.31.34.121', model: 'C9300-48UXM', os: '17.9.4', sn: 'CIS4NEW652026', oem: 'CISCO', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 }
   ],
   server: [
-    { st: 'none', name: 'BGLK-CDC-SRV-01', ip: '172.31.70.11', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XYZ', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '172.31.70.14', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
-    { st: 'none', name: 'DEL-EDC-SRV-07', ip: '172.31.71.07', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'BGLK-CDC-SRV-01', ip: '10.10.1.11', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XYZ', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'BGLK-CDC-SRV-02', ip: '10.10.1.14', model: 'DL380 Gen11', os: 'RHEL 9.4', sn: 'SGH2041XZA', oem: 'HPE', loc: 'BGLK-277', s: 'm', stock: 'deployed', v: null },
+    { st: 'none', name: 'DEL-EDC-SRV-07', ip: '10.10.2.7', model: 'PowerEdge R760', os: 'RHEL 9.2', sn: 'DPE7601144', oem: 'DELL', loc: 'DEL-279', s: 'm', stock: 'deployed', v: null },
     { st: 'ok', name: 'BLR-AMF-CORE-02', ip: '10.10.4.21', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKCORE022026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 3 },
-    { st: 'drift', name: 'KA-AMFCN-NEW-63', ip: '172.31.147.41', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW632026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TN-NRFCN-NEW-64', ip: '172.31.156.58', model: 'NRF-CN', os: '24.1-NF', sn: 'NOKNNEW642026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'KL-AMFCN-NEW-65', ip: '172.31.165.75', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW652026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'KA-CLOUDC-NEW-85', ip: '172.31.235.205', model: 'Cloud Core', os: 'CGF 2.4', sn: 'ERICNEW852026', oem: 'ERICSSON', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TN-SMFCN-NEW-86', ip: '172.31.244.222', model: 'SMF-CN', os: '24.1-NF', sn: 'NOKNNEW862026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'KL-CLOUDC-NEW-87', ip: '172.31.143.239', model: 'Cloud Core', os: 'CGF 2.4', sn: 'ERICNEW872026', oem: 'ERICSSON', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'KA-UPFCN-NEW-59', ip: '172.31.213.159', model: 'UPF-CN', os: '24.1-NF', sn: 'NOKNNEW592026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TN-AMFCN-NEW-60', ip: '172.31.222.176', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW602026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'KL-SMFCN-NEW-61', ip: '172.31.231.193', model: 'SMF-CN', os: '24.1-NF', sn: 'NOKNNEW612026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 }
+    { st: 'drift', name: 'KA-AMFCN-NEW-63', ip: '10.10.10.63', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW632026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TN-NRFCN-NEW-64', ip: '10.10.10.64', model: 'NRF-CN', os: '24.1-NF', sn: 'NOKNNEW642026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'KL-AMFCN-NEW-65', ip: '10.10.10.65', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW652026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'KA-CLOUDC-NEW-85', ip: '10.10.10.85', model: 'Cloud Core', os: 'CGF 2.4', sn: 'ERICNEW852026', oem: 'ERICSSON', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TN-SMFCN-NEW-86', ip: '10.10.10.86', model: 'SMF-CN', os: '24.1-NF', sn: 'NOKNNEW862026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'KL-CLOUDC-NEW-87', ip: '10.10.10.87', model: 'Cloud Core', os: 'CGF 2.4', sn: 'ERICNEW872026', oem: 'ERICSSON', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'KA-UPFCN-NEW-59', ip: '10.10.10.59', model: 'UPF-CN', os: '24.1-NF', sn: 'NOKNNEW592026', oem: 'NOKIA', loc: 'BGLK-277', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TN-AMFCN-NEW-60', ip: '10.10.10.60', model: 'AMF-CN', os: '24.1-NF', sn: 'NOKNNEW602026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'KL-SMFCN-NEW-61', ip: '10.10.10.61', model: 'SMF-CN', os: '24.1-NF', sn: 'NOKNNEW612026', oem: 'NOKIA', loc: 'CHE-118', s: 'd', stock: 'deployed', v: 5 }
   ],
   dwdm: [
-    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.75.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.75.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.93.12', model: '6500-T12', os: '11.5.0', sn: 'CIENA6500HYD01', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null },
-    { st: 'ok', name: 'KOL-NOKIA-1830PSS-01', ip: '172.31.204.19', model: '1830 PSS-32', os: 'R21.6', sn: 'NOK1830KOL01', oem: 'NOKIA', loc: 'KOL-204', s: 'm', stock: 'deployed', v: null },
-    { st: 'drift', name: 'RJ-1830PS-NEW-53', ip: '172.31.78.61', model: '1830 PSS-32', os: 'R21.6', sn: 'NOKSNEW532026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'GJ-FSP300-NEW-58', ip: '172.31.104.146', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW582026', oem: 'ADVA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'NE-FSP300-NEW-66', ip: '172.31.90.42', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW662026', oem: 'ADVA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'JK-6500T1-NEW-67', ip: '172.31.93.59', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW672026', oem: 'CIENA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'PB-FSP300-NEW-68', ip: '172.31.94.76', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW682026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'RJ-6500T1-NEW-75', ip: '172.31.75.195', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW752026', oem: 'CIENA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'GJ-FSP300-NEW-80', ip: '172.31.96.40', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW802026', oem: 'ADVA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'NE-6500T1-NEW-88', ip: '172.31.90.176', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW882026', oem: 'CIENA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'JK-FSP300-NEW-89', ip: '172.31.93.193', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW892026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'PB-FSP300-NEW-90', ip: '172.31.94.210', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW902026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'RJ-1830PS-NEW-97', ip: '172.31.77.89', model: '1830 PSS-32', os: 'R21.6', sn: 'NOKSNEW972026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'GJ-6500T1-NEW-54', ip: '172.31.98.174', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW542026', oem: 'CIENA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'NE-6500T1-NEW-62', ip: '172.31.90.70', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW622026', oem: 'CIENA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'JK-FSP300-NEW-63', ip: '172.31.93.87', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW632026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'PB-FSP300-NEW-64', ip: '172.31.94.104', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW642026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 }
+    { st: 'ok', name: 'WR-ADVA-FSP3000-01', ip: '172.31.175.144', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8841', oem: 'ADVA', loc: 'MUM-011', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'WR-ADVA-FSP3000-02', ip: '172.31.175.145', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV3000-8842', oem: 'ADVA', loc: 'PUN-014', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'HYD-CIENA-6500-01', ip: '172.31.193.12', model: '6500-T12', os: '11.5.0', sn: 'CIENA6500HYD01', oem: 'CIENA', loc: 'HYD-093', s: 'm', stock: 'deployed', v: null },
+    { st: 'ok', name: 'KOL-NOKIA-1830PSS-01', ip: '172.31.184.19', model: '1830 PSS-32', os: 'R21.6', sn: 'NOK1830KOL01', oem: 'NOKIA', loc: 'KOL-204', s: 'm', stock: 'deployed', v: null },
+    { st: 'drift', name: 'RJ-1830PS-NEW-53', ip: '172.31.178.61', model: '1830 PSS-32', os: 'R21.6', sn: 'NOKSNEW532026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'GJ-FSP300-NEW-58', ip: '172.31.184.146', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW582026', oem: 'ADVA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'NE-FSP300-NEW-66', ip: '172.31.190.42', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW662026', oem: 'ADVA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'JK-6500T1-NEW-67', ip: '172.31.193.59', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW672026', oem: 'CIENA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'PB-FSP300-NEW-68', ip: '172.31.194.76', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW682026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'RJ-6500T1-NEW-75', ip: '172.31.175.195', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW752026', oem: 'CIENA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'GJ-FSP300-NEW-80', ip: '172.31.186.40', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW802026', oem: 'ADVA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'NE-6500T1-NEW-88', ip: '172.31.190.176', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW882026', oem: 'CIENA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'JK-FSP300-NEW-89', ip: '172.31.193.193', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW892026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'PB-FSP300-NEW-90', ip: '172.31.194.210', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW902026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'RJ-1830PS-NEW-97', ip: '172.31.177.89', model: '1830 PSS-32', os: 'R21.6', sn: 'NOKSNEW972026', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'GJ-6500T1-NEW-54', ip: '172.31.188.174', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW542026', oem: 'CIENA', loc: 'AHM-131', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'NE-6500T1-NEW-62', ip: '172.31.190.70', model: '6500-T12', os: '11.5.0', sn: 'CIE1NEW622026', oem: 'CIENA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'JK-FSP300-NEW-63', ip: '172.31.193.87', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW632026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'PB-FSP300-NEW-64', ip: '172.31.194.104', model: 'FSP 3000', os: 'ONMSi 21.1', sn: 'ADV0NEW642026', oem: 'ADVA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 5 }
   ],
   enodeb: [
     { st: 'ok', name: 'PUN-HNJW-C3-ENB-014', ip: '10.44.18.14', model: 'AirScale', os: '21B', sn: 'NOK-ENB-014', oem: 'NOKIA', loc: 'PUN-014', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'INDR-AREA-001-ENB-07', ip: '10.44.19.7', model: 'AirScale', os: '21B', sn: 'NOK-ENB-007', oem: 'NOKIA', loc: 'INDR-275', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'CHE-ERIC-ENB-031', ip: '10.44.22.31', model: 'Baseband 6630', os: 'L23B', sn: 'ERIC-ENB-031', oem: 'ERICSSON', loc: 'CHE-118', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'AHM-HUAWEI-ENB-045', ip: '10.44.24.45', model: 'BTS3900', os: 'V100R020C10', sn: 'HW-ENB-045', oem: 'HUAWEI', loc: 'AHM-131', s: 'e', stock: 'deployed', v: null },
-    { st: 'drift', name: 'MH-AIRSCA-ENB-59', ip: '172.31.221.183', model: 'AirScale 5G', os: '23B', sn: 'NOKAENB592026', oem: 'NOKIA', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TS-BTS390-ENB-61', ip: '172.31.239.217', model: 'BTS3900', os: 'V100R020C10', sn: 'HUA0ENB612026', oem: 'HUAWEI', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'MH-AIRSCA-ENB-81', ip: '172.31.199.137', model: 'AirScale 5G', os: '23B', sn: 'NOKAENB812026', oem: 'NOKIA', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TS-AIRSCA-ENB-83', ip: '172.31.217.171', model: 'AirScale', os: '23B', sn: 'NOKAENB832026', oem: 'NOKIA', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'MH-BTS390-ENB-55', ip: '172.31.177.91', model: 'BTS3900', os: 'V100R020C10', sn: 'HUA0ENB552026', oem: 'HUAWEI', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'TS-AAU561-ENB-57', ip: '172.31.195.125', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1ENB572026', oem: 'HUAWEI', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 }
+    { st: 'drift', name: 'MH-AIRSCA-ENB-59', ip: '10.44.30.59', model: 'AirScale 5G', os: '23B', sn: 'NOKAENB592026', oem: 'NOKIA', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TS-BTS390-ENB-61', ip: '10.44.30.61', model: 'BTS3900', os: 'V100R020C10', sn: 'HUA0ENB612026', oem: 'HUAWEI', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'MH-AIRSCA-ENB-81', ip: '10.44.30.81', model: 'AirScale 5G', os: '23B', sn: 'NOKAENB812026', oem: 'NOKIA', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TS-AIRSCA-ENB-83', ip: '10.44.30.83', model: 'AirScale', os: '23B', sn: 'NOKAENB832026', oem: 'NOKIA', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'MH-BTS390-ENB-55', ip: '10.44.30.55', model: 'BTS3900', os: 'V100R020C10', sn: 'HUA0ENB552026', oem: 'HUAWEI', loc: 'PUN-162', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'TS-AAU561-ENB-57', ip: '10.44.30.57', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1ENB572026', oem: 'HUAWEI', loc: 'HYD-093', s: 'd', stock: 'deployed', v: 5 }
   ],
   gnodeb: [
     { st: 'ok', name: 'BLR-SOUTH-GNB-021', ip: '10.51.22.21', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-021', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
-    { st: 'ok', name: 'BLR-GNB-T3800-014', ip: '172.31.70.12', model: 'AirScale gNB', os: '23B', sn: 'NOK-GNB-3800', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
+    { st: 'ok', name: 'BLR-GNB-T3800-014', ip: '10.51.20.14', model: 'AirScale gNB', os: '23B', sn: 'NOK-GNB-3800', oem: 'NOKIA', loc: 'BGLK-277', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'DEL-CENTRAL-GNB-009', ip: '10.51.23.9', model: 'AirScale 5G', os: '23A', sn: 'NOK-GNB-009', oem: 'NOKIA', loc: 'DEL-279', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'VJA-ERIC-GNB-018', ip: '10.51.26.18', model: 'AIR 6449', os: 'L23B', sn: 'ERIC-GNB-018', oem: 'ERICSSON', loc: 'VJA-118', s: 'e', stock: 'deployed', v: null },
     { st: 'ok', name: 'PUN-HUAWEI-GNB-027', ip: '10.51.27.27', model: 'AAU5613', os: 'V100R020C10', sn: 'HW-GNB-027', oem: 'HUAWEI', loc: 'PUN-162', s: 'e', stock: 'deployed', v: null },
-    { st: 'drift', name: 'OR-AIRSCA-GNB-60', ip: '172.31.230.200', model: 'AirScale gNB', os: '23B', sn: 'NOKAGNB602026', oem: 'NOKIA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'AP-AIR644-GNB-62', ip: '172.31.248.234', model: 'AIR 6449', os: 'L23B', sn: 'ERI4GNB622026', oem: 'ERICSSON', loc: 'VJA-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'OR-AAU561-GNB-82', ip: '172.31.208.154', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1GNB822026', oem: 'HUAWEI', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'AP-AAU561-GNB-84', ip: '172.31.226.188', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1GNB842026', oem: 'HUAWEI', loc: 'VJA-118', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'OR-BASEBA-GNB-56', ip: '172.31.186.108', model: 'Baseband 6630', os: 'L23B', sn: 'ERIAGNB562026', oem: 'ERICSSON', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
-    { st: 'drift', name: 'AP-AIRSCA-GNB-58', ip: '172.31.204.142', model: 'AirScale gNB', os: '23B', sn: 'NOKAGNB582026', oem: 'NOKIA', loc: 'VJA-118', s: 'd', stock: 'faulty', v: 5 }
+    { st: 'drift', name: 'OR-AIRSCA-GNB-60', ip: '10.51.30.60', model: 'AirScale gNB', os: '23B', sn: 'NOKAGNB602026', oem: 'NOKIA', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'AP-AIR644-GNB-62', ip: '10.51.30.62', model: 'AIR 6449', os: 'L23B', sn: 'ERI4GNB622026', oem: 'ERICSSON', loc: 'VJA-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'OR-AAU561-GNB-82', ip: '10.51.30.82', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1GNB822026', oem: 'HUAWEI', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'AP-AAU561-GNB-84', ip: '10.51.30.84', model: 'AAU5613', os: 'V100R020C10', sn: 'HUA1GNB842026', oem: 'HUAWEI', loc: 'VJA-118', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'OR-BASEBA-GNB-56', ip: '10.51.30.56', model: 'Baseband 6630', os: 'L23B', sn: 'ERIAGNB562026', oem: 'ERICSSON', loc: 'KOL-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'drift', name: 'AP-AIRSCA-GNB-58', ip: '10.51.30.58', model: 'AirScale gNB', os: '23B', sn: 'NOKAGNB582026', oem: 'NOKIA', loc: 'VJA-118', s: 'd', stock: 'faulty', v: 5 }
   ]
 };
 
@@ -154,11 +155,31 @@ function nextIp(c: NeClass, idx: number, isPlanned: boolean): string {
   while (true) {
     let candidate = '';
     if (isPlanned) {
-      const subnets: Record<NeClass, number> = { router: 11, switch: 12, server: 13, dwdm: 14, enodeb: 15, gnodeb: 16 };
-      const sub = subnets[c];
-      const o3 = Math.floor(offset / 240);
-      const o4 = 10 + (offset % 240);
-      candidate = `192.168.${sub + o3}.${o4}`;
+      if (c === 'enodeb') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `10.44.${o3}.${o4}`;
+      } else if (c === 'gnodeb') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `10.51.${o3}.${o4}`;
+      } else if (c === 'server') {
+        const o3 = 50 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `10.10.${o3}.${o4}`;
+      } else if (c === 'dwdm') {
+        const o3 = 190 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `172.31.${o3}.${o4}`;
+      } else if (c === 'switch') {
+        const o3 = 135 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `172.31.${o3}.${o4}`;
+      } else {
+        const o3 = 105 + Math.floor(offset / 240);
+        const o4 = 10 + (offset % 240);
+        candidate = `172.31.${o3}.${o4}`;
+      }
     } else {
       if (c === 'enodeb') {
         const o3 = 30 + Math.floor(offset / 240);

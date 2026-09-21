@@ -93,10 +93,22 @@ DOMAIN_TRUST_ROWS.forEach(row => {
   const mk = (status: DeviceStatus, i: number): DomainDevice => {
     const pre = prefixes[Math.floor(rnd() * prefixes.length)];
     const num = 100 + Math.floor(rnd() * 880);
+    let ip = '';
+    if (row.domain === 'IPMPLS') {
+      ip = `172.31.${30 + Math.floor(rnd() * 70)}.${10 + Math.floor(rnd() * 240)}`;
+    } else if (row.domain === 'Transport') {
+      ip = `172.31.${160 + Math.floor(rnd() * 35)}.${10 + Math.floor(rnd() * 240)}`;
+    } else if (row.domain === 'RAN') {
+      ip = pre === 'gNB'
+        ? `10.51.${10 + Math.floor(rnd() * 40)}.${10 + Math.floor(rnd() * 240)}`
+        : `10.44.${10 + Math.floor(rnd() * 40)}.${10 + Math.floor(rnd() * 240)}`;
+    } else {
+      ip = `10.10.${10 + Math.floor(rnd() * 30)}.${10 + Math.floor(rnd() * 240)}`;
+    }
     return {
       id: `${row.domain}-${status}-${i}`,
       name: `${pre}-${num}`,
-      ip: `10.${Math.floor(rnd() * 223) + 1}.${Math.floor(rnd() * 255)}.${Math.floor(rnd() * 255)}`,
+      ip,
       domain: row.domain,
       region: regionFor(status, i),
       status,

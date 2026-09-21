@@ -114,10 +114,10 @@ export interface AttentionRow {
   name: string; ip: string; region: Region; vendor: string; model: string; reason: string; last: string;
 }
 export const ATTENTION: AttentionRow[] = [
-  { name: 'RTR-WEST-2045', ip: '10.20.34.45',  region: 'West',  vendor: 'Cisco',   model: 'ASR920',     reason: 'auth',    last: getLiveDateStr(9, 12) },
-  { name: 'SW-WEST-1120',  ip: '10.20.11.20',  region: 'West',  vendor: 'Cisco',   model: 'C9300-48UXM',reason: 'unreach', last: getLiveDateStr(9, 8) },
+  { name: 'RTR-WEST-2045', ip: '172.31.84.45',  region: 'West',  vendor: 'Cisco',   model: 'ASR920',     reason: 'auth',    last: getLiveDateStr(9, 12) },
+  { name: 'SW-WEST-1120',  ip: '172.31.124.20', region: 'West',  vendor: 'Cisco',   model: 'C9300-48UXM',reason: 'unreach', last: getLiveDateStr(9, 8) },
   { name: 'BGLK-EX4300-T-CHR-07', ip: '172.31.31.2', region: 'South', vendor: 'Juniper', model: 'EX4300-48P', reason: 'timeout', last: getLiveDateStr(9, 5) },
-  { name: 'EDGE-RTR-012',  ip: '10.100.2.10',  region: 'East',  vendor: 'Juniper', model: 'MX204',      reason: 'timeout', last: getLiveDateStr(8, 58) },
+  { name: 'EDGE-RTR-012',  ip: '172.31.88.10',  region: 'East',  vendor: 'Juniper', model: 'MX204',      reason: 'timeout', last: getLiveDateStr(8, 58) },
   { name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', region: 'South', vendor: 'Nokia', model: '7750', reason: 'adapter', last: getLiveDateStr(8, 51) },
   { name: 'DEL-C9300-ACC-07', ip: '172.31.35.61', region: 'North', vendor: 'Cisco', model: 'C9300-48UXM', reason: 'auth', last: getLiveDateStr(8, 47) },
   { name: 'KOL-NCS540-AGG-91', ip: '172.31.145.215', region: 'East', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 44) },
