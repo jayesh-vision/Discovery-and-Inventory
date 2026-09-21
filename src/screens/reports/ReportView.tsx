@@ -6,7 +6,7 @@ import {
   type ReportModule, type Row, MODULE_LABEL, STATE_TONE, buildReport, cellText, fmtValue, reportDefById
 } from '../../data/reports';
 import {
-  AUDIENCE_GLYPH, ExportMenu, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell, useReportNav
+  AUDIENCE_GLYPH, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell, useReportNav
 } from './parts';
 
 const PRIORITY_TONE = { P1: 'error', P2: 'warning', P3: 'neutral' } as const;
@@ -29,14 +29,6 @@ export function ReportView({ module }: { module: ReportModule }) {
 
   return (
     <div className="page rpt-page">
-      {/* back navigation lives in the breadcrumb above the page (Topbar) —
-          this toolbar used to duplicate it with its own "All reports" link
-          back to the same place; removed rather than kept as a second,
-          redundant way to do the same thing. */}
-      <div className="rpt-toolbar rpt-noprint">
-        <span className="grow" />
-        <ExportMenu def={def} content={content} withPrint label="Download report" />
-      </div>
 
       <div className="rpt-printhead">NetSingularity OSS · {MODULE_LABEL[def.module]} reports · {def.distribution}</div>
 

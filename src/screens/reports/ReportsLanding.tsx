@@ -10,11 +10,6 @@ import {
 import { REPORT_RUNS, RUN_STATUS_TONE, type ReportRun } from '../../data/reports/runs';
 import { AUDIENCE_GLYPH, ExportMenu, TrendSpark, VisualCard, reportPath } from './parts';
 
-const PURPOSE: Record<ReportModule, string> = {
-  discovery: 'how far the inventory can be trusted, and every number drills down to the rule, exception or device behind it.',
-  inventory: 'the network estate as an asset, and every number drills down to the element, site or record behind it.'
-};
-
 /* The headline of the reports that matter most for each module, as tiles.
    Values, trends and tones come from each report's own builder. */
 interface TileSpec { id: string; title: string; sub?: string }
@@ -160,19 +155,25 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
 
   return (
     <div className="page">
-      <header className="rpt-head">
-        <div style={{ minWidth: 0 }}>
-          <h1 className="rpt-head-title">{MODULE_LABEL[module]} reports</h1>
-          <p className="rpt-head-p">{all.length} reports for {audiences.map(x => x.a.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1')} teams — {PURPOSE[module]}</p>
-        </div>
-        <dl className="rpt-head-meta">
-          <div><dt>Latest data</dt><dd className="num">{latest}</dd></div>
-          <div><dt>Report status</dt><dd>
-            <Chip tone="success">{all.length - attention} current</Chip>
-            {attention > 0 && <Chip tone="warning">{attention} {attention === 1 ? 'needs' : 'need'} attention</Chip>}
-          </dd></div>
-        </dl>
-      </header>
+      <div className="rpt-context" aria-label="Report context">
+        <span className="rpt-ctx" title={`Latest data as of ${latest}`}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <span className="rpt-ctx-text">Latest data <b>{latest}</b></span>
+        </span>
+        <span className="rpt-ctx" title={`Report status: ${all.length - attention} current, ${attention} need attention`}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+          </svg>
+          <span className="rpt-ctx-text">
+            Report status <b>{all.length - attention} current</b>{attention > 0 ? <> · <b>{attention} {attention === 1 ? 'needs' : 'need'} attention</b></> : null}
+          </span>
+        </span>
+      </div>
 
       <div className="rpt-tiles">{TILES[module].map(t => <HeadlineTile key={t.id} spec={t} />)}</div>
 

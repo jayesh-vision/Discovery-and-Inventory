@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS } from '../routes';
-import { reportDefById } from '../data/reports';
+import { reportDefById, buildReport } from '../data/reports';
+import { ExportMenu } from '../screens/reports/parts';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -153,8 +154,14 @@ export default function Topbar() {
   if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
     finalLeafLabel = 'Transcript';
   }
+  let reportDef = null;
+  let reportContent = null;
   if (s.key === 'discoveryreport' || s.key === 'inventoryreport') {
-    finalLeafLabel = reportDefById(params.id ?? '')?.name ?? finalLeafLabel;
+    reportDef = reportDefById(params.id ?? '') ?? null;
+    if (reportDef) {
+      finalLeafLabel = reportDef.name;
+      reportContent = buildReport(reportDef);
+    }
   }
   if (segs.length > 0 && segs[segs.length - 1].label === finalLeafLabel) {
     segs[segs.length - 1] = { label: finalLeafLabel, to: null };
@@ -163,15 +170,22 @@ export default function Topbar() {
   }
 
   return (
-    <nav className="topbar" aria-label="Breadcrumb">
-      {segs.map((g, i) => (
-        <span key={i} className="topbar-seg">
-          {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
-          {g.to
-            ? <button className="topbar-crumb-link" onClick={() => nav(g.to as string)}>{g.label}</button>
-            : <span className={i === segs.length - 1 ? 'topbar-crumb-current' : 'topbar-crumb-text'}>{g.label}</span>}
-        </span>
-      ))}
-    </nav>
+    <div className="topbar">
+      <nav className="topbar-crumbs" aria-label="Breadcrumb">
+        {segs.map((g, i) => (
+          <span key={i} className="topbar-seg">
+            {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
+            {g.to
+              ? <button className="topbar-crumb-link" onClick={() => nav(g.to as string)}>{g.label}</button>
+              : <span className={i === segs.length - 1 ? 'topbar-crumb-current' : 'topbar-crumb-text'}>{g.label}</span>}
+          </span>
+        ))}
+      </nav>
+      {reportDef && reportContent && (
+        <div className="topbar-right">
+          <ExportMenu def={reportDef} content={reportContent} withPrint label="Download report" />
+        </div>
+      )}
+    </div>
   );
 }

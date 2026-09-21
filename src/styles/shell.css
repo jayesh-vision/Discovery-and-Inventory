@@ -1766,8 +1766,10 @@ a.side-item.active:not(.is-active) { background: transparent; }
 /* top-left breadcrumb — see Topbar.tsx. Padded to line up with the page
    content's own side padding, not the page's own title (some screens
    have none), so it always sits flush above whatever renders below it. */
-.topbar { display: flex; align-items: center; flex-wrap: wrap;
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
   padding: var(--vw-space-lg) var(--vw-space-xl) 0; font-size: var(--vw-font-label-md); }
+.topbar-crumbs { display: flex; align-items: center; flex-wrap: wrap; }
+.topbar-right { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; }
 .topbar-seg { display: inline-flex; align-items: center; }
 .topbar-crumb-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; cursor: pointer;
   color: var(--vw-color-gray-400); }
@@ -1775,6 +1777,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .topbar-crumb-sep { color: var(--vw-color-gray-300); margin: 0 6px; }
 .topbar-crumb-text { color: var(--vw-color-gray-400); }
 .topbar-crumb-current { color: var(--vw-color-gray-700); font-weight: 500; }
+.page.rpt-page { padding-top: var(--vw-space-md); }
 
 /* ══ Discovery Insights (React) ═════════════════════════ */
 .ins2 { display: flex; gap: var(--vw-space-lg); align-items: flex-start; }
@@ -2272,6 +2275,47 @@ details[open] > summary .vw-tx-chevron {
 .rpt-head-meta { display: flex; gap: var(--vw-space-lg); margin: 0; }
 .rpt-head-meta dt { font-size: 0.75rem; color: var(--vw-color-gray-600); margin-bottom: 6px; }
 .rpt-head-meta dd { margin: 0; display: flex; gap: 6px; align-items: center; min-height: 26px; font-size: 0.875rem; font-weight: 600; color: var(--vw-color-gray-900); }
+
+/* context pills */
+.rpt-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-bottom: var(--vw-space-md);
+}
+.rpt-ctx {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 8px;
+  background: var(--vw-color-white);
+  font-size: 0.75rem;
+  color: var(--vw-color-gray-700);
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+.rpt-ctx > svg {
+  color: var(--vw-color-gray-400);
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+.rpt-ctx-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.25;
+}
+.rpt-ctx b {
+  font-weight: 600;
+  color: var(--vw-color-gray-900);
+}
+
 
 /* headline tiles */
 .rpt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--vw-space-md); }

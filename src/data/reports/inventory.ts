@@ -369,7 +369,7 @@ const archive: ReportBuilder = () => {
       { priority: 'P3', action: `Review retention for archive records older than 5 years (oldest ${DECOMM_OLDEST})`, owner: 'Asset management', impact: 'Keeps the archive auditable' }
     ],
     table: {
-      title: 'Decommissioned elements', sub: 'Zombies first, then most recent; select a row to open the archive',
+      title: 'Decommissioned elements', sub: 'Zombies first, then most recent',
       columns: [
         { key: 'status', header: 'Network status', fmt: 'chip', tones: { 'Still answering': 'error', Silent: 'neutral' } },
         { key: 'name', header: 'Element', fmt: 'mono' }, { key: 'cls', header: 'Class' }, { key: 'model', header: 'Model' }, { key: 'oem', header: 'OEM' },
@@ -377,7 +377,7 @@ const archive: ReportBuilder = () => {
         { key: 'why', header: 'Reason', width: '200px' }, { key: 'by', header: 'By' }, { key: 'wo', header: 'Work order', fmt: 'mono' }
       ],
       rows: [...rows].sort((a, b) => Number(b.zombie) - Number(a.zombie) || parseDmy(b.on).getTime() - parseDmy(a.on).getTime()).map(r => ({
-        id: `${r.cls}-${r.sn}`, link: { key: 'inactive', q: `cls=${r.cls}` },
+        id: `${r.cls}-${r.sn}`,
         cells: { status: r.zombie ? 'Still answering' : 'Silent', name: r.name, cls: name(r.cls), model: r.model, oem: r.oem, sn: r.sn, loc: r.loc, on: r.on, why: r.why, by: r.by, wo: r.wo }
       })),
       facet: 'cls', empty: 'The archive is empty.'
@@ -437,7 +437,7 @@ const sites: ReportBuilder = () => {
       { priority: 'P3', action: 'Extend facility surveys beyond the sampled sites to all central and regional locations', owner: 'Facilities', impact: `${IL.central + IL.regional} sites with measured headroom` }
     ],
     table: {
-      title: 'Surveyed sites', sub: `${LOCATIONS.length} sites with a facility record; select a row to open the site`,
+      title: 'Surveyed sites', sub: `${LOCATIONS.length} sites with a facility record`,
       columns: [
         { key: 'id', header: 'Site', fmt: 'mono' }, { key: 'name', header: 'Name' }, { key: 'type', header: 'Type' }, { key: 'tier', header: 'Tier' },
         { key: 'status', header: 'Status', fmt: 'chip', tones: { 'On-air': 'success', 'In progress': 'info', Planned: 'neutral', Failed: 'error' } },
@@ -446,7 +446,7 @@ const sites: ReportBuilder = () => {
         { key: 'rack', header: 'Rack used', fmt: 'pct', right: true }, { key: 'ports', header: 'Ports used', fmt: 'pct', right: true }
       ],
       rows: s.map(x => ({
-        id: x.l.id, link: { key: 'sitedetails', params: { id: x.l.id } },
+        id: x.l.id,
         cells: { id: x.l.id, name: x.l.name, type: x.l.type, tier: x.l.cat, status: x.l.st, city: `${x.l.city}, ${x.l.state}`, ne: x.l.ne, disc: x.l.disc, load: r1(x.load), power: x.powerPct, rack: x.rackPct, ports: x.portPct }
       })),
       facet: 'status', empty: 'No surveyed sites.'
