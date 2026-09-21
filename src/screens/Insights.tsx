@@ -202,9 +202,18 @@ export default function Insights() {
           </div>
         </div> */}
         <div className="ix-context" aria-label="Page context">
-          <span className="ix-ctx">{Ic.layers(14)}<b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
-          <span className="ix-ctx">{Ic.clock(14)}Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
-          <span className="ix-ctx">{Ic.calendar(14)}Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
+          <span className="ix-ctx" title={`${TOP_DOMAINS.length} domains · ${DOMAIN_KEYS.length - TOP_DOMAINS.length} sub-domain · ${DOMAIN_TRUST_TOTAL.inScope} assets in scope`}>
+            {Ic.layers(14)}
+            <span><b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
+          </span>
+          <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
+            {Ic.clock(14)}
+            <span>Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
+          </span>
+          <span className="ix-ctx" title={`Next ${DOMAIN_LABEL[RECONCILE_NEXT.domain]} at ${RECONCILE_NEXT.at} · in ${RECONCILE_NEXT.eta}`}>
+            {Ic.calendar(14)}
+            <span>Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
+          </span>
           <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key">
             {DOMAIN_KEYS.map(d => <Dom key={d} domain={d} sm />)}
           </span>
