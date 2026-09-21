@@ -1830,6 +1830,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
   min-width: 11rem; padding: var(--vw-space-sm) var(--vw-space-md);
   background: var(--vw-color-gray-900); color: var(--vw-color-white); border-radius: var(--vw-radius-md);
   font-size: var(--vw-font-size-sm); box-shadow: 0 8px 24px rgba(15, 23, 42, .25); }
+.ch-tip.is-left { transform: translate(calc(-100% - 14px), -50%); }
 .ch-tip-h { font-weight: 500; margin-bottom: 4px; }
 .ch-tip-dim { color: var(--vw-color-gray-400); font-weight: 400; }
 .ch-tip-r { display: flex; align-items: center; gap: 8px; padding: 2px 0; }

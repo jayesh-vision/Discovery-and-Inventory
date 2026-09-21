@@ -136,7 +136,7 @@ function TargetBar({ value, target, min, max, hex, higherIsBetter, format }: {
         <span className="ix-target-f" style={{ width: pos(value), background: hex }} />
         <span className="ix-target-m" style={{ left: pos(target) }} title={`target ${format(target)}`} />
       </span>
-      <span>target <b>{format(target)}</b>{higherIsBetter ? '' : ' or less'}</span>
+      <span>target <b>{format(target)}</b>{!higherIsBetter && <span className="ix-target-note"> or less</span>}</span>
     </div>
   );
 }
@@ -202,19 +202,21 @@ export default function Insights() {
           </div>
         </div> */}
         <div className="ix-context" aria-label="Page context">
-          <span className="ix-ctx" title={`${TOP_DOMAINS.length} domains · ${DOMAIN_KEYS.length - TOP_DOMAINS.length} sub-domain · ${DOMAIN_TRUST_TOTAL.inScope} assets in scope`}>
+          <span className="ix-ctx" title={`${TOP_DOMAINS.length} domains · ${DOMAIN_KEYS.length - TOP_DOMAINS.length} sub-domains · ${DOMAIN_TRUST_TOTAL.inScope} assets in scope`}>
             {Ic.layers(14)}
-            <span><b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub-domain · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> assets in scope</span>
+            <span className="ix-ctx-text">
+              <b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub<span className="ix-ctx-long">-domain</span> · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> <span className="ix-ctx-long">assets </span>in scope
+            </span>
           </span>
           <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
             {Ic.clock(14)}
-            <span>Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
+            <span className="ix-ctx-text">Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
           </span>
           <span className="ix-ctx" title={`Next ${DOMAIN_LABEL[RECONCILE_NEXT.domain]} at ${RECONCILE_NEXT.at} · in ${RECONCILE_NEXT.eta}`}>
             {Ic.calendar(14)}
-            <span>Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
+            <span className="ix-ctx-text">Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
           </span>
-          <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key">
+          <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key" title="Domains: RAN, Core, Transport, IP/MPLS">
             {DOMAIN_KEYS.map(d => <Dom key={d} domain={d} sm />)}
           </span>
         </div>
@@ -236,7 +238,8 @@ export default function Insights() {
                 style={{ ['--ix-accent' as string]: hex }}
                 {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
                 <div className="ix-kpi-top">
-                  <span className="ix-kpi-l">{m.label}
+                  <span className="ix-kpi-l" title={m.label}>
+                    <span className="ix-kpi-lt">{m.label}</span>
                     {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
                   </span>
                   <Pill tone={r.tone}>{r.status}</Pill>
@@ -246,7 +249,7 @@ export default function Insights() {
                   {m.hero && hero.delta && <Delta dir={hero.delta.up ? 'up' : 'down'} good={hero.delta.up}>{hero.delta.figure}</Delta>}
                   {!m.hero && r.delta !== undefined && r.delta !== 0 && (
                     <Delta dir={r.delta > 0 ? 'up' : 'down'} good={r.higherIsBetter ? r.delta > 0 : r.delta < 0}>
-                      {n(+Math.abs(r.delta).toFixed(2))}{r.deltaUnit} vs trend start
+                      {n(+Math.abs(r.delta).toFixed(2))}{r.deltaUnit} <span className="ix-delta-note">vs trend start</span>
                     </Delta>
                   )}
                 </div>

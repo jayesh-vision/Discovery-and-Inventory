@@ -1,34 +1,50 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 /* ── shared tooltip ─────────────────────────────────────── */
-/* Every chart below reports the raw cursor position (x, y) and this
-   anchors a fixed-position box 14px to its right — fine until the
-   cursor (and so the box) is near the right edge of the viewport, e.g.
-   the last bucket/point of a chart that runs edge to edge, where the
-   box's natural width pushes it straight past the edge and gets clipped
-   by the browser itself, not by anything this app draws. Same clamp
-   idiom as InfoTip (ui.tsx): measure the box against the viewport after
-   every position update and nudge it back with a translateX delta added
-   to the CSS class's own translate(14px, -50%) rather than overriding
-   it outright — one fix here covers every chart's tooltip at once. */
+import { createPortal } from 'react-dom';
+
+/* ── chart hover tooltip ────────────────────────────────────
+   Follows cursor on its LEFT side so it never spills past the right edge
+   of the viewport on trailing series/bars. Clamps to viewport margins.
+   Rendered via createPortal into document.body so position: fixed
+   coordinates are never distorted by container zoom or transform. */
 export function Tip({ x, y, children }: { x: number; y: number; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shiftPx, setShiftPx] = useState(0);
+  const [shift, setShift] = useState({ dx: 0, dy: 0 });
+
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const margin = 8;
+    const margin = 12;
     const rect = el.getBoundingClientRect();
     let dx = 0;
-    if (rect.right > window.innerWidth - margin) dx = (window.innerWidth - margin) - rect.right;
-    if (rect.left + dx < margin) dx = margin - rect.left;
-    setShiftPx(dx);
+    let dy = 0;
+    if (rect.left < margin) {
+      dx = margin - rect.left;
+    } else if (rect.right > window.innerWidth - margin) {
+      dx = (window.innerWidth - margin) - rect.right;
+    }
+    if (rect.top < margin) {
+      dy = margin - rect.top;
+    } else if (rect.bottom > window.innerHeight - margin) {
+      dy = (window.innerHeight - margin) - rect.bottom;
+    }
+    setShift({ dx, dy });
   }, [x, y, children]);
-  return (
-    <div ref={ref} className="ch-tip" style={{ left: x, top: y,
-      ...(shiftPx ? { transform: `translate(calc(14px + ${shiftPx}px), -50%)` } : {}) }}>
+
+  return createPortal(
+    <div
+      ref={ref}
+      className="ch-tip is-left"
+      style={{
+        left: x,
+        top: y,
+        transform: `translate(calc(-100% - 14px + ${shift.dx}px), calc(-50% + ${shift.dy}px))`
+      }}
+    >
       {children}
-    </div>
+    </div>,
+    document.body
   );
 }
 
