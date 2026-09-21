@@ -57,7 +57,7 @@ export default function Topbar() {
      destination to name. */
   if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
     || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
-    || s.key === 'jobs' || s.key === 'targets') && !drill) {
+    || s.key === 'jobs' || s.key === 'targets') && !drill && !from) {
     return null;
   }
 

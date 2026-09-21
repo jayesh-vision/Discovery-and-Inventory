@@ -167,15 +167,21 @@ export default function Insights() {
     const domainLabel = DOMAIN_LABEL[d];
     nav(legacyPath('jobs', { label: domainLabel, from: 'Insights', q: `domain=${domainLabel}` }));
   };
-  /* the 3 non-hero KPI tiles each have one real, meaningful destination;
-     "Inventory trust index" itself stays a plain figure — there's no single
-     drill-down it names the way the other three do */
+  /* Each of the four headline KPI tiles opens its respective drill-down listing */
+  const toDevices = () => {
+    nav('/discovery/insights/devices?from=Insights');
+  };
+  const toTargets = () => {
+    nav(legacyPath('targets', { label: 'Scan targets', from: 'Insights' }));
+  };
   const KPI_TARGET: Partial<Record<string, () => void>> = {
-    'Discovery coverage': () => nav('/discovery/targets'),
+    'Inventory trust index': () => toDevices(),
+    'Discovery coverage': () => toTargets(),
     'Open discrepancy backlog': () => toDiscrepancies(),
     'Mean time to reconcile': () => openDomain('Transport')
   };
   const KPI_HINT: Record<string, string> = {
+    'Inventory trust index': 'View all devices in inventory',
     'Discovery coverage': 'View Scan targets',
     'Open discrepancy backlog': 'View all open discrepancies',
     'Mean time to reconcile': 'View Transport, the current outlier'
@@ -236,10 +242,10 @@ export default function Insights() {
             return (
               <Wrap key={m.label} className={`ix-kpi${m.hero ? ' is-hero' : ''}`}
                 style={{ ['--ix-accent' as string]: hex }}
-                {...(to ? { onClick: to, title: KPI_HINT[m.label] } : {})}>
+                {...(to ? { onClick: to, type: 'button' as const, 'aria-label': KPI_HINT[m.label] } : {})}>
                 <div className="ix-kpi-top">
-                  <span className="ix-kpi-l" title={m.label}>
-                    <span className="ix-kpi-lt">{m.label}</span>
+                  <span className="ix-kpi-l">
+                    <span className="ix-kpi-lt" title={m.label}>{m.label}</span>
                     {KPI_DEF[m.label] && <InfoTip text={KPI_DEF[m.label]} label={`What ${m.label.toLowerCase()} means`} />}
                   </span>
                   <Pill tone={r.tone}>{r.status}</Pill>

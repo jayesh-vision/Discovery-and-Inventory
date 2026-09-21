@@ -236,8 +236,12 @@
   color: inherit;
   transition: border-color var(--ix-ease), box-shadow var(--ix-ease);
   container-type: inline-size;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
+}
+.ix-kpi:hover,
+.ix-kpi:focus-within {
+  z-index: 25;
 }
 .ix-kpi::before {
   content: '';
@@ -273,7 +277,7 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   text-transform: uppercase;
   color: var(--vw-color-gray-600);
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   max-width: 100%;
 }
