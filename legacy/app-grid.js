@@ -196,7 +196,7 @@ function kebabCell(items, gid, i) {
    rather than competing with extra's own controls for the left side. */
 function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '', filterChips = '') {
   const st = gridOf(key);
-  const activeFilters = Object.values(st.filters).filter(Boolean).length;
+  const activeFilters = Object.entries(st.filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain')).length;
   return `<div class="grid-bar">
     <span class="vw-card-description grid-count">${showing === null
       ? `<span class="num">${total}</span> records` : `Showing ${showing} of ${total}`}</span>
@@ -235,7 +235,7 @@ function filterPanel(spec, key = '') {
     <div class="fpanel-body">
       <div class="fpanel-nav">
         ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}${gridOf(key).filters[x.n] ? ' has-value' : ''}"
-          data-filterfield="${i}">${x.n}</button>`).join('')}
+          data-filterfield="${key}|${i}">${x.n}</button>`).join('')}
       </div>
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
@@ -305,7 +305,7 @@ function layoutStockChips() {
    applied — field and value both live in gridOf(key).filters already, so
    nothing view-specific is needed here. */
 function chipsModal(key) {
-  const active = Object.entries(gridOf(key).filters).filter(([, v]) => v);
+  const active = Object.entries(gridOf(key).filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'));
   return `<div class="drawer-overlay" data-chipsmodalclose="1"></div>
     <div class="chips-modal" role="dialog" aria-label="Selected filters">
       <div class="chips-modal-head">
@@ -332,7 +332,7 @@ function chipsModal(key) {
    row, via the shared .stock-chips/data-chipsrow markup. */
 function activeFilterChips(key) {
   const filters = gridOf(key).filters;
-  const chips = Object.entries(filters).filter(([, v]) => v)
+  const chips = Object.entries(filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'))
     .map(([field, value]) => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(field)}: ${esc(value)}
       <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`)
     .join('');
@@ -352,14 +352,12 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],

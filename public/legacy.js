@@ -3239,7 +3239,7 @@ function kebabCell(items, gid, i) {
    rather than competing with extra's own controls for the left side. */
 function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key = '', filterChips = '') {
   const st = gridOf(key);
-  const activeFilters = Object.values(st.filters).filter(Boolean).length;
+  const activeFilters = Object.entries(st.filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain')).length;
   return `<div class="grid-bar">
     <span class="vw-card-description grid-count">${showing === null
       ? `<span class="num">${total}</span> records` : `Showing ${showing} of ${total}`}</span>
@@ -3278,7 +3278,7 @@ function filterPanel(spec, key = '') {
     <div class="fpanel-body">
       <div class="fpanel-nav">
         ${fields.map((x, i) => `<button class="fp-f${i === FILTER_FIELD ? ' is-on' : ''}${gridOf(key).filters[x.n] ? ' has-value' : ''}"
-          data-filterfield="${i}">${x.n}</button>`).join('')}
+          data-filterfield="${key}|${i}">${x.n}</button>`).join('')}
       </div>
       <div class="fpanel-ctl">
         <span class="fp-label">${f.n}</span>
@@ -3348,7 +3348,7 @@ function layoutStockChips() {
    applied — field and value both live in gridOf(key).filters already, so
    nothing view-specific is needed here. */
 function chipsModal(key) {
-  const active = Object.entries(gridOf(key).filters).filter(([, v]) => v);
+  const active = Object.entries(gridOf(key).filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'));
   return `<div class="drawer-overlay" data-chipsmodalclose="1"></div>
     <div class="chips-modal" role="dialog" aria-label="Selected filters">
       <div class="chips-modal-head">
@@ -3375,7 +3375,7 @@ function chipsModal(key) {
    row, via the shared .stock-chips/data-chipsrow markup. */
 function activeFilterChips(key) {
   const filters = gridOf(key).filters;
-  const chips = Object.entries(filters).filter(([, v]) => v)
+  const chips = Object.entries(filters).filter(([k, v]) => Boolean(v) && (!['jobs', 'targets'].includes(key) || k !== 'Domain'))
     .map(([field, value]) => `<span class="vw-chip vw-chip--info active-filter-chip">${esc(field)}: ${esc(value)}
       <button class="active-filter-chip-x" data-clearfilter="${key}|${esc(field)}" aria-label="Remove ${esc(field)} filter">${IC_X}</button></span>`)
     .join('');
@@ -3395,14 +3395,12 @@ const FS = {
              { n:'Model' }, { n:'OS version' }, { n:'Location ID' },
              { n:'Software', o:['Current','Behind','Unknown'] }, { n:'End of sale' }],
   targets:  [{ n:'Outcome', o:['Exact match','Drifted','Stale','Missing','Rogue','Unclaimed','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Gateway IP' }, { n:'Hostname' }, { n:'Circle' }, { n:'Job' },
              { n:'Collector', o:['Device','Hardware','LLDP','OSPF','BGP','Service'] },
              { n:'Age', o:['Under 24 h','1 – 7 days','7 – 30 days','Over 30 days'] }],
   /* Status lists run states only — "held" describes the schedule, not the run,
      and lives in its own field */
   jobs:     [{ n:'Status', o:['Completed','Completed with errors','Running','No adapter'] },
-             { n:'Domain', o:DOMAIN_FILTER_OPTIONS },
              { n:'Schedule state', o:['held'], h:'A held job keeps its cadence but will not run until released.' },
              { n:'Job' }, { n:'Scope' }, { n:'Collector node' }, { n:'Credential profile' },
              { n:'Schedule', o:['Every 6 h','Daily','Weekly','On demand'] }],
@@ -14463,15 +14461,51 @@ document.addEventListener('click', e => {
   const vlca = e.target.closest('[data-vnflcaccordion]');
   if (vlca) { const k = vlca.dataset.vnflcaccordion; VNF_LC_DRAWER_OPEN[k] = !VNF_LC_DRAWER_OPEN[k]; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const fo = e.target.closest('[data-filteropen]');
-  if (fo) { FILTER_OPEN = !FILTER_OPEN; FILTER_FIELD = 0; KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fo) {
+    const k = fo.dataset.filteropen;
+    FILTER_OPEN = !FILTER_OPEN;
+    if (FILTER_OPEN && k) {
+      const spec = (typeof FS !== 'undefined' && FS[k]) || [];
+      const activeEntry = Object.entries(gridOf(k).filters).find(([fName, val]) => Boolean(val) && (k !== 'jobs' || fName !== 'Domain'));
+      if (activeEntry) {
+        const foundIdx = spec.findIndex(s => s.n === activeEntry[0]);
+        FILTER_FIELD = foundIdx >= 0 ? foundIdx : 0;
+      } else {
+        FILTER_FIELD = 0;
+      }
+    } else {
+      FILTER_FIELD = 0;
+    }
+    KEBAB = null; GRIDMENU = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fc = e.target.closest('[data-filterclose]');
   if (fc) { FILTER_OPEN = false; go(CURRENT); return; }
   const fr = e.target.closest('[data-filterreset]');
-  if (fr) { gridOf(fr.dataset.filterreset).filters = {}; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
+  if (fr) {
+    const k = fr.dataset.filterreset;
+    const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+    gridOf(k).filters = dom ? { Domain: dom } : {};
+    FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return;
+  }
   const fa = e.target.closest('[data-filterapply]');
   if (fa) { FILTER_OPEN = false; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const ff = e.target.closest('[data-filterfield]');
-  if (ff) { FILTER_FIELD = Number(ff.dataset.filterfield); go(CURRENT); return; }
+  if (ff) {
+    const raw = ff.dataset.filterfield;
+    let k = '', idx = 0;
+    if (raw && raw.includes('|')) {
+      [k, idx] = raw.split('|');
+      idx = Number(idx);
+    } else {
+      idx = Number(raw);
+    }
+    FILTER_FIELD = idx;
+    if (k) {
+      const dom = ((k === 'jobs' || k === 'targets') && gridOf(k).filters.Domain) || null;
+      gridOf(k).filters = dom ? { Domain: dom } : {};
+    }
+    go(CURRENT); return;
+  }
   /* the chip row's own "+N More" (built by layoutStockChips(), not any
      view's template) opens a popup listing every filter this grid has
      applied; its own backdrop/X close it the same way a kebab menu does */
@@ -14822,7 +14856,9 @@ document.addEventListener('input', e => {
   }
   if (el.hasAttribute && el.hasAttribute('data-filterval')) {
     const [key, field] = el.dataset.filterval.split('|');
-    gridOf(key).filters[field] = el.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (el.value) gridOf(key).filters[field] = el.value;
     if (el.classList && el.classList.contains('fp-sel')) el.classList.toggle('is-placeholder', !el.value);
     return; /* applied on "Apply filters", not per keystroke */
   }
@@ -14848,7 +14884,9 @@ document.addEventListener('change', e => {
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');
-    gridOf(key).filters[field] = e.target.value;
+    const dom = (key === 'jobs' && gridOf('jobs').filters.Domain) || null;
+    gridOf(key).filters = dom ? { Domain: dom } : {};
+    if (e.target.value) gridOf(key).filters[field] = e.target.value;
     if (e.target.classList && e.target.classList.contains('fp-sel')) e.target.classList.toggle('is-placeholder', !e.target.value);
     return;
   }
