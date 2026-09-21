@@ -1,15 +1,13 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cv, InfoTip } from '../components/ui';
-import { StackedBars, Sparkline, BandChart } from '../components/charts';
+import { StackedBars, Sparkline } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHeader, Seg, type Tone } from '../components/ops';
 import { legacyPath } from '../routes';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
-  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
-  MATCH_OUTCOME, MATCH_TOTAL_NOTE, DISCREPANCY_TYPES, BACKLOG_DAYS, BACKLOG_DETECTED, BACKLOG_AUTORESOLVED,
-  BACKLOG_AGE, DOMAIN_TRUST_ROWS, DOMAIN_TRUST_TOTAL, REGION_DISCREPANCY,
+  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT, DOMAIN_TRUST_TOTAL,
   DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, TOP_DOMAINS, domainParentLabel, domainRoute,
   type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
@@ -45,22 +43,7 @@ const TONE_HEX: Record<Tone, string> = {
   success: cv('emerald', 500), warning: cv('amber', 500), critical: cv('red', 500), info: cv('blue', 500), neutral: cv('slate', 400)
 };
 
-/* Match outcome → the Discrepancy details screen's own category filter.
-   "Matched" has nothing to drill into (it's the healthy population, not a
-   discrepancy), so it's the one tile with no entry here and stays inert. */
-const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
-  'Attribute mismatch': 'ATTRIBUTE',
-  'Extra — no record': 'EXISTENCE',
-  'Relationship drift': 'RELATIONSHIP',
-  'Missing — no live peer': 'EXISTENCE'
-};
-const MATCH_OUTCOME_DEF: Record<string, string> = {
-  'Matched': 'The record’s identity, attributes and relationships all agree with the live network — no reconciliation action needed.',
-  'Attribute mismatch': 'The record exists and its identity matches, but one or more attribute values differ from what the live network reports.',
-  'Extra — no record': 'The live network reports an object that has no corresponding record in inventory.',
-  'Relationship drift': 'The record exists but its relationships — neighbours, parent/child links — no longer match what the live network reports.',
-  'Missing — no live peer': 'Inventory has a record for this object, but the live network no longer reports it.'
-};
+
 
 /* one-sentence explanations for the ⓘ beside a KPI or card title —
    plain language, never repeating the numbers already on screen */
@@ -158,23 +141,7 @@ function TargetBar({ value, target, min, max, hex, higherIsBetter, format }: {
   );
 }
 
-/* region × domain drift cell — a solid block on one blue intensity scale:
-   the thing compared across a row is severity, not which domain it is */
-const REGION_HEAT_STEPS = [50, 100, 200, 300, 400, 500, 600] as const;
-const REGION_HEAT_MAX = Math.max(...REGION_DISCREPANCY.flatMap(r => Object.values(r.drift)));
-function heatShade(v: number, max: number) {
-  const r = v / max;
-  return r > 0.9 ? 600 : r > 0.7 ? 500 : r > 0.5 ? 400 : r > 0.3 ? 300 : r > 0.15 ? 200 : r > 0.05 ? 100 : 50;
-}
-/* age histogram — one shade per bucket, oldest the darkest */
-const AGE_RAMP = [cv('blue', 200), cv('blue', 300), cv('blue', 400), cv('blue', 500), cv('blue', 700)];
 
-/* reconciliation-run bars share one scale across every domain (a 53% run is
-   visibly shorter than a 75% one), floored just under the lowest run so a
-   3-point move within a domain still shows */
-const CYCLE_PCTS = RECONCILE_CYCLE_ROWS.map(c => c.touchlessPct);
-const CYCLE_LO = Math.min(...CYCLE_PCTS) - 6, CYCLE_HI = Math.max(...CYCLE_PCTS) + 2;
-const cycleBarPx = (pct: number) => Math.round(8 + (pct - CYCLE_LO) / (CYCLE_HI - CYCLE_LO) * 40);
 
 export default function Insights() {
   const nav = useNavigate();
@@ -217,11 +184,8 @@ export default function Insights() {
   const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
   const objToday = OBJECTS_DAILY_VALUES[OBJECTS_DAILY_VALUES.length - 1].reduce((a, b) => a + b, 0);
-  const backlogOlder = BACKLOG_AGE.slice(3).reduce((a, b) => a + b.count, 0);
   const failedTargets = ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0);
-  const openTotal = DISCREPANCY_TYPES.reduce((a, r) => a + r.count, 0);
   const lastCycle = RECONCILE_CYCLE_ROWS[0];
-  const mttrMax = Math.max(...DOMAIN_TRUST_ROWS.map(d => d.mttrHours));
   const onKey = (fn: () => void) => (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
   };
