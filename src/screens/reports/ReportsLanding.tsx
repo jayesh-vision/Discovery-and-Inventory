@@ -57,7 +57,7 @@ function HeadlineTile({ spec }: { spec: TileSpec }) {
       <div className="rpt-tile-top">
         <span className="rpt-tile-t">{spec.title}</span>
         {def.state !== 'Current' && <Chip tone={STATE_TONE[def.state]}>{def.state}</Chip>}
-        <span onClick={e => e.stopPropagation()}><InfoTip text={`From “${def.name}” (${def.id}) · data as of ${def.lastRun}. Click the tile to open the report.`} /></span>
+        <span onClick={e => e.stopPropagation()}><InfoTip align="right" text={`From “${def.name}” (${def.id}) · data as of ${def.lastRun}. Click the tile to open the report.`} /></span>
       </div>
       <div className="rpt-tile-v num">{fmtValue(h.value, h.fmt)}</div>
       <div className="rpt-tile-sub">{sub}</div>

@@ -99,17 +99,12 @@ export function DrillBar({ from, label, onBack, onClear }: { from: string; label
    Drawn as a dot-and-stem SVG rather than an italic "i" character: at
    16px an italic serif "i" (KpiCard's original glyph) reads as a "?" to
    readers, so this one is shape-drawn to never be ambiguous. */
-export function InfoTip({ text, label }: { text: string; label?: string }) {
+export function InfoTip({ text, label, align }: { text: string; label?: string; align?: 'left' | 'right' }) {
   const [open, setOpen] = useState(false);
   const defRef = useRef<HTMLSpanElement>(null);
   /* the definition box is a fixed-width absolute box anchored to the icon's
-     left edge — fine near the left of a card, but an icon sitting near the
-     RIGHT edge (the last of several tiles in a row, say) pushes that box
-     straight past the viewport edge, spilling outside the page rather than
-     wrapping back over the card it's describing. Rather than hand-tune a
-     position per call site (there are 20+), measure the box against the
-     viewport every time it opens and nudge it back in — the one fix covers
-     every InfoTip in the app at once. */
+     edge. When align="right", it anchors to the right edge and extends leftwards.
+     We also measure against viewport margins to ensure it never spills outside. */
   const [shiftPx, setShiftPx] = useState(0);
   useLayoutEffect(() => {
     if (!open) { setShiftPx(0); return; }
@@ -152,7 +147,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         </svg>
       </span>
       {open && (
-        <span ref={defRef} className="info-tip-def" role="tooltip"
+        <span ref={defRef} className={`info-tip-def${align === 'right' ? ' is-right' : ''}`} role="tooltip"
           style={shiftPx ? { transform: `translateX(${shiftPx}px)` } : undefined}>
           {text}
         </span>

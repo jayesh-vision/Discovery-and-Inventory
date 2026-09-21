@@ -1984,6 +1984,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
   border-radius: var(--vw-radius-md); font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 13px; line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
   font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none; }
+.info-tip-def.is-right { left: auto; right: 0; }
 .kpi3-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; row-gap: 2px; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }
@@ -2276,11 +2277,12 @@ details[open] > summary .vw-tx-chevron {
 .rpt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--vw-space-md); }
 @media (max-width: 1000px) { .rpt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .rpt-tiles { grid-template-columns: 1fr; } }
-.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 150px; padding: 16px 18px 12px; overflow: hidden; cursor: pointer;
+.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 150px; padding: 16px 18px 12px; overflow: visible; cursor: pointer;
   background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg); transition: border-color .15s, box-shadow .15s; }
-.rpt-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--rpt-accent); }
-.rpt-tile:hover { border-color: var(--vw-color-blue-300); box-shadow: 0 6px 20px rgba(15,23,42,.07); }
+.rpt-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--rpt-accent); border-top-left-radius: inherit; border-top-right-radius: inherit; }
+.rpt-tile:hover, .rpt-tile:focus-within { border-color: var(--vw-color-blue-300); box-shadow: 0 6px 20px rgba(15,23,42,.07); z-index: 20; }
 .rpt-tile:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
+.rpt-tile .info-tip-def { left: auto; right: 0; }
 .rpt-tile-top { display: flex; align-items: center; gap: 8px; }
 .rpt-tile-t { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rpt-tile-v { margin-top: 8px; font-size: 1.75rem; line-height: 1.15; font-weight: 700; color: var(--vw-color-gray-900); letter-spacing: -.01em; }
