@@ -5,7 +5,7 @@ import type { ColorTone } from '../../data/ledger';
 import { DataGrid } from '../../components/grid/DataGrid';
 import { IcSearch } from '../../components/grid/icons';
 import {
-  type Audience, type ReportDef, type ReportModule, AUDIENCES, MODULE_LABEL, STATE_TONE, buildReport, fmtValue, reportDefById, reportsFor
+  type Audience, type ReportDef, type ReportModule, AUDIENCES, MODULE_LABEL, STATE_TONE, buildReport, fmtValue, reportDefById, reportsFor, formatReportDate
 } from '../../data/reports';
 import { REPORT_RUNS, RUN_STATUS_TONE, type ReportRun } from '../../data/reports/runs';
 import { AUDIENCE_GLYPH, ExportMenu, TrendSpark, VisualCard, reportPath } from './parts';
@@ -154,7 +154,7 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
   const audiences = AUDIENCES.map(a => ({ a, n: all.filter(r => r.audience === a).length })).filter(x => x.n);
   const runs = REPORT_RUNS.filter(r => r.module === module);
   const attention = all.filter(r => r.state !== 'Current').length;
-  const latest = all.map(r => r.lastRun.split(' ')[0]).sort((a, b) => Date.parse(b) - Date.parse(a))[0];
+  const latest = formatReportDate(new Date());
   const featureDef = reportDefById(FEATURE[module].id);
   const feature = useMemo(() => (featureDef ? buildReport(featureDef).visuals.find(v => v.title === FEATURE[module].visual) : undefined), [featureDef, module]);
 

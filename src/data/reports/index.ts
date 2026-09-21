@@ -3,7 +3,7 @@ import { DISCOVERY_BUILDERS } from './discovery';
 import { INVENTORY_BUILDERS } from './inventory';
 
 export * from './model';
-export { REPORT_DEFS, reportsFor, reportDefById } from './catalog';
+export { REPORT_DEFS, reportsFor, reportDefById, formatReportDate, getRelativeReportDate } from './catalog';
 
 const BUILDERS = { ...DISCOVERY_BUILDERS, ...INVENTORY_BUILDERS };
 const cache = new Map<string, ReportContent>();
