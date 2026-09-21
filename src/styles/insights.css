@@ -24,9 +24,9 @@
   /* fluid rhythm: 16px page padding and gaps on a phone, growing to 32/24 on
      a wide desktop, with no step in between to land on */
   --ix-pad: clamp(0.75rem, 1.2vw + 0.4rem, 2rem);
-  --ix-gap: clamp(0.75rem, 0.8vw + 0.4rem, 1.5rem);
+  --ix-gap: clamp(0.75rem, 0.8vw + 0.4rem, 1.25rem);
   gap: var(--ix-gap);
-  padding: var(--ix-pad) var(--ix-pad) calc(var(--ix-pad) + 0.5rem);
+  padding: 1.25rem var(--ix-pad) calc(var(--ix-pad) + 0.5rem);
   color: var(--ix-text);
   font-size: 0.8125rem;
 }
@@ -35,7 +35,7 @@
 
 /* ── page header ──────────────────────────────────────────────────────── */
 .ix-head { display: flex; align-items: center; width: 100%;
-  padding: var(--vw-space-lg) 0; border-bottom: 1px solid var(--ix-border);
+  padding: 0; margin: 0; border-bottom: none;
   container-type: inline-size; }
 .ix-head > div:first-child { min-width: 0; flex: 1 1 22rem; }
 .ix-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ix-muted); }
