@@ -13094,8 +13094,87 @@ function nodeLinksRouter(N) {
       </div>`; })()}`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
 }
 
+/* the 5 highest-bandwidth instances on this node, enriched with a
+   customer ID / city / plan tier / active-service count purely for
+   display — deterministic per node (nint/nrand seeded on N.name, the
+   same idiom every other synthesised figure in this file uses), never
+   independent of the real instance it's describing (cust/type/bw/util
+   all come straight from N.instances, only the extra display fields are
+   new). Index range 1800+ is unused anywhere else in app-node.js's
+   svcTypes/instances (which run through ~1700), so it can't collide. */
+const SVC_CUST_CITY = [['Mumbai', 'Maharashtra'], ['Bangalore', 'Karnataka'], ['Delhi', 'NCR'],
+  ['Hyderabad', 'Telangana'], ['Chennai', 'Tamil Nadu'], ['Pune', 'Maharashtra'],
+  ['Kolkata', 'West Bengal'], ['Ahmedabad', 'Gujarat']];
+const SVC_PLAN_TIER = ['Premium', 'Enterprise', 'Business'];
+function nodePremiumCustomers(N) {
+  const top = [...N.instances].sort((a, b) => b.util - a.util).slice(0, 5).map((r, i) => {
+    const [city, state] = SVC_CUST_CITY[i % SVC_CUST_CITY.length];
+    return {
+      ...r, city, state,
+      custId: `CUST-${nint(N.name, 1800 + i, 1000, 9999)}`,
+      plan: `${SVC_PLAN_TIER[nint(N.name, 1810 + i, 0, SVC_PLAN_TIER.length - 1)]} ${r.type}`,
+      activeCount: nint(N.name, 1820 + i, 3, 10)
+    };
+  });
+  const totalServices = top.reduce((a, c) => a + c.activeCount, 0);
+  const avgUtil = +(top.reduce((a, c) => a + c.util, 0) / top.length).toFixed(1);
+  const growth = nint(N.name, 1830, 6, 16);
+  return { top, totalServices, avgUtil, growth };
+}
+function svcIconBox(tone, path) {
+  return `<div style="width:34px;height:34px;border-radius:8px;background:${cv(tone,50)};color:${cv(tone,600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg></div>`;
+}
+
+function nodeTopCustomersRouter(N) {
+  const { top, totalServices, avgUtil, growth } = nodePremiumCustomers(N);
+  return `
+    <div class="row vw-items-center" style="gap:10px;margin-bottom:var(--vw-space-md)">
+      ${svcIconBox('sky', '<circle cx="9" cy="7" r="4"/><path d="M17 11a4 4 0 1 0-3-6.7"/><path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>')}
+      <div><span class="vw-card-title-sm">Top 5 premium customers</span><br>
+        <span class="vw-card-metric-label-sub">Highest revenue generators by device and service usage</span></div>
+    </div>
+    <div class="stack-s">
+      ${top.map((c, i) => `
+        <div class="vw-card-child" style="padding:var(--vw-space-md)">
+          <div class="row" style="gap:10px;align-items:center;margin-bottom:10px">
+            <span style="width:26px;height:26px;border-radius:50%;background:${cv('sky',500)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600;flex-shrink:0">#${i + 1}</span>
+            <div class="stack-x" style="gap:1px">
+              <div class="row" style="gap:6px;align-items:center">
+                <span class="vw-value" style="font-weight:600">${c.cust}</span>${chip(c.custId, 'neutral')}
+              </div>
+              <span class="vw-card-metric-label-sub">${c.city}, ${c.state}</span>
+            </div>
+          </div>
+          <div class="vw-grid vw-grid-cols-4 vw-gap-md">
+            <div class="stack-x"><span class="nv-hk">Service plan</span><span class="vw-value">${c.plan}</span></div>
+            <div class="stack-x"><span class="nv-hk">Bandwidth</span><span class="vw-value">${c.bw}</span></div>
+            <div class="stack-x"><span class="nv-hk">Utilization</span>
+              <span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
+                <span class="hbar-fill" style="display:block;width:${c.util}%;background:${cv(c.util>90?'red':c.util>75?'amber':'emerald',400)}"></span></span>
+                <span class="num">${c.util}%</span></span>
+            </div>
+            <div class="stack-x"><span class="nv-hk">Active services</span><span class="vw-value" style="color:${cv('sky',600)}">${c.activeCount} Services</span></div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="vw-card-footer-divider row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-md)">
+      <div class="stack-x"><span class="nv-hk">Avg. utilization</span><span class="vw-value num">${avgUtil}%</span></div>
+      <div class="stack-x"><span class="nv-hk">Total services</span><span class="vw-value num">${totalServices} Active</span></div>
+      <div class="stack-x"><span class="nv-hk">Growth trend</span><span class="vw-value num" style="color:${cv('emerald',600)}">+${growth}% Avg</span></div>
+    </div>`;
+}
+
 function nodeServicesRouter(N) {
   const rows = N.instances;
+  const byCount = [...N.svcTypes].sort((a, b) => b.c - a.c);
+  const [topType, secondType] = byCount;
+  const healthyType = N.svcTypes.find(t => t.deg === 0 && t.dn === 0) || N.svcTypes[0];
+  const degradedRow = rows.find(r => r.st === 'Degraded');
+  const atRisk = rows.filter(r => r.util > 88).sort((a, b) => b.util - a.util);
+  const { top: premium, growth } = nodePremiumCustomers(N);
+  const stable = [...premium].sort((a, b) => b.util - a.util)[Math.floor(premium.length / 2)];
+  const churn = [...premium].sort((a, b) => a.up - b.up)[0];
   return card(`
     ${headSm('Network services')}
     <div class="vw-grid vw-grid-cols-5 vw-gap-md" style="margin-top:var(--vw-space-md)">
@@ -13123,40 +13202,66 @@ function nodeServicesRouter(N) {
     </div>
 
     <div class="nv-svc-split">
-      <div class="cx-panel grow">
-        <div class="row vw-justify-between vw-items-baseline cx-panel-head">
-          <span class="eyebrow">All service instances</span>
-          <span class="vw-card-metric-label-sub">${rows.length} instances</span>
+      <div class="stack-s grow">
+        <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
+          <div class="row vw-justify-between vw-items-baseline cx-panel-head">
+            <span class="eyebrow">All service instances</span>
+            <span class="vw-card-metric-label-sub">${rows.length} instances</span>
+          </div>
+          ${table([{t:'Service ID'},{t:'Type'},{t:'Customer'},{t:'Status'},{t:'Bandwidth'},
+                   {t:'Utilisation',r:true},{t:'SLA target',r:true},{t:'Uptime',r:true}],
+            rows.map(r => [
+              `<span class="mono">${r.id}</span>`,
+              chip(r.type, r.type === 'L3VPN' ? 'info' : r.type === 'L2VPN' ? 'purple' : 'neutral'),
+              `<span class="vw-value">${r.cust}</span><br><span class="vw-card-metric-label-sub mono">${r.ifc}</span>`,
+              chip(r.st, r.st === 'Active' ? 'success' : r.st === 'Degraded' ? 'warning' : 'error'),
+              `<span class="mono">${r.bw}</span>`,
+              `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
+                <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util>90?'red':r.util>75?'amber':'emerald',400)}"></span></span>${r.util}%</span>`,
+              `${r.sla}%`, `${r.up}%`
+            ]), '',
+            () => [])}
         </div>
-        ${table([{t:'Service ID'},{t:'Type'},{t:'Customer'},{t:'Status'},{t:'Bandwidth'},
-                 {t:'Utilisation',r:true},{t:'SLA target',r:true},{t:'Uptime',r:true}],
-          rows.map(r => [
-            `<span class="mono">${r.id}</span>`,
-            chip(r.type, r.type === 'L3VPN' ? 'info' : r.type === 'L2VPN' ? 'purple' : 'neutral'),
-            `<span class="vw-value">${r.cust}</span><br><span class="vw-card-metric-label-sub mono">${r.ifc}</span>`,
-            chip(r.st, r.st === 'Active' ? 'success' : r.st === 'Degraded' ? 'warning' : 'error'),
-            `<span class="mono">${r.bw}</span>`,
-            `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
-              <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util>90?'red':r.util>75?'amber':'emerald',400)}"></span></span>${r.util}%</span>`,
-            `${r.sla}%`, `${r.up}%`
-          ]), '',
-          () => [])}
+        <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
+          ${nodeTopCustomersRouter(N)}
+        </div>
       </div>
-      ${nvAI('AI service analytics', 'Intelligent service optimisation', 'red', [
-        { t:'Top 5 premium customers', s:'Highest committed bandwidth on this node',
-          d: N.instances.slice(0, 5).map((r, i) =>
-              `${i + 1} · <strong>${r.cust}</strong> — ${r.bw}, ${r.util}% utilised, ${r.type}`).join('<br>') },
-        { t:'SLA risk alert', s:'Predictive analysis', chip:['Risk','error'],
-          d:`${rows.filter(r => r.util > 88).length} services are running above 88% utilisation. At the current growth rate the 99.9% SLA is at risk within the quarter.` },
-        { t:'Growth forecast', s:'Next 30 days', chip:['+18%','info'],
-          d:`L3VPN traffic is growing faster than the estate average. Provision headroom on the attachment interfaces before the next cycle.` },
-        { t:'Capacity insight', s:'Bandwidth optimisation', chip:['+24%','warning'],
-          d:`Peak bandwidth on the top two customers is concentrated inside a four-hour window. Shaping would recover measurable headroom.` },
-        { t:'Top revenue contribution', s:'Customer analytics', chip:['High priority','error'],
-          d:`The top three customers on this node account for a disproportionate share of committed bandwidth. Any outage here is commercially material.` },
-        { t:'Churn risk detection', s:'Behavioural signal',
-          d:`One customer has recorded repeated degradation events in the last 30 days. Worth a proactive review before renewal.` }
-      ])}
+      <div class="stack-s" style="width:min(21rem, 100%);flex-shrink:0">
+        ${nvAI('Next 30 days', '', 'slate', [
+          { t:`${topType.n} Services`, s:'Growth forecast', chip:[`+${nint(N.name, 1840, 10, 22)}%`,'info'],
+            d:`Predicted traffic growth based on historical patterns. ${topType.c} service${topType.c > 1 ? 's' : ''} need capacity review.` },
+          { t:`${secondType.n} Services`, s:'Growth forecast', chip:[`+${nint(N.name, 1841, 14, 26)}%`,'warning'],
+            d:`Peak growth expected in the ${secondType.n} segment. Consider proactive capacity planning.` }
+        ])}
+        ${nvAI('Quality insights', 'Service health', 'slate', [
+          { t:`${healthyType.n} Services Optimal`, s:'',
+            d:`All ${healthyType.n} services operating at ${healthyType.sla}% SLA with excellent performance metrics.` },
+          ...(degradedRow ? [{ t:`${degradedRow.type} Path Issues`, s:'',
+            d:`${degradedRow.id} experiencing intermittent degradation. Path diagnostics recommended.` }] : [])
+        ])}
+        ${nvAI('Capacity alerts', `${atRisk.length} customer${atRisk.length === 1 ? '' : 's'} at risk`, 'red',
+          atRisk.length ? atRisk.slice(0, 2).map(r => ({
+            t:`${r.cust} - Urgent`, s:'',
+            d:`${r.type} at ${r.util}% capacity. Peak usage growing week over week. Recommend proactive ${r.bw} upgrade within 5 days.`,
+            chip:['High priority','error']
+          })) : [{ t:'No customers at risk', s:'', d:'Every service instance is currently under the 88% utilisation threshold.' }])}
+        ${nvAI('Behavior insights', 'Customer patterns', 'slate', [
+          { t:'Top 5 Revenue Contributors', s:'Customer analytics',
+            d:`Average growth rate of ${growth}% MoM across top customers. All on premium service plans with high satisfaction.` },
+          { t:`${stable.cust} - High Value`, s:'',
+            d:`${stable.type} customer showing a stable ${stable.util}% usage pattern. Excellent retention candidate — consider loyalty program enrollment.` },
+          { t:'Churn Risk Detection', s:'',
+            d:`${churn.cust} shows uptime dipping to ${churn.up}% over 30 days with service degradation events. Schedule an account review.` }
+        ])}
+        ${nvAI('AI recommendations', 'Priority actions', 'slate', [
+          { t:'1. Immediate Capacity Upgrade', s:'',
+            d: atRisk.length ? `Contact ${atRisk[0].cust} within 24hrs for emergency capacity upgrade to prevent SLA breach.` : 'No immediate capacity action required.' },
+          { t:'2. Upsell Opportunity', s:'',
+            d:`Schedule an upsell meeting with ${premium[0].cust} — highest revenue growth potential.` },
+          { t:'3. Retention Action', s:'',
+            d:`Conduct a retention call with ${churn.cust} to address degradation concerns.` }
+        ])}
+      </div>
     </div>`);
 }
 
