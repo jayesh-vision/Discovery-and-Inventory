@@ -81,8 +81,8 @@ export default function PhysicalResources() {
      the row's own location correctly for every class) but not a link that
      opens the wrong element. */
   const rowActions = (r: Row): Action[] => [
-    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name })) }] : []),
-    ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}`) }]),
+    ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip })) }] : []),
+    ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}`) }]),
     { l: 'Site info', onClick: () => openSite(r.loc) }
   ];
 
@@ -136,7 +136,7 @@ export default function PhysicalResources() {
               <Chip tone={tone}>{label}</Chip>,
               <>{cls === 'router'
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
-                    onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}`)}>{r.name}</button>
+                    onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}`)}>{r.name}</button>
                 : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
               <Mono>{r.os}</Mono>,

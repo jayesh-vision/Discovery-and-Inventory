@@ -1282,7 +1282,8 @@ body {
 .nst-input-shell.nst-input--error:focus-within { box-shadow: 0 0 0 3px var(--vw-color-red-100); }
 .nst-input-shell.nst-input--disabled     { background: var(--vw-color-gray-50); border-color: var(--vw-color-gray-200); cursor: not-allowed; }
 
-.nst-input-shell input {
+.nst-input-shell input,
+.nst-input-shell select {
   flex: 1;
   border: none;
   outline: none;
@@ -1295,7 +1296,8 @@ body {
 }
 
 .nst-input-shell input::placeholder { color: var(--vw-color-gray-400); }
-.nst-input-shell input:disabled     { cursor: not-allowed; color: var(--vw-color-gray-300); }
+.nst-input-shell input:disabled,
+.nst-input-shell select:disabled    { cursor: not-allowed; color: var(--vw-color-gray-300); }
 
 .nst-input-shell .nst-input-icon {
   flex-shrink: 0;

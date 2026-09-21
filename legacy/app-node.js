@@ -9,6 +9,13 @@
    will draw the wrong conclusion about how fresh it is.
    ═══════════════════════════════════════════════════════ */
 let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
+/* the row that opened Node view also knows its own IP — several seeded
+   arrays (PHY, a site's own roster, reconciliation rows) are independent,
+   hand-authored data and can each hold a same-named record with different
+   field values, so name alone doesn't always pick the row that was actually
+   clicked. When the caller has it, IP is specific enough in this data to
+   break that tie; see nodeRecord() below. */
+let NODE_IP = null;
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */
@@ -25,14 +32,22 @@ const nrand = (s, i, lo, hi) => lo + ((nseed(s) + i * 2654435761) % 100000) / 10
 const nint = (s, i, lo, hi) => Math.round(nrand(s, i, lo, hi));
 
 /* find the element wherever it lives in the estate */
-function nodeRecord(name) {
+function nodeRecord(name, wantIp) {
   if (!name) name = NODE_ID;
   const rawName = String(name);
   const clean = decodeURIComponent(rawName).trim().toUpperCase();
+  const cleanIp = wantIp ? decodeURIComponent(String(wantIp)).trim() : null;
+  /* PHY, a site's own roster and REC_ROWS are separate, hand-authored arrays
+     that can each hold a record sharing this name — prefer the one whose IP
+     also matches the row that was actually clicked, within each array,
+     before falling back to a bare name match (unchanged behaviour when no
+     ip was passed at all, e.g. every entry point that predates this). */
+  const findByNameThenIp = arr => (cleanIp && arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean && x.ip === cleanIp))
+    || arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean);
 
   if (typeof PHY !== 'undefined' && PHY) {
     for (const k of Object.keys(PHY)) {
-      const found = (PHY[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+      const found = findByNameThenIp(PHY[k] || []);
       if (found) return { ...found, cls: k };
     }
   }
@@ -42,7 +57,7 @@ function nodeRecord(name) {
       if (typeof siteNE === 'function') {
         const neObj = siteNE(loc.id, loc.ne, loc.disc);
         for (const k of Object.keys(neObj)) {
-          const found = (neObj[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+          const found = findByNameThenIp(neObj[k] || []);
           if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id };
         }
       }
@@ -123,8 +138,8 @@ const NODE_CLASS = {
   enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:false }
 };
 
-function nodeOf(name) {
-  const r = nodeRecord(name), cls = r.cls, meta = NODE_CLASS[cls] || NODE_CLASS.router;
+function nodeOf(name, wantIp) {
+  const r = nodeRecord(name, wantIp), cls = r.cls, meta = NODE_CLASS[cls] || NODE_CLASS.router;
   const s = name, sw = cls === 'switch';
   const ifTotal = sw ? nint(s, 1, 336, 384) : nint(s, 1, 24, 48);
   const ifUp    = Math.round(ifTotal * nrand(s, 2, 0.6, 0.97));

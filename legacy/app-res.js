@@ -1,5 +1,8 @@
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+/* the row that opened this page also knows its own IP — see NODE_IP in
+   app-node.js for why that disambiguates a same-named record correctly */
+let RES_IP = null;
 let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
 let RES_SVC_TAB = 'l3vpn', RES_SVC_VIEW = null; /* which tab, and { tab, i } of the row shown in the service-linking dialog, or null — see resSvcs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
@@ -37,7 +40,7 @@ function resOverview() {
      when RES_ID is one of the curated samples, nodeRecord()'s resolution —
      the same one Node View uses — otherwise), so this table always names
      the element the reader is actually looking at. */
-  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID);
+  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID, RES_IP);
   const provLoc = LOCATIONS.find(l => l.id === provR.loc);
   const PROV_LIVE = [
     { f: 'Management IP', v: provR.ip,    src: 'Scope',                ok: true },
@@ -667,10 +670,10 @@ function viewResource() {
      "MH-DC-001-PE-T4-05" actually live, never in the small hand-authored
      PHY.router list), then finally synthesises a plausible record so it
      always resolves to *something* for RES_ID specifically. */
-  const rec = nodeRecord(RES_ID);
-  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
-  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
-  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+  const rec = nodeRecord(RES_ID, RES_IP);
+  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID, RES_IP));
+  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID, RES_IP));
+  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID, RES_IP));
 
   /* a curated PHY.router entry wins when RES_ID happens to be one of the
      ~30 named samples (it carries more hand-authored depth) — everything

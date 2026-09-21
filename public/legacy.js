@@ -5680,7 +5680,7 @@ function locList() {
         '',
         [], 'location')}
 
-      ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
+      ${table([{t:'Status', plain:true},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
         locRows().map(l => {
           const pct = l.ne ? Math.round(l.disc / l.ne * 100) : 0;
@@ -5695,7 +5695,7 @@ function locList() {
               <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${pct}%;background:${cv(tone,400)}"></span></span>
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
-        }), '',
+        }), 'chip-auto',
         i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })],
         i => ({ 'data-site': locRows()[i].id }))}`)}`;
 }
@@ -5914,10 +5914,10 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
+    ? [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
+    ? [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
@@ -7754,6 +7754,9 @@ function viewReports() {
 
 /* ═══ Resource detail ═══ */
 let RES_ID = 'NDLS-J960-P_R1-T1-NR', RES_TAB = 'overview', IF_FILTER = 'all', NBR_TAB = 'lldp', RES_HIST_FILTER = 'All';
+/* the row that opened this page also knows its own IP — see NODE_IP in
+   app-node.js for why that disambiguates a same-named record correctly */
+let RES_IP = null;
 let NBR_VIEW = null; /* { tab, i } of the row shown in the neighbour-details dialog, or null — see resNbrs() */
 let RES_SVC_TAB = 'l3vpn', RES_SVC_VIEW = null; /* which tab, and { tab, i } of the row shown in the service-linking dialog, or null — see resSvcs() */
 let RES_ENB_TAB = 'cell'; /* which tab is open on an eNodeB's own View details page — see viewEnodebResource() */
@@ -7791,7 +7794,7 @@ function resOverview() {
      when RES_ID is one of the curated samples, nodeRecord()'s resolution —
      the same one Node View uses — otherwise), so this table always names
      the element the reader is actually looking at. */
-  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID);
+  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID, RES_IP);
   const provLoc = LOCATIONS.find(l => l.id === provR.loc);
   const PROV_LIVE = [
     { f: 'Management IP', v: provR.ip,    src: 'Scope',                ok: true },
@@ -8421,10 +8424,10 @@ function viewResource() {
      "MH-DC-001-PE-T4-05" actually live, never in the small hand-authored
      PHY.router list), then finally synthesises a plausible record so it
      always resolves to *something* for RES_ID specifically. */
-  const rec = nodeRecord(RES_ID);
-  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID));
-  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID));
-  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID));
+  const rec = nodeRecord(RES_ID, RES_IP);
+  if (rec.cls === 'enodeb') return viewEnodebResource(nodeOf(RES_ID, RES_IP));
+  if (rec.cls === 'switch') return viewSwitchResource(nodeOf(RES_ID, RES_IP));
+  if (rec.cls === 'dwdm') return viewDwdmResource(nodeOf(RES_ID, RES_IP));
 
   /* a curated PHY.router entry wins when RES_ID happens to be one of the
      ~30 named samples (it carries more hand-authored depth) — everything
@@ -11589,6 +11592,13 @@ function viewOpex() {
    will draw the wrong conclusion about how fresh it is.
    ═══════════════════════════════════════════════════════ */
 let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
+/* the row that opened Node view also knows its own IP — several seeded
+   arrays (PHY, a site's own roster, reconciliation rows) are independent,
+   hand-authored data and can each hold a same-named record with different
+   field values, so name alone doesn't always pick the row that was actually
+   clicked. When the caller has it, IP is specific enough in this data to
+   break that tie; see nodeRecord() below. */
+let NODE_IP = null;
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */
@@ -11605,14 +11615,22 @@ const nrand = (s, i, lo, hi) => lo + ((nseed(s) + i * 2654435761) % 100000) / 10
 const nint = (s, i, lo, hi) => Math.round(nrand(s, i, lo, hi));
 
 /* find the element wherever it lives in the estate */
-function nodeRecord(name) {
+function nodeRecord(name, wantIp) {
   if (!name) name = NODE_ID;
   const rawName = String(name);
   const clean = decodeURIComponent(rawName).trim().toUpperCase();
+  const cleanIp = wantIp ? decodeURIComponent(String(wantIp)).trim() : null;
+  /* PHY, a site's own roster and REC_ROWS are separate, hand-authored arrays
+     that can each hold a record sharing this name — prefer the one whose IP
+     also matches the row that was actually clicked, within each array,
+     before falling back to a bare name match (unchanged behaviour when no
+     ip was passed at all, e.g. every entry point that predates this). */
+  const findByNameThenIp = arr => (cleanIp && arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean && x.ip === cleanIp))
+    || arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean);
 
   if (typeof PHY !== 'undefined' && PHY) {
     for (const k of Object.keys(PHY)) {
-      const found = (PHY[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+      const found = findByNameThenIp(PHY[k] || []);
       if (found) return { ...found, cls: k };
     }
   }
@@ -11622,7 +11640,7 @@ function nodeRecord(name) {
       if (typeof siteNE === 'function') {
         const neObj = siteNE(loc.id, loc.ne, loc.disc);
         for (const k of Object.keys(neObj)) {
-          const found = (neObj[k] || []).find(x => x.name && String(x.name).trim().toUpperCase() === clean);
+          const found = findByNameThenIp(neObj[k] || []);
           if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id };
         }
       }
@@ -11703,8 +11721,8 @@ const NODE_CLASS = {
   enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:false }
 };
 
-function nodeOf(name) {
-  const r = nodeRecord(name), cls = r.cls, meta = NODE_CLASS[cls] || NODE_CLASS.router;
+function nodeOf(name, wantIp) {
+  const r = nodeRecord(name, wantIp), cls = r.cls, meta = NODE_CLASS[cls] || NODE_CLASS.router;
   const s = name, sw = cls === 'switch';
   const ifTotal = sw ? nint(s, 1, 336, 384) : nint(s, 1, 24, 48);
   const ifUp    = Math.round(ifTotal * nrand(s, 2, 0.6, 0.97));
@@ -14167,7 +14185,7 @@ const NODE_TABS = {
 };
 
 function viewNode() {
-  const N = nodeOf(NODE_ID);
+  const N = nodeOf(NODE_ID, NODE_IP);
   if (!N.live) {
     /* no NODE_VIEW_CLASSES member is live:false today (eNodeB joined
        Router/Switch/DWDM once it got its own seeded assurance model — see
@@ -14335,9 +14353,17 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  /* A plain, first-time drill that stays on the same screen (view === CURRENT,
+     no richer curDrill/inherited state above) needs no "from" at all — the
+     breadcrumb's own single-crumb-chain logic already renders "Location >
+     All locations" correctly from `drill` alone. Falling back to crumbName
+     here would instead label the origin as the screen's own crumb, which
+     Topbar.tsx's cross-section "from" handling then reads as a self-referencing
+     hop and collapses to a bare, non-clickable label. Only a genuine jump to a
+     *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
-    || inheritedFrom || crumbName;
+    || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -14431,6 +14457,7 @@ function applyDrillQuery(view, q, label) {
     const targetRes = p.name || (label ? label.trim() : null);
     if (targetRes) {
       RES_ID = decodeURIComponent(targetRes).trim();
+      RES_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
       /* most arrivals (row actions, breadcrumb) land on Overview same as
          always; an explicit ?tab= (Node linking's wire, drilling straight to
          the interface a link's own Source/Destination NE carries) opens
@@ -14452,6 +14479,7 @@ function applyDrillQuery(view, q, label) {
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
+      NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_ALERT_SEV = 'All severity';
@@ -14557,7 +14585,7 @@ function go(k) {
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
-    : k === 'resource' ? { name: RES_ID } : k === 'node' ? { name: NODE_ID } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
+    : k === 'resource' ? { name: RES_ID, ip: RES_IP } : k === 'node' ? { name: NODE_ID, ip: NODE_IP } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
@@ -15297,8 +15325,8 @@ window.__nsLegacy = {
       setTimeout(() => { __siteSectionPending = null; }, 0); }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
-    if (k === 'resource' && p.name) { RES_ID = p.name; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; }
+    if (k === 'resource' && p.name) { RES_ID = p.name; RES_IP = p.ip || null; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
+    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_IP = p.ip || null; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }

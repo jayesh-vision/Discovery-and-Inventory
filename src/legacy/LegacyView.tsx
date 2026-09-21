@@ -102,6 +102,16 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     const from = sp.get('from') ?? 'Inventory';
     const back = sp.get('back') ?? 'physical';
     sp.delete('drill'); sp.delete('from'); sp.delete('back');
+    /* :name/:id live in the route path, not the query string, so a bare
+       loc.search never carries them — applyDrillQuery() then can't find its
+       own p.name/p.id and, for a view like 'node' with a label-based
+       fallback, derives the wrong identifier from the drill label instead
+       (e.g. "Router · X" instead of "X"), silently overwriting the correct
+       id setParams() just set from these same route params below. Folding
+       them into q keeps the two bridges in agreement. */
+    for (const [k, v] of Object.entries(params as Record<string, string>)) {
+      if (v && !sp.has(k)) sp.set(k, v);
+    }
     const q = sp.toString();
 
     const combinedParams: Record<string, string> = {

@@ -100,9 +100,17 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  /* A plain, first-time drill that stays on the same screen (view === CURRENT,
+     no richer curDrill/inherited state above) needs no "from" at all — the
+     breadcrumb's own single-crumb-chain logic already renders "Location >
+     All locations" correctly from `drill` alone. Falling back to crumbName
+     here would instead label the origin as the screen's own crumb, which
+     Topbar.tsx's cross-section "from" handling then reads as a self-referencing
+     hop and collapses to a bare, non-clickable label. Only a genuine jump to a
+     *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
-    || inheritedFrom || crumbName;
+    || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -196,6 +204,7 @@ function applyDrillQuery(view, q, label) {
     const targetRes = p.name || (label ? label.trim() : null);
     if (targetRes) {
       RES_ID = decodeURIComponent(targetRes).trim();
+      RES_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
       /* most arrivals (row actions, breadcrumb) land on Overview same as
          always; an explicit ?tab= (Node linking's wire, drilling straight to
          the interface a link's own Source/Destination NE carries) opens
@@ -217,6 +226,7 @@ function applyDrillQuery(view, q, label) {
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
+      NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_ALERT_SEV = 'All severity';

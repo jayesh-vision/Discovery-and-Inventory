@@ -1696,7 +1696,7 @@ const NODE_TABS = {
 };
 
 function viewNode() {
-  const N = nodeOf(NODE_ID);
+  const N = nodeOf(NODE_ID, NODE_IP);
   if (!N.live) {
     /* no NODE_VIEW_CLASSES member is live:false today (eNodeB joined
        Router/Switch/DWDM once it got its own seeded assurance model — see

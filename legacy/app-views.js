@@ -1694,7 +1694,7 @@ function locList() {
         '',
         [], 'location')}
 
-      ${table([{t:'Status'},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
+      ${table([{t:'Status', plain:true},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
         locRows().map(l => {
           const pct = l.ne ? Math.round(l.disc / l.ne * 100) : 0;
@@ -1709,7 +1709,7 @@ function locList() {
               <span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${pct}%;background:${cv(tone,400)}"></span></span>
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
-        }), '',
+        }), 'chip-auto',
         i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })],
         i => ({ 'data-site': locRows()[i].id }))}`)}`;
 }
@@ -1928,10 +1928,10 @@ function viewSite() {
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
+    ? [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'MAC address'},{t:'Serial number'},{t:'Template'},{t:'Vendor'},{t:'Source'}]
     : SITE_TAB === 'dwdm'
-    ? [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
-    : [{t:'Status'},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
+    ? [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Type'},{t:'Vendor'},{t:'Software version'},{t:'Serial number'},{t:'Shelf · slot'},{t:'Source'}]
+    : [{t:'Status', plain:true},{t:'Name'},{t:'IP address'},{t:'Model'},{t:'OS version'},{t:'Serial number'},{t:'Vendor'},{t:'Rack · U'},{t:'Source'}];
 
   const cell = r => SITE_TAB === 'switch'
     ? [rst(r.st === 'dup' ? 'drift' : r.st), `<span class="vw-value">${r.name}</span>`, `<span class="mono">${r.ip}</span>`,
