@@ -152,7 +152,7 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
   const setAudience = (a: Audience | 'All') => {
     const next = new URLSearchParams(sp);
     if (a === 'All') next.delete('audience'); else next.set('audience', a);
-    setSp(next, { replace: true });
+    setSp(next, { replace: true, preventScrollReset: true });
   };
   const needle = q.trim().toLowerCase();
   const shown = all.filter(r => (audience === 'All' || r.audience === audience)
@@ -204,9 +204,9 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
         </div>
       </div>
       <div className="rpt-filters" role="group" aria-label="Filter by audience">
-        <button className={`rpt-filter${audience === 'All' ? ' is-on' : ''}`} onClick={() => setAudience('All')}>All audiences <span className="num">{all.length}</span></button>
+        <button type="button" className={`rpt-filter${audience === 'All' ? ' is-on' : ''}`} onClick={() => setAudience('All')}>All audiences <span className="num">{all.length}</span></button>
         {audiences.map(({ a, n }) => (
-          <button key={a} className={`rpt-filter${audience === a ? ' is-on' : ''}`} onClick={() => setAudience(audience === a ? 'All' : a)}>
+          <button type="button" key={a} className={`rpt-filter${audience === a ? ' is-on' : ''}`} onClick={() => setAudience(audience === a ? 'All' : a)}>
             <span aria-hidden>{AUDIENCE_GLYPH[a]}</span>{a} <span className="num">{n}</span>
           </button>
         ))}
@@ -215,7 +215,7 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
       {shown.length ? (
         <div className="rpt-grid">{shown.map(d => <ReportCard key={d.id} def={d} />)}</div>
       ) : (
-        <Card><div className="tbl-empty">No reports match. <button className="nst-btn nst-btn--xs" onClick={() => { setQ(''); setAudience('All'); }}>Show all</button></div></Card>
+        <Card><div className="tbl-empty">No reports match. <button type="button" className="nst-btn nst-btn--xs" onClick={() => { setQ(''); setAudience('All'); }}>Show all</button></div></Card>
       )}
 
       <Card>

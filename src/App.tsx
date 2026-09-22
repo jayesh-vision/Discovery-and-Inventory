@@ -6,10 +6,10 @@ import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
 
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [pathname, search]);
+  }, [pathname]);
   return null;
 }
 
