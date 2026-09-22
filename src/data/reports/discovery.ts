@@ -174,7 +174,7 @@ const backlog: ReportBuilder = () => {
         { key: 'count', header: 'Open', fmt: 'num', right: true }, { key: 'share', header: 'Share of backlog', fmt: 'pct', right: true }, { key: 'age', header: 'Age band' }
       ],
       rows: [...DISCREPANCY_TYPES].sort((a, b) => b.count - a.count).map(t => ({
-        id: t.label, link: { key: 'discrepancydetails', q: `q=${encodeURIComponent(t.label)}` },
+        id: t.label, link: { key: 'discrepancydetails', q: `type=${encodeURIComponent(t.label)}` },
         cells: { type: t.label, domain: t.domain, category: t.category, count: t.count, share: r1(pct(t.count, open)), age: t.ageBand }
       })),
       facet: 'domain', empty: 'No open discrepancies.'

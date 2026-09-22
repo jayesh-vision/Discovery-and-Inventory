@@ -238,7 +238,7 @@ export default function Reconcile() {
             <div className="ix-bars" style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
               {DISCREPANCY_TYPES.map(r => (
                 <button key={r.label} type="button" className="ix-bar" title={`View ${r.label} (${DOMAIN_LABEL[r.domain]})`}
-                  onClick={() => toDiscrepancies({ q: r.label })}>
+                  onClick={() => toDiscrepancies({ type: r.label })}>
                   <span className="ix-bar-l"><i style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[r.domain], flexShrink: 0 }} /><span>{r.label}</span></span>
                   <span className="ix-bar-c">{r.category}</span>
                   <span className="ix-bar-t"><span className="ix-bar-f" style={{ width: `${(r.count / DISCREPANCY_TYPES[0].count * 100).toFixed(1)}%`, background: DOMAIN_HEX[r.domain] }} /></span>

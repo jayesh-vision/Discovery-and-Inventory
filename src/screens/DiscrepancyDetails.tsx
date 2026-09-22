@@ -29,15 +29,25 @@ export default function DiscrepancyDetails() {
   const urlDomain = parseDomainKey(sp.get('domain'));
   const urlCategory = isCategory(sp.get('category')) ? sp.get('category') as DiscrepancyCategory : undefined;
   const urlAge = isAgeBand(sp.get('age')) ? sp.get('age') as AgeBand : undefined;
-  const urlQ = sp.get('q') ?? '';
+
+  const rawType = sp.get('type') ?? '';
+  const rawQ = sp.get('q') ?? '';
+  const matchedType = DISCREPANCY_TYPES.find(t =>
+    t.label.toLowerCase() === rawType.trim().toLowerCase() ||
+    t.label.toLowerCase() === rawQ.trim().toLowerCase()
+  );
+  const urlType = matchedType ? matchedType.label : (rawType ? rawType : undefined);
+  /* Search box must be empty when navigating to a specific discrepancy type */
+  const urlQ = matchedType ? '' : rawQ;
 
   const defaultFilters = useMemo(() => {
     const f: Record<string, string> = {};
+    if (urlType) f['Discrepancy type'] = urlType;
     if (urlDomain) f.Domain = DOMAIN_LABEL[urlDomain];
     if (urlCategory) f.Category = urlCategory;
     if (urlAge) f.Age = AGE_LABEL[urlAge];
     return f;
-  }, [urlDomain, urlCategory, urlAge]);
+  }, [urlType, urlDomain, urlCategory, urlAge]);
 
   const [query, setQuery] = useState(urlQ);
   const [filters, setFilters] = useState<Record<string, string>>(defaultFilters);
@@ -72,6 +82,7 @@ export default function DiscrepancyDetails() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return allOpenDevices.filter(d => {
+      if (filters['Discrepancy type'] && d.issue !== filters['Discrepancy type']) return false;
       if (q && !(d.name.toLowerCase().includes(q) || d.ip.includes(q) || d.issue.toLowerCase().includes(q) || d.region.toLowerCase().includes(q))) return false;
       if (!domainFilterMatches(d.domain, filters.Domain)) return false;
       if (filters.Category && d.category !== filters.Category) return false;
@@ -80,14 +91,35 @@ export default function DiscrepancyDetails() {
     });
   }, [allOpenDevices, query, filters]);
 
-  const total = allOpenDevices.length;
+  const activeType = filters['Discrepancy type'];
+  const activeTypeMeta = activeType ? DISCREPANCY_TYPES.find(t => t.label === activeType) : undefined;
+  const baseCount = useMemo(() => {
+    if (activeType) return allOpenDevices.filter(d => d.issue === activeType).length;
+    return allOpenDevices.length;
+  }, [allOpenDevices, activeType]);
+
   const shown = rows.length;
 
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Open discrepancies', v: String(total), s: 'across every domain', t: 'sky' },
-        { k: 'Shown here', v: String(shown), s: `${shown} of ${total} open discrepancies`, t: 'purple' }
+        activeType ? {
+          k: 'Discrepancy type',
+          v: String(baseCount),
+          s: `${activeType}${activeTypeMeta ? ` · ${DOMAIN_LABEL[activeTypeMeta.domain]}` : ''}`,
+          t: 'sky'
+        } : {
+          k: 'Open discrepancies',
+          v: String(allOpenDevices.length),
+          s: 'across every domain',
+          t: 'sky'
+        },
+        {
+          k: 'Shown here',
+          v: String(shown),
+          s: `${shown} of ${baseCount} ${activeType ? 'items' : 'open discrepancies'}`,
+          t: 'purple'
+        }
       ]} />
       <Card>
         <DataGrid<DiscrepancyDeviceRow> chipWidth="auto"
@@ -103,6 +135,7 @@ export default function DiscrepancyDetails() {
           resetKey={`${query}|${JSON.stringify(filters)}`}
           searchPlaceholder="Device, IP, discrepancy type..."
           filters={[
+            { n: 'Discrepancy type', o: DISCREPANCY_TYPES.map(t => t.label) },
             { n: 'Domain', o: DOMAIN_OPTIONS },
             { n: 'Category', o: CATEGORIES },
             { n: 'Age', o: AGE_BANDS.map(a => AGE_LABEL[a]) }
