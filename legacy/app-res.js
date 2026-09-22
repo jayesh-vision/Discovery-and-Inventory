@@ -291,9 +291,25 @@ function resSvcs() {
       <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
     </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
-    ${rows.length ? table([{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
-      rows.map(s => [chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
-        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), 'chip-auto', null,
+    ${rows.length ? table(t === 'l3vpn'
+      ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
+      : [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
+      rows.map(s => t === 'l3vpn' ? [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="mono">${s.rd}</span>`,
+        `<span class="mono">${s.rt || '—'}</span>${s.extraRt ? ` <span class="rt-badge">+${s.extraRt}</span>` : ''}`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `L3:${s.erp}`}</span>`,
+        s.cust
+      ] : [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="mono">${s.vcId || s.erp}</span>`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `L2:${s.erp}`}</span>`,
+        s.cust
+      ]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
            No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();

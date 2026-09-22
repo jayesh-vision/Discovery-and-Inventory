@@ -3398,6 +3398,7 @@ function viewLinks() {
   const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
   const isLldp = t === 'lldp';
   const isOspf = t === 'ospf';
+  const isIsis = t === 'isis';
 
   const lldpCols = [
     { t: 'Source IP address' },
@@ -3428,6 +3429,22 @@ function viewLinks() {
     { t: 'Area ID' }
   ];
 
+  const isisCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Source System ID' },
+    { t: 'Level' },
+    { t: 'Metric / Cost' },
+    { t: 'Circuit Type' },
+    { t: 'Destination IP address' },
+    { t: 'Destination NE' },
+    { t: 'Destination interface' },
+    { t: 'Neighbor System ID' },
+    { t: 'Link ID' },
+    { t: 'Area ID / NET' }
+  ];
+
   const defaultCols = [
     { t: 'Status', plain: true },
     { t: 'Source NE' },
@@ -3437,7 +3454,7 @@ function viewLinks() {
     { t: 'Link name' }
   ];
 
-  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : defaultCols;
+  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : isIsis ? isisCols : defaultCols;
 
   const tableRows = rows.map(r => {
     if (isLldp) {
@@ -3471,6 +3488,23 @@ function viewLinks() {
         `<span class="mono">${r.areaId || '—'}</span>`
       ];
     }
+    if (isIsis) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="mono">${r.sSysId || '—'}</span>`,
+        `<span class="num">${r.level || 'L2'}</span>`,
+        `<span class="num">${r.metric || '10'}</span>`,
+        r.circuitType || 'Point-to-Point',
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        `<span class="mono">${r.dif || '—'}</span>`,
+        `<span class="mono">${r.dSysId || '—'}</span>`,
+        `<span class="mono">${r.linkId || '—'}</span>`,
+        `<span class="mono">${r.areaId || '—'}</span>`
+      ];
+    }
     return [
       chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
       `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
@@ -3483,6 +3517,8 @@ function viewLinks() {
     ? 'Link name, Source interface, Destination interface'
     : isOspf
     ? 'Source OSPF IP, Destination IP address, Destination OSPF IP'
+    : isIsis
+    ? 'Source System ID, Neighbor System ID, Link ID, Area ID'
     : 'Source IP, source NE, destination NE, destination IP';
 
   const linkExtra = '';
@@ -3658,30 +3694,74 @@ function viewServices() {
         </div>`,
         [], 'services')}
       ${t === 'l2vpn'
-        ? table([{t:'Status', plain:true},{t:'Name'},{t:'VC ID'},{t:'Source IP address'},{t:'Source NE'},{t:'Source interface'},
-                 {t:'Source admin status'},{t:'Source operational status'},{t:'Destination IP address'},{t:'Destination NE'},
-                 {t:'Destination interface'},{t:'Destination admin status'},{t:'Destination operational status'},{t:'Link ID'}],
+        ? table([
+            { t: 'Name' },
+            { t: 'VC ID' },
+            { t: 'Discovery time' },
+            { t: 'Status', plain: true },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'Source admin status' },
+            { t: 'Source operational status' },
+            { t: 'Destination IP address' },
+            { t: 'Destination NE' },
+            { t: 'Destination interface' },
+            { t: 'Destination admin status' },
+            { t: 'Destination operational status' },
+            { t: 'Link ID' },
+            { t: 'ERP number' }
+          ],
             rows.map(s => {
-              const adminChip = chip('Up', 'success');
-              const operChip = chip(s.st, s.chip);
+              const statusPill = val => {
+                const isUp = String(val || 'up').toLowerCase().startsWith('up');
+                return `<span class="status-pill-${isUp ? 'up' : 'down'}">${isUp ? 'up(1)' : 'down(2)'}</span>`;
+              };
               return [
-                chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, s.erp,
-                `<span class="mono">${s.ip}</span>`, `<span class="mono">${s.ne}</span>`, `<span class="mono">${s.ifc}</span>`,
-                adminChip, operChip,
-                `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIfc}</span>`,
-                adminChip, operChip,
-                `<span class="mono">L2:${s.erp}</span>`
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="mono">${s.vcId || s.erp || '—'}</span>`,
+                `<span class="num">${s.discoveryTime || '09-22-2026 12:04:37'}</span>`,
+                statusPill(s.st),
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                statusPill(s.srcAdmin || 'up'),
+                statusPill(s.srcOper || s.st),
+                `<span class="mono">${s.dstIp || '—'}</span>`,
+                `<span class="mono">${s.dstNe || '—'}</span>`,
+                `<span class="mono">${s.dstIfc || '—'}</span>`,
+                statusPill(s.dstAdmin || 'up'),
+                statusPill(s.dstOper || s.st),
+                `<span class="mono">${s.linkId || (s.vcId ? `L2:${s.vcId}` : '—')}</span>`,
+                `<span class="mono">${s.erp || '—'}</span>`
               ];
             }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : t === 'l3vpn'
-        ? table([{t:'Status', plain:true},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
-            rows.map(s => [
-              chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
-              `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-              `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-            ]), 'chip-lg',
+        ? table([
+            { t: 'Discovery time' },
+            { t: 'Name' },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'VRF—RD' },
+            { t: 'VRF—RT' },
+            { t: 'Link ID' }
+          ],
+            rows.map(s => {
+              const rtBadge = s.extraRt ? ` <span class="rt-badge">+${s.extraRt}</span>` : '';
+              return [
+                `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                `<span class="mono">${s.rd || '—'}</span>`,
+                `<span class="mono">${s.rt || '—'}</span>${rtBadge}`,
+                `<span class="mono">${s.linkId || (s.erp ? `L3:${s.erp}` : '—')}</span>`
+              ];
+            }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : svcP2PTable(t, rows)}`)}

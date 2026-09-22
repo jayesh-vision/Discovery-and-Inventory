@@ -246,13 +246,43 @@ export interface MatchTile { label: string; value: number; tone: ColorTone }
 export const MATCH_OUTCOME: MatchTile[] = [
   { label: 'Matched', value: 11959, tone: 'emerald' },
   { label: 'Attribute mismatch', value: 53, tone: 'amber' },
-  { label: 'Extra — no record', value: 44, tone: 'orange' },
+  { label: 'Extra — no record', value: 66, tone: 'orange' },
   { label: 'Relationship drift', value: 18, tone: 'sky' },
-  { label: 'Missing — no live peer', value: 16, tone: 'red' },
-  { label: 'Unresolved match', value: 12, tone: 'purple' },
-  { label: 'Stale', value: 4, tone: 'gray' }
+  { label: 'Missing — no live peer', value: 10, tone: 'red' }
 ];
-export const MATCH_TOTAL_NOTE = '11,959 matched · 147 open across six classes';
+export const MATCH_TOTAL_NOTE = '11,959 matched · 147 open across four classes';
+
+export const MATCH_CLASSES = [
+  'Attribute mismatch',
+  'Extra — no record',
+  'Relationship drift',
+  'Missing — no live peer'
+] as const;
+export type MatchClass = typeof MATCH_CLASSES[number];
+
+export const ISSUE_MATCH_CLASS: Record<string, MatchClass> = {
+  // Attribute mismatch (53)
+  'PCI value ≠ record': 'Attribute mismatch',
+  'NF registration mismatch': 'Attribute mismatch',
+  'Antenna parameter drift': 'Attribute mismatch',
+  'ROADM setpoint drift': 'Attribute mismatch',
+  'Interface admin state ≠ record': 'Attribute mismatch',
+  'NF profile drift': 'Attribute mismatch',
+
+  // Extra — no record (66)
+  'Undocumented wavelength': 'Extra — no record',
+  'New / unregistered cell': 'Extra — no record',
+
+  // Relationship drift (18)
+  'Neighbour relation drift': 'Relationship drift',
+  'Topology gap (LLDP)': 'Relationship drift',
+  'VLAN/LAG membership': 'Relationship drift',
+
+  // Missing — no live peer (10)
+  'Record with no live peer': 'Missing — no live peer',
+  'Decommissioned record on file': 'Missing — no live peer',
+  'Stale, past re-verify window': 'Missing — no live peer'
+};
 
 /* ── Discrepancy types ────────────────────────────────────────────────── */
 export type DiscrepancyCategory = 'EXISTENCE' | 'ATTRIBUTE' | 'RELATIONSHIP' | 'FRESHNESS';

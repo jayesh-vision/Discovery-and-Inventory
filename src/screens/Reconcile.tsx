@@ -27,12 +27,6 @@ const Dom = ({ domain, sm, muted }: { domain: DomainKey; sm?: boolean; muted?: b
 
 const n = (v: number) => v.toLocaleString('en-IN');
 
-const MATCH_OUTCOME_CATEGORY: Partial<Record<string, string>> = {
-  'Attribute mismatch': 'ATTRIBUTE',
-  'Extra — no record': 'EXISTENCE',
-  'Relationship drift': 'RELATIONSHIP',
-  'Missing — no live peer': 'EXISTENCE'
-};
 const MATCH_OUTCOME_DEF: Record<string, string> = {
   'Matched': 'The record’s identity, attributes and relationships all agree with the live network — no reconciliation action needed.',
   'Attribute mismatch': 'The record exists and its identity matches, but one or more attribute values differ from what the live network reports.',
@@ -90,16 +84,16 @@ export default function Reconcile() {
         <Panel title="Match classes" info={CARD_DEF['Match classes']} description={MATCH_TOTAL_NOTE} flush>
           <div className="ix-tiles">
             {MATCH_OUTCOME.slice(0, 5).map((t, i) => {
-              const category = MATCH_OUTCOME_CATEGORY[t.label];
-              const Tile = category ? 'button' : 'div';
+              const isClickable = i > 0;
+              const Tile = isClickable ? 'button' : 'div';
               return (
                 <Tile key={t.label} className={`ix-tile${i === 0 ? ' is-hero' : ''}`}
-                  {...(category ? { onClick: () => toDiscrepancies({ category }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
+                  {...(isClickable ? { onClick: () => toDiscrepancies({ matchClass: t.label }), title: `View ${t.label.toLowerCase()} discrepancies` } : {})}>
                   <span className="ix-tile-v num">{n(t.value)}</span>
                   <span className="ix-tile-l">{t.label}
                     {MATCH_OUTCOME_DEF[t.label] && <InfoTip text={MATCH_OUTCOME_DEF[t.label]} label={`What ${t.label.toLowerCase()} means`} />}
                   </span>
-                  <span className="ix-tile-s">{i === 0 ? 'no action needed' : category ? 'open · click to view' : ''}</span>
+                  <span className="ix-tile-s">{i === 0 ? 'no action needed' : 'open · click to view'}</span>
                 </Tile>
               );
             })}

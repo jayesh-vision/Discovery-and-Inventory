@@ -2226,7 +2226,41 @@ const LINKS = {
     { st: 'established', sne: 'NDLS-J960-P_R1-T1-NR', sip: '172.31.42.100', sif: 'AS 24186', dne: 'BGLK-NCS540-PE-T3', dip: '172.31.53.249', dif: 'established(6)', name: 'iBGP RR', v: 3 }
   ],
   isis: [
-    { st: 'up', sne: 'VZG-N540X-PE-T4-NR', sip: '172.31.53.186', sif: 'L2', dne: 'VZG-N540X-PE-T4-SR', dip: '172.31.53.187', dif: 'up', name: 'ISIS L2', v: 10 }
+    {
+      st: 'up', sip: '172.31.53.186', sne: 'VZG-N540X-PE-T4-NR', sif: 'TenGigE0/1/0/1',
+      sSysId: '1720.3105.3186', level: 'L2', metric: '10', circuitType: 'Point-to-Point',
+      dip: '172.31.53.187', dne: 'VZG-N540X-PE-T4-SR', dif: 'TenGigE0/1/0/2',
+      dSysId: '1720.3105.3187', linkId: 'ISIS:8421091', areaId: '49.0001.1720.3105.3186.00',
+      name: 'ISIS:VZG-P2P-10G', v: 10
+    },
+    {
+      st: 'up', sip: '172.31.31.209', sne: 'NDLS-J204-T3-NR', sif: 'xe-0/1/4.0',
+      sSysId: '1720.3103.1209', level: 'L2', metric: '10', circuitType: 'Point-to-Point',
+      dip: '172.31.53.150', dne: 'DSC-IP-Estate-N540X-PE-T3', dif: 'TenGigE0/0/0/20',
+      dSysId: '1720.3105.3150', linkId: 'ISIS:8421092', areaId: '49.0001.1720.3103.1209.00',
+      name: 'ISIS:NDLS-DSC-10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.42.100', sne: 'NDLS-J960-P_R1-T1-NR', sif: 'xe-0/2/1.10',
+      sSysId: '1720.3104.2100', level: 'L1/L2', metric: '20', circuitType: 'Point-to-Point',
+      dip: '172.31.53.186', dne: 'VZG-N540X-PE-T4-NR', dif: 'TenGigE0/1/0/1',
+      dSysId: '1720.3105.3186', linkId: 'ISIS:8421093', areaId: '49.0001.1720.3104.2100.00',
+      name: 'ISIS:NDLS-VZG-10G', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.41.154', sne: 'NCR-HQ-ALD-J2.2K-R2-T4', sif: 'xe-0/3/1',
+      sSysId: '1720.3104.1154', level: 'L2', metric: '10', circuitType: 'Point-to-Point',
+      dip: '172.31.41.155', dne: 'NCR-HQ-PRYJ-J2.2K-R1-T4', dif: 'xe-0/3/0',
+      dSysId: '1720.3104.1155', linkId: 'ISIS:8421094', areaId: '49.0002.1720.3104.1154.00',
+      name: 'ISIS:NCR-ALD-PRYJ', v: 3
+    },
+    {
+      st: 'up', sip: '172.31.47.96', sne: 'OFB-HQ-J7020-PE-T3-ER', sif: 'et-0/0/5',
+      sSysId: '1720.3104.7096', level: 'L2', metric: '10', circuitType: 'Point-to-Point',
+      dip: '172.31.31.56', dne: 'HWH_NKG-J960-PE-R1-T1-ER', dif: 'xe-7/2/0',
+      dSysId: '1720.3103.1056', linkId: 'ISIS:8421095', areaId: '49.0003.1720.3104.7096.00',
+      name: 'ISIS:OFB-HWH-10G', v: 3
+    }
   ]
 };
 
@@ -2263,17 +2297,464 @@ const SVC_P2P_COLS = {
 };
 const SERVICES = {
   l3vpn: [
-    { st: 'Up', chip: 'success', name: 'CGDA', ip: '172.31.53.252', rd: '24186:1015707', rt: '24186:900287, 24186:888970', erp: '1097', ifc: 'FortyGigE0/0/0/28.100', ne: 'BGLK-ASR9010-PE-T1', v: 3 },
-    { st: 'Down', chip: 'error', name: 'E-24678', ip: '172.31.53.252', rd: '24186:1001487', rt: '24186:899142, 24186:899138', erp: '1098', ifc: 'FortyGigE0/0/0/28.17', ne: 'BGLK-ASR9010-PE-T1', v: 3 },
-    { st: 'Down', chip: 'error', name: 'VSS-RB-Connectivity', ip: '172.31.53.252', rd: '24186:1019673', rt: '24186:900172, 24186:900174', erp: '1099', ifc: 'TenGigE0/0/0/2.200', ne: 'BGLK-ASR9010-PE-T1', v: 3 },
-    { st: 'Up', chip: 'success', name: 'NE-CAMERA', ip: '172.31.53.249', rd: '24186:1016097', rt: '24186:900476, 24186:900478', erp: '1101', ifc: 'GigabitEthernet0/0/0/10.3177', ne: 'BGLK-NCS540-PE-T3', v: 3 },
-    { st: 'Up', chip: 'success', name: 'SAFE-CITY-SW-MGMT', ip: '172.31.53.249', rd: '24186:1016096', rt: '24186:900477, 24186:900479', erp: '1102', ifc: 'GigabitEthernet0/0/0/10.10', ne: 'BGLK-NCS540-PE-T3', v: 3 },
-    { st: 'Up', chip: 'success', name: 'SC-DU', ip: '172.31.53.24', rd: '24186:1016064', rt: '24186:901', erp: '1105', ifc: 'BD6', ne: 'BGLK-MX204-AGG-02', v: 10 }
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'RCIL-ILL',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/10.48',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/10.48',
+      rd: '24186:1023575',
+      rt: '24186:900429',
+      extraRt: 5,
+      linkId: 'L3:114031',
+      erp: '10235',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'Railwire-Monitoring',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/10.100',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/10.100',
+      rd: '24186:1015770',
+      rt: '24186:900287',
+      extraRt: 1,
+      linkId: 'L3:113965',
+      erp: '10157',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'VSS-MGMT-THANA',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/16.100',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/16.100',
+      rd: '24186:1019081',
+      rt: '24186:900624',
+      extraRt: 1,
+      linkId: 'L3:61549',
+      erp: '10190',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'VSS-MGMT-THANA',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/16.300',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/16.300',
+      rd: '24186:1019081',
+      rt: '24186:900624',
+      extraRt: 1,
+      linkId: 'L3:61548',
+      erp: '10191',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'VSS-RB-Connectivity',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/16.200',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/16.200',
+      rd: '24186:1019082',
+      rt: '24186:900172',
+      extraRt: 5,
+      linkId: 'L3:61547',
+      erp: '10192',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 14:43:55',
+      name: 'G-WiFi-AP-MGMT',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/16.1000',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/16.1000',
+      rd: '24186:1008437',
+      rt: '24186:900033',
+      extraRt: 1,
+      linkId: 'L3:61546',
+      erp: '10084',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'M-148937',
+      ip: '172.31.39.40',
+      ne: 'ONR-J2.2K-WIFI-T4-SR',
+      ifc: 'ge-0/0/3.33',
+      srcIp: '172.31.39.40',
+      srcNe: 'ONR-J2.2K-WIFI-T4-SR',
+      srcIfc: 'ge-0/0/3.33',
+      rd: '24186:1023986',
+      rt: '24186:900701',
+      extraRt: 1,
+      linkId: 'L3:119149',
+      erp: '10239',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'CGDA-HQ-SECURE',
+      ip: '172.31.39.40',
+      ne: 'ONR-J2.2K-WIFI-T4-SR',
+      ifc: 'ge-0/0/3.100',
+      srcIp: '172.31.39.40',
+      srcNe: 'ONR-J2.2K-WIFI-T4-SR',
+      srcIfc: 'ge-0/0/3.100',
+      rd: '24186:1015707',
+      rt: '24186:900287',
+      extraRt: 2,
+      linkId: 'L3:119150',
+      erp: '10158',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'SAFE-CITY-SW-MGMT',
+      ip: '172.31.42.100',
+      ne: 'NDLS-J960-P_R1-T1-NR',
+      ifc: 'xe-0/0/2.10',
+      srcIp: '172.31.42.100',
+      srcNe: 'NDLS-J960-P_R1-T1-NR',
+      srcIfc: 'xe-0/0/2.10',
+      rd: '24186:1016096',
+      rt: '24186:900477',
+      extraRt: 3,
+      linkId: 'L3:119151',
+      erp: '10161',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'NIC-DISTRICT-WAN',
+      ip: '172.31.42.100',
+      ne: 'NDLS-J960-P_R1-T1-NR',
+      ifc: 'xe-0/0/2.20',
+      srcIp: '172.31.42.100',
+      srcNe: 'NDLS-J960-P_R1-T1-NR',
+      srcIfc: 'xe-0/0/2.20',
+      rd: '24186:1016110',
+      rt: '24186:900480',
+      extraRt: 1,
+      linkId: 'L3:119152',
+      erp: '10162',
+      st: 'Up',
+      chip: 'success'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'POLICE-NET-ZONE4',
+      ip: '172.31.53.252',
+      ne: 'BGLK-ASR9010-PE-T1',
+      ifc: 'TenGigE0/0/0/2.400',
+      srcIp: '172.31.53.252',
+      srcNe: 'BGLK-ASR9010-PE-T1',
+      srcIfc: 'TenGigE0/0/0/2.400',
+      rd: '24186:1019680',
+      rt: '24186:900185',
+      extraRt: 4,
+      linkId: 'L3:119153',
+      erp: '10196',
+      st: 'Down',
+      chip: 'error'
+    },
+    {
+      discoveryTime: '09-22-2026 02:59:24',
+      name: 'HEALTH-DEPT-VPN',
+      ip: '172.31.53.249',
+      ne: 'BGLK-NCS540-PE-T3',
+      ifc: 'GigabitEthernet0/0/0/10.15',
+      srcIp: '172.31.53.249',
+      srcNe: 'BGLK-NCS540-PE-T3',
+      srcIfc: 'GigabitEthernet0/0/0/10.15',
+      rd: '24186:1016125',
+      rt: '24186:900490',
+      extraRt: 1,
+      linkId: 'L3:119154',
+      erp: '10163',
+      st: 'Up',
+      chip: 'success'
+    }
   ],
   l2vpn: [
-    { st: 'Up', chip: 'success', name: 'VPWS-BGLK-INDR-01', ip: '172.31.31.189', rd: '24186:2001144', rt: '24186:700114', erp: '2041', ifc: 'xe-0/0/2.100', ne: 'INDR-ASR920-PE-T3', dstIp: '172.31.31.17', dstNe: 'BGLK-NCS540-PE-T3', dstIfc: 'ge-0/0/1.100', v: 3 },
-    { st: 'Up', chip: 'success', name: 'VPLS-SAFE-CITY', ip: '172.31.53.249', rd: '24186:2001188', rt: '24186:700118', erp: '2042', ifc: 'ge-0/0/5.0', ne: 'BGLK-NCS540-PE-T3', dstIp: '172.31.53.17', dstNe: 'BGLK-ASR9010-PE-T1', dstIfc: 'TenGigE0/0/0/2.200', v: 3 },
-    { st: 'Down', chip: 'error', name: 'VPWS-CHE-MAS-04', ip: '172.31.61.140', rd: '24186:2001202', rt: '24186:700120', erp: '2043', ifc: 'xe-0/3/0.200', ne: 'CHE-J2.2K-PE-T4-ER', dstIp: '172.31.61.17', dstNe: 'CHE-J2.2K-PE-T4-WR', dstIfc: 'xe-0/1/0.200', v: 30 }
+    {
+      name: 'L2_VPN_3530',
+      vcId: '3530',
+      discoveryTime: '09-22-2026 14:43:55',
+      st: 'up',
+      srcIp: '172.31.53.169',
+      srcNe: 'RE-J7024-PE-T3-NR',
+      srcIfc: 'et-0/0/15.3530',
+      ip: '172.31.53.169',
+      ne: 'RE-J7024-PE-T3-NR',
+      ifc: 'et-0/0/15.3530',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.33.59',
+      dstNe: 'NDLS-J488-BNG-R-T2-NR',
+      dstIfc: 'ce2.3530',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:2114',
+      erp: '23530'
+    },
+    {
+      name: 'L2_VPN_31297',
+      vcId: '31297',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'xe-0/1/7.104',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'xe-0/1/7.104',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.34.142',
+      dstNe: 'DELHI-KROHTAKRKT-J7024-PE-T3-NR',
+      dstIfc: 'et-0/0/4.104',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:118274',
+      erp: '31297'
+    },
+    {
+      name: 'L2_VPN_12695',
+      vcId: '12695',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/14.11',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/14.11',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.34.230',
+      dstNe: 'IRCON-KMRYT-N540X-T4-NR',
+      dstIfc: 'TenGigE0/0/0/13.11',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:3080226',
+      erp: '12695'
+    },
+    {
+      name: 'L2_VPN_635823',
+      vcId: '635823',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.81',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.81',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.45.245',
+      dstNe: 'GZB-N140-T3-NR',
+      dstIfc: 'TenGigE0/0/0/13.46',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:104616',
+      erp: '63582'
+    },
+    {
+      name: 'L2_VPN_65682',
+      vcId: '65682',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/12.81',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/12.81',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.53.2',
+      dstNe: 'Noida-N540-T3-NR',
+      dstIfc: 'TenGigE0/0/0/14.46',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:106822',
+      erp: '65682'
+    },
+    {
+      name: 'L2_VPN_5101001',
+      vcId: '5101001',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.8',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.8',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.60.57',
+      dstNe: 'ONRC-BARAKHAMBA-ROAD-NL-T4-NR',
+      dstIfc: 'GigabitEthernet0/0/14.95',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:91939',
+      erp: '51010'
+    },
+    {
+      name: 'L2_VPN_32827',
+      vcId: '32827',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'xe-0/1/5.34',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'xe-0/1/5.34',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.47.158',
+      dstNe: 'SES-HQ-GSC-J2.2K-SD-T4-SR',
+      dstIfc: 'ge-0/0/2.34',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:31822',
+      erp: '32827'
+    },
+    {
+      name: 'L2_VPN_575400',
+      vcId: '575400',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.60',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.60',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.61.135',
+      dstNe: 'NDLS-3rd FLOOR-N55A2-PE-T3-NR',
+      dstIfc: 'GigabitEthernet0/0/13.45',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:75535',
+      erp: '57540'
+    },
+    {
+      name: 'L2_VPN_15002022',
+      vcId: '15002022',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'down',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.95',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.95',
+      srcAdmin: 'up',
+      srcOper: 'down',
+      dstIp: '172.31.11.229',
+      dstNe: 'MPLS_NR-NDO-J2.2K-T4-NR',
+      dstIfc: 'ge-0/0/1.105',
+      dstAdmin: 'up',
+      dstOper: 'down',
+      linkId: 'L2:60292',
+      erp: '15002'
+    },
+    {
+      name: 'L2_VPN_29102042',
+      vcId: '29102042',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.81',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.81',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.35.154',
+      dstNe: 'HYD-J2.2K-WIFI-T4-NR',
+      dstIfc: 'xe-0/1/1.10',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:80330',
+      erp: '29102'
+    },
+    {
+      name: 'L2_VPN_68923',
+      vcId: '68923',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.70',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.70',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.53.182',
+      dstNe: 'CBB-CNF-N5401-T4-NR',
+      dstIfc: 'TenGigE0/0/0/21.185',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:77302',
+      erp: '68923'
+    },
+    {
+      name: 'L2_VPN_68928',
+      vcId: '68928',
+      discoveryTime: '09-22-2026 12:04:37',
+      st: 'up',
+      srcIp: '172.31.31.209',
+      srcNe: 'NDLS-J204-T3-NR',
+      srcIfc: 'lt-0/0/13.71',
+      ip: '172.31.31.209',
+      ne: 'NDLS-J204-T3-NR',
+      ifc: 'lt-0/0/13.71',
+      srcAdmin: 'up',
+      srcOper: 'up',
+      dstIp: '172.31.33.35',
+      dstNe: 'PNP-J204-PE-T3-NR',
+      dstIfc: 'et-0/0/3.105',
+      dstAdmin: 'up',
+      dstOper: 'up',
+      linkId: 'L2:77231',
+      erp: '68928'
+    }
   ]
 };
 
@@ -2338,32 +2819,80 @@ LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
     reason: BGP_DOWN_REASONS[st]
   };
 });
-LINKS.isis = padList(LINKS.isis, 10, (r, i) => ({
-  ...r, st: i % 6 === 5 ? 'down' : 'up',
-  sne: PAD_NE[i % PAD_NE.length], sip: PAD_IP(i), sif: i % 3 ? 'L2' : 'L1L2',
-  dne: PAD_NE[(i + 4) % PAD_NE.length], dip: PAD_IP(i + 4), dif: 'up', name: i % 3 ? 'ISIS L2' : 'ISIS L1L2', v: [10, 12, 21][i % 3],
-  reason: i % 6 === 5 ? ISIS_DOWN_REASONS[i % ISIS_DOWN_REASONS.length] : undefined
+LINKS.isis = padList(LINKS.isis, 12, (r, i) => {
+  const isDown = i % 6 === 5;
+  const sne = r.sne || PAD_NE[i % PAD_NE.length];
+  const dne = r.dne || PAD_NE[(i + 4) % PAD_NE.length];
+  const sip = r.sip || PAD_IP(i);
+  const dip = r.dip || PAD_IP(i + 4);
+  const sNum = sip.replace(/\./g, '').slice(-4);
+  const dNum = dip.replace(/\./g, '').slice(-4);
+  return {
+    ...r,
+    st: isDown ? 'down' : 'up',
+    sne, sip, sif: r.sif || (i % 2 === 0 ? 'xe-0/1/2.0' : 'TenGigE0/0/0/1'),
+    sSysId: r.sSysId || `1720.310${i}.${sNum}`,
+    level: r.level || (i % 3 === 0 ? 'L1/L2' : 'L2'),
+    metric: r.metric || String(10 * ((i % 3) + 1)),
+    circuitType: r.circuitType || 'Point-to-Point',
+    dne, dip, dif: r.dif || (i % 2 === 0 ? 'xe-0/3/3.0' : 'TenGigE0/0/0/2'),
+    dSysId: r.dSysId || `1720.310${i + 4}.${dNum}`,
+    linkId: r.linkId || `ISIS:${8421090 + i}`,
+    areaId: r.areaId || `49.0001.1720.310${i}.${sNum}.00`,
+    name: r.name || (i % 3 ? 'ISIS L2' : 'ISIS L1L2'),
+    v: r.v || [10, 12, 21][i % 3],
+    reason: isDown ? ISIS_DOWN_REASONS[i % ISIS_DOWN_REASONS.length] : undefined
+  };
+});
+
+SERVICES.l3vpn = padList(SERVICES.l3vpn, 16, (r, i) => ({
+  ...r,
+  st: i % 5 === 3 ? 'Down' : (r.st || 'Up'), chip: i % 5 === 3 ? 'error' : (r.chip || 'success'),
+  discoveryTime: r.discoveryTime || '09-22-2026 14:43:55',
+  name: r.name || (['SAFE-CITY-CAM', 'NIC-WAN-LINK', 'BSNL-TRANSIT', 'GOV-SECRETARIAT', 'METRO-RAIL-OPS',
+    'POLICE-NET', 'HEALTH-DEPT-VPN', 'UNIV-CAMPUS-NET'][i % 8] + `-${String(12 + i).padStart(2, '0')}`),
+  ip: r.ip || PAD_IP(i),
+  ne: r.ne || PAD_NE[i % PAD_NE.length],
+  ifc: r.ifc || `${['TenGigE0/0/0/', 'GigabitEthernet0/0/0/', 'FortyGigE0/0/0/'][i % 3]}${i % 12}.${100 + i}`,
+  srcIp: r.ip || PAD_IP(i),
+  srcNe: r.ne || PAD_NE[i % PAD_NE.length],
+  srcIfc: r.ifc || `${['TenGigE0/0/0/', 'GigabitEthernet0/0/0/', 'FortyGigE0/0/0/'][i % 3]}${i % 12}.${100 + i}`,
+  rd: r.rd || `24186:10${16100 + i * 7}`,
+  rt: r.rt || `24186:9004${70 + i}`,
+  extraRt: r.extraRt !== undefined ? r.extraRt : (i % 3 + 1),
+  linkId: r.linkId || `L3:${114000 + i * 37}`,
+  erp: r.erp || String(1110 + i),
+  v: [3, 6, 14][i % 3]
 }));
 
-SERVICES.l3vpn = padList(SERVICES.l3vpn, 12, (r, i) => ({
-  ...r,
-  st: i % 5 === 3 ? 'Down' : 'Up', chip: i % 5 === 3 ? 'error' : 'success',
-  name: ['SAFE-CITY-CAM', 'NIC-WAN-LINK', 'BSNL-TRANSIT', 'GOV-SECRETARIAT', 'METRO-RAIL-OPS',
-    'POLICE-NET', 'HEALTH-DEPT-VPN', 'UNIV-CAMPUS-NET'][i % 8] + `-${String(12 + i).padStart(2, '0')}`,
-  ip: PAD_IP(i), rd: `24186:10${16100 + i * 7}`, rt: `24186:9004${70 + i}`,
-  erp: String(1110 + i), ifc: `${['TenGigE0/0/0/', 'GigabitEthernet0/0/0/', 'FortyGigE0/0/0/'][i % 3]}${i % 12}.${100 + i}`,
-  ne: PAD_NE[i % PAD_NE.length], v: [3, 6, 14][i % 3]
-}));
-SERVICES.l2vpn = padList(SERVICES.l2vpn, 10, (r, i) => ({
-  ...r,
-  st: i % 4 === 2 ? 'Down' : 'Up', chip: i % 4 === 2 ? 'error' : 'success',
-  name: `${i % 2 ? 'VPWS' : 'VPLS'}-${['BGLK', 'DEL', 'CHE', 'PUN', 'HYD', 'KOL'][i % 6]}-${String(5 + i).padStart(2, '0')}`,
-  ip: PAD_IP(i + 2), rd: `24186:20${1210 + i * 3}`, rt: `24186:7001${20 + i}`,
-  erp: String(2050 + i), ifc: `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`,
-  ne: PAD_NE[(i + 3) % PAD_NE.length],
-  dstIp: PAD_IP(i + 9), dstNe: PAD_NE[(i + 7) % PAD_NE.length], dstIfc: `${i % 2 ? 'ge' : 'xe'}-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`,
-  v: [3, 7, 30][i % 3]
-}));
+SERVICES.l2vpn = padList(SERVICES.l2vpn, 16, (r, i) => {
+  const isDown = i % 5 === 3 || r.st === 'down';
+  const srcIp = r.srcIp || PAD_IP(i + 2);
+  const srcNe = r.srcNe || PAD_NE[(i + 3) % PAD_NE.length];
+  const srcIfc = r.srcIfc || `${i % 2 ? 'xe' : 'ge'}-0/${i % 4}/${i % 3}.${100 + i}`;
+  const dstIp = r.dstIp || PAD_IP(i + 9);
+  const dstNe = r.dstNe || PAD_NE[(i + 7) % PAD_NE.length];
+  const dstIfc = r.dstIfc || `${i % 2 ? 'ge' : 'xe'}-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`;
+  const vcId = r.vcId || String(30000 + i * 143);
+  return {
+    ...r,
+    name: r.name || `L2_VPN_${vcId}`,
+    vcId,
+    discoveryTime: r.discoveryTime || '09-22-2026 12:04:37',
+    st: isDown ? 'down' : 'up',
+    chip: isDown ? 'error' : 'success',
+    srcIp, srcNe, srcIfc,
+    ne: srcNe, ip: srcIp, ifc: srcIfc,
+    srcAdmin: r.srcAdmin || 'up',
+    srcOper: isDown ? 'down' : (r.srcOper || 'up'),
+    dstIp, dstNe, dstIfc,
+    dstAdmin: r.dstAdmin || 'up',
+    dstOper: isDown ? 'down' : (r.dstOper || 'up'),
+    linkId: r.linkId || `L2:${vcId}`,
+    erp: (r.erp && r.erp !== '—') ? r.erp : String(20000 + (i * 1237) % 70000),
+    v: [3, 7, 30][i % 3]
+  };
+});
 
 /* ── RAN, Transport and Core domain services ────────────────
    Every one of these six new types shares L2VPN's own point-to-point
@@ -3779,7 +4308,7 @@ const IFACES = [
 const IF_CAP = { total:36, up:22, adminDown:14, operDown:2, optical:16, opticalUsed:9, opticalFree:7,
                  forecast:'4 months to exhaustion at current fill rate' };
 
-const NBR_TABS = [{k:'lldp',n:'LLDP',c:19},{k:'ospf',n:'OSPF',c:12},{k:'bgp',n:'BGP',c:4},{k:'isis',n:'ISIS',c:0}];
+const NBR_TABS = [{k:'lldp',n:'LLDP',c:19},{k:'ospf',n:'OSPF',c:12},{k:'bgp',n:'BGP',c:4},{k:'isis',n:'ISIS',c:3}];
 const NBRS = {
   lldp: [
     { local:'xe-0/0/1', remote:'PSA-C920-WIFI1-T4-ER', rport:'Gi0/0/1',        rip:'172.31.38.41',  st:'ok',  seen:'3 h' },
@@ -3797,15 +4326,21 @@ const NBRS = {
     { local:'AS 24186', remote:'172.31.53.252', rport:'established(6)', rip:'172.31.53.252', st:'ok', seen:'3 h' },
     { local:'AS 24186', remote:'172.31.53.249', rport:'established(6)', rip:'172.31.53.249', st:'ok', seen:'3 h' }
   ],
-  isis: []
+  isis: [
+    { local:'L2 (xe-0/1/4.0)', remote:'DSC-IP-Estate-N540X-PE-T3', rport:'TenGigE0/0/0/20', rip:'172.31.53.150', st:'ok', seen:'3 h' },
+    { local:'L1/L2 (xe-0/2/1.10)', remote:'VZG-N540X-PE-T4-NR', rport:'TenGigE0/1/0/1', rip:'172.31.53.186', st:'ok', seen:'3 h' },
+    { local:'L2 (xe-0/3/1.0)', remote:'NCR-HQ-PRYJ-J2.2K-R1-T4', rport:'xe-0/3/0', rip:'172.31.41.155', st:'ok', seen:'3 h' }
+  ]
 };
 
 const RES_SERVICES = [
-  { st:'Up',   chip:'success', t:'L3VPN', name:'CGDA',              rd:'24186:1015707', ifc:'xe-0/0/9.100', erp:'1097', cust:'Karnataka Govt' },
-  { st:'Down', chip:'error',   t:'L3VPN', name:'VSS-RB-Connectivity',rd:'24186:1019673',ifc:'xe-0/0/5.200', erp:'1099', cust:'VSS Retail' },
-  { st:'Up',   chip:'success', t:'L3VPN', name:'NE-CAMERA',         rd:'24186:1016097', ifc:'xe-0/0/9.317', erp:'1101', cust:'Safe City' },
-  { st:'Down', chip:'error',   t:'L3VPN', name:'SAFE-CITY-SW-MGMT', rd:'24186:1016096', ifc:'xe-0/0/2.10',  erp:'1102', cust:'Safe City' },
-  { st:'Up',   chip:'success', t:'L2VPN', name:'VPWS-BGLK-INDR-01', rd:'24186:2001144', ifc:'xe-0/0/1.100', erp:'2041', cust:'Enterprise' }
+  { st:'Up',   chip:'success', t:'L3VPN', name:'RCIL-ILL',           rd:'24186:1023575', rt:'24186:900429', extraRt: 5, ifc:'et-0/0/10.48', erp:'10235', linkId:'L3:114031', cust:'Railtel ILL' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'Railwire-Monitoring',rd:'24186:1015770', rt:'24186:900287', extraRt: 1, ifc:'et-0/0/10.100', erp:'10157', linkId:'L3:113965', cust:'Railwire Ops' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'VSS-MGMT-THANA',     rd:'24186:1019081', rt:'24186:900624', extraRt: 1, ifc:'et-0/0/16.100', erp:'10190', linkId:'L3:61549', cust:'Safe City' },
+  { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',   rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
+  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',        vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
+  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',       vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
+  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' }
 ];
 
 const RES_ALARMS = [
@@ -7384,6 +7919,7 @@ function viewLinks() {
   const linkFS = FS.links.map(f => f.n === 'Status' ? { ...f, o: (LINK_ST_OPTS[t] || []).map(k => LINK_ST[k][0]) } : f);
   const isLldp = t === 'lldp';
   const isOspf = t === 'ospf';
+  const isIsis = t === 'isis';
 
   const lldpCols = [
     { t: 'Source IP address' },
@@ -7414,6 +7950,22 @@ function viewLinks() {
     { t: 'Area ID' }
   ];
 
+  const isisCols = [
+    { t: 'Source IP address' },
+    { t: 'Source NE' },
+    { t: 'Source interface' },
+    { t: 'Source System ID' },
+    { t: 'Level' },
+    { t: 'Metric / Cost' },
+    { t: 'Circuit Type' },
+    { t: 'Destination IP address' },
+    { t: 'Destination NE' },
+    { t: 'Destination interface' },
+    { t: 'Neighbor System ID' },
+    { t: 'Link ID' },
+    { t: 'Area ID / NET' }
+  ];
+
   const defaultCols = [
     { t: 'Status', plain: true },
     { t: 'Source NE' },
@@ -7423,7 +7975,7 @@ function viewLinks() {
     { t: 'Link name' }
   ];
 
-  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : defaultCols;
+  const tableCols = isLldp ? lldpCols : isOspf ? ospfCols : isIsis ? isisCols : defaultCols;
 
   const tableRows = rows.map(r => {
     if (isLldp) {
@@ -7457,6 +8009,23 @@ function viewLinks() {
         `<span class="mono">${r.areaId || '—'}</span>`
       ];
     }
+    if (isIsis) {
+      return [
+        `<span class="mono">${r.sip || '—'}</span>`,
+        `<span class="vw-value">${r.sne || '—'}</span>`,
+        `<span class="mono">${r.sif || '—'}</span>`,
+        `<span class="mono">${r.sSysId || '—'}</span>`,
+        `<span class="num">${r.level || 'L2'}</span>`,
+        `<span class="num">${r.metric || '10'}</span>`,
+        r.circuitType || 'Point-to-Point',
+        `<span class="mono">${r.dip || '—'}</span>`,
+        `<span class="vw-value">${r.dne || '—'}</span>`,
+        `<span class="mono">${r.dif || '—'}</span>`,
+        `<span class="mono">${r.dSysId || '—'}</span>`,
+        `<span class="mono">${r.linkId || '—'}</span>`,
+        `<span class="mono">${r.areaId || '—'}</span>`
+      ];
+    }
     return [
       chip(LINK_ST[r.st][0], LINK_ST[r.st][1]),
       `<span class="vw-value">${r.sne}</span>`, `<span class="mono">${r.sip}</span>`,
@@ -7469,6 +8038,8 @@ function viewLinks() {
     ? 'Link name, Source interface, Destination interface'
     : isOspf
     ? 'Source OSPF IP, Destination IP address, Destination OSPF IP'
+    : isIsis
+    ? 'Source System ID, Neighbor System ID, Link ID, Area ID'
     : 'Source IP, source NE, destination NE, destination IP';
 
   const linkExtra = '';
@@ -7644,30 +8215,74 @@ function viewServices() {
         </div>`,
         [], 'services')}
       ${t === 'l2vpn'
-        ? table([{t:'Status', plain:true},{t:'Name'},{t:'VC ID'},{t:'Source IP address'},{t:'Source NE'},{t:'Source interface'},
-                 {t:'Source admin status'},{t:'Source operational status'},{t:'Destination IP address'},{t:'Destination NE'},
-                 {t:'Destination interface'},{t:'Destination admin status'},{t:'Destination operational status'},{t:'Link ID'}],
+        ? table([
+            { t: 'Name' },
+            { t: 'VC ID' },
+            { t: 'Discovery time' },
+            { t: 'Status', plain: true },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'Source admin status' },
+            { t: 'Source operational status' },
+            { t: 'Destination IP address' },
+            { t: 'Destination NE' },
+            { t: 'Destination interface' },
+            { t: 'Destination admin status' },
+            { t: 'Destination operational status' },
+            { t: 'Link ID' },
+            { t: 'ERP number' }
+          ],
             rows.map(s => {
-              const adminChip = chip('Up', 'success');
-              const operChip = chip(s.st, s.chip);
+              const statusPill = val => {
+                const isUp = String(val || 'up').toLowerCase().startsWith('up');
+                return `<span class="status-pill-${isUp ? 'up' : 'down'}">${isUp ? 'up(1)' : 'down(2)'}</span>`;
+              };
               return [
-                chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, s.erp,
-                `<span class="mono">${s.ip}</span>`, `<span class="mono">${s.ne}</span>`, `<span class="mono">${s.ifc}</span>`,
-                adminChip, operChip,
-                `<span class="mono">${s.dstIp}</span>`, `<span class="mono">${s.dstNe}</span>`, `<span class="mono">${s.dstIfc}</span>`,
-                adminChip, operChip,
-                `<span class="mono">L2:${s.erp}</span>`
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="mono">${s.vcId || s.erp || '—'}</span>`,
+                `<span class="num">${s.discoveryTime || '09-22-2026 12:04:37'}</span>`,
+                statusPill(s.st),
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                statusPill(s.srcAdmin || 'up'),
+                statusPill(s.srcOper || s.st),
+                `<span class="mono">${s.dstIp || '—'}</span>`,
+                `<span class="mono">${s.dstNe || '—'}</span>`,
+                `<span class="mono">${s.dstIfc || '—'}</span>`,
+                statusPill(s.dstAdmin || 'up'),
+                statusPill(s.dstOper || s.st),
+                `<span class="mono">${s.linkId || (s.vcId ? `L2:${s.vcId}` : '—')}</span>`,
+                `<span class="mono">${s.erp || '—'}</span>`
               ];
             }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : t === 'l3vpn'
-        ? table([{t:'Status', plain:true},{t:'Name'},{t:'Source IP'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'ERP number'},{t:'Source interface'},{t:'NE name'}],
-            rows.map(s => [
-              chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.ip}</span>`,
-              `<span class="mono">${s.rd}</span>`, `<span class="mono">${s.rt}</span>`, s.erp,
-              `<span class="mono">${s.ifc}</span>`, `<span class="mono">${s.ne}</span>`
-            ]), 'chip-lg',
+        ? table([
+            { t: 'Discovery time' },
+            { t: 'Name' },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'VRF—RD' },
+            { t: 'VRF—RT' },
+            { t: 'Link ID' }
+          ],
+            rows.map(s => {
+              const rtBadge = s.extraRt ? ` <span class="rt-badge">+${s.extraRt}</span>` : '';
+              return [
+                `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                `<span class="mono">${s.rd || '—'}</span>`,
+                `<span class="mono">${s.rt || '—'}</span>${rtBadge}`,
+                `<span class="mono">${s.linkId || (s.erp ? `L3:${s.erp}` : '—')}</span>`
+              ];
+            }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
         : svcP2PTable(t, rows)}`)}
@@ -8045,9 +8660,25 @@ function resSvcs() {
       <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
     </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
-    ${rows.length ? table([{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'Attachment interface'},{t:'ERP number'},{t:'Customer'}],
-      rows.map(s => [chip(s.st, s.chip), `<span class="vw-value">${s.name}</span>`, `<span class="mono">${s.rd}</span>`,
-        `<span class="mono">${s.ifc}</span>`, s.erp, s.cust]), 'chip-auto', null,
+    ${rows.length ? table(t === 'l3vpn'
+      ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
+      : [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
+      rows.map(s => t === 'l3vpn' ? [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="mono">${s.rd}</span>`,
+        `<span class="mono">${s.rt || '—'}</span>${s.extraRt ? ` <span class="rt-badge">+${s.extraRt}</span>` : ''}`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `L3:${s.erp}`}</span>`,
+        s.cust
+      ] : [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="mono">${s.vcId || s.erp}</span>`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `L2:${s.erp}`}</span>`,
+        s.cust
+      ]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
            No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
