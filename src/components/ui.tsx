@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { ChipTone, ColorTone } from '../data/ledger';
 import { DOMAIN_HEX, DOMAIN_LABEL, domainParentLabel, type DomainKey } from '../data/discoveryOverview';
 
@@ -94,63 +95,140 @@ export function DrillBar({ from, label, onBack, onClear }: { from: string; label
   );
 }
 
+/* ── Section header for views structured as stacked panels ────────────── */
+export function SectionHeader({ title, description, right }: { title: string; description?: string; right?: ReactNode }) {
+  return (
+    <div className="ix-sec-head">
+      <div>
+        <h2 className="ix-sec-t">{title}</h2>
+        {description && <p className="ix-sec-d">{description}</p>}
+      </div>
+      {right && <div className="ix-sec-r">{right}</div>}
+    </div>
+  );
+}
+
 /* an "i" info button that reveals a one-sentence explanation of the
    card/metric beside it — hover or focus for a peek, click to pin it open.
-   Drawn as a dot-and-stem SVG rather than an italic "i" character: at
-   16px an italic serif "i" (KpiCard's original glyph) reads as a "?" to
-   readers, so this one is shape-drawn to never be ambiguous. */
+   Renders via createPortal directly into document.body to prevent clipping
+   by overflow:hidden on ancestor containers and to avoid overlapping underlying text. */
 export function InfoTip({ text, label, align }: { text: string; label?: string; align?: 'left' | 'right' }) {
   const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const btnRef = useRef<HTMLSpanElement>(null);
   const defRef = useRef<HTMLSpanElement>(null);
-  /* the definition box is a fixed-width absolute box anchored to the icon's
-     edge. When align="right", it anchors to the right edge and extends leftwards.
-     We also measure against viewport margins to ensure it never spills outside. */
-  const [shiftPx, setShiftPx] = useState(0);
+  const [pos, setPos] = useState<{ top: number; left: number; place: 'top' | 'bottom'; arrowLeft: number } | null>(null);
+
   useLayoutEffect(() => {
-    if (!open) { setShiftPx(0); return; }
-    const el = defRef.current;
-    if (!el) return;
-    const margin = 8;
-    const rect = el.getBoundingClientRect();
-    let dx = 0;
-    if (rect.right > window.innerWidth - margin) dx = (window.innerWidth - margin) - rect.right;
-    if (rect.left + dx < margin) dx = margin - rect.left;
-    setShiftPx(dx);
-  }, [open]);
-  /* a real <button> here would sit nested inside the KPI card / outcome
-     tile's own <button> at several call sites — invalid HTML (a button
-     can't contain a button) that also confuses which element a click or a
-     Tab stop actually lands on. A span with the button role/keyboard
-     handling gets the same behavior without ever nesting interactive
-     elements. */
+    if (!open) { setPos(null); return; }
+
+    const updatePos = () => {
+      const btn = btnRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const tooltipWidth = defRef.current ? defRef.current.offsetWidth : Math.min(280, window.innerWidth - 24);
+      const tooltipHeight = defRef.current ? defRef.current.offsetHeight : 64;
+
+      const spaceAbove = rect.top;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const placeTop = spaceAbove >= tooltipHeight + 12 || spaceAbove > spaceBelow;
+
+      const top = placeTop
+        ? Math.max(8, rect.top - tooltipHeight - 8)
+        : Math.min(window.innerHeight - tooltipHeight - 8, rect.bottom + 8);
+
+      let left = align === 'right'
+        ? rect.right - tooltipWidth
+        : rect.left + rect.width / 2 - tooltipWidth / 2;
+
+      left = Math.max(12, Math.min(window.innerWidth - tooltipWidth - 12, left));
+      const arrowLeft = Math.max(12, Math.min(tooltipWidth - 12, rect.left + rect.width / 2 - left));
+
+      setPos({ top, left, place: placeTop ? 'top' : 'bottom', arrowLeft });
+    };
+
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+
+    const onDocClick = (e: MouseEvent) => {
+      if (btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setPinned(false);
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPinned(false);
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, align]);
+
   return (
-    /* title="" (not omitted) stops the browser's native title tooltip from
-       inheriting whatever `title` the surrounding clickable card carries
-       (several call sites — the Insights hero KPIs, for one — wrap an
-       InfoTip in a button with its own title="View X" hint). Without it,
-       hovering the "i" fires BOTH that native tooltip and this component's
-       own info-tip-def box at once, stacked on top of each other. Empty
-       string, not deleting the attribute, is what actually breaks the
-       inheritance — an element with no title of its own still shows the
-       nearest ancestor's. */
     <span className="info-tip" title="">
-      <span role="button" tabIndex={0} className="info-tip-btn" aria-label={label ?? 'What this shows'} aria-expanded={open}
-        onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
-        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }}
+      <span
+        ref={btnRef}
+        role="button"
+        tabIndex={0}
+        className="info-tip-btn"
+        aria-label={label ?? 'What this shows'}
+        aria-expanded={open}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => { if (!pinned) setOpen(false); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => { if (!pinned) setOpen(false); }}
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          setPinned(p => {
+            const next = !p;
+            setOpen(next);
+            return next;
+          });
+        }}
         onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setOpen(v => !v); }
-        }}>
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            setPinned(p => {
+              const next = !p;
+              setOpen(next);
+              return next;
+            });
+          }
+        }}
+      >
         <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" aria-hidden="true">
           <circle cx="8" cy="4" r="1.4" />
           <rect x="6.8" y="6.8" width="2.4" height="6.2" rx="1.1" />
         </svg>
       </span>
-      {open && (
-        <span ref={defRef} className={`info-tip-def${align === 'right' ? ' is-right' : ''}`} role="tooltip"
-          style={shiftPx ? { transform: `translateX(${shiftPx}px)` } : undefined}>
+      {open && typeof document !== 'undefined' && createPortal(
+        <span
+          ref={defRef}
+          className={`info-tip-portal is-${pos?.place ?? 'top'}`}
+          role="tooltip"
+          style={{
+            top: pos ? `${pos.top}px` : '-9999px',
+            left: pos ? `${pos.left}px` : '-9999px',
+            visibility: pos ? 'visible' : 'hidden',
+            ['--arrow-left' as string]: `${pos?.arrowLeft ?? 140}px`
+          }}
+        >
           {text}
-        </span>
+        </span>,
+        document.body
       )}
     </span>
   );

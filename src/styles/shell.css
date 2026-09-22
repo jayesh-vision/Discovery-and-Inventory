@@ -1988,6 +1988,15 @@ a.side-item.active:not(.is-active) { background: transparent; }
   font-size: 13px; line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
   font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none; }
 .info-tip-def.is-right { left: auto; right: 0; }
+.info-tip-portal { position: fixed; z-index: 99999; width: 17.5rem; max-width: calc(100vw - 24px);
+  padding: 8px 12px; background: var(--vw-color-gray-900); color: var(--vw-color-white);
+  border-radius: var(--vw-radius-md); font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12.5px; line-height: 1.45; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4), 0 8px 10px -6px rgba(15, 23, 42, 0.3);
+  font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none;
+  box-sizing: border-box; }
+.info-tip-portal::after { content: ''; position: absolute; left: var(--arrow-left, 50%); transform: translateX(-50%); width: 0; height: 0; }
+.info-tip-portal.is-top::after { top: 100%; border-width: 6px 6px 0 6px; border-style: solid; border-color: var(--vw-color-gray-900) transparent transparent transparent; }
+.info-tip-portal.is-bottom::after { bottom: 100%; border-width: 0 6px 6px 6px; border-style: solid; border-color: transparent transparent var(--vw-color-gray-900) transparent; }
 .kpi3-num { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; row-gap: 2px; }
 .kpi3-v { font-size: 2rem; font-weight: 500; line-height: 1.05; color: var(--vw-color-gray-900); }
 .kpi3-u { font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-500); }
