@@ -2321,10 +2321,9 @@ details[open] > summary .vw-tx-chevron {
 .rpt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--vw-space-md); }
 @media (max-width: 1000px) { .rpt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .rpt-tiles { grid-template-columns: 1fr; } }
-.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 150px; padding: 16px 18px 12px; overflow: visible; cursor: pointer;
-  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg); transition: border-color .15s, box-shadow .15s; }
-.rpt-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--rpt-accent); border-top-left-radius: inherit; border-top-right-radius: inherit; }
-.rpt-tile:hover, .rpt-tile:focus-within { border-color: var(--vw-color-blue-300); box-shadow: 0 6px 20px rgba(15,23,42,.07); z-index: 20; }
+.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 150px; padding: 14px 18px 12px; overflow: visible; cursor: pointer;
+  background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200); border-top: 3px solid var(--rpt-accent, var(--vw-color-slate-300)); border-radius: var(--vw-radius-lg); transition: border-color .15s, box-shadow .15s; }
+.rpt-tile:hover, .rpt-tile:focus-within { border-color: var(--vw-color-blue-300); border-top-color: var(--rpt-accent, var(--vw-color-slate-300)); box-shadow: 0 6px 20px rgba(15,23,42,.07); z-index: 20; }
 .rpt-tile:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 .rpt-tile .info-tip-def { left: auto; right: 0; }
 .rpt-tile-top { display: flex; align-items: center; gap: 8px; }

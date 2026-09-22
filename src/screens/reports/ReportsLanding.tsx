@@ -38,7 +38,18 @@ const FEATURE: Record<ReportModule, { id: string; visual: string }> = {
 /* 400, not 500 — every chart/bar/segment fill in src/data/reports/*.ts
    already uses cv(tone, 400); these tile accents were the one place in the
    whole feature still on the punchier 500 shade. */
-const ACCENT: Partial<Record<ColorTone, string>> = { red: cv('red', 400), amber: cv('amber', 400) };
+const ACCENT: Record<ColorTone, string> = {
+  sky: cv('sky', 400),
+  cyan: cv('cyan', 400),
+  emerald: cv('emerald', 400),
+  amber: cv('amber', 400),
+  slate: cv('slate', 400),
+  red: cv('red', 400),
+  purple: cv('purple', 400),
+  orange: cv('orange', 400),
+  fuchsia: cv('fuchsia', 400),
+  gray: cv('gray', 400)
+};
 
 function HeadlineTile({ spec }: { spec: TileSpec }) {
   const nav = useNavigate();
@@ -48,7 +59,7 @@ function HeadlineTile({ spec }: { spec: TileSpec }) {
   const sub = spec.sub ?? h.label.charAt(0).toUpperCase() + h.label.slice(1);
   return (
     <article className="rpt-tile" role="link" tabIndex={0} onClick={open} onKeyDown={e => { if (e.key === 'Enter') open(); }}
-      style={{ ['--rpt-accent' as string]: ACCENT[h.tone] ?? 'transparent' }} aria-label={`${spec.title}: ${fmtValue(h.value, h.fmt)}. Open ${def.name}`}>
+      style={{ ['--rpt-accent' as string]: ACCENT[h.tone] ?? cv(h.tone, 400) }} aria-label={`${spec.title}: ${fmtValue(h.value, h.fmt)}. Open ${def.name}`}>
       <div className="rpt-tile-top">
         <span className="rpt-tile-t">{spec.title}</span>
         {def.state !== 'Current' && <Chip tone={STATE_TONE[def.state]}>{def.state}</Chip>}

@@ -122,11 +122,6 @@ export function ReportView({ module }: { module: ReportModule }) {
           <div key={m.term}><dt>{m.term}</dt><dd>{m.definition}</dd></div>
         ))}</dl>
       </Card>
-
-      <div className="rpt-foot">
-        <span>{def.id} · {def.name} · snapshot <span className="mono">{def.snapshot}</span></span>
-        <span>Figures computed from the {MODULE_LABEL[def.module].toLowerCase()} data at the snapshot time · internal</span>
-      </div>
     </div>
   );
 }
