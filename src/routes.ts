@@ -118,6 +118,9 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
   if (!mergedParams.id && (sp.get('id') || sp.get('site'))) {
     mergedParams.id = sp.get('id') || sp.get('site')!;
   }
+  if (!mergedParams.ip && sp.get('ip')) {
+    mergedParams.ip = sp.get('ip')!;
+  }
   for (const [k, v] of Object.entries(mergedParams)) {
     if (!v) continue;
     if (path.includes(':' + k)) {

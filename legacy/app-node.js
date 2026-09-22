@@ -48,7 +48,7 @@ function nodeRecord(name, wantIp) {
   if (typeof PHY !== 'undefined' && PHY) {
     for (const k of Object.keys(PHY)) {
       const found = findByNameThenIp(PHY[k] || []);
-      if (found) return { ...found, cls: k };
+      if (found) return { ...found, cls: k, ip: cleanIp || found.ip };
     }
   }
 
@@ -58,7 +58,7 @@ function nodeRecord(name, wantIp) {
         const neObj = siteNE(loc.id, loc.ne, loc.disc);
         for (const k of Object.keys(neObj)) {
           const found = findByNameThenIp(neObj[k] || []);
-          if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id };
+          if (found) return { ...found, cls: k === 'dwdm' ? 'dwdm' : k === 'switch' ? 'switch' : 'router', loc: loc.id, ip: cleanIp || found.ip };
         }
       }
     }
@@ -72,7 +72,7 @@ function nodeRecord(name, wantIp) {
       const rec = found.inv || found.net || found;
       return {
         name: rec.name || rawName,
-        ip: rec.ip || '172.31.33.100',
+        ip: cleanIp || rec.ip || '172.31.33.100',
         oem: rec.oem || 'JUNIPER',
         model: rec.model || 'MX960',
         os: rec.os || '21.2R3-S8.5',
@@ -87,7 +87,7 @@ function nodeRecord(name, wantIp) {
   if (typeof TRANSCRIPT !== 'undefined' && TRANSCRIPT && TRANSCRIPT.host && String(TRANSCRIPT.host).trim().toUpperCase() === clean) {
     return {
       name: TRANSCRIPT.host,
-      ip: TRANSCRIPT.ip,
+      ip: cleanIp || TRANSCRIPT.ip,
       oem: 'JUNIPER',
       model: 'MX960',
       os: '21.2R3-S8.5',
@@ -109,21 +109,32 @@ function nodeRecord(name, wantIp) {
     }
   } catch (err) {}
 
+  const isEnodeb = urlCls === 'enodeb' || clean.includes('ENB') || clean.includes('GNB') || clean.includes('NODEB') || clean.includes('RADIO') || clean.includes('CELL');
+  const isCoreNf = clean.includes('AMF') || clean.includes('UPF') || clean.includes('SMF') || clean.includes('NRF') || clean.includes('MME') || clean.includes('CORE');
   const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR') || clean.includes('ACC') || clean.includes('DIST');
   const isServer = urlCls === 'server' || clean.includes('SERVER') || clean.includes('SRV') || clean.includes('HOST');
-  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT');
-  const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540');
-  const cls = isSw ? 'switch' : isServer ? 'server' : isDwdm ? 'dwdm' : isRouter ? 'router' : (urlCls || 'router');
+  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('WAVE') || clean.includes('OTN');
+  const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540') || clean.includes('7750') || clean.includes('ASR');
+  const cls = isEnodeb ? 'enodeb' : isSw ? 'switch' : isDwdm ? 'dwdm' : isServer ? 'server' : isRouter ? 'router' : (urlCls || 'router');
 
-  const oem = clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
+  const oem = isEnodeb ? (clean.includes('SAMS') ? 'SAMSUNG' : clean.includes('NOK') ? 'NOKIA' : 'ERICSSON')
+    : isCoreNf ? (clean.includes('DEL') || clean.includes('BLR') ? 'NOKIA' : 'CISCO')
+    : isDwdm ? (clean.includes('TEJ') ? 'TEJAS' : clean.includes('INF') ? 'INFINERA' : 'CIENA')
+    : clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
     : clean.startsWith('N') || clean.includes('NOKIA') || clean.includes('7750') ? 'NOKIA'
     : clean.includes('HPE') || clean.includes('DELL') ? 'HPE'
     : 'JUNIPER';
-  const model = oem === 'CISCO' ? (clean.includes('540') ? 'NCS-540' : 'ASR920')
+  const model = isEnodeb ? (clean.includes('GNB') ? 'AirScale 5G gNodeB' : 'RBS 6601 eNodeB')
+    : isCoreNf ? (clean.includes('AMF') ? 'Cloud AMF 5GC' : clean.includes('UPF') ? 'Cloud UPF 5GC' : 'Cloud Native NF')
+    : isDwdm ? (clean.includes('OTN') ? '6500 OTN' : 'Waveserver 5')
+    : oem === 'CISCO' ? (clean.includes('540') ? 'NCS-540' : 'ASR920')
     : oem === 'NOKIA' ? '7750'
     : clean.includes('204') ? 'MX204' : clean.includes('2200') ? 'ACX2200' : 'MX960';
-  const os = oem === 'CISCO' ? '17.9.4' : oem === 'NOKIA' ? 'TiMOS-C-22.10' : '21.2R3-S8.5';
-  const ip = `172.31.${nint(rawName, 1, 10, 99)}.${nint(rawName, 2, 10, 250)}`;
+  const os = isEnodeb ? 'BB-24.Q2'
+    : isCoreNf ? 'CloudOS-5G.4'
+    : isDwdm ? 'SAOS-10.8'
+    : oem === 'CISCO' ? '17.9.4' : oem === 'NOKIA' ? 'TiMOS-C-22.10' : '21.2R3-S8.5';
+  const ip = cleanIp || `172.31.${nint(rawName, 1, 10, 99)}.${nint(rawName, 2, 10, 250)}`;
   const sn = `${oem.slice(0,2)}${nint(rawName, 3, 100000, 999999)}AFB`;
   const loc = `${clean.slice(0,3)}-${nint(rawName, 4, 100, 400)}`;
 

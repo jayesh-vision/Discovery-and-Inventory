@@ -40,7 +40,7 @@ function resOverview() {
      when RES_ID is one of the curated samples, nodeRecord()'s resolution —
      the same one Node View uses — otherwise), so this table always names
      the element the reader is actually looking at. */
-  const provR = PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID, RES_IP);
+  const provR = (RES_IP && PHY.router.find(x => x.name === RES_ID && x.ip === RES_IP)) || (RES_IP ? nodeRecord(RES_ID, RES_IP) : (PHY.router.find(x => x.name === RES_ID) || nodeRecord(RES_ID, RES_IP)));
   const provLoc = LOCATIONS.find(l => l.id === provR.loc);
   const PROV_LIVE = [
     { f: 'Management IP', v: provR.ip,    src: 'Scope',                ok: true },
@@ -199,7 +199,7 @@ function nbrViewDialog() {
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
           <span class="vw-card-description">${tabLabel} link</span>${chip(stLabel, stTone)}
         </div>
-        ${linkDiagram({ sne: RES_ID, dne: r.remote, name: r.rport })}
+        ${linkDiagram({ sne: RES_ID, sip: srcRouter.ip, dne: r.remote, dip: r.rip, name: r.rport })}
         ${detailFieldGrid([
           ['Status', stLabel], ['Protocol', tabLabel], ['Link name', linkName],
           ['Source NE', RES_ID], ['Source IP', srcRouter.ip],
@@ -270,7 +270,15 @@ function resSvcViewDialog() {
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
           <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
         </div>
-        ${svcDiagram({ name: r.name, erp: r.erp, ifc: r.ifc, ne: RES_ID }, RES_SVC_VIEW.tab)}
+        ${svcDiagram({
+          name: r.name,
+          erp: r.erp,
+          ifc: r.ifc,
+          ne: RES_ID,
+          ip: (PHY.router.find(x => x.name === RES_ID) || {}).ip,
+          dstNe: r.dstNe || (RES_SVC_VIEW.tab === 'l2vpn' ? 'NDLS-J488-BNG-R-T2-NR' : 'DEL-PE-CORE-01'),
+          dstIp: r.dstIp || (RES_SVC_VIEW.tab === 'l2vpn' ? '172.31.33.59' : '172.31.60.2')
+        }, RES_SVC_VIEW.tab)}
         ${detailFieldGrid([
           ['Equipment Name', r.ifc], ['ERP number', r.erp],
           ['Link ID', linkId], ['Admin status', adminStatus]
@@ -696,7 +704,7 @@ function viewResource() {
      else, which is most nodes reached through Location/Site/Node View,
      falls back to nodeRecord's own resolved data for RES_ID instead of
      silently substituting a different router's record */
-  const r = PHY.router.find(x => x.name === RES_ID) || rec;
+  const r = (RES_IP && PHY.router.find(x => x.name === RES_ID && x.ip === RES_IP)) || (RES_IP ? rec : (PHY.router.find(x => x.name === RES_ID) || rec));
   const body = { overview:resOverview, hardware:resHardware, ifaces:resIfaces, nbrs:resNbrs,
                  svcs:resSvcs, alarms:resAlarms, config:resConfig, history:resHistory }[RES_TAB]();
   return `<div class="page">

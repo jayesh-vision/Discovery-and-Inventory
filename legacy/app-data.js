@@ -1574,6 +1574,10 @@ const PHY = {
     { st: 'none', name: 'ERS-N7750-SR7-T2-SR', ip: '172.31.100.14', model: '7750 SR-7', os: 'TiMOS-C-22.10.R1', sn: 'NSN7750ERS14A7X1', oem: 'NOKIA', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
     { st: 'none', name: 'NDD-J2.2K-PE-T4-SR', ip: '172.31.100.11', model: 'EX4300-48P', os: '3.2.0.4', sn: 'QCT3048NDD11A01', oem: 'JUNIPER', loc: 'BGLK-277', s: 'p', stock: 'planned', v: null },
     { st: 'ok', name: 'WKR-J7024-PE-T4-WR', ip: '172.31.62.11', model: 'ACX7024', os: '23.2R1-S2.6', sn: 'FL2423AN0050', oem: 'JUNIPER', loc: 'WKR-204', s: 'd', stock: 'deployed', v: 5 },
+    { st: 'ok', name: 'PSA-C920-WIFI1-T4-ER', ip: '172.31.42.101', model: 'ASR920', os: '17.6.3', sn: 'CAT2034U1SR', oem: 'CISCO', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
+    { st: 'ok', name: 'NDLS-J488-BNG-R-T2-NR', ip: '172.31.33.59', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1235F88AFB', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
+    { st: 'ok', name: 'DEL-AMF-CORE-01', ip: '10.60.10.5', model: 'Cloud AMF 5GC', os: 'CloudOS-5G.4', sn: 'NOK5GC991823', oem: 'NOKIA', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
+    { st: 'ok', name: 'RPF_PANCHKUIYA-J1.1K-PE-T4', ip: '172.31.46.156', model: 'MX204', os: '21.4R3-S5.5', sn: 'JN1238P89AFA', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
     {
       st: 'none', name: 'MAS-J960-P-R2-T1-SR', ip: '172.31.31.140', model: 'MX960', os: '21.2R3-S8.4', sn: 'JN1231A55AFB', oem: 'JUNIPER', loc: 'MAS-041', s: 'm', stock: 'decomm', v: null,
       dOn: '14-Jun-2026', dWhy: 'Replaced under CR-8802', dBy: 'Anjali Verma', dWo: 'WO-3312', zombie: false
@@ -2608,6 +2612,9 @@ SERVICES.l3vpn = padList(SERVICES.l3vpn, 16, (r, i) => ({
   srcIp: r.ip || PAD_IP(i),
   srcNe: r.ne || PAD_NE[i % PAD_NE.length],
   srcIfc: r.ifc || `${['TenGigE0/0/0/', 'GigabitEthernet0/0/0/', 'FortyGigE0/0/0/'][i % 3]}${i % 12}.${100 + i}`,
+  dstIp: r.dstIp || PAD_IP(i + 8),
+  dstNe: r.dstNe || PAD_NE[(i + 5) % PAD_NE.length],
+  dstIfc: r.dstIfc || `xe-0/${(i + 1) % 4}/${(i + 2) % 3}.${200 + i}`,
   rd: r.rd || `24186:10${16100 + i * 7}`,
   rt: r.rt || `24186:9004${70 + i}`,
   extraRt: r.extraRt !== undefined ? r.extraRt : (i % 3 + 1),

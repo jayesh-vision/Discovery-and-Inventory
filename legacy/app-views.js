@@ -986,12 +986,12 @@ function recTable() {
       <td><span class="vw-card-metric-label-sub num">${r.ver}</span></td>
       ${kebabCell(
         r.inv && r.net && r.diff.length
-          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })]
         : !r.inv
           ? [A('Open the run transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(r.ne)}` })]
         : !r.net
-          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })]
-          : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}` })], 'rec', ri)}
+          ? [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })]
+          : [A('View details', { v:'resource', l:r.ne, q:`name=${encodeURIComponent(r.ne)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })], 'rec', ri)}
     </tr>`).join('');
 
   const chips = [['All','All results'],['Open','Open exceptions'],['Agree','Agree'],['Differ','Differ'],['Stale','Stale'],
@@ -2074,8 +2074,8 @@ function viewSite() {
            the site this whole page is showing, so that action would only
            ever reopen the page the reader is already on */
         i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` })
+          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })] : []),
+          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })
         ])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
@@ -2442,8 +2442,8 @@ function viewPhysical() {
         }), 'chip-auto',
         i => rows[i].stock === 'decomm'
           ? []
-          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}` })] : []),
-             A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}` }),
+          : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })] : []),
+             A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` }),
              siteA(rows[i].loc)])}
       <div class="vw-card-footer-divider legend">
         <span class="legend-i">${rst('ok')} record and network agree</span>
@@ -3341,20 +3341,20 @@ const LINK_ST_OPTS = { lldp: ['up', 'down'], ospf: ['up', 'down'], isis: ['up', 
    Source Interface this link reports (r.sif) lives — so a click now opens
    that instead. */
 function linkDiagram(r) {
-  const node = (label, role) => `
-    <button class="linkdiagram-node"${dA({ v: 'resource', l: label, q: `name=${encodeURIComponent(label)}` })}
+  const node = (label, role, ip) => `
+    <button class="linkdiagram-node"${dA({ v: 'resource', l: label, q: `name=${encodeURIComponent(label)}${ip ? `&ip=${encodeURIComponent(ip)}` : ''}` })}
       title="Open ${esc(label)} · View details" aria-label="Open ${role} element ${esc(label)} details">
       <span class="linkdiagram-icon">${nodeThumb('router')}</span>
       <span class="linkdiagram-label" title="${esc(label)}">${esc(label)}</span>
     </button>`;
   const linkName = r.name === '—' ? 'Unnamed link' : r.name;
   return `<div class="linkdiagram-canvas">
-    ${node(r.sne, 'Source')}
-    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}&tab=ifaces` })}
+    ${node(r.sne, 'Source', r.sip)}
+    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.sne, q: `name=${encodeURIComponent(r.sne)}${r.sip ? `&ip=${encodeURIComponent(r.sip)}` : ''}&tab=ifaces` })}
       title="Open ${esc(r.sne)} · Interfaces" aria-label="Open ${esc(r.sne)}'s Interfaces tab">
       <span class="linkdiagram-wire-badge">${esc(linkName)}</span>
     </button>
-    ${node(r.dne, 'Destination')}
+    ${node(r.dne, 'Destination', r.dip)}
   </div>`;
 }
 
@@ -3581,24 +3581,27 @@ let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or 
    list instead of a page the reader never opened. */
 function svcDiagram(r, tab) {
   const svcLabel = `${r.name}_${r.erp}`;
-  const nodeBtn = name => `<button class="linkdiagram-node"${dA({ v: 'resource', l: name, q: `name=${encodeURIComponent(name)}` })} title="View ${esc(name)}">
-      <span class="linkdiagram-icon">${nodeThumb('router')}</span>
+  const nodeBtn = (name, ip, role) => `<button class="linkdiagram-node"${dA({ v: 'resource', l: name, q: `name=${encodeURIComponent(name)}${ip ? `&ip=${encodeURIComponent(ip)}` : ''}` })} title="View ${esc(name)}">
+      <span class="linkdiagram-icon">${nodeThumb(role === 'cloud' ? 'cloud' : 'router')}</span>
       <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(name)}">${esc(name)}</span>
     </button>`;
+  const srcName = r.ne || r.srcNe;
+  const srcIp = r.ip || r.srcIp;
+  const dstName = tab === 'l3vpn' ? (r.dstNe || 'PE-AGG-CORE-01') : (r.dstNe || r.ne);
+  const dstIp = tab === 'l3vpn' ? (r.dstIp || '172.31.60.1') : (r.dstIp || r.ip);
   const srcNode = tab === 'l3vpn'
     ? `<span class="linkdiagram-node is-static">
         <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
         <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
       </span>`
-    : nodeBtn(r.ne);
-  const dstName = tab === 'l3vpn' ? r.ne : r.dstNe;
+    : nodeBtn(srcName, srcIp, 'Source');
   return `<div class="linkdiagram-canvas">
     ${srcNode}
-    <button class="linkdiagram-wire"${dA({ v: 'resource', l: r.ne, q: `name=${encodeURIComponent(r.ne)}` })}
-      title="View ${esc(r.ne)}" aria-label="View ${esc(r.ne)}, source interface ${esc(r.ifc)}">
+    <button class="linkdiagram-wire"${dA({ v: 'resource', l: srcName, q: `name=${encodeURIComponent(srcName)}${srcIp ? `&ip=${encodeURIComponent(srcIp)}` : ''}` })}
+      title="View ${esc(srcName)}" aria-label="View ${esc(srcName)}, source interface ${esc(r.ifc)}">
       <span class="linkdiagram-wire-badge">${esc(r.ifc)}</span>
     </button>
-    ${nodeBtn(dstName)}
+    ${nodeBtn(dstName, dstIp, 'Destination')}
   </div>`;
 }
 
@@ -3643,7 +3646,8 @@ function svcViewDialog() {
      "Service linking" diagram + detail view below — svcDiagram and
      L2VPN/L3VPN's own fields are untouched, since ?? only ever fills in
      what a row doesn't already have under that name. */
-  const r = { ...raw, ne: raw.ne ?? raw.srcNe, ip: raw.ip ?? raw.srcIp, ifc: raw.ifc ?? raw.srcIfc };
+  const r = { ...raw, ne: raw.ne ?? raw.srcNe, ip: raw.ip ?? raw.srcIp, ifc: raw.ifc ?? raw.srcIfc,
+              dstNe: raw.dstNe, dstIp: raw.dstIp, dstIfc: raw.dstIfc };
   const cols = SVC_P2P_COLS[SVC_VIEW.tab];
   const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : SVC_VIEW.tab === 'l2vpn' ? 'L2' : SVC_VIEW.tab.toUpperCase()}:${r.erp}`;
   const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
