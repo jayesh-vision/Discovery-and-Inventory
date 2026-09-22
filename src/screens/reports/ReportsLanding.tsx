@@ -150,6 +150,7 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
   const audienceParam = sp.get('audience') as Audience | null;
   const audience: Audience | 'All' = audienceParam && AUDIENCES.includes(audienceParam) ? audienceParam : 'All';
   const setAudience = (a: Audience | 'All') => {
+    setQ('');
     const next = new URLSearchParams(sp);
     if (a === 'All') next.delete('audience'); else next.set('audience', a);
     setSp(next, { replace: true, preventScrollReset: true });
