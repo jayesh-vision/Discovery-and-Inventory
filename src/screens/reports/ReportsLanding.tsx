@@ -77,38 +77,49 @@ const IcAlert = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none
 const IcFlag = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>;
 function NeedsAttention({ reports }: { reports: ReportDef[] }) {
   const nav = useNavigate();
-  const [more, setMore] = useState(false);
   const items = useMemo(() => {
     const all = reports.flatMap(def => buildReport(def).findings.filter(f => f.tone === 'crit' || f.tone === 'warn').map(f => ({ def, f })));
     const seen = new Set<string>();
     return [...all.filter(x => x.f.tone === 'crit'), ...all.filter(x => x.f.tone === 'warn')]
       .filter(x => !seen.has(x.f.title) && !!seen.add(x.f.title));
   }, [reports]);
-  const LIMIT = 5;
-  const shown = more ? items : items.slice(0, LIMIT);
+
   return (
     <section className="vw-card-section rpt-attn">
       <span className="vw-card-title-sm">Needs attention</span>
       <div className="vw-card-metric-label-sub" style={{ marginTop: 2 }}>The findings most likely to need a decision · {items.length} across {reports.length} reports</div>
-      <ul className="rpt-attn-list">
-        {shown.map(({ def, f }) => (
-          <li key={`${def.id}-${f.title}`}>
-            <button className="rpt-attn-row" onClick={() => nav(reportPath(def))}>
-              <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
-              <span className="rpt-attn-main">
-                <span className="rpt-attn-t">{f.title}</span>
-                <span className="rpt-attn-d"><span className="rpt-attn-link">{def.name}</span> · {f.detail}</span>
-              </span>
-              <span className="rpt-attn-chev" aria-hidden>›</span>
-            </button>
-          </li>
-        ))}
+      <ul className="rpt-attn-list" tabIndex={0} aria-label="Needs attention findings list">
+        {items.map(({ def, f }, idx) => {
+          const isClickable = idx >= 6;
+          return (
+            <li key={`${def.id}-${f.title}`}>
+              {isClickable ? (
+                <button
+                  type="button"
+                  className="rpt-attn-row is-clickable"
+                  onClick={() => nav(reportPath(def))}
+                  title={`Open report: ${def.name}`}
+                >
+                  <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
+                  <span className="rpt-attn-main">
+                    <span className="rpt-attn-t">{f.title}</span>
+                    <span className="rpt-attn-d"><span className="rpt-attn-link">{def.name}</span> · {f.detail}</span>
+                  </span>
+                  <span className="rpt-attn-chev" aria-hidden>›</span>
+                </button>
+              ) : (
+                <div className="rpt-attn-row is-static" aria-disabled="true">
+                  <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
+                  <span className="rpt-attn-main">
+                    <span className="rpt-attn-t">{f.title}</span>
+                    <span className="rpt-attn-d"><span className="rpt-attn-static-label">{def.name}</span> · {f.detail}</span>
+                  </span>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
-      {items.length > LIMIT && (
-        <button className="nst-btn nst-btn--xs nst-btn--ghost rpt-attn-more" onClick={() => setMore(m => !m)}>
-          {more ? 'Show less' : `Show ${items.length - LIMIT} more`}
-        </button>
-      )}
     </section>
   );
 }

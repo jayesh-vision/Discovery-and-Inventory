@@ -6,7 +6,7 @@ import {
   type ReportModule, type Row, MODULE_LABEL, STATE_TONE, buildReport, cellText, fmtValue, reportDefById
 } from '../../data/reports';
 import {
-  AUDIENCE_GLYPH, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell, useReportNav
+  AUDIENCE_GLYPH, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell
 } from './parts';
 
 const PRIORITY_TONE = { P1: 'error', P2: 'warning', P3: 'neutral' } as const;
@@ -18,7 +18,6 @@ const STATE_BANNER = { Stale: 'warning', Running: 'info', Failed: 'error' } as c
    about it and the record-level detail, then how every figure was derived. */
 export function ReportView({ module }: { module: ReportModule }) {
   const { id = '' } = useParams();
-  const go = useReportNav();
   const def = reportDefById(id);
   const content = useMemo(() => (def ? buildReport(def) : null), [def]);
   if (!def || !content || def.module !== module) return <Navigate to={`/${module}/reports`} replace />;
@@ -26,6 +25,7 @@ export function ReportView({ module }: { module: ReportModule }) {
   const h = content.headline;
   const t = content.table;
   const facetOptions = t.facet ? [...new Set(t.rows.map(r => cellText(r.cells[t.facet!], t.columns.find(c => c.key === t.facet)!)))] : [];
+  const subClean = t.sub.replace(/;\s*select a row[^·]*/i, '').trim();
 
   return (
     <div className="page rpt-page">
@@ -95,7 +95,7 @@ export function ReportView({ module }: { module: ReportModule }) {
 
       <Card className="rpt-detail">
         <span className="vw-card-title-sm">{t.title}</span>
-        <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>{t.sub} · {t.rows.length.toLocaleString('en-IN')} rows</div>
+        <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>{subClean} · {t.rows.length.toLocaleString('en-IN')} rows</div>
         <div className="rpt-noprint">
           <DataGrid<Row>
             columns={t.columns.map(c => ({ t: c.header, r: c.right }))}
@@ -103,7 +103,6 @@ export function ReportView({ module }: { module: ReportModule }) {
             searchPlaceholder={`Search ${t.title.toLowerCase()}`}
             filters={t.facet ? [{ n: t.columns.find(c => c.key === t.facet)!.header, o: facetOptions }] : undefined}
             emptyText={t.empty}
-            onRowClick={t.rows.some(r => r.link) ? r => { if (r.link) go(r.link); } : undefined}
             renderRow={r => t.columns.map(c => renderCell(r.cells[c.key], c))}
           />
         </div>

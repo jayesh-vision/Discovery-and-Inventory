@@ -88,7 +88,7 @@ const trustExecutive: ReportBuilder = () => {
       }))
     ],
     table: {
-      title: 'Domain trust scorecard', sub: 'One row per domain; select a row to open its devices',
+      title: 'Domain trust scorecard', sub: 'One row per domain',
       columns: [
         { key: 'domain', header: 'Domain', fmt: 'domain' }, { key: 'inScope', header: 'In scope', fmt: 'num', right: true },
         { key: 'unverified', header: 'Unverified', fmt: 'num', right: true }, { key: 'inSync', header: 'In sync', fmt: 'num', right: true },
@@ -168,7 +168,7 @@ const backlog: ReportBuilder = () => {
       { priority: 'P3', action: 'Approve RUL-RAN-002 (antenna parameter drift) to automate 8 RAN attribute items', owner: 'Anjali Verma', impact: 'Raises RAN touchless rate' }
     ],
     table: {
-      title: 'Open discrepancies by type', sub: 'Largest first; select a row to see the individual items',
+      title: 'Open discrepancies by type', sub: 'Largest first',
       columns: [
         { key: 'type', header: 'Discrepancy type' }, { key: 'domain', header: 'Domain', fmt: 'domain' }, { key: 'category', header: 'Category' },
         { key: 'count', header: 'Open', fmt: 'num', right: true }, { key: 'share', header: 'Share of backlog', fmt: 'pct', right: true }, { key: 'age', header: 'Age band' }
@@ -232,7 +232,7 @@ const exceptions: ReportBuilder = () => {
       { priority: 'P3', action: 'Register KOL-GNB-NEW-07 in the RAN asset register', owner: 'RAN planning', impact: 'Closes RX-5004 before it breaches' }
     ],
     table: {
-      title: 'Open exceptions', sub: 'Breached first; select a row to open the exception queue for its rule',
+      title: 'Open exceptions', sub: 'Breached first',
       columns: [
         { key: 'id', header: 'ID', fmt: 'mono' }, { key: 'sla', header: 'SLA', fmt: 'chip', tones: SLA_TONE },
         { key: 'state', header: 'State', fmt: 'chip', tones: EXCEPTION_TONE }, { key: 'domain', header: 'Domain', fmt: 'domain' },
@@ -300,7 +300,7 @@ const coverage: ReportBuilder = () => {
       impact: `${r.targets} ${DOMAIN_LABEL[r.domain]} targets back in coverage`
     })),
     table: {
-      title: 'Discovery jobs and collectors', sub: 'One row per domain; select a row to open scan jobs',
+      title: 'Discovery jobs and collectors', sub: 'One row per domain',
       columns: [
         { key: 'domain', header: 'Domain', fmt: 'domain' }, { key: 'protocols', header: 'Protocols' }, { key: 'schedule', header: 'Schedule' },
         { key: 'targets', header: 'Targets', fmt: 'num', right: true }, { key: 'coverage', header: 'Coverage', fmt: 'pct2', right: true },

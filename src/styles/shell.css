@@ -2336,10 +2336,26 @@ details[open] > summary .vw-tx-chevron {
 /* needs attention + featured chart */
 .rpt-overview { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--vw-space-md); align-items: stretch; }
 @media (max-width: 1100px) { .rpt-overview { grid-template-columns: 1fr; } }
-.rpt-attn-list { list-style: none; margin: var(--vw-space-sm) 0 0; padding: 0; }
+.rpt-attn { display: flex; flex-direction: column; min-height: 0; }
+.rpt-attn-list {
+  list-style: none;
+  margin: var(--vw-space-sm) 0 0;
+  padding: 0 6px 0 0;
+  max-height: 312px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--vw-color-slate-300) transparent;
+}
+.rpt-attn-list::-webkit-scrollbar { width: 6px; }
+.rpt-attn-list::-webkit-scrollbar-track { background: transparent; }
+.rpt-attn-list::-webkit-scrollbar-thumb { background: var(--vw-color-slate-300); border-radius: 3px; }
+.rpt-attn-list::-webkit-scrollbar-thumb:hover { background: var(--vw-color-slate-400); }
 .rpt-attn-list li + li { border-top: 1px solid var(--vw-color-slate-100); }
-.rpt-attn-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 4px; background: none; border: 0; text-align: left; cursor: pointer; font: inherit; border-radius: var(--vw-radius-md); }
-.rpt-attn-row:hover { background: var(--vw-color-slate-50); }
+.rpt-attn-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 4px; background: none; border: 0; text-align: left; font: inherit; border-radius: var(--vw-radius-md); box-sizing: border-box; }
+.rpt-attn-row.is-clickable { cursor: pointer; }
+.rpt-attn-row.is-clickable:hover { background: var(--vw-color-slate-50); }
+.rpt-attn-row.is-static { cursor: default; }
 .rpt-attn-ic { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--vw-radius-md); }
 .rpt-attn-ic[data-tone="crit"] { background: var(--vw-color-red-50); color: var(--vw-color-red-600); }
 .rpt-attn-ic[data-tone="warn"] { background: var(--vw-color-amber-50); color: var(--vw-color-amber-600); }
@@ -2347,6 +2363,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-attn-t { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900); }
 .rpt-attn-d { font-size: 0.75rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rpt-attn-link { color: var(--vw-color-blue-600); font-weight: 500; }
+.rpt-attn-static-label { color: var(--vw-color-gray-700); font-weight: 500; }
 .rpt-attn-chev { flex-shrink: 0; font-size: 1.25rem; color: var(--vw-color-gray-400); }
 .rpt-attn-more { margin-top: 6px; }
 .rpt-overview > .rpt-visual, .rpt-overview > .rpt-visual.is-wide { margin: 0; grid-column: auto; }

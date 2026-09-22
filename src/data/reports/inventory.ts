@@ -82,7 +82,7 @@ const estate: ReportBuilder = () => {
       { priority: 'P3', action: 'Add discovery adapters for server, DWDM and RAN classes', owner: 'Discovery engineering', impact: `Verifies up to ${fmtNum(IL.ne - IL.discovered)} more elements` }
     ],
     table: {
-      title: 'Estate by equipment class', sub: 'Stock position per class; select a row to open Physical Resources',
+      title: 'Estate by equipment class', sub: 'Stock position per class',
       columns: [
         { key: 'cls', header: 'Class' }, { key: 'planned', header: 'Planned', fmt: 'num', right: true }, { key: 'instore', header: 'In store', fmt: 'num', right: true },
         { key: 'deployed', header: 'Deployed', fmt: 'num', right: true }, { key: 'faulty', header: 'Faulty / RMA', fmt: 'num', right: true },
@@ -301,7 +301,7 @@ const quality: ReportBuilder = () => {
       { priority: 'P3', action: `Field-check the ${n('miss')} missing ${n('miss') === 1 ? 'element' : 'elements'}`, owner: 'Field operations', impact: 'Confirms decommission or restores the record' }
     ],
     table: {
-      title: 'Verification quality by class', sub: 'Element register; select a row to open the class',
+      title: 'Verification quality by class', sub: 'Element register',
       columns: [
         { key: 'cls', header: 'Class' }, { key: 'active', header: 'Active (ledger)', fmt: 'num', right: true }, { key: 'disc', header: 'Discovered', fmt: 'num', right: true },
         { key: 'discPct', header: 'Coverage', fmt: 'pct', right: true },
