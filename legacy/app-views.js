@@ -437,7 +437,7 @@ function viewJobs() {
     ${card(`
       ${gridBar(rows.length, JOBS.length, 'Job, scope, collector', FS.jobs, '', [], 'jobs')}
       ${table(
-        [{ t: 'Status' }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
+        [{ t: 'Status', plain: true }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
         rows.map(j => [
@@ -457,7 +457,7 @@ function viewJobs() {
           jobHeld(j) ? chip('Held', 'warning')
             : `<span class="vw-card-metric-label-sub">${j.next}</span>${
                 jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
-        ]), 'job-table',
+        ]), 'job-table chip-auto',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:`tgt=All&job=${encodeURIComponent(rows[i].id)}` }),
               ])}`)}
 
