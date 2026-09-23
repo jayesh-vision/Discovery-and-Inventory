@@ -126,7 +126,8 @@ const stock: ReportBuilder = () => {
     ],
     kpis: [
       { title: 'Deployed', definition: 'Elements installed and in service.', value: deployed, fmt: 'num', of: `${r1(pct(deployed, IL.ne))}% of active`, tone: 'emerald',
-        delta: { text: `${planned} planned`, better: null } },
+        delta: { text: `${planned} planned`, better: null },
+        visual: { kind: 'against', value: deployed, limit: IL.ne } },
       { title: 'Faulty / RMA', definition: 'Elements reported faulty or returned to the OEM.', value: faulty, fmt: 'num', of: `${r1(pct(faulty, IL.ne))}% of active`, tone: 'amber',
         delta: { text: `${EST.spares.rma} under RMA`, better: false },
         visual: { kind: 'segments', parts: rows.filter(r => r.m.faulty).map(r => ({ n: name(r.k), c: r.m.faulty, hex: CLASS_HEX[r.k] })), total: faulty } },
@@ -134,7 +135,8 @@ const stock: ReportBuilder = () => {
         delta: { text: `${(instore / faulty).toFixed(2)} per faulty element`, better: false },
         visual: { kind: 'against', value: instore, limit: faulty } },
       { title: 'Classes without cover', definition: 'Equipment classes with faulty units and no spare in store.', value: noCover.length, fmt: 'num', of: `of ${NE_CLASSES.length} classes`, tone: 'red',
-        delta: { text: noCover.map(r => name(r.k)).join(', '), better: false } }
+        delta: { text: noCover.map(r => name(r.k)).join(', '), better: false },
+        visual: { kind: 'against', value: noCover.length, limit: NE_CLASSES.length } }
     ],
     visuals: [
       { kind: 'heat', span: 2, title: 'Class × stock state', sub: 'Element counts; darker holds more', fmt: 'num',
@@ -199,14 +201,17 @@ const lifecycle: ReportBuilder = () => {
     ],
     kpis: [
       { title: 'Past end of support', definition: 'Active elements whose model is beyond the OEM end-of-support date.', value: EST.eol.past, fmt: 'num', of: `${r1(pct(EST.eol.past, IL.ne))}% of active`, tone: 'red',
-        delta: { text: `${past.length} models`, better: false } },
+        delta: { text: `${past.length} models`, better: false },
+        visual: { kind: 'against', value: EST.eol.past, limit: IL.ne } },
       { title: 'Within 12 months', definition: 'Active elements reaching end of support in the next 12 months.', value: EST.eol.within12, fmt: 'num', of: `${r1(pct(EST.eol.within12, IL.ne))}% of active`, tone: 'amber',
-        delta: { text: `${soon.length} models`, better: false } },
+        delta: { text: `${soon.length} models`, better: false },
+        visual: { kind: 'against', value: EST.eol.within12, limit: IL.ne } },
       { title: 'Software compliance', definition: 'Elements on the approved software baseline ÷ elements assessed.', value: r1(pct(EST.compliance.compliant, assessed)), fmt: 'pct', of: `${fmtNum(EST.compliance.compliant)} of ${fmtNum(assessed)}`, tone: 'emerald',
         delta: { text: `${fmtNum(EST.compliance.behind)} behind`, better: false },
         visual: { kind: 'segments', parts: [{ n: 'On baseline', c: EST.compliance.compliant, hex: TONE_HEX.success }, { n: 'Behind', c: EST.compliance.behind, hex: TONE_HEX.warning }, { n: 'Unknown', c: EST.compliance.unknown, hex: TONE_HEX.neutral }], total: assessed } },
       { title: 'Models without a support date', definition: 'Distinct models with no end-of-support date on record.', value: unknownModels.length, fmt: 'num', of: `of ${models.length} models`, tone: 'slate',
-        delta: { text: `${new Set(models.map(m => m.oem)).size} OEMs in the estate`, better: null } }
+        delta: { text: `${new Set(models.map(m => m.oem)).size} OEMs in the estate`, better: null },
+        visual: { kind: 'against', value: unknownModels.length, limit: models.length } }
     ],
     visuals: [
       { kind: 'composition', span: 2, title: 'End-of-support exposure', sub: `${fmtNum(IL.ne)} active elements`,
@@ -280,9 +285,11 @@ const quality: ReportBuilder = () => {
         delta: { text: `${fmtNum(n('ok'))} verified`, better: false },
         visual: { kind: 'segments', parts: byState.map(x => ({ n: RSTATE[x.s][0], c: x.n, hex: stateHex[x.s] })), total: register.length } },
       { title: 'Stale records', definition: 'Records not re-verified within the scan window.', value: n('stale'), fmt: 'num', of: `${r1(pct(n('stale'), register.length))}% of register`, tone: 'orange',
-        delta: { text: 're-verification overdue', better: false } },
+        delta: { text: 're-verification overdue', better: false },
+        visual: { kind: 'against', value: n('stale'), limit: register.length } },
       { title: 'Never discovered', definition: 'Records discovery has never verified — planned, manual or EMS-only.', value: n('none'), fmt: 'num', of: `${r1(pct(n('none'), register.length))}% of register`, tone: 'slate',
-        delta: { text: `${undiscoveredClasses.length} classes without an adapter`, better: null } }
+        delta: { text: `${undiscoveredClasses.length} classes without an adapter`, better: null },
+        visual: { kind: 'against', value: n('none'), limit: register.length } }
     ],
     visuals: [
       { kind: 'composition', span: 2, title: 'Record verification state', sub: `Element register · ${fmtNum(register.length)} records`,
@@ -350,11 +357,14 @@ const archive: ReportBuilder = () => {
         delta: { text: `${lastYear} in the last 12 months`, better: null },
         visual: { kind: 'segments', parts: NE_CLASSES.map(k => ({ n: name(k), c: PHY_MATRIX[k].decomm, hex: CLASS_HEX[k] })), total: IL.inactive } },
       { title: 'Still answering', definition: 'Archived elements that still respond to discovery scans.', value: DECOMM_ZOMBIES, fmt: 'num', of: 'zombie assets', tone: 'red',
-        delta: { text: zombies.map(z => z.loc).join(', '), better: false } },
+        delta: { text: zombies.map(z => z.loc).join(', '), better: false },
+        visual: { kind: 'against', value: DECOMM_ZOMBIES, limit: 10 } },
       { title: 'Retired, last 12 months', definition: 'Elements decommissioned in the 12 months to the report date.', value: lastYear, fmt: 'num', of: `${r1(pct(lastYear, rows.length))}% of archive`, tone: 'sky',
-        delta: { text: `${years[years.length - 1][1]} so far in ${years[years.length - 1][0]}`, better: null } },
+        delta: { text: `${years[years.length - 1][1]} so far in ${years[years.length - 1][0]}`, better: null },
+        visual: { kind: 'against', value: lastYear, limit: rows.length } },
       { title: 'Oldest record', definition: 'Age of the longest-held record in the archive, in months.', value: oldestMonths, fmt: 'num', of: `months · ${DECOMM_OLDEST}`, tone: 'amber',
-        delta: { text: `${rows.filter(r => TODAY.getTime() - parseDmy(r.on).getTime() > 5 * 365 * 86400000).length} records older than 5 years`, better: null } }
+        delta: { text: `${rows.filter(r => TODAY.getTime() - parseDmy(r.on).getTime() > 5 * 365 * 86400000).length} records older than 5 years`, better: null },
+        visual: { kind: 'against', value: oldestMonths, limit: 120 } }
     ],
     visuals: [
       { kind: 'ramp', title: 'Decommissioned per year', sub: 'Archive records by decommission year', buckets: years.map(([y, c], i) => ({ label: y, count: c, hex: cv('slate', [200, 300, 300, 400, 400, 500, 500, 600][i] ?? 500) })) },
@@ -421,7 +431,8 @@ const sites: ReportBuilder = () => {
         delta: { text: status.map(([st, c]) => `${c} ${st.toLowerCase()}`).join(' · '), better: null },
         visual: { kind: 'segments', parts: status.map(([st, c]) => ({ n: st, c, hex: statusTone[st] ?? TONE_HEX.neutral })), total: LOCATIONS.length } },
       { title: 'Sites near capacity', definition: 'Surveyed sites above 75% of rated power or rack space.', value: hot.length, fmt: 'num', of: `of ${LOCATIONS.length} surveyed`, tone: 'red',
-        delta: { text: hot.map(x => x.l.id).join(', ') || 'none', better: hot.length === 0 } }
+        delta: { text: hot.map(x => x.l.id).join(', ') || 'none', better: hot.length === 0 },
+        visual: { kind: 'against', value: hot.length, limit: LOCATIONS.length } }
     ],
     visuals: [
       { kind: 'bars', title: 'Power load vs rating', sub: 'Surveyed sites · % of rated feed capacity', fmt: 'pct', max: 100, target: { value: 75, label: '75%' },
@@ -493,11 +504,14 @@ const vendors: ReportBuilder = () => {
         delta: { text: `${fmtNum(top.n)} elements`, better: null },
         visual: { kind: 'segments', parts: oems.slice(0, 5).map((o, i) => ({ n: o.oem, c: o.n, hex: oemHex(i) })), total: register.length } },
       { title: 'Top-3 concentration', definition: 'Share of elements supplied by the three largest OEMs.', value: top3, fmt: 'pct', of: `HHI ${fmtNum(hhi)}`, tone: 'sky',
-        delta: { text: oems.slice(0, 3).map(o => o.oem).join(', '), better: null } },
+        delta: { text: oems.slice(0, 3).map(o => o.oem).join(', '), better: null },
+        visual: { kind: 'against', value: top3, limit: 100 } },
       { title: 'Vendors', definition: 'Distinct OEMs in the element register.', value: oems.length, fmt: 'num', of: `${new Set(register.map(r => r.model)).size} models`, tone: 'slate',
-        delta: { text: `${oems.filter(o => o.share < 2).length} below 2% share`, better: null } },
+        delta: { text: `${oems.filter(o => o.share < 2).length} below 2% share`, better: null },
+        visual: { kind: 'against', value: oems.length, limit: 20 } },
       { title: 'Most exposed vendor', definition: 'Highest share of a vendor’s installed base on models past or near end of support.', value: exposure(riskiest), fmt: 'pct', of: riskiest.oem, tone: 'red',
-        delta: { text: `${riskiest.pastPct}% past · ${riskiest.soonPct}% in window`, better: false } }
+        delta: { text: `${riskiest.pastPct}% past · ${riskiest.soonPct}% in window`, better: false },
+        visual: { kind: 'against', value: exposure(riskiest), limit: 100 } }
     ],
     visuals: [
       { kind: 'bars', title: 'Elements by vendor', sub: 'Share of the element register', fmt: 'pct',

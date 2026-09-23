@@ -245,7 +245,7 @@ export default function Insights() {
                     <TargetBar value={r.value} target={r.target} min={r.scaleMin} max={r.scaleMax!} hex={hex}
                       higherIsBetter={r.higherIsBetter} format={fmt} />
                   )}
-                  <Sparkline values={m.trend} height={30} hex={hex} />
+                  <Sparkline values={m.trend} height={20} hex={hex} />
                 </div>
               </Wrap>
             );

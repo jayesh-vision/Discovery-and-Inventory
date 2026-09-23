@@ -73,7 +73,10 @@ export function ReportView({ module }: { module: ReportModule }) {
 
       {content.visuals.length > 0 && (
         <>
-          <div className="rpt-section">Analysis</div>
+          <div className="rpt-section">
+            <span>Analysis</span>
+            <span className="rpt-section-count">{content.visuals.length} {content.visuals.length === 1 ? 'view' : 'views'}</span>
+          </div>
           <div className="rpt-visuals">{content.visuals.map(v => <VisualCard key={v.title} v={v} />)}</div>
         </>
       )}
@@ -84,7 +87,7 @@ export function ReportView({ module }: { module: ReportModule }) {
           <thead><tr><th style={{ width: '7rem' }}>Priority</th><th>Action</th><th style={{ width: '16rem' }}>Owner</th><th style={{ width: '22rem' }}>Expected impact</th></tr></thead>
           <tbody>{content.actions.map((a, i) => (
             <tr key={i}>
-              <td><Chip tone={PRIORITY_TONE[a.priority]} strong>{a.priority}</Chip><div className="rpt-muted" style={{ fontSize: 11, marginTop: 3 }}>{PRIORITY_WHEN[a.priority]}</div></td>
+              <td><Chip tone={PRIORITY_TONE[a.priority]} strong>{a.priority}</Chip><div className="rpt-muted" style={{ fontSize: '0.75rem', marginTop: 3 }}>{PRIORITY_WHEN[a.priority]}</div></td>
               <td className="rpt-td-wrap vw-value" style={{ fontWeight: 500 }}>{a.action}</td>
               <td className="rpt-td-wrap">{a.owner}</td>
               <td className="rpt-td-wrap rpt-muted">{a.impact}</td>

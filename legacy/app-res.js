@@ -536,7 +536,7 @@ function viewSwitchResource(N) {
             <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
             ${chip(stLabel, stTone)}${chip(r.oem || 'Switch', 'info')}
           </div>
-          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+          <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             Switch · ${r.loc || N.name}
           </span>
@@ -550,7 +550,7 @@ function viewSwitchResource(N) {
         ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
         ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
       ].map(([k, v]) => `<div class="stack-x">
-        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+        <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
       '', 'padding:var(--vw-space-lg)')}
 
     <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-ressw="${k}">${l}</button>`).join('')}</div>
@@ -1645,7 +1645,7 @@ function viewRackDetail() {
           ${rkIcon('emerald', 'arrow')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Largest Free Block</span>
-            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.largest ? `${m.largest.u}U` : '—'}</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${m.largest ? `${m.largest.u}U` : '—'}</span>
             <span class="vw-card-metric-label-sub">${m.largest ? uRange(m.largest) : 'rack is full'}</span>
           </span>
         </div>
@@ -1653,7 +1653,7 @@ function viewRackDetail() {
           ${rkIcon('sky', 'list')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Total Devices</span>
-            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.devices}</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${m.devices}</span>
             <span class="vw-card-metric-label-sub">Devices mounted</span>
           </span>
         </div>
@@ -2133,7 +2133,7 @@ function viewSpliceDetail() {
           stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[ic]}</svg></span>
       <span class="stack-x" style="min-width:0">
         <span class="vw-card-metric-label">${k}</span>
-        <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${v}</span>
+        <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${v}</span>
       </span>
     </div>`).join('')}
   </div>`;
@@ -2167,7 +2167,7 @@ function viewSpliceDetail() {
           ${rkIcon(overBudget ? 'red' : 'emerald', overBudget ? 'gauge' : 'check')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Mean splice loss</span>
-            <span class="vw-value num" style="font-size:1.375rem;font-weight:600">${esc(r.loss)}</span>
+            <span class="vw-value num" style="font-size:1.375rem;font-weight:300">${esc(r.loss)}</span>
           </span>
         </span>
         ${read ? `<span class="rk-pill" style="background:${cv(overBudget ? 'red' : 'emerald', 25)};border-color:${cv(overBudget ? 'red' : 'emerald', 100)}">

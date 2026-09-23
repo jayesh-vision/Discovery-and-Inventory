@@ -114,43 +114,43 @@ function viewInsights() {
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-lg)">
       <div class="vw-card" style="border-left:4px solid var(--vw-color-blue-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-blue-600);margin-bottom:6px">North zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-blue-600);margin-bottom:6px">North zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">681</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">681</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">91.8% success · 56 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 7 new · 0.9 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 7 new · 0.9 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-teal-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-teal-600);margin-bottom:6px">South zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-teal-600);margin-bottom:6px">South zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">694</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">694</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.9% success · 49 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 5 new · 2.4 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 5 new · 2.4 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-amber-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-amber-600);margin-bottom:6px">East zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-amber-600);margin-bottom:6px">East zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">609</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">609</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.2% success · 48 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 4 new · 1.8 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 4 new · 1.8 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-purple-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-purple-600);margin-bottom:6px">West zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-purple-600);margin-bottom:6px">West zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">375</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">375</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">93.6% success · 24 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 3 new · 2.7 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 3 new · 2.7 pt vs last cycle</div>
       </div>
     </div>
 

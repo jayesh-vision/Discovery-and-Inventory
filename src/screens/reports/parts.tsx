@@ -165,7 +165,7 @@ function Heat({ v }: { v: Extract<Visual, { kind: 'heat' }> }) {
         <thead><tr><th />{v.cols.map(c => <th key={c} className="eyebrow" style={{ textAlign: 'center' }}>{c}</th>)}<th className="eyebrow" style={{ textAlign: 'right' }}>Total</th></tr></thead>
         <tbody>{v.rows.map((r, ri) => (
           <tr key={r}>
-            <td className="vw-value" style={{ fontWeight: 600 }}>{r}</td>
+            <td className="vw-value" style={{ fontWeight: 500 }}>{r}</td>
             {v.cols.map((c, ci) => {
               const x = v.values[ri][ci]; const s = shade(x);
               return (
@@ -177,7 +177,7 @@ function Heat({ v }: { v: Extract<Visual, { kind: 'heat' }> }) {
                 </td>
               );
             })}
-            <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{fmtValue(sum(v.values[ri], y => y), v.fmt)}</td>
+            <td className="num" style={{ textAlign: 'right', fontWeight: 500 }}>{fmtValue(sum(v.values[ri], y => y), v.fmt)}</td>
           </tr>
         ))}</tbody>
       </table>
@@ -232,7 +232,7 @@ function Steps({ v }: { v: Extract<Visual, { kind: 'steps' }> }) {
               <span className="rpt-step-gain" style={{ left: at(prev), width: `calc(${at(s.cum)} - ${at(prev)})`, background: reached ? cv('emerald', 400) : cv('blue', 400) }} />
               <span className="rpt-step-target" style={{ left: at(v.target) }} />
             </span>
-            <span className="rpt-step-v num">+{s.gain.toFixed(2)} → <b>{fmtValue(s.cum, v.fmt)}</b></span>
+            <span className="rpt-step-v num">+{s.gain.toFixed(2)} → <span style={{ fontWeight: 500, color: 'var(--vw-color-gray-900)' }}>{fmtValue(s.cum, v.fmt)}</span></span>
           </div>
         );
       })}
@@ -247,7 +247,7 @@ export function VisualCard({ v }: { v: Visual }) {
     case 'ramp': body = <RampBars buckets={v.buckets} height={220} />; break;
     case 'donut': body = (
       <div className="rpt-donut">
-        <Donut slices={v.slices} total={v.total} label={v.label} size={190} />
+        <Donut slices={v.slices} total={v.total} label={v.label} size={160} />
         <Composition parts={v.slices.map(s => ({ n: s.n, c: s.c, hex: s.hex }))} />
       </div>
     ); break;
@@ -274,5 +274,5 @@ export const TrendSpark = ({ values, better }: { values?: number[]; better?: 'up
   if (!values || values.length < 2) return null;
   const up = values[values.length - 1] >= values[0];
   const good = better ? (better === 'up') === up : null;
-  return <Sparkline values={values} height={34} hex={good === null ? cv('blue', 500) : good ? cv('emerald', 500) : cv('red', 500)} />;
+  return <Sparkline values={values} height={20} hex={good === null ? cv('blue', 500) : good ? cv('emerald', 500) : cv('red', 500)} />;
 };

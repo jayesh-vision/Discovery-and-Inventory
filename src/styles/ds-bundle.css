@@ -749,6 +749,7 @@ body {
 .vw-card-metric-xxs,
 .vw-card-metric-xxxs {
   font-weight: 300;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--vw-color-gray-950, var(--vw-color-gray-900));
 }

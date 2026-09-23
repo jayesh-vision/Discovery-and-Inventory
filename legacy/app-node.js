@@ -895,7 +895,7 @@ const nvAI = (title, sub, tone, cards, extraStyle = '') => {
   return `
   <div class="nv-ai"${extraStyle ? ` style="${extraStyle}"` : ''}>
     <div class="nv-ai-head" style="background:${bg};border-bottom:1px solid ${border};padding:12px 16px">
-      <span class="nv-ai-t" style="color:${textCol};font-weight:700;font-size:0.875rem">${title}</span>
+      <span class="nv-ai-t" style="color:${textCol};font-weight:500;font-size:0.875rem">${title}</span>
       <span class="nv-ai-s" style="color:${subCol};font-size:0.75rem;margin-top:2px">${sub}</span>
     </div>
     <div class="nv-ai-body">

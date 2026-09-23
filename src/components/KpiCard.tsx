@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { cv } from './ui';
+import { cv, InfoTip } from './ui';
 
 /* A KPI an operator can read without a legend:
    - a plain-language title and a one-sentence definition behind ⓘ
@@ -15,17 +15,12 @@ export function KpiCard({ title, definition, value, unit, of, visual, delta, act
   title: string; definition: string; value: string; unit?: string; of?: string;
   visual?: ReactNode; delta: Delta; action?: { label: string; onClick: () => void }; tone?: string;
 }) {
-  const [info, setInfo] = useState(false);
   const dTone = delta.better === null ? 'gray' : delta.better ? 'emerald' : 'red';
   return (
     <div className="kpi3" style={{ ['--kpi-accent' as string]: cv(tone, 500) }}>
       <div className="kpi3-head">
         <span className="kpi3-title">{title}</span>
-        <button className="kpi3-info" aria-label={`What ${title.toLowerCase()} means`} aria-expanded={info}
-          onMouseEnter={() => setInfo(true)} onMouseLeave={() => setInfo(false)}
-          onFocus={() => setInfo(true)} onBlur={() => setInfo(false)}
-          onClick={() => setInfo(v => !v)}>i</button>
-        {info && <div className="kpi3-def" role="tooltip">{definition}</div>}
+        {definition && <InfoTip text={definition} label={`What ${title.toLowerCase()} means`} />}
       </div>
       <div className="kpi3-num">
         <span className="kpi3-v num">{value}</span>{unit && <span className="kpi3-u">{unit}</span>}
@@ -62,7 +57,7 @@ export function Cycles({ values, labels, format }: { values: number[]; labels: s
   return (
     <div className="kpi3-cyc" onMouseLeave={() => setHov(null)}>
       {values.map((v, i) => {
-        const h = 22 + Math.round(((v - min) / span) * 26);
+        const h = 7 + Math.round(((v - min) / span) * 14);
         const last = i === values.length - 1;
         return (
           <span key={i} className={`kpi3-cyc-b${last ? ' is-cur' : ''}${hov === i ? ' is-hov' : ''}`} style={{ height: h }}
@@ -74,15 +69,14 @@ export function Cycles({ values, labels, format }: { values: number[]; labels: s
   );
 }
 
-/* a value against a limit */
 export function Against({ value, limit, format, hex }: { value: number; limit: number; format: (v: number) => string; hex: string }) {
   const pctV = Math.min(100, value / limit * 100);
   return (
     <>
-      <div className="kpi3-seg" role="img" aria-label={`${format(value)} of a ${format(limit)} limit`}>
+      <div className="kpi3-seg" role="img" aria-label={`${format(value)} of ${format(limit)}`}>
         <span style={{ width: `${pctV.toFixed(1)}%`, background: hex }} />
       </div>
-      <div className="kpi3-seg-l"><span><b className="num">{pctV.toFixed(0)}%</b> of the {format(limit)} window</span></div>
+      <div className="kpi3-seg-l"><span><b className="num">{pctV.toFixed(0)}%</b> of {format(limit)}</span></div>
     </>
   );
 }

@@ -213,9 +213,11 @@ const exceptions: ReportBuilder = () => {
         delta: { text: `${Math.round(pct(breached.length, ex.length))}% of open exceptions`, better: false },
         visual: { kind: 'segments', parts: (['Breached', 'At risk', 'On track'] as const).map(s => ({ n: s, c: ex.filter(e => e.sla === s).length, hex: TONE_HEX[SLA_TONE[s]] })), total: ex.length } },
       { title: 'No owner', definition: 'Exceptions not yet assigned to a person or team.', value: unowned.length, fmt: 'num', of: `of ${ex.length}`, tone: 'amber',
-        delta: { text: unowned.map(e => e.id).join(', '), better: false } },
+        delta: { text: unowned.map(e => e.id).join(', '), better: false },
+        visual: { kind: 'against', value: unowned.length, limit: ex.length } },
       { title: 'Oldest open', definition: 'Days since the oldest open exception was detected.', value: oldest, fmt: 'days', of: tl1[0]?.id, tone: 'orange',
-        delta: { text: 'TL1 credential expired 19-Nov-2025', better: false } }
+        delta: { text: 'TL1 credential expired 19-Nov-2025', better: false },
+        visual: { kind: 'against', value: oldest, limit: 365 } }
     ],
     visuals: [
       { kind: 'donut', title: 'By exception state', sub: 'What kind of disagreement each exception is', total: ex.length, label: 'exceptions',
@@ -276,9 +278,10 @@ const coverage: ReportBuilder = () => {
         visual: { kind: 'cycles', values: COVERAGE.trend, labels: cycleLabels(COVERAGE.trend.length) } },
       { title: 'Failing targets', definition: 'Targets discovery could not complete, grouped by root cause.', value: failedTargets, fmt: 'num', of: '4 root causes', tone: 'red',
         delta: { text: `${ROOT_CAUSE_FAILURES[1].targets} RAN unreachable`, better: false },
-        visual: { kind: 'segments', parts: ROOT_CAUSE_FAILURES.map(r => ({ n: `${DOMAIN_LABEL[r.domain]} ${r.tag}`, c: r.targets, hex: DOMAIN_HEX[r.domain] })), total: failedTargets } },
+        visual: { kind: 'segments', parts: ROOT_CAUSE_FAILURES.map(r => ({ n: r.tag === 'AUTH' ? 'Auth' : r.tag === 'FGP' ? 'Fgp' : `${r.domain} net`, c: r.targets, hex: DOMAIN_HEX[r.domain] })), total: failedTargets } },
       { title: 'Never verified', definition: 'Assets in scope that discovery has never successfully verified.', value: 68, fmt: 'num', of: `${funnel['Answered, unidentified']} unidentified`, tone: 'amber',
-        delta: { text: 'RAN 38 · Transport 30', better: false } },
+        delta: { text: 'RAN 38 · Transport 30', better: false },
+        visual: { kind: 'segments', parts: [{ n: 'RAN', c: 38, hex: DOMAIN_HEX.RAN }, { n: 'Transport', c: 30, hex: DOMAIN_HEX.Transport }], total: 68 } },
       { title: 'Weakest adapter', definition: 'Lowest per-adapter success rate in the last sweep.', value: weakAdapter.successPct, fmt: 'pct', of: weakAdapter.adapter, tone: 'orange',
         delta: { text: weakAdapter.status, better: false },
         visual: { kind: 'against', value: weakAdapter.successPct, limit: 100 } }
@@ -341,7 +344,8 @@ const automation: ReportBuilder = () => {
     ],
     kpis: [
       { title: 'Touchless rate', definition: 'Share of discrepancies closed by policy without an engineer.', value: 60.7, fmt: 'pct', of: `from ${PLATFORM_OUTPUT.touchlessStart}%`, tone: 'emerald',
-        delta: { text: `+${PLATFORM_OUTPUT.touchlessNow - PLATFORM_OUTPUT.touchlessStart} pt since baseline`, better: true } },
+        delta: { text: `+${PLATFORM_OUTPUT.touchlessNow - PLATFORM_OUTPUT.touchlessStart} pt since baseline`, better: true },
+        visual: { kind: 'against', value: 60.7, limit: 100 } },
       { title: 'Closed without an engineer', definition: 'Discrepancies closed automatically in the last 30 days.', value: PLATFORM_OUTPUT.closedNoEngineer, fmt: 'num', of: `of ${fmtNum(PLATFORM_OUTPUT.detected)} detected`, tone: 'sky',
         delta: { text: `${Math.round(pct(PLATFORM_OUTPUT.closedNoEngineer, PLATFORM_OUTPUT.detected))}% of detections`, better: null },
         visual: { kind: 'against', value: PLATFORM_OUTPUT.closedNoEngineer, limit: PLATFORM_OUTPUT.detected } },
@@ -410,9 +414,11 @@ const rules: ReportBuilder = () => {
         delta: { text: live.map(r => r.id).join(', '), better: null },
         visual: { kind: 'segments', parts: RULE_LIFECYCLE.map(s => ({ n: s, c: RULES.filter(r => r.status === s).length, hex: TONE_HEX[STATUS_TONE[s]] })).filter(p => p.c), total: RULES.length } },
       { title: 'Awaiting a decision', definition: 'Rules in Review or Approved but not yet activated.', value: waiting.length, fmt: 'num', of: 'review or activation', tone: 'sky',
-        delta: { text: waiting.map(r => r.id).join(', '), better: false } },
+        delta: { text: waiting.map(r => r.id).join(', '), better: false },
+        visual: { kind: 'against', value: waiting.length, limit: RULES.length } },
       { title: 'Suspended', definition: 'Rules stopped by an operator or a failed run.', value: suspended.length, fmt: 'num', of: suspended.map(r => r.priority).join(', ') + ' priority', tone: 'red',
-        delta: { text: suspended.map(r => r.id).join(', '), better: false } },
+        delta: { text: suspended.map(r => r.id).join(', '), better: false },
+        visual: { kind: 'against', value: suspended.length, limit: RULES.length } },
       { title: 'Exception rate, live rules', definition: 'Exceptions ÷ records compared in each live rule’s latest run.', value: exRate, fmt: 'pct', of: `${fmtNum(liveEx)} of ${fmtNum(liveMatched + liveEx)}`, tone: 'amber',
         delta: { text: `${liveRuns.length} latest runs`, better: null },
         visual: { kind: 'against', value: liveEx, limit: liveMatched + liveEx } }
@@ -480,26 +486,30 @@ const cost: ReportBuilder = () => {
     ],
     kpis: [
       { title: 'Unbilled optical capacity', definition: 'Live wavelengths with no service record × assumed managed rate × 12.', value: opticalUsd, fmt: 'usd', of: 'per year', tone: 'red',
-        delta: { text: '42 wavelengths · rising', better: false } },
+        delta: { text: '42 wavelengths · rising', better: false },
+        visual: { kind: 'against', value: 42, limit: 60 } },
       { title: 'Engineer time reclaimed', definition: 'Touchless closures × minutes each, per month.', value: 904, fmt: 'num', of: 'hours / month', tone: 'emerald',
-        delta: { text: engineer.card.note ?? '', better: true } },
+        delta: { text: engineer.card.note ?? '', better: true },
+        visual: { kind: 'against', value: 904, limit: 1200 } },
       { title: 'Field dispatches avoided', definition: 'Findings traced to a degraded collector instead of a site visit × cost per visit.', value: dispatchUsd, fmt: 'usd', of: '34 visits', tone: 'sky',
-        delta: { text: '$340 per Transport visit', better: true } },
+        delta: { text: '$340 per Transport visit', better: true },
+        visual: { kind: 'against', value: 34, limit: 50 } },
       { title: 'Audit exposure', definition: 'Records an external inventory audit would raise today (direct count, no assumption).', value: 30, fmt: 'num', of: 'records', tone: 'amber',
-        delta: { text: 'flat', better: null } }
+        delta: { text: 'flat', better: null },
+        visual: { kind: 'against', value: 30, limit: 100 } }
     ],
     visuals: [
-      { kind: 'bars', span: 2, title: 'Annual value at stake by lever', sub: 'US$ per year at the stated assumptions', fmt: 'usd',
+      { kind: 'bars', title: 'Annual value at stake by lever', sub: 'US$ per year at the stated assumptions', fmt: 'usd',
         rows: [
           { label: 'Unbilled optical capacity (exposure)', value: opticalUsd, hex: 'var(--vw-color-red-400)', sub: '42 wavelengths × $3,800 × 12' },
           { label: 'Engineer time reclaimed (saving)', value: engineerUsd, hex: 'var(--vw-color-emerald-400)', sub: '2,169 closures × 25 min × $65/h' },
           { label: 'Field dispatches avoided (saving)', value: dispatchUsd, hex: 'var(--vw-color-sky-400)', sub: '34 visits × $340' }
         ] },
-      { kind: 'composition', title: 'Risk direction', sub: `${RISK_REGISTER.length} risks on the register`,
-        parts: [
-          { n: 'Rising', c: RISK_REGISTER.filter(r => r.direction === 'up').length, hex: 'var(--vw-color-red-400)' },
-          { n: 'Needs action now', c: RISK_REGISTER.filter(r => r.direction === 'now').length, hex: 'var(--vw-color-amber-400)' },
-          { n: 'Flat', c: RISK_REGISTER.filter(r => r.direction === 'flat').length, hex: 'var(--vw-color-slate-300)' }
+      { kind: 'donut', title: 'Risk direction', sub: `${RISK_REGISTER.length} risks on the register`, total: RISK_REGISTER.length, label: 'risks',
+        slices: [
+          { k: 'Rising', n: 'Rising', c: RISK_REGISTER.filter(r => r.direction === 'up').length, hex: 'var(--vw-color-red-400)' },
+          { k: 'Needs action now', n: 'Needs action now', c: RISK_REGISTER.filter(r => r.direction === 'now').length, hex: 'var(--vw-color-amber-400)' },
+          { k: 'Flat', n: 'Flat', c: RISK_REGISTER.filter(r => r.direction === 'flat').length, hex: 'var(--vw-color-slate-300)' }
         ] }
     ],
     actions: [

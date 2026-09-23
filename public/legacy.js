@@ -4645,43 +4645,43 @@ function viewInsights() {
 
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-lg)">
       <div class="vw-card" style="border-left:4px solid var(--vw-color-blue-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-blue-600);margin-bottom:6px">North zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-blue-600);margin-bottom:6px">North zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">681</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">681</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">91.8% success · 56 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 7 new · 0.9 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 7 new · 0.9 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-teal-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-teal-600);margin-bottom:6px">South zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-teal-600);margin-bottom:6px">South zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">694</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">694</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.9% success · 49 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 5 new · 2.4 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 5 new · 2.4 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-amber-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-amber-600);margin-bottom:6px">East zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-amber-600);margin-bottom:6px">East zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">609</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">609</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">92.2% success · 48 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 4 new · 1.8 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 4 new · 1.8 pt vs last cycle</div>
       </div>
 
       <div class="vw-card" style="border-left:4px solid var(--vw-color-purple-500);border-radius:12px;padding:var(--vw-space-md) var(--vw-space-lg);background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.05)">
-        <div style="font-size:0.875rem;font-weight:600;color:var(--vw-color-purple-600);margin-bottom:6px">West zone</div>
+        <div style="font-size:0.875rem;font-weight:500;color:var(--vw-color-purple-600);margin-bottom:6px">West zone</div>
         <div class="row vw-items-baseline" style="gap:8px;margin-bottom:4px">
-          <span class="num" style="font-size:1.75rem;font-weight:700;color:var(--vw-color-slate-900);line-height:1">375</span>
+          <span class="num" style="font-size:1.75rem;font-weight:300;color:var(--vw-color-slate-900);line-height:1">375</span>
           <span class="mono" style="font-size:0.875rem;color:var(--vw-color-slate-500)">devices</span>
         </div>
         <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);margin-bottom:8px">93.6% success · 24 failed</div>
-        <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-emerald-600)">▲ 3 new · 2.7 pt vs last cycle</div>
+        <div style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-emerald-600)">▲ 3 new · 2.7 pt vs last cycle</div>
       </div>
     </div>
 
@@ -8920,7 +8920,7 @@ function viewSwitchResource(N) {
             <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
             ${chip(stLabel, stTone)}${chip(r.oem || 'Switch', 'info')}
           </div>
-          <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+          <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             Switch · ${r.loc || N.name}
           </span>
@@ -8934,7 +8934,7 @@ function viewSwitchResource(N) {
         ['Serial number', r.sn || '—'], ['IP address', r.ip || '—'], ['Software version', r.os || '—'],
         ['Longitude', r.lon || '—'], ['Latitude', r.lat || '—']
       ].map(([k, v]) => `<div class="stack-x">
-        <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+        <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
       '', 'padding:var(--vw-space-lg)')}
 
     <div class="section-tabs">${TABS.map(([k, l]) => `<button class="stab${tab === k ? ' is-on' : ''}" data-ressw="${k}">${l}</button>`).join('')}</div>
@@ -10029,7 +10029,7 @@ function viewRackDetail() {
           ${rkIcon('emerald', 'arrow')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Largest Free Block</span>
-            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.largest ? `${m.largest.u}U` : '—'}</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${m.largest ? `${m.largest.u}U` : '—'}</span>
             <span class="vw-card-metric-label-sub">${m.largest ? uRange(m.largest) : 'rack is full'}</span>
           </span>
         </div>
@@ -10037,7 +10037,7 @@ function viewRackDetail() {
           ${rkIcon('sky', 'list')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Total Devices</span>
-            <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${m.devices}</span>
+            <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${m.devices}</span>
             <span class="vw-card-metric-label-sub">Devices mounted</span>
           </span>
         </div>
@@ -10517,7 +10517,7 @@ function viewSpliceDetail() {
           stroke-linecap="round" stroke-linejoin="round">${RK_ICONS[ic]}</svg></span>
       <span class="stack-x" style="min-width:0">
         <span class="vw-card-metric-label">${k}</span>
-        <span class="vw-value num" style="font-size:1.25rem;font-weight:600">${v}</span>
+        <span class="vw-value num" style="font-size:1.25rem;font-weight:300">${v}</span>
       </span>
     </div>`).join('')}
   </div>`;
@@ -10551,7 +10551,7 @@ function viewSpliceDetail() {
           ${rkIcon(overBudget ? 'red' : 'emerald', overBudget ? 'gauge' : 'check')}
           <span class="stack-x" style="min-width:0">
             <span class="vw-card-metric-label">Mean splice loss</span>
-            <span class="vw-value num" style="font-size:1.375rem;font-weight:600">${esc(r.loss)}</span>
+            <span class="vw-value num" style="font-size:1.375rem;font-weight:300">${esc(r.loss)}</span>
           </span>
         </span>
         ${read ? `<span class="rk-pill" style="background:${cv(overBudget ? 'red' : 'emerald', 25)};border-color:${cv(overBudget ? 'red' : 'emerald', 100)}">
@@ -13133,7 +13133,7 @@ const nvAI = (title, sub, tone, cards, extraStyle = '') => {
   return `
   <div class="nv-ai"${extraStyle ? ` style="${extraStyle}"` : ''}>
     <div class="nv-ai-head" style="background:${bg};border-bottom:1px solid ${border};padding:12px 16px">
-      <span class="nv-ai-t" style="color:${textCol};font-weight:700;font-size:0.875rem">${title}</span>
+      <span class="nv-ai-t" style="color:${textCol};font-weight:500;font-size:0.875rem">${title}</span>
       <span class="nv-ai-s" style="color:${subCol};font-size:0.75rem;margin-top:2px">${sub}</span>
     </div>
     <div class="nv-ai-body">
@@ -13203,14 +13203,14 @@ function nodeHeaderSwitch(N) {
           <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
           ${chip(stLabel, stTone)}
         </div>
-        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           ${r.loc || N.name}(${coords})
         </span>
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
@@ -13224,14 +13224,15 @@ function nodeOverviewSwitch(N) {
     nvTile('System Uptime', '287 Days', `Last reboot: ${agoStamp(287 * 1440, true)}`, 'purple')
   ];
   return card(`
-    <div class="nv-tiles">${tiles.join('')}</div>
+    ${headSm('Overview')}
+    <div class="nv-tiles" style="margin-top:var(--vw-space-md)">${tiles.join('')}</div>
 
     <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
       ${nvHealthCard('ICMP Health', 'Network Reachability',
         ['Healthy', 'success'],
-        [['Packet Loss', '0.02%', '1200 sent'],
-         ['Latency Avg', '7.62 ms', 'Min: 4.18'], ['Jitter', '1.24 ms', 'Max: 12.44'],
-         ['Availability', '99.98%', 'Successful probes']],
+        [['Packet Loss', '0.02%'],
+         ['Latency Avg', '7.62 ms'], ['Jitter', '1.24 ms'],
+         ['Availability', '99.98%']],
         `Last Sync: ${agoStamp(2, true)} · Probe Interval: 1 hr`)}
       ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
         [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
@@ -13372,8 +13373,8 @@ function nodeLinksSwitch(N) {
           </svg>
         </div>
         <div>
-          <div style="font-size:1.1875rem;font-weight:600;color:var(--vw-color-slate-900);letter-spacing:-0.01em">Link capacity dashboard</div>
-          <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px;display:flex;align-items:center;gap:8px">
+          <div style="font-size:1rem;font-weight:500;color:var(--vw-color-gray-900);letter-spacing:-0.01em">Link capacity dashboard</div>
+          <div style="font-size:0.8125rem;color:var(--vw-color-gray-500);margin-top:2px;display:flex;align-items:center;gap:8px">
             <span>LLDP Protocol capacity analysis</span>
             <span style="display:inline-flex;align-items:center;gap:4px;color:#059669;font-weight:500;font-size:0.75rem">
               <span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981"></span>Live assurance
@@ -13392,20 +13393,20 @@ function nodeLinksSwitch(N) {
     <div style="display:grid;grid-template-columns:330px 1fr;gap:var(--vw-space-xl);align-items:start">
       <div class="cx-panel" style="padding:16px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
         <div class="row vw-justify-between vw-items-center" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--vw-color-slate-100)">
-          <span style="font-size:0.75rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · LLDP</span>
-          <span style="font-size:0.6875rem;font-weight:600;padding:2px 8px;border-radius:10px;background:#e0f2fe;color:#0369a1">${N.capRows.length} Active</span>
+          <span style="font-size:0.6875rem;font-weight:500;color:var(--vw-color-gray-500);text-transform:uppercase;letter-spacing:0.04em">${N.capRows.length} Links in countdown · LLDP</span>
+          <span style="font-size:0.6875rem;font-weight:500;padding:2px 8px;border-radius:10px;background:#e0f2fe;color:#0369a1">${N.capRows.length} Active</span>
         </div>
         <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:4px">
           ${N.capRows.map((lk, idx) => `
             <button data-nlinksel="${idx}" aria-pressed="${idx === NODE_LINK_SEL}" style="width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1.5px solid ${idx === NODE_LINK_SEL ? '#0284c7' : 'var(--vw-color-slate-200)'};background:${idx === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};border-left:${idx === NODE_LINK_SEL ? '4px solid #0284c7' : '3px solid transparent'};box-shadow:${idx === NODE_LINK_SEL ? '0 4px 12px rgba(2,132,199,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'};cursor:pointer;transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);margin-bottom:8px">
               <div class="row vw-justify-between vw-items-center" style="margin-bottom:6px">
-                <span class="mono" style="font-size:0.875rem;font-weight:600;color:${idx === NODE_LINK_SEL ? '#0369a1' : '#0284c7'}">${lk.n}</span>
+                <span class="mono" style="font-size:0.875rem;font-weight:500;color:${idx === NODE_LINK_SEL ? '#0369a1' : '#0284c7'}">${lk.n}</span>
                 <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${idx === NODE_LINK_SEL ? '#bae6fd' : '#f1f5f9'};color:${idx === NODE_LINK_SEL ? '#0284c7' : '#94a3b8'};font-size:0.75rem">→</span>
-                <span class="mono" style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-800)">${lk.peer}</span>
+                <span class="mono" style="font-size:0.8125rem;font-weight:500;color:var(--vw-color-gray-800)">${lk.peer}</span>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.75rem">
-                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Source IP</span><br><span class="mono" style="font-weight:600;color:${idx === NODE_LINK_SEL ? '#0369a1' : '#334155'}">${lk.sip}</span></div>
-                <div><span class="nv-hk" style="font-size:0.6875rem;color:#64748b">Destination IP</span><br><span class="mono" style="font-weight:600;color:var(--vw-color-slate-700)">${lk.dip}</span></div>
+                <div><span class="nv-hk" style="font-size:0.6875rem;color:var(--vw-color-gray-500)">Source IP</span><br><span class="mono" style="font-weight:400;color:${idx === NODE_LINK_SEL ? '#0369a1' : 'var(--vw-color-gray-700)'}">${lk.sip}</span></div>
+                <div><span class="nv-hk" style="font-size:0.6875rem;color:var(--vw-color-gray-500)">Destination IP</span><br><span class="mono" style="font-weight:400;color:var(--vw-color-gray-700)">${lk.dip}</span></div>
               </div>
             </button>`).join('')}
         </div>
@@ -13419,21 +13420,21 @@ function nodeLinksSwitch(N) {
         return `
       <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
         <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--vw-color-slate-100)">
-          <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity trend · ${esc(sel.n)}</div>
+          <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-gray-900)">Link capacity trend · ${esc(sel.n)}</div>
           <div style="display:flex;align-items:center;gap:12px;font-size:0.75rem">
-            <span style="padding:3px 10px;border-radius:12px;background:#f0f9ff;color:#0369a1;font-weight:600">Peak: ${peak}%</span>
-            <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:600">${growth >= 0 ? '+' : ''}${growth}%/day</span>
+            <span style="padding:3px 10px;border-radius:12px;background:#f0f9ff;color:#0369a1;font-weight:500">Peak: ${peak}%</span>
+            <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:500">${growth >= 0 ? '+' : ''}${growth}%/day</span>
           </div>
         </div>
         ${nvTrend(trendData, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
         <div class="row vw-justify-center" style="gap:24px;margin-top:20px;font-size:0.75rem">
           <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#f0f9ff;border:1px solid #e0f2fe;border-radius:16px">
             <span style="width:8px;height:8px;border-radius:50%;background:#0ea5e9;box-shadow:0 0 6px rgba(14,165,233,0.5)"></span>
-            <span style="font-weight:600;color:#0369a1">${esc(sel.n)} - Inbound Utilization</span>
+            <span style="font-weight:500;color:#0369a1">${esc(sel.n)} - Inbound Utilization</span>
           </span>
           <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#fff7ed;border:1px solid #ffedd5;border-radius:16px">
             <span style="width:8px;height:8px;border-radius:50%;background:#f97316;box-shadow:0 0 6px rgba(249,115,22,0.5)"></span>
-            <span style="font-weight:600;color:#c2410c">${esc(sel.n)} - Outbound Utilization</span>
+            <span style="font-weight:500;color:#c2410c">${esc(sel.n)} - Outbound Utilization</span>
           </span>
         </div>
       </div>`;
@@ -13471,11 +13472,11 @@ function nodeServicesSwitch(N) {
   return card(`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
       <button class="nst-btn${svcType === 'L2VPN' ? ' is-on' : ''}" data-nswsvctab="L2VPN"
-        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${svcType === 'L2VPN' ? '600' : '500'};color:${svcType === 'L2VPN' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${svcType === 'L2VPN' ? '#ffffff' : 'transparent'};box-shadow:${svcType === 'L2VPN' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:500;color:${svcType === 'L2VPN' ? 'var(--vw-color-gray-900)' : 'var(--vw-color-gray-600)'};background:${svcType === 'L2VPN' ? '#ffffff' : 'transparent'};box-shadow:${svcType === 'L2VPN' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
         L2VPN
       </button>
       <button class="nst-btn${svcType === 'L3VPN' ? ' is-on' : ''}" data-nswsvctab="L3VPN"
-        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${svcType === 'L3VPN' ? '600' : '500'};color:${svcType === 'L3VPN' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${svcType === 'L3VPN' ? '#ffffff' : 'transparent'};box-shadow:${svcType === 'L3VPN' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:500;color:${svcType === 'L3VPN' ? 'var(--vw-color-gray-900)' : 'var(--vw-color-gray-600)'};background:${svcType === 'L3VPN' ? '#ffffff' : 'transparent'};box-shadow:${svcType === 'L3VPN' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
         L3VPN
       </button>
     </div>
@@ -13483,8 +13484,8 @@ function nodeServicesSwitch(N) {
     <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:12px;padding:20px;background:#ffffff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div>
-          <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${svcType} Service instances</div>
-          <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">${rows.length} Services Of type ${svcType}</div>
+          <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-gray-900,#0f172a)">${svcType} Service instances</div>
+          <div style="font-size:0.8125rem;color:var(--vw-color-gray-500,#64748b);margin-top:2px">${rows.length} Services Of type ${svcType}</div>
         </div>
         <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
           <option>All status</option>
@@ -13495,18 +13496,18 @@ function nodeServicesSwitch(N) {
 
       ${table([{t:'Service name'},{t:'Site type'},{t:'Status'},{t:'Source interface'},{t:'Bandwidth'}],
         rows.map(r => [
-          `<span style="font-weight:600;color:var(--vw-color-slate-800);font-size:0.875rem">${r.n}</span>`,
-          `<span style="display:inline-flex;padding:3px 10px;border-radius:12px;background:#f3e8ff;color:#7e22ce;font-size:0.75rem;font-weight:600">${r.t}</span>`,
+          `<span style="font-weight:500;color:var(--vw-color-gray-800);font-size:0.875rem">${r.n}</span>`,
+          `<span style="display:inline-flex;padding:3px 10px;border-radius:12px;background:#f3e8ff;color:#7e22ce;font-size:0.75rem;font-weight:500">${r.t}</span>`,
           chip(r.st, r.st === 'Active' ? 'success' : 'error'),
           `<span class="mono" style="color:var(--vw-color-slate-700);font-size:0.8125rem">${r.ifc}</span>`,
-          `<span style="font-weight:500;color:var(--vw-color-slate-800);font-size:0.8125rem">${r.bw}</span>`
+          `<span style="font-weight:400;color:var(--vw-color-gray-800);font-size:0.8125rem">${r.bw}</span>`
         ]), '',
         () => [])}
 
-      <div style="display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0);font-size:0.8125rem;color:var(--vw-color-slate-600)">
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-emerald-500,#10b981)"></span><strong>${activeCount}</strong> Active</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><strong>${disableCount}</strong> Disable</span>
-        <span style="margin-left:auto;font-weight:600;color:var(--vw-color-slate-800)">${rows.length} Total</span>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0);font-size:0.8125rem;color:var(--vw-color-gray-600)">
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-emerald-500,#10b981)"></span><span style="font-weight:500">${activeCount}</span> Active</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><span style="font-weight:500">${disableCount}</span> Disable</span>
+        <span style="margin-left:auto;font-weight:500;color:var(--vw-color-gray-800)">${rows.length} Total</span>
       </div>
     </div>`);
 }
@@ -13563,11 +13564,11 @@ function nodeAlertsSwitch(N) {
   return card(`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;background:var(--vw-color-slate-100,#f1f5f9);padding:4px;border-radius:10px;width:fit-content">
       <button class="nst-btn${alertTab === 'alerts' ? ' is-on' : ''}" data-nalert="alerts"
-        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'alerts' ? '600' : '500'};color:${alertTab === 'alerts' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:500;color:${alertTab === 'alerts' ? 'var(--vw-color-gray-900)' : 'var(--vw-color-gray-600)'};background:${alertTab === 'alerts' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'alerts' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
         Alerts
       </button>
       <button class="nst-btn${alertTab === 'incidents' ? ' is-on' : ''}" data-nalert="incidents"
-        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:${alertTab === 'incidents' ? '600' : '500'};color:${alertTab === 'incidents' ? 'var(--vw-color-slate-900)' : 'var(--vw-color-slate-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
+        style="padding:6px 16px;border:0;border-radius:8px;font-size:0.875rem;font-weight:500;color:${alertTab === 'incidents' ? 'var(--vw-color-gray-900)' : 'var(--vw-color-gray-600)'};background:${alertTab === 'incidents' ? '#ffffff' : 'transparent'};box-shadow:${alertTab === 'incidents' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'};cursor:pointer">
         Incidents
       </button>
     </div>
@@ -13579,8 +13580,8 @@ function nodeAlertsSwitch(N) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <div>
-            <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">Active alerts & events</div>
-            <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
+            <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-gray-900,#0f172a)">Active alerts & events</div>
+            <div style="font-size:0.8125rem;color:var(--vw-color-gray-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
           </div>
         </div>
         <select class="nst-input nst-input--sm" style="height:34px;width:auto;font-size:0.8125rem;font-weight:500;padding:4px 24px 4px 10px;border-radius:6px;border:1px solid var(--vw-color-slate-300,#cbd5e1);background:#ffffff;color:var(--vw-color-slate-700);cursor:pointer">
@@ -13615,10 +13616,10 @@ function nodeAlertsSwitch(N) {
       </div>
 
       <div style="display:flex;align-items:center;gap:16px;margin-top:20px;padding-top:12px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0);font-size:0.8125rem;color:var(--vw-color-slate-600)">
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><span style="font-weight:600">1</span> Critical</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-amber-500,#f59e0b)"></span><span style="font-weight:600">2</span> Major</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-yellow-500,#eab308)"></span><span style="font-weight:600">1</span> Minor</span>
-        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-slate-400,#94a3b8)"></span><span style="font-weight:600">0</span> Warning</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-rose-500,#f43f5e)"></span><span style="font-weight:500">1</span> Critical</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-amber-500,#f59e0b)"></span><span style="font-weight:500">2</span> Major</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-yellow-500,#eab308)"></span><span style="font-weight:500">1</span> Minor</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-slate-400,#94a3b8)"></span><span style="font-weight:500">0</span> Warning</span>
         <span style="margin-left:auto;font-weight:500;color:var(--vw-color-slate-800)">4 Total</span>
       </div>
     </div>`);
@@ -13656,14 +13657,14 @@ function nodeHeaderRouter(N) {
           ${chip(stLabel, stTone)}
           ${chip(N.meta.n, 'neutral')}
         </div>
-        <span class="vw-card-metric-label-sub mono">${r.loc} · ${r.ip} · ${r.sn}</span>
+        <span class="vw-card-metric-label-sub">${r.loc} · ${r.ip} · ${r.sn}</span>
       </div>
       <div class="row" style="flex-shrink:0">
         <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}`, q:`name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
+      <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
@@ -13917,23 +13918,23 @@ function renderLinkCapacityChart(row, linkTrendFn, protoLabel) {
     <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
       ${[0, 0.25, 0.5, 0.75, 1].map(f => Math.round(floor + (ceil - floor) * f)).map(v => `
         <line x1="${PADL}" x2="${W - PADR}" y1="${y(v)}" y2="${y(v)}" stroke="#f1f5f9" stroke-width="1.2"/>
-        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="system-ui">${v}%</text>
+        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="Poppins,sans-serif">${v}%</text>
       `).join('')}
 
       ${ceil >= 85 && floor <= 85 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(85)}" y2="${y(85)}" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4"/>
-        <text x="${W - PADR + 6}" y="${y(85) + 4}" font-size="10" font-weight="600" fill="#b45309" font-family="system-ui">Warning 85%</text>` : ''}
+        <text x="${W - PADR + 6}" y="${y(85) + 4}" font-size="10" font-weight="600" fill="#b45309" font-family="Poppins,sans-serif">Warning 85%</text>` : ''}
       ${ceil >= 95 && floor <= 95 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(95)}" y2="${y(95)}" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="6 4"/>
-        <text x="${W - PADR + 6}" y="${y(95) + 4}" font-size="10" font-weight="600" fill="#b91c1c" font-family="system-ui">Critical 95%</text>` : ''}
+        <text x="${W - PADR + 6}" y="${y(95) + 4}" font-size="10" font-weight="600" fill="#b91c1c" font-family="Poppins,sans-serif">Critical 95%</text>` : ''}
 
       ${line('a', '#2563eb')}${dots('a', '#2563eb')}
       ${line('f', '#f59e0b')}${dots('f', '#f59e0b')}
 
       <text x="${x(aMidI)}" y="${y(trend[aMidI].a) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8"
-        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="system-ui">Bandwidth (actual)</text>
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="Poppins,sans-serif">Bandwidth (actual)</text>
       <text x="${x(fMidI)}" y="${y(trend[fMidI].f) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309"
-        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="system-ui">Bandwidth (forecast)</text>
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="Poppins,sans-serif">Bandwidth (forecast)</text>
 
-      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="system-ui">${m}</text>`).join('')}
+      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="Poppins,sans-serif">${m}</text>`).join('')}
     </svg>`;
 }
 
@@ -13979,14 +13980,14 @@ function nodeLinksRouter(N) {
               ${p.icon}
             </div>
             <div>
-              <div style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">${p.k}</div>
+              <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-slate-900)">${p.k}</div>
               <div style="font-size:0.6875rem;color:var(--vw-color-slate-500)">Protocol links</div>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px">
             ${p.labels.map((label, li) => `<div class="row vw-justify-between vw-items-center" style="font-size:0.75rem">
               <span style="color:var(--vw-color-slate-500)">${label}</span>
-              <span class="num" style="font-weight:600;color:${li === 0 ? p.iconCol : p.vals[li] > 0 ? 'var(--vw-color-red-600)' : 'var(--vw-color-slate-400)'}">${p.vals[li]}</span>
+              <span class="num" style="font-weight:500;color:${li === 0 ? p.iconCol : p.vals[li] > 0 ? 'var(--vw-color-red-600)' : 'var(--vw-color-slate-400)'}">${p.vals[li]}</span>
             </div>`).join('')}
           </div>
         </button>`).join('')}
@@ -14005,7 +14006,7 @@ function nodeLinksRouter(N) {
             </svg>
           </div>
           <div>
-            <div style="font-size:1.0625rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity forecasting dashboard</div>
+            <div style="font-size:1rem;font-weight:500;color:var(--vw-color-slate-900)">Link capacity forecasting dashboard</div>
             <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);margin-top:2px">${sel.k} protocol capacity analysis</div>
           </div>
         </div>
@@ -14016,7 +14017,7 @@ function nodeLinksRouter(N) {
       <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--vw-space-xl);align-items:start">
         <div class="cx-panel" style="padding:14px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
           <div class="row vw-justify-between vw-items-center" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--vw-color-slate-100)">
-            <span style="font-size:0.6875rem;font-weight:600;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${rows.length} Links in countdown · ${sel.k}</span>
+            <span style="font-size:0.6875rem;font-weight:500;color:var(--vw-color-slate-600);text-transform:uppercase;letter-spacing:0.04em">${rows.length} Links in countdown · ${sel.k}</span>
           </div>
           <div class="stack-s" style="max-height:460px;overflow-y:auto;padding-right:2px">
             ${rows.map((r, i) => `
@@ -14025,12 +14026,12 @@ function nodeLinksRouter(N) {
                 background:${i === NODE_LINK_SEL ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff'};
                 margin-bottom:6px;cursor:pointer;transition:all .15s ease">
                 <div class="row vw-justify-between vw-items-baseline" style="margin-bottom:4px">
-                  <span class="mono" style="font-size:0.8125rem;font-weight:600;color:${i === NODE_LINK_SEL ? '#0369a1' : 'var(--vw-color-slate-800)'}">${r.n}</span>
+                  <span class="mono" style="font-size:0.8125rem;font-weight:500;color:${i === NODE_LINK_SEL ? '#0369a1' : 'var(--vw-color-slate-800)'}">${r.n}</span>
                   ${chip(r.util > 85 ? 'Backhaul' : 'Healthy', r.util > 85 ? 'error' : 'success')}
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:0.6875rem">
                   <span style="color:var(--vw-color-slate-500)">Bandwidth utilisation</span>
-                  <span class="mono" style="text-align:right;font-weight:600;color:${cv(r.tone,700)}">${r.util}%</span>
+                  <span class="mono" style="text-align:right;font-weight:500;color:${cv(r.tone,700)}">${r.util}%</span>
                   <span style="color:var(--vw-color-slate-500)">Active sessions</span>
                   <span class="mono num" style="text-align:right">${n(r.sess)}</span>
                   <span style="color:var(--vw-color-slate-500)">Forecast date</span>
@@ -14092,10 +14093,10 @@ function nodeTopCustomersRouter(N) {
       ${top.map((c, i) => `
         <div class="vw-card-child" style="padding:var(--vw-space-md)">
           <div class="row" style="gap:10px;align-items:center;margin-bottom:10px">
-            <span style="width:26px;height:26px;border-radius:50%;background:${cv('sky',500)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600;flex-shrink:0">#${i + 1}</span>
+            <span style="width:26px;height:26px;border-radius:50%;background:${cv('sky',500)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:500;flex-shrink:0">#${i + 1}</span>
             <div class="stack-x" style="gap:1px">
               <div class="row" style="gap:6px;align-items:center">
-                <span class="vw-value" style="font-weight:600">${c.cust}</span>${chip(c.custId, 'neutral')}
+                <span class="vw-value" style="font-weight:500">${c.cust}</span>${chip(c.custId, 'neutral')}
               </div>
               <span class="vw-card-metric-label-sub">${c.city}, ${c.state}</span>
             </div>
@@ -14246,7 +14247,7 @@ function nodeAlertsRouter(N) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
-              <div style="font-size:1rem;font-weight:600;color:var(--vw-color-slate-800,#1e293b);line-height:1.2">${alertTab === 'alerts' ? 'Active alerts & events' : 'Open incidents'}</div>
+              <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-slate-800,#1e293b);line-height:1.2">${alertTab === 'alerts' ? 'Active alerts & events' : 'Open incidents'}</div>
               <div style="font-size:0.8125rem;color:var(--vw-color-slate-500,#64748b);margin-top:2px">Real-time monitoring across all network resources</div>
             </div>
           </div>
