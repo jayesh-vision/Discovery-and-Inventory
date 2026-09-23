@@ -499,7 +499,7 @@ button { font: inherit; }
 .cell.is-total { cursor: default; background: var(--vw-color-slate-50); border-style: solid; }
 .cell.is-total:hover { border-color: var(--vw-color-slate-200); box-shadow: none; }
 .cell-n { font-size: 1.125rem; font-weight: 300; line-height: 1; }
-.cell-l { font-size: 0.625rem; color: var(--vw-color-gray-500); }
+.cell-l { font-size: 0.6875rem; color: var(--vw-color-gray-500); }
 
 /* Transcript */
 .steps { display: flex; flex-direction: column; }
@@ -699,7 +699,7 @@ button { font: inherit; }
 }
 .flow-arrow { flex: 0 0 26px; display: flex; align-items: center; justify-content: center; color: var(--vw-color-slate-300); }
 .flow-drop {
-  display: flex; align-items: center; gap: 4px; font-size: 0.625rem;
+  display: flex; align-items: center; gap: 4px; font-size: 0.6875rem;
   color: var(--vw-color-red-700); margin-top: 2px;
 }
 
@@ -803,7 +803,7 @@ button { font: inherit; }
 .health-row { display: grid; grid-template-columns: 8px 1fr auto; gap: var(--vw-space-sm);
   align-items: start; }
 .health-row .vw-card-metric-md { justify-self: end; align-self: center; }
-.side-section { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+.side-section { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--vw-color-gray-400); padding: var(--vw-space-md) 0.75rem var(--vw-space-xxs); }
 .side-section:first-child { padding-top: var(--vw-space-xs); }
 @media (max-width: 560px) {
@@ -1069,7 +1069,7 @@ path.st.has-c:hover { fill-opacity: .78; }
   width: 4px; height: 30px; border-radius: var(--vw-radius-full); }
 .statc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-sm); }
 .statc-k { font-size: 0.75rem; color: var(--vw-color-gray-500); line-height: 1.3; }
-.statc-period { font-size: 0.625rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
+.statc-period { font-size: 0.6875rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
 .statc-valrow { display: flex; align-items: baseline; gap: var(--vw-space-sm); margin-top: 2px; min-width: 0; }
 .statc-v { font-size: 1.375rem; font-weight: 300; line-height: 1.2; color: var(--vw-color-gray-900);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1369,7 +1369,7 @@ button.sb-row.is-drill::after { display: none; }
 .nv-pchip { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0;
   padding: 4px var(--vw-space-sm); border-radius: var(--vw-radius-sm);
   background: var(--vw-color-slate-50); border-left: 3px solid var(--nt); }
-.nv-pk { font-size: 0.625rem; color: var(--vw-color-gray-500); }
+.nv-pk { font-size: 0.6875rem; color: var(--vw-color-gray-500); }
 .nv-pv { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900); }
 .nv-hw { flex-wrap: wrap; }
 .nv-hw > .grow { min-width: 22rem; }
@@ -1514,7 +1514,7 @@ button.sb-row.is-drill::after { display: none; }
 .ox-col-fill { display: block; width: 100%; border-radius: var(--vw-radius-xs); }
 .ox-col-budget { position: absolute; left: -2px; right: -2px; height: 2px;
   background: var(--vw-color-gray-800); border-radius: 1px; }
-.ox-col-m { font-size: 0.625rem; color: var(--vw-color-gray-500); white-space: nowrap; }
+.ox-col-m { font-size: 0.6875rem; color: var(--vw-color-gray-500); white-space: nowrap; }
 .ox-blegend { display: inline-block; width: 12px; height: 2px; background: var(--vw-color-gray-800);
   border-radius: 1px; vertical-align: middle; }
 @media (max-width: 780px) { .ox-bars { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: var(--vw-space-sm); } }
@@ -1544,14 +1544,23 @@ button.kpi-progress:focus-visible { outline: 2px solid var(--vw-color-blue-500);
    "this facet is applied" without inventing a new selected-state idiom */
 button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
   box-shadow: 0 0 0 1px var(--kpi-hover, currentColor), 0 1px 2px rgba(16, 24, 40, .04); }
-.kprog-label {font-size: 0.75rem;
+.kprog-label {font-size: 0.875rem;
   font-weight: 600; color: var(--vw-color-gray-500); letter-spacing: .01em; }
-/* the status legend under the bar must read as ONE line in every card
-   built on this tile (KPI cards, region facet cards): compact type and
-   gaps, items forbidden to wrap, and clip rather than break the row */
-.kpi-progress .legend { flex-wrap: nowrap; gap: 8px; overflow: hidden; }
-.kpi-progress .legend-i { white-space: nowrap; font-size: 0.65rem; gap: 4px; flex: 0 0 auto; }
-.kpi-progress .legend-sw { width: 9px; height: 9px; flex-shrink: 0; }
+/* the shared vw-card-metric-xl rule is weight 300 — thin enough to read as
+   faint rather than as the headline figure of the card; every other card on
+   this page reads the number first, so it's bumped here to match how the
+   rest of the app's own KPI tiles weight their big number (kpi2-v, kpi3-v).
+   Size is pulled in from the shared rule's clamp (up to 30px on a wide
+   screen) to a flat, more moderate size — now that the title/legend around
+   it read at a normal size too, the number no longer needs to be that large
+   to stand out as the card's headline figure. */
+.kpi-progress .vw-card-metric-xl { font-weight: 500; font-size: 1.5rem; }
+/* was forced onto one line (nowrap + clip) at a barely-legible 10.4px to make
+   that fit — now reads at a normal legend size and wraps onto a second line
+   instead of clipping when a card's own width can't fit it on one. */
+.kpi-progress .legend { flex-wrap: wrap; row-gap: 4px; gap: 8px; overflow: visible; }
+.kpi-progress .legend-i { white-space: nowrap; font-size: 0.8125rem; gap: 4px; flex: 0 0 auto; }
+.kpi-progress .legend-sw { width: 10px; height: 10px; flex-shrink: 0; }
 /* the estate inventory cards (see invCard()) split their old single
    whole-card button in two: this is the head (icon/total/meter) —
    still card-shaped, not a bare row, so it keeps .kpi-progress's own
@@ -2269,12 +2278,12 @@ details[open] > summary .vw-tx-chevron {
 .rpt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
 .rpt-dot.is-sq { border-radius: 2px; width: 9px; height: 9px; }
 .rpt-wrap { display: inline-block; white-space: normal; line-height: 1.4; }
-.rpt-id { font-size: 0.75rem; color: var(--vw-color-gray-500); }
+.rpt-id { font-size: 0.8125rem; color: var(--vw-color-gray-500); }
 .rpt-h2 { margin: 2px 0 0; font-size: 1.125rem; font-weight: 700; color: var(--vw-color-gray-900); display: flex; align-items: center; gap: 4px; }
 .rpt-section { font-size: 0.9375rem; font-weight: 700; color: var(--vw-color-gray-900); }
-.rpt-aud { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; color: var(--vw-color-gray-700);
+.rpt-aud { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-700);
   background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-200); border-radius: 999px; padding: 2px 10px; }
-.rpt-aud > span[aria-hidden] { color: var(--vw-color-blue-600); font-size: 0.75rem; }
+.rpt-aud > span[aria-hidden] { color: var(--vw-color-blue-600); font-size: 0.8125rem; }
 
 /* hero */
 .rpt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--vw-space-xl); flex-wrap: wrap; }
@@ -2302,7 +2311,7 @@ details[open] > summary .vw-tx-chevron {
   border: 1px solid var(--vw-color-slate-200);
   border-radius: 8px;
   background: var(--vw-color-white);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--vw-color-gray-700);
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -2330,15 +2339,21 @@ details[open] > summary .vw-tx-chevron {
 .rpt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--vw-space-md); }
 @media (max-width: 1000px) { .rpt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .rpt-tiles { grid-template-columns: 1fr; } }
-.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 150px; padding: 14px 18px 12px; overflow: visible; cursor: pointer;
+/* min-height was 150px, sized for a tile with a trend sparkline at the
+   bottom (.rpt-tile-spark) — a report whose headline has no trend (most of
+   Inventory's) renders three short lines and stops, leaving 30-40px of dead
+   air under them. This is now sized to what the no-spark case actually
+   needs; a tile that does have a spark still grows past it via its own
+   content height, same as before. */
+.rpt-tile { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 112px; padding: 12px 16px 10px; overflow: visible; cursor: pointer;
   background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200); border-top: 3px solid var(--rpt-accent, var(--vw-color-slate-300)); border-radius: var(--vw-radius-lg); transition: border-color .15s, box-shadow .15s; }
 .rpt-tile:hover, .rpt-tile:focus-within { border-color: var(--vw-color-blue-300); border-top-color: var(--rpt-accent, var(--vw-color-slate-300)); box-shadow: 0 6px 20px rgba(15,23,42,.07); z-index: 20; }
 .rpt-tile:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 .rpt-tile .info-tip-def { left: auto; right: 0; }
 .rpt-tile-top { display: flex; align-items: center; gap: 8px; }
-.rpt-tile-t { flex: 1; min-width: 0; font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rpt-tile-v { margin-top: 8px; font-size: 1.75rem; line-height: 1.15; font-weight: 700; color: var(--vw-color-gray-900); letter-spacing: -.01em; }
-.rpt-tile-sub { margin-top: 10px; font-size: 0.75rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpt-tile-t { flex: 1; min-width: 0; font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpt-tile-v { margin-top: 8px; font-size: 1.75rem; line-height: 1.15; font-weight: 500; color: var(--vw-color-gray-900); letter-spacing: -.01em; }
+.rpt-tile-sub { margin-top: 8px; font-size: 0.8125rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rpt-tile-spark { margin-top: auto; padding-top: 8px; }
 .rpt-tile-spark svg { display: block; width: 100%; }
 
@@ -2370,7 +2385,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-attn-ic[data-tone="warn"] { background: var(--vw-color-amber-50); color: var(--vw-color-amber-600); }
 .rpt-attn-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .rpt-attn-t { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900); }
-.rpt-attn-d { font-size: 0.75rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpt-attn-d { font-size: 0.8125rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rpt-attn-link { color: var(--vw-color-blue-600); font-weight: 500; }
 .rpt-attn-static-label { color: var(--vw-color-gray-700); font-weight: 500; }
 .rpt-attn-chev { flex-shrink: 0; font-size: 1.25rem; color: var(--vw-color-gray-400); }
@@ -2401,25 +2416,32 @@ details[open] > summary .vw-tx-chevron {
 .rpt-card:hover { border-color: var(--vw-color-blue-300); box-shadow: 0 6px 20px rgba(15,23,42,.07); }
 .rpt-card:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 .rpt-card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.rpt-card-name { margin: 2px 0 0; font-size: 1rem; font-weight: 700; color: var(--vw-color-gray-900); line-height: 1.3; }
+/* was weight 700 — the one card title in the app bolder than the rest of
+   its own family (vw-card-title-sm, kpi3-title, kpi2-label all sit at
+   500-600); brought in line so a report library card doesn't read heavier
+   than every other card type. */
+.rpt-card-name { margin: 2px 0 0; font-size: 1rem; font-weight: 600; color: var(--vw-color-gray-900); line-height: 1.3; }
 .rpt-card:hover .rpt-card-name { color: var(--vw-color-blue-700); }
 .rpt-card-q { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--vw-color-gray-600);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4rem; }
 .rpt-card-metric { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 6px; }
-.rpt-card-v { font-size: 1.625rem; font-weight: 700; color: var(--vw-color-gray-900); line-height: 1.1; letter-spacing: -.01em; }
-.rpt-card-l { font-size: 0.75rem; color: var(--vw-color-gray-600); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* was weight 700, same as rpt-tile-v before it got the same fix (see
+   comment there) — every other headline number in the app (kpi2-v,
+   kpi3-v, rpt-tile-v) reads at 500. */
+.rpt-card-v { font-size: 1.625rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.1; letter-spacing: -.01em; }
+.rpt-card-l { font-size: 0.8125rem; color: var(--vw-color-gray-600); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rpt-card-spark { width: 7.5rem; flex-shrink: 0; }
 .rpt-card-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--vw-color-slate-100); padding-top: 10px; flex-wrap: nowrap; min-width: 0; }
-.rpt-card-meta { font-size: 0.75rem; color: var(--vw-color-gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rpt-card-meta { font-size: 0.8125rem; color: var(--vw-color-gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* export menu */
 .rpt-menu { position: relative; display: inline-flex; align-items: center; gap: 8px; }
 .rpt-menu .kmenu { min-width: 17rem; }
 .rpt-menu-i { align-items: flex-start !important; }
-.rpt-menu-hint { font-size: 0.75rem; color: var(--vw-color-gray-500); white-space: normal; }
+.rpt-menu-hint { font-size: 0.8125rem; color: var(--vw-color-gray-500); white-space: normal; }
 .rpt-ext { flex-shrink: 0; width: 3.1rem; text-align: center; font-size: 0.625rem; font-weight: 700; letter-spacing: .04em;
   color: var(--vw-color-blue-700); background: var(--vw-color-blue-50); border: 1px solid var(--vw-color-blue-100); border-radius: 4px; padding: 3px 0; margin-top: 1px; }
-.rpt-menu-note { position: absolute; right: 0; top: calc(100% + 6px); white-space: nowrap; font-size: 0.75rem; color: var(--vw-color-emerald-700);
+.rpt-menu-note { position: absolute; right: 0; top: calc(100% + 6px); white-space: nowrap; font-size: 0.8125rem; color: var(--vw-color-emerald-700);
   background: var(--vw-color-emerald-50); border: 1px solid var(--vw-color-emerald-200); border-radius: 6px; padding: 3px 8px; z-index: 30; }
 
 /* report document */
@@ -2427,14 +2449,27 @@ details[open] > summary .vw-tx-chevron {
 .rpt-printhead { display: none; }
 .rpt-doc { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: var(--vw-space-xl); border-top: 3px solid var(--vw-color-blue-700); }
 @media (max-width: 1000px) { .rpt-doc { grid-template-columns: 1fr; } }
-.rpt-doc-title { margin: 10px 0 6px; font-size: 1.625rem; font-weight: 700; letter-spacing: -.015em; color: var(--vw-color-gray-900); line-height: 1.2; }
+/* .eyebrow's shared 11px is shared with unrelated screens (e.g. Rule
+   details), so it's bumped only in this report-header context rather than
+   at its own definition, matching the ~13px floor the rest of this page
+   (and the rest of the app) already reads at. */
+.rpt-doc .eyebrow, .rpt-headline .eyebrow { font-size: 0.8125rem; }
+/* was weight 700, then 600 — still read as bold at this size purely from
+   the combination of size + near-black colour; dropped to the same regular
+   weight vw-page-title uses elsewhere, so size and colour alone (not
+   weight) carry its prominence as the page's own heading. */
+.rpt-doc-title { margin: 10px 0 6px; font-size: 1.25rem; font-weight: 500; letter-spacing: -.015em; color: var(--vw-color-gray-900); line-height: 1.3; }
 .rpt-doc-q { margin: 0; font-size: 0.9375rem; line-height: 1.55; color: var(--vw-color-gray-700); max-width: 72ch; }
 .rpt-meta { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 12px 28px; margin: 18px 0 0; justify-content: start; }
 .rpt-meta > div.is-wide { grid-column: 1 / -1; }
-.rpt-meta dt { font-size: 0.75rem; color: var(--vw-color-gray-500); margin-bottom: 3px; }
-.rpt-meta dd { margin: 0; font-size: 0.8125rem; color: var(--vw-color-gray-900); font-weight: 500; }
+.rpt-meta dt { font-size: 0.8125rem; color: var(--vw-color-gray-500); margin-bottom: 3px; }
+.rpt-meta dd { margin: 0; font-size: 0.875rem; color: var(--vw-color-gray-900); font-weight: 500; }
 .rpt-headline { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-100); border-radius: var(--vw-radius-lg); padding: 16px 18px; align-self: start; }
-.rpt-headline-v { font-size: 2.125rem; font-weight: 700; color: var(--vw-color-gray-900); line-height: 1.1; margin-top: 6px; letter-spacing: -.02em; }
+/* was weight 700, then just a smaller flat size — now sized to exactly
+   match rpt-card-v, the same "report's own headline number" role on the
+   library card this report opened from, instead of an arbitrary size
+   picked just for this box. */
+.rpt-headline-v { font-size: 1.625rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.1; margin-top: 6px; letter-spacing: -.02em; }
 .rpt-headline-l { font-size: 0.8125rem; color: var(--vw-color-gray-700); margin-top: 4px; line-height: 1.4; }
 .rpt-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--vw-radius-md); font-size: 0.8125rem;
   border: 1px solid var(--vw-color-amber-200); background: var(--vw-color-amber-50); color: var(--vw-color-amber-900); }
@@ -2445,7 +2480,7 @@ details[open] > summary .vw-tx-chevron {
 @media (max-width: 900px) { .rpt-findings { grid-template-columns: 1fr; } }
 .rpt-finding { position: relative; padding: 12px 14px 12px 18px; border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md); background: var(--vw-color-white); overflow: hidden; }
 .rpt-finding::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--rpt-accent); }
-.rpt-finding-t { font-size: 0.875rem; font-weight: 600; color: var(--vw-color-gray-900); }
+.rpt-finding-t { font-size: 0.9375rem; font-weight: 600; color: var(--vw-color-gray-900); }
 .rpt-finding-d { font-size: 0.8125rem; line-height: 1.55; color: var(--vw-color-gray-700); margin-top: 6px; }
 .rpt-visuals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--vw-space-md); }
 @media (max-width: 1000px) { .rpt-visuals { grid-template-columns: 1fr; } }
@@ -2455,14 +2490,14 @@ details[open] > summary .vw-tx-chevron {
 .rpt-bars { display: flex; flex-direction: column; gap: 8px; }
 .rpt-bar { display: grid; grid-template-columns: minmax(8rem, 36%) minmax(0, 1fr) 5.5rem; align-items: center; gap: 12px; }
 .rpt-bar-l { display: flex; flex-direction: column; min-width: 0; }
-.rpt-bar-name { font-size: 0.8125rem; color: var(--vw-color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rpt-bar-sub { font-size: 0.6875rem; color: var(--vw-color-gray-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rpt-bar-name { font-size: 0.875rem; color: var(--vw-color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rpt-bar-sub { font-size: 0.8125rem; color: var(--vw-color-gray-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rpt-bar-track { position: relative; height: 12px; background: var(--vw-color-slate-100); border-radius: 3px; }
 .rpt-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
 .rpt-bar-target { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px dashed var(--vw-color-emerald-600); }
 .rpt-bar-target.is-legend { position: static; display: inline-block; height: 12px; margin-right: 6px; vertical-align: middle; }
-.rpt-bar-legend { font-size: 0.75rem; color: var(--vw-color-gray-600); }
-.rpt-bar-v { font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--vw-color-gray-900); }
+.rpt-bar-legend { font-size: 0.8125rem; color: var(--vw-color-gray-600); }
+.rpt-bar-v { font-size: 0.875rem; font-weight: 600; text-align: right; color: var(--vw-color-gray-900); }
 .rpt-heat td, .rpt-heat th { border-top: 0 !important; }
 .rpt-heat-cell { display: block; min-width: 3.5rem; text-align: center; padding: 10px 6px; border-radius: 8px; font-weight: 600; font-size: 0.875rem; }
 .rpt-heat-key { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
@@ -2488,7 +2523,7 @@ details[open] > summary .vw-tx-chevron {
 @media (max-width: 900px) { .rpt-method { grid-template-columns: 1fr; } }
 .rpt-method dt { font-size: 0.8125rem; font-weight: 600; color: var(--vw-color-gray-900); }
 .rpt-method dd { margin: 3px 0 0; font-size: 0.8125rem; line-height: 1.55; color: var(--vw-color-gray-700); }
-.rpt-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.75rem; color: var(--vw-color-gray-500);
+.rpt-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.8125rem; color: var(--vw-color-gray-500);
   border-top: 1px solid var(--vw-color-slate-200); padding-top: 10px; }
 .rpt-print-table, .rpt-print-note { display: none; }
 
@@ -2542,8 +2577,8 @@ details[open] > summary .vw-tx-chevron {
    real cut from the last. */
 .tbl-wrap td:not(.st-td) .vw-chip {
   box-sizing: border-box;
-  width: 52px;
-  height: 18px;
+  width: 54px;
+  height: 19px;
   padding: 0 4px;
   display: inline-flex;
   align-items: center;
@@ -2552,7 +2587,7 @@ details[open] > summary .vw-tx-chevron {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
 }

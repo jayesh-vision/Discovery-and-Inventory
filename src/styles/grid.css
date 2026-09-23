@@ -23,7 +23,7 @@
   display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap;
   margin: var(--vw-space-sm) 0 var(--vw-space-md);
 }
-.grid-count { white-space: nowrap; font-size: 0.875rem; color: var(--vw-color-gray-700); }
+.grid-count { white-space: nowrap; font-size: 0.9375rem; color: var(--vw-color-gray-700); }
 
 /* The search box nests an .nst-input inside an .nst-input-shell for the sake
    of the icon, so the inner one draws no frame of its own. */
@@ -33,7 +33,7 @@
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   color: var(--vw-color-gray-400); display: flex; pointer-events: none;
 }
-.grid-search .nst-input { min-height: 0; padding: 0 0 0 1.75rem; border: 0; border-radius: 0; background: none; font-size: 0.875rem; }
+.grid-search .nst-input { min-height: 0; padding: 0 0 0 1.75rem; border: 0; border-radius: 0; background: none; font-size: 0.9375rem; }
 .grid-search .nst-input:focus { outline: none; }
 
 .grid-tools { display: flex; gap: var(--vw-space-sm); position: relative; }
@@ -70,7 +70,7 @@
 .kmenu--fixed { position: fixed; right: auto; bottom: auto; top: auto; }
 .kmenu-i {
   display: flex; align-items: center; gap: var(--vw-space-sm); width: 100%;
-  text-align: left; font: inherit; font-size: 0.875rem; white-space: nowrap;
+  text-align: left; font: inherit; font-size: 0.9375rem; white-space: nowrap;
   padding: 9px var(--vw-space-sm); border: 0; border-radius: var(--vw-radius-sm);
   background: none; color: var(--vw-color-gray-800); cursor: pointer;
 }
@@ -95,7 +95,10 @@
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--vw-space-md) var(--vw-space-lg) var(--vw-space-xs);
 }
-.fpanel-head .vw-card-title-sm { font-size: 1.0625rem; font-weight: 500; }
+/* .vw-card-title-sm's own size (--vw-font-heading-sm) applies unchanged here —
+   the filter panel's title is a card title like any other; it had its own
+   larger, unexplained override before, which meant the same class read as
+   two different sizes depending on which screen it sat on. */
 .fp-x { border: 0; background: none; cursor: pointer; color: var(--vw-color-gray-500); display: flex; padding: 2px; border-radius: var(--vw-radius-sm); }
 .fp-x:hover { background: var(--vw-color-slate-100); color: var(--vw-color-gray-900); }
 .fpanel-body { display: grid; grid-template-columns: 12rem 1fr; min-height: auto; }
@@ -104,7 +107,7 @@
   padding: 0 0 var(--vw-space-xs); border-right: 1px solid var(--vw-color-slate-100);
 }
 .fp-f {
-  position: relative; text-align: left; font: inherit; font-size: 0.9375rem; cursor: pointer;
+  position: relative; text-align: left; font: inherit; font-size: 1rem; cursor: pointer;
   padding: 8px var(--vw-space-md); border: 0; background: none; color: var(--vw-color-gray-700);
 }
 .fp-f:hover { background: var(--vw-color-slate-50); }
@@ -115,8 +118,8 @@
   padding: var(--vw-space-xs) var(--vw-space-lg) var(--vw-space-md);
   justify-content: flex-start;
 }
-.fp-label { font-size: 0.875rem; color: var(--vw-color-gray-500); }
-.fp-hint { font-size: 0.6875rem; color: var(--vw-color-gray-400); }
+.fp-label { font-size: 0.9375rem; color: var(--vw-color-gray-500); }
+.fp-hint { font-size: 0.75rem; color: var(--vw-color-gray-400); }
 .nst-select-shell { display: block; }
 .fp-sel { width: 100%; }
 .fp-sel.is-placeholder,
@@ -174,7 +177,7 @@
 }
 
 .grid-loader-text {
-  font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-800);
+  font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-800);
   font-family: inherit; letter-spacing: -0.01em;
 }
 
@@ -199,7 +202,7 @@
 /* header: a quiet grey band that stays put while the rows move under it */
 .nst-table th {
   padding-top: 14px; padding-bottom: 14px;
-  font-size: 0.875rem; font-weight: 400; color: var(--vw-color-gray-600);
+  font-size: 0.9375rem; font-weight: 400; color: var(--vw-color-gray-600);
   background: var(--vw-color-slate-50);
 }
 .tbl-wrap .nst-table thead th { position: sticky; top: 0; z-index: 3; background: var(--vw-color-slate-50); }
@@ -210,7 +213,7 @@
 .nst-table tbody tr[data-site] { cursor: pointer; }
 .nst-table tbody tr[hidden] { display: none; }
 .nst-table tbody tr.is-row-link { cursor: pointer; }
-.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
+.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.875rem; }
 .nst-table td select.nst-input { min-width: 9rem; }
 .tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }
 
@@ -222,7 +225,7 @@
    difference reads unmistakably rather than needing a pixel ruler. */
 .st-td > .vw-chip {
   display: flex; width: 100%; min-width: 7rem; justify-content: center;
-  padding-top: 8px; padding-bottom: 8px; font-size: 0.9375rem; font-weight: 600; border-radius: var(--vw-radius-full);
+  padding-top: 8px; padding-bottom: 8px; font-size: 1rem; font-weight: 600; border-radius: var(--vw-radius-full);
 }
 
 /* the action column is the last cell of the row, not a column of its own */
@@ -255,7 +258,7 @@
   position: fixed; z-index: 80; transform: translateY(-100%) translateY(-6px);
   padding: 4px 10px; border-radius: var(--vw-radius-full);
   background: var(--vw-color-gray-900); color: var(--vw-color-white);
-  font-size: 0.75rem; font-weight: 500; white-space: nowrap;
+  font-size: 0.8125rem; font-weight: 500; white-space: nowrap;
   opacity: 0; transition: opacity 120ms ease-out; pointer-events: none;
 }
 .copy-toast.is-in { opacity: 1; }

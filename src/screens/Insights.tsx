@@ -8,7 +8,7 @@ import { legacyPath } from '../routes';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT, DOMAIN_TRUST_TOTAL,
-  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, TOP_DOMAINS, domainParentLabel, domainRoute,
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, domainParentLabel, domainRoute,
   type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';
 
@@ -198,39 +198,19 @@ export default function Insights() {
 
   return (
     <div className="page ix">
-      {/* ── page header ─────────────────────────────────────────── */}
-      <div className="ix-head">
-        {/* <div>
-          <div className="ix-eyebrow">Discovery and reconciliation</div>
-          <h1 className="ix-title">Insights</h1>
-          <div className="ix-desc">
-            How much of the estate discovery reaches, how much of it reconciliation trusts, and what stands between today’s figure and the target.
-          </div>
-        </div> */}
-        <div className="ix-context" aria-label="Page context">
-          <span className="ix-ctx" title={`${TOP_DOMAINS.length} domains · ${DOMAIN_KEYS.length - TOP_DOMAINS.length} sub-domains · ${DOMAIN_TRUST_TOTAL.inScope} assets in scope`}>
-            {Ic.layers(14)}
-            <span className="ix-ctx-text">
-              <b>{TOP_DOMAINS.length}</b> domains · <b>{DOMAIN_KEYS.length - TOP_DOMAINS.length}</b> sub<span className="ix-ctx-long">-domain</span> · <b>{DOMAIN_TRUST_TOTAL.inScope}</b> <span className="ix-ctx-long">assets </span>in scope
-            </span>
-          </span>
-          <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
-            {Ic.clock(14)}
-            <span className="ix-ctx-text">Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
-          </span>
-          <span className="ix-ctx" title={`Next ${DOMAIN_LABEL[RECONCILE_NEXT.domain]} at ${RECONCILE_NEXT.at} · in ${RECONCILE_NEXT.eta}`}>
-            {Ic.calendar(14)}
-            <span className="ix-ctx-text">Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
-          </span>
-          <span className="ix-ctx ix-ctx-domains" aria-label="Domain colour key" title="Domains: RAN, Core, Transport, IP/MPLS">
-            {DOMAIN_KEYS.map(d => <Dom key={d} domain={d} sm />)}
-          </span>
-        </div>
-      </div>
-
       {/* ── inventory trust: the four headline figures ───────────── */}
       <section className="ix-section" aria-labelledby="ix-trust">
-        <SectionHeader title="Inventory trust" description="The headline figures — where the estate stands today, which way each is moving, and how far it is from target." />
+        <SectionHeader title="Inventory trust" description="The headline figures — where the estate stands today, which way each is moving, and how far it is from target."
+          right={<>
+            <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
+              {Ic.clock(14)}
+              <span className="ix-ctx-text">Last cycle <b>{lastCycle.when}</b> · {DOMAIN_LABEL[lastCycle.domain]}</span>
+            </span>
+            <span className="ix-ctx" title={`Next ${DOMAIN_LABEL[RECONCILE_NEXT.domain]} at ${RECONCILE_NEXT.at} · in ${RECONCILE_NEXT.eta}`}>
+              {Ic.calendar(14)}
+              <span className="ix-ctx-text">Next <b>{DOMAIN_LABEL[RECONCILE_NEXT.domain]}</b> at {RECONCILE_NEXT.at} · in {RECONCILE_NEXT.eta}</span>
+            </span>
+          </>} />
         <div className="ix-kpis">
           {TRUST_METRICS.map(m => {
             const r = kpiRead(m);

@@ -367,13 +367,13 @@
 :root {
   --fontFamily: 'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  /* Heading scale */
-  --vw-font-heading-2xl: 1.5rem;     /* 24px */
-  --vw-font-heading-xl:  1.25rem;    /* 20px */
-  --vw-font-heading-lg:  1.125rem;   /* 18px */
-  --vw-font-heading-md:  1rem;       /* 16px */
-  --vw-font-heading-sm:  0.875rem;   /* 14px */
-  --vw-font-heading-xs:  0.75rem;    /* 12px */
+  /* Heading scale — bumped +1px per tier app-wide for readability */
+  --vw-font-heading-2xl: 1.5625rem;  /* 25px */
+  --vw-font-heading-xl:  1.3125rem;  /* 21px */
+  --vw-font-heading-lg:  1.1875rem;  /* 19px */
+  --vw-font-heading-md:  1.0625rem;  /* 17px */
+  --vw-font-heading-sm:  0.9375rem;  /* 15px */
+  --vw-font-heading-xs:  0.8125rem;  /* 13px */
 
   --vw-line-heading-2xl: 1.5;
   --vw-line-heading-xl:  1.5;
@@ -383,27 +383,38 @@
   --vw-line-heading-xs:  1.33;
 
   /* Body / description */
-  --vw-font-description: 0.875rem;    /* 14px */
+  --vw-font-description: 0.9375rem;   /* 15px */
   --vw-line-description: 1.4;
 
   /* Label scale */
-  --vw-font-label-lg: 1rem;          /* 16px */
-  --vw-font-label-md: 0.875rem;      /* 14px */
-  --vw-font-label-sm: 0.75rem;       /* 12px */
-  --vw-font-label-xs: 0.6875rem;     /* 11px */
+  --vw-font-label-lg: 1.0625rem;      /* 17px */
+  --vw-font-label-md: 0.9375rem;      /* 15px */
+  --vw-font-label-sm: 0.8125rem;      /* 13px */
+  --vw-font-label-xs: 0.75rem;        /* 12px */
 
   /* Legend / variance */
-  --vw-font-legend: 0.75rem;         /* 12px */
+  --vw-font-legend: 0.8125rem;        /* 13px */
   --vw-line-legend: 1.2;
 
-  /* Metric value scale (matches .vw-card-metric-*) */
-  --vw-font-value-xxxl: 2.25rem;     /* 36px */
-  --vw-font-value-xxl:  2rem;        /* 32px */
-  --vw-font-value-xl:   1.75rem;     /* 28px */
-  --vw-font-value-lg:   1.5rem;      /* 24px */
-  --vw-font-value-md:   1.125rem;    /* 18px */
-  --vw-font-value-sm:   1rem;        /* 16px */
-  --vw-font-value-xs:   0.875rem;    /* 14px */
+  /* shell.css leans on this pair for card titles, table cells and fine
+     print across the app (kpi3-title, kpi2-label, .mtbl/.vtbl, geo-card,
+     fill-l, ...) — aliased onto the label scale above rather than a new
+     size, so "sm"/"xs" mean the same thing everywhere they're used. Was
+     previously referenced but never defined, so every one of those spots
+     silently inherited whatever size happened to be ambient at its point
+     in the DOM instead of a real, predictable size — the direct cause of
+     the same-looking card reading a different size on different pages. */
+  --vw-font-size-sm: var(--vw-font-label-md);  /* 15px */
+  --vw-font-size-xs: var(--vw-font-label-sm);  /* 13px */
+
+  /* Metric value scale (matches .vw-card-metric-*) — bumped +1px per tier */
+  --vw-font-value-xxxl: 2.3125rem;   /* 37px */
+  --vw-font-value-xxl:  2.0625rem;   /* 33px */
+  --vw-font-value-xl:   1.8125rem;   /* 29px */
+  --vw-font-value-lg:   1.5625rem;   /* 25px */
+  --vw-font-value-md:   1.1875rem;   /* 19px */
+  --vw-font-value-sm:   1.0625rem;   /* 17px */
+  --vw-font-value-xs:   0.9375rem;   /* 15px */
 }
 /* ============================================================
    NST Design System — Theme Tokens (default)
@@ -663,28 +674,28 @@ body {
 }
 
 .vw-card-activity-label {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.5;
   color: var(--vw-color-gray-800);
 }
 
 .vw-card-activity-value {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.4;
   color: var(--vw-color-gray-500);
 }
 
 .vw-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.4;
   color: var(--vw-color-gray-500);
 }
 
 .vw-value {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.5;
   color: var(--vw-color-gray-900);
@@ -707,14 +718,14 @@ body {
 /* ── Page typography ─────────────────────────────────────── */
 
 .vw-page-title {
-  font-size: 1.25rem;
+  font-size: 1.3125rem;
   font-weight: 500;
   line-height: 1.5;
   color: var(--vw-color-slate-800);
 }
 
 .vw-page-description {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.4;
   color: var(--vw-color-slate-700);
@@ -1062,8 +1073,8 @@ body {
   transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
 
   /* default size = md */
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 15px;
+  line-height: 21px;
   padding: 8px 16px;
 
   /* default variant = outline */
@@ -1091,10 +1102,10 @@ body {
 }
 
 /* ── Sizes ───────────────────────────────────────────────── */
-.nst-btn--xs { font-size: 12px; line-height: 16px; padding: 4px; }
-.nst-btn--sm { font-size: 13px; line-height: 18px; padding: 6px 8px; }
-.nst-btn--md { font-size: 14px; line-height: 20px; padding: 8px 16px; }
-.nst-btn--lg { font-size: 16px; line-height: 24px; padding: 8px 16px; }
+.nst-btn--xs { font-size: 13px; line-height: 17px; padding: 4px; }
+.nst-btn--sm { font-size: 14px; line-height: 19px; padding: 6px 8px; }
+.nst-btn--md { font-size: 15px; line-height: 21px; padding: 8px 16px; }
+.nst-btn--lg { font-size: 17px; line-height: 25px; padding: 8px 16px; }
 
 /* Icon-only — square, matching each size's text-button height */
 .nst-btn--icon.nst-btn--xs { width: 24px; height: 24px; padding: 0; }
@@ -1188,9 +1199,9 @@ body {
   background: var(--vw-color-white);
 
   font-family: var(--fontFamily);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
-  line-height: 20px;
+  line-height: 21px;
   color: var(--vw-color-gray-700);
 
   box-sizing: border-box;
@@ -1207,10 +1218,10 @@ body {
   white-space: nowrap;
 
   font-family: var(--fontFamily);
-  font-size: 12px;
+  font-size: 13px;
   font-style: normal;
   font-weight: 500;
-  line-height: 18px;
+  line-height: 19px;
 }
 
 /* Placeholder text */
@@ -1249,8 +1260,8 @@ body {
 /* Hint / error message below input */
 .nst-input-hint {
   font-family: var(--fontFamily);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 13px;
+  line-height: 19px;
   font-weight: 400;
   color: var(--vw-color-gray-400);
 }
@@ -1289,8 +1300,8 @@ body {
   outline: none;
   background: transparent;
   font-family: var(--fontFamily);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 15px;
+  line-height: 21px;
   color: var(--vw-color-gray-700);
   min-width: 0;
 }

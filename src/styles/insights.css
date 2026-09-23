@@ -10,7 +10,10 @@
      body/table 13 · metadata 12 · micro-label 11 (uppercase, tracked) */
 
 .ix {
-  zoom: 0.9;
+  /* was zoom: 0.9 — shrank every element on this page, text included, by a
+     further 10% underneath whatever font-size each rule below sets. That
+     silently undid the readability fixes throughout this file, so it's
+     gone; the page now renders each rule's own declared size directly. */
   --ix-border: var(--vw-color-slate-200);
   --ix-hair: var(--vw-color-slate-100);
   --ix-soft: var(--vw-color-slate-50);
@@ -28,7 +31,7 @@
   gap: var(--ix-gap);
   padding: 1.25rem var(--ix-pad) calc(var(--ix-pad) + 0.5rem);
   color: var(--ix-text);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
 }
 .ix .num { font-variant-numeric: tabular-nums; }
 .ix :focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
@@ -38,9 +41,9 @@
   padding: 0; margin: 0; border-bottom: none;
   container-type: inline-size; }
 .ix-head > div:first-child { min-width: 0; flex: 1 1 22rem; }
-.ix-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ix-muted); }
-.ix-title { font-size: clamp(1.25rem, 1rem + 0.9vw, 1.5rem); font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--ix-text); margin: 4px 0 0; }
-.ix-desc { font-size: 13px; color: var(--ix-muted); margin-top: 6px; max-width: 68ch; line-height: 1.5; }
+.ix-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ix-muted); }
+.ix-title { font-size: clamp(1.375rem, 1.1rem + 0.9vw, 1.625rem); font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--ix-text); margin: 4px 0 0; }
+.ix-desc { font-size: 14px; color: var(--ix-muted); margin-top: 6px; max-width: 68ch; line-height: 1.5; }
 .ix-context {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -58,7 +61,7 @@
   border: 1px solid var(--ix-border);
   border-radius: 0.5rem;
   background: var(--vw-color-white);
-  font-size: clamp(0.58rem, 0.46rem + 0.45cqi, 0.75rem);
+  font-size: clamp(0.75rem, 0.63rem + 0.45cqi, 0.875rem);
   color: var(--ix-body);
   white-space: nowrap;
   box-shadow: var(--ix-shadow);
@@ -113,16 +116,20 @@
 
 /* ── sections ─────────────────────────────────────────────────────────── */
 .ix-section { display: flex; flex-direction: column; gap: var(--vw-space-md); }
-.ix-sh { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--vw-space-lg); }
-.ix-sh-t { font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ix-text); }
-.ix-sh-d { font-size: 12px; color: var(--ix-muted); margin-top: 2px; }
-.ix-sh-r { display: flex; align-items: center; gap: var(--vw-space-xs); font-size: 12px; color: var(--ix-muted); }
+/* wraps rather than squeezing the title/description column when the right
+   slot (e.g. Inventory trust's "Last cycle"/"Next <domain>" pills) doesn't
+   fit beside it at narrower widths */
+.ix-sh { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 4px var(--vw-space-lg); }
+.ix-sh > div:first-child { min-width: 0; flex: 1 1 16rem; }
+.ix-sh-t { font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--ix-text); }
+.ix-sh-d { font-size: 13px; color: var(--ix-muted); margin-top: 2px; }
+.ix-sh-r { display: flex; align-items: center; flex-wrap: wrap; gap: var(--vw-space-xs); font-size: 13px; color: var(--ix-muted); }
 
 .ix-module { display: flex; align-items: center; gap: var(--vw-space-xs) var(--vw-space-md); margin-top: var(--vw-space-xs); flex-wrap: wrap; }
-.ix-module-n { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--vw-color-blue-600); }
-.ix-module-l { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ix-text); }
+.ix-module-n { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--vw-color-blue-600); }
+.ix-module-l { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ix-text); }
 .ix-module-rule { flex: 1; height: 1px; background: var(--ix-border); }
-.ix-module-meta { font-size: 12px; color: var(--ix-muted); }
+.ix-module-meta { font-size: 13px; color: var(--ix-muted); }
 .ix-module-meta b { font-weight: 600; color: var(--ix-body); }
 
 .ix-grid { display: grid; gap: var(--ix-gap); grid-template-columns: var(--cols, 1fr); align-items: stretch; }
@@ -138,8 +145,8 @@
   padding: 14px var(--vw-space-lg) 0; }
 .ix-panel-hl { min-width: 0; flex: 1 1 14rem; }
 .ix-panel-r { margin-left: auto; }
-.ix-panel-t { font-size: 14px; font-weight: 600; color: var(--ix-text); display: flex; align-items: center; line-height: 1.3; }
-.ix-panel-d { font-size: 12px; color: var(--ix-muted); margin-top: 3px; line-height: 1.4; }
+.ix-panel-t { font-size: 15px; font-weight: 600; color: var(--ix-text); display: flex; align-items: center; line-height: 1.3; }
+.ix-panel-d { font-size: 13px; color: var(--ix-muted); margin-top: 3px; line-height: 1.4; }
 .ix-panel-d b { font-weight: 600; color: var(--ix-body); }
 .ix-panel-r { display: flex; align-items: center; gap: var(--vw-space-xs); flex-shrink: 0; }
 .ix-panel-b { padding: var(--vw-space-md) var(--vw-space-lg) var(--vw-space-lg); flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -148,8 +155,8 @@
 .ix-panel-b.is-flush { padding: var(--vw-space-xs) 0 0; overflow-x: auto; overflow-y: hidden; border-radius: 0 0 var(--ix-radius) var(--ix-radius); }
 
 /* ── data table ───────────────────────────────────────────────────────── */
-.ix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.ix-table th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase;
+.ix-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ix-table th { text-align: left; font-size: 13px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase;
   color: var(--ix-muted); padding: 8px var(--vw-space-lg); border-bottom: 1px solid var(--ix-border); white-space: nowrap; }
 .ix-table td { padding: 10px var(--vw-space-lg); border-top: 1px solid var(--ix-hair); vertical-align: middle;
   white-space: nowrap; color: var(--ix-text); line-height: 1.35; }
@@ -164,24 +171,24 @@
 .ix-table .is-dim { color: var(--ix-faint); }
 .ix-table .is-strong { font-weight: 600; }
 .ix-primary { display: block; font-weight: 500; color: var(--ix-text); }
-.ix-secondary { display: block; font-size: 11.5px; color: var(--ix-muted); margin-top: 2px; }
-.ix-secondary.mono { font-size: 11px; }
+.ix-secondary { display: block; font-size: 12.5px; color: var(--ix-muted); margin-top: 2px; }
+.ix-secondary.mono { font-size: 13px; }
 .ix-warn { color: var(--vw-color-amber-700); font-weight: 600; }
 .ix-good { color: var(--vw-color-emerald-700); font-weight: 600; }
-.ix-mark { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 10.5px; font-weight: 600;
+.ix-mark { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 13px; font-weight: 600;
   letter-spacing: .04em; text-transform: uppercase; color: var(--vw-color-amber-700); }
 
 /* ── domain tag / pill / meter / delta / seg / code ───────────────────── */
 .ix-dom { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; color: var(--ix-text); white-space: nowrap; }
 .ix-dom i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.ix-dom.is-sm { font-size: 12px; font-weight: 500; color: var(--ix-body); }
+.ix-dom.is-sm { font-size: 13px; font-weight: 500; color: var(--ix-body); }
 .ix-dom.is-sm i { width: 7px; height: 7px; }
 .ix-dom.is-muted { color: var(--ix-muted); font-weight: 400; }
 /* a sub-domain's parent, muted in front of it: "Transport · IP/MPLS" */
 .ix-dom-p { color: var(--ix-muted); font-weight: 400; }
 .ix-doms { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-.ix-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px;
+.ix-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 13px;
   font-weight: 500; line-height: 1.5; border: 1px solid transparent; white-space: nowrap; }
 .ix-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .85; flex-shrink: 0; }
 .ix-pill > svg { flex-shrink: 0; }
@@ -196,18 +203,18 @@
 .ix-meter-t { width: 56px; height: 5px; border-radius: 999px; background: var(--ix-hair); overflow: hidden; flex-shrink: 0; }
 .ix-meter-f { display: block; height: 100%; border-radius: 999px; transition: width 250ms var(--ix-ease); }
 
-.ix-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ix-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .ix-delta.is-good { color: var(--vw-color-emerald-700); }
 .ix-delta.is-bad { color: var(--vw-color-red-600); }
 .ix-delta.is-flat { color: var(--ix-muted); }
 
 .ix-seg { display: inline-flex; padding: 2px; background: var(--ix-hair); border-radius: 8px; }
-.ix-seg button { border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 500; padding: 4px 10px;
+.ix-seg button { border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; padding: 4px 10px;
   border-radius: 6px; color: var(--ix-muted); cursor: pointer; transition: background var(--ix-ease), color var(--ix-ease); }
 .ix-seg button:hover { color: var(--ix-text); }
 .ix-seg button.is-on { background: var(--vw-color-white); color: var(--ix-text); box-shadow: 0 1px 2px rgba(15, 23, 42, .12); }
 
-.ix-code { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px;
+.ix-code { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px;
   color: var(--ix-body); background: var(--ix-hair); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
 
 /* ── KPI hero row ─────────────────────────────────────────────────────── */
@@ -271,7 +278,10 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   display: inline-flex;
   align-items: center;
   gap: 0.25em;
-  font-size: clamp(0.55rem, 0.48rem + 0.6cqi, 0.6875rem);
+  /* was clamp(0.55rem, ...), then clamp(0.6875rem, ...) — both still read as
+     fine print next to the card's own headline number; this is a title, not
+     a caption, so it now sits close to the app's own small-label size. */
+  font-size: clamp(0.8125rem, 0.72rem + 0.5cqi, 0.875rem);
   font-weight: 600;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -308,12 +318,12 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   font-size: clamp(1.2rem, 0.95rem + 2.5cqi, 2.2rem);
 }
 .ix-delta {
-  font-size: clamp(0.58rem, 0.52rem + 0.5cqi, 0.75rem);
+  font-size: clamp(0.8125rem, 0.72rem + 0.4cqi, 0.9375rem);
   white-space: nowrap;
 }
 @container (max-width: 260px) {
   .ix-kpi-top { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
-  .ix-pill { font-size: 0.58rem; padding: 0.1em 0.45em; }
+  .ix-pill { font-size: 0.75rem; padding: 0.15em 0.5em; }
   .ix-delta-note { display: none; }
 }
 @container (max-width: 200px) {
@@ -321,12 +331,16 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   .ix-target-note { display: none; }
 }
 .ix-kpi-u {
-  font-size: clamp(0.68rem, 0.6rem + 0.5cqi, 0.875rem);
+  /* sits right next to ix-kpi-v (up to 2.2rem/35px on a hero tile) — at the
+     old 0.8125-1rem ceiling it read as barely-there next to a number that
+     size, so it now scales closer to it instead of staying pinned to the
+     app's small-label size. */
+  font-size: clamp(1rem, 0.88rem + 0.9cqi, 1.375rem);
   font-weight: 500;
   color: var(--ix-muted);
 }
 .ix-kpi-sub {
-  font-size: clamp(0.6rem, 0.55rem + 0.5cqi, 0.75rem);
+  font-size: clamp(0.8125rem, 0.72rem + 0.4cqi, 0.9375rem);
   color: var(--vw-color-gray-600);
   line-height: 1.35;
   overflow: hidden;
@@ -351,7 +365,7 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: clamp(0.2rem, 0.5cqi, 0.5rem);
-  font-size: clamp(0.55rem, 0.5rem + 0.4cqi, 0.6875rem);
+  font-size: clamp(0.75rem, 0.68rem + 0.4cqi, 0.875rem);
   color: var(--ix-muted);
   white-space: nowrap;
 }
@@ -390,17 +404,17 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-chart .ch-grid { stroke: var(--ix-hair); stroke-dasharray: 3 5; }
 /* the charts here draw fluid (real pixels, see charts.tsx), so these are
    true on-screen sizes at every width */
-.ix-chart .ch-axis { font-size: 11px; fill: var(--ix-faint); }
-.ix-chart .ch-lab { font-size: 13px; }
+.ix-chart .ch-axis { font-size: 13px; fill: var(--ix-faint); }
+.ix-chart .ch-lab { font-size: 14px; }
 .ix-chart .ch-svg { height: auto; }
 .ix-chart .ch-svg rect { transition: opacity var(--ix-ease); }
-.ix-chart .ch-legend { justify-content: flex-start; gap: 8px 16px; flex-wrap: wrap; margin-top: 8px; padding-left: 44px; font-size: 12px; color: var(--vw-color-gray-600); }
+.ix-chart .ch-legend { justify-content: flex-start; gap: 8px 16px; flex-wrap: wrap; margin-top: 8px; padding-left: 44px; font-size: 13px; color: var(--vw-color-gray-600); }
 .ix-chart .ch-dot { width: 8px; height: 8px; }
-.ix-stats { display: flex; align-items: baseline; gap: 14px; font-size: 12px; color: var(--ix-muted); flex-wrap: wrap; }
-.ix-stats b { font-size: 13px; font-weight: 600; color: var(--ix-text); font-variant-numeric: tabular-nums; }
+.ix-stats { display: flex; align-items: baseline; gap: 14px; font-size: 13px; color: var(--ix-muted); flex-wrap: wrap; }
+.ix-stats b { font-size: 14px; font-weight: 600; color: var(--ix-text); font-variant-numeric: tabular-nums; }
 
 /* header legend for a chart whose series the panel names, not the svg */
-.ix-legend { display: inline-flex; align-items: center; gap: 14px; font-size: 12px; color: var(--vw-color-gray-600); white-space: nowrap; }
+.ix-legend { display: inline-flex; align-items: center; gap: 14px; font-size: 13px; color: var(--vw-color-gray-600); white-space: nowrap; }
 .ix-legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .ix-legend i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .ix-legend i.is-band { border-radius: 2px; width: 10px; background: var(--vw-color-blue-100); }
@@ -411,12 +425,12 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   padding: 8px 8px; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 6px;
   transition: background var(--ix-ease); }
 .ix-age-row:hover, .ix-age-row:focus-visible { background: var(--ix-soft); }
-.ix-age-l { font-size: 12.5px; font-weight: 500; color: var(--ix-body); white-space: nowrap; }
+.ix-age-l { font-size: 13.5px; font-weight: 500; color: var(--ix-body); white-space: nowrap; }
 .ix-age-t { height: 14px; border-radius: 4px; background: var(--ix-hair); overflow: hidden; }
 .ix-age-f { display: block; height: 100%; border-radius: 4px; transition: width 250ms var(--ix-ease); }
-.ix-age-n { text-align: right; font-size: 14px; font-weight: 600; color: var(--ix-text); }
-.ix-age-s { text-align: right; font-size: 11.5px; color: var(--ix-muted); }
-.ix-age-div { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; font-size: 10.5px; font-weight: 600;
+.ix-age-n { text-align: right; font-size: 15px; font-weight: 600; color: var(--ix-text); }
+.ix-age-s { text-align: right; font-size: 12.5px; color: var(--ix-muted); }
+.ix-age-div { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; font-size: 13px; font-weight: 600;
   letter-spacing: .06em; text-transform: uppercase; color: var(--vw-color-amber-700); white-space: nowrap; }
 .ix-age-div::after { content: ''; flex: 1; height: 1px; background: var(--vw-color-amber-200); }
 
@@ -432,13 +446,13 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-sev.is-warning { background: var(--vw-color-amber-50); color: var(--vw-color-amber-700); }
 .ix-sev.is-critical { background: var(--vw-color-red-50); color: var(--vw-color-red-600); }
 .ix-sev.is-info { background: var(--vw-color-blue-50); color: var(--vw-color-blue-600); }
-.ix-fail-t { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 4px; font-size: 14px; font-weight: 600; color: var(--ix-text); line-height: 1.3; }
+.ix-fail-t { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 4px; font-size: 15px; font-weight: 600; color: var(--ix-text); line-height: 1.3; }
 .ix-fail-m { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
-.ix-fail-cat { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ix-muted); margin-right: 2px; }
+.ix-fail-cat { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ix-muted); margin-right: 2px; }
 .ix-fail-r { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.ix-fail-n { font-size: 20px; font-weight: 600; line-height: 1; color: var(--ix-text); font-variant-numeric: tabular-nums; }
-.ix-fail-n small { font-size: 11px; font-weight: 500; color: var(--ix-muted); margin-left: 5px; letter-spacing: .02em; }
-.ix-act { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px; font-weight: 500; line-height: 1.4;
+.ix-fail-n { font-size: 21px; font-weight: 600; line-height: 1; color: var(--ix-text); font-variant-numeric: tabular-nums; }
+.ix-fail-n small { font-size: 13px; font-weight: 500; color: var(--ix-muted); margin-left: 5px; letter-spacing: .02em; }
+.ix-act { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 500; line-height: 1.4;
   color: var(--vw-color-blue-700); background: var(--vw-color-blue-50); border: 1px solid var(--vw-color-blue-100); border-radius: 6px;
   padding: 4px 9px; cursor: pointer; white-space: nowrap; transition: background var(--ix-ease), border-color var(--ix-ease); }
 .ix-act:hover { background: var(--vw-color-blue-100); }
@@ -454,9 +468,9 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-tile.is-hero { background: var(--ix-soft); }
 button.ix-tile { cursor: pointer; transition: background var(--ix-ease); }
 button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-blue-50); }
-.ix-tile-v { font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.ix-tile-l { display: flex; align-items: center; font-size: 12.5px; font-weight: 500; color: var(--vw-color-gray-700); }
-.ix-tile-s { font-size: 11px; color: var(--ix-muted); }
+.ix-tile-v { font-size: 1.625rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ix-tile-l { display: flex; align-items: center; font-size: 13.5px; font-weight: 500; color: var(--vw-color-gray-700); }
+.ix-tile-s { font-size: 13px; color: var(--ix-muted); }
 
 /* ── ranked bar list (open items by type) ─────────────────────────────── */
 .ix-bars { display: flex; flex-direction: column; }
@@ -466,16 +480,16 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 .ix-bar:hover, .ix-bar:focus-visible { background: var(--ix-soft); }
 .ix-bar-l { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .ix-bar-l span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ix-bar-c { font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ix-faint); }
+.ix-bar-c { font-size: 13px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ix-faint); }
 .ix-bar-t { height: 6px; border-radius: 999px; background: var(--ix-hair); overflow: hidden; }
 .ix-bar-f { display: block; height: 100%; border-radius: 999px; }
 .ix-bar-n { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ── region heat cells ────────────────────────────────────────────────── */
 .ix-heat { display: block; width: 100%; padding: 10px 8px; border: 0; border-radius: 8px; text-align: center; font: inherit;
-  font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: transform var(--ix-ease), box-shadow var(--ix-ease); }
+  font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: transform var(--ix-ease), box-shadow var(--ix-ease); }
 .ix-heat:hover, .ix-heat:focus-visible { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, .18); }
-.ix-legend-ramp { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ix-muted); margin-top: auto; padding-top: var(--vw-space-md); }
+.ix-legend-ramp { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ix-muted); margin-top: auto; padding-top: var(--vw-space-md); }
 .ix-legend-ramp > div { display: flex; gap: 3px; }
 .ix-legend-ramp > div > span { width: 18px; height: 12px; border-radius: 3px; }
 
@@ -506,9 +520,9 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 .ix-runs { display: flex; align-items: flex-end; gap: 8px; }
 .ix-runbar { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 46px; padding: 2px 0 0; border: 0;
   background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; }
-.ix-runbar-v { font-size: 11px; font-weight: 600; color: var(--ix-muted); line-height: 1; }
+.ix-runbar-v { font-size: 13px; font-weight: 600; color: var(--ix-muted); line-height: 1; }
 .ix-runbar-b { display: block; width: 100%; border-radius: 3px 3px 2px 2px; opacity: .3; transition: opacity var(--ix-ease), height 250ms var(--ix-ease); }
-.ix-runbar-t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; color: var(--ix-faint); line-height: 1; }
+.ix-runbar-t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; color: var(--ix-faint); line-height: 1; }
 .ix-runbar.is-cur .ix-runbar-v { color: var(--ix-text); }
 .ix-runbar.is-cur .ix-runbar-b { opacity: 1; }
 .ix-runbar.is-cur .ix-runbar-t { color: var(--ix-body); }
@@ -516,19 +530,19 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 .ix-runbar.is-cur:hover .ix-runbar-b { opacity: 1; }
 .ix-cycle-stats { display: flex; gap: var(--vw-space-xl); }
 .ix-stat { display: flex; flex-direction: column; gap: 3px; }
-.ix-stat-k { font-size: 10.5px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ix-faint); white-space: nowrap; }
-.ix-stat-v { font-size: 13px; font-weight: 600; color: var(--ix-text); line-height: 1; }
+.ix-stat-k { font-size: 13px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ix-faint); white-space: nowrap; }
+.ix-stat-v { font-size: 14px; font-weight: 600; color: var(--ix-text); line-height: 1; }
 .ix-cycle-pct { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.ix-cycle-v { font-size: 1.375rem; font-weight: 600; letter-spacing: -.01em; line-height: 1; font-variant-numeric: tabular-nums; }
-.ix-cycle-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ix-muted); white-space: nowrap; }
-.ix-cycle-pl .ix-delta { font-size: 11px; }
+.ix-cycle-v { font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ix-cycle-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ix-muted); white-space: nowrap; }
+.ix-cycle-pl .ix-delta { font-size: 13px; }
 .ix-next { display: flex; align-items: center; gap: 10px; padding: 12px 0 0; margin-top: 4px; border-top: 1px dashed var(--ix-border);
-  font-size: 12px; color: var(--ix-muted); flex-shrink: 0; }
+  font-size: 13px; color: var(--ix-muted); flex-shrink: 0; }
 .ix-next b { color: var(--ix-text); font-weight: 600; }
 .ix-next i { width: 9px; height: 9px; border-radius: 50%; background: var(--vw-color-white); border: 2px solid var(--ix-next-hex); box-sizing: border-box; flex-shrink: 0; }
 
 /* ── drawer key/value list ────────────────────────────────────────────── */
-.ix .kv > div { padding: 9px 0; border-top: 1px solid var(--ix-hair); font-size: 13px; }
+.ix .kv > div { padding: 9px 0; border-top: 1px solid var(--ix-hair); font-size: 14px; }
 .ix-drawer-actions { display: flex; gap: 8px; margin-top: var(--vw-space-lg); flex-wrap: wrap; }
 
 /* ── responsive ───────────────────────────────────────────────────────── */
@@ -553,10 +567,10 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 }
 /* <768 phone: list rows fold their trailing figures/actions under text */
 @media (max-width: 767px) {
-  .ix-sh-t { font-size: 15px; }
+  .ix-sh-t { font-size: 16px; }
   .ix-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ix-tile.is-hero { grid-column: 1 / -1; }
-  .ix-table { font-size: 12px; }
+  .ix-table { font-size: 13px; }
   .ix-fail { grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; }
   .ix-fail-r { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 10px; }
   .ix-bar { grid-template-columns: minmax(0, 1fr) 2.6rem; }
@@ -566,7 +580,7 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 }
 /* ≤480 small phone: tighter insets so content, not chrome, gets the width */
 @media (max-width: 480px) {
-  .ix-ctx { padding: 5px 8px; font-size: 11.5px; gap: 6px; }
+  .ix-ctx { padding: 5px 8px; font-size: 12.5px; gap: 6px; }
   .ix-ctx-domains { gap: 8px; }
   .ix-kpi { padding: 14px 14px 12px 16px; }
   .ix-panel-h, .ix-panel-b, .ix-fail { padding-left: 14px; padding-right: 14px; }
