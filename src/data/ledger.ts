@@ -39,7 +39,7 @@ export const classMeta = (k: NeClass): ClassMeta => PHY_TABS.find(x => x.k === k
    nothing to view — so it's the one class left out; every other class opens
    Node view, even where the page itself has no live assurance feed to show. */
 export const NODE_VIEW_CLASSES: NeClass[] = ['router', 'switch', 'dwdm', 'enodeb'];
-export const hasNodeView = (k: NeClass): boolean => NODE_VIEW_CLASSES.includes(k);
+export const hasNodeView = (k?: string | null): boolean => !!k && NODE_VIEW_CLASSES.includes(k.toLowerCase() as NeClass);
 
 /* Node view is a genuinely different screen per class (see legacy/app-node2.js
    — separate header/overview/hardware per class, not one template branching
@@ -48,11 +48,11 @@ export const hasNodeView = (k: NeClass): boolean => NODE_VIEW_CLASSES.includes(k
 const NODE_VIEW_LABEL: Partial<Record<NeClass, string>> = {
   router: 'Router node view', switch: 'Switch node view', dwdm: 'DWDM node view', enodeb: 'eNodeB node view'
 };
-export const nodeViewLabel = (k: NeClass): string => NODE_VIEW_LABEL[k] || 'Node view';
+export const nodeViewLabel = (k?: string | null): string => (k ? NODE_VIEW_LABEL[k.toLowerCase() as NeClass] : undefined) || 'Node view';
 /* the short form, for spots (like the breadcrumb's drill segment) that sit
    right after something that already said "Node view" once */
 const NODE_CLASS_NAME: Partial<Record<NeClass, string>> = { router: 'Router', switch: 'Switch', dwdm: 'DWDM', enodeb: 'eNodeB' };
-export const nodeClassName = (k: NeClass): string => NODE_CLASS_NAME[k] || 'Node';
+export const nodeClassName = (k?: string | null): string => (k ? NODE_CLASS_NAME[k.toLowerCase() as NeClass] : undefined) || 'Node';
 
 export type ChipTone = 'success' | 'info' | 'warning' | 'error' | 'neutral' | 'purple' | 'cyan' | 'orange' | 'pink';
 export type ColorTone = 'sky' | 'cyan' | 'emerald' | 'amber' | 'slate' | 'red' | 'purple' | 'orange' | 'fuchsia' | 'gray';

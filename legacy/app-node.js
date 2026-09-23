@@ -113,7 +113,7 @@ function nodeRecord(name, wantIp) {
   const isCoreNf = clean.includes('AMF') || clean.includes('UPF') || clean.includes('SMF') || clean.includes('NRF') || clean.includes('MME') || clean.includes('CORE');
   const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR') || clean.includes('ACC') || clean.includes('DIST');
   const isServer = urlCls === 'server' || clean.includes('SERVER') || clean.includes('SRV') || clean.includes('HOST');
-  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('WAVE') || clean.includes('OTN');
+  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('OADM') || clean.includes('ILA') || clean.includes('GNE') || clean.includes('WAVE') || clean.includes('OTN');
   const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540') || clean.includes('7750') || clean.includes('ASR');
   const cls = isEnodeb ? 'enodeb' : isSw ? 'switch' : isDwdm ? 'dwdm' : isServer ? 'server' : isRouter ? 'router' : (urlCls || 'router');
 

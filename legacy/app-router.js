@@ -223,7 +223,7 @@ function applyDrillQuery(view, q, label) {
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
     NODE_TAB = p.tab || 'overview';
-    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
+    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;

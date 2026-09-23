@@ -649,8 +649,9 @@ function viewDwdmResource(N) {
         D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
         '', () => []));
 
+  const nodeViewBtn = `<button class="nst-btn nst-btn--sm is-drill"${dA({ v:'node', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>Node view</button>`;
   return `<div class="page">
-    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}
+    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`, nodeViewBtn)}
 
     ${card(`
       <div class="nv-head">

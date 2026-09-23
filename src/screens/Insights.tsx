@@ -7,7 +7,7 @@ import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHead
 import { legacyPath } from '../routes';
 import {
   TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
-  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT, DOMAIN_TRUST_TOTAL,
+  ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
   DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, domainParentLabel, domainRoute,
   type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
 } from '../data/discoveryOverview';

@@ -1241,6 +1241,9 @@ function nodeHeaderDwdm(N) {
           MGMT IP ${r.ip || '—'}
         </span>
       </div>
+      <div class="row" style="flex-shrink:0">
+        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
+      </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,

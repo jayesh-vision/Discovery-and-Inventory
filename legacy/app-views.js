@@ -2073,10 +2073,14 @@ function viewSite() {
         /* no "Site info" here — every row on this tab already belongs to
            the site this whole page is showing, so that action would only
            ever reopen the page the reader is already on */
-        i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })
-        ])
+        i => {
+          const rowCls = rows[i].cls || (hasNodeView(rows[i].type) ? rows[i].type : SITE_TAB);
+          const ipParam = rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : '';
+          return [
+            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })] : []),
+            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })
+          ];
+        })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
       ${rows.length ? `<div class="vw-card-footer-divider legend">

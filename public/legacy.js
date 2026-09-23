@@ -1798,18 +1798,18 @@ const PHY_TABS = [
    nothing to view — so it's the one class left out; every other class opens
    Node view, even where the page itself has no live assurance feed to show. */
 const NODE_VIEW_CLASSES = ['router', 'switch', 'dwdm', 'enodeb'];
-const hasNodeView = k => NODE_VIEW_CLASSES.includes(k);
+const hasNodeView = k => NODE_VIEW_CLASSES.includes((k || '').toLowerCase());
 
 /* Node view is a genuinely different screen per class (see app-node2.js —
    separate header/overview/hardware per class, not one template branching
    on cls). The breadcrumb and page title should say which one a reader is
    actually looking at, instead of the same generic "Node view" for all four. */
 const NODE_VIEW_LABEL = { router: 'Router node view', switch: 'Switch node view', dwdm: 'DWDM node view', enodeb: 'eNodeB node view' };
-const nodeViewLabel = k => NODE_VIEW_LABEL[k] || 'Node view';
+const nodeViewLabel = k => NODE_VIEW_LABEL[(k || '').toLowerCase()] || 'Node view';
 /* the short form, for spots (like the breadcrumb's drill segment) that sit
    right after something that already said "Node view" once */
 const NODE_CLASS_NAME = { router: 'Router', switch: 'Switch', dwdm: 'DWDM', enodeb: 'eNodeB' };
-const nodeClassName = k => NODE_CLASS_NAME[k] || 'Node';
+const nodeClassName = k => NODE_CLASS_NAME[(k || '').toLowerCase()] || 'Node';
 const PHY = {
   router: [
     { st: 'ok', name: 'NDLS-J960-P_R1-T1-NR', ip: '172.31.42.100', model: 'MX960', os: '21.2R3-S8.5', sn: 'JN1236F87AFB', oem: 'JUNIPER', loc: 'DEL-279', s: 'd', stock: 'deployed', v: 3 },
@@ -6601,10 +6601,14 @@ function viewSite() {
         /* no "Site info" here — every row on this tab already belongs to
            the site this whole page is showing, so that action would only
            ever reopen the page the reader is already on */
-        i => [
-          ...(hasNodeView(rows[i].type || SITE_TAB) ? [A('Node view', { v:'node', l:`${nodeClassName(rows[i].type || SITE_TAB)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })] : []),
-          A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })
-        ])
+        i => {
+          const rowCls = rows[i].cls || (hasNodeView(rows[i].type) ? rows[i].type : SITE_TAB);
+          const ipParam = rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : '';
+          return [
+            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })] : []),
+            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })
+          ];
+        })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
              No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
       ${rows.length ? `<div class="vw-card-footer-divider legend">
@@ -9029,8 +9033,9 @@ function viewDwdmResource(N) {
         D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
         '', () => []));
 
+  const nodeViewBtn = `<button class="nst-btn nst-btn--sm is-drill"${dA({ v:'node', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>Node view</button>`;
   return `<div class="page">
-    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}
+    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`, nodeViewBtn)}
 
     ${card(`
       <div class="nv-head">
@@ -12346,7 +12351,7 @@ function nodeRecord(name, wantIp) {
   const isCoreNf = clean.includes('AMF') || clean.includes('UPF') || clean.includes('SMF') || clean.includes('NRF') || clean.includes('MME') || clean.includes('CORE');
   const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR') || clean.includes('ACC') || clean.includes('DIST');
   const isServer = urlCls === 'server' || clean.includes('SERVER') || clean.includes('SRV') || clean.includes('HOST');
-  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('WAVE') || clean.includes('OTN');
+  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('OADM') || clean.includes('ILA') || clean.includes('GNE') || clean.includes('WAVE') || clean.includes('OTN');
   const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540') || clean.includes('7750') || clean.includes('ASR');
   const cls = isEnodeb ? 'enodeb' : isSw ? 'switch' : isDwdm ? 'dwdm' : isServer ? 'server' : isRouter ? 'router' : (urlCls || 'router');
 
@@ -14391,6 +14396,9 @@ function nodeHeaderDwdm(N) {
           MGMT IP ${r.ip || '—'}
         </span>
       </div>
+      <div class="row" style="flex-shrink:0">
+        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
+      </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
@@ -15137,7 +15145,7 @@ function applyDrillQuery(view, q, label) {
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
     NODE_TAB = p.tab || 'overview';
-    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^Node view\s*·?\s*/i, '').trim() : null);
+    const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
