@@ -915,20 +915,17 @@ function viewTarget() {
             r.steps.replace(/of \d+/, `of ${stepCount}`), chip(r.out, r.chip),
             `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
           ]), 'chip-auto')}
-        </div>`, 'grow')}
+        </div>`, '', 'flex:2;min-width:0')}
 
       ${card(`${headSm('Objects discovered')}
-        <div class="stack-s" style="margin-top:var(--vw-space-md)">
+        <div style="display:grid;grid-template-columns:auto 1fr auto minmax(5.5rem,auto);gap:var(--vw-space-xs) var(--vw-space-sm);align-items:center;margin-top:var(--vw-space-md)">
           ${objects.map(a => `
-            <div class="stack-x" style="gap:2px">
-              <div class="hbar" style="grid-template-columns:4rem 1fr 2.5rem">
-                <span class="vw-label">${a.proto}</span>
-                <div class="hbar-track"><div class="hbar-fill" style="width:${(a.c/aMax*100).toFixed(0)}%;background:${cv(a.tone,400)}"></div></div>
-                <span class="vw-value num t-right">${a.c}</span>
-              </div>
-              <span class="vw-card-metric-label-sub">${a.chg}</span>
-            </div>`).join('')}
-        </div>`, '', 'width:min(330px,100%);flex-shrink:0')}
+            <span class="vw-label" style="white-space:nowrap">${a.proto}</span>
+            <div class="hbar-track"><div class="hbar-fill" style="width:${(a.c/aMax*100).toFixed(0)}%;background:${cv(a.tone,400)}"></div></div>
+            <span class="vw-value num t-right" style="min-width:1.5rem">${a.c}</span>
+            <span class="vw-card-metric-label-sub" style="white-space:nowrap">${a.chg}</span>
+          `).join('')}
+        </div>`, '', 'flex:1;min-width:380px')}
     </div>
 
     ${card(`
