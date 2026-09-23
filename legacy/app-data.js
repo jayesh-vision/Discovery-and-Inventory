@@ -1046,6 +1046,7 @@ const OBJECTS_BY_DOMAIN = {
   IPMPLS: [
     { proto: 'Interfaces', c: 18, ok: 16, chg: '2 admin-down', tone: 'sky' },
     { proto: 'IGP adjacencies', c: 8, ok: 8, chg: 'no change', tone: 'cyan' },
+    { proto: 'OSPF', c: 8, ok: 8, chg: 'no change', tone: 'amber' },
     { proto: 'LDP peers', c: 6, ok: 6, chg: 'no change', tone: 'indigo' },
     { proto: 'BGP peers', c: 3, ok: 3, chg: 'no change', tone: 'purple' },
     { proto: 'VPN instances', c: 13, ok: 13, chg: '1 added', tone: 'emerald' }
@@ -1059,7 +1060,7 @@ const OBJECTS_SUB_BY_DOMAIN = {
   Transport: '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances',
   RAN: '3 cells · 14 neighbour relations · 3 antenna sectors · 142 active sessions',
   Core: '4 NRF subscriptions · 3 core interfaces · 1,204 PDU sessions · 3 dependent NFs',
-  IPMPLS: '18 interfaces · 8 IGP adjacencies · 6 LDP peers · 3 BGP peers · 13 VPN instances'
+  IPMPLS: '18 interfaces · 8 IGP adjacencies · 8 OSPF · 6 LDP peers · 3 BGP peers · 13 VPN instances'
 };
 
 /* ── field provenance for the sample record ─────────────── */

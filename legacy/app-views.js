@@ -899,7 +899,7 @@ function viewTarget() {
 
     <div class="row-t" style="align-items:stretch">
       ${card(`${headSm('Run history')}
-        <div style="margin-top:var(--vw-space-md)">
+        <div style="margin-top:var(--vw-space-md);min-width:0">
         ${table([{ t: 'Run' }, { t: 'Started' }, { t: 'Elapsed' }, { t: 'Steps' }, { t: 'Outcome' }, { t: 'What changed' }],
           /* the newest run matches the "Last discovery · 3h ago" KPI above it
              exactly, and each older run keeps its original gap from the one
@@ -913,9 +913,9 @@ function viewTarget() {
             `<span class="num">${agoStamp([180, 1980, 3420, 4860][i] ?? 180 + i * 1440, true)}</span>`,
             `<span class="num">${r.dur}</span>`,
             r.steps.replace(/of \d+/, `of ${stepCount}`), chip(r.out, r.chip),
-            `<span class="vw-card-description" style="white-space:normal">${r.note}</span>`
+            `<span class="vw-card-description" style="white-space:nowrap">${r.note}</span>`
           ]), 'chip-auto')}
-        </div>`, '', 'flex:2;min-width:0')}
+        </div>`, '', 'flex:2;min-width:0;overflow:hidden')}
 
       ${card(`${headSm('Objects discovered')}
         <div style="display:grid;grid-template-columns:auto 1fr auto minmax(5.5rem,auto);gap:var(--vw-space-xs) var(--vw-space-sm);align-items:center;margin-top:var(--vw-space-md)">
