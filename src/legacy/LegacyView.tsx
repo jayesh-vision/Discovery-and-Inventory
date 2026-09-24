@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isReactOwned, legacyPath } from '../routes';
+import { exportTable } from '../utils/tableExport';
 
 /* ── the prototype renderer, loaded once ────────────────── */
 declare global {
@@ -22,6 +23,7 @@ declare global {
       owns: (k: string) => boolean;
       navigate: (k: string, drill: { label?: string; q?: string } | null, params?: Record<string, string>) => void;
       sync: (k: string, params: Record<string, string>, drill?: { label?: string; q?: string; from?: string } | null) => void;
+      exportTable?: (table: HTMLTableElement | null | undefined, kind: 'csv' | 'xlsx', stemName?: string) => Promise<void>;
     };
   }
 }
@@ -87,7 +89,8 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
           const isSameScreen = k === legacyKey;
           nav(target, { replace: isSameScreen });
         }
-      }
+      },
+      exportTable: (t, k, n) => exportTable(t, k, n)
     };
   }, [nav, legacyKey]);
 

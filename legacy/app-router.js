@@ -47,20 +47,70 @@ let CURRENT = 'insights';
 
 /* Reads whatever table the grid toolbar sits above and turns exactly what's
    on screen right now (search and filters already applied) into a real
-   file, so "Export" produces the rows the reader is actually looking at. */
+   file (.xlsx or .csv), so "Export" produces the rows the reader is actually looking at. */
 function exportNearestTable(btn, kind) {
   const table = btn.closest('.vw-card-section, .card, section')?.querySelector('table');
   if (!table) { alert('Nothing to export — this grid has no rows yet.'); return; }
-  const cell = td => `"${td.textContent.replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`;
-  const lines = [...table.querySelectorAll('tr')].map(tr =>
-    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cell).join(','));
-  const ext = kind === 'xlsx' ? 'xls' : 'csv';
-  const blob = new Blob([lines.join('\r\n')], { type: kind === 'xlsx' ? 'application/vnd.ms-excel' : 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${CURRENT}-export.${ext}`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const stem = `${CURRENT}-export`;
+  if (window.__nsBridge && window.__nsBridge.exportTable) {
+    window.__nsBridge.exportTable(table, kind, stem);
+    return;
+  }
+  const cleanCellText = td => {
+    const clone = td.cloneNode(true);
+    clone.querySelectorAll('button, .kmenu, .kmenu-trigger, [aria-hidden="true"], svg, script, style, .sr-only').forEach(e => e.remove());
+    clone.querySelectorAll('br').forEach(br => br.replaceWith('\uE000'));
+    clone.querySelectorAll('span, div, p, strong, em, b, i, a, td, th').forEach(el => {
+      if (el.textContent && !el.textContent.endsWith(' ') && !el.textContent.endsWith('\n')) el.after(document.createTextNode(' '));
+    });
+    return (clone.textContent || '').split('\uE000').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n');
+  };
+  const trs = [...table.querySelectorAll('tr')].filter(tr => !tr.classList.contains('grid-empty-tr'));
+  const matrix = trs.map(tr =>
+    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cleanCellText)
+  ).filter(row => row.length > 0);
+
+  if (kind === 'xlsx') {
+    const xmlRows = matrix.map((row, rIdx) => {
+      const isHeader = rIdx === 0;
+      const cells = row.map(val => {
+        const escVal = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `<Cell${isHeader ? ' ss:StyleID="Header"' : ''}><Data ss:Type="String">${escVal}</Data></Cell>`;
+      }).join('');
+      return `<Row>${cells}</Row>`;
+    }).join('\n');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="${CURRENT.slice(0, 31)}">
+  <Table>
+   ${xmlRows}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+    const blob = new Blob([xml], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${stem}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } else {
+    const escapeCsv = v => /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+    const csv = '\uFEFF' + matrix.map(r => r.map(escapeCsv).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${stem}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }
 
 /* ── drill-down ───────────────────────────────────────── */

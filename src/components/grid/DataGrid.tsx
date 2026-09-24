@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 import { domainFilterMatches, isDomainKey } from '../../data/discoveryOverview';
+import { exportTable } from '../../utils/tableExport';
 
 /* ── types ──────────────────────────────────────────────── */
 /** w: optional column width (e.g. '18%') — a grid with few, short columns
@@ -144,30 +145,20 @@ function FilterPanel({ fields, activeFilters, onClose, onApply, onReset }: {
 }
 
 /* Reads the grid's own rendered table — search and filters already applied —
-   and turns exactly what's on screen into a real file, mirroring the
-   prototype's exportNearestTable so both sides export the same thing. */
-function exportTable(wrap: HTMLDivElement | null, kind: 'csv' | 'xlsx') {
+   and turns exactly what's on screen into a real file (.xlsx or .csv),
+   mirroring the prototype's exportNearestTable so both sides export the same thing. */
+function exportGrid(wrap: HTMLDivElement | null, kind: 'csv' | 'xlsx') {
   const table = wrap?.querySelector('table');
-  if (!table) { alert('Nothing to export — this grid has no rows yet.'); return; }
-  const cell = (td: Element) => `"${(td.textContent ?? '').replace(/\s+/g, ' ').trim().replace(/"/g, '""')}"`;
-  const lines = [...table.querySelectorAll('tr')].map(tr =>
-    [...tr.children].filter(c => !c.classList.contains('kb-th') && !c.classList.contains('kb-td')).map(cell).join(','));
   const name = location.pathname.split('/').filter(Boolean).pop() || 'export';
-  const ext = kind === 'xlsx' ? 'xls' : 'csv';
-  const blob = new Blob([lines.join('\r\n')], { type: kind === 'xlsx' ? 'application/vnd.ms-excel' : 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${name}-export.${ext}`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  void exportTable(table, kind, `${name}-export`);
 }
 
 /* The platform's grid menu: refresh lives here, not as a toolbar button. */
 function stdActions(wrap: HTMLDivElement | null, onTriggerRefresh?: (r?: DOMRect) => void): Action[] {
   return [
     { l: 'Refresh', onClick: () => onTriggerRefresh?.() },
-    { l: 'Export as CSV', onClick: () => exportTable(wrap, 'csv') },
-    { l: 'Export as XLSX', onClick: () => exportTable(wrap, 'xlsx') }
+    { l: 'Export as CSV', onClick: () => exportGrid(wrap, 'csv') },
+    { l: 'Export as XLSX', onClick: () => exportGrid(wrap, 'xlsx') }
   ];
 }
 
