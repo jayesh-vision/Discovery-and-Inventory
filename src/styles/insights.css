@@ -146,7 +146,7 @@
 .ix-panel-hl { min-width: 0; flex: 1 1 14rem; }
 .ix-panel-r { margin-left: auto; }
 .ix-panel-t { font-size: 0.9375rem; font-weight: 500; color: var(--ix-text); display: flex; align-items: center; line-height: 1.35; }
-.ix-panel-d { font-size: 13px; color: var(--ix-muted); margin-top: 3px; line-height: 1.4; }
+.ix-panel-d { font-size: 0.8125rem; color: var(--ix-muted); margin-top: 3px; line-height: 1.4; font-weight: 400; }
 .ix-panel-d b { font-weight: 500; color: var(--ix-body); }
 .ix-panel-r { display: flex; align-items: center; gap: var(--vw-space-xs); flex-shrink: 0; }
 .ix-panel-b { padding: var(--vw-space-md) var(--vw-space-lg) var(--vw-space-lg); flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -203,7 +203,7 @@
 .ix-meter-t { width: 56px; height: 5px; border-radius: 999px; background: var(--ix-hair); overflow: hidden; flex-shrink: 0; }
 .ix-meter-f { display: block; height: 100%; border-radius: 999px; transition: width 250ms var(--ix-ease); }
 
-.ix-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ix-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .ix-delta.is-good { color: var(--vw-color-emerald-700); }
 .ix-delta.is-bad { color: var(--vw-color-red-600); }
 .ix-delta.is-flat { color: var(--ix-muted); }
@@ -278,11 +278,9 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   display: inline-flex;
   align-items: center;
   gap: 0.25em;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--vw-color-gray-600);
+  color: var(--vw-color-gray-700);
   white-space: nowrap;
   overflow: visible;
   min-width: 0;
@@ -303,16 +301,16 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   min-width: 0;
 }
 .ix-kpi-v {
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 500;
-  letter-spacing: -.02em;
-  line-height: 1.1;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
   color: var(--ix-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .ix-kpi.is-hero .ix-kpi-v {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
 }
 .ix-delta {
   font-size: 0.75rem;
@@ -333,9 +331,9 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   color: var(--ix-muted);
 }
 .ix-kpi-sub {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--vw-color-gray-500);
-  line-height: 1.3;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
@@ -361,7 +359,7 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 4px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--ix-muted);
   white-space: nowrap;
 }
@@ -390,7 +388,7 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   transform: translateX(-1px);
 }
 .ix-target b {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ix-body);
   font-variant-numeric: tabular-nums;
 }
@@ -407,7 +405,7 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-chart .ch-legend { justify-content: flex-start; gap: 8px 16px; flex-wrap: wrap; margin-top: 8px; padding-left: 44px; font-size: 13px; color: var(--vw-color-gray-600); }
 .ix-chart .ch-dot { width: 8px; height: 8px; }
 .ix-stats { display: flex; align-items: baseline; gap: 14px; font-size: 13px; color: var(--ix-muted); flex-wrap: wrap; }
-.ix-stats b { font-size: 14px; font-weight: 600; color: var(--ix-text); font-variant-numeric: tabular-nums; }
+.ix-stats b { font-size: 14px; font-weight: 500; color: var(--ix-text); font-variant-numeric: tabular-nums; }
 
 /* header legend for a chart whose series the panel names, not the svg */
 .ix-legend { display: inline-flex; align-items: center; gap: 14px; font-size: 13px; color: var(--vw-color-gray-600); white-space: nowrap; }
@@ -421,12 +419,12 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   padding: 8px 8px; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 6px;
   transition: background var(--ix-ease); }
 .ix-age-row:hover, .ix-age-row:focus-visible { background: var(--ix-soft); }
-.ix-age-l { font-size: 13.5px; font-weight: 500; color: var(--ix-body); white-space: nowrap; }
+.ix-age-l { font-size: 0.8125rem; font-weight: 500; color: var(--ix-body); white-space: nowrap; }
 .ix-age-t { height: 14px; border-radius: 4px; background: var(--ix-hair); overflow: hidden; }
 .ix-age-f { display: block; height: 100%; border-radius: 4px; transition: width 250ms var(--ix-ease); }
-.ix-age-n { text-align: right; font-size: 15px; font-weight: 600; color: var(--ix-text); }
-.ix-age-s { text-align: right; font-size: 12.5px; color: var(--ix-muted); }
-.ix-age-div { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; font-size: 13px; font-weight: 600;
+.ix-age-n { text-align: right; font-size: 0.875rem; font-weight: 500; color: var(--ix-text); font-variant-numeric: tabular-nums; }
+.ix-age-s { text-align: right; font-size: 0.75rem; color: var(--ix-muted); }
+.ix-age-div { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; font-size: 0.75rem; font-weight: 500;
   letter-spacing: .06em; text-transform: uppercase; color: var(--vw-color-amber-700); white-space: nowrap; }
 .ix-age-div::after { content: ''; flex: 1; height: 1px; background: var(--vw-color-amber-200); }
 
@@ -464,9 +462,9 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
 .ix-tile.is-hero { background: var(--ix-soft); }
 button.ix-tile { cursor: pointer; transition: background var(--ix-ease); }
 button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-blue-50); }
-.ix-tile-v { font-size: 1.375rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.ix-tile-l { display: flex; align-items: center; font-size: 13.5px; font-weight: 500; color: var(--vw-color-gray-700); }
-.ix-tile-s { font-size: 13px; color: var(--ix-muted); }
+.ix-tile-v { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.015em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.ix-tile-l { display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-700); }
+.ix-tile-s { font-size: 0.8125rem; color: var(--ix-muted); font-weight: 400; }
 
 /* ── ranked bar list (open items by type) ─────────────────────────────── */
 .ix-bars { display: flex; flex-direction: column; }
@@ -529,7 +527,7 @@ button.ix-tile:hover, button.ix-tile:focus-visible { background: var(--vw-color-
 .ix-stat-k { font-size: 13px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ix-faint); white-space: nowrap; }
 .ix-stat-v { font-size: 0.875rem; font-weight: 500; color: var(--ix-text); line-height: 1; }
 .ix-cycle-pct { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.ix-cycle-v { font-size: 1.375rem; font-weight: 500; letter-spacing: -.01em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ix-cycle-v { font-size: 1.5rem; font-weight: 500; letter-spacing: -.015em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .ix-cycle-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ix-muted); white-space: nowrap; }
 .ix-cycle-pl .ix-delta { font-size: 13px; }
 .ix-next { display: flex; align-items: center; gap: 10px; padding: 12px 0 0; margin-top: 4px; border-top: 1px dashed var(--ix-border);

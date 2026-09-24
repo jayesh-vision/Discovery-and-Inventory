@@ -185,7 +185,7 @@ export default function RuleDetails() {
               </div>
               {rule.status === 'Review' && (
                 <div style={{ marginTop: 'var(--vw-space-md)', padding: 'var(--vw-space-md)', background: 'var(--vw-color-slate-50)', borderRadius: 'var(--vw-radius-md)' }}>
-                  <div className="vw-card-title-sm" style={{ fontSize: '0.8125rem' }}>Review packet</div>
+                  <div className="vw-card-title-sm">Review packet</div>
                   <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>Business description</div>
                   <p className="vw-card-description" style={{ marginTop: '2px' }}>{rule.description}</p>
                   <div className="vw-card-metric-label-sub" style={{ marginTop: '10px' }}>Expected impact</div>

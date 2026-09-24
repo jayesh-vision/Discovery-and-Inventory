@@ -407,14 +407,22 @@
   --vw-font-size-sm: var(--vw-font-label-md);  /* 15px */
   --vw-font-size-xs: var(--vw-font-label-sm);  /* 13px */
 
-  /* Metric value scale (matches .vw-card-metric-*) — bumped +1px per tier */
-  --vw-font-value-xxxl: 2.3125rem;   /* 37px */
-  --vw-font-value-xxl:  2.0625rem;   /* 33px */
-  --vw-font-value-xl:   1.625rem;    /* 26px — matches the headline-number size used elsewhere (rpt-card-v, rpt-headline-v) */
-  --vw-font-value-lg:   1.5625rem;   /* 25px */
-  --vw-font-value-md:   1.1875rem;   /* 19px */
-  --vw-font-value-sm:   1.0625rem;   /* 17px */
-  --vw-font-value-xs:   0.9375rem;   /* 15px */
+  /* Metric value scale (matches .vw-card-metric-*) */
+  --vw-font-value-xxxl: 2rem;        /* 32px */
+  --vw-font-value-xxl:  1.75rem;     /* 28px - hero metric */
+  --vw-font-value-xl:   1.5rem;      /* 24px - standard metric value */
+  --vw-font-value-lg:   1.25rem;     /* 20px */
+  --vw-font-value-md:   1.125rem;    /* 18px */
+  --vw-font-value-sm:   1rem;        /* 16px */
+  --vw-font-value-xs:   0.875rem;    /* 14px */
+
+  /* Universal semantic card typography tokens */
+  --vw-card-title-size: 0.9375rem;    /* 15px - standard card title */
+  --vw-card-title-sm-size: 0.875rem;  /* 14px - compact card / KPI title */
+  --vw-card-desc-size: 0.8125rem;     /* 13px - card description, subtitle */
+  --vw-card-meta-size: 0.75rem;       /* 12px - micro legend, badges, delta */
+  --vw-card-metric-size: 1.5rem;      /* 24px - standard card metric value */
+  --vw-card-metric-hero-size: 1.75rem;/* 28px - hero metric value */
 }
 /* ============================================================
    NST Design System — Theme Tokens (default)
@@ -646,31 +654,31 @@ body {
 /* ── Card typography ─────────────────────────────────────── */
 
 .vw-card-title {
-  font-size: var(--vw-font-heading-md);
+  font-size: var(--vw-card-title-size, 0.9375rem);
   font-weight: 500;
-  line-height: var(--vw-line-heading-md);
-  color: var(--vw-color-gray-800);
+  line-height: 1.35;
+  color: var(--vw-color-gray-900, #111827);
 }
 
 .vw-card-title-lg {
-  font-size: var(--vw-font-heading-lg);
+  font-size: 1.0625rem;
   font-weight: 500;
-  line-height: var(--vw-line-heading-lg);
-  color: var(--vw-color-gray-800);
+  line-height: 1.35;
+  color: var(--vw-color-gray-900, #111827);
 }
 
 .vw-card-title-sm {
-  font-size: var(--vw-font-heading-sm);
+  font-size: var(--vw-card-title-sm-size, 0.875rem);
   font-weight: 500;
-  line-height: var(--vw-line-heading-sm);
-  color: var(--vw-color-gray-800);
+  line-height: 1.35;
+  color: var(--vw-color-gray-800, #1f2937);
 }
 
 .vw-card-description {
-  font-size: var(--vw-font-description);
-  line-height: var(--vw-line-description);
+  font-size: var(--vw-card-desc-size, 0.8125rem);
+  line-height: 1.4;
   font-weight: 400;
-  color: var(--vw-color-gray-500);
+  color: var(--vw-color-gray-500, #6b7280);
 }
 
 .vw-card-activity-label {
@@ -754,10 +762,11 @@ body {
 .vw-card-metric-xs,
 .vw-card-metric-xxs,
 .vw-card-metric-xxxs {
-  font-weight: 400;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: var(--vw-color-gray-950, var(--vw-color-gray-900));
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--vw-color-gray-900, #111827);
 }
 
 .vw-card-metric-xxxl { font-size: var(--vw-font-value-xxxl); }
@@ -768,19 +777,17 @@ body {
 .vw-card-metric-sm   { font-size: var(--vw-font-value-sm); }
 .vw-card-metric-xs   { font-size: var(--vw-font-value-xs); }
 .vw-card-metric-xxs  { font-size: 0.75rem; }
-.vw-card-metric-xxxs { font-size: 0.625rem; }
+.vw-card-metric-xxxs { font-size: 0.6875rem; }
 
 .vw-card-metric-label,
 .vw-card-metric-label-sub,
 .vw-card-metric-label-sm {
-  font-weight: 400;
-  line-height: 1.2;
-  color: var(--vw-color-gray-500);
+  line-height: 1.35;
 }
 
-.vw-card-metric-label    { font-size: var(--vw-font-label-md); }
+.vw-card-metric-label    { font-size: var(--vw-card-title-size, 0.9375rem); font-weight: 500; color: var(--vw-color-gray-700, #374151); }
 .vw-card-metric-label-sub,
-.vw-card-metric-label-sm { font-size: var(--vw-font-label-sm); }
+.vw-card-metric-label-sm { font-size: var(--vw-card-desc-size, 0.8125rem); font-weight: 400; color: var(--vw-color-gray-500, #6b7280); }
 
 /* ── Variance / trend ────────────────────────────────────── */
 
