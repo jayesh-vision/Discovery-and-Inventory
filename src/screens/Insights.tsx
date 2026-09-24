@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useState, useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cv, InfoTip } from '../components/ui';
 import { StackedBars, Sparkline } from '../components/charts';
@@ -6,7 +6,8 @@ import { Drawer } from '../components/Drawer';
 import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHeader, Seg, type Tone } from '../components/ops';
 import { legacyPath } from '../routes';
 import {
-  TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_DAYS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
+  TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
+  getObjectsDailyDays,
   ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
   DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, domainParentLabel, domainRoute,
   type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
@@ -186,10 +187,12 @@ export default function Insights() {
     'Open discrepancy backlog': 'View all open discrepancies',
     'Mean time to reconcile': 'View Transport, the current outlier'
   };
-  const objDays = objRange === '7d' ? OBJECTS_DAILY_DAYS.slice(-7) : OBJECTS_DAILY_DAYS;
+  const dailyDays = useMemo(() => getObjectsDailyDays(14), []);
+  const objDays = objRange === '7d' ? dailyDays.slice(-7) : dailyDays;
   const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
   const objToday = OBJECTS_DAILY_VALUES[OBJECTS_DAILY_VALUES.length - 1].reduce((a, b) => a + b, 0);
+  const todayDateStr = dailyDays[dailyDays.length - 1];
   const failedTargets = ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0);
   const lastCycle = RECONCILE_CYCLE_ROWS[0];
   const onKey = (fn: () => void) => (e: KeyboardEvent) => {
@@ -284,10 +287,10 @@ export default function Insights() {
           </Panel>
 
           <Panel title="New items discovered per day" info={CARD_DEF['New items discovered per day']} className="ix-chart"
-            description={<span className="ix-stats"><span>Last {objRange === '7d' ? 7 : 14} days</span><span><b>{objTotal}</b> new items</span><span><b>{objToday}</b> today</span><span>avg <b>{(objTotal / objDays.length).toFixed(1)}</b>/day</span></span>}
+            description={<span className="ix-stats"><span>Last {objRange === '7d' ? 7 : 14} days</span><span><b>{objTotal}</b> new items</span><span><b>{objToday}</b> on {todayDateStr}</span><span>avg <b>{(objTotal / objDays.length).toFixed(1)}</b>/day</span></span>}
             right={<Seg label="Range" value={objRange} onChange={setObjRange} options={[{ k: '7d', n: '7d' }, { k: '14d', n: '14d' }]} />}>
             <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={236} fluid />
+              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={252} rotateLabels fluid />
             </div>
           </Panel>
         </div>

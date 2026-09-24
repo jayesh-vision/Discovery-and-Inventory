@@ -84,12 +84,14 @@ function useFluidWidth(enabled?: boolean) {
 
 /* ── stacked daily bars ─────────────────────────────────── */
 export interface Series { k: string; n: string; hex: string }
-export function StackedBars({ days, series, values, height = 240, fluid }: {
-  days: string[]; series: Series[]; values: number[][]; height?: number; fluid?: boolean;
+export function StackedBars({ days, series, values, height = 240, fluid, rotateLabels }: {
+  days: string[]; series: Series[]; values: number[][]; height?: number; fluid?: boolean; rotateLabels?: boolean;
 }) {
   const [hov, setHov] = useState<{ i: number; x: number; y: number } | null>(null);
   const [wrapRef, measured] = useFluidWidth(fluid);
-  const W = fluid && measured ? measured : 1000, H = height, padL = 44, padB = 34, padT = 12;
+  const shouldRotate = rotateLabels ?? (days.length > 5 && days.some(d => /^[A-Za-z]{3}\s+\d{1,2}$/.test(d)));
+  const padL = 44, padB = shouldRotate ? 52 : 34, padT = 12;
+  const W = fluid && measured ? measured : 1000, H = height;
   const totals = values.map(v => v.reduce((a, b) => a + b, 0));
   const max = Math.max(...totals);
   /* a "nice" step sized to roughly 4 ticks over the actual max, rather than
@@ -108,7 +110,7 @@ export function StackedBars({ days, series, values, height = 240, fluid }: {
      always prints, and a stepped label that would sit right beside it is
      dropped so the two never overprint */
   const every = slot < 34 ? 2 : 1, last = days.length - 1;
-  const showLabel = (i: number) => i === last || (i % every === 0 && last - i >= every);
+  const showLabel = (i: number) => shouldRotate ? true : (i === last || (i % every === 0 && last - i >= every));
   return (
     <div className="ch-wrap" ref={wrapRef} onMouseLeave={() => setHov(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} className="ch-svg" role="img" aria-label="Discovered devices per day">
@@ -130,7 +132,13 @@ export function StackedBars({ days, series, values, height = 240, fluid }: {
                 return <rect key={s.k} x={cx - bw / 2} y={y0} width={bw} height={h} rx={si === series.length - 1 ? 4 : 0}
                   fill={s.hex} opacity={hov && hov.i !== i ? 0.45 : 1} />;
               })}
-              {showLabel(i) && <text x={i === last ? cx + slot / 2 : cx} y={H - 10} textAnchor={i === last ? 'end' : 'middle'} className="ch-axis">{d}</text>}
+              {shouldRotate ? (
+                <text x={cx + 3} y={y(0) + 12} textAnchor="end"
+                  transform={`rotate(-45 ${cx + 3} ${y(0) + 12})`}
+                  className="ch-axis" style={{ fontSize: '11.5px' }}>{d}</text>
+              ) : (
+                showLabel(i) && <text x={i === last ? cx + slot / 2 : cx} y={H - 10} textAnchor={i === last ? 'end' : 'middle'} className="ch-axis">{d}</text>
+              )}
             </g>
           );
         })}

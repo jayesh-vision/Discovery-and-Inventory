@@ -165,7 +165,17 @@ export const DISCOVERY_JOB_ROWS: DiscoveryJobRow[] = [
 ];
 
 /* ── New objects discovered per day, last 14 days ────────────────────── */
-export const OBJECTS_DAILY_DAYS = Array.from({ length: 14 }, (_, i) => (i === 13 ? 'Today' : `-${13 - i}d`));
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const getObjectsDailyDays = (count = 14): string[] => {
+  const now = new Date();
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() - (count - 1 - i));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${MONTH_NAMES[d.getMonth()]} ${pad(d.getDate())}`;
+  });
+};
+export const OBJECTS_DAILY_DAYS = getObjectsDailyDays(14);
 /* one series per domain, in DOMAIN_ORDER (so the legend reads as the tree:
    IP/MPLS directly after Transport) */
 export const OBJECTS_DAILY_SERIES = DOMAIN_ORDER.map(d => ({ k: d.toLowerCase(), n: DOMAIN_LABEL[d], hex: DOMAIN_HEX[d], domain: d }));
