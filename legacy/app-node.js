@@ -16,6 +16,7 @@ let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
    clicked. When the caller has it, IP is specific enough in this data to
    break that tie; see nodeRecord() below. */
 let NODE_IP = null;
+let NODE_SITE = null;
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */

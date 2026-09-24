@@ -187,7 +187,7 @@ const ARROW = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" strok
 
 function donut(segs,total,top,sub,size=150){
   const sw=Math.max(7,Math.round(size*0.10)), r=size/2-sw/2-2, cx=size/2, cy=size/2, C=2*Math.PI*r;
-  const fTop=Math.max(11,Math.round(size*0.145)), fSub=Math.max(7,Math.round(size*0.062));
+  const fTop=Math.max(13,Math.round(size*0.145)), fSub=Math.max(10,Math.round(size*0.08));
   let off=0;
   const arcs=segs.map(s=>{const len=(s.c/total)*C;
     const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cv(s.tone,400)}" stroke-width="${sw}"
@@ -195,7 +195,7 @@ function donut(segs,total,top,sub,size=150){
       transform="rotate(-90 ${cx} ${cy})"><title>${s.n}: ${n(s.c)}</title></circle>`; off+=len; return el;}).join('');
   return `<svg viewBox="0 0 ${size} ${size}" style="height:${size}px;width:${size}px;flex-shrink:0;display:block" role="img" aria-label="${top} ${sub}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--vw-color-slate-100)" stroke-width="${sw}"/>${arcs}
-    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="300" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
+    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
     ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-gray-500)" font-family="Poppins,sans-serif">${sub}</text>` : ''}</svg>`;
 }
 
@@ -6606,9 +6606,10 @@ function viewSite() {
         i => {
           const rowCls = rows[i].cls || (hasNodeView(rows[i].type) ? rows[i].type : SITE_TAB);
           const ipParam = rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : '';
+          const siteParam = `&site=${encodeURIComponent(l.id)}&tab=${encodeURIComponent(SITE_TAB)}`;
           return [
-            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })] : []),
-            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })
+            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}${siteParam}&cls=${encodeURIComponent(rowCls)}` })] : []),
+            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}${siteParam}` })
           ];
         })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
@@ -8070,10 +8071,10 @@ function viewLinks() {
           : x.c;
         return `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
-          style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:2px">
+          style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)">
           <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-lg num">${n(c)}</span>
+          <span class="vw-card-metric-xl num">${n(c)}</span>
           <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
         </button>`;
       }).join('')}
@@ -12256,6 +12257,7 @@ let NODE_ID = 'NDLS-J960-P_R1-T1-NR';
    clicked. When the caller has it, IP is specific enough in this data to
    break that tie; see nodeRecord() below. */
 let NODE_IP = null;
+let NODE_SITE = null;
 let NODE_PERF = '24h';
 let NODE_ALERT_TAB = 'alerts';
 let NODE_ALERT_SEV = 'All severity'; /* Router Alerts & diagnostics: severity filter */
@@ -15073,6 +15075,9 @@ function drillTo(view, label, q) {
   const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
     ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
     : null;
+  const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
+    ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
@@ -15084,6 +15089,7 @@ function drillTo(view, label, q) {
      hop and collapses to a bare, non-clickable label. Only a genuine jump to a
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
+    || siteDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
     || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
@@ -15141,7 +15147,15 @@ function applyDrillQuery(view, q, label) {
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
-  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
+  if (view === 'site')     {
+    if (p.id) {
+      SITE_ID = p.id;
+      SITE_TAB = (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) ? p.tab : (p.tab || 'router');
+      SITE_SECTION = 'ne';
+    } else if (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) {
+      SITE_TAB = p.tab;
+    }
+  }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   /* as in setParams: only a different frame closes the gallery, since this
      also runs on the re-render that follows opening it */
@@ -15197,11 +15211,20 @@ function applyDrillQuery(view, q, label) {
        carries its own ?tab=) must land on Overview, not whatever tab was
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
-    NODE_TAB = p.tab || 'overview';
+    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab);
+    NODE_TAB = p.nodetab || (isNodeSpecificTab ? p.tab : 'overview');
+    if (p.site) NODE_SITE = decodeURIComponent(p.site).trim();
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
+      if (!NODE_SITE && typeof LOCATIONS !== 'undefined') {
+        const nr = typeof nodeRecord === 'function' ? nodeRecord(NODE_ID, NODE_IP) : null;
+        if (nr && nr.loc) {
+          const sRec = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+          if (sRec) NODE_SITE = sRec.id;
+        }
+      }
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_ALERT_SEV = 'All severity';
@@ -15306,8 +15329,11 @@ function go(k) {
       DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
 }
 function __legacyParams(k) {
-  return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
-    : k === 'resource' ? { name: RES_ID, ip: RES_IP } : k === 'node' ? { name: NODE_ID, ip: NODE_IP } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
+  return k === 'site' ? { id: SITE_ID, ...(typeof SITE_TAB !== 'undefined' && SITE_TAB ? { tab: SITE_TAB } : {}) }
+    : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
+    : k === 'resource' ? { name: RES_ID, ip: RES_IP }
+    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}) }
+    : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
@@ -16028,6 +16054,13 @@ window.__nsLegacy = {
   setSection: s => { __siteSectionPending = s; },
   /* map any location tag (sample city codes included) to the real roster row */
   resolveSite: ref => { const r = resolveSite(ref); return r ? { id: r.id, name: r.name } : null; },
+  /* resolve which site owns any device */
+  siteForNode: (name, ip) => {
+    const nr = typeof nodeRecord === 'function' ? nodeRecord(name, ip) : null;
+    if (!nr || !nr.loc) return null;
+    const s = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+    return s ? { id: s.id, name: s.name, cls: nr.cls } : null;
+  },
   /* URL-driven only (the LegacyView effect). A null here means the URL has
      no drill — the live DRILL must clear too, or go()'s refresh path keeps
      the stale one and sync() shoves the old drill URL back on top of a
@@ -16035,7 +16068,10 @@ window.__nsLegacy = {
   setDrill: d => { DRILL_PENDING = d; if (!d) DRILL = null; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
-    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router';
+    if (k === 'site'  && p.id)   {
+      SITE_ID = p.id;
+      if (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) SITE_TAB = p.tab;
+      else if (!p.tab) SITE_TAB = 'router';
       SITE_SECTION = __siteSectionPending || 'ne';
       /* React StrictMode fires this effect twice per navigation (mount,
          cleanup, mount again) with no gap between — clearing the pending
@@ -16044,11 +16080,29 @@ window.__nsLegacy = {
          an explicit setSection() from the click that navigated here.
          Deferring the clear lets both passes see the same pending value;
          a setTimeout(0) still lands well before any real next click. */
-      setTimeout(() => { __siteSectionPending = null; }, 0); }
+      setTimeout(() => { __siteSectionPending = null; }, 0);
+    }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_IP = p.ip || null; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_IP = p.ip || null; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; }
+    if (k === 'node'  && p.name) {
+      NODE_ID = p.name;
+      NODE_IP = p.ip || null;
+      if (p.site) NODE_SITE = p.site;
+      else if (typeof LOCATIONS !== 'undefined') {
+        const nr = typeof nodeRecord === 'function' ? nodeRecord(NODE_ID, NODE_IP) : null;
+        if (nr && nr.loc) {
+          const sRec = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+          if (sRec) NODE_SITE = sRec.id;
+        }
+      }
+      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
+      NODE_PERF = '24h';
+      NODE_ALERT_TAB = 'alerts';
+      NODE_LINK_PROTO = 'LLDP';
+      NODE_HW_SEL = 'bbu';
+      NODE_ENB_LINK_TAB = 'backhaul';
+    }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }

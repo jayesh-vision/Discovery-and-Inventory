@@ -757,7 +757,7 @@ button { font: inherit; }
 
 /* legend */
 .legend { display: flex; gap: var(--vw-space-md); flex-wrap: wrap; }
-.legend-i { display: flex; align-items: center; gap: 6px; font-size: 0.6875rem; color: var(--vw-color-gray-600); }
+.legend-i { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--vw-color-gray-600); }
 .legend-sw { width: 10px; height: 10px; border-radius: 2px; }
 /* refinements */
 .flow-node { min-width: 0; }
@@ -1090,12 +1090,15 @@ path.st.has-c:hover { fill-opacity: .78; }
 .statc-accent { position: absolute; left: var(--vw-space-md); top: calc(var(--vw-space-md) + 2px);
   width: 4px; height: 30px; border-radius: var(--vw-radius-full); }
 .statc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-sm); }
-.statc-k { font-size: 0.6875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
-.statc-period { font-size: 0.6875rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
+.statc-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
+.statc-period { font-size: 0.75rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
 .statc-valrow { display: flex; align-items: baseline; gap: var(--vw-space-sm); margin-top: 2px; min-width: 0; }
-.statc-v { font-size: 1.375rem; font-weight: 300; line-height: 1.2; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums;
+/* was weight 300 — same thin-headline-number pattern already fixed for
+   kpi-progress's .vw-card-metric-xl; this card's own number needed the
+   same fix (weight only, size unchanged). */
+.statc-v { font-size: 1.375rem; font-weight: 500; line-height: 1.2; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.statc-trend { font-size: 0.6875rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+.statc-trend { font-size: 0.75rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
 .statc-map { margin-top: var(--vw-space-sm); border-radius: var(--vw-radius-md); overflow: hidden;
   border: 1px solid var(--vw-color-slate-200); height: 126px; }
 .statc-facts { display: flex; flex-direction: column; gap: 7px; margin-top: var(--vw-space-md);
@@ -1106,9 +1109,11 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stat-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--vw-radius-full);
   background: var(--vw-color-slate-100); overflow: hidden; }
 .stat-bar > span { display: block; height: 100%; border-radius: var(--vw-radius-full); }
-.stat-k { font-size: 0.6875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
-.stat-v { font-size: 1.375rem; font-weight: 300; line-height: 1.15; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums; }
-.stat-s { font-size: 0.6875rem; font-weight: 400; color: var(--vw-color-gray-500); line-height: 1.3;
+.stat-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
+/* was weight 300, same thin-headline-number pattern as kpi-progress's
+   .vw-card-metric-xl and statc-v above — fixed the same way. */
+.stat-v { font-size: 1.375rem; font-weight: 500; line-height: 1.15; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums; }
+.stat-s { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .stat-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .stat-cell { border-top: 1px solid var(--vw-color-slate-200); }

@@ -410,7 +410,7 @@
   /* Metric value scale (matches .vw-card-metric-*) — bumped +1px per tier */
   --vw-font-value-xxxl: 2.3125rem;   /* 37px */
   --vw-font-value-xxl:  2.0625rem;   /* 33px */
-  --vw-font-value-xl:   1.8125rem;   /* 29px */
+  --vw-font-value-xl:   1.625rem;    /* 26px — matches the headline-number size used elsewhere (rpt-card-v, rpt-headline-v) */
   --vw-font-value-lg:   1.5625rem;   /* 25px */
   --vw-font-value-md:   1.1875rem;   /* 19px */
   --vw-font-value-sm:   1.0625rem;   /* 17px */
@@ -739,6 +739,12 @@ body {
 
 /* ── Metric numerals ─────────────────────────────────────── */
 
+/* was weight 300 at the shared base — the same too-thin headline-number
+   pattern kept resurfacing screen by screen (Location's region cards,
+   the compact stat strip, now Links/Services) because each fix only
+   scoped an override to the one card component that had been reported.
+   Fixed here instead, at the one rule every one of those draws from, so
+   it no longer needs re-discovering per screen. */
 .vw-card-metric-xxxl,
 .vw-card-metric-xxl,
 .vw-card-metric-xl,
@@ -748,7 +754,7 @@ body {
 .vw-card-metric-xs,
 .vw-card-metric-xxs,
 .vw-card-metric-xxxs {
-  font-weight: 300;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--vw-color-gray-950, var(--vw-color-gray-900));

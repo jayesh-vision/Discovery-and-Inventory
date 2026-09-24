@@ -2077,9 +2077,10 @@ function viewSite() {
         i => {
           const rowCls = rows[i].cls || (hasNodeView(rows[i].type) ? rows[i].type : SITE_TAB);
           const ipParam = rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : '';
+          const siteParam = `&site=${encodeURIComponent(l.id)}&tab=${encodeURIComponent(SITE_TAB)}`;
           return [
-            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })] : []),
-            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}` })
+            ...(hasNodeView(rowCls) ? [A('Node view', { v:'node', l:`${nodeClassName(rowCls)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}${siteParam}&cls=${encodeURIComponent(rowCls)}` })] : []),
+            A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${ipParam}${siteParam}` })
           ];
         })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
@@ -3541,10 +3542,10 @@ function viewLinks() {
           : x.c;
         return `
         <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
-          style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:2px">
+          style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)">
           <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-lg num">${n(c)}</span>
+          <span class="vw-card-metric-xl num">${n(c)}</span>
           <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
         </button>`;
       }).join('')}

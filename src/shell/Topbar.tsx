@@ -75,13 +75,17 @@ export default function Topbar() {
     return SCREENS.find(x => matches(x) && x.module === s.module) ?? SCREENS.find(matches);
   };
 
-  const targetFor = (prefix: string): string | null => {
+  const targetFor = (prefix: string, hopQuery?: string): string | null => {
     const t = screenForCrumb(prefix);
     if (!t) return null;
     let path = t.path;
+    const hopSp = hopQuery ? new URLSearchParams(hopQuery) : null;
     const mergedParams: Record<string, string> = { ...params };
-    if (!mergedParams.id && (params.name || sp.get('site') || sp.get('id'))) {
-      const siteRef = sp.get('site') || sp.get('id') || (window as any).__nsLegacy?.resolveSite?.(params.name)?.id;
+    if (!mergedParams.id) {
+      const siteRef = hopSp?.get('id') || hopSp?.get('site')
+        || sp.get('site') || sp.get('id')
+        || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.id
+        || (window as any).__nsLegacy?.resolveSite?.(params.name)?.id;
       if (siteRef) mergedParams.id = siteRef;
     }
     for (const [k, v] of Object.entries(mergedParams)) path = path.replace(':' + k, v);
@@ -122,15 +126,24 @@ export default function Topbar() {
       const parts = originScreen ? originScreen.crumb.split(' · ') : [hop.crumb];
       if (parts.length > 1) {
         for (let i = 0; i < parts.length - 1; i++) {
-          const base = targetFor(parts.slice(0, i + 1).join(' · '));
+          const base = targetFor(parts.slice(0, i + 1).join(' · '), hop.query);
           if (segs.length === 0 || segs[segs.length - 1].label !== parts[i]) {
             segs.push({ label: parts[i], to: base });
           }
         }
       }
       const label = hop.drill || parts[parts.length - 1];
-      const base = targetFor(originScreen?.crumb || hop.crumb);
-      const to = base ? (hop.query ? `${base}?${hop.query}` : base) : null;
+      const base = targetFor(originScreen?.crumb || hop.crumb, hop.query);
+      let toQuery = '';
+      if (hop.query) {
+        const qp = new URLSearchParams(hop.query);
+        if (originScreen?.path.includes(':id')) {
+          qp.delete('id');
+          qp.delete('site');
+        }
+        toQuery = qp.toString();
+      }
+      const to = base ? (toQuery ? `${base}?${toQuery}` : base) : null;
       if (segs.length === 0 || segs[segs.length - 1].label !== label) {
         segs.push({ label, to });
       } else {
@@ -140,8 +153,13 @@ export default function Topbar() {
   } else {
     const chain = ownParts.slice(0, -1);
     segs = chain.map((label, i) => {
-      const base = targetFor(chain.slice(0, i + 1).join(' · '));
-      return { label, to: base };
+      const prefix = chain.slice(0, i + 1).join(' · ');
+      const base = targetFor(prefix);
+      let to = base;
+      if (base && prefix === 'Location · Site details' && sp.get('tab')) {
+        to = `${base}?tab=${encodeURIComponent(sp.get('tab')!)}`;
+      }
+      return { label, to };
     });
     if (drill && !chain.length) {
       segs.push({ label: leaf, to: pathname });
