@@ -493,52 +493,52 @@ const TARGETS = [
   },
   {
     ip: '10.51.22.21', host: 'BLR-SOUTH-GNB-021', oem: 'Nokia', model: 'AirScale 5G',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 6, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.51.20.14', host: 'BLR-GNB-T3800-014', oem: 'Nokia', model: 'AirScale gNB',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 6, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.44.18.14', host: 'PUN-HNJW-C3-ENB-014', oem: 'Nokia', model: 'AirScale',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 6, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.44.19.7', host: 'INDR-AREA-001-ENB-07', oem: 'Nokia', model: 'AirScale',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 6, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.44.22.31', host: 'CHE-ERIC-ENB-031', oem: 'Ericsson', model: 'Baseband 6630',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 4, job: 'DSC-RAN-BLR', domain: 'RAN',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:05', fresh: 6, job: 'DSC-RAN-BLR', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.51.23.9', host: 'DEL-CENTRAL-GNB-009', oem: 'Nokia', model: 'AirScale 5G',
-    circle: 'Delhi', sync: '01-Sep-2026 09:04', fresh: 4, job: 'DSC-RAN-DEL', domain: 'RAN',
+    circle: 'Delhi', sync: '01-Sep-2026 09:04', fresh: 6, job: 'DSC-RAN-DEL', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.51.26.18', host: 'VJA-ERIC-GNB-018', oem: 'Ericsson', model: 'AIR 6449',
-    circle: 'Telangana', sync: '01-Sep-2026 09:02', fresh: 4, job: 'DSC-RAN-HYD', domain: 'RAN',
+    circle: 'Telangana', sync: '01-Sep-2026 09:02', fresh: 6, job: 'DSC-RAN-HYD', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.51.27.27', host: 'PUN-HUAWEI-GNB-027', oem: 'Huawei', model: 'AAU5613',
-    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 4, job: 'DSC-RAN-MUM', domain: 'RAN',
+    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 6, job: 'DSC-RAN-MUM', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.44.24.45', host: 'AHM-HUAWEI-ENB-045', oem: 'Huawei', model: 'BTS3900',
-    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 4, job: 'DSC-RAN-MUM', domain: 'RAN',
+    circle: 'Maharashtra', sync: '01-Sep-2026 09:03', fresh: 6, job: 'DSC-RAN-MUM', domain: 'RAN',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   },
   {
     ip: '10.10.4.21', host: 'BLR-AMF-CORE-02', oem: 'Nokia', model: 'AMF-CN',
-    circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 5, job: 'DSC-CORE-NRF', domain: 'Core',
+    circle: 'Karnataka', sync: '01-Sep-2026 09:02', fresh: 2, job: 'DSC-CORE-NRF', domain: 'Core',
     ch: ['ok', 'ok', 'ok', 'ok', 'ok'], out: 'Exact match', chip: 'success'
   }
 ];
@@ -954,43 +954,43 @@ JOBS.push(...[
 JOBS.push(
   {
     id: 'DSC-RAN-BLR', site: 'Karnataka · RAN cluster', scope: 'gNodeB/eNodeB · Bengaluru-East',
-    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    collector: 'clr-blr-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 hrs sweep', next: 'sweeping now', domain: 'RAN',
     last: '01-Sep-2026 09:05', dur: '5 m 51 s', targets: 2350, clean: 2309, partial: 30, fail: 11,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-RAN-DEL', site: 'Delhi NCR · RAN cluster', scope: 'gNodeB/eNodeB · Delhi-Central',
-    collector: 'clr-del-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    collector: 'clr-del-04', cred: 'ro-ran-v1', sched: 'Continuous · 6 hrs sweep', next: 'sweeping now', domain: 'RAN',
     last: '01-Sep-2026 09:04', dur: '5 m 22 s', targets: 2200, clean: 2163, partial: 28, fail: 9,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-RAN-MUM', site: 'Maharashtra · RAN cluster', scope: 'gNodeB/eNodeB · Mumbai-West',
-    collector: 'clr-mum-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    collector: 'clr-mum-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 hrs sweep', next: 'sweeping now', domain: 'RAN',
     last: '01-Sep-2026 09:03', dur: '4 m 58 s', targets: 2050, clean: 2016, partial: 26, fail: 8,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-RAN-HYD', site: 'Telangana · RAN cluster', scope: 'gNodeB/eNodeB · Hyderabad-South',
-    collector: 'clr-hyd-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 min sweep', next: 'sweeping now', domain: 'RAN',
+    collector: 'clr-hyd-01', cred: 'ro-ran-v1', sched: 'Continuous · 6 hrs sweep', next: 'sweeping now', domain: 'RAN',
     last: '01-Sep-2026 09:02', dur: '4 m 41 s', targets: 1850, clean: 1818, partial: 24, fail: 8,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-CORE-NRF', site: 'Karnataka · 5GC core', scope: 'AMF/UPF · NRF-registered NFs',
-    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    collector: 'clr-blr-05', cred: 'ro-core-v1', sched: 'Continuous · 2 hrs sweep', next: 'sweeping now', domain: 'Core',
     last: '01-Sep-2026 09:02', dur: '1 m 40 s', targets: 130, clean: 130, partial: 0, fail: 0,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-CORE-DEL', site: 'Delhi · 5GC core (secondary)', scope: 'AMF/UPF · NRF-registered NFs',
-    collector: 'clr-del-05', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    collector: 'clr-del-05', cred: 'ro-core-v1', sched: 'Continuous · 2 hrs sweep', next: 'sweeping now', domain: 'Core',
     last: '01-Sep-2026 09:01', dur: '1 m 22 s', targets: 115, clean: 114, partial: 1, fail: 0,
     state: 'Completed', chip: 'success'
   },
   {
     id: 'DSC-CORE-MUM', site: 'Maharashtra · 5GC core (tertiary)', scope: 'AMF/UPF/SMF · NRF-registered NFs',
-    collector: 'clr-mum-02', cred: 'ro-core-v1', sched: 'Continuous · 2 min sweep', next: 'sweeping now', domain: 'Core',
+    collector: 'clr-mum-02', cred: 'ro-core-v1', sched: 'Continuous · 2 hrs sweep', next: 'sweeping now', domain: 'Core',
     last: '01-Sep-2026 08:58', dur: '1 m 15 s', targets: 95, clean: 94, partial: 1, fail: 0,
     state: 'Completed', chip: 'success'
   },
@@ -4835,8 +4835,10 @@ const jobChip = j => JOB_CHIP[j.state] || 'neutral';
 function cadenceH(sched) {
   const every = /^Every\s+(\d+)\s*h/i.exec(sched);
   if (every) return Number(every[1]);
-  if (/^Daily/i.test(sched))  return 24;
+  if (/^(?:Daily|Nightly)/i.test(sched))  return 24;
   if (/^Weekly/i.test(sched)) return 168;
+  const cont = /Continuous\s*·\s*(\d+)\s*h(?:rs?|ours?)?/i.exec(sched);
+  if (cont) return Number(cont[1]);
   return null;
 }
 const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
@@ -4866,6 +4868,8 @@ JOBS.forEach(j => {
     if (d > JOB_NOW) d.setDate(d.getDate() - 1);
   } else {
     d.setTime(JOB_NOW.getTime() - c * 3600000);
+    const minMatch = /(\d{1,2}):(\d{2})/.exec(j.last);
+    if (minMatch) d.setMinutes(+minMatch[2]);
   }
   j.last = `${pad2(d.getDate())}-${DK_MON[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 });

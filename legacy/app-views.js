@@ -303,8 +303,10 @@ const jobChip = j => JOB_CHIP[j.state] || 'neutral';
 function cadenceH(sched) {
   const every = /^Every\s+(\d+)\s*h/i.exec(sched);
   if (every) return Number(every[1]);
-  if (/^Daily/i.test(sched))  return 24;
+  if (/^(?:Daily|Nightly)/i.test(sched))  return 24;
   if (/^Weekly/i.test(sched)) return 168;
+  const cont = /Continuous\s*·\s*(\d+)\s*h(?:rs?|ours?)?/i.exec(sched);
+  if (cont) return Number(cont[1]);
   return null;
 }
 const JOB_GRACE_H = 6;   /* a run may slip this far before it counts as missed */
@@ -334,6 +336,8 @@ JOBS.forEach(j => {
     if (d > JOB_NOW) d.setDate(d.getDate() - 1);
   } else {
     d.setTime(JOB_NOW.getTime() - c * 3600000);
+    const minMatch = /(\d{1,2}):(\d{2})/.exec(j.last);
+    if (minMatch) d.setMinutes(+minMatch[2]);
   }
   j.last = `${pad2(d.getDate())}-${DK_MON[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 });

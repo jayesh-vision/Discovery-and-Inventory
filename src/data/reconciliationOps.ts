@@ -18,6 +18,12 @@ export type ReconcileJobStatus = 'Completed' | 'Completed with errors' | 'Runnin
 export const JOB_STATUS_TONE: Record<ReconcileJobStatus, ChipTone> = {
   Completed: 'success', 'Completed with errors': 'warning', Running: 'info', Scheduled: 'neutral'
 };
+const DK_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const todayAt = (timeStr: string) => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}-${DK_MON[d.getMonth()]}-${d.getFullYear()} ${timeStr}`;
+};
 export interface ReconcileJob {
   id: string; domain: DomainKey; source: string; target: string; scanType: string;
   status: ReconcileJobStatus; schedule: string; lastRun: string; nextRun: string; duration: string;
@@ -25,16 +31,16 @@ export interface ReconcileJob {
 }
 export const RECONCILE_JOBS: ReconcileJob[] = [
   { id: 'RCJ-RAN-01', domain: 'RAN', source: 'Network · SNMP v2c/v3', target: 'RAN asset register',
-    scanType: 'Identity + attribute match', status: 'Completed', schedule: 'Continuous · 6 min sweep',
-    lastRun: '01-Sep-2026 09:05', nextRun: 'sweeping now', duration: '41.2 s',
+    scanType: 'Identity + attribute match', status: 'Completed', schedule: 'Continuous · 6 hrs sweep',
+    lastRun: todayAt('09:05'), nextRun: 'sweeping now', duration: '41.2 s',
     resultSummary: '8,412 scanned · 52 drifted · 40 auto-resolved', ruleIds: ['RUL-RAN-001', 'RUL-RAN-003'] },
   { id: 'RCJ-RAN-02', domain: 'RAN', source: 'Network · SNMP v2c/v3', target: 'RAN asset register',
     scanType: 'Attribute comparison', status: 'Scheduled', schedule: 'On demand',
     lastRun: '—', nextRun: 'not yet run', duration: '—',
     resultSummary: 'Awaiting RUL-RAN-002 approval', ruleIds: ['RUL-RAN-002'] },
   { id: 'RCJ-CORE-01', domain: 'Core', source: 'Network · REST (NRF)', target: 'NF registry',
-    scanType: 'Identity match', status: 'Completed', schedule: 'Continuous · 2 min sweep',
-    lastRun: '01-Sep-2026 09:02', nextRun: 'sweeping now', duration: '8.1 s',
+    scanType: 'Identity match', status: 'Completed', schedule: 'Continuous · 2 hrs sweep',
+    lastRun: todayAt('09:02'), nextRun: 'sweeping now', duration: '8.1 s',
     resultSummary: '340 scanned · 18 drifted · 11 auto-resolved', ruleIds: ['RUL-CORE-001'] },
   { id: 'RCJ-TRN-01', domain: 'Transport', source: 'Network · SNMP + TL1', target: 'Transport asset register',
     scanType: 'Identity match', status: 'Completed with errors', schedule: 'Nightly 01:00 + 12 min delta',
@@ -46,15 +52,15 @@ export const RECONCILE_JOBS: ReconcileJob[] = [
     resultSummary: 'Awaiting RUL-TRN-002 approval', ruleIds: ['RUL-TRN-002'] },
   { id: 'RCJ-IPM-01', domain: 'IPMPLS', source: 'Network · SNMP MPLS-LDP-MIB', target: 'Links',
     scanType: 'Relationship match', status: 'Completed', schedule: 'Continuous · 60s delta',
-    lastRun: '01-Sep-2026 09:19', nextRun: 'sweeping now', duration: '6.2 s',
+    lastRun: todayAt('09:19'), nextRun: 'sweeping now', duration: '6.2 s',
     resultSummary: '1,204 scanned · 12 drifted · 9 auto-resolved', ruleIds: ['RUL-IPM-001'] },
   { id: 'RCJ-IPM-02', domain: 'IPMPLS', source: 'Network · SNMP v2c/v3', target: 'Physical Resources',
     scanType: 'Attribute comparison', status: 'Completed', schedule: 'Retired',
     lastRun: '14-Aug-2026 09:00', nextRun: '—', duration: '5.8 s',
     resultSummary: '1,180 scanned · 5 drifted — rule retired', ruleIds: ['RUL-IPM-002'] },
   { id: 'RCJ-RAN-03', domain: 'RAN', source: 'Network · SNMP v2c/v3', target: 'RAN asset register',
-    scanType: 'Existence check', status: 'Running', schedule: 'Continuous · 6 min sweep',
-    lastRun: '01-Sep-2026 09:05', nextRun: 'running now', duration: '— running',
+    scanType: 'Existence check', status: 'Running', schedule: 'Continuous · 6 hrs sweep',
+    lastRun: todayAt('09:05'), nextRun: 'running now', duration: '— running',
     resultSummary: 'Sweeping RAN cluster Bengaluru-East', ruleIds: ['RUL-RAN-003'] }
 ];
 

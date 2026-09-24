@@ -154,10 +154,10 @@ export interface DiscoveryJobRow {
   status: 'Healthy' | 'Credential warning'; lastRun: string; nextRun: string;
 }
 export const DISCOVERY_JOB_ROWS: DiscoveryJobRow[] = [
-  { domain: 'RAN', protocols: 'SNMP v2c/v3', schedule: 'Continuous · 6 min sweep',
-    targets: 8450, coveragePct: 99.55, status: 'Healthy', lastRun: '6 min ago', nextRun: 'sweeping now' },
-  { domain: 'Core', protocols: 'REST (NRF), NETCONF', schedule: 'Continuous · 2 min sweep',
-    targets: 340, coveragePct: 100, status: 'Healthy', lastRun: '2 min ago', nextRun: 'sweeping now' },
+  { domain: 'RAN', protocols: 'SNMP v2c/v3', schedule: 'Continuous · 6 hrs sweep',
+    targets: 8450, coveragePct: 99.55, status: 'Healthy', lastRun: '6 hrs ago', nextRun: 'sweeping now' },
+  { domain: 'Core', protocols: 'REST (NRF), NETCONF', schedule: 'Continuous · 2 hrs sweep',
+    targets: 340, coveragePct: 100, status: 'Healthy', lastRun: '2 hrs ago', nextRun: 'sweeping now' },
   { domain: 'Transport', protocols: 'SNMP, LLDP, TL1', schedule: 'Nightly 01:00 + 12 min delta',
     targets: 2180, coveragePct: 98.62, status: 'Credential warning', lastRun: '32 min ago', nextRun: '01:00 · in 5h 49m' },
   { domain: 'IPMPLS', protocols: 'NETCONF/YANG, LLDP', schedule: 'Continuous · 60s delta',
