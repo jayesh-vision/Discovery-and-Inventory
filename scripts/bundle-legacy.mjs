@@ -99,8 +99,11 @@ patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
       DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
 }
 function __legacyParams(k) {
-  return k === 'site' ? { id: SITE_ID } : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
-    : k === 'resource' ? { name: RES_ID, ip: RES_IP } : k === 'node' ? { name: NODE_ID, ip: NODE_IP } : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
+  return k === 'site' ? { id: SITE_ID, ...(typeof SITE_TAB !== 'undefined' && SITE_TAB ? { tab: SITE_TAB } : {}) }
+    : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
+    : k === 'resource' ? { name: RES_ID, ip: RES_IP }
+    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}) }
+    : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
@@ -127,6 +130,13 @@ window.__nsLegacy = {
   setSection: s => { __siteSectionPending = s; },
   /* map any location tag (sample city codes included) to the real roster row */
   resolveSite: ref => { const r = resolveSite(ref); return r ? { id: r.id, name: r.name } : null; },
+  /* resolve which site owns any device */
+  siteForNode: (name, ip) => {
+    const nr = typeof nodeRecord === 'function' ? nodeRecord(name, ip) : null;
+    if (!nr || !nr.loc) return null;
+    const s = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+    return s ? { id: s.id, name: s.name, cls: nr.cls } : null;
+  },
   /* URL-driven only (the LegacyView effect). A null here means the URL has
      no drill — the live DRILL must clear too, or go()'s refresh path keeps
      the stale one and sync() shoves the old drill URL back on top of a
@@ -134,7 +144,10 @@ window.__nsLegacy = {
   setDrill: d => { DRILL_PENDING = d; if (!d) DRILL = null; },
   /* deep links into detail screens set the id the view reads */
   setParams: (k, p) => {
-    if (k === 'site'  && p.id)   { SITE_ID = p.id; SITE_TAB = 'router';
+    if (k === 'site'  && p.id)   {
+      SITE_ID = p.id;
+      if (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) SITE_TAB = p.tab;
+      else if (!p.tab) SITE_TAB = 'router';
       SITE_SECTION = __siteSectionPending || 'ne';
       /* React StrictMode fires this effect twice per navigation (mount,
          cleanup, mount again) with no gap between — clearing the pending
@@ -143,11 +156,29 @@ window.__nsLegacy = {
          an explicit setSection() from the click that navigated here.
          Deferring the clear lets both passes see the same pending value;
          a setTimeout(0) still lands well before any real next click. */
-      setTimeout(() => { __siteSectionPending = null; }, 0); }
+      setTimeout(() => { __siteSectionPending = null; }, 0);
+    }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_IP = p.ip || null; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
-    if (k === 'node'  && p.name) { NODE_ID = p.name; NODE_IP = p.ip || null; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_LINK_PROTO = 'LLDP'; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; }
+    if (k === 'node'  && p.name) {
+      NODE_ID = p.name;
+      NODE_IP = p.ip || null;
+      if (p.site) NODE_SITE = p.site;
+      else if (typeof LOCATIONS !== 'undefined') {
+        const nr = typeof nodeRecord === 'function' ? nodeRecord(NODE_ID, NODE_IP) : null;
+        if (nr && nr.loc) {
+          const sRec = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+          if (sRec) NODE_SITE = sRec.id;
+        }
+      }
+      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
+      NODE_PERF = '24h';
+      NODE_ALERT_TAB = 'alerts';
+      NODE_LINK_PROTO = 'LLDP';
+      NODE_HW_SEL = 'bbu';
+      NODE_ENB_LINK_TAB = 'backhaul';
+    }
     if (k === 'vnfdetails' && p.name) { VNF_DETAIL_ID = p.name; VNF_DETAIL_TAB = 'vdu4g'; }
     if (k === 'cell4gdetails' && p.cell) { CELL_4G_NAME = p.cell; }
     if (k === 'cell5gdetails' && p.cell) { CELL_5G_NAME = p.cell; }

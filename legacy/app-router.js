@@ -148,6 +148,9 @@ function drillTo(view, label, q) {
   const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
     ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
     : null;
+  const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
+    ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
@@ -159,6 +162,7 @@ function drillTo(view, label, q) {
      hop and collapses to a bare, non-clickable label. Only a genuine jump to a
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
+    || siteDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
     || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
@@ -216,7 +220,15 @@ function applyDrillQuery(view, q, label) {
     LOC_TYPEGRP = p.type || null;
     LOC_GROUP = p.group || null;
   }
-  if (view === 'site')     { if (p.id) { SITE_ID = p.id; SITE_TAB = 'router'; SITE_SECTION = 'ne'; } }
+  if (view === 'site')     {
+    if (p.id) {
+      SITE_ID = p.id;
+      SITE_TAB = (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) ? p.tab : (p.tab || 'router');
+      SITE_SECTION = 'ne';
+    } else if (p.tab && typeof SITE_TABS !== 'undefined' && SITE_TABS.some(t => t.k === p.tab)) {
+      SITE_TAB = p.tab;
+    }
+  }
   if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
   /* as in setParams: only a different frame closes the gallery, since this
      also runs on the re-render that follows opening it */
@@ -272,11 +284,20 @@ function applyDrillQuery(view, q, label) {
        carries its own ?tab=) must land on Overview, not whatever tab was
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
-    NODE_TAB = p.tab || 'overview';
+    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab);
+    NODE_TAB = p.nodetab || (isNodeSpecificTab ? p.tab : 'overview');
+    if (p.site) NODE_SITE = decodeURIComponent(p.site).trim();
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
     if (targetNode) {
       NODE_ID = decodeURIComponent(targetNode).trim();
       NODE_IP = p.ip ? decodeURIComponent(p.ip).trim() : null;
+      if (!NODE_SITE && typeof LOCATIONS !== 'undefined') {
+        const nr = typeof nodeRecord === 'function' ? nodeRecord(NODE_ID, NODE_IP) : null;
+        if (nr && nr.loc) {
+          const sRec = typeof resolveSite === 'function' ? resolveSite(nr.loc) : null;
+          if (sRec) NODE_SITE = sRec.id;
+        }
+      }
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_ALERT_SEV = 'All severity';

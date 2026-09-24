@@ -185,7 +185,7 @@ const ARROW = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" strok
 
 function donut(segs,total,top,sub,size=150){
   const sw=Math.max(7,Math.round(size*0.10)), r=size/2-sw/2-2, cx=size/2, cy=size/2, C=2*Math.PI*r;
-  const fTop=Math.max(11,Math.round(size*0.145)), fSub=Math.max(7,Math.round(size*0.062));
+  const fTop=Math.max(13,Math.round(size*0.145)), fSub=Math.max(10,Math.round(size*0.08));
   let off=0;
   const arcs=segs.map(s=>{const len=(s.c/total)*C;
     const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cv(s.tone,400)}" stroke-width="${sw}"
@@ -193,7 +193,7 @@ function donut(segs,total,top,sub,size=150){
       transform="rotate(-90 ${cx} ${cy})"><title>${s.n}: ${n(s.c)}</title></circle>`; off+=len; return el;}).join('');
   return `<svg viewBox="0 0 ${size} ${size}" style="height:${size}px;width:${size}px;flex-shrink:0;display:block" role="img" aria-label="${top} ${sub}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--vw-color-slate-100)" stroke-width="${sw}"/>${arcs}
-    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="300" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
+    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
     ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-gray-500)" font-family="Poppins,sans-serif">${sub}</text>` : ''}</svg>`;
 }
 
