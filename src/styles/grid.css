@@ -140,6 +140,59 @@
 }
 /* the platform's primary in this panel is the dark one */
 .fp-apply, .fp-apply:hover { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
+
+/* compact / smaller filter panel */
+.fpanel--sm {
+  width: min(23rem, 92vw);
+  border-radius: var(--vw-radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
+}
+.fpanel--sm .fpanel-head {
+  padding: 10px 14px 6px;
+}
+.fpanel--sm .vw-card-title-sm {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.fpanel--sm .fpanel-body {
+  grid-template-columns: 7.5rem 1fr;
+}
+.fpanel--sm .fpanel-nav {
+  padding: 0 0 4px;
+}
+.fpanel--sm .fp-f {
+  font-size: 0.8125rem;
+  padding: 6px 10px;
+}
+.fpanel--sm .fpanel-ctl {
+  padding: 4px 14px 8px;
+  gap: 4px;
+}
+.fpanel--sm .fp-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.fpanel--sm .fp-hint {
+  font-size: 0.6875rem;
+}
+.fpanel--sm .fpanel-ctl .nst-input,
+.fpanel--sm .fpanel-ctl select {
+  min-height: 32px;
+  height: 32px;
+  font-size: 0.8125rem;
+  padding: 4px 8px;
+}
+.fpanel--sm .fpanel-foot {
+  padding: 8px 14px 8px;
+  gap: 6px;
+}
+.fpanel--sm .fpanel-foot .nst-btn {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  min-height: 28px;
+  height: 28px;
+}
+
 @media (max-width: 620px) {
   .fpanel-body { grid-template-columns: 1fr; }
   .fpanel-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--vw-color-slate-100); }

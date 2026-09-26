@@ -1,17 +1,27 @@
-import { useState, useMemo, type KeyboardEvent, type ReactNode } from 'react';
+import { useState, useMemo, useRef, useEffect, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cv, InfoTip } from '../components/ui';
-import { StackedBars, Sparkline } from '../components/charts';
+import { StackedBars } from '../components/charts';
 import { Drawer } from '../components/Drawer';
 import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHeader, Seg, type Tone } from '../components/ops';
+import { IcFilter } from '../components/grid/icons';
+import { FilterPanel, type FilterField } from '../components/grid/DataGrid';
 import { legacyPath } from '../routes';
 import {
-  TRUST_METRICS, DISCOVERY_JOB_ROWS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
+  TRUST_METRICS, DISCOVERY_SCAN_JOBS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   getObjectsDailyDays,
   ADAPTER_ROWS, ROOT_CAUSE_FAILURES, RECONCILE_CYCLE_ROWS, RECONCILE_NEXT,
-  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER, domainParentLabel, domainRoute,
-  type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow
+  DOMAIN_HEX, DOMAIN_LABEL, DOMAIN_FULL_LABEL, DOMAIN_ORDER,
+  domainParentLabel, domainRoute,
+  type DomainKey, type TrustMetric, type AdapterRow, type RootCauseFailure, type ReconcileCycleRow,
+  type DiscoveryScanJob
 } from '../data/discoveryOverview';
+
+const JOB_FILTER_FIELDS: FilterField[] = [
+  { n: 'Status', o: ['Completed', 'Completed with errors', 'Running'] },
+  { n: 'Domain', o: ['RAN', 'Core', 'Transport', 'IP/MPLS'] },
+  { n: 'Job name' }
+];
 
 /* one drawer, three possible row shapes — simpler than three parallel
    useState hooks for what is, on screen, always exactly one open panel */
@@ -55,8 +65,8 @@ const KPI_DEF: Record<string, string> = {
   'Mean time to reconcile': 'Average time from a discrepancy being detected to it being resolved, whether closed automatically or by an engineer.'
 };
 const CARD_DEF: Record<string, string> = {
-  'Discovery jobs': 'Scheduled discovery scans, one row per domain, with the adapters they use and how much of that domain’s inventory they currently cover.',
-  'New items discovered per day': 'New assets discovery has found for the first time each day, split out by domain.',
+  'Discovery jobs': 'Active discovery scan jobs across all network domains, showing schedule, collector node, and target counts.',
+  'New items discovered per day': 'New assets discovery has detected for the first time each day, partitioned by telecom hierarchy. RAN rollouts drive continuous edge expansions (~70%), while Core network functions change only during formal change management windows.',
   'Discovery adapters': 'The protocols discovery uses to reach devices, and how reliably each one succeeds across the domains it covers.',
   'Failures by root cause': 'Scan attempts that failed, grouped by their underlying cause rather than by device, so one fix can clear many failures at once.',
   'Match classes': 'How reconciliation classified every compared record last cycle — matched, or one of the ways a record can disagree with the live network.',
@@ -99,20 +109,28 @@ function kpiRead(m: TrustMetric): KpiRead {
   switch (m.label) {
     case 'Inventory trust index': {
       const gap = target !== null ? target - value : 0;
-      return { value, unit, target, tone: (gap > 0 ? 'warning' : 'success') as Tone,
-        status: gap > 0 ? `${gap.toFixed(2)} pt below target` : 'On target', higherIsBetter: true, scaleMin: 95, scaleMax: 100 };
+      return {
+        value, unit, target, tone: (gap > 0 ? 'warning' : 'success') as Tone,
+        status: gap > 0 ? `${gap.toFixed(2)} pt below target` : 'On target', higherIsBetter: true, scaleMin: 95, scaleMax: 100
+      };
     }
     case 'Discovery coverage':
-      return { value, unit, target: null, tone: (value >= 99 ? 'success' : 'warning') as Tone,
-        status: value >= 99 ? 'Healthy' : 'Below 99%', higherIsBetter: true, delta: last - first, deltaUnit: ' pt' };
+      return {
+        value, unit, target: null, tone: (value >= 99 ? 'success' : 'warning') as Tone,
+        status: value >= 99 ? 'Healthy' : 'Below 99%', higherIsBetter: true, delta: last - first, deltaUnit: ' pt'
+      };
     case 'Open discrepancy backlog':
-      return { value, unit, target: null, tone: (last <= first ? 'info' : 'warning') as Tone,
-        status: last < first ? 'Falling' : last > first ? 'Rising' : 'Flat', higherIsBetter: false, delta: last - first, deltaUnit: '' };
+      return {
+        value, unit, target: null, tone: (last <= first ? 'info' : 'warning') as Tone,
+        status: last < first ? 'Downward' : last > first ? 'Rising' : 'Flat', higherIsBetter: false, delta: last - first, deltaUnit: ''
+      };
     default: { /* Mean time to reconcile */
       const over = target !== null ? value - target : 0;
-      return { value, unit, target, tone: (over > 0 ? 'warning' : 'success') as Tone,
+      return {
+        value, unit, target, tone: (over > 0 ? 'warning' : 'success') as Tone,
         status: over > 0 ? `${over.toFixed(1)}h above target` : 'Within target', higherIsBetter: false,
-        delta: last - first, deltaUnit: 'h', scaleMin: 0, scaleMax: Math.ceil(Math.max(value, target ?? 0) * 1.25) };
+        delta: last - first, deltaUnit: 'h', scaleMin: 0, scaleMax: Math.ceil(Math.max(value, target ?? 0) * 1.25)
+      };
     }
   }
 }
@@ -152,6 +170,23 @@ export default function Insights() {
   };
   const [objRange, setObjRange] = useState<'7d' | '14d'>('14d');
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
+  const [jobFilters, setJobFilters] = useState<Record<string, string>>({});
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [filterOpen]);
+
+  const hasActiveFilters = Object.values(jobFilters).some(v => Boolean(v && v.trim()));
+
   /* the row's own fix action is a real local acknowledgement, not a fake
      network round-trip — the button records that it was requested and
      disables, the same honest "no backend" idiom used everywhere else in
@@ -161,13 +196,37 @@ export default function Insights() {
     const p = new URLSearchParams(params);
     nav(`/discovery/insights/discrepancies${p.toString() ? '?' + p.toString() : ''}`);
   };
-  /* opens Scan jobs filtered to this domain's fleet. Scan jobs' own crumb
-     has no Insights parent, so this names its origin via drill/from so the
-     reader gets a real "Insights > {domain}" trail back. */
-  const toJobs = (d: DomainKey) => {
-    const domainLabel = DOMAIN_LABEL[d];
-    nav(legacyPath('jobs', { label: domainLabel, from: 'Insights', q: `domain=${domainLabel}` }));
+  const toJobTargets = (j: DiscoveryScanJob) => {
+    const domainLabel = DOMAIN_LABEL[j.domain];
+    nav(legacyPath('targets', {
+      label: `Targets in ${j.id}`,
+      from: `Insights?drill=${encodeURIComponent(domainLabel)}`,
+      q: `tgt=All&job=${encodeURIComponent(j.id)}&domain=${encodeURIComponent(domainLabel)}`
+    }));
   };
+  const visibleJobs = useMemo(() => {
+    let list = DISCOVERY_SCAN_JOBS;
+    if (jobFilters.Status) {
+      list = list.filter(j => j.status === jobFilters.Status);
+    }
+    if (jobFilters.Domain) {
+      const target = jobFilters.Domain;
+      list = list.filter(j => {
+        if (target === 'IP/MPLS' || target === 'IPMPLS') return j.domain === 'IPMPLS';
+        if (target === 'Transport') return j.domain === 'Transport';
+        return j.domain === target;
+      });
+    }
+    if (jobFilters['Job name']) {
+      const q = jobFilters['Job name'].trim().toLowerCase();
+      list = list.filter(j =>
+        j.id.toLowerCase().includes(q) ||
+        j.site.toLowerCase().includes(q) ||
+        j.scope.toLowerCase().includes(q)
+      );
+    }
+    return byDomain(list);
+  }, [jobFilters]);
   /* Each of the four headline KPI tiles opens its respective drill-down listing */
   const toDevices = () => {
     nav('/discovery/insights/devices?from=Insights');
@@ -192,6 +251,7 @@ export default function Insights() {
   const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
   const objToday = OBJECTS_DAILY_VALUES[OBJECTS_DAILY_VALUES.length - 1].reduce((a, b) => a + b, 0);
+
   const todayDateStr = dailyDays[dailyDays.length - 1];
   const failedTargets = ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0);
   const lastCycle = RECONCILE_CYCLE_ROWS[0];
@@ -203,7 +263,10 @@ export default function Insights() {
     <div className="page ix">
       {/* ── inventory trust: the four headline figures ───────────── */}
       <section className="ix-section" aria-labelledby="ix-trust">
-        <SectionHeader title="Inventory trust" description="The headline figures — where the estate stands today, which way each is moving, and how far it is from target."
+        <SectionHeader
+          title=""
+          // title="Inventory trust"
+          // description="The headline figures — where the estate stands today, which way each is moving, and how far it is from target."
           right={<>
             <span className="ix-ctx" title={`Last cycle ${lastCycle.when} · ${DOMAIN_LABEL[lastCycle.domain]}`}>
               {Ic.clock(14)}
@@ -243,13 +306,12 @@ export default function Insights() {
                   )}
                 </div>
                 <div className="ix-kpi-sub">{m.hero ? hero.rest : m.sub}</div>
-                <div className="ix-kpi-foot">
-                  {r.target !== null && r.scaleMin !== undefined && (
+                {r.target !== null && r.scaleMin !== undefined && (
+                  <div className="ix-kpi-foot">
                     <TargetBar value={r.value} target={r.target} min={r.scaleMin} max={r.scaleMax!} hex={hex}
                       higherIsBetter={r.higherIsBetter} format={fmt} />
-                  )}
-                  <Sparkline values={m.trend} height={20} hex={hex} />
-                </div>
+                  </div>
+                )}
               </Wrap>
             );
           })}
@@ -257,40 +319,107 @@ export default function Insights() {
       </section>
 
       <ModuleRule num="I" label="Discovery" meta={<>
-        <b>{DISCOVERY_JOB_ROWS.length}</b> jobs · <b>{ADAPTER_ROWS.length}</b> adapters · <b>{ROOT_CAUSE_FAILURES.length}</b> root causes · <b>{failedTargets}</b> failed targets
+        <b>{DISCOVERY_SCAN_JOBS.length}</b> jobs · <b>{ADAPTER_ROWS.length}</b> adapters · <b>{ROOT_CAUSE_FAILURES.length}</b> root causes · <b>{failedTargets}</b> failed targets
       </>} />
 
       {/* ── jobs + daily discovery ───────────────────────────────── */}
       <section className="ix-section">
         <SectionHeader title="Jobs and daily discovery" description="What each domain’s scan covers, on what schedule, and how many new assets it has been turning up." />
-        <div className="ix-grid is-wide" style={{ ['--cols' as string]: 'minmax(0, 1.35fr) minmax(0, 1fr)' }}>
-          <Panel title="Discovery jobs" info={CARD_DEF['Discovery jobs']} description="Schedule, coverage and adapters per domain · click a row to open its scan jobs" flush>
-            <table className="ix-table">
-              <thead><tr>
-                <th>Domain · adapters</th><th>Schedule</th><th className="t-r">Targets</th><th className="t-r">Coverage</th>
-                <th>Last → next run</th><th>Health</th>
-              </tr></thead>
-              <tbody>{byDomain(DISCOVERY_JOB_ROWS).map(j => (
-                <tr key={j.domain} className="is-click" tabIndex={0} onClick={() => toJobs(j.domain)} onKeyDown={onKey(() => toJobs(j.domain))}
-                  aria-label={`View ${DOMAIN_LABEL[j.domain]} scan jobs`}>
-                  <td><Dom domain={j.domain} /><span className="ix-secondary">{j.protocols}</span></td>
-                  <td>{j.schedule}</td>
-                  <td className="t-r num">{n(j.targets)}</td>
-                  <td className="t-r"><Meter pct={j.coveragePct} hex={DOMAIN_HEX[j.domain]} /></td>
-                  <td><span className="ix-primary">{j.lastRun}</span><span className={`ix-secondary${j.nextRun === 'sweeping now' ? ' ix-good' : ''}`} style={{ fontWeight: 500 }}>→ {j.nextRun}</span></td>
-                  <td>
-                    <Pill tone={j.status === 'Healthy' ? 'success' : 'warning'} icon={j.status === 'Healthy' ? Ic.check(11) : Ic.alert(11)}>{j.status}</Pill>
-                  </td>
-                </tr>))}
-              </tbody>
-            </table>
+
+        <div className="ix-grid" style={{ ['--cols' as string]: 'minmax(0, 1.25fr) minmax(0, 1fr)' }}>
+          {/* Discovery jobs grid */}
+          <Panel title="Discovery jobs" info={CARD_DEF['Discovery jobs']}
+            description={<>Showing <b>{visibleJobs.length}</b> of <b>{DISCOVERY_SCAN_JOBS.length}</b> scan jobs · click row for targets</>}
+            right={
+              <div ref={filterRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className={`icon-btn${filterOpen ? ' is-on' : ''}${hasActiveFilters ? ' has-value' : ''}`}
+                  onClick={() => setFilterOpen(v => !v)}
+                  aria-label="Filters"
+                  aria-expanded={filterOpen}
+                  title="Filter by Status, Domain, Job name"
+                >
+                  <IcFilter />
+                </button>
+
+                {filterOpen && (
+                  <FilterPanel
+                    compact
+                    hideReset
+                    fields={JOB_FILTER_FIELDS}
+                    activeFilters={jobFilters}
+                    onClose={() => setFilterOpen(false)}
+                    onApply={values => { setJobFilters(values); setFilterOpen(false); }}
+                    onReset={() => setJobFilters({})}
+                  />
+                )}
+              </div>
+            }
+            flush>
+            <div style={{ maxHeight: 280, overflow: 'auto' }}>
+              <table className="ix-table" style={{ minWidth: '780px' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--vw-color-white)', boxShadow: '0 1px 0 var(--ix-hair)' }}>
+                  <tr>
+                    <th style={{ width: '110px' }}>Status</th>
+                    <th style={{ width: '100px' }}>Domain</th>
+                    <th>Job · scope</th>
+                    <th>Collector · credential</th>
+                    <th>Schedule</th>
+                    <th>Last run · duration</th>
+                    <th className="t-r">Targets</th>
+                    <th className="t-r">Clean · partial · failed</th>
+                    <th>Next run</th>
+                  </tr>
+                </thead>
+                <tbody>{visibleJobs.map(j => (
+                  <tr key={j.id} className="is-click" tabIndex={0} onClick={() => toJobTargets(j)} onKeyDown={onKey(() => toJobTargets(j))}
+                    aria-label={`View targets in ${j.id}`}>
+                    <td>
+                      <Pill tone={j.status === 'Completed' ? 'success' : j.status === 'Running' ? 'info' : j.status === 'No adapter' ? 'neutral' : 'warning'}
+                        icon={j.status === 'Completed' ? Ic.check(11) : j.status === 'Completed with errors' ? Ic.alert(11) : undefined}>
+                        {j.status}
+                      </Pill>
+                    </td>
+                    <td><Dom domain={j.domain} /></td>
+                    <td>
+                      <span className="ix-primary mono" style={{ fontWeight: 600 }}>{j.id}</span>
+                      <div className="ix-secondary">{j.site} · <span className="mono">{j.scope}</span></div>
+                    </td>
+                    <td>
+                      <span className="mono">{j.collector}</span>
+                      <div className="ix-secondary mono">{j.cred}</div>
+                    </td>
+                    <td>{j.schedule}</td>
+                    <td>
+                      <span className="num">{j.lastRun}</span>
+                      <div className="ix-secondary num">{j.duration}</div>
+                    </td>
+                    <td className="t-r num" style={{ fontWeight: 500 }}>{n(j.targets)}</td>
+                    <td className="t-r" style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{ color: cv('emerald', 700), fontWeight: 500 }}>{n(j.clean)}</span>
+                      <span style={{ color: 'var(--ix-hair)', margin: '0 4px' }}>·</span>
+                      <span style={{ color: cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400) }}>{n(j.partial)}</span>
+                      <span style={{ color: 'var(--ix-hair)', margin: '0 4px' }}>·</span>
+                      <span style={{ color: cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400) }}>{n(j.fail)}</span>
+                    </td>
+                    <td>
+                      <span className={j.nextRun === 'sweeping now' ? 'ix-good' : 'ix-secondary'} style={{ fontWeight: j.nextRun === 'sweeping now' ? 500 : 400 }}>
+                        {j.nextRun}
+                      </span>
+                    </td>
+                  </tr>))}
+                </tbody>
+              </table>
+            </div>
           </Panel>
 
+          {/* New items discovered per day chart */}
           <Panel title="New items discovered per day" info={CARD_DEF['New items discovered per day']} className="ix-chart"
             description={<span className="ix-stats"><span>Last {objRange === '7d' ? 7 : 14} days</span><span><b>{objTotal}</b> new items</span><span><b>{objToday}</b> on {todayDateStr}</span><span>avg <b>{(objTotal / objDays.length).toFixed(1)}</b>/day</span></span>}
             right={<Seg label="Range" value={objRange} onChange={setObjRange} options={[{ k: '7d', n: '7d' }, { k: '14d', n: '14d' }]} />}>
             <div className="grow" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={252} rotateLabels fluid />
+              <StackedBars days={objDays} series={OBJECTS_DAILY_SERIES} values={objValues} height={240} rotateLabels fluid />
             </div>
           </Panel>
         </div>
@@ -319,33 +448,33 @@ export default function Insights() {
           <Panel title="Failures by root cause" info={CARD_DEF['Failures by root cause']}
             description={<><b>{failedTargets}</b> targets · <b>{ROOT_CAUSE_FAILURES.length}</b> root causes · one fix each</>} flush>
             <div>
-            {ROOT_CAUSE_FAILURES.map(f => {
-              const extra = f.targets - f.examples.length;
-              const acted = !!requested[f.cause];
-              const cat = FAIL_CAT[f.tag];
-              return (
-                <div key={f.cause} className="ix-fail" role="button" tabIndex={0}
-                  onClick={() => setDrawer({ kind: 'failure', row: f })} onKeyDown={onKey(() => setDrawer({ kind: 'failure', row: f }))}
-                  aria-label={`View details for ${f.cause}`}>
-                  <span className={`ix-sev is-${cat.tone}`} title={cat.label}>{cat.icon}</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="ix-fail-t">{f.cause}<Dom domain={f.domain} sm muted /></div>
-                    <div className="ix-fail-m">
-                      <span className="ix-fail-cat">{cat.label}</span>
-                      {f.examples.map(ex => <Code key={ex}>{ex}</Code>)}
-                      {extra > 0 && <Code>+{extra} more</Code>}
+              {ROOT_CAUSE_FAILURES.map(f => {
+                const extra = f.targets - f.examples.length;
+                const acted = !!requested[f.cause];
+                const cat = FAIL_CAT[f.tag];
+                return (
+                  <div key={f.cause} className="ix-fail" role="button" tabIndex={0}
+                    onClick={() => setDrawer({ kind: 'failure', row: f })} onKeyDown={onKey(() => setDrawer({ kind: 'failure', row: f }))}
+                    aria-label={`View details for ${f.cause}`}>
+                    <span className={`ix-sev is-${cat.tone}`} title={cat.label}>{cat.icon}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="ix-fail-t">{f.cause}<Dom domain={f.domain} sm muted /></div>
+                      <div className="ix-fail-m">
+                        <span className="ix-fail-cat">{cat.label}</span>
+                        {f.examples.map(ex => <Code key={ex}>{ex}</Code>)}
+                        {extra > 0 && <Code>+{extra} more</Code>}
+                      </div>
+                    </div>
+                    <div className="ix-fail-r">
+                      <span className="ix-fail-n num">{f.targets}<small>TARGETS</small></span>
+                      <button type="button" className="ix-act" disabled={acted}
+                        onClick={e => { e.stopPropagation(); setRequested(r => ({ ...r, [f.cause]: true })); }}>
+                        {acted ? <>{Ic.check(12)}Requested</> : <>{f.action}{Ic.chevron(12)}</>}
+                      </button>
                     </div>
                   </div>
-                  <div className="ix-fail-r">
-                    <span className="ix-fail-n num">{f.targets}<small>TARGETS</small></span>
-                    <button type="button" className="ix-act" disabled={acted}
-                      onClick={e => { e.stopPropagation(); setRequested(r => ({ ...r, [f.cause]: true })); }}>
-                      {acted ? <>{Ic.check(12)}Requested</> : <>{f.action}{Ic.chevron(12)}</>}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </Panel>
         </div>
@@ -587,7 +716,7 @@ export default function Insights() {
           </Panel>
         </div>
       </section>
-      */} 
+      */}
 
       <Drawer open={!!drawer} onClose={() => setDrawer(null)} title={drawer ? drawerTitle(drawer) : ''}
         sub={drawer ? drawerSub(drawer) : undefined}>
