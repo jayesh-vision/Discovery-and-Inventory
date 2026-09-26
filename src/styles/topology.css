@@ -1,0 +1,681 @@
+/* ── RailTel NOC Service Topology Explorer CSS ───────────────────────
+   Styling for the multi-column cascading tree (Miller columns) topology viewer
+   matching the reference design on noc.railtel.in.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.topo-explorer {
+  display: flex;
+  flex-direction: column;
+  background: var(--vw-color-white, #ffffff);
+  border: 1px solid var(--ix-border, #e2e8f0);
+  border-radius: var(--ix-radius, 12px);
+  box-shadow: var(--ix-shadow, 0 1px 3px rgba(15, 23, 42, 0.06));
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--vw-color-gray-900, #0f172a);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Top Control & Filter Bar ─────────────────────────────────────────── */
+.topo-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.topo-control-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.topo-service-radios {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topo-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vw-color-gray-700, #334155);
+  cursor: pointer;
+}
+
+.topo-radio-label input[type="radio"] {
+  accent-color: var(--vw-color-blue-600, #2563eb);
+  cursor: pointer;
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.topo-select-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topo-select-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vw-color-gray-600, #475569);
+}
+
+.topo-select-control {
+  height: 32px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--vw-color-gray-800, #1e293b);
+  outline: none;
+  cursor: pointer;
+}
+
+.topo-select-control:focus {
+  border-color: var(--vw-color-blue-500, #3b82f6);
+}
+
+.topo-search-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 6px;
+  height: 32px;
+  box-sizing: border-box;
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-search-input-group:focus-within {
+  border-color: var(--vw-color-blue-500, #3b82f6);
+  color: var(--vw-color-blue-600, #2563eb);
+}
+
+.topo-text-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--vw-color-gray-800, #1e293b);
+  width: 140px;
+}
+
+.topo-text-input::placeholder {
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-input-clear {
+  border: none;
+  background: transparent;
+  color: var(--vw-color-gray-400, #94a3b8);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topo-input-clear:hover {
+  color: var(--vw-color-gray-700, #334155);
+}
+
+.topo-control-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topo-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  color: var(--vw-color-gray-600, #475569);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.topo-action-btn:hover {
+  background: var(--vw-color-slate-50, #f8fafc);
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  color: var(--vw-color-gray-900, #0f172a);
+}
+
+.topo-action-btn.is-active {
+  background: var(--vw-color-blue-600, #2563eb);
+  border-color: var(--vw-color-blue-600, #2563eb);
+  color: #ffffff;
+}
+
+/* ── Main Cascading Topology Canvas ───────────────────────────────────── */
+.topo-canvas-container {
+  position: relative;
+  background: #f8fafc;
+  min-height: 480px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 30px 24px 34px;
+  box-sizing: border-box;
+}
+
+.topo-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.topo-columns-flow {
+  display: flex;
+  align-items: flex-start;
+  gap: 48px;
+  position: relative;
+  z-index: 2;
+  min-width: max-content;
+}
+
+/* ── Root Service Entity Card ─────────────────────────────────────────── */
+.topo-root-node-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: center;
+  margin-top: 40px;
+}
+
+.topo-root-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 2px solid #a855f7;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12);
+  width: 120px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.topo-root-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #faf5ff;
+  border: 1.5px solid #e9d5ff;
+  color: #9333ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.topo-root-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vw-color-gray-900, #0f172a);
+  margin-bottom: 3px;
+}
+
+.topo-root-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7e22ce;
+  background: #f3e8ff;
+  border: 1px solid #e9d5ff;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-bottom: 5px;
+}
+
+.topo-root-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vw-color-gray-500, #64748b);
+  line-height: 1.35;
+}
+
+/* ── Generic Column Box (Miller Columns) ──────────────────────────────── */
+.topo-col {
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  max-height: 480px;
+}
+
+.topo-col-regions {
+  width: 244px;
+}
+
+.topo-col-territories {
+  width: 264px;
+}
+
+.topo-col-elements {
+  width: 280px;
+}
+
+.topo-col-interfaces {
+  width: 320px;
+}
+
+.topo-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 10px;
+  border-bottom: 1px solid var(--vw-color-slate-100, #f1f5f9);
+  margin-bottom: 10px;
+}
+
+.topo-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vw-color-gray-800, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topo-col-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vw-color-gray-500, #64748b);
+  background: var(--vw-color-slate-100, #f1f5f9);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.topo-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--vw-color-slate-50, #f8fafc);
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.topo-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  color: var(--vw-color-gray-800, #1e293b);
+  width: 100%;
+}
+
+.topo-search-box input::placeholder {
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 2px;
+  max-height: 380px;
+}
+
+/* Custom scrollbar for column lists */
+.topo-card-list::-webkit-scrollbar {
+  width: 4px;
+}
+.topo-card-list::-webkit-scrollbar-thumb {
+  background: var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 4px;
+}
+
+/* ── Item Cards ───────────────────────────────────────────────────────── */
+.topo-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-align: left;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.topo-item-card:hover {
+  border-color: var(--vw-color-blue-400, #60a5fa);
+  background: #f8fafc;
+}
+
+.topo-item-card.is-selected {
+  border-color: var(--vw-color-blue-600, #2563eb);
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px var(--vw-color-blue-600, #2563eb);
+}
+
+.topo-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.topo-badge-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 13px;
+  border: 1px solid var(--vw-color-blue-300, #93c5fd);
+  color: var(--vw-color-blue-700, #1d4ed8);
+  background: #eff6ff;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.topo-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.topo-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vw-color-gray-900, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-item-sub {
+  font-size: 11px;
+  color: var(--vw-color-gray-500, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--vw-color-red-600, #dc2626);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* ── Network Elements Column Customization ────────────────────────────── */
+.topo-device-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+}
+
+.topo-device-icon.is-alert {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+/* ── Interface Cards Customization ────────────────────────────────────── */
+.topo-if-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  gap: 6px;
+  transition: all 120ms ease;
+  position: relative;
+}
+
+.topo-if-card:hover {
+  border-color: var(--vw-color-blue-400, #60a5fa);
+  background: #f8fafc;
+}
+
+.topo-if-card.is-selected {
+  border-color: var(--vw-color-blue-600, #2563eb);
+  background: #eff6ff;
+}
+
+.topo-if-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topo-if-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topo-if-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vw-color-gray-900, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-if-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 3px;
+  column-gap: 8px;
+  font-size: 11px;
+  color: var(--vw-color-gray-600, #475569);
+  padding-top: 4px;
+  border-top: 1px dashed var(--vw-color-slate-100, #f1f5f9);
+}
+
+.topo-if-meta-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-status-tag {
+  display: inline-block;
+  font-weight: 600;
+}
+.topo-status-tag.is-up {
+  color: var(--vw-color-emerald-700, #047857);
+}
+.topo-status-tag.is-down {
+  color: var(--vw-color-red-600, #dc2626);
+}
+
+/* ── Bottom Summary KPI Bar ───────────────────────────────────────────── */
+.topo-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid var(--vw-color-slate-200, #e2e8f0);
+}
+
+.topo-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.topo-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topo-kpi-icon.is-orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.topo-kpi-icon.is-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.topo-kpi-icon.is-green {
+  background: #ecfdf5;
+  color: #059669;
+}
+.topo-kpi-icon.is-red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.topo-kpi-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.topo-kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vw-color-gray-600, #475569);
+}
+
+.topo-kpi-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--vw-color-gray-900, #0f172a);
+  line-height: 1.2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .topo-kpi-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .topo-kpi-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Floating Hover Tooltip (Clean Minimal Micro-Chip) ───────────────── */
+.topo-floating-tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  transition: opacity 120ms ease;
+  animation: topoTooltipFade 130ms cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.12));
+}
+
+@keyframes topoTooltipFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -92%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.topo-floating-tooltip.is-bottom {
+  animation: topoTooltipFadeBottom 130ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes topoTooltipFadeBottom {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.topo-floating-tooltip-inner {
+  background: #ffffff;
+  color: var(--vw-color-gray-900, #0f172a);
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+  white-space: nowrap;
+  max-width: 340px;
+  box-sizing: border-box;
+  text-align: center;
+}
+

@@ -17,6 +17,7 @@ import RuleDefinition from './screens/RuleDefinition';
 import RuleDetails from './screens/RuleDetails';
 import { DiscoveryReports, InventoryReports } from './screens/reports/ReportsLanding';
 import { DiscoveryReportView, InventoryReportView } from './screens/reports/ReportView';
+import Location from './screens/Location';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -71,7 +72,7 @@ export const SCREENS: Screen[] = [
     crumb: 'Reports · Report', rail: 'discoveryreports', component: DiscoveryReportView },
 
   { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Home', legacy: true },
-  { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', legacy: true },
+  { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },
