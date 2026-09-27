@@ -1,149 +1,660 @@
-# INVENTORY v5 — TABLE USAGE, SCREEN MAPPING AND MOCK-API GUIDE
+# INVENTORY v5 — Screen-by-Screen Table Usage and Mock-API Guide
 
-**Database:** `inventory_schema_v5.sql` (revision 2, 2026-09-27), 106 tables, as loaded into `inventory_27sep`
-**Frontend:** NetSingularity Discovery & Inventory (React 19, `src/routes.ts`)
-**Companion documents:** `DATABASE_UI_MODULE_IDEATION.md` (module and API design), `INVENTORY_DATABASE_MODULE_CATEGORIZATION.md` (ownership analysis over the v4 dump)
-**Date:** 2026-09-27
-
-This document answers three questions for every table in the database:
-
-1. What is the table for, in the language of the screens?
-2. Which screen (existing route or proposed module) reads or writes it, and who owns the data?
-3. When the owning module's integration is not available yet, which mock API is enough for the UI to work?
-
-It also settles the open question on `TEAM` / `TEAM_MEMBER` and the other tables that could arguably belong to another module.
+| | |
+|---|---|
+| **Database** | `inventory_schema_v5.sql` (revision 2, 2026-09-27) — 106 tables, loaded as `inventory_27sep` |
+| **Frontend** | NetSingularity Discovery & Inventory, React 19, routes in `src/routes.ts` (screenshots taken from the current build on 2026-09-27) |
+| **Companions** | `DATABASE_UI_MODULE_IDEATION.md` (module and API design) · `INVENTORY_DATABASE_MODULE_CATEGORIZATION.md` (ownership analysis) |
+| **Audience** | UI, backend and integration engineers deciding what each screen reads, who owns that data, and what to mock until the owning module's API exists |
 
 ---
 
-## 1. How to read the mock-API column
+## Contents
 
-The UI never talks to the database. Every screen goes through a module service interface with two implementations, `MockXService` (in-memory, seeded from `src/mock`) and `ApiXService` (HTTP). Three situations occur:
-
-| Owner of the table | Real path | Until the real path exists |
-|---|---|---|
-| **Inventory** | Inventory API (Spring Boot over this database) | `MockXService` of the module; the mock store is seeded from the dummy data in this file |
-| **Another module (User Management, Passive Inventory, Open/CoPEX)** | Their API, or a CDC copy landing in a reference table | A mock of *their* contract (`MockTeamService`, `MockPassiveService`, `MockCopexService`); the UI code is identical either way |
-| **Integration layer (Discovery, Reconciliation, Reporting engines)** | Integration API exposing read models and actions | A mock that also simulates the engine (a run that completes on a timer, an action that appends an event) |
-
-"Mock API when integration is not available" in the matrix names the exact mock that is sufficient. Reference catalogs are mocked directly from the seed rows in the SQL file, so they need no separate fixture.
+1. [How to read this document](#1-how-to-read-this-document)
+2. [Decisions: TEAM, TEAM_MEMBER and other "could be elsewhere" tables](#2-decisions-team-team_member-and-other-could-be-elsewhere-tables)
+3. [Discovery & Reconciliation screens](#3-discovery--reconciliation-screens)
+4. [Inventory screens](#4-inventory-screens)
+5. [Integration dependencies per module](#5-integration-dependencies-per-module)
+6. [Mock API catalogue](#6-mock-api-catalogue)
+7. [Gaps between the UI and the schema](#7-gaps-between-the-ui-and-the-schema)
+8. [Table-by-table matrix (all 106 tables)](#8-table-by-table-matrix-all-106-tables)
+9. [Tables removed in v5 and how their screens are served](#9-tables-removed-in-v5-and-how-their-screens-are-served)
+10. [Screenshot index](#10-screenshot-index)
 
 ---
 
-## 2. Decision: TEAM and TEAM_MEMBER
+## 1. How to read this document
 
-### 2.1 What the schema says [Schema]
+Every screen section has the same shape:
 
-- `TEAM` (code, name) is referenced by three foreign keys: `RECONCILIATION_EXCEPTION.OWNER_TEAM_ID_FK`, `RECONCILIATION_RULE.EXCEPTION_REVIEWER_TEAM_ID_FK`, `SITE_ISSUE.OWNER_TEAM_ID_FK`. Its comment says: *owning team or queue for exceptions and rules; "Unassigned" is the absence of a team*.
-- `TEAM_MEMBER` (team, user, role LEAD / MEMBER) is referenced by nothing. Only `TEAM` and `USER` point into it.
+- **Screenshot** of the current build.
+- **What the screen is for**, in one or two sentences.
+- **UI element → data** table: each visible card, column, filter or action, the table and column that feed it, and the access mode.
+- **Owner · integration · mock** line: who owns the data, which module must be integrated, and which mock service is enough meanwhile.
+- **Gaps**: where the current screen and the v5 schema disagree.
 
-### 2.2 What the UI needs [Confirmed from `src/`]
+Access modes: **R** read · **W** create / edit · **A** action executed by the owning engine (run, hold, approve, dispose, move) · **D** derived (computed by the API, no single table).
 
-- The Exceptions screen shows an **owner** and an **assignee**; the Rules screens show owner / reviewer / approver / executor / exception-reviewer. Today all of these are people (`MOCK_USERS`). Nothing in the UI lists team members or administers teams.
-- The only place membership matters is a picker: when an exception is assigned to a person, the natural default list is "people in the owner team".
+Owner values: **Inventory** (written through the Inventory API) · **Catalog** (seeded reference rows) · **User Management** (CDC copy) · **Master data** (pending owner) · **Discovery / Reconciliation / Reporting service** (pipelines write, UI reads) · **Passive Inventory** (proxy only) · **Open/CoPEX** (no table here).
 
-### 2.3 Verdict
+Mock rule: the UI talks only to module service interfaces. `MockXService` (in-memory, seeded from the dummy data in `inventory_schema_v5.sql`) and `ApiXService` implement the same interface, so a screen never changes when the real API arrives. For another module's data the mock imitates *that module's* contract, not a table.
 
-| Table | Decision | Reason |
+---
+
+## 2. Decisions: TEAM, TEAM_MEMBER and other "could be elsewhere" tables
+
+### 2.1 Where TEAM shows up in the UI today
+
+![Reconciliation Exceptions drawer](screenshots/reconcileexceptions_drawer.jpg)
+
+| Evidence | What it shows |
+|---|---|
+| Exceptions grid, **Owner** column | Mostly people (Priya Iyer, Meera Nair, Gaurav Shukla), "Unassigned", and for RX-5007 a team: **Architecture**. The queue-then-person model the schema anticipates is already on screen. |
+| Rule details, **Responsibilities** | Owner, reviewer, approver, executor are people; the rule form has an **Exception reviewer** picker (a person today; `EXCEPTION_REVIEWER_TEAM_ID_FK` in the schema). |
+| Site details, **Attention / Issues** | Issue owner is free text ("OSS platform team"). |
+| Reports, "No owner" KPI | Counts exceptions "not yet assigned to a person or team". |
+
+### 2.2 Verdict
+
+| Table | Decision | Why |
 |---|---|---|
-| `TEAM` | **Keep, as a CDC reference copy owned by User Management** (same pattern as `USER`) | Three FK columns need a local row; an exception queue and an approver group are organisational groups, which is exactly what User Management owns. Inventory never creates teams; it receives them. |
-| `TEAM_MEMBER` | **Not required in Inventory. Recommend removing it in the next schema revision** | No Inventory table depends on it, no screen lists it, and membership is a User Management fact. The one UI need (assignee picker) is served by a User Management API call `GET /api/um/groups/{id}/members`, mocked until then. Keeping a local copy would create a second source of truth for membership. |
-
-The same logic decides the other "could be another module" tables:
-
-| Table | Could belong to | Verdict for v5 | Why |
-|---|---|---|---|
-| `USER` | User Management | Keep as CDC reference copy | 13 FK columns; no PII stored |
-| `TENANT` | Platform / User Management | Keep as reference copy | Root of every `CUSTOMER_ID` |
-| `OPERATIONAL_AREA`, `GEOGRAPHY_LEVEL1..4` | Master-data or User Management scoping service | Keep, **validate** whether a master-data owner exists; if yes, become CDC copies | `SITE` binds to `GEOGRAPHY_LEVEL4`; the circle filter is used app-wide |
-| `VENDOR`, `PRODUCT_MODEL` | Shared catalog / vendor feed | Keep, **validate** | Passive Inventory and Open/CoPEX need the same vendors; a shared catalog owner would make these CDC copies |
-| `RESOURCE_ASSET` | Open/CoPEX (purchase cost, PO) | Keep, **validate** column split | Asset tag and warranty are operational; cost and PO are financial |
-| `RACK`, `ANTENNA`, `POWER_FEED` | Passive Inventory | Keep, **validate** | Device placement and cell-antenna binding depend on them; proxies would be needed first |
-| `SITE_CONTACT` | none (external contacts, not users) | Keep | PII is encrypted; not a User Management concern |
-| `SITE_ISSUE` | Rollout / project tool | Keep, **validate** source | Currently UI-raised |
-| `NETWORK_ELEMENT_VIRTUAL_INSTANCE`, `CLOUD_CLUSTER` | Orchestrator | Keep, state read-only | Lifecycle actions would call the orchestrator |
-| `SCAN_*`, `COLLECTOR`, `CREDENTIAL_PROFILE`, `DISCOVERY_STEP_DEFINITION` | Discovery service (NiFi / Spark) | Keep for now | UI needs the read models; physical location of the tables is an infrastructure decision |
-| `RECONCILIATION_JOB*`, `RECONCILIATION_RUN*`, `RECONCILIATION_RESULT*` | Reconciliation service | Keep for now | as above |
-| `RECONCILIATION_RULE*`, `RECONCILIATION_EXCEPTION` | Reconciliation module, if one is carved out | Keep in Inventory | People-governed business objects that protect the golden record |
-| `REPORT_RUN`, `DOMAIN_TRUST_SNAPSHOT` | Reporting service | Keep for now | Read models for Reports and Insights |
-| `EXTERNAL_SYSTEM`, `EXTERNAL_OBJECT_TYPE`, `EXTERNAL_RESOURCE`, `RESOURCE_EXTERNAL_REFERENCE` | Integration layer | Keep in Inventory | They are the anchor every cross-module link hangs on |
-
-### 2.4 Change to apply when you are ready (not applied to the loaded database)
+| `TEAM` | **Keep, as a CDC reference copy owned by User Management** | Three FK columns need a local row: `RECONCILIATION_EXCEPTION.OWNER_TEAM_ID_FK`, `RECONCILIATION_RULE.EXCEPTION_REVIEWER_TEAM_ID_FK`, `SITE_ISSUE.OWNER_TEAM_ID_FK`. A queue such as "NOC RAN" or "Architecture" is an organisational group, which User Management owns. Inventory never creates teams; it receives them (same pattern as `USER`). |
+| `TEAM_MEMBER` | **Not required. Drop in the next revision** | No table references it and no screen lists members. The only need, the assignee picker on an exception defaulting to "people in the owner team", is a User Management lookup. A local copy would be a second source of truth for membership. |
 
 ```sql
--- TEAM_MEMBER is not required by Inventory; membership is a User Management fact served by API.
+-- apply when ready (not applied to the loaded database)
 DROP TABLE TEAM_MEMBER;
 ALTER TABLE TEAM COMMENT = 'Reference copy of a User Management group used as owner queue for exceptions, exception-reviewer team of a rule and owner of a site issue; rows arrive by CDC and are never created here. [v5 rev 3]';
 ```
 
-If User Management turns out not to model groups at all, `TEAM` stays Inventory-owned as a small admin list and `TEAM_MEMBER` can be reinstated. Nothing else in the schema changes either way.
+### 2.3 Other tables that could belong to another module
 
----
-
-## 3. Screen-by-screen map
-
-Route keys are those in `src/routes.ts`; "new" marks screens proposed in the ideation document. **R** = the screen reads the table, **W** = the screen creates or edits rows, **A** = the screen triggers an action that the owning engine executes.
-
-### 3.1 Discovery & reconciliation
-
-| Screen (route) | Tables | Owner of the data | Integration needed | Enough for now |
-|---|---|---|---|---|
-| Insights (`insights` + drill-downs `regiondevices`, `discovereddevices`, `domaindevices`, `subdomaindevices`, `discrepancydetails`) | R `DOMAIN_TRUST_SNAPSHOT`, `COLLECTOR`, `SCAN_RUN`, `SCAN_RUN_TARGET`, `SCAN_TARGET`, `RECONCILIATION_RUN`, `RECONCILIATION_EXCEPTION`, `DISCREPANCY_TYPE`, `NETWORK_ELEMENT` (counts), `OPERATIONAL_AREA`, `DOMAIN` | Integration read models + Inventory counts | Discovery and Reconciliation services for live figures | `MockInsightsService` computing the cards from the other mock stores |
-| Scan jobs (`jobs`) | R/W `SCAN_JOB`, `SCAN_JOB_SCOPE`; R `COLLECTOR`, `CREDENTIAL_PROFILE`, `EXTERNAL_SYSTEM`, `OPERATIONAL_AREA`, `SCAN_RUN`; A run / hold / resume | Discovery service | Yes: job contract and action semantics | `MockScanJobService` (run creates a RUNNING run, completes on a timer) |
-| Scan targets (`targets`) | R `SCAN_TARGET`, `SCAN_RUN_TARGET`, `NETWORK_ELEMENT` (matched), `VENDOR` | Discovery service | Yes | `MockScanJobService.targets()` |
-| Target transcript (`target`) | R `SCAN_STEP_RESULT`, `DISCOVERY_STEP_DEFINITION`, `SCAN_STEP_PAYLOAD` (permissioned) | Discovery service | Yes | `MockScanJobService.steps()`; payload as a stub string |
-| Reconciliation overview (`reconcile`) | R `RECONCILIATION_RESULT` (aggregates), `RECONCILIATION_RUN`, `RECONCILIATION_EXCEPTION`, `DOMAIN`, `OPERATIONAL_AREA` | Reconciliation service | Yes for live aggregates | `MockReconciliationService.overview()` |
-| Reconciliation jobs (`reconcilejobs`) | R/W `RECONCILIATION_JOB`, `RECONCILIATION_JOB_RULE`; R `RECONCILIATION_RUN`, `SCAN_RUN`; A run | Reconciliation service | Yes | `MockReconciliationService` |
-| Reconciliation results (`reconcileresults`) | R `RECONCILIATION_RESULT`, `RECONCILIATION_RESULT_FIELD`, `RECONCILIATION_STATE_MAP`, `RESOURCE` (subject link), `SCAN_TARGET` | Reconciliation service | Yes | `MockReconciliationService.results()` |
-| Reconciliation exceptions (`reconcileexceptions`) | R `RECONCILIATION_EXCEPTION`, `DISCREPANCY_TYPE`, `TEAM`, `USER`, `RECONCILIATION_RESULT_FIELD`; A assign / dispose / raise work order | Inventory (workflow) + engine (creation) | Engine creates and auto-resolves; User Management for teams and people | `MockReconciliationService.exceptions()` + `MockTeamService`, `MockUserService` |
-| Rules list / definition / details (`rules`, `rulenew`, `ruleedit`, `ruledetails`) | R/W `RECONCILIATION_RULE`, `RECONCILIATION_RULE_CONDITION`; R `RECONCILIATION_RULE_EVENT`, `RECONCILIATION_RULE_TRANSITION`, `RECONCILIATION_FIELD`, `RECONCILIATION_RUN_RULE`, `RECONCILIATION_JOB_RULE`, `USER`, `TEAM`; A submit / approve / reject / request-changes / activate / suspend / resume / retire | Inventory | Engine only for EXECUTING flips; User Management for people and teams | `MockRuleService` deriving allowed actions from the transition seed |
-| Discovery reports (`discoveryreports`, `discoveryreport`) | R/W `REPORT_DEFINITION`; R `REPORT_RUN`, `DOMAIN_TRUST_SNAPSHOT`; A run | Inventory (catalogue) + Reporting service (runs) | Reporting service | `MockReportService` (run → COMPLETED with stub file) |
-
-### 3.2 Inventory
-
-| Screen (route) | Tables | Owner of the data | Integration needed | Enough for now |
-|---|---|---|---|---|
-| Location list (`location`), Site create | R/W `SITE`; R `SITE_TYPE`, `GEOGRAPHY_LEVEL1..4`, `OPERATIONAL_AREA` | Inventory (+ master data to validate) | None for the screen; CDC if a master-data owner exists | `MockSiteService`, `MockReferenceService` |
-| Site details (`site`) | R `SITE`, `SITE_CONTACT`, `SITE_ISSUE`, `TEAM`, `NETWORK_ELEMENT` (counts), `RESOURCE_EXTERNAL_REFERENCE` | Inventory | User Management for teams | `MockSiteService` |
-| Facility (`sitedetails`) | R/W `FLOOR`, `ROOM`, `RACK`, `POWER_FEED`; R `NETWORK_ELEMENT` (rack positions), `EXTERNAL_RESOURCE` (power units) | Inventory; Passive Inventory for power units | Passive Inventory API for power-unit detail | `MockSiteService` + `MockPassiveService` (proxies only) |
-| Site equipment (`siteequipment`) | R `NETWORK_ELEMENT`, `RACK`, `EQUIPMENT_COMPONENT`, `PORT` | Inventory | none | `MockNetworkElementService` |
-| Node view (`node`) | R `NETWORK_ELEMENT`, `EQUIPMENT_COMPONENT`, `PORT`, `LINK`, `RESOURCE_FIELD_PROVENANCE`, `NETWORK_ELEMENT_HEALTH` | Inventory + Discovery (provenance, health) | Discovery writes provenance and health | `MockNetworkElementService` |
-| Capex / Opex (`capex`, `opex`) | **no table in this database** | Open/CoPEX module | Yes: Open/CoPEX API | `MockCopexService` (plans, lines, actuals per site and financial year) — see §6 |
-| Physical Resources (`physical`) and Element (`resource`) | R/W `NETWORK_ELEMENT` + 11 `NETWORK_ELEMENT_*_DETAIL`, `EQUIPMENT_COMPONENT`, `PORT`, `PORT_IP_ADDRESS`, `PORT_VLAN`; R `NETWORK_ELEMENT_HEALTH`, `NETWORK_ELEMENT_MOVEMENT`, `NETWORK_ELEMENT_STOCK_TRANSITION`, `NETWORK_ELEMENT_CLASS`, `VENDOR`, `PRODUCT_MODEL`, `PRODUCT_MODEL_POLICY`, `RESOURCE_ASSET`, `RESOURCE_ATTRIBUTE`, `RESOURCE_TECHNOLOGY`, `RESOURCE_RELATIONSHIP`, `RESOURCE_FIELD_PROVENANCE`, `RESOURCE_EXTERNAL_REFERENCE`; A move / decommission | Inventory (discovery writes discovered rows) | Discovery for health and provenance; Passive for power-unit proxy | `MockNetworkElementService` |
-| Virtual Resources (`virtual`, `vnfdetails`, `vnflifecycle`) | R `NETWORK_ELEMENT` (virtual), `NETWORK_ELEMENT_VIRTUAL_INSTANCE`, `CLOUD_CLUSTER`, `NETWORK_ELEMENT_CORE_DETAIL`, `NETWORK_ELEMENT_SERVER_DETAIL`, `NETWORK_FUNCTION_TYPE`; A lifecycle operations | Inventory; orchestrator for lifecycle | Orchestrator API (validate) | `MockVirtualService` (actions flip INSTANTIATION_STATE locally) |
-| Cell 4G / 5G details (`cell4gdetails`, `cell5gdetails`) and RAN Inventory (new) | R/W `RADIO_CELL`, `RADIO_SECTOR`, `ANTENNA`; R `RADIO_CELL_PLMN`, `CELL_ANTENNA`, `CELL_RADIO_UNIT`, `PLMN`, `NETWORK_SLICE`, `FREQUENCY_BAND`, `TECHNOLOGY`, `NETWORK_ELEMENT_RAN_DETAIL`, `EXTERNAL_RESOURCE` (antenna mount) | Inventory; EMS discovery for parameters | Passive Inventory for mount assets | `MockRanService` |
-| Passive Infrastructure (`passive`, `odf`, `power`, `cord`, `splice`, `duct`, `fiber`) | R `EXTERNAL_RESOURCE`, `EXTERNAL_SYSTEM`, `EXTERNAL_OBJECT_TYPE` (proxies); `rack` route → `RACK` | Passive Inventory / fiber app | **Yes**: Passive Inventory API for everything beyond the label | `MockPassiveService` returning proxy lists plus a mocked detail per object type — see §6 |
-| Links (`links`) | R/W `LINK`, `LINK_PROTOCOL_ATTRIBUTE`, `LINK_MICROWAVE_ATTRIBUTE`; R `LINK_LAYER`, `NETWORK_ELEMENT`, `PORT` | Inventory (discovery writes adjacencies) | none for the screen | `MockLinkService` |
-| Services (`services`) | R/W `SERVICE_INSTANCE`, `SERVICE_ENDPOINT`; R `SERVICE_TYPE`, `NETWORK_SLICE`, `VRF`, `IP_SUBNET` | Inventory | LCM / discovery write discovered services | `MockServiceService` |
-| IP & Logical (new) | R/W `IP_SUBNET`, `VLAN`, `VRF`; R `PORT_IP_ADDRESS`, `PORT_VLAN` | Inventory | none | `MockIpamService` |
-| Relationships & Impact (new, tab + drawer) | R/W `RESOURCE_RELATIONSHIP`; R `RELATIONSHIP_TYPE`, `RELATIONSHIP_RULE`, `RESOURCE`, `RESOURCE_CLASS` | Inventory | none | `MockRelationshipService` |
-| Inactive inventory (`inactive`) | R `NETWORK_ELEMENT`, `NETWORK_ELEMENT_MOVEMENT`, `PORT`, `LINK`, `SERVICE_INSTANCE`, `RECONCILIATION_EXCEPTION`; A recover | Inventory | none | Derived from the other mock stores |
-| Inventory reports (`reports`, `inventoryreport`) | as Discovery reports | Inventory + Reporting service | Reporting service | `MockReportService` |
-| Integrations (new, admin) | R `EXTERNAL_SYSTEM`, `EXTERNAL_RESOURCE`, `RESOURCE_EXTERNAL_REFERENCE`, `EXTERNAL_OBJECT_TYPE` | Integration layer | Yes | `MockIntegrationService` |
-| Administration (new) | R `USER`, `TEAM`; R/W `OPERATIONAL_AREA`, `GEOGRAPHY_LEVEL1..4`, `PRODUCT_MODEL_POLICY`, `ATTRIBUTE_DEFINITION`; R `VENDOR`, `PRODUCT_MODEL` | Inventory + User Management + master data | User Management for users and teams | `MockAdminService` |
-
----
-
-## 4. Which screens need another module, and what is enough meanwhile
-
-| Screen | Module it depends on | What is exchanged | Mock that is enough |
+| Table(s) | Could belong to | Verdict for v5 | Why |
 |---|---|---|---|
-| Capex, Opex | **Open / CoPEX** | site id and financial year out; plan header, lines, monthly actuals in | `MockCopexService`: `getCapexPlan(siteId, fy)`, `getOpexPlan(siteId, fy)`, optional `getCapexLinesForResource(resourceId)` |
-| Passive Infrastructure (ODF, Power plant, Patch cords, Ducts, Fiber spans, Splice), Facility power, Antenna mount, Power controller | **Passive Inventory** (and fiber app) | site id out; proxy list (id, type, label, last sync) always available from `EXTERNAL_RESOURCE`; full attributes and deep link from the module | `MockPassiveService`: `listProxies(siteId, objectType)`, `getAsset(externalId)`, `getRackOccupancy(rackCode)`, `getPowerUnit(externalId)`, `getPatchCords(portId)`; deep link opens the mocked URL |
-| Rules (roles), Exceptions (owner team, assignee), Site issues (owner team), Administration | **User Management** | user id → display name / status (CDC copy of `USER`); group id → name (CDC copy of `TEAM`); group members and roles by API | `MockUserService.list()`, `MockTeamService.list()`, `MockTeamService.members(teamId)`, `MockUserService.roles(userId)` — static lists |
-| Scan jobs, Scan targets, Target transcript, Insights collector and failure cards | **Discovery service** | job definitions and actions out; runs, target outcomes, steps, health, provenance in | `MockScanJobService` with a simulated scheduler |
-| Reconciliation overview, jobs, results; Exceptions creation; Rule EXECUTING flips | **Reconciliation service** | job definitions and run action out; runs, results, fields, exceptions in | `MockReconciliationService` with a simulated run |
-| Reports (runs and downloads), Insights trust trend | **Reporting service** | run request out; run status, file, KPI series in | `MockReportService`, `MockInsightsService` |
-| Virtual Resources lifecycle operations | **Orchestrator** (validate) | instance id and operation out; instantiation state in | `MockVirtualService` |
-| Location filters, Site create geography, circle filters | **Master data** (validate) | geography and operational-area trees in | `MockReferenceService` from the dummy rows |
+| `USER`, `TENANT` | User Management / platform | Keep as reference copies | 13 FK columns on `USER`; `TENANT` roots every `CUSTOMER_ID` |
+| `OPERATIONAL_AREA`, `GEOGRAPHY_LEVEL1..4` | Master data / User Management scoping | Keep; **validate** owner | `SITE` binds to `GEOGRAPHY_LEVEL4`; the circle filter is used app-wide (Location, Scan jobs, Insights) |
+| `VENDOR`, `PRODUCT_MODEL` | Shared catalog | Keep; **validate** | Passive Inventory and Open/CoPEX need the same vendors |
+| `RESOURCE_ASSET` | Open/CoPEX (cost, PO) | Keep; **validate** column split | Element › Support position shows warranty and PO; cost is financial |
+| `RACK`, `ANTENNA`, `POWER_FEED` | Passive Inventory | Keep; **validate** | Device placement (Element rack/U), cell-antenna binding and the Facility power panel depend on them |
+| `SITE_CONTACT`, `SITE_ISSUE` | none / rollout tool | Keep | Contacts are encrypted external people; issues are UI-raised today |
+| `NETWORK_ELEMENT_VIRTUAL_INSTANCE`, `CLOUD_CLUSTER` | Orchestrator | Keep, state read-only | "Lifecycle operation" button on the VNF view would call the orchestrator |
+| `SCAN_*`, `COLLECTOR`, `CREDENTIAL_PROFILE`, `DISCOVERY_STEP_DEFINITION` | Discovery service (NiFi / Spark) | Keep for now | Scan jobs / targets / transcript read them |
+| `RECONCILIATION_JOB*`, `_RUN*`, `_RESULT*` | Reconciliation service | Keep for now | Reconciliation jobs / results read them |
+| `RECONCILIATION_RULE*`, `RECONCILIATION_EXCEPTION` | Reconciliation module, if carved out | Keep in Inventory | People-governed business objects (Rules, Exceptions screens) |
+| `REPORT_RUN`, `DOMAIN_TRUST_SNAPSHOT` | Reporting service | Keep for now | Reports and Insights read them |
+| `EXTERNAL_SYSTEM`, `EXTERNAL_OBJECT_TYPE`, `EXTERNAL_RESOURCE`, `RESOURCE_EXTERNAL_REFERENCE` | Integration layer | Keep in Inventory | Anchor of every cross-module link; Passive screens are proxy views over them |
 
-Screens that need **no** other module (Inventory API mock is enough): Location list, Site details (except team names), Site equipment, Node view (except provenance/health freshness), Physical Resources, Element, Links, Services, IP & Logical, Relationships & Impact, Inactive inventory, RAN Inventory (except antenna mount labels).
+---
+
+## 3. Discovery & Reconciliation screens
+
+### 3.1 Insights (`/discovery/insights`)
+
+![Insights](screenshots/insights.jpg)
+
+**What it is for.** Executive and operational dashboard: trust index, discovery coverage, discrepancy backlog, MTTR, per-domain jobs, adapters, failures by root cause, and the daily discovery volume chart.
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Inventory trust index, target, 7-day delta | `DOMAIN_TRUST_SNAPSHOT.TRUST_INDEX_PERCENT`, `IN_SCOPE`, `IN_SYNC` per day | R (D) |
+| Discovery coverage "12,106 of 12,174 reached" | `NETWORK_ELEMENT` count vs `SCAN_TARGET.LAST_OUTCOME`, `LAST_SYNC_TIME` | D |
+| Open discrepancy backlog, raised today, carried | `RECONCILIATION_EXCEPTION.STATUS`, `DETECTED_TIME` | D |
+| Mean time to reconcile per domain | `DOMAIN_TRUST_SNAPSHOT.MTTR_HOURS` | R |
+| Last cycle / next run banner | `RECONCILIATION_RUN.ENDED_TIME`, `RECONCILIATION_JOB.NEXT_RUN_TIME` | R |
+| Discovery jobs card (status, domain, job, scope) | `SCAN_JOB.CODE`, `DOMAIN_ID_FK`, `SCAN_JOB_SCOPE.SCOPE_VALUE`, `OPERATIONAL_AREA.NAME`, last `SCAN_RUN.STATUS` | R |
+| New items discovered per day (stacked by domain) | `NETWORK_ELEMENT.CREATED_TIME` where `RECORD_SOURCE = 'DISCOVERED'` grouped by `DOMAIN_ID_FK` | D |
+| Discovery adapters (protocol, endpoints, success) | `DISCOVERY_STEP_DEFINITION.PROTOCOL` × `SCAN_STEP_RESULT.STATE` aggregated | D |
+| Failures by root cause (credentials, reachability, fingerprint, NRF) | `SCAN_RUN_TARGET.FAILURE_REASON`, `FAILURE_STAGE`, `SCAN_TARGET.HOST_NAME` / `IP_ADDRESS`; collector name from `COLLECTOR.CODE` | D |
+| Region drill-down (`/insights/region/:region`) | `OPERATIONAL_AREA` (REGION level) → `SITE.OPERATIONAL_AREA_ID_FK` → `NETWORK_ELEMENT` | D |
+| Domain devices (`/insights/domain/:domain`): In scope, Open, Unverified, Trust; device list with issue | `DOMAIN_TRUST_SNAPSHOT` (cards); `RECONCILIATION_EXCEPTION` joined to `NETWORK_ELEMENT.NETWORK_ELEMENT_NAME`, `MANAGEMENT_IP`, `DISCREPANCY_TYPE.LABEL`, `SCAN_TARGET.LAST_SYNC_TIME` | D |
+| Discrepancies (`/insights/discrepancies`): device, type, domain, match class, age, last scan | `RECONCILIATION_EXCEPTION` + `DISCREPANCY_TYPE.LABEL`, `CATEGORY` + `RECONCILIATION_RESULT.OUTCOME` (match class) | R |
+
+**Owner · integration · mock.** All read models over Discovery- and Reconciliation-owned tables plus Inventory counts. Real path: aggregation endpoints (`GET /api/insights/*`) on the Inventory API fed by the two engines. Until then `MockInsightsService` derives every card from the other mock stores and the seven `DOMAIN_TRUST_SNAPSHOT` dummy rows.
+
+**Gaps.** The page groups by 4 domains (RAN, Core, Transport, IP/MPLS); the schema has 9 `DOMAIN` rows. Regions on this page (West, Southeast, …) are not the `OPERATIONAL_AREA` circles used elsewhere; the region table must switch to `OPERATIONAL_AREA` rows.
+
+### 3.2 Scan jobs (`/discovery/jobs`)
+
+![Scan jobs](screenshots/jobs.jpg)
+
+**What it is for.** Definition and health of every discovery job: schedule, collector, credential, last run and the clean / partial / failed split of its targets.
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Total jobs, live / on demand / held | `SCAN_JOB.SCHEDULE_KIND`, `SCHEDULE_STATE` | D |
+| Next run card | `SCAN_JOB.NEXT_RUN_TIME`, `CODE`, target count from `SCAN_TARGET` | D |
+| Jobs needing attention (no adapter, held, errors) | last `SCAN_RUN.STATUS` in (`NO_ADAPTER`, `COMPLETED_WITH_ERRORS`), `SCAN_JOB.SCHEDULE_STATE = 'HELD'` | D |
+| Collector nodes in use | `COLLECTOR` count, targets per `SCAN_JOB.COLLECTOR_ID_FK` | D |
+| Status column | last `SCAN_RUN.STATUS` (Running / Completed / Completed with errors / No adapter) | R |
+| Domain column and filter | `SCAN_JOB.DOMAIN_ID_FK` → `DOMAIN.NAME`, parent for "Transport · IP/MPLS" | R |
+| Job · scope (code, circle, scope values) | `SCAN_JOB.CODE`, `OPERATIONAL_AREA.NAME`, `SCAN_JOB_SCOPE.SCOPE_KIND` / `SCOPE_VALUE` (CIDR, seed + `MAX_CRAWL_DEPTH`) | R |
+| Collector · credential | `COLLECTOR.CODE`, `CREDENTIAL_PROFILE.CODE` (or `EXTERNAL_SYSTEM.CODE` for API sources) | R |
+| Schedule | `SCAN_JOB.SCHEDULE_KIND`, `INTERVAL_MINUTES`, `CRON_EXPRESSION` rendered as text | R |
+| Last run · duration | `SCAN_RUN.STARTED_TIME`, `DURATION_MS` | R |
+| Targets, clean · partial · failed | `SCAN_RUN_TARGET.STATUS` counts for the last run | D |
+| Row actions: View targets, run / hold / resume | navigation; `POST /scan-jobs/{id}/actions/{run|hold|resume}` | A |
+| Filter panel (domain, status, collector) | same columns | R |
+
+**Owner · integration · mock.** Discovery service owns definitions' schedule state and every run. UI writes the definition (`SCAN_JOB`, `SCAN_JOB_SCOPE`) and triggers actions. Mock: `MockScanJobService` where `run()` creates a RUNNING `SCAN_RUN`, then completes it on a timer with generated run targets.
+
+**Gaps.** Screen is still legacy JS (`legacy/app-views.js`) with a `domain` field added; port to React on the service interface.
+
+### 3.3 Scan targets (`/discovery/targets`)
+
+![Scan targets](screenshots/targets.jpg)
+
+**What it is for.** Every polled address with its last outcome, vendor fingerprint, failure reason and the collector step chain (Dev · Int · Rou · MPL · BGP · VPN).
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Status (Success / Partial / Failed) | latest `SCAN_RUN_TARGET.STATUS` (cached as `SCAN_TARGET.LAST_OUTCOME`) | R |
+| Domain | `SCAN_JOB.DOMAIN_ID_FK` | R |
+| Gateway IP | `SCAN_TARGET.IP_ADDRESS` (identity of a target; hostname may be null) | R |
+| Hostname · circle · job | `SCAN_TARGET.HOST_NAME`, `OPERATIONAL_AREA.NAME`, `SCAN_JOB.CODE` | R |
+| Vendor · model | `SCAN_TARGET.OBSERVED_VENDOR_ID_FK` → `VENDOR.NAME`, `OBSERVED_MODEL` | R |
+| Last run, Age chip (fresh / 1 mo / 20 mo) | `SCAN_TARGET.LAST_SYNC_TIME` | R |
+| Failure reason | `SCAN_TARGET.LAST_FAILURE_REASON` (SNMP timeout, Host unreachable, Auth failed, Parse error, No adapter) | R |
+| Collector chain chips | `SCAN_STEP_RESULT.STATE` per `DISCOVERY_STEP_DEFINITION` of the last run target | R |
+| Row action: View transcript | navigation to 3.4 | – |
+
+**Owner · integration · mock.** Discovery service. `MockScanJobService.targets()`.
+
+### 3.4 Target transcript (`/discovery/targets/:host`)
+
+![Target transcript](screenshots/target.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Header (host, gateway, job, circle) | `SCAN_TARGET.HOST_NAME`, `IP_ADDRESS`, `SCAN_JOB.CODE`, `OPERATIONAL_AREA.NAME` | R |
+| Last discovery, Steps passed, Discovered objects | `SCAN_RUN_TARGET.CREATED_TIME`; `SCAN_STEP_RESULT.STATE` counts; `WROTE_SUMMARY` parsed | D |
+| Run history (run, started, elapsed, steps, outcome, what changed) | `SCAN_RUN.RUN_NUMBER`, `STARTED_TIME`; `SCAN_RUN_TARGET.DURATION_MS`, `OUTCOME`, `NOTE` | R |
+| Objects discovered bars | `PORT`, `LINK` (by layer), `SERVICE_INSTANCE` counts written for the matched NE | D |
+| Collector transcript step cards (protocol, ms) and detail (WROTE, Request, Response) | `SCAN_STEP_RESULT` joined to `DISCOVERY_STEP_DEFINITION.NAME`, `PROTOCOL`; `DURATION_MS`, `RESPONSE_BYTES`, `WROTE_SUMMARY`, `FAILURE_REASON`, `SUGGESTED_ACTION`; raw text from `SCAN_STEP_PAYLOAD` (decrypted server side, permissioned) | R |
+| Download payload | `SCAN_STEP_PAYLOAD` via `GET /scan-step-results/{id}/payload` | R |
+
+**Owner · integration · mock.** Discovery service / collector. `MockScanJobService.steps()`; payload as a stub string. **Gap:** the route is by hostname; targets are identified by IP in the schema (hostname nullable) → route by target id.
+
+### 3.5 Reconciliation overview (`/discovery/reconcile`)
+
+![Reconciliation overview](screenshots/reconcile.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Match classes tiles (matched, attribute mismatch, extra, relationship drift, missing) | `RECONCILIATION_RESULT.OUTCOME` counts of the last run per domain | D |
+| Trust by domain (in scope, unverified, in sync, trust, open, MTTR, automated) | `DOMAIN_TRUST_SNAPSHOT` latest row per `DOMAIN_ID_FK` | R |
+| Open discrepancies by region heat map | `RECONCILIATION_EXCEPTION` × `SITE.OPERATIONAL_AREA_ID_FK` × `DOMAIN_ID_FK` | D |
+| Detected vs auto-resolved per day | `RECONCILIATION_EXCEPTION.DETECTED_TIME`, `IS_AUTO_RESOLVED`, `CLOSED_TIME` | D |
+| Age of open discrepancies bands | `RECONCILIATION_EXCEPTION.DETECTED_TIME` where `STATUS` open | D |
+| Open items by type | `RECONCILIATION_EXCEPTION.DISCREPANCY_TYPE_ID_FK` → `DISCREPANCY_TYPE.LABEL`, `CATEGORY` | D |
+| Reconciliation cycles (last 3 runs per domain: scanned, drifted, auto-resolved, to queue) | `RECONCILIATION_RUN` + `RECONCILIATION_RUN_RULE.MATCHED_COUNT`, `EXCEPTION_COUNT`; `RECONCILIATION_JOB.NEXT_RUN_TIME` | D |
+| Quick actions (Workbench, Scan management, Rules) | navigation | – |
+
+**Owner · integration · mock.** Reconciliation service read models. `MockReconciliationService.overview()`.
+
+### 3.6 Reconciliation jobs (`/discovery/reconcile/jobs`)
+
+![Reconciliation jobs](screenshots/reconcilejobs.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Job, Domain | `RECONCILIATION_JOB.CODE`, `DOMAIN_ID_FK` | R |
+| Source · target | `RECONCILIATION_JOB.SOURCE_DESCRIPTION`, `TARGET_DESCRIPTION` | R/W |
+| Scan type | `RECONCILIATION_JOB.SCAN_TYPE` (IDENTITY_ATTRIBUTE, ATTRIBUTE, IDENTITY, EXISTENCE, RELATIONSHIP) | R/W |
+| Schedule, Next run | `CRON_EXPRESSION`, `SCHEDULE_STATE` (LIVE / HELD / RETIRED), `NEXT_RUN_TIME` | R/W |
+| Last run · duration | `RECONCILIATION_RUN.STARTED_TIME`, `ENDED_TIME` | R |
+| Result (status, scanned, drifted, auto-resolved; "Awaiting RUL-… approval") | `RECONCILIATION_RUN.STATUS`; sums of `RECONCILIATION_RUN_RULE`; rule status from `RECONCILIATION_RULE.STATUS` via `RECONCILIATION_JOB_RULE` | D |
+| Row click → rule | `RECONCILIATION_JOB_RULE.RECONCILIATION_RULE_ID_FK` | – |
+| Run action | `POST /recon-jobs/{id}/actions/run` | A |
+
+**Owner · integration · mock.** Reconciliation service. `MockReconciliationService` with a simulated run.
+
+### 3.7 Reconciliation results (`/discovery/reconcile/results`)
+
+![Reconciliation results](screenshots/reconcileresults.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Network element | `RECONCILIATION_RESULT.RESOURCE_ID_FK` → `NETWORK_ELEMENT.NETWORK_ELEMENT_NAME` (or `SCAN_TARGET.HOST_NAME` when the subject is a target) | R |
+| Domain | via `RECONCILIATION_RULE.DOMAIN_ID_FK` | R |
+| Outcome chip | `RECONCILIATION_RESULT.OUTCOME` → label via `RECONCILIATION_STATE_MAP` | R |
+| Mismatched fields | `RECONCILIATION_RESULT_FIELD.FIELD_CODE` where `IS_MATCH = 0` → `RECONCILIATION_FIELD.LABEL` | R |
+| Verified | `RECONCILIATION_RESULT.VERIFIED_TIME` | R |
+| Rule | `RECONCILIATION_RULE.NAME` | R |
+| Row drawer: inventory value vs network value, evidence | `RECONCILIATION_RESULT_FIELD.INVENTORY_VALUE`, `NETWORK_VALUE`, `EVIDENCE_SOURCE` | R |
+
+**Owner · integration · mock.** Reconciliation service (high volume, server paging). `MockReconciliationService.results()`.
+
+### 3.8 Reconciliation exceptions (`/discovery/reconcile/exceptions`)
+
+![Reconciliation exceptions](screenshots/reconcileexceptions.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Open, SLA breached, At risk cards | `RECONCILIATION_EXCEPTION.STATUS`, `SLA_DUE_TIME` vs now | D |
+| Exception, State chip | `CODE`, `STATE` (ROGUE, DRIFTED, MISSING, DUPLICATE, UNCLAIMED, NO_ADAPTER, ZOMBIE) | R |
+| Domain | `DOMAIN_ID_FK` | R |
+| Subject (device · field) | `RESOURCE_ID_FK` → subtype name, `SUBJECT_DETAIL`; or `SCAN_TARGET_ID_FK` | R |
+| Owner | `OWNER_TEAM_ID_FK` → `TEAM.NAME` and/or `ASSIGNEE_ID_FK` → `USER.DISPLAY_NAME`; "Unassigned" = both null | R |
+| Age, SLA chip | `DETECTED_TIME`, `SLA_DUE_TIME` | D |
+| Next action text | derived from `STATE` + `DISCREPANCY_TYPE` (UI copy) | D |
+| Drawer: rule link, "View source/target record" | `RECONCILIATION_RULE_ID_FK`, `RECONCILIATION_RESULT_ID_FK`, resource route | R |
+| Dispositions (Accept network, Accept record, Raise workorder, Approve exception) | `POST /recon-exceptions/{id}/actions/dispose` → `DISPOSITION`, `DISPOSITION_BY_FK`, `DISPOSITION_TIME`, `DISPOSITION_NOTE`, `WORK_ORDER_REFERENCE`, `EXCEPTION_EXPIRES_DATE`, `CLOSED_TIME` | A |
+| Assign | `POST …/actions/assign` → `OWNER_TEAM_ID_FK`, `ASSIGNEE_ID_FK` | A |
+
+**Owner · integration · mock.** Inventory owns the workflow row; the Reconciliation engine creates and auto-resolves exceptions; User Management supplies teams and people. Mocks: `MockReconciliationService.exceptions()`, `MockTeamService`, `MockUserService`.
+
+### 3.9 Rules list (`/discovery/reconcile/rules`)
+
+![Rules list](screenshots/rules.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Rules, Active, Awaiting review, Domains covered | `RECONCILIATION_RULE.STATUS` counts, distinct `DOMAIN_ID_FK` | D |
+| Rule name, code, origin | `NAME`, `CODE`, `ORIGIN` (MANUAL, AUTO_GENERATED, AI_SUGGESTED) | R |
+| Domain | `DOMAIN_ID_FK` | R |
+| Source · target | `SOURCE_DESCRIPTION`, `TARGET_DESCRIPTION` | R |
+| Type | `RULE_TYPE` | R |
+| Status chip | `STATUS` (DRAFT, REVIEW, APPROVED, ACTIVE, EXECUTING, SUSPENDED, RETIRED) | R |
+| Owner · reviewer | `OWNER_ID_FK`, `REVIEWER_ID_FK` → `USER.DISPLAY_NAME` | R |
+| Last updated, Last execution | `MODIFIED_TIME`; latest `RECONCILIATION_RUN_RULE` → `RECONCILIATION_RUN.ENDED_TIME` | R |
+| Priority | `PRIORITY` | R |
+| Create rule, Edit, Review actions | navigation to 3.10 / 3.11 | – |
+
+### 3.10 Rule definition (`/discovery/reconcile/rules/new`, `/rules/:id/edit`)
+
+![New rule](screenshots/rulenew.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Rule name, Domain, Source, Target, Rule type, Priority, Description | `RECONCILIATION_RULE.NAME`, `DOMAIN_ID_FK`, `SOURCE_DESCRIPTION`, `TARGET_DESCRIPTION`, `RULE_TYPE`, `PRIORITY`, `DESCRIPTION` | W |
+| Matching conditions rows (source field, operator, target field, AND/OR, add / remove) | `RECONCILIATION_RULE_CONDITION.SEQUENCE_NUMBER`, `CONNECTOR`, `SOURCE_FIELD_CODE`, `OPERATOR`, `TARGET_KIND`, `TARGET_FIELD_CODE`, `TARGET_LITERAL`; pick-lists from `RECONCILIATION_FIELD` | W |
+| Responsibilities: Owner, Reviewer, Approver, Executor | `OWNER_ID_FK`, `REVIEWER_ID_FK`, `APPROVER_ID_FK`, `EXECUTOR_ID_FK` (pickers from `USER`) | W |
+| Exception reviewer | `EXCEPTION_REVIEWER_TEAM_ID_FK` (picker from `TEAM`) | W |
+| Create rule (Draft) | `POST /recon-rules` → `STATUS = 'DRAFT'`, first `RECONCILIATION_RULE_EVENT` | W |
+
+**Gap.** The form offers a *person* as exception reviewer; the schema expects a team. Either change the picker to `TEAM` or add a person column; the team form matches the queue model on the Exceptions screen.
+
+### 3.11 Rule details (`/discovery/reconcile/rules/:id`)
+
+![Rule details](screenshots/ruledetails.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Header: name, code, domain, type, description, priority, status | `RECONCILIATION_RULE` | R |
+| Status banner "Responsible: … · Next action" | `STATUS` + `RECONCILIATION_RULE_TRANSITION.ACTOR_ROLE` for the next allowed move | D |
+| Owner / Reviewer / Approver / Executor cards | `*_ID_FK` → `USER.DISPLAY_NAME` | R |
+| Overview tab: source, target, rule type, origin, created, last updated | `SOURCE_DESCRIPTION`, `TARGET_DESCRIPTION`, `RULE_TYPE`, `ORIGIN`, `CREATED_TIME` + `CREATOR`, `MODIFIED_TIME` | R |
+| Rule logic tab | `RECONCILIATION_RULE_CONDITION` rendered as chains | R |
+| Responsibilities tab | roles + `EXCEPTION_REVIEWER_TEAM_ID_FK` → `TEAM.NAME` | R |
+| Lifecycle tab (stage rail, who / when) | `RECONCILIATION_RULE_EVENT.FROM_STATUS`, `TO_STATUS`, `ACTION`, `ACTOR_ID_FK`, `EVENT_TIME`, `NOTE` | R |
+| Execution tab | `RECONCILIATION_RUN_RULE.MATCHED_COUNT`, `EXCEPTION_COUNT`, `DURATION_MS` + `RECONCILIATION_RUN.STARTED_TIME` | R |
+| Exceptions tab | `RECONCILIATION_EXCEPTION` where `RECONCILIATION_RULE_ID_FK = id` | R |
+| Activity tab | `RECONCILIATION_RULE_EVENT` timeline | R |
+| Approve / Reject / Request changes / Activate / Suspend / Resume / Retire | `POST /recon-rules/{id}/actions/{verb}`; allowed set computed from `RECONCILIATION_RULE_TRANSITION` × caller role; appends an event | A |
+
+**Owner · integration · mock.** Inventory. Only ACTIVE ↔ EXECUTING flips come from the engine. `MockRuleService` derives `allowedActions` from the seeded transition table.
+
+### 3.12 Discovery reports (`/discovery/reports`, `/discovery/reports/:id`)
+
+![Discovery reports](screenshots/discoveryreports.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| KPI tiles (trust index, open discrepancies, SLA breaches, coverage, automation rate, cost of drift) | `DOMAIN_TRUST_SNAPSHOT` series, `RECONCILIATION_EXCEPTION` aggregates | D |
+| Needs attention list | findings computed by each report definition (UI logic over the same read models) | D |
+| Trust index measured and projected | `DOMAIN_TRUST_SNAPSHOT.TRUST_INDEX_PERCENT` last 30 days | R |
+| Report library cards (audience, code, name, question) | `REPORT_DEFINITION.AUDIENCE`, `CODE`, `NAME`, `QUESTION`, `IS_FEATURED`, `MODULE = 'DISCOVERY'` | R/W |
+| Report view: run / export, run history | `POST /reports/definitions/{id}/actions/run`; `REPORT_RUN.STATUS`, `FORMAT`, `FILE_REFERENCE`, `COMPLETED_TIME` | A / R |
+
+**Owner · integration · mock.** Catalogue is Inventory; runs and files come from the Reporting service. `MockReportService` (run → COMPLETED with a stub file).
 
 
 ---
 
-## 5. Table-by-table matrix (all 106 tables)
+## 4. Inventory screens
 
-Owner values: **Inventory** (written through Inventory API), **Inventory (seeded catalog)** (global reference rows shipped with the schema), **User Management (CDC copy)**, **Shared master data (validate)**, **Integration: Discovery / Reconciliation / Reporting service** (pipelines write, UI reads), **Integration layer (registry)**, **Passive Inventory (proxy only)**.
+### 4.1 Inventory home (`/inventory`)
+
+![Inventory home](screenshots/home.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Locations (central / regional / edge) | `SITE.CATEGORY` counts | D |
+| Network elements, verified on the network | `NETWORK_ELEMENT` count; `RECONCILIATION_STATE = 'VERIFIED'` | D |
+| Links by layer, Services by type | `LINK.LAYER`, `SERVICE_INSTANCE.SERVICE_TYPE` counts | D |
+| Where each record came from | `NETWORK_ELEMENT.RECORD_SOURCE` (DISCOVERED, PLANNED_CIQ, MANUAL, EMS) | D |
+| How recently it was verified | `NETWORK_ELEMENT.LAST_VERIFIED_TIME` bands | D |
+| Network elements by class | `NETWORK_ELEMENT.NETWORK_ELEMENT_CLASS` → `NETWORK_ELEMENT_CLASS.NAME` | D |
+| Recently discovered grid | `NETWORK_ELEMENT` ordered by `CREATED_TIME`: name, `MANAGEMENT_IP`, `PRODUCT_MODEL.MODEL`, `SERIAL_NUMBER`, `VENDOR.NAME`, `SITE.CODE`, `RECORD_SOURCE`, `RECONCILIATION_STATE` | R |
+
+**Owner · integration · mock.** Inventory read model. `MockNetworkElementService.summary()`.
+
+### 4.2 Location (`/inventory/location`) and Site create
+
+![Location](screenshots/location.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Total locations, datacenters, PoPs, sites with status splits | `SITE.SITE_TYPE_ID_FK` → `SITE_TYPE`, `SITE.STATUS` (PLANNED, IN_PROGRESS, ON_AIR, FAILED, DECOMMISSIONED) | D |
+| Network hierarchy (Datacenters → Circles → PoPs → Sites) | `OPERATIONAL_AREA` (CIRCLE level) → `SITE.OPERATIONAL_AREA_ID_FK`; `SITE.PARENT_SITE_ID_FK` for PoP → site | D |
+| Circle picker, search PoP / site, search node / IP | `OPERATIONAL_AREA.NAME`; `SITE.CODE`, `NAME`; `NETWORK_ELEMENT.NETWORK_ELEMENT_NAME`, `MANAGEMENT_IP` | R |
+| Coverage by circle (DC, PoP, sites, on-air %, failed) | `SITE` grouped by `OPERATIONAL_AREA_ID_FK` and `SITE_TYPE` | D |
+| Site create form (type, category, geography cascade, address, lat / long, environment, rollout stage, landlord, lease end) | `SITE.SITE_TYPE_ID_FK`, `CATEGORY`, `GEOGRAPHY_LEVEL4_ID_FK` (cascade through `GEOGRAPHY_LEVEL1..3`), `ADDRESS`, `POSTAL_CODE`, `LATITUDE`, `LONGITUDE`, `ENVIRONMENT`, `ROLLOUT_STAGE`, `LANDLORD`, `LEASE_END_DATE`, `OPERATIONAL_AREA_ID_FK` | W |
+
+**Owner · integration · mock.** Inventory; geography and operational areas pending a master-data owner (CDC if one exists). `MockSiteService`, `MockReferenceService`.
+
+### 4.3 Site details (`/inventory/location/site/:id`)
+
+![Site details](screenshots/site.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Status chips (On-air, Edge, Fully reconciled) | `SITE.STATUS`, `CATEGORY`; reconciled = no open `RECONCILIATION_EXCEPTION` for NEs at the site | D |
+| Name, Site type, Location ID, Address, Zone, State, City, Coordinates | `SITE.NAME`, `SITE_TYPE.NAME`, `SITE.CODE`, `ADDRESS`, `OPERATIONAL_AREA` (ZONE), `GEOGRAPHY_LEVEL1.GEOGRAPHY_NAME`, `GEOGRAPHY_LEVEL2.GEOGRAPHY_NAME`, `LATITUDE` / `LONGITUDE` | R/W |
+| Network elements, Discovered, Drifted, Not discovered | `NETWORK_ELEMENT` at `SITE_ID_FK`: count, `RECORD_SOURCE`, `RECONCILIATION_STATE` | D |
+| Links terminating (LLDP · OSPF · BGP) | `LINK.A_NETWORK_ELEMENT_ID_FK` / `Z_…` of the site's NEs, by `LAYER` | D |
+| Capex committed, Opex run rate | **not in this database** → Open/CoPEX API (section 4.5) | Ext |
+| Attention tab (issues) | `SITE_ISSUE.ISSUE_KIND`, `CATEGORY`, `REASON`, `RAISED_TIME`, `RESOLVED_TIME`, `OWNER_TEAM_ID_FK` → `TEAM.NAME` | R/W |
+| Network elements tab (Router / Switch / DWDM tabs; status, name, IP, model, OS, serial, vendor, rack · U, source) | `NETWORK_ELEMENT` + `NETWORK_ELEMENT_CLASS`, `PRODUCT_MODEL.MODEL`, `OS_VERSION`, `SERIAL_NUMBER`, `VENDOR.NAME`, `RACK.CODE`, `RACK_UNIT_START`, `RECORD_SOURCE`, `RECONCILIATION_STATE` | R |
+| Contacts (not visible in the shot; on the details panel) | `SITE_CONTACT.CONTACT_ROLE`, `CONTACT_NAME`, decrypted phone / email | R/W |
+
+**Owner · integration · mock.** Inventory; Open/CoPEX for the two finance KPIs; User Management for issue owner teams. `MockSiteService` + `MockCopexService.summary(siteId)`.
+
+### 4.4 Facility (`/inventory/location/site/:id/details`)
+
+![Facility](screenshots/sitedetails.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Power in use, capacity, AC / DC split | `POWER_FEED.KIND`, `RATING_KW`, `LOAD_KW`, `STATUS` | R/W |
+| Rack space (U used / free), Building (racks, floors, rooms) | `RACK.HEIGHT_RACK_UNITS`; used U from `NETWORK_ELEMENT.RACK_UNIT_START` / `END`; `FLOOR`, `ROOM` counts | D |
+| Ports in use / free, port classes, by rack | `PORT.USAGE_STATE`, `MEDIA`, `SPEED_MBPS` for NEs at the site, grouped by `RACK` | D |
+| Power feed table (feed, type, source, rating, load, utilisation, status) | `POWER_FEED.CODE`, `KIND`, `SOURCE`, `RATING_KW`, `LOAD_KW`, `STATUS` | R/W |
+| Load last 24 hours chart | not stored (performance data belongs to PM) | Ext |
+| Where the power goes, Backup (DG set, battery bank), PUE | DG / battery = power units → `EXTERNAL_RESOURCE` (class `POWER_UNIT`) + Passive Inventory API for rating / autonomy / last test | Ext |
+| Floors, rooms and racks table (rack, floor · room, role, height, used, draw) | `RACK.CODE`, `ROOM.NAME`, `FLOOR.NAME`, `RACK.ROLE`, `HEIGHT_RACK_UNITS`, `POWER_BUDGET_KW`; used from NE placements | R/W |
+
+**Owner · integration · mock.** Inventory for feeds, floors, rooms, racks; **Passive Inventory** for power units (DG, battery) and their tests; PM for the 24-hour load. `MockSiteService.facility()` + `MockPassiveService.powerUnits(siteId)`.
+
+### 4.5 Capex and Opex (`/inventory/location/site/:id/capex`, `/opex`)
+
+![Capex](screenshots/capex.jpg)
+
+| UI element | Data | Mode |
+|---|---|---|
+| Approved budget, committed, paid, headroom, cost per element, AFE, FY | Open/CoPEX: capex plan header (site id, financial year, AFE number, approved amount, currency) | Ext |
+| Commitment stage and category bars | Open/CoPEX: capex lines aggregated by state and category | Ext |
+| Line items (item, category, vendor · PO, qty, unit cost, amount, stage, linked elements) | Open/CoPEX: capex lines; **linked elements are `RESOURCE.ID` / `NETWORK_ELEMENT` names supplied by Inventory** | Ext |
+| Opex: monthly budget, run rate, contract lines, 12-month actuals | Open/CoPEX: opex plan, lines, monthly actuals | Ext |
+
+**Owner · integration · mock.** Entirely **Open/CoPEX** (the `CAPEX_*` / `OPEX_*` tables were removed in v5). Inventory contributes `SITE.ID`, `RESOURCE.ID` and `VENDOR` ids. Until the module publishes its API: `MockCopexService.capexPlan(siteId, fy)`, `opexPlan(siteId, fy)`, `capexLinesForResource(resourceId)` (see 6.2). The screens keep working unchanged.
+
+### 4.6 Site equipment (`/inventory/location/site/:id/equipment`)
+
+![Site equipment](screenshots/siteequipment.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Cable view header (site, fibre type, cores) | `SITE`; incoming fibre = `EXTERNAL_RESOURCE` (FIBER_SPAN / FIBER_CABLE, fiber app) | R / Ext |
+| Equipment cards (router, switch, port count, connections) | `NETWORK_ELEMENT` at the site, `PORT` count, `LINK` (PHYSICAL) count | R |
+| IN-FDMS / OUT-FDMS port strips | passive ODF positions → `EXTERNAL_RESOURCE` (class `PASSIVE_PORT`) via Passive Inventory | Ext |
+| IN → OUT mapping, strand colours, Connect / Add equipment | physical `LINK` rows (`LAYER = 'PHYSICAL'`, `A_PORT_ID_FK`, `Z_PORT_ID_FK`) for device-to-device; patch cords to ODF positions belong to Passive Inventory | R/W / Ext |
+
+**Owner · integration · mock.** Inventory for equipment and device-side links; **Passive Inventory** for ODF positions and patch cords; fiber app for spans. `MockNetworkElementService` + `MockPassiveService.ports(assetId)`, `patchCords(portId)`.
+
+### 4.7 Node view (`/inventory/node/:name`)
+
+![Node view](screenshots/node.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Header (name, status, class chip, management IP), NEMI software, region, shelves, commissioned | `NETWORK_ELEMENT.NETWORK_ELEMENT_NAME`, `OPERATIONAL_STATUS`, `NETWORK_ELEMENT_CLASS`, `MANAGEMENT_IP`, `OS_VERSION`, `OPERATIONAL_AREA`, `EQUIPMENT_COMPONENT` (SHELF) count, `CREATED_TIME` / `RESOURCE_ASSET.PURCHASE_DATE` | R |
+| Health score, availability, ICMP / NTP strips | `NETWORK_ELEMENT_HEALTH.REACHABILITY`, `AVAILABILITY_24H_PERCENT`, `NTP_STATUS` (latest only; 24-h history belongs to PM) | R / Ext |
+| Node identity (NE name, product type, software, subnet, oldest module) with "Inventory sheet" source | `RESOURCE_FIELD_PROVENANCE.FIELD_CODE`, `FIELD_VALUE`, `SOURCE` | R |
+| Degree summary (optical degrees, spare) | `LINK` rows with optical `LAYER` (OCH, OMS) from this NE; `NETWORK_ELEMENT_OPTICAL_DETAIL.ROADM_DEGREES` | R |
+| Worst signal margin, monitored channels, active alarms | performance and fault data — **not in this database** (PM / FM systems) | Ext |
+| Hardware & shelves tab | `EQUIPMENT_COMPONENT` tree (`COMPONENT_CLASS`, `SLOT_POSITION`, `PART_NUMBER`, `SERIAL_NUMBER`, `STATUS`) | R |
+| Topology & degrees, Optical channels tabs | `LINK` (optical layers), `SERVICE_INSTANCE` (WAVELENGTH, OTN_CIRCUIT) | R |
+
+**Owner · integration · mock.** Inventory + Discovery (provenance, health); PM / FM for margins and alarms (out of scope of this database). `MockNetworkElementService`; alarms remain UI-mock only.
+
+### 4.8 Physical Resources (`/inventory/physical`)
+
+![Physical Resources](screenshots/physical.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Class tabs (Router, Switch, DWDM, eNodeB, gNodeB) with counts | `NETWORK_ELEMENT_CLASS` (catalog) × `NETWORK_ELEMENT.NETWORK_ELEMENT_CLASS` counts | R |
+| Stock chips (planned / in store / deployed / faulty) | `NETWORK_ELEMENT.STOCK_STATE` | D |
+| Status chip (Verified, Drifted, Stale, Missing, Not discovered) | `NETWORK_ELEMENT.RECONCILIATION_STATE` | R |
+| Name / IP | `NETWORK_ELEMENT_NAME`, `MANAGEMENT_IP` | R |
+| Model / Vendor | `PRODUCT_MODEL.MODEL`, `VENDOR.NAME` | R |
+| OS version, Serial number | `OS_VERSION`, `SERIAL_NUMBER` | R |
+| Region | `SITE.OPERATIONAL_AREA_ID_FK` → REGION ancestor | R |
+| Ports (used / total bar) | `PORT.USAGE_STATE` counts | D |
+| Location | `SITE.CODE` | R |
+| System description | `RESOURCE_FIELD_PROVENANCE` (`sysDescr`) or `PRODUCT_MODEL.DESCRIPTION` | R |
+| Row actions: View details, Node view, Move, Decommission | navigation; `POST /network-elements/{id}/actions/move` (`NETWORK_ELEMENT_MOVEMENT`, `NETWORK_ELEMENT_STOCK_TRANSITION`), `…/actions/decommission` (`DECOMMISSIONED_TIME`, `DECOMMISSION_REASON`, `DECOMMISSIONED_BY_FK`) | A |
+| Filter panel (vendor, model, region, status, source) | same columns | R |
+
+**Owner · integration · mock.** Inventory (discovery writes discovered rows). `MockNetworkElementService`. **Gap:** the UI has 6 class tabs, the schema 25 classes; drive the tab bar from `NETWORK_ELEMENT_CLASS.SORT_ORDER` grouped by `NETWORK_ELEMENT_CLASS_DOMAIN`.
+
+### 4.9 Element (`/inventory/resource/:name`)
+
+![Element](screenshots/resource.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Header chips (Verified, Active · Physical, Deployed, Past end of sale), IP, serial, OS, rack · U | `RECONCILIATION_STATE`, `RESOURCE_CLASS`, `STOCK_STATE`, `PRODUCT_MODEL.END_OF_SALE_DATE`, `MANAGEMENT_IP`, `SERIAL_NUMBER`, `OS_VERSION`, `RACK.CODE`, `RACK_UNIT_START` / `END` | R |
+| Ports used / free / headroom | `PORT.USAGE_STATE` | D |
+| Components (failed, degrading) | `EQUIPMENT_COMPONENT.STATUS` | D |
+| Adjacencies (LLDP / OSPF / BGP) | `LINK.LAYER` counts where A or Z is this NE | D |
+| Services (currently down) | `SERVICE_ENDPOINT.NETWORK_ELEMENT_ID_FK` → `SERVICE_INSTANCE.STATUS` | D |
+| Open alarms | FM system — not in this database | Ext |
+| Identity and provenance table (field, value, source chip) | `RESOURCE_FIELD_PROVENANCE.FIELD_CODE` → `RECONCILIATION_FIELD.LABEL`, `FIELD_VALUE`, `SOURCE` (SCOPE, DERIVED_SYS_OBJECT_ID, DEVICE_COLLECTOR, HARDWARE_COLLECTOR, LINK_COLLECTOR, SERVICE_COLLECTOR, MANUAL, WORK_ORDER); "ERP · not integrated" = no `RESOURCE_ASSET.WARRANTY_END_DATE` | R |
+| Support position (end of sale, end of support, warranty / AMC, purchased, PO) | `PRODUCT_MODEL.END_OF_SALE_DATE`, `END_OF_LIFE_DATE`; `RESOURCE_ASSET.WARRANTY_END_DATE`, `MAINTENANCE_CONTRACT_END_DATE`, `PURCHASE_DATE`, `PURCHASE_ORDER_NUMBER` | R |
+| Impact if this element fails | `RESOURCE_RELATIONSHIP` (`DEPENDS_ON`, `BACKHAULED_BY`, `SERVED_BY`) + `LINK` neighbours + `SERVICE_ENDPOINT` | D |
+| Hardware tab | `EQUIPMENT_COMPONENT` tree with `PRODUCT_MODEL`, `PART_NUMBER`, `SERIAL_NUMBER` | R/W |
+| Interfaces tab | `PORT` + `PORT_IP_ADDRESS`, `PORT_VLAN`, `VRF` | R/W |
+| Neighbours tab | `LINK` + `LINK_PROTOCOL_ATTRIBUTE` | R |
+| Services tab | `SERVICE_ENDPOINT` → `SERVICE_INSTANCE` | R |
+| Alarms, Configuration tabs | FM / config management — not in this database | Ext |
+| History tab | `NETWORK_ELEMENT_MOVEMENT` (from / to state, sites, work order, moved time) | R |
+| Class detail panel (router role, IGP, MPLS …) | `NETWORK_ELEMENT_IP_MPLS_DETAIL` (or the detail table of the class) | R/W |
+
+**Owner · integration · mock.** Inventory; Discovery for provenance and health; FM / config outside scope. `MockNetworkElementService.get(id)` returns the class detail as a discriminated union.
+
+### 4.10 Virtual Resources (`/inventory/virtual`, `/virtual/details`, `/virtual/lifecycle`)
+
+![Virtual Resources](screenshots/virtual.jpg)
+
+![VNF view](screenshots/vnfdetails.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| NF type cards (vDU, CU-CP, CU-UP, Others; ready / in progress / planned / failed) | `NETWORK_ELEMENT` where `IS_VIRTUAL = 1`, grouped by `NETWORK_ELEMENT_CORE_DETAIL.NETWORK_FUNCTION_TYPE_CODE` (or RAN split function for vDU / CU) and `OPERATIONAL_STATUS` / `STOCK_STATE` | D |
+| Status, NF name, Type | `OPERATIONAL_STATUS`, `NETWORK_ELEMENT_NAME`, NF type | R |
+| Network service | `SERVICE_INSTANCE` linked through `SERVICE_ENDPOINT` | R |
+| Subcloud | `NETWORK_ELEMENT_VIRTUAL_INSTANCE.CLOUD_CLUSTER_ID_FK` → `CLOUD_CLUSTER.CODE` | R |
+| Technology | `RESOURCE_TECHNOLOGY` → `TECHNOLOGY.CODE` | R |
+| Host | `NETWORK_ELEMENT_VIRTUAL_INSTANCE.HOST_NETWORK_ELEMENT_ID_FK` → host `NETWORK_ELEMENT_NAME` | R |
+| Source chip (EMS, Planned · CIQ) | `RECORD_SOURCE` | R |
+| View: identity (host site, reference id, NE name, DU element id), hardware (config, model, material id, serial), location, vendor, technology & coverage, network & interface | `NETWORK_ELEMENT` + `NETWORK_ELEMENT_VIRTUAL_INSTANCE.INSTANCE_UUID`, `DESCRIPTOR_ID`, `DESCRIPTOR_VERSION`; host `NETWORK_ELEMENT_SERVER_DETAIL`; `SITE.LATITUDE` / `LONGITUDE`; `RESOURCE_ATTRIBUTE` for plan id, material id, strategy (custom attributes) | R |
+| Lifecycle operation button / lifecycle screen | orchestrator action; `INSTANTIATION_STATE` reflects the result | A (Ext) |
+
+**Owner · integration · mock.** Inventory for the records; **orchestrator** (to validate) for instantiation state and lifecycle operations. `MockVirtualService` flips `INSTANTIATION_STATE` locally. **Gap:** vDU / CU-CP / CU-UP are RAN split functions; in the schema they are `GNB_DU` / `GNB_CU` classes with `IS_VIRTUAL = 1`, not `CORE_NF`.
+
+### 4.11 Cell 4G / 5G details (`/inventory/virtual/cell-4g-details`, `/cell-5g-details`)
+
+![Cell 5G details](screenshots/cell5gdetails.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Header (cell name, status, NR band, PCI) | `RADIO_CELL.CELL_NAME`, `CELL_STATUS`, `BAND_CODE`, `PHYSICAL_CELL_ID` | R |
+| Coverage site, bandwidth, cell identity, Rx paths per RU | `RADIO_SECTOR` / `SITE.CODE`, `BANDWIDTH_MHZ`, `CELL_IDENTITY`; RU paths from `CELL_RADIO_UNIT` → RU `NETWORK_ELEMENT` | R |
+| General & site (host site, NE id / name, lat / long) | `NETWORK_ELEMENT_ID_FK` → node, `SITE.LATITUDE` / `LONGITUDE` | R |
+| Cell & DU identifiers (DU id, cell identity, cell number, name) | `RADIO_CELL.LOCAL_CELL_ID`, `CELL_IDENTITY`, node `NETWORK_ELEMENT_RAN_DETAIL.NODE_ID` | R |
+| Radio frequency (PCI, EARFCN DL / UL, band, bandwidth, RF branches, Rx paths) | `PHYSICAL_CELL_ID`, `ARFCN_DOWNLINK`, `ARFCN_UPLINK`, `BAND_CODE`, `BANDWIDTH_MHZ`, `MIMO_MODE` | R/W |
+| PRACH & network config (RSI, TAC, SSB, max Tx power …) | `ROOT_SEQUENCE_INDEX`, `LAC_TAC`, `MAX_TRANSMIT_POWER_DBM`; the remaining vendor parameters → `RESOURCE_ATTRIBUTE` | R/W |
+| Hardware & equipment (RU model, vendor, antenna vendor / model, tilts, azimuth, RET) | `CELL_RADIO_UNIT` → RU `NETWORK_ELEMENT` + `PRODUCT_MODEL`; `CELL_ANTENNA` → `ANTENNA.VENDOR_ID_FK`, `PRODUCT_MODEL_ID_FK`, `ELECTRICAL_TILT_DEG`, `MECHANICAL_TILT_DEG`, `AZIMUTH_DEG`, `REMOTE_ELECTRICAL_TILT_CAPABLE` | R/W |
+| PLMNs (not shown on the shot; on the 4G page) | `RADIO_CELL_PLMN` → `PLMN.MCC`, `MNC`, `IS_PRIMARY` | R |
+
+**Owner · integration · mock.** Inventory; EMS discovery writes cell parameters; **Passive Inventory** for the antenna mount (`ANTENNA.MOUNT_EXTERNAL_RESOURCE_ID_FK`). `MockRanService`. **Gap:** these screens live under Virtual Resources; the proposed RAN Inventory module gives them a home under Resources.
+
+### 4.12 Passive Infrastructure (`/inventory/passive` and element pages)
+
+![Passive Infrastructure — Racks](screenshots/passive_rack.jpg)
+
+![ODF element](screenshots/passive_odf_detail.jpg)
+
+| Tab / page | Data today (v5) | Owner | Mode |
+|---|---|---|---|
+| Summary cards (passive records, fiber core fill, spans impaired, ODF fill, rack fill, power tests due) | counts of `EXTERNAL_RESOURCE` by `OBJECT_TYPE`; rack fill from `RACK` + NE placements; fibre, ODF fill and power tests from Passive Inventory / fiber app | mixed | D / Ext |
+| **Racks** tab and `/passive/rack/:id` (status, rack, site, height, U used / free, elevation, power, cooling) | `RACK.CODE`, `SITE.CODE`, `HEIGHT_RACK_UNITS`, `POWER_BUDGET_KW`; elevation from `NETWORK_ELEMENT.RACK_UNIT_START` / `END` (router / switch) and passive occupants from Passive proxies | Inventory (validate) | R/W |
+| **ODF** tab and `/passive/odf/:id` (frame, ports total / used / free, trays, model, photos) | `EXTERNAL_RESOURCE` (class `PASSIVE_ASSET`, `OBJECT_TYPE = PASSIVE_ASSET`) gives id, label, last sync; every attribute on the page comes from **Passive Inventory API**; photos from the same module | Passive Inventory | Ext |
+| **Power plant** tab and `/passive/power/:id` (DG set, rectifier, battery; rating, runtime, last test) | `EXTERNAL_RESOURCE` (class `POWER_UNIT`) + Passive API (unit, tests, overdue flag); linked controller = `NETWORK_ELEMENT_POWER_DETAIL.POWER_UNIT_EXTERNAL_RESOURCE_ID_FK` | Passive Inventory | Ext |
+| **Splice closures**, **Ducts**, **Fiber spans** tabs and pages | `EXTERNAL_RESOURCE` (`OBJECT_TYPE` = SPLICE_CLOSURE, DUCT, FIBER_SPAN; `SYSTEM_TYPE = FIBER_INVENTORY`) + fiber app deep link (`EXTERNAL_SYSTEM.BASE_URL`) | Fiber application | Ext |
+| **Patch cords** tab and `/passive/cord/:id` (A / Z port, type, length, loss) | Passive Inventory API (`PATCH_CORD` object type); device-side ports resolved against `PORT` | Passive Inventory | Ext |
+
+**Owner · integration · mock.** Racks stay Inventory for now; everything else on this screen is **Passive Inventory** or the **fiber application**. `MockPassiveService` returns proxy lists from `EXTERNAL_RESOURCE` plus a mocked detail per object type so all seven pages keep rendering; the real API replaces the detail calls one object type at a time.
+
+### 4.13 Links (`/inventory/links`)
+
+![Links](screenshots/links.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Layer cards and tabs (LLDP, OSPF, BGP, ISIS) | `LINK.LAYER` counts → `LINK_LAYER.NAME`, `CATEGORY` | D |
+| Source IP, Source NE, Source interface, ifalias | `LINK.A_IP_ADDRESS`, `A_NETWORK_ELEMENT_ID_FK` → name, `A_PORT_ID_FK` → `PORT.NAME`, `PORT.DESCRIPTION` | R |
+| Destination NE / interface / IP, remote name | `Z_NETWORK_ELEMENT_ID_FK`, `Z_PORT_ID_FK`, `Z_IP_ADDRESS`, `Z_REMOTE_NAME` | R |
+| Link name | `LINK.LINK_NAME` | R/W |
+| Status, first / last seen, source | `STATUS`, `FIRST_SEEN_TIME`, `LAST_SEEN_TIME`, `RECORD_SOURCE` | R |
+| Protocol columns (AS numbers, OSPF area, neighbour state, IS-IS level) | `LINK_PROTOCOL_ATTRIBUTE` | R |
+| Microwave hop fields (when present) | `LINK_MICROWAVE_ATTRIBUTE` | R/W |
+| NE filter (`?ne=`) | `A_` / `Z_NETWORK_ELEMENT_ID_FK` | R |
+
+**Owner · integration · mock.** Inventory; discovery writes the adjacency layers. `MockLinkService`. **Gap:** only 4 routing / L2 layers are shown; the catalog has 45 layers in 9 categories (physical, tunnel, optical, microwave, fronthaul, RAN and core interfaces) that need tabs.
+
+### 4.14 Services (`/inventory/services`)
+
+![Services](screenshots/services.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Domain cards and tabs (RAN, Transport, Core, IP/MPLS) with type splits | `SERVICE_INSTANCE.DOMAIN_ID_FK`, `SERVICE_TYPE` counts | D |
+| Sub-type chips (S1/NG, X2/Xn) | `SERVICE_TYPE` (or `LINK_LAYER` for RAN interfaces — see gap) | R |
+| Status | `SERVICE_INSTANCE.STATUS` | R |
+| Interface, Bearer ID | `REFERENCE_KIND` / `REFERENCE_VALUE` (BEARER_ID, CIRCUIT_ID, APN_ID, VC_ID) | R |
+| Source / Destination IP, NE, interface, admin and operational status | `SERVICE_ENDPOINT.ENDPOINT_ROLE` (SOURCE / DESTINATION / PE / CE), `IP_ADDRESS`, `NETWORK_ELEMENT_ID_FK`, `PORT_ID_FK`, `ADMIN_STATUS`, `OPERATIONAL_STATUS` | R |
+| VRF, ERP number (search) | `VRF.NAME` via `VRF.SERVICE_INSTANCE_ID_FK`; `REFERENCE_KIND = 'ERP_NUMBER'` | R |
+
+**Owner · integration · mock.** Inventory; LCM / discovery write discovered services. `MockServiceService`. **Gap:** S1-MME, N2, N3 rows are 3GPP interfaces; in v5 those are `LINK` rows with `LAYER` S1_MME / NG_C / NG_U, while `SERVICE_INSTANCE` covers L3VPN, backhaul, wavelength, APN and voice. The RAN tab should read `LINK` (RAN_INTERFACE category).
+
+### 4.15 Inactive inventory (`/inventory/inactive`)
+
+![Inactive inventory](screenshots/inactive.jpg)
+
+| UI element | Table · column(s) | Mode |
+|---|---|---|
+| Decommissioned NE, still answering discovery, retired links, retired services, oldest record, recovered to store | `NETWORK_ELEMENT.STOCK_STATE = 'DECOMMISSIONED'`, `LAST_SEEN_TIME` after `DECOMMISSIONED_TIME`; `LINK.RECORD_STATE = 'INACTIVE'`; `SERVICE_INSTANCE.RECORD_STATE`; `NETWORK_ELEMENT_MOVEMENT` (RECOVER) | D |
+| Class tabs (Router … gNodeB, L2VPN, L3VPN) | `NETWORK_ELEMENT_CLASS`; `SERVICE_TYPE` | R |
+| Name, Model / Vendor, Serial, Last IP / location | `NETWORK_ELEMENT` + `PRODUCT_MODEL`, `VENDOR`, `MANAGEMENT_IP`, `SITE.CODE` | R |
+| Decommissioned date · work order, Reason, Authorised by | `DECOMMISSIONED_TIME`, `WORK_ORDER_REFERENCE`, `DECOMMISSION_REASON`, `DECOMMISSIONED_BY_FK` → `USER.DISPLAY_NAME` | R |
+| Discovery chip (Silent / Still answering) | `SCAN_TARGET.LAST_SYNC_TIME` for the NE's IP | D |
+| Row action: recover to store, open exception | `POST /network-elements/{id}/actions/move` (DECOMMISSIONED → IN_STORE, RECOVER); link to `RECONCILIATION_EXCEPTION` (ZOMBIE state) | A |
+
+**Owner · integration · mock.** Inventory. Derived from the NE / link / service mock stores.
+
+### 4.16 Inventory reports (`/inventory/reports`, `/inventory/reports/:id`)
+
+Same structure as 3.12 with `REPORT_DEFINITION.MODULE = 'INVENTORY'` (Hardware lifecycle risk reads `PRODUCT_MODEL.END_OF_SALE_DATE` / `END_OF_LIFE_DATE` against `NETWORK_ELEMENT` and `EQUIPMENT_COMPONENT`).
+
+
+---
+
+## 5. Integration dependencies per module
+
+| Module | Screens that depend on it | What is exchanged | Mock that is enough until the API exists |
+|---|---|---|---|
+| **Open / CoPEX** | Capex, Opex (4.5); the two finance KPIs on Site details (4.3) | out: `SITE.ID`, `RESOURCE.ID`, `VENDOR.ID`, financial year · in: plan header, lines, monthly actuals | `MockCopexService` — `capexPlan(siteId, fy)`, `opexPlan(siteId, fy)`, `capexLinesForResource(resourceId)`, `summary(siteId)` |
+| **Passive Inventory** | Passive Infrastructure ODF / Power plant / Patch cords pages (4.12); Facility backup panel (4.4); Site equipment ODF strips (4.6); antenna mount on cells (4.11); power controller detail (4.9) | out: site id, rack code, port ids · in: proxy list (always local in `EXTERNAL_RESOURCE`), full attributes, tests, occupancy, deep link | `MockPassiveService` — `proxies(siteId, objectType)`, `asset(externalId)`, `ports(assetId)`, `rackOccupancy(rackCode)`, `powerUnits(siteId)`, `powerUnit(externalId)`, `patchCords(portId)`, `deepLink(externalId)` |
+| **Fiber application** | Splice closures, Ducts, Fiber spans pages (4.12); incoming fibre on Site equipment | in: proxies (`SYSTEM_TYPE = FIBER_INVENTORY`) and deep link | same `MockPassiveService` with fiber object types |
+| **User Management** | Rules roles (3.10, 3.11); Exceptions owner / assignee (3.8); Site issues owner (4.3); Inactive "Authorised by" (4.15) | in: CDC copy of `USER` and `TEAM`; by API: group members, role claims | `MockUserService.list()`, `roles(id)`; `MockTeamService.list()`, `members(teamId)` — static lists |
+| **Discovery service (NiFi / Spark)** | Scan jobs, Scan targets, Target transcript (3.2 – 3.4); Insights adapters / failures / jobs cards (3.1); provenance and health on Element and Node view (4.7, 4.9) | out: job definitions, run / hold / resume · in: runs, target outcomes, step results, health, provenance | `MockScanJobService` with a simulated scheduler |
+| **Reconciliation service** | Overview, Jobs, Results (3.5 – 3.7); exception creation and auto-resolve (3.8); ACTIVE ↔ EXECUTING on rules (3.11); cycles on Insights | out: job definitions, run · in: runs, results, fields, exceptions | `MockReconciliationService` with a simulated run |
+| **Reporting service** | Report runs and downloads (3.12, 4.16); trust trend on Insights | out: run request · in: run status, file, KPI series | `MockReportService`, `MockInsightsService` |
+| **Orchestrator** (validate) | Lifecycle operation on the VNF view (4.10) | out: instance id, operation · in: instantiation state | `MockVirtualService` |
+| **PM / FM systems** (out of scope) | Node view margins, alarms, 24-h availability; Element alarms and configuration; Facility 24-h load | in: telemetry and alarms | UI-mock only; not represented in this database |
+| **Master data** (validate) | Geography cascade and circle filters everywhere | in: `GEOGRAPHY_LEVEL1..4`, `OPERATIONAL_AREA` | `MockReferenceService` from the dummy rows |
+
+Screens that need **no other module** for their own data: Home, Location list, Site details (except finance KPIs and issue teams), Physical Resources, Element (except alarms), Links, Services, Inactive inventory, Rules, and the RAN cell pages (except antenna mounts).
+
+---
+
+## 6. Mock API catalogue
+
+Contracts are proposals. Each mock lives in `src/services/<module>/Mock<X>Service.ts` and is seeded from `src/mock/<module>`, mirroring the dummy data in `inventory_schema_v5.sql`. `ApiXService` implements the same interface; a screen never changes when the real endpoint arrives. Every mock applies paging, filtering, `rowVersion` conflicts and the lifecycle rules of the seeded transition tables.
+
+### 6.1 Inventory API mocks (own data)
+
+| Service | Key methods | Backing tables |
+|---|---|---|
+| `MockReferenceService` | `domains()`, `neClasses(domain?)`, `resourceClasses()`, `technologies()`, `frequencyBands(tech)`, `linkLayers()`, `serviceTypes()`, `siteTypes()`, `nfTypes()`, `discoverySteps(domain)`, `discrepancyTypes()`, `reconFields(class?)`, `ruleTransitions()`, `stockTransitions()`, `relationshipTypes()`, `relationshipRules()`, `externalObjectTypes()`, `vendors()`, `productModels(vendor?, class?)`, `geo(level, parent?)`, `operationalAreas()` | all seeded catalogs, `VENDOR`, `PRODUCT_MODEL`, `GEOGRAPHY_LEVEL1..4`, `OPERATIONAL_AREA` |
+| `MockSiteService` | `list(q)`, `get(id)`, `create`, `update`, `floors / rooms / racks / powerFeeds / contacts / issues (siteId)`, `facility(siteId)`, `rackElevation(rackId)`, `hierarchy()` | `SITE`, `FLOOR`, `ROOM`, `RACK`, `POWER_FEED`, `SITE_CONTACT`, `SITE_ISSUE` |
+| `MockNetworkElementService` | `summary()`, `list(q)`, `get(id)` (class detail union), `create`, `update`, `components(id)`, `ports(id)`, `health(id)`, `movements(id)`, `move(id, body)`, `decommission(id, body)`, `asset / attributes / technologies / provenance / externalRefs / relationships / impact (resourceId)` | `NETWORK_ELEMENT` + 11 detail tables, `EQUIPMENT_COMPONENT`, `PORT`, `PORT_IP_ADDRESS`, `PORT_VLAN`, `NETWORK_ELEMENT_HEALTH`, `NETWORK_ELEMENT_MOVEMENT`, `RESOURCE_*` |
+| `MockVirtualService` | `list(q)`, `instance(id)`, `clusters()`, `lifecycle(id, op)` | `NETWORK_ELEMENT_VIRTUAL_INSTANCE`, `CLOUD_CLUSTER` |
+| `MockRanService` | `cells(q)`, `cell(id)`, `sectors(siteId)`, `antennas(siteId)`, `plmns()`, `slices()` | `RADIO_CELL`, `RADIO_CELL_PLMN`, `CELL_ANTENNA`, `CELL_RADIO_UNIT`, `RADIO_SECTOR`, `ANTENNA`, `PLMN`, `NETWORK_SLICE` |
+| `MockLinkService` | `list(q)`, `get(id)`, `create`, `update` | `LINK`, `LINK_PROTOCOL_ATTRIBUTE`, `LINK_MICROWAVE_ATTRIBUTE` |
+| `MockServiceService` | `list(q)`, `get(id)` (endpoints embedded) | `SERVICE_INSTANCE`, `SERVICE_ENDPOINT` |
+| `MockIpamService` | `subnets(context?)`, `vrfs(neId)`, `vlans(neId)` | `IP_SUBNET`, `VRF`, `VLAN` |
+| `MockRuleService` | `list(q)`, `get(id)` (conditions, `allowedActions`), `create`, `update`, `action(id, verb, note)`, `events(id)`, `executions(id)` | `RECONCILIATION_RULE`, `_CONDITION`, `_EVENT`, `_TRANSITION`, `RECONCILIATION_RUN_RULE` |
+| `MockReportService` | `definitions(module)`, `run(defId, format)`, `runs(q)`, `file(runId)` | `REPORT_DEFINITION`, `REPORT_RUN` |
+| `MockInactiveService` | `list(kind, domain)` | derived from the NE / port / link / service stores |
+
+### 6.2 Other-module mocks (contract to be replaced by the module's real API)
+
+| Service | Methods that are enough for the current screens | Stands in for |
+|---|---|---|
+| `MockCopexService` (Open / CoPEX) | `summary(siteId)` → committed capex, opex run rate; `capexPlan(siteId, fy)` → header (AFE, approved amount, currency) + lines (description, category, vendor, PO, qty, unit cost, state, state date, linked resource ids); `opexPlan(siteId, fy)` → header + lines (category, supplier, contract, frequency, amount, state, due, end, escalation) + 12 monthly actuals; `capexLinesForResource(resourceId)` | removed `CAPEX_*` / `OPEX_*` tables; Capex and Opex screens; Site details finance KPIs |
+| `MockPassiveService` (Passive Inventory + fiber app) | `proxies(siteId, objectType)` from `EXTERNAL_RESOURCE`; `asset(externalId)` → type, code, site, rack, U range, vendor, model, serial, status, install date, ports (total / used / free), photos; `ports(assetId)`; `rackOccupancy(rackCode)`; `powerUnits(siteId)`, `powerUnit(externalId)` → kind, rating, runtime, last test, overdue; `patchCords(portId)`; `deepLink(externalId)` | removed `PASSIVE_ASSET`, `PASSIVE_ASSET_TYPE`, `PATCH_CORD`, `POWER_UNIT`, `POWER_UNIT_TEST`; the seven Passive pages; Facility backup panel |
+| `MockUserService` (User Management) | `list()`, `get(id)`, `roles(id)` | CDC copy of `USER` plus role claims |
+| `MockTeamService` (User Management groups) | `list()`, `members(teamId)` | CDC copy of `TEAM`; replaces `TEAM_MEMBER` |
+
+### 6.3 Integration-engine mocks
+
+| Service | Behaviour the mock must simulate | Backing tables |
+|---|---|---|
+| `MockScanJobService` | `run(jobId)` creates a `SCAN_RUN` in RUNNING, then after a delay writes run targets and step results and flips the status; `hold` / `resume` toggle `SCHEDULE_STATE`; targets keep a cached last outcome | `SCAN_JOB`, `SCAN_JOB_SCOPE`, `SCAN_TARGET`, `SCAN_RUN`, `SCAN_RUN_TARGET`, `SCAN_STEP_RESULT`, `COLLECTOR`, `CREDENTIAL_PROFILE` |
+| `MockReconciliationService` | `run(jobId)` creates a run, results, result fields and exceptions from the current mock inventory; `assign` / `dispose` update an exception and set `CLOSED_TIME` when resolved; `overview()` aggregates | `RECONCILIATION_JOB`, `_JOB_RULE`, `_RUN`, `_RUN_RULE`, `_RESULT`, `_RESULT_FIELD`, `RECONCILIATION_EXCEPTION`, `RECONCILIATION_STATE_MAP` |
+| `MockInsightsService` | derives every Insights card from the other mock stores; trust trend from `DOMAIN_TRUST_SNAPSHOT` | read models |
+| `MockIntegrationService` | `systems()`, `system(id)`, `proxies(systemId)`, `externalRefs(resourceId)` | `EXTERNAL_SYSTEM`, `EXTERNAL_RESOURCE`, `RESOURCE_EXTERNAL_REFERENCE` |
+
+---
+
+## 7. Gaps between the UI and the schema
+
+| # | Gap | Screens | What to change |
+|---|---|---|---|
+| 1 | UI has 4 domains (RAN, Core, Transport, IP/MPLS); schema has 9 `DOMAIN` rows | every domain filter | Load domains from the reference API; extend `DomainKey` |
+| 2 | UI has 6 NE class tabs; schema has 25 classes with detail tables | Physical Resources, Inactive | Drive tabs from `NETWORK_ELEMENT_CLASS` grouped by `NETWORK_ELEMENT_CLASS_DOMAIN` |
+| 3 | Insights regions (West, Southeast …) differ from `OPERATIONAL_AREA` circles | Insights | Use REGION-level `OPERATIONAL_AREA` rows |
+| 4 | Target transcript routes by hostname; targets are identified by IP (hostname nullable) | Scan targets | Route by `SCAN_TARGET.ID` |
+| 5 | Exception reviewer on the rule form is a person; schema has `EXCEPTION_REVIEWER_TEAM_ID_FK` | Rule definition | Picker from `TEAM` (queue model already visible on Exceptions) |
+| 6 | RAN "services" (S1-MME, N2, N3) are `LINK` rows of category RAN_INTERFACE in v5 | Services | RAN tab reads `LINK`, other tabs read `SERVICE_INSTANCE` |
+| 7 | Links screen shows 4 layers; catalog has 45 in 9 categories | Links | Tabs by `LINK_LAYER.CATEGORY` |
+| 8 | vDU / CU-CP / CU-UP are RAN split classes (`GNB_DU`, `GNB_CU`, `IS_VIRTUAL = 1`), not core NFs | Virtual Resources | Group by NE class for RAN and by `NETWORK_FUNCTION_TYPE` for core |
+| 9 | Cell pages sit under Virtual Resources | Cell 4G / 5G | Move under the RAN Inventory module |
+| 10 | Capex / Opex screens have no tables in v5 | Capex, Opex, Site details KPIs | `MockCopexService` now, Open/CoPEX API later |
+| 11 | ODF / power / patch cord / fibre pages show full attributes that v5 no longer stores | Passive Infrastructure, Facility, Site equipment | Proxy views + `MockPassiveService` now, Passive Inventory API later |
+| 12 | Alarms, signal margins, 24-h load / availability, configuration are PM / FM data | Node view, Element, Facility | Keep as UI mocks; not a schema concern |
+| 13 | Append-only trails (`NETWORK_ELEMENT_MOVEMENT`, `RECONCILIATION_RULE_EVENT`) have no triggers in v5 | Element History, Rule Activity | Application layer enforces append-only |
+
+---
+
+## 8. Table-by-table matrix (all 106 tables)
+
+Owner values as in section 1. "Screens" names the sections above.
 
 | # | Table | Used for | Screens / UI usage | Owner | Integration required from | Mock API when integration is not available | Notes |
 |---|---|---|---|---|---|---|---|
@@ -245,8 +756,8 @@ Owner values: **Inventory** (written through Inventory API), **Inventory (seeded
 | 96 | `SITE_CONTACT` | Site contact people (PII encrypted) | Site details: Contacts panel | Inventory | none (validate: not a User Management concern) | GET /api/sites/{id}/contacts mocked with plain values | API decrypts server side |
 | 97 | `SITE_ISSUE` | Rollout blocker / standing risk at a site | Site details: Issues panel; Insights rollout risk | Inventory | Rollout tool may raise issues (validate) | GET/POST /api/sites/{id}/issues mocked |  |
 | 98 | `SITE_TYPE` | Site kinds | Location list filter, Site create form | Inventory (seeded catalog) | none | Reference API mocked from the seed rows in this file | Not seeded in dump; dummy data adds 3 |
-| 99 | `TEAM` | Owner queue of an exception, exception-reviewer team of a rule, owner of a site issue | Reconciliation Exceptions (Owner filter, drawer), Rule details (Responsibilities), Site details (Issues) | User Management group (CDC copy) — see §2 | User Management (CDC of groups) | GET /api/teams mocked from a static list | Keep as reference copy (3 FK columns). Never created in this UI |
-| 100 | `TEAM_MEMBER` | Which users are in a team | none (only a picker when assigning an exception to a person in the owner team) | User Management | User Management API (group membership) | GET /api/teams/{id}/members mocked; no table needed | Recommend DROP in the next revision — see §2 |
+| 99 | `TEAM` | Owner queue of an exception, exception-reviewer team of a rule, owner of a site issue | Exceptions 3.8 (Owner column shows a team such as Architecture), Rule definition / details 3.10 – 3.11, Site details 4.3 (Issues) | User Management group (CDC copy) — section 2 | User Management (CDC of groups) | GET /api/teams mocked from a static list | Keep as reference copy (3 FK columns). Never created in this UI |
+| 100 | `TEAM_MEMBER` | Which users are in a team | none (only the assignee picker on an exception) | User Management | User Management API (group membership) | MockTeamService.members(teamId); no table needed | Not required by Inventory; drop in the next revision (section 2) |
 | 101 | `TECHNOLOGY` | Technology catalog with generation | Technology tags on Element detail, RAN cell filters | Inventory (seeded catalog) | none | Reference API mocked from the seed rows in this file |  |
 | 102 | `TENANT` | Root of every CUSTOMER_ID; identifies the operator | none (tenant comes from the login token) | User Management (CDC copy) | User Management / platform (CDC) | Static tenant constant in the mock session | Reference copy |
 | 103 | `USER` | Names shown for owner / reviewer / approver / assignee / tested-by | Rules (all), Reconciliation Exceptions, Node view movements, Site details issues | User Management (CDC copy) | User Management (CDC for names; API or token for roles) | GET /api/users mocked from MOCK_USERS; roles from a static role map | Keep. 13 FK columns depend on it; no PII stored |
@@ -256,62 +767,40 @@ Owner values: **Inventory** (written through Inventory API), **Inventory (seeded
 
 ---
 
-## 6. Mock API catalogue
-
-Contracts are proposals; the real APIs of the other modules must be adopted as soon as they are published. Each mock lives in `src/services/<module>/Mock<X>Service.ts` and is seeded from `src/mock/<module>`, which mirrors the dummy data in the SQL file.
-
-### 6.1 Inventory API mocks (own data)
-
-| Service | Key methods | Backing tables |
-|---|---|---|
-| `MockReferenceService` | `domains()`, `neClasses(domain?)`, `resourceClasses()`, `technologies()`, `frequencyBands(tech)`, `linkLayers()`, `serviceTypes()`, `siteTypes()`, `passiveAssetTypes()` (from `EXTERNAL_OBJECT_TYPE`), `nfTypes()`, `discoverySteps(domain)`, `discrepancyTypes()`, `reconFields(class?)`, `ruleTransitions()`, `stockTransitions()`, `relationshipTypes()`, `relationshipRules()`, `vendors()`, `productModels(vendor?, class?)`, `geo(level, parent?)`, `operationalAreas()` | all seeded catalogs, `VENDOR`, `PRODUCT_MODEL`, `GEOGRAPHY_LEVEL1..4`, `OPERATIONAL_AREA` |
-| `MockSiteService` | `list(q)`, `get(id)`, `create`, `update`, `floors/rooms/racks/powerFeeds/contacts/issues(siteId)`, `rackElevation(rackId)` | `SITE`, `FLOOR`, `ROOM`, `RACK`, `POWER_FEED`, `SITE_CONTACT`, `SITE_ISSUE` |
-| `MockNetworkElementService` | `list(q)`, `get(id)` (detail union by class), `create`, `update`, `components(id)`, `ports(id)`, `health(id)`, `movements(id)`, `move(id, body)`, `decommission(id, body)`, `asset/attributes/technologies/provenance/externalRefs/relationships(resourceId)` | `NETWORK_ELEMENT` + 11 details, `EQUIPMENT_COMPONENT`, `PORT`, `PORT_IP_ADDRESS`, `PORT_VLAN`, `NETWORK_ELEMENT_HEALTH`, `NETWORK_ELEMENT_MOVEMENT`, `RESOURCE_*` |
-| `MockVirtualService` | `list()`, `instance(id)`, `clusters()`, `lifecycle(id, op)` | `NETWORK_ELEMENT_VIRTUAL_INSTANCE`, `CLOUD_CLUSTER` |
-| `MockRanService` | `cells(q)`, `cell(id)`, `sectors(siteId)`, `antennas(siteId)`, `plmns()`, `slices()` | `RADIO_CELL`, `RADIO_CELL_PLMN`, `CELL_ANTENNA`, `CELL_RADIO_UNIT`, `RADIO_SECTOR`, `ANTENNA`, `PLMN`, `NETWORK_SLICE` |
-| `MockLinkService` | `list(q)`, `get(id)`, `create`, `update` | `LINK`, `LINK_PROTOCOL_ATTRIBUTE`, `LINK_MICROWAVE_ATTRIBUTE` |
-| `MockServiceService` | `list(q)`, `get(id)` (endpoints embedded) | `SERVICE_INSTANCE`, `SERVICE_ENDPOINT` |
-| `MockIpamService` | `subnets(context?)`, `vrfs(neId)`, `vlans(neId)` | `IP_SUBNET`, `VRF`, `VLAN` |
-| `MockRelationshipService` | `of(resourceId)`, `impact(resourceId, depth)`, `add`, `remove` | `RESOURCE_RELATIONSHIP` |
-| `MockRuleService` | `list(q)`, `get(id)` (conditions, allowedActions), `create`, `update`, `action(id, verb, note)`, `events(id)`, `executions(id)` | `RECONCILIATION_RULE`, `_CONDITION`, `_EVENT`, `_TRANSITION`, `RECONCILIATION_RUN_RULE` |
-| `MockReportService` | `definitions(module)`, `run(defId, format)`, `runs(q)`, `file(runId)` | `REPORT_DEFINITION`, `REPORT_RUN` |
-| `MockInactiveService` | `list(kind, domain)` | derived from NE / port / link / service mock stores |
-
-### 6.2 Other-module mocks (contract to be replaced by the module's real API)
-
-| Service | Methods that are enough for the current screens | Replaces |
-|---|---|---|
-| `MockCopexService` (Open / CoPEX) | `capexPlan(siteId, fy)` → header + lines; `opexPlan(siteId, fy)` → header + lines + 12 monthly actuals; `capexLinesForResource(resourceId)` | the removed `CAPEX_*` / `OPEX_*` tables; Capex and Opex screens |
-| `MockPassiveService` (Passive Inventory) | `proxies(siteId, objectType)` (from `EXTERNAL_RESOURCE`), `asset(externalId)` → type, code, rack, U range, vendor, model, status, ports; `rackOccupancy(rackCode)`; `powerUnit(externalId)` → kind, rating, last test, overdue; `patchCords(portId)`; `deepLink(externalId)` | the removed `PASSIVE_ASSET`, `PASSIVE_ASSET_TYPE`, `PATCH_CORD`, `POWER_UNIT`, `POWER_UNIT_TEST`; ODF / Power plant / Patch cords / Ducts / Fiber spans / Splice screens |
-| `MockUserService` (User Management) | `list()`, `get(id)`, `roles(id)` | CDC copy of `USER` plus role claims |
-| `MockTeamService` (User Management groups) | `list()`, `members(teamId)` | CDC copy of `TEAM`; replaces `TEAM_MEMBER` |
-
-### 6.3 Integration-engine mocks
-
-| Service | Behaviour the mock must simulate | Backing tables |
-|---|---|---|
-| `MockScanJobService` | `run(jobId)` creates a `SCAN_RUN` in RUNNING, then after a delay writes run targets, step results and flips status; `hold` / `resume` toggle `SCHEDULE_STATE`; targets keep a cached last outcome | `SCAN_JOB`, `SCAN_JOB_SCOPE`, `SCAN_TARGET`, `SCAN_RUN`, `SCAN_RUN_TARGET`, `SCAN_STEP_RESULT`, `COLLECTOR`, `CREDENTIAL_PROFILE` |
-| `MockReconciliationService` | `run(jobId)` creates a run, results, result fields and exceptions from the current mock inventory; `assign` / `dispose` update an exception and set `CLOSED_TIME` when resolved | `RECONCILIATION_JOB`, `_JOB_RULE`, `_RUN`, `_RUN_RULE`, `_RESULT`, `_RESULT_FIELD`, `RECONCILIATION_EXCEPTION`, `RECONCILIATION_STATE_MAP` |
-| `MockInsightsService` | derives every Insights card from the other mock stores; trust trend from `DOMAIN_TRUST_SNAPSHOT` rows | read models |
-| `MockIntegrationService` | `systems()`, `system(id)`, `proxies(systemId)`, `externalRefs(resourceId)` | `EXTERNAL_SYSTEM`, `EXTERNAL_RESOURCE`, `RESOURCE_EXTERNAL_REFERENCE` |
-
----
-
-## 7. Tables that are no longer in the database and how their screens are served
+## 9. Tables removed in v5 and how their screens are served
 
 | Removed in v5 | Screens affected | Served by |
 |---|---|---|
-| `PASSIVE_ASSET`, `PASSIVE_ASSET_TYPE`, `PATCH_CORD` | Passive Infrastructure: ODF, Patch cords (and Racks list if Passive takes racks later) | `EXTERNAL_RESOURCE` proxies (class `PASSIVE_ASSET` / `PASSIVE_PORT`) + Passive Inventory API, mocked by `MockPassiveService` |
-| `POWER_UNIT`, `POWER_UNIT_TEST` | Passive Infrastructure: Power plant; Facility power panel; power controller detail | `EXTERNAL_RESOURCE` proxies (class `POWER_UNIT`) + Passive API |
-| `CAPEX_PLAN`, `CAPEX_LINE`, `CAPEX_LINE_RESOURCE`, `OPEX_PLAN`, `OPEX_LINE`, `OPEX_MONTH_ACTUAL` | Capex, Opex under Site details | Open/CoPEX API, mocked by `MockCopexService`; `SITE.ID` and `RESOURCE.ID` are the keys exchanged |
+| `PASSIVE_ASSET`, `PASSIVE_ASSET_TYPE`, `PATCH_CORD` | Passive Infrastructure: ODF, Patch cords; Site equipment ODF strips | `EXTERNAL_RESOURCE` proxies (class `PASSIVE_ASSET` / `PASSIVE_PORT`) + Passive Inventory API, mocked by `MockPassiveService` |
+| `POWER_UNIT`, `POWER_UNIT_TEST` | Passive Infrastructure: Power plant; Facility backup panel; power controller detail | `EXTERNAL_RESOURCE` proxies (class `POWER_UNIT`) + Passive API |
+| `CAPEX_PLAN`, `CAPEX_LINE`, `CAPEX_LINE_RESOURCE`, `OPEX_PLAN`, `OPEX_LINE`, `OPEX_MONTH_ACTUAL` | Capex, Opex; Site details finance KPIs | Open/CoPEX API, mocked by `MockCopexService`; `SITE.ID` and `RESOURCE.ID` are the keys exchanged |
 | `USER_IDENTITY` | none | User Management |
 
-Already external before v5 and unchanged: fiber plant (ducts, spans, splices, strands) via `EXTERNAL_RESOURCE` with `SYSTEM_TYPE = FIBER_INVENTORY`.
+Already external before v5 and unchanged: fibre plant (ducts, spans, splice closures, strands) via `EXTERNAL_RESOURCE` with `SYSTEM_TYPE = FIBER_INVENTORY`.
 
 ---
 
-## 8. Summary
+## 10. Screenshot index
 
-- **TEAM stays as a CDC reference copy; TEAM_MEMBER is not required** and should be dropped in the next revision, with membership served by a User Management API (mocked by `MockTeamService.members`).
-- Of the 106 tables, 70 are Inventory-owned (51 business tables and 19 seeded catalogs), 21 are integration read models (Discovery 11, Reconciliation 6, Reporting 2, registry 2), 7 are shared master data pending an owner, 3 are User Management copies or leftovers (`USER`, `TEAM`, `TEAM_MEMBER`), 1 is the Passive Inventory proxy table, and 4 are Inventory tables flagged for validation against Passive Inventory or Open/CoPEX (`RACK`, `ANTENNA`, `POWER_FEED`, `RESOURCE_ASSET`).
-- Every existing screen can run today on mock services seeded from the dummy data in `inventory_schema_v5.sql`. Only Capex/Opex and the Passive detail screens depend on a module that has no table here, and for both a small mock contract (§6.2) is enough until the module publishes its API.
+All images are in `db/inventory/screenshots/`, captured at 1600 × 1000 from the production build on 2026-09-27.
+
+| File | Screen | Route |
+|---|---|---|
+| `insights.jpg` | Insights | `/discovery/insights` |
+| `insights_region.jpg`, `insights_discovered.jpg`, `insights_domain.jpg`, `insights_discrepancies.jpg` | Insights drill-downs | `/discovery/insights/…` |
+| `jobs.jpg` | Scan jobs | `/discovery/jobs` |
+| `targets.jpg`, `target.jpg` | Scan targets, Target transcript | `/discovery/targets`, `/discovery/targets/:host` |
+| `reconcile.jpg` | Reconciliation overview | `/discovery/reconcile` |
+| `reconcilejobs.jpg`, `reconcilejobs_rowlink.jpg` | Reconciliation jobs (row click opens the rule) | `/discovery/reconcile/jobs` |
+| `reconcileresults.jpg` | Reconciliation results | `/discovery/reconcile/results` |
+| `reconcileexceptions.jpg`, `reconcileexceptions_drawer.jpg` | Reconciliation exceptions, drawer | `/discovery/reconcile/exceptions` |
+| `rules.jpg`, `rulenew.jpg`, `ruledetails.jpg` | Rules list, New rule, Rule details | `/discovery/reconcile/rules…` |
+| `discoveryreports.jpg`, `discoveryreport.jpg` | Discovery reports, Report view | `/discovery/reports…` |
+| `home.jpg` | Inventory home | `/inventory` |
+| `location.jpg` | Location | `/inventory/location` |
+| `site.jpg`, `capex.jpg`, `opex.jpg`, `sitedetails.jpg`, `siteequipment.jpg` | Site details, Capex, Opex, Facility, Site equipment | `/inventory/location/site/:id…` |
+| `node.jpg` | Node view | `/inventory/node/:name` |
+| `physical.jpg`, `resource.jpg` | Physical Resources, Element | `/inventory/physical`, `/inventory/resource/:name` |
+| `virtual.jpg`, `vnfdetails.jpg`, `vnflifecycle.jpg`, `cell5gdetails.jpg` | Virtual Resources, VNF view, Lifecycle, Cell 5G | `/inventory/virtual…` |
+| `passive.jpg`, `passive_<tab>.jpg`, `passive_<tab>_detail.jpg` (rack, odf, power, splice, cord, duct, fiber) | Passive Infrastructure tabs and element pages | `/inventory/passive…` |
+| `links.jpg`, `services.jpg`, `inactive.jpg`, `reports.jpg` | Links, Services, Inactive inventory, Inventory reports | `/inventory/…` |

@@ -1,0 +1,257 @@
+[
+ {
+  "key": "insights",
+  "url": "http://localhost:4173/discovery/insights",
+  "title": "Insights · Discovery and reconciliation"
+ },
+ {
+  "key": "insights_region",
+  "url": "http://localhost:4173/discovery/insights/region/west",
+  "title": "Insights · Devices by region · Discovery and reconciliation"
+ },
+ {
+  "key": "insights_discovered",
+  "url": "http://localhost:4173/discovery/insights/discovered",
+  "title": "Insights · Discovered devices · Discovery and reconciliation"
+ },
+ {
+  "key": "insights_domain",
+  "url": "http://localhost:4173/discovery/insights/domain/ran",
+  "title": "Insights · Domain devices · Discovery and reconciliation"
+ },
+ {
+  "key": "insights_discrepancies",
+  "url": "http://localhost:4173/discovery/insights/discrepancies",
+  "title": "Insights · Discrepancies · Discovery and reconciliation"
+ },
+ {
+  "key": "jobs",
+  "url": "http://localhost:4173/discovery/jobs",
+  "title": "Scan jobs · Discovery and reconciliation"
+ },
+ {
+  "key": "targets",
+  "url": "http://localhost:4173/discovery/targets",
+  "title": "Scan targets · Discovery and reconciliation"
+ },
+ {
+  "key": "target",
+  "url": "http://localhost:4173/discovery/targets/SP-CNOC-LAB-J204-PE-T3-NR1",
+  "title": "Scan targets · Target · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcile",
+  "url": "http://localhost:4173/discovery/reconcile",
+  "title": "Reconciliation · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcilejobs",
+  "url": "http://localhost:4173/discovery/reconcile/jobs",
+  "title": "Reconciliation · Jobs · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcilejobs_drawer",
+  "url": "http://localhost:4173/discovery/reconcile/rules/RUL-RAN-001",
+  "title": "Reconciliation · Rules · Rule details · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcileresults",
+  "url": "http://localhost:4173/discovery/reconcile/results",
+  "title": "Reconciliation · Results · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcileexceptions",
+  "url": "http://localhost:4173/discovery/reconcile/exceptions",
+  "title": "Reconciliation · Exceptions · Discovery and reconciliation"
+ },
+ {
+  "key": "reconcileexceptions_drawer_drawer",
+  "url": "http://localhost:4173/discovery/reconcile/exceptions",
+  "title": "Reconciliation · Exceptions · Discovery and reconciliation"
+ },
+ {
+  "key": "rules",
+  "url": "http://localhost:4173/discovery/reconcile/rules",
+  "title": "Reconciliation · Rules · Discovery and reconciliation"
+ },
+ {
+  "key": "rulenew",
+  "url": "http://localhost:4173/discovery/reconcile/rules/new",
+  "title": "Reconciliation · Rules · New rule · Discovery and reconciliation"
+ },
+ {
+  "key": "ruledetails",
+  "url": "http://localhost:4173/discovery/reconcile/rules/RUL-RAN-001",
+  "title": "Reconciliation · Rules · Rule details · Discovery and reconciliation"
+ },
+ {
+  "key": "discoveryreports",
+  "url": "http://localhost:4173/discovery/reports",
+  "title": "Reports · Discovery and reconciliation"
+ },
+ {
+  "key": "discoveryreport",
+  "url": "http://localhost:4173/discovery/reports/DR-01",
+  "title": "Reports · Inventory trust executive report · Discovery and reconciliation"
+ },
+ {
+  "key": "home",
+  "url": "http://localhost:4173/inventory",
+  "title": "Home · Inventory"
+ },
+ {
+  "key": "location",
+  "url": "http://localhost:4173/inventory/location",
+  "title": "Location · Inventory"
+ },
+ {
+  "key": "site",
+  "url": "http://localhost:4173/inventory/location/site/BGLK-277",
+  "title": "Location · Site details · Inventory"
+ },
+ {
+  "key": "capex",
+  "url": "http://localhost:4173/inventory/location/site/BGLK-277/capex",
+  "title": "Location · Site details · Capex · Inventory"
+ },
+ {
+  "key": "opex",
+  "url": "http://localhost:4173/inventory/location/site/BGLK-277/opex",
+  "title": "Location · Site details · Opex · Inventory"
+ },
+ {
+  "key": "sitedetails",
+  "url": "http://localhost:4173/inventory/location/site/BGLK-277/details",
+  "title": "Location · Site details · Facility · Inventory"
+ },
+ {
+  "key": "siteequipment",
+  "url": "http://localhost:4173/inventory/location/site/BGLK-277/equipment",
+  "title": "Location · Site details · Site equipment · Inventory"
+ },
+ {
+  "key": "virtual",
+  "url": "http://localhost:4173/inventory/virtual",
+  "title": "Resources · Virtual Resources · Inventory"
+ },
+ {
+  "key": "vnfdetails",
+  "url": "http://localhost:4173/inventory/virtual/details",
+  "title": "Resources · Virtual Resources · View · Inventory"
+ },
+ {
+  "key": "vnflifecycle",
+  "url": "http://localhost:4173/inventory/virtual/lifecycle",
+  "title": "Resources · Virtual Resources · Lifecycle operation · Inventory"
+ },
+ {
+  "key": "cell5gdetails",
+  "url": "http://localhost:4173/inventory/virtual/cell-5g-details",
+  "title": "Resources · Virtual Resources · View · Cell 5G details · Inventory"
+ },
+ {
+  "key": "physical",
+  "url": "http://localhost:4173/inventory/physical",
+  "title": "Resources · Physical Resources · Inventory"
+ },
+ {
+  "key": "resource",
+  "url": "http://localhost:4173/inventory/resource/VZG-N540X-PE-T4-NR",
+  "title": "Resources · Physical Resources · Element · Inventory"
+ },
+ {
+  "key": "passive",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_rack",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_rack_detail",
+  "url": "http://localhost:4173/inventory/passive/rack/BGLK-277-RACK-A?id=BGLK-277-RACK-A&drill=BGLK-277-RACK-A&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Racks · Element · Inventory"
+ },
+ {
+  "key": "passive_odf",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_odf_detail",
+  "url": "http://localhost:4173/inventory/passive/odf/BGLK-277-ODF-01?id=BGLK-277-ODF-01&drill=BGLK-277-ODF-01&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · ODF · Element · Inventory"
+ },
+ {
+  "key": "passive_power",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_power_detail",
+  "url": "http://localhost:4173/inventory/passive/power/BGLK-277-DG-01?id=BGLK-277-DG-01&drill=BGLK-277-DG-01&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Power plant · Element · Inventory"
+ },
+ {
+  "key": "passive_splice",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_splice_detail",
+  "url": "http://localhost:4173/inventory/passive/splice/SC-BGLK-277-011?id=SC-BGLK-277-011&drill=SC-BGLK-277-011&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Splice closures · Element · Inventory"
+ },
+ {
+  "key": "passive_cord",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_cord_detail",
+  "url": "http://localhost:4173/inventory/passive/cord/PC-BGLK-277-101?id=PC-BGLK-277-101&drill=PC-BGLK-277-101&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Patch cords · Element · Inventory"
+ },
+ {
+  "key": "passive_duct",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_duct_detail",
+  "url": "http://localhost:4173/inventory/passive/duct/DT-BGLK-277-CHE-118?id=DT-BGLK-277-CHE-118&drill=DT-BGLK-277-CHE-118&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Ducts · Element · Inventory"
+ },
+ {
+  "key": "passive_fiber",
+  "url": "http://localhost:4173/inventory/passive",
+  "title": "Resources · Passive Infrastructure · Inventory"
+ },
+ {
+  "key": "passive_fiber_detail",
+  "url": "http://localhost:4173/inventory/passive/fiber/FS-BGLK-277-INDR-275?id=FS-BGLK-277-INDR-275&drill=FS-BGLK-277-INDR-275&from=Resources+%C2%B7+Passive+Infrastructure",
+  "title": "Resources · Passive Infrastructure · Fiber spans · Element · Inventory"
+ },
+ {
+  "key": "links",
+  "url": "http://localhost:4173/inventory/links",
+  "title": "Connectivity · Links · Inventory"
+ },
+ {
+  "key": "services",
+  "url": "http://localhost:4173/inventory/services",
+  "title": "Services · Inventory"
+ },
+ {
+  "key": "inactive",
+  "url": "http://localhost:4173/inventory/inactive",
+  "title": "Inactive inventory · Inventory"
+ },
+ {
+  "key": "reports",
+  "url": "http://localhost:4173/inventory/reports",
+  "title": "Reports · Inventory"
+ }
+]
