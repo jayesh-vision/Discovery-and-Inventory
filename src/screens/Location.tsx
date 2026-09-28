@@ -31,7 +31,7 @@ const COVERAGE_CIRCLES: CoverageCircle[] = [
 
 export default function Location() {
   const nav = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
 
   const toggleCircle = (code: string) => {
