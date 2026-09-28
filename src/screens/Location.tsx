@@ -1,8 +1,46 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
 import '../styles/shell.css';
-import '../styles/topology.css';
+
+/* ── Fallback topology placeholder when external topology module is unlinked ── */
+function NetworkHierarchyTopology({
+  isExpanded = false,
+  onNavigateToSite: _onNavigateToSite
+}: {
+  isExpanded?: boolean;
+  onNavigateToSite?: (id: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: isExpanded ? '320px' : '220px',
+        background: 'var(--vw-color-slate-50, #f8fafc)',
+        borderRadius: '8px',
+        border: '1px dashed var(--vw-color-slate-200, #e2e8f0)',
+        color: 'var(--vw-color-gray-500, #64748b)',
+        padding: '24px',
+        textAlign: 'center',
+        gap: '8px'
+      }}
+    >
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--vw-color-gray-400)' }}>
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+      <span style={{ fontSize: '13px', fontWeight: 500 }}>Network Hierarchy Topology</span>
+      <span style={{ fontSize: '11px', color: 'var(--vw-color-gray-400)' }}>
+        Interactive topology visualization drill-down
+      </span>
+    </div>
+  );
+}
 
 /* ── Coverage by circle dataset ───────────────────────────────────────── */
 interface CoverageCircle {
@@ -154,7 +192,7 @@ export default function Location() {
               </div>
               <NetworkHierarchyTopology
                 isExpanded={true}
-                onNavigateToSite={id => nav(`/inventory/location/site/${id}/details`)}
+                onNavigateToSite={(id: string) => nav(`/inventory/location/site/${id}/details`)}
               />
             </div>
 
@@ -198,7 +236,7 @@ export default function Location() {
               <div style={{ flex: '1 1 auto', minHeight: 0 }}>
                 <NetworkHierarchyTopology
                   isExpanded={false}
-                  onNavigateToSite={id => nav(`/inventory/location/site/${id}/details`)}
+                  onNavigateToSite={(id: string) => nav(`/inventory/location/site/${id}/details`)}
                 />
               </div>
             </div>
