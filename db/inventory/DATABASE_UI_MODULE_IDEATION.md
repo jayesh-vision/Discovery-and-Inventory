@@ -1,5 +1,7 @@
 # DATABASE → UI MODULE IDEATION
 
+> **Status (2026-09-30).** This document analyses the v4 dump (115 tables, original names). Its decisions are now applied: the current schema is `inventory_schema.sql` **v7** with 100 tables limited to the Inventory, Discovery and Reconciliation modules. Tables owned by other modules were removed (User Management: `USER_IDENTITY`, `TEAM_MEMBER`, `TEAM`; Passive Inventory: `PASSIVE_ASSET`, `PASSIVE_ASSET_TYPE`, `PATCH_CORD`, `POWER_UNIT`, `POWER_UNIT_TEST`, `FLOOR`, `ROOM`, `RACK`, `POWER_FEED`; Open / CoPEX: `CAPEX_*`, `OPEX_*`), and names changed (`NE_*` → `NETWORK_ELEMENT_*`, `RECON_*` → `RECONCILIATION_*`, `*_CLASS` → `*_TYPE`, `EXTERNAL_OBJECT_TYPE` → `EXTERNAL_ENTITY_TYPE`). For the current state read `INVENTORY_DATABASE.md`, `ER_DIAGRAM.md` and `INVENTORY_TABLE_USAGE_AND_MOCK_API.md`.
+
 **Product:** NetSingularity Discovery & Inventory
 **Input:** `INVENTORY_SCHEMA.sql` (mysqldump 10.13, MySQL 9.5.0, database `INVENTORY`, v4, dump completed 2026-09-24)
 **Frontend under analysis:** React 19 + TypeScript + react-router 7 app in this repository (`src/`), with a legacy vanilla-JS bridge (`legacy/*.js` → `public/legacy.js`) for the screens not yet ported

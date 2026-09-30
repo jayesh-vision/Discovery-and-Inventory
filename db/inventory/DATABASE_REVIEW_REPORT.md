@@ -1,23 +1,23 @@
-# Database Schema Quality Review — `inventory_schema.sql` v6
+# Database Schema Quality Review — `inventory_schema.sql` v7
 
 | | |
 |---|---|
-| **Schema reviewed** | `db/inventory/inventory_schema.sql`, v6 (2026-09-28): 105 tables, 1,517 columns, 303 foreign keys, 192 unique keys, 336 CHECK constraints, 198 generated columns, 350 catalog seed rows + dummy data |
+| **Schema reviewed** | `db/inventory/inventory_schema.sql`, v7 (2026-09-30): 100 tables, 1,455 columns, 289 foreign keys, 179 unique keys, 326 CHECK constraints, 187 generated columns, 350 catalog seed rows + dummy data |
 | **Method** | The DDL was loaded into a scratch MySQL 9.5.0 and every table, column, index, foreign key, CHECK constraint and comment was extracted from `information_schema`; findings below cite those objects. Row counts are dummy data only, so uniqueness claims are about what the constraints prevent, not about existing data. |
 | **Review framework** | `databasereviewprompt.md` — eight weighted dimensions, severity Critical / Major / Minor, gate = zero Critical **and** score ≥ 7.0 |
 | **Style guide** | `mysql_guidelines.md` |
-| **Previous revision reviewed** | v5 (2026-09-27); section 6 lists what this revision fixed |
+| **Previous revisions reviewed** | v5 (2026-09-27) and v6 (2026-09-28); section 6 lists what changed |
 | **Reviewer** | generated audit, 2026-09-28 |
 
 ---
 
 ## 1. Verdict
 
-**Score 9.4 / 10 — PASS.** Zero Critical findings, zero Major findings, ten Minor findings. The gate rule applied: a schema passes only when it has **no Critical finding and a weighted score of at least 7.0**; the two conditions are independent, and a single Critical finding fails the gate regardless of score. Both conditions are met.
+**Score 9.3 / 10 — PASS.** Zero Critical findings, zero Major findings, twelve Minor findings. The gate rule applied: a schema passes only when it has **no Critical finding and a weighted score of at least 7.0**; the two conditions are independent, and a single Critical finding fails the gate regardless of score. Both conditions are met.
 
 | # | Dimension | Weight | Score | Weighted | Findings |
 |---|---|---|---|---|---|
-| 1 | Referential integrity | 20% | 9.5 | 1.90 | 1 Minor |
+| 1 | Referential integrity | 20% | 9.0 | 1.80 | 3 Minor |
 | 2 | Indexing & performance | 18% | 9.5 | 1.71 | 1 Minor |
 | 3 | Data type & storage design | 12% | 9.0 | 1.08 | 2 Minor |
 | 4 | Naming conventions | 8% | 9.5 | 0.76 | 1 Minor |
@@ -25,11 +25,11 @@
 | 6 | Normalization & redundancy control | 12% | 9.0 | 1.08 | 2 Minor |
 | 7 | Security & sensitive data | 5% | 10.0 | 0.50 | 0 |
 | 8 | Documentation accuracy | 10% | 9.5 | 0.95 | 1 Minor |
-| | **Total** | **100%** | | **9.41** | **10 Minor · 0 Major · 0 Critical** |
+| | **Total** | **100%** | | **9.31** | **12 Minor · 0 Major · 0 Critical** |
 
-Weighted math: 0.20×9.5 + 0.18×9.5 + 0.12×9.0 + 0.08×9.5 + 0.15×9.5 + 0.12×9.0 + 0.05×10.0 + 0.10×9.5 = 1.90 + 1.71 + 1.08 + 0.76 + 1.425 + 1.08 + 0.50 + 0.95 = **9.405**.
+Weighted math: 0.20×9.0 + 0.18×9.5 + 0.12×9.0 + 0.08×9.5 + 0.15×9.5 + 0.12×9.0 + 0.05×10.0 + 0.10×9.5 = 1.80 + 1.71 + 1.08 + 0.76 + 1.425 + 1.08 + 0.50 + 0.95 = **9.305**.
 
-Finding count check: 1 + 1 + 2 + 1 + 2 + 2 + 0 + 1 = 10 findings listed in section 4, all Minor, matching the table above.
+Finding count check: 3 + 1 + 2 + 1 + 2 + 2 + 0 + 1 = 12 findings listed in section 4, all Minor, matching the table above.
 
 ---
 
@@ -37,15 +37,15 @@ Finding count check: 1 + 1 + 2 + 1 + 2 + 2 + 0 + 1 = 10 findings listed in secti
 
 | Object | Count | Observations |
 |---|---|---|
-| Tables | 105 | all `SNAKE_UPPER_CASE`, singular, InnoDB, utf8mb4; every table has a comment (105 / 105) |
-| Columns | 1,517 | every column has a comment (1,517 / 1,517); 179 vocabulary columns list their values in the comment |
-| Foreign keys | 303 | 83 tenant keys (`CUSTOMER_ID → TENANT`) on all 83 tenant tables; 220 relationship keys, every one composite on `CUSTOMER_ID` where both sides are tenant tables; 59 `ON DELETE CASCADE`, all on true composition (supertype → subtype, parent → child detail, run → results) |
-| Unique keys | 192 | natural keys on every master table; 27 contain a nullable column, each one deliberate (soft-delete flag last, or "unknown identity must not collide") |
-| CHECK constraints | 336 | value lists for every vocabulary column, cross-column rules (xor subjects, closed ↔ closed time, held ↔ reason, source ↔ system), ranges (latitude / longitude, percentages, VLAN 1–4094, tilt, azimuth, gNB id length, IPv4/IPv6 validity, MAC and UUID formats), non-negative measures |
-| Generated columns | 198 | `LIVE_FLAG` / `ACTIVE_FLAG` for soft-delete-aware unique keys, binary IP forms, `LINK_KEY`, `CELL_KEY`, derived `RESOURCE_TYPE`, `DURATION_MS`, `TRUST_INDEX_PERCENT`, `SUBJECT_KIND` / `SUBJECT_ID` |
+| Tables | 100 | all `SNAKE_UPPER_CASE`, singular, InnoDB, utf8mb4; every table has a comment (100 / 100) |
+| Columns | 1,455 | every column has a comment (1,455 / 1,455); 174 vocabulary columns list their values in the comment |
+| Foreign keys | 289 | 78 tenant keys (`CUSTOMER_ID → TENANT`) on all 78 tenant tables; 211 relationship keys, every one composite on `CUSTOMER_ID` where both sides are tenant tables; 55 `ON DELETE CASCADE`, all on true composition (supertype → subtype, parent → child detail, run → results) |
+| Unique keys | 179 | natural keys on every master table; 29 contain a nullable column, each one deliberate (soft-delete flag last, or "unknown identity must not collide") |
+| CHECK constraints | 326 | value lists for every vocabulary column, cross-column rules (xor subjects, closed ↔ closed time, held ↔ reason, source ↔ system), ranges (latitude / longitude, percentages, VLAN 1–4094, tilt, azimuth, gNB id length, IPv4/IPv6 validity, MAC and UUID formats), non-negative measures |
+| Generated columns | 187 | `LIVE_FLAG` / `ACTIVE_FLAG` for soft-delete-aware unique keys, binary IP forms, `LINK_KEY`, `CELL_KEY`, derived `RESOURCE_TYPE`, `DURATION_MS`, `TRUST_INDEX_PERCENT`, `SUBJECT_KIND` / `SUBJECT_ID` |
 | Views / triggers / routines | 0 | by design; the header and every affected comment say the application enforces derived figures, cycle checks and append-only trails |
-| FK enforceability | 303 / 303 | `tests/fk_index_check.py`: no foreign key is served by an index with a nullable trailing column (InnoDB skips the check on such rows) |
-| Negative tests | 13 / 13 rejected | wrong proxy type, unknown proxy id, removed PORT_KIND, port without device, VLAN range, VRF of another device, bad system type, soft-deleted row with unknown site, wrong target outcome, negative capacity, wrong record source, unknown team |
+| FK enforceability | 289 / 289 | `tests/fk_index_check.py`: no foreign key is served by an index with a nullable trailing column (InnoDB skips the check on such rows) |
+| Negative tests | 15 / 15 rejected | wrong proxy type, unknown proxy id, removed PORT_KIND, port without device, VLAN range, VRF of another device, bad system type, soft-deleted row with unknown site, wrong target outcome, negative capacity, wrong record source, unknown team |
 | Guideline checker | 0 violations | `tests/inventory_guideline_checks.sql` (19 rules: casing, comments, `IS_` booleans, no FLOAT, no ENUM, `_FK` columns have FKs, vocabulary columns have CHECK or FK, PK widths, redundant indexes, detail-table binding) |
 
 ---
@@ -66,9 +66,9 @@ Finding count check: 1 + 1 + 2 + 1 + 2 + 2 + 0 + 1 = 10 findings listed in secti
 
 All findings are **Minor**. None blocks the gate. Each carries the SQL to apply if the team decides to act on it.
 
-### Dimension 1 — Referential integrity (score 9.5)
+### Dimension 1 — Referential integrity (score 9.0)
 
-**F1 · Minor · Audit stamps are not foreign keys.** `CREATED_TIME / CREATOR / MODIFIED_TIME / LAST_MODIFIER` exist on 83 tables and hold `USER.ID`, but `CREATOR` and `LAST_MODIFIER` have no FK. A typo'd or foreign-tenant id would be stored silently. The header documents this as deliberate (users are never hard-deleted; the Audit module owns history), so it is a recorded trade-off, not an omission. If the team prefers enforcement, the type already matches (`BIGINT UNSIGNED` on both sides):
+**F1 · Minor · Audit stamps are not foreign keys.** `CREATED_TIME / CREATOR / MODIFIED_TIME / LAST_MODIFIER` exist on 78 tables and hold `USER.ID`, but `CREATOR` and `LAST_MODIFIER` have no FK. A typo'd or foreign-tenant id would be stored silently. The header documents this as deliberate (users are never hard-deleted; the Audit module owns history), so it is a recorded trade-off, not an omission. If the team prefers enforcement, the type already matches (`BIGINT UNSIGNED` on both sides):
 
 ```sql
 -- verify first: rows whose stamp does not resolve to a user of the same tenant
@@ -79,7 +79,26 @@ ALTER TABLE NETWORK_ELEMENT
   ADD CONSTRAINT FK_NETWORK_ELEMENT__CREATOR FOREIGN KEY (CUSTOMER_ID, CREATOR) REFERENCES USER (CUSTOMER_ID, ID),
   ADD CONSTRAINT FK_NETWORK_ELEMENT__LAST_MODIFIER FOREIGN KEY (CUSTOMER_ID, LAST_MODIFIER) REFERENCES USER (CUSTOMER_ID, ID);
 ```
-Cost: two indexes per table (166 in total) on columns nobody queries by; this is why the trade-off was taken.
+Cost: two indexes per table (156 in total) on columns nobody queries by; this is why the trade-off was taken.
+
+**F11 · Minor · Team references are codes without a foreign key (new in v7).** `RECONCILIATION_EXCEPTION.OWNER_TEAM_REFERENCE`, `RECONCILIATION_RULE.EXCEPTION_REVIEWER_TEAM_REFERENCE` and `SITE_ISSUE.OWNER_TEAM_REFERENCE` hold a User Management group code. With the `TEAM` table removed (groups are not an Inventory concern) the database accepts a misspelt or retired code. The `_REFERENCE` suffix marks the column as an external identifier, and the API must validate it against User Management on write. To find orphans once a group feed exists:
+
+```sql
+SELECT CODE, OWNER_TEAM_REFERENCE FROM RECONCILIATION_EXCEPTION
+ WHERE OWNER_TEAM_REFERENCE IS NOT NULL AND OWNER_TEAM_REFERENCE NOT IN (/* codes returned by the User Management group API */ 'NOC-RAN', 'NOC-TRANSPORT', 'ARCHITECTURE');
+```
+
+**F12 · Minor · The rack proxy is not type-bound (new in v7).** `NETWORK_ELEMENT.RACK_EXTERNAL_RESOURCE_ID_FK` references `EXTERNAL_RESOURCE (CUSTOMER_ID, ID)`, so the database guarantees the proxy exists in the same tenant but not that it is a rack (it could be a fiber span proxy), nor that the rack is at the device's site (v6 enforced both through the local `RACK` table). The same is true of the antenna mount and power-unit proxies since v5. To enforce the type, add a constant column as the subtype tables do:
+
+```sql
+-- verify first: devices whose rack proxy is not a rack
+SELECT n.ID, e.RESOURCE_TYPE FROM NETWORK_ELEMENT n JOIN EXTERNAL_RESOURCE e ON e.CUSTOMER_ID = n.CUSTOMER_ID AND e.ID = n.RACK_EXTERNAL_RESOURCE_ID_FK WHERE e.RESOURCE_TYPE <> 'RACK';
+ALTER TABLE EXTERNAL_RESOURCE ADD UNIQUE KEY UK_EXTERNAL_RESOURCE__CUSTOMER_ID_ID_RESOURCE_TYPE (CUSTOMER_ID, ID, RESOURCE_TYPE);
+ALTER TABLE NETWORK_ELEMENT
+  ADD COLUMN RACK_RESOURCE_TYPE VARCHAR(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin GENERATED ALWAYS AS (IF(RACK_EXTERNAL_RESOURCE_ID_FK IS NULL, NULL, 'RACK')) STORED COMMENT 'Derived: RACK when a rack proxy is set; binds the proxy type',
+  DROP FOREIGN KEY FK_NETWORK_ELEMENT__RACK_EXTERNAL_RESOURCE,
+  ADD CONSTRAINT FK_NETWORK_ELEMENT__RACK_EXTERNAL_RESOURCE FOREIGN KEY (CUSTOMER_ID, RACK_EXTERNAL_RESOURCE_ID_FK, RACK_RESOURCE_TYPE) REFERENCES EXTERNAL_RESOURCE (CUSTOMER_ID, ID, RESOURCE_TYPE);
+```
 
 ### Dimension 2 — Indexing & performance (score 9.5)
 
@@ -129,7 +148,7 @@ No findings. Credential-shaped columns: none store a secret (`VAULT_REFERENCE` o
 
 ### Dimension 8 — Documentation accuracy (score 9.5)
 
-**F10 · Minor · Value lists are written twice.** 179 columns list their allowed values in the comment ("Values: …") and again in a CHECK. They match today (the guideline checker verifies that each such column has a CHECK or FK), but a future ALTER of a CHECK without the comment would leave the comment wrong. A generator, or a rule in the checker comparing the two lists, closes the gap:
+**F10 · Minor · Value lists are written twice.** 174 columns list their allowed values in the comment ("Values: …") and again in a CHECK. They match today (the guideline checker verifies that each such column has a CHECK or FK), but a future ALTER of a CHECK without the comment would leave the comment wrong. A generator, or a rule in the checker comparing the two lists, closes the gap:
 
 ```sql
 -- candidate checker rule: comment values not equal to CHECK values
@@ -149,11 +168,11 @@ SELECT c.table_name, c.column_name FROM information_schema.columns c
 |---|---|---|
 | §1 SNAKE_UPPER_CASE, singular, prefixed, consistent | Met | 0 casing violations; all table names singular; child tables prefixed (`NETWORK_ELEMENT_*`, `RECONCILIATION_*`, `RESOURCE_*`, `SCAN_*`, `SITE_*`, `LINK_*`, `RADIO_*`, `PORT_*`, `EXTERNAL_*`, `REPORT_*`); no unclear abbreviations in identifiers, industry acronyms listed in the header |
 | §2 PK types | Met | `INT UNSIGNED` on tenant tables, `SMALLINT UNSIGNED` on global catalogs (except `PRODUCT_MODEL`, which can exceed 65k rows), `BIGINT UNSIGNED` on `USER`, `RESOURCE` and its satellites, scan and reconciliation result tables |
-| §2 Booleans `TINYINT(1)` | Met | all 60 `IS_*` columns and flags |
+| §2 Booleans `TINYINT(1)` | Met | all 35 `IS_*` columns and the generated flags and flags |
 | §2 Categories | Deviation, recorded | `VARCHAR` + CHECK instead of `ENUM` (project rule, JPA `@Enumerated(STRING)`); header explains |
-| §2 VARCHAR vs TEXT, DECIMAL for money, NOT NULL / DEFAULT / UNIQUE | Met | no TEXT / FLOAT / DOUBLE; `DECIMAL` for `PURCHASE_COST`; defaults on every status; 192 unique keys |
+| §2 VARCHAR vs TEXT, DECIMAL for money, NOT NULL / DEFAULT / UNIQUE | Met | no TEXT / FLOAT / DOUBLE; `DECIMAL` for `PURCHASE_COST`; defaults on every status; 179 unique keys |
 | §3 Indexing | Met | all FK columns indexed; composites lead with `CUSTOMER_ID`; no index on a lone boolean or date; redundancy limited to the ten enforcement twins (F2) |
-| §4 Relationships | Met | 303 explicit FKs; cascade only on composition; junction tables unique on their pair; no CSV columns; 3NF with documented controlled denormalization (F8) |
+| §4 Relationships | Met | 289 explicit FKs; cascade only on composition; junction tables unique on their pair; no CSV columns; 3NF with documented controlled denormalization (F8) |
 | §5 Documentation | Met | table banners with purpose, related tables and update date; every table and column commented |
 | §6 Security | Met | no plaintext secrets; encrypted PII |
 | §7 Audit tables | Deviation, recorded | no `*_AUD` tables: change history is owned by the separate Audit module; who / when stamps exist on every mutable table; append-only trails (`NETWORK_ELEMENT_MOVEMENT`, `RECONCILIATION_RULE_EVENT`) are business data and stay |
@@ -182,12 +201,25 @@ Nothing from the v5 review is partially fixed or still open. The ten findings ab
 
 ---
 
+### Diff against the v6 review (2026-09-28)
+
+v7 narrows the schema to the tables the Inventory, Discovery and Reconciliation modules own or strictly need. No v6 finding changed status; two Minor findings are new and come directly from removing tables.
+
+| Change in v7 | Effect on the review |
+|---|---|
+| `TEAM` removed; three columns became `*_TEAM_REFERENCE` group codes | 3 foreign keys gone; new Minor finding F11 |
+| `FLOOR`, `ROOM`, `RACK`, `POWER_FEED` removed; device rack placement points at an `EXTERNAL_RESOURCE` proxy | 11 foreign keys gone, 1 added; new Minor finding F12; the v6 remark that `RACK` / `POWER_FEED` ownership was "pending validation" is closed |
+| Comment corrections ("resource typees", `NE_*_DETAIL`, `(from NETWORK_ELEMENT_DETAIL)`, capitalisation) | documentation accuracy unchanged at 9.5 |
+| Score | 9.4 → 9.3 (referential integrity 9.5 → 9.0); still PASS, zero Critical and zero Major |
+
+---
+
 ## 7. How to re-run this review
 
 ```sh
 mysql -uroot -p -e "CREATE DATABASE inventory_review"
 mysql -uroot -p inventory_review < db/inventory/inventory_schema.sql
 mysql -uroot -p inventory_review < db/inventory/tests/inventory_guideline_checks.sql      # prints violations (none expected)
-MYSQL="mysql -uroot -p" python3 db/inventory/tests/fk_index_check.py inventory_review   # expects "303 FK(s) checked, 0 bypassable"
-# negative tests: each line of tests/v6_negative_tests.tsv must be rejected
+MYSQL="mysql -uroot -p" python3 db/inventory/tests/fk_index_check.py inventory_review   # expects "289 FK(s) checked, 0 bypassable"
+# negative tests: each line of tests/v7_negative_tests.tsv must be rejected
 ```
