@@ -2,15 +2,21 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const localLeaflet = path.resolve(__dirname, 'node-view-source/node_modules/leaflet');
+const leafletPath = fs.existsSync(localLeaflet)
+  ? localLeaflet
+  : path.resolve(__dirname, 'node_modules/leaflet');
 
 export default defineConfig({
   cacheDir: path.resolve(__dirname, '.vite-cache-user'),
   plugins: [react()],
   resolve: {
     alias: {
-      leaflet: path.resolve(__dirname, 'node-view-source/node_modules/leaflet'),
+      leaflet: leafletPath,
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
       'react-router-dom': path.resolve(__dirname, 'node_modules/react-router-dom')
