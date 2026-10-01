@@ -1152,14 +1152,15 @@ const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
      an installation at 100%) can show that share as a bar instead of leaving
      the sub-line blank. Cells that don't pass it render exactly as before. */
   const pct = typeof c.pct === 'number' && isFinite(c.pct) ? Math.max(0, Math.min(100, Math.round(c.pct))) : null;
-  const inner = `<span class="stat-dot" style="background:${cv(c.t,400)}"></span>
+  const tone = c.t || 'slate';
+  const inner = `<span class="stat-dot" style="background:${cv(tone,400)}"></span>
     <span class="stat-k">${c.k}</span>
-    <span class="stat-v num">${c.v}</span>
+    <span class="stat-v num stat-v--${tone}" style="color:${cv(tone,700)}">${c.v}</span>
     <span class="stat-s">${c.s}</span>${pct === null ? '' :
-    `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(c.t,400)}"></span></span>`}`;
-  return c.go ? `<button class="stat-cell is-click" data-sitesection="${c.go}">${inner}</button>`
-    : c.d ? `<button class="stat-cell is-click"${dA(c.d)}>${inner}</button>`
-    : `<div class="stat-cell">${inner}</div>`;
+    `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(tone,400)}"></span></span>`}`;
+  return c.go ? `<button class="stat-cell is-click stat-cell--${tone}" data-tone="${tone}" data-sitesection="${c.go}">${inner}</button>`
+    : c.d ? `<button class="stat-cell is-click stat-cell--${tone}" data-tone="${tone}"${dA(c.d)}>${inner}</button>`
+    : `<div class="stat-cell stat-cell--${tone}" data-tone="${tone}">${inner}</div>`;
 }).join('')}</div>`;
 
 /* ── Location ─────────────────────────────────────────── */

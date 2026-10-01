@@ -1084,6 +1084,16 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stat-cell:first-child { border-left: 0; }
 .stat-cell.is-click { cursor: pointer; }
 .stat-cell.is-click:hover { background: var(--vw-color-slate-50); }
+.stat-cell.is-click[data-tone="cyan"]:hover    { background: #f0fdfa; }
+.stat-cell.is-click[data-tone="emerald"]:hover { background: #f0fdf4; }
+.stat-cell.is-click[data-tone="green"]:hover   { background: #f0fdf4; }
+.stat-cell.is-click[data-tone="red"]:hover     { background: #fff1f2; }
+.stat-cell.is-click[data-tone="sky"]:hover     { background: #f0f9ff; }
+.stat-cell.is-click[data-tone="blue"]:hover    { background: #eff6ff; }
+.stat-cell.is-click[data-tone="amber"]:hover   { background: #fffbeb; }
+.stat-cell.is-click[data-tone="orange"]:hover  { background: #fff7ed; }
+.stat-cell.is-click[data-tone="purple"]:hover  { background: #faf5ff; }
+.stat-cell.is-click[data-tone="violet"]:hover  { background: #faf5ff; }
 .stat-dot { grid-row: 1 / -1; width: 4px; border-radius: var(--vw-radius-full); align-self: stretch; }
 /* A stat cell whose value is a share (a percentage, or a used/total split)
    can carry a mini bar on a fourth row — opt in by passing `pct` to
@@ -1117,10 +1127,25 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stat-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--vw-radius-full);
   background: var(--vw-color-slate-100); overflow: hidden; }
 .stat-bar > span { display: block; height: 100%; border-radius: var(--vw-radius-full); }
-.stat-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-800, #1e293b); line-height: 1.3; letter-spacing: -0.01em; }
-.stat-v { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; }
-.stat-s { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.3;
+.stat-k { font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-600, #475569); line-height: 1.35; letter-spacing: -0.01em; }
+.stat-v { font-size: 1.5rem; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1; }
+.stat-s { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Tone-based Semantic Colors for Card Count (Muted, Elegant Enterprise Tones — NOT Bright/Neon) ── */
+.stat-v--cyan,    .stat-cell[data-tone="cyan"] .stat-v,    .stat-cell--cyan .stat-v    { color: var(--vw-color-cyan-700, #0e7490) !important; }
+.stat-v--emerald, .stat-cell[data-tone="emerald"] .stat-v, .stat-cell--emerald .stat-v { color: var(--vw-color-emerald-700, #047857) !important; }
+.stat-v--green,   .stat-cell[data-tone="green"] .stat-v,   .stat-cell--green .stat-v   { color: var(--vw-color-green-700, #15803d) !important; }
+.stat-v--red,     .stat-cell[data-tone="red"] .stat-v,     .stat-cell--red .stat-v     { color: var(--vw-color-red-700, #b91c1c) !important; }
+.stat-v--sky,     .stat-cell[data-tone="sky"] .stat-v,     .stat-cell--sky .stat-v     { color: var(--vw-color-sky-700, #0369a1) !important; }
+.stat-v--blue,    .stat-cell[data-tone="blue"] .stat-v,    .stat-cell--blue .stat-v    { color: var(--vw-color-blue-700, #1d4ed8) !important; }
+.stat-v--amber,   .stat-cell[data-tone="amber"] .stat-v,   .stat-cell--amber .stat-v   { color: var(--vw-color-amber-700, #b45309) !important; }
+.stat-v--orange,  .stat-cell[data-tone="orange"] .stat-v,  .stat-cell--orange .stat-v  { color: var(--vw-color-orange-700, #c2410c) !important; }
+.stat-v--purple,  .stat-cell[data-tone="purple"] .stat-v,  .stat-cell--purple .stat-v  { color: var(--vw-color-purple-700, #6d28d9) !important; }
+.stat-v--violet,  .stat-cell[data-tone="violet"] .stat-v,  .stat-cell--violet .stat-v  { color: var(--vw-color-violet-700, #6d28d9) !important; }
+.stat-v--teal,    .stat-cell[data-tone="teal"] .stat-v,    .stat-cell--teal .stat-v    { color: var(--vw-color-teal-700, #0f766e) !important; }
+.stat-v--rose,    .stat-cell[data-tone="rose"] .stat-v,    .stat-cell--rose .stat-v    { color: var(--vw-color-rose-700, #be123c) !important; }
+.stat-v--slate,   .stat-cell[data-tone="slate"] .stat-v,   .stat-cell--slate .stat-v   { color: var(--vw-color-slate-700, #334155) !important; }
 @media (max-width: 900px) { .stat-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .stat-cell { border-top: 1px solid var(--vw-color-slate-200); }
   .stat-cell:nth-child(-n+2) { border-top: 0; } .stat-cell:nth-child(odd) { border-left: 0; } }
