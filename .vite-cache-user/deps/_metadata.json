@@ -1,0 +1,90 @@
+{
+  "hash": "fb829886",
+  "configHash": "a25f32cd",
+  "lockfileHash": "b577ac19",
+  "browserHash": "0b300e37",
+  "optimized": {
+    "exceljs": {
+      "src": "../../node_modules/exceljs/dist/exceljs.min.js",
+      "file": "exceljs.js",
+      "fileHash": "45664286",
+      "needsInterop": true
+    },
+    "jspdf-autotable": {
+      "src": "../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
+      "file": "jspdf-autotable.js",
+      "fileHash": "e54d9765",
+      "needsInterop": false
+    },
+    "jspdf": {
+      "src": "../../node_modules/jspdf/dist/jspdf.es.min.js",
+      "file": "jspdf.js",
+      "fileHash": "cb8aee37",
+      "needsInterop": false
+    },
+    "leaflet": {
+      "src": "../../node-view-source/node_modules/leaflet/dist/leaflet-src.js",
+      "file": "leaflet.js",
+      "fileHash": "d6abcf95",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "296872ac",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "3990ddf6",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "276ccce8",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "df9253fb",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "27cfeac7",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "61a17055",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "html2canvas-CHeJ0-tT": {
+      "file": "html2canvas-CHeJ0-tT.js",
+      "isDynamicEntry": true
+    },
+    "index.es-BTj9uAxk": {
+      "file": "index.es-BTj9uAxk.js",
+      "isDynamicEntry": true
+    },
+    "purify.es-BKjNtD2s": {
+      "file": "purify.es-BKjNtD2s.js",
+      "isDynamicEntry": true
+    },
+    "rolldown-runtime-DUp30N8C": {
+      "file": "rolldown-runtime-DUp30N8C.js",
+      "isDynamicEntry": false
+    },
+    "typeof-KEtdrNHU": {
+      "file": "typeof-KEtdrNHU.js",
+      "isDynamicEntry": false
+    }
+  }
+}
