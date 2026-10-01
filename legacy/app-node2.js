@@ -4,11 +4,11 @@
 const NODE_ICON = {
   router: '<path d="M4 15h16M4 15l3-4M4 15l3 4M20 15l-3-4M20 15l-3 4"/><circle cx="12" cy="7" r="2.5"/><path d="M12 9.5V15"/>',
   switch: '<rect x="3" y="9" width="18" height="6" rx="1"/><path d="M6 9V6M10 9V6M14 9V6M18 9V6M6 15v3M10 15v3M14 15v3M18 15v3"/>',
-  dwdm:   '<path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
+  dwdm: '<path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
   server: '<rect x="4" y="3" width="16" height="6" rx="1"/><rect x="4" y="11" width="16" height="6" rx="1"/><circle cx="8" cy="6" r="0.8" fill="currentColor"/><circle cx="8" cy="14" r="0.8" fill="currentColor"/>',
   enodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>',
   gnodeb: '<path d="M12 3v18M7 8a7 7 0 0 1 10 0M4.5 5.5a10.5 10.5 0 0 1 15 0"/><circle cx="12" cy="3" r="1.4" fill="currentColor"/>',
-  cloud:  '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>'
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>'
 };
 function nodeThumb(cls) {
   const d = NODE_ICON[cls] || NODE_ICON.router;
@@ -18,7 +18,7 @@ function nodeHeaderSwitch(N) {
   const r = N.r;
   const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
   const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
-  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name, 62, 10, 99)}:8F:${nint(N.name, 63, 10, 99)}`;
   const popId = r.pop || 'POP-1030620';
   const vendor = r.oem || 'CIENA';
   const osVer = r.os || 'IOS XE 17.9.4';
@@ -74,15 +74,15 @@ function nodeOverviewSwitch(N) {
 
     <div class="nv-health-row" style="margin-top:var(--vw-space-md)">
       ${nvHealthCard('ICMP Health', 'Network Reachability',
-        ['Healthy', 'success'],
-        [['Packet Loss', '0.02%'],
-         ['Latency Avg', '7.62 ms'], ['Jitter', '1.24 ms'],
-         ['Availability', '99.98%']],
-        `Last Sync: ${agoStamp(2, true)} · Probe Interval: 1 hr`)}
+    ['Healthy', 'success'],
+    [['Packet Loss', '0.02%'],
+    ['Latency Avg', '7.62 ms'], ['Jitter', '1.24 ms'],
+    ['Availability', '99.98%']],
+    `Last Sync: ${agoStamp(2, true)} · Probe Interval: 1 hr`)}
       ${nvHealthCard('NTP Sync', 'Time Synchronization', ['Synchronized', 'success'],
-        [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
-         ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
-        `Last Sync: ${agoStamp(18, true)}`)}
+      [['Offset', '0.812 ms'], ['Delay', '2.74 ms'], ['Jitter', '0.153 ms'],
+      ['Primary NTP', '10.10.10.10'], ['Secondary NTP', '10.10.10.11'], ['Stratum', '3']],
+      `Last Sync: ${agoStamp(18, true)}`)}
       ${nvHealthCard('RADIUS Auth', 'AAA Authentication',
         ['Healthy', 'success'],
         [['Primary DNS', '10.20.20.5 • Reachable'], ['Secondary DNS', '10.20.20.6 • Reachable']],
@@ -91,8 +91,10 @@ function nodeOverviewSwitch(N) {
 }
 
 function nodeHardwareSwitch(N) {
-  const topIf = IFACES.slice(0, 8).map((i, x) => ({ ...i,
-    inb: nint(N.name, 1800 + x, 22, 88), outb: nint(N.name, 1900 + x, 18, 84) }));
+  const topIf = IFACES.slice(0, 8).map((i, x) => ({
+    ...i,
+    inb: nint(N.name, 1800 + x, 22, 88), outb: nint(N.name, 1900 + x, 18, 84)
+  }));
 
   const perfCard = card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
@@ -100,30 +102,30 @@ function nodeHardwareSwitch(N) {
       <div class="row">
         <div class="nv-fcgroup">
           ${[['CPU forecast', N.perf.fCpu + '%', 'blue'],
-             ['Memory forecast', N.perf.fMem + '%', 'orange'],
-             ['Temp forecast', N.perf.fTemp + '°C', 'red']]
-            .map(([k, v, t]) => `<span class="nv-fc">
+    ['Memory forecast', N.perf.fMem + '%', 'orange'],
+    ['Temp forecast', N.perf.fTemp + '°C', 'red']]
+      .map(([k, v, t]) => `<span class="nv-fc">
               <span class="nv-fck">${k}</span>
-              <span class="nv-fcv num" style="color:${cv(t,600)}">${v}</span></span>`).join('')}
+              <span class="nv-fcv num" style="color:${cv(t, 600)}">${v}</span></span>`).join('')}
         </div>
         <span class="nst-input-shell nv-per"><select class="nst-input" data-nperfsel>
-          ${['24h','7 days'].map(p => `<option${NODE_PERF===p?' selected':''}>${p}</option>`).join('')}
+          ${['24h', '7 days'].map(p => `<option${NODE_PERF === p ? ' selected' : ''}>${p}</option>`).join('')}
         </select></span>
       </div>
     </div>
     <div style="margin-top:var(--vw-space-md)">${nvForecast(N.perf.fc, 340)}</div>
     <div class="row vw-justify-center vw-wrap vw-card-footer-divider" style="gap:var(--vw-space-md)">
-      ${[['CPU','blue'],['Memory','orange'],['Temp','red']].flatMap(([k, t]) => [
-        `<span class="legend-i"><span class="nv-lsw" style="background:${cv(t,500)}"></span>${k} (actual)</span>`,
-        `<span class="legend-i"><span class="nv-lsw is-dash" style="--lc:${cv(t,500)}"></span>${k} (forecast)</span>`
+      ${[['CPU', 'blue'], ['Memory', 'orange'], ['Temp', 'red']].flatMap(([k, t]) => [
+        `<span class="legend-i"><span class="nv-lsw" style="background:${cv(t, 500)}"></span>${k} (actual)</span>`,
+        `<span class="legend-i"><span class="nv-lsw is-dash" style="--lc:${cv(t, 500)}"></span>${k} (forecast)</span>`
       ]).join('')}
     </div>`, 'grow');
 
   const envCard = `<div class="vw-grid vw-grid-cols-3 vw-gap-md" style="margin-top:var(--vw-space-md)">
     ${[['Power supplies', `${N.env.psu[0]} / ${N.env.psu[1]}`, 'Healthy · redundant', 'sky'],
-       ['Fans', `${N.env.fans[0]} / ${N.env.fans[1]}`, `Healthy · avg ${n(N.env.rpm)} RPM`, 'purple'],
-       ['Temperature sensors', 'Normal', `Inlet ${N.env.tin}°C · ASIC ${N.env.tmax}°C · outlet ${N.env.tmin}°C`, 'emerald']]
-      .map(([k, v, s, t]) => `<div class="vw-card-child nv-env" style="--nt:${cv(t,400)};--ntb:${cv(t,50)}">
+    ['Fans', `${N.env.fans[0]} / ${N.env.fans[1]}`, `Healthy · avg ${n(N.env.rpm)} RPM`, 'purple'],
+    ['Temperature sensors', 'Normal', `Inlet ${N.env.tin}°C · ASIC ${N.env.tmax}°C · outlet ${N.env.tmin}°C`, 'emerald']]
+      .map(([k, v, s, t]) => `<div class="vw-card-child nv-env" style="--nt:${cv(t, 400)};--ntb:${cv(t, 50)}">
         <span class="nv-hk">${k}</span><span class="nv-env-v num">${v}</span>
         <span class="vw-card-metric-label-sub">${s}</span></div>`).join('')}
   </div>`;
@@ -134,16 +136,16 @@ function nodeHardwareSwitch(N) {
       ${nvChassis(N.chassis)}
     </div>`;
 
-  const utilBand = v => v > 85 ? ['Critical','red'] : v > 70 ? ['Warning','orange']
-                      : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
+  const utilBand = v => v > 85 ? ['Critical', 'red'] : v > 70 ? ['Warning', 'orange']
+    : v > 50 ? ['Moderate', 'amber'] : ['Normal', 'emerald'];
   const utilList = `
     <div class="cx-panel">
       <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
-          const d = nint(N.name, 2200 + x, -6, 9);
-          const [, tone] = utilBand(i.inb);
-          return `<div class="nv-util">
+    const d = nint(N.name, 2200 + x, -6, 9);
+    const [, tone] = utilBand(i.inb);
+    return `<div class="nv-util">
             <div class="row vw-justify-between vw-items-baseline vw-wrap" style="gap:var(--vw-space-xs)">
               <span class="row" style="gap:var(--vw-space-xs);min-width:0">
                 <span class="vw-value mono" title="${i.desc}">${i.n}</span>
@@ -156,14 +158,14 @@ function nodeHardwareSwitch(N) {
               </span>
             </div>
             <span class="hbar-track" style="height:8px;display:block"><span class="hbar-fill"
-              style="display:block;width:${i.inb}%;background:${cv(tone,400)}"></span></span>
+              style="display:block;width:${i.inb}%;background:${cv(tone, 400)}"></span></span>
           </div>`;
-        }).join('')}
+  }).join('')}
       </div>
       <div class="vw-card-footer-divider nv-ulegend">
-        ${[['Critical (>85%)','red'],['Warning (70–85%)','orange'],
-           ['Moderate (50–70%)','amber'],['Normal (<50%)','emerald']]
-          .map(([l, t]) => `<span class="legend-i"><span class="legend-sw" style="background:${cv(t,400)}"></span>${l}</span>`).join('')}
+        ${[['Critical (>85%)', 'red'], ['Warning (70–85%)', 'orange'],
+    ['Moderate (50–70%)', 'amber'], ['Normal (<50%)', 'emerald']]
+      .map(([l, t]) => `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, 400)}"></span>${l}</span>`).join('')}
       </div>
     </div>`;
 
@@ -177,34 +179,34 @@ function nodeHardwareSwitch(N) {
         <span class="eyebrow">Top interfaces by utilisation</span>
         <span class="vw-card-metric-label-sub">Real-time bandwidth consumption of ${N.ov.ifTotal} interfaces</span>
       </div>
-      ${table([{t:'Name'},{t:'Description'},{t:'Media'},{t:'Admin status'},{t:'Operational status'},
-               {t:'Inbound utilisation',r:true},{t:'Outbound utilisation',r:true}],
-        topIf.map(i => [
-          `<span class="vw-value mono">${i.n}</span>`,
-          `<span class="vw-card-metric-label-sub">${i.desc}</span>`,
-          `<span class="mono">${i.sp}</span>`,
-          chip(i.admin, i.admin === 'up' ? 'success' : 'error'),
-          chip(i.oper, i.oper === 'up' ? 'success' : 'error'),
-          `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
-            <span class="hbar-fill" style="display:block;width:${i.inb}%;background:${cv(i.inb>85?'red':i.inb>70?'amber':'emerald',400)}"></span></span>${i.inb}%</span>`,
-          `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
-            <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb>85?'red':i.outb>70?'amber':'emerald',400)}"></span></span>${i.outb}%</span>`
-        ]), '',
-        () => [])}
+      ${table([{ t: 'Name' }, { t: 'Description' }, { t: 'Media' }, { t: 'Admin status' }, { t: 'Operational status' },
+  { t: 'Inbound utilisation', r: true }, { t: 'Outbound utilisation', r: true }],
+    topIf.map(i => [
+      `<span class="vw-value mono">${i.n}</span>`,
+      `<span class="vw-card-metric-label-sub">${i.desc}</span>`,
+      `<span class="mono">${i.sp}</span>`,
+      chip(i.admin, i.admin === 'up' ? 'success' : 'error'),
+      chip(i.oper, i.oper === 'up' ? 'success' : 'error'),
+      `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
+            <span class="hbar-fill" style="display:block;width:${i.inb}%;background:${cv(i.inb > 85 ? 'red' : i.inb > 70 ? 'amber' : 'emerald', 400)}"></span></span>${i.inb}%</span>`,
+      `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
+            <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb > 85 ? 'red' : i.outb > 70 ? 'amber' : 'emerald', 400)}"></span></span>${i.outb}%</span>`
+    ]), '',
+    () => [])}
 
       <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
         <span class="eyebrow">SFP module details</span>
         <span class="vw-card-metric-label-sub">Optical transceiver status and health for ${N.sfp.length} modules</span>
       </div>
-      ${table([{t:'Port'},{t:'Type'},{t:'Status'},{t:'TX power',r:true},{t:'RX power',r:true},{t:'Temperature',r:true}],
-        N.sfp.map(s => [
-          `<span class="mono">${s.port}</span>`, `<span class="mono">${s.type}</span>`,
-          chip(s.st, s.st === 'Active' ? 'success' : s.st === 'Standby' ? 'warning' : 'error'),
-          `<span class="mono">${s.tx} dBm</span>`,
-          `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red',700)}"` : ''}>${s.rx} dBm</span>`,
-          `${s.temp} °C`
-        ]), '',
-        () => [])}`)}`;
+      ${table([{ t: 'Port' }, { t: 'Type' }, { t: 'Status' }, { t: 'TX power', r: true }, { t: 'RX power', r: true }, { t: 'Temperature', r: true }],
+      N.sfp.map(s => [
+        `<span class="mono">${s.port}</span>`, `<span class="mono">${s.type}</span>`,
+        chip(s.st, s.st === 'Active' ? 'success' : s.st === 'Standby' ? 'warning' : 'error'),
+        `<span class="mono">${s.tx} dBm</span>`,
+        `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red', 700)}"` : ''}>${s.rx} dBm</span>`,
+        `${s.temp} °C`
+      ]), '',
+      () => [])}`)}`;
 }
 
 function nodeLinksSwitch(N) {
@@ -258,11 +260,11 @@ function nodeLinksSwitch(N) {
       </div>
 
       ${(() => {
-        const sel = N.capRows[NODE_LINK_SEL] || N.capRows[0];
-        const trendData = N.linkTrendDaily(sel);
-        const peak = Math.max(...trendData.map(t => Math.max(t.a, t.f)));
-        const growth = +(((trendData[6].a + trendData[6].f) / 2 - (trendData[0].a + trendData[0].f) / 2) / 6).toFixed(1);
-        return `
+      const sel = N.capRows[NODE_LINK_SEL] || N.capRows[0];
+      const trendData = N.linkTrendDaily(sel);
+      const peak = Math.max(...trendData.map(t => Math.max(t.a, t.f)));
+      const growth = +(((trendData[6].a + trendData[6].f) / 2 - (trendData[0].a + trendData[0].f) / 2) / 6).toFixed(1);
+      return `
       <div class="cx-panel" style="padding:24px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
         <div class="row vw-justify-between vw-items-center" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--vw-color-slate-100)">
           <div style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-gray-900)">Link capacity trend · ${esc(sel.n)}</div>
@@ -271,7 +273,7 @@ function nodeLinksSwitch(N) {
             <span style="padding:3px 10px;border-radius:12px;background:#fff7ed;color:#c2410c;font-weight:500">${growth >= 0 ? '+' : ''}${growth}%/day</span>
           </div>
         </div>
-        ${nvTrend(trendData, [{ k:'a', tone:'sky' }, { k:'f', tone:'orange' }], 280)}
+        ${nvTrend(trendData, [{ k: 'a', tone: 'sky' }, { k: 'f', tone: 'orange' }], 280)}
         <div class="row vw-justify-center" style="gap:24px;margin-top:20px;font-size:0.75rem">
           <span style="display:inline-flex;align-items:center;gap:8px;padding:4px 14px;background:#f0f9ff;border:1px solid #e0f2fe;border-radius:16px">
             <span style="width:8px;height:8px;border-radius:50%;background:#0ea5e9;box-shadow:0 0 6px rgba(14,165,233,0.5)"></span>
@@ -283,7 +285,7 @@ function nodeLinksSwitch(N) {
           </span>
         </div>
       </div>`;
-      })()}
+    })()}
     </div>`);
 }
 
@@ -339,15 +341,15 @@ function nodeServicesSwitch(N) {
         </select>
       </div>
 
-      ${table([{t:'Service name'},{t:'Site type'},{t:'Status'},{t:'Source interface'},{t:'Bandwidth'}],
-        rows.map(r => [
-          `<span style="font-weight:500;color:var(--vw-color-gray-800);font-size:0.875rem">${r.n}</span>`,
-          `<span style="display:inline-flex;padding:3px 10px;border-radius:12px;background:#f3e8ff;color:#7e22ce;font-size:0.75rem;font-weight:500">${r.t}</span>`,
-          chip(r.st, r.st === 'Active' ? 'success' : 'error'),
-          `<span class="mono" style="color:var(--vw-color-slate-700);font-size:0.8125rem">${r.ifc}</span>`,
-          `<span style="font-weight:400;color:var(--vw-color-gray-800);font-size:0.8125rem">${r.bw}</span>`
-        ]), '',
-        () => [])}
+      ${table([{ t: 'Service name' }, { t: 'Site type' }, { t: 'Status' }, { t: 'Source interface' }, { t: 'Bandwidth' }],
+    rows.map(r => [
+      `<span style="font-weight:500;color:var(--vw-color-gray-800);font-size:0.875rem">${r.n}</span>`,
+      `<span style="display:inline-flex;padding:3px 10px;border-radius:12px;background:#f3e8ff;color:#7e22ce;font-size:0.75rem;font-weight:500">${r.t}</span>`,
+      chip(r.st, r.st === 'Active' ? 'success' : 'error'),
+      `<span class="mono" style="color:var(--vw-color-slate-700);font-size:0.8125rem">${r.ifc}</span>`,
+      `<span style="font-weight:400;color:var(--vw-color-gray-800);font-size:0.8125rem">${r.bw}</span>`
+    ]), '',
+    () => [])}
 
       <div style="display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:12px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0);font-size:0.8125rem;color:var(--vw-color-gray-600)">
         <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--vw-color-emerald-500,#10b981)"></span><span style="font-weight:500">${activeCount}</span> Active</span>
@@ -421,7 +423,7 @@ function nodeAlertsSwitch(N) {
     <div style="border:1px solid var(--vw-color-slate-200,#e2e8f0);border-radius:12px;padding:20px;background:#ffffff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:34px;height:34px;border-radius:8px;background:${cv('red',50)};color:${cv('red',600)};display:flex;align-items:center;justify-content:center">
+          <div style="width:34px;height:34px;border-radius:8px;background:${cv('red', 50)};color:${cv('red', 600)};display:flex;align-items:center;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <div>
@@ -479,7 +481,7 @@ function nodeHeaderRouter(N) {
   const r = N.r;
   const stLabel = r.st === 'ok' ? 'Ready' : r.st === 'drift' ? 'Degraded' : r.st === 'stale' ? 'Stale' : r.st === 'miss' ? 'Missing' : N.ready;
   const stTone = stLabel === 'Ready' ? 'success' : stLabel === 'Degraded' || stLabel === 'Stale' ? 'warning' : 'error';
-  const macAddr = r.mac || `A4:5E:60:${nint(N.name,62,10,99)}:8F:${nint(N.name,63,10,99)}`;
+  const macAddr = r.mac || `A4:5E:60:${nint(N.name, 62, 10, 99)}:8F:${nint(N.name, 63, 10, 99)}`;
   const rackLoc = r.rack ? `Rack ${r.rack}` : `Rack A · U${nint(N.name, 60, 10, 44)}-${nint(N.name, 61, 45, 48)}`;
 
   const cells = [
@@ -505,7 +507,7 @@ function nodeHeaderRouter(N) {
         <span class="vw-card-metric-label-sub">${r.loc} · ${r.ip} · ${r.sn}</span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`Node resources · ${N.name}`, q:`name=${encodeURIComponent(N.name)}` })}>Node resources</button>
+        <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
     <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
@@ -527,27 +529,29 @@ function nodeOverviewRouter(N) {
 
     <div class="nv-health-row">
       ${nvHealthCard('ICMP health', 'Network reachability',
-        [N.icmp.loss < 0.3 ? 'Healthy' : 'Degraded', N.icmp.loss < 0.3 ? 'success' : 'warning'],
-        [['Packet loss', `${N.icmp.loss}%`, N.icmp.loss > 0.3 ? 'red' : null],
-         ['Latency avg', `${N.icmp.lat} ms`], ['Jitter', `${N.icmp.jit} ms`],
-         ['Availability', `${N.icmp.avail}%`, 'emerald']],
-        `Last checked ${N.icmp.checked} · probe interval ${N.icmp.probe}`)}
+    [N.icmp.loss < 0.3 ? 'Healthy' : 'Degraded', N.icmp.loss < 0.3 ? 'success' : 'warning'],
+    [['Packet loss', `${N.icmp.loss}%`, N.icmp.loss > 0.3 ? 'red' : null],
+    ['Latency avg', `${N.icmp.lat} ms`], ['Jitter', `${N.icmp.jit} ms`],
+    ['Availability', `${N.icmp.avail}%`, 'emerald']],
+    `Last checked ${N.icmp.checked} · probe interval ${N.icmp.probe}`)}
       ${nvHealthCard('NTP sync', 'Time synchronisation', ['Synchronised', 'success'],
-        [['Offset', `${N.ntp.off} ms`], ['Delay', `${N.ntp.delay} ms`], ['Jitter', `${N.ntp.jit} ms`],
-         ['Stratum', N.ntp.stratum]],
-        `Primary <span class="mono">${N.ntp.primary}</span> · secondary <span class="mono">${N.ntp.secondary}</span> · last sync ${N.ntp.sync}`)}
+      [['Offset', `${N.ntp.off} ms`], ['Delay', `${N.ntp.delay} ms`], ['Jitter', `${N.ntp.jit} ms`],
+      ['Stratum', N.ntp.stratum]],
+      `Primary <span class="mono">${N.ntp.primary}</span> · secondary <span class="mono">${N.ntp.secondary}</span> · last sync ${N.ntp.sync}`)}
       ${nvHealthCard('RADIUS auth', 'AAA authentication',
         [N.rad.fails > 3 ? 'Degraded' : 'Healthy', N.rad.fails > 3 ? 'warning' : 'success'],
         [['Success rate', `${N.rad.ok}%`, 'emerald'], ['Failures 24 h', N.rad.fails, N.rad.fails ? 'amber' : null],
-         ['Primary', 'Reachable', 'emerald'], ['Secondary', 'Reachable', 'emerald']],
+        ['Primary', 'Reachable', 'emerald'], ['Secondary', 'Reachable', 'emerald']],
         `Primary <span class="mono">${N.rad.primary}</span> · secondary <span class="mono">${N.rad.secondary}</span> · last auth ${N.rad.last}`)}
     </div>`);
 }
 
 function nodeHardwareRouter(N) {
-  const perfKeys = [{ k:'cpu', tone:'sky' }, { k:'mem', tone:'amber' }, { k:'temp', tone:'red' }];
-  const topIf = IFACES.slice(0, 8).map((i, x) => ({ ...i,
-    inb: nint(N.name, 1800 + x, 22, 88), outb: nint(N.name, 1900 + x, 18, 84) }));
+  const perfKeys = [{ k: 'cpu', tone: 'sky' }, { k: 'mem', tone: 'amber' }, { k: 'temp', tone: 'red' }];
+  const topIf = IFACES.slice(0, 8).map((i, x) => ({
+    ...i,
+    inb: nint(N.name, 1800 + x, 22, 88), outb: nint(N.name, 1900 + x, 18, 84)
+  }));
 
   const perfCard = card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="gap:var(--vw-space-md)">
@@ -555,37 +559,47 @@ function nodeHardwareRouter(N) {
       <div class="row">
         <div class="nv-fcgroup">
           ${[['CPU forecast', N.perf.fCpu + '%', 'blue'],
-             ['Memory forecast', N.perf.fMem + '%', 'orange'],
-             ['Temp forecast', N.perf.fTemp + '°C', 'red']]
-            .map(([k, v, t]) => `<span class="nv-fc">
+    ['Memory forecast', N.perf.fMem + '%', 'orange'],
+    ['Temp forecast', N.perf.fTemp + '°C', 'red']]
+      .map(([k, v, t]) => `<span class="nv-fc">
               <span class="nv-fck">${k}</span>
-              <span class="nv-fcv num" style="color:${cv(t,600)}">${v}</span></span>`).join('')}
+              <span class="nv-fcv num" style="color:${cv(t, 600)}">${v}</span></span>`).join('')}
         </div>
         <span class="nst-input-shell nv-per"><select class="nst-input" data-nperfsel>
-          ${['24h','7 days'].map(p => `<option${NODE_PERF===p?' selected':''}>${p}</option>`).join('')}
+          ${['24h', '7 days'].map(p => `<option${NODE_PERF === p ? ' selected' : ''}>${p}</option>`).join('')}
         </select></span>
       </div>
     </div>
     <div style="margin-top:var(--vw-space-md)">${nvForecast(N.perf.fc, 340)}</div>
     <div class="row vw-justify-center vw-wrap vw-card-footer-divider" style="gap:var(--vw-space-md)">
-      ${[['CPU','blue'],['Memory','orange'],['Temp','red']].flatMap(([k, t]) => [
-        `<span class="legend-i"><span class="nv-lsw" style="background:${cv(t,500)}"></span>${k} (actual)</span>`,
-        `<span class="legend-i"><span class="nv-lsw is-dash" style="--lc:${cv(t,500)}"></span>${k} (forecast)</span>`
+      ${[['CPU', 'blue'], ['Memory', 'orange'], ['Temp', 'red']].flatMap(([k, t]) => [
+        `<span class="legend-i"><span class="nv-lsw" style="background:${cv(t, 500)}"></span>${k} (actual)</span>`,
+        `<span class="legend-i"><span class="nv-lsw is-dash" style="--lc:${cv(t, 500)}"></span>${k} (forecast)</span>`
       ]).join('')}
     </div>`, 'grow');
 
   const aiHw = nvAI('AI hardware analysis', 'Predictive maintenance and failure detection', 'orange', [
-    { t:'Port capacity', s:'Utilisation forecast', big:`~${nint(N.name, 70, 3, 9)} months`, tone:'orange',
-      d:`Port exhaustion predicted at the current growth rate of +${nint(N.name, 71, 3, 9)}.${nint(N.name, 72, 0, 9)}% a month.`,
-      bar: nint(N.name, 73, 78, 94) },
-    { t:'Failure prediction', s:'Component analysis', chip:['Low','success'],
-      d:`Fan module wear — predicted cyclic growth in RPM degradation, 2.3% over 30 days. No action required yet.` },
-    { t:'Optical degradation', s:'SFP power drift', chip:['Medium','warning'],
-      d:`SFP on ${N.sfp[3].port} is drifting ${(0.2 + nrand(N.name, 74, 0, 0.5)).toFixed(1)} dB a month. Replace before it crosses the receiver floor.` },
-    { t:'Thermal analysis', s:'Temperature monitoring', chip:['Normal','success'],
-      d:`Chassis temperatures are within acceptable range. Sensor status green across all zones.` },
-    { t:'Optimisation tip', s:'Suggested action', chip:['Informational','info'],
-      d:`Schedule the optical clean during off-peak hours. Consider adjusting the alerting threshold to 78%.` }
+    {
+      t: 'Port capacity', s: 'Utilisation forecast', big: `~${nint(N.name, 70, 3, 9)} months`, tone: 'orange',
+      d: `Port exhaustion predicted at the current growth rate of +${nint(N.name, 71, 3, 9)}.${nint(N.name, 72, 0, 9)}% a month.`,
+      bar: nint(N.name, 73, 78, 94)
+    },
+    {
+      t: 'Failure prediction', s: 'Component analysis', chip: ['Low', 'success'],
+      d: `Fan module wear — predicted cyclic growth in RPM degradation, 2.3% over 30 days. No action required yet.`
+    },
+    {
+      t: 'Optical degradation', s: 'SFP power drift', chip: ['Medium', 'warning'],
+      d: `SFP on ${N.sfp[3].port} is drifting ${(0.2 + nrand(N.name, 74, 0, 0.5)).toFixed(1)} dB a month. Replace before it crosses the receiver floor.`
+    },
+    {
+      t: 'Thermal analysis', s: 'Temperature monitoring', chip: ['Normal', 'success'],
+      d: `Chassis temperatures are within acceptable range. Sensor status green across all zones.`
+    },
+    {
+      t: 'Optimisation tip', s: 'Suggested action', chip: ['Informational', 'info'],
+      d: `Schedule the optical clean during off-peak hours. Consider adjusting the alerting threshold to 78%.`
+    }
   ]);
 
   const portLayout = `
@@ -594,16 +608,16 @@ function nodeHardwareRouter(N) {
       ${nvChassis(N.chassis)}
     </div>`;
 
-  const utilBand = v => v > 85 ? ['Critical','red'] : v > 70 ? ['Warning','orange']
-                      : v > 50 ? ['Moderate','amber'] : ['Normal','emerald'];
+  const utilBand = v => v > 85 ? ['Critical', 'red'] : v > 70 ? ['Warning', 'orange']
+    : v > 50 ? ['Moderate', 'amber'] : ['Normal', 'emerald'];
   const utilList = `
     <div class="cx-panel">
       <div class="cx-panel-head"><span class="eyebrow">Interface utilisation</span></div>
       <div class="stack-s" style="margin-top:var(--vw-space-sm)">
         ${topIf.slice(0, 7).map((i, x) => {
-          const d = nint(N.name, 2200 + x, -6, 9);
-          const [, tone] = utilBand(i.inb);
-          return `<div class="nv-util">
+    const d = nint(N.name, 2200 + x, -6, 9);
+    const [, tone] = utilBand(i.inb);
+    return `<div class="nv-util">
             <div class="row vw-justify-between vw-items-baseline vw-wrap" style="gap:var(--vw-space-xs)">
               <span class="row" style="gap:var(--vw-space-xs);min-width:0">
                 <span class="vw-value mono" title="${i.desc}">${i.n}</span>
@@ -616,48 +630,48 @@ function nodeHardwareRouter(N) {
               </span>
             </div>
             <span class="hbar-track" style="height:8px;display:block"><span class="hbar-fill"
-              style="display:block;width:${i.inb}%;background:${cv(tone,400)}"></span></span>
+              style="display:block;width:${i.inb}%;background:${cv(tone, 400)}"></span></span>
           </div>`;
-        }).join('')}
+  }).join('')}
       </div>
       <div class="vw-card-footer-divider nv-ulegend">
-        ${[['Critical (>85%)','red'],['Warning (70–85%)','orange'],
-           ['Moderate (50–70%)','amber'],['Normal (<50%)','emerald']]
-          .map(([l, t]) => `<span class="legend-i"><span class="legend-sw" style="background:${cv(t,400)}"></span>${l}</span>`).join('')}
+        ${[['Critical (>85%)', 'red'], ['Warning (70–85%)', 'orange'],
+    ['Moderate (50–70%)', 'amber'], ['Normal (<50%)', 'emerald']]
+      .map(([l, t]) => `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, 400)}"></span>${l}</span>`).join('')}
       </div>
     </div>`;
 
   const opticalBlock = N.optical ? `
     <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-top:var(--vw-space-md)">
       ${kpi('Channels in service', `${N.optical.used} / ${N.optical.chans.length}`,
-        `${N.optical.chans.length - N.optical.used} spare wavelengths`, 'cyan')}
+    `${N.optical.chans.length - N.optical.used} spare wavelengths`, 'cyan')}
       ${kpi('Worst OSNR', `${Math.min(...N.optical.chans.filter(c => !c.spare).map(c => c.osnr))} dB`,
-        'margin to the 12 dB FEC floor', 'amber')}
+      'margin to the 12 dB FEC floor', 'amber')}
       ${kpi('Amplifiers', `${N.optical.amps.filter(a => a.st === 'Active').length} / ${N.optical.amps.length}`,
         N.optical.amps.map(a => a.n.split(' ')[0]).join(' · '), 'purple')}
       ${kpi('Spans', String(N.optical.spans.length),
-        `${N.optical.spans.reduce((a, s) => a + s.km, 0)} km total`, 'sky')}
+          `${N.optical.spans.reduce((a, s) => a + s.km, 0)} km total`, 'sky')}
     </div>
 
     <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-lg)">
       <span class="eyebrow">Wavelength plan</span>
       <span class="vw-card-metric-label-sub">Per-channel optical power, OSNR and pre-FEC BER</span>
     </div>
-    ${table([{t:'Channel'},{t:'Wavelength'},{t:'Service'},{t:'Line rate'},{t:'Status'},
-             {t:'TX power',r:true},{t:'RX power',r:true},{t:'OSNR',r:true},{t:'Pre-FEC BER',r:true}],
-      N.optical.chans.map(c => [
-        `<span class="mono">${c.ch}</span>`, `<span class="mono">${c.lambda} nm</span>`,
-        c.spare ? `<span style="color:${cv('gray',400)}">spare wavelength</span>` : `<span class="vw-value">${c.svc}</span>`,
-        c.rate ? `<span class="mono">${c.rate}</span>` : `<span style="color:${cv('gray',300)}">—</span>`,
-        chip(c.st, c.st === 'Active' ? 'success' : c.st === 'Warning' ? 'warning'
-          : c.st === 'Unequipped' ? 'neutral' : 'error'),
-        c.tx === null ? `<span style="color:${cv('gray',300)}">—</span>` : `<span class="mono">${c.tx} dBm</span>`,
-        c.rx === null ? `<span style="color:${cv('gray',300)}">—</span>` : `<span class="mono">${c.rx} dBm</span>`,
-        c.osnr === null ? `<span style="color:${cv('gray',300)}">—</span>`
-          : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red',700)}"` : ''}>${c.osnr} dB</span>`,
-        c.ber === null ? `<span style="color:${cv('gray',300)}">—</span>` : `<span class="mono">${c.ber}</span>`
-      ]), '',
-      () => [])}
+    ${table([{ t: 'Channel' }, { t: 'Wavelength' }, { t: 'Service' }, { t: 'Line rate' }, { t: 'Status' },
+          { t: 'TX power', r: true }, { t: 'RX power', r: true }, { t: 'OSNR', r: true }, { t: 'Pre-FEC BER', r: true }],
+            N.optical.chans.map(c => [
+              `<span class="mono">${c.ch}</span>`, `<span class="mono">${c.lambda} nm</span>`,
+              c.spare ? `<span style="color:${cv('gray', 400)}">spare wavelength</span>` : `<span class="vw-value">${c.svc}</span>`,
+              c.rate ? `<span class="mono">${c.rate}</span>` : `<span style="color:${cv('gray', 300)}">—</span>`,
+              chip(c.st, c.st === 'Active' ? 'success' : c.st === 'Warning' ? 'warning'
+                : c.st === 'Unequipped' ? 'neutral' : 'error'),
+              c.tx === null ? `<span style="color:${cv('gray', 300)}">—</span>` : `<span class="mono">${c.tx} dBm</span>`,
+              c.rx === null ? `<span style="color:${cv('gray', 300)}">—</span>` : `<span class="mono">${c.rx} dBm</span>`,
+              c.osnr === null ? `<span style="color:${cv('gray', 300)}">—</span>`
+                : `<span class="mono"${c.osnr < 15 ? ` style="color:${cv('red', 700)}"` : ''}>${c.osnr} dB</span>`,
+              c.ber === null ? `<span style="color:${cv('gray', 300)}">—</span>` : `<span class="mono">${c.ber}</span>`
+            ]), '',
+            () => [])}
 
     <div class="nv-portsplit" style="margin-top:var(--vw-space-lg)">
       <div class="cx-panel">
@@ -673,14 +687,14 @@ function nodeHardwareRouter(N) {
       <div class="cx-panel">
         <div class="cx-panel-head"><span class="eyebrow">Span loss against budget</span></div>
         ${N.optical.spans.map(sp => {
-          const pct = Math.min(100, sp.loss / sp.budget * 100);
-          return `<div class="cx-row">
+              const pct = Math.min(100, sp.loss / sp.budget * 100);
+              return `<div class="cx-row">
             <span class="vw-label" title="${sp.n}">${sp.n}</span>
             <span class="hbar-track"><span class="hbar-fill" style="display:block;width:${pct.toFixed(0)}%;
               background:${cv(pct > 88 ? 'red' : pct > 70 ? 'amber' : 'emerald', 400)}"></span></span>
             <span class="vw-value num t-right">${sp.loss} / ${sp.budget} dB</span>
           </div>`;
-        }).join('')}
+            }).join('')}
       </div>
     </div>` : '';
 
@@ -691,14 +705,14 @@ function nodeHardwareRouter(N) {
     </div>
     ${card(`
       ${N.meta.hw === 'optical' ? opticalBlock
-        : `<div class="nv-portsplit">${portLayout}${utilList}</div>`}
+      : `<div class="nv-portsplit">${portLayout}${utilList}</div>`}
 
       <div class="cx-panel-head row vw-justify-between vw-items-baseline" style="margin-top:var(--vw-space-xl)">
         <span class="eyebrow">Top interfaces by utilisation</span>
         <span class="vw-card-metric-label-sub">Real-time bandwidth consumption of ${N.ov.ifTotal} interfaces</span>
       </div>
-      ${table([{t:'Name'},{t:'Description'},{t:'Media'},{t:'Admin status'},{t:'Operational status'},
-               {t:'Inbound utilisation',r:true},{t:'Outbound utilisation',r:true}],
+      ${table([{ t: 'Name' }, { t: 'Description' }, { t: 'Media' }, { t: 'Admin status' }, { t: 'Operational status' },
+      { t: 'Inbound utilisation', r: true }, { t: 'Outbound utilisation', r: true }],
         topIf.map(i => [
           `<span class="vw-value mono">${i.n}</span>`,
           `<span class="vw-card-metric-label-sub">${i.desc}</span>`,
@@ -706,9 +720,9 @@ function nodeHardwareRouter(N) {
           chip(i.admin, i.admin === 'up' ? 'success' : 'error'),
           chip(i.oper, i.oper === 'up' ? 'success' : 'error'),
           `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
-            <span class="hbar-fill" style="display:block;width:${i.inb}%;background:${cv(i.inb>85?'red':i.inb>70?'amber':'emerald',400)}"></span></span>${i.inb}%</span>`,
+            <span class="hbar-fill" style="display:block;width:${i.inb}%;background:${cv(i.inb > 85 ? 'red' : i.inb > 70 ? 'amber' : 'emerald', 400)}"></span></span>${i.inb}%</span>`,
           `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:4rem;height:7px">
-            <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb>85?'red':i.outb>70?'amber':'emerald',400)}"></span></span>${i.outb}%</span>`
+            <span class="hbar-fill" style="display:block;width:${i.outb}%;background:${cv(i.outb > 85 ? 'red' : i.outb > 70 ? 'amber' : 'emerald', 400)}"></span></span>${i.outb}%</span>`
         ]), '',
         () => [])}
 
@@ -716,15 +730,15 @@ function nodeHardwareRouter(N) {
         <span class="eyebrow">SFP module details</span>
         <span class="vw-card-metric-label-sub">Optical transceiver status and health for ${N.sfp.length} modules</span>
       </div>
-      ${table([{t:'Port'},{t:'Type'},{t:'Status'},{t:'TX power',r:true},{t:'RX power',r:true},{t:'Temperature',r:true}],
-        N.sfp.map(s => [
-          `<span class="mono">${s.port}</span>`, `<span class="mono">${s.type}</span>`,
-          chip(s.st, s.st === 'Active' ? 'success' : s.st === 'Standby' ? 'warning' : 'error'),
-          `<span class="mono">${s.tx} dBm</span>`,
-          `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red',700)}"` : ''}>${s.rx} dBm</span>`,
-          `${s.temp} °C`
-        ]), '',
-        () => [])}`)}`;
+      ${table([{ t: 'Port' }, { t: 'Type' }, { t: 'Status' }, { t: 'TX power', r: true }, { t: 'RX power', r: true }, { t: 'Temperature', r: true }],
+          N.sfp.map(s => [
+            `<span class="mono">${s.port}</span>`, `<span class="mono">${s.type}</span>`,
+            chip(s.st, s.st === 'Active' ? 'success' : s.st === 'Standby' ? 'warning' : 'error'),
+            `<span class="mono">${s.tx} dBm</span>`,
+            `<span class="mono"${s.rx < -18 ? ` style="color:${cv('red', 700)}"` : ''}>${s.rx} dBm</span>`,
+            `${s.temp} °C`
+          ]), '',
+          () => [])}`)}`;
 }
 
 /* one link's own capacity trend (see nodeOf()'s linkTrend — derived from
@@ -792,22 +806,34 @@ function nodeLinksRouter(N) {
      Active/Down/Init the way the cards used to is technically true but
      reads as a template that was never finished for anything but LLDP. */
   const PROTO_META = {
-    OSPF: { labels: ['Active Links', 'Down Links', 'Init State'], tone: 'emerald', iconCol: '#16a34a', iconBg: '#dcfce7',
-      icon: `<circle cx="12" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="18" r="3"></circle><line x1="12" y1="9" x2="6" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line>` },
-    BGP:  { labels: ['Established', 'Idle', 'Active'], tone: 'purple', iconCol: '#9333ea', iconBg: '#f3e8ff',
-      icon: `<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>` },
-    LLDP: { labels: ['Neighbors Up', 'Neighbors Down', 'Unknown'], tone: 'sky', iconCol: '#0284c7', iconBg: '#e0f2fe',
-      icon: `<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>` },
-    LSP:  { labels: ['Active LSP', 'Standby LSP', 'Down LSP'], tone: 'rose', iconCol: '#e11d48', iconBg: '#ffe4e6',
-      icon: `<path d="M4 12h4l2-6 4 12 2-6h4"></path>` },
-    ISIS: { labels: ['Up Links', 'Down Links', 'Init State'], tone: 'amber', iconCol: '#d97706', iconBg: '#fef3c7',
-      icon: `<polygon points="12 2 2 22 22 22 12 2"></polygon>` }
+    OSPF: {
+      labels: ['Active Links', 'Down Links', 'Init State'], tone: 'emerald', iconCol: '#16a34a', iconBg: '#dcfce7',
+      icon: `<circle cx="12" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="18" r="3"></circle><line x1="12" y1="9" x2="6" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line>`
+    },
+    BGP: {
+      labels: ['Established', 'Idle', 'Active'], tone: 'purple', iconCol: '#9333ea', iconBg: '#f3e8ff',
+      icon: `<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>`
+    },
+    LLDP: {
+      labels: ['Neighbors Up', 'Neighbors Down', 'Unknown'], tone: 'sky', iconCol: '#0284c7', iconBg: '#e0f2fe',
+      icon: `<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>`
+    },
+    LSP: {
+      labels: ['Active LSP', 'Standby LSP', 'Down LSP'], tone: 'rose', iconCol: '#e11d48', iconBg: '#ffe4e6',
+      icon: `<path d="M4 12h4l2-6 4 12 2-6h4"></path>`
+    },
+    ISIS: {
+      labels: ['Up Links', 'Down Links', 'Init State'], tone: 'amber', iconCol: '#d97706', iconBg: '#fef3c7',
+      icon: `<polygon points="12 2 2 22 22 22 12 2"></polygon>`
+    }
   };
   const protoCardsConfig = ['OSPF', 'BGP', 'LLDP', 'LSP', 'ISIS'].map(k => {
     const row = N.protoRows.find(p => p.k === k) || { a: 0, d: 0, i: 0 };
     const m = PROTO_META[k];
-    return { k, labels: m.labels, vals: [row.a, row.d, row.i], iconCol: m.iconCol, iconBg: m.iconBg,
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg>` };
+    return {
+      k, labels: m.labels, vals: [row.a, row.d, row.i], iconCol: m.iconCol, iconBg: m.iconBg,
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg>`
+    };
   });
 
   return card(`
@@ -858,7 +884,8 @@ function nodeLinksRouter(N) {
         ${chip(`${sel.k} Protocol`, 'info')}
       </div>
 
-      ${(() => { const rows = N.capRowsByProto[sel.k] || N.capRowsByProto.LLDP; return `
+      ${(() => {
+      const rows = N.capRowsByProto[sel.k] || N.capRowsByProto.LLDP; return `
       <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--vw-space-xl);align-items:start">
         <div class="cx-panel" style="padding:14px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
           <div class="row vw-justify-between vw-items-center" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--vw-color-slate-100)">
@@ -876,7 +903,7 @@ function nodeLinksRouter(N) {
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:0.6875rem">
                   <span style="color:var(--vw-color-slate-500)">Bandwidth utilisation</span>
-                  <span class="mono" style="text-align:right;font-weight:500;color:${cv(r.tone,700)}">${r.util}%</span>
+                  <span class="mono" style="text-align:right;font-weight:500;color:${cv(r.tone, 700)}">${r.util}%</span>
                   <span style="color:var(--vw-color-slate-500)">Active sessions</span>
                   <span class="mono num" style="text-align:right">${n(r.sess)}</span>
                   <span style="color:var(--vw-color-slate-500)">Forecast date</span>
@@ -891,7 +918,8 @@ function nodeLinksRouter(N) {
         <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200)">
           ${renderLinkCapacityChart(rows[NODE_LINK_SEL] || rows[0], N.linkTrend, sel.k)}
         </div>
-      </div>`; })()}`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
+      </div>`;
+    })()}`, '', 'padding:var(--vw-space-lg) var(--vw-space-xl)')}`);
 }
 
 /* the 5 highest-bandwidth instances on this node, enriched with a
@@ -903,8 +931,8 @@ function nodeLinksRouter(N) {
    new). Index range 1800+ is unused anywhere else in app-node.js's
    svcTypes/instances (which run through ~1700), so it can't collide. */
 const SVC_CUST_CITY = [['Mumbai', 'Maharashtra'], ['Bangalore', 'Karnataka'], ['Delhi', 'NCR'],
-  ['Hyderabad', 'Telangana'], ['Chennai', 'Tamil Nadu'], ['Pune', 'Maharashtra'],
-  ['Kolkata', 'West Bengal'], ['Ahmedabad', 'Gujarat']];
+['Hyderabad', 'Telangana'], ['Chennai', 'Tamil Nadu'], ['Pune', 'Maharashtra'],
+['Kolkata', 'West Bengal'], ['Ahmedabad', 'Gujarat']];
 const SVC_PLAN_TIER = ['Premium', 'Enterprise', 'Business'];
 function nodePremiumCustomers(N) {
   const top = [...N.instances].sort((a, b) => b.util - a.util).slice(0, 5).map((r, i) => {
@@ -922,7 +950,7 @@ function nodePremiumCustomers(N) {
   return { top, totalServices, avgUtil, growth };
 }
 function svcIconBox(tone, path) {
-  return `<div style="width:34px;height:34px;border-radius:8px;background:${cv(tone,50)};color:${cv(tone,600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+  return `<div style="width:34px;height:34px;border-radius:8px;background:${cv(tone, 50)};color:${cv(tone, 600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg></div>`;
 }
 
@@ -938,7 +966,7 @@ function nodeTopCustomersRouter(N) {
       ${top.map((c, i) => `
         <div class="vw-card-child" style="padding:var(--vw-space-md)">
           <div class="row" style="gap:10px;align-items:center;margin-bottom:10px">
-            <span style="width:26px;height:26px;border-radius:50%;background:${cv('sky',500)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:500;flex-shrink:0">#${i + 1}</span>
+            <span style="width:26px;height:26px;border-radius:50%;background:${cv('sky', 500)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:500;flex-shrink:0">#${i + 1}</span>
             <div class="stack-x" style="gap:1px">
               <div class="row" style="gap:6px;align-items:center">
                 <span class="vw-value" style="font-weight:500">${c.cust}</span>${chip(c.custId, 'neutral')}
@@ -951,17 +979,17 @@ function nodeTopCustomersRouter(N) {
             <div class="stack-x"><span class="nv-hk">Bandwidth</span><span class="vw-value">${c.bw}</span></div>
             <div class="stack-x"><span class="nv-hk">Utilization</span>
               <span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
-                <span class="hbar-fill" style="display:block;width:${c.util}%;background:${cv(c.util>90?'red':c.util>75?'amber':'emerald',400)}"></span></span>
+                <span class="hbar-fill" style="display:block;width:${c.util}%;background:${cv(c.util > 90 ? 'red' : c.util > 75 ? 'amber' : 'emerald', 400)}"></span></span>
                 <span class="num">${c.util}%</span></span>
             </div>
-            <div class="stack-x"><span class="nv-hk">Active services</span><span class="vw-value" style="color:${cv('sky',600)}">${c.activeCount} Services</span></div>
+            <div class="stack-x"><span class="nv-hk">Active services</span><span class="vw-value" style="color:${cv('sky', 600)}">${c.activeCount} Services</span></div>
           </div>
         </div>`).join('')}
     </div>
     <div class="vw-card-footer-divider row vw-justify-between vw-wrap" style="margin-top:var(--vw-space-md)">
       <div class="stack-x"><span class="nv-hk">Avg. utilization</span><span class="vw-value num">${avgUtil}%</span></div>
       <div class="stack-x"><span class="nv-hk">Total services</span><span class="vw-value num">${totalServices} Active</span></div>
-      <div class="stack-x"><span class="nv-hk">Growth trend</span><span class="vw-value num" style="color:${cv('emerald',600)}">+${growth}% Avg</span></div>
+      <div class="stack-x"><span class="nv-hk">Growth trend</span><span class="vw-value num" style="color:${cv('emerald', 600)}">+${growth}% Avg</span></div>
     </div>`;
 }
 
@@ -987,8 +1015,8 @@ function nodeServicesRouter(N) {
           <span class="vw-card-metric-label-sub">${t.c} service${t.c > 1 ? 's' : ''}</span>
           <div class="nv-svc-g">
             <span class="nv-hk">Active</span><span class="num">${t.a}</span>
-            <span class="nv-hk">Degraded</span><span class="num"${t.deg ? ` style="color:${cv('amber',700)}"` : ''}>${t.deg}</span>
-            <span class="nv-hk">Down</span><span class="num"${t.dn ? ` style="color:${cv('red',700)}"` : ''}>${t.dn}</span>
+            <span class="nv-hk">Degraded</span><span class="num"${t.deg ? ` style="color:${cv('amber', 700)}"` : ''}>${t.deg}</span>
+            <span class="nv-hk">Down</span><span class="num"${t.dn ? ` style="color:${cv('red', 700)}"` : ''}>${t.dn}</span>
             <span class="nv-hk">SLA target</span><span class="num">${t.sla}%</span>
           </div>
         </div>`).join('')}
@@ -1008,19 +1036,19 @@ function nodeServicesRouter(N) {
             <span class="eyebrow">All service instances</span>
             <span class="vw-card-metric-label-sub">${rows.length} instances</span>
           </div>
-          ${table([{t:'Service ID'},{t:'Type'},{t:'Customer'},{t:'Status'},{t:'Bandwidth'},
-                   {t:'Utilisation',r:true},{t:'SLA target',r:true},{t:'Uptime',r:true}],
-            rows.map(r => [
-              `<span class="mono">${r.id}</span>`,
-              chip(r.type, r.type === 'L3VPN' ? 'info' : r.type === 'L2VPN' ? 'purple' : 'neutral'),
-              `<span class="vw-value">${r.cust}</span><br><span class="vw-card-metric-label-sub mono">${r.ifc}</span>`,
-              chip(r.st, r.st === 'Active' ? 'success' : r.st === 'Degraded' ? 'warning' : 'error'),
-              `<span class="mono">${r.bw}</span>`,
-              `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
-                <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util>90?'red':r.util>75?'amber':'emerald',400)}"></span></span>${r.util}%</span>`,
-              `${r.sla}%`, `${r.up}%`
-            ]), '',
-            () => [])}
+          ${table([{ t: 'Service ID' }, { t: 'Type' }, { t: 'Customer' }, { t: 'Status' }, { t: 'Bandwidth' },
+  { t: 'Utilisation', r: true }, { t: 'SLA target', r: true }, { t: 'Uptime', r: true }],
+    rows.map(r => [
+      `<span class="mono">${r.id}</span>`,
+      chip(r.type, r.type === 'L3VPN' ? 'info' : r.type === 'L2VPN' ? 'purple' : 'neutral'),
+      `<span class="vw-value">${r.cust}</span><br><span class="vw-card-metric-label-sub mono">${r.ifc}</span>`,
+      chip(r.st, r.st === 'Active' ? 'success' : r.st === 'Degraded' ? 'warning' : 'error'),
+      `<span class="mono">${r.bw}</span>`,
+      `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:7px">
+                <span class="hbar-fill" style="display:block;width:${r.util}%;background:${cv(r.util > 90 ? 'red' : r.util > 75 ? 'amber' : 'emerald', 400)}"></span></span>${r.util}%</span>`,
+      `${r.sla}%`, `${r.up}%`
+    ]), '',
+    () => [])}
         </div>
         <div class="cx-panel" style="padding:20px;border-radius:14px;background:#ffffff;border:1px solid var(--vw-color-slate-200);box-shadow:0 2px 8px rgba(15,23,42,0.03)">
           ${nodeTopCustomersRouter(N)}
@@ -1028,46 +1056,66 @@ function nodeServicesRouter(N) {
       </div>
       <div class="stack-s" style="width:min(21rem, 100%);flex-shrink:0">
         ${nvAI('Next 30 days', '', 'slate', [
-          { t:`${topType.n} Services`, s:'Growth forecast', chip:[`+${nint(N.name, 1840, 10, 22)}%`,'info'],
-            d:`Predicted traffic growth based on historical patterns. ${topType.c} service${topType.c > 1 ? 's' : ''} need capacity review.` },
-          { t:`${secondType.n} Services`, s:'Growth forecast', chip:[`+${nint(N.name, 1841, 14, 26)}%`,'warning'],
-            d:`Peak growth expected in the ${secondType.n} segment. Consider proactive capacity planning.` }
-        ])}
+      {
+        t: `${topType.n} Services`, s: 'Growth forecast', chip: [`+${nint(N.name, 1840, 10, 22)}%`, 'info'],
+        d: `Predicted traffic growth based on historical patterns. ${topType.c} service${topType.c > 1 ? 's' : ''} need capacity review.`
+      },
+      {
+        t: `${secondType.n} Services`, s: 'Growth forecast', chip: [`+${nint(N.name, 1841, 14, 26)}%`, 'warning'],
+        d: `Peak growth expected in the ${secondType.n} segment. Consider proactive capacity planning.`
+      }
+    ])}
         ${nvAI('Quality insights', 'Service health', 'slate', [
-          { t:`${healthyType.n} Services Optimal`, s:'',
-            d:`All ${healthyType.n} services operating at ${healthyType.sla}% SLA with excellent performance metrics.` },
-          ...(degradedRow ? [{ t:`${degradedRow.type} Path Issues`, s:'',
-            d:`${degradedRow.id} experiencing intermittent degradation. Path diagnostics recommended.` }] : [])
-        ])}
+      {
+        t: `${healthyType.n} Services Optimal`, s: '',
+        d: `All ${healthyType.n} services operating at ${healthyType.sla}% SLA with excellent performance metrics.`
+      },
+      ...(degradedRow ? [{
+        t: `${degradedRow.type} Path Issues`, s: '',
+        d: `${degradedRow.id} experiencing intermittent degradation. Path diagnostics recommended.`
+      }] : [])
+    ])}
         ${nvAI('Capacity alerts', `${atRisk.length} customer${atRisk.length === 1 ? '' : 's'} at risk`, 'red',
-          atRisk.length ? atRisk.slice(0, 2).map(r => ({
-            t:`${r.cust} - Urgent`, s:'',
-            d:`${r.type} at ${r.util}% capacity. Peak usage growing week over week. Recommend proactive ${r.bw} upgrade within 5 days.`,
-            chip:['High priority','error']
-          })) : [{ t:'No customers at risk', s:'', d:'Every service instance is currently under the 88% utilisation threshold.' }])}
+      atRisk.length ? atRisk.slice(0, 2).map(r => ({
+        t: `${r.cust} - Urgent`, s: '',
+        d: `${r.type} at ${r.util}% capacity. Peak usage growing week over week. Recommend proactive ${r.bw} upgrade within 5 days.`,
+        chip: ['High priority', 'error']
+      })) : [{ t: 'No customers at risk', s: '', d: 'Every service instance is currently under the 88% utilisation threshold.' }])}
         ${nvAI('Behavior insights', 'Customer patterns', 'slate', [
-          { t:'Top 5 Revenue Contributors', s:'Customer analytics',
-            d:`Average growth rate of ${growth}% MoM across top customers. All on premium service plans with high satisfaction.` },
-          { t:`${stable.cust} - High Value`, s:'',
-            d:`${stable.type} customer showing a stable ${stable.util}% usage pattern. Excellent retention candidate — consider loyalty program enrollment.` },
-          { t:'Churn Risk Detection', s:'',
-            d:`${churn.cust} shows uptime dipping to ${churn.up}% over 30 days with service degradation events. Schedule an account review.` }
-        ])}
+        {
+          t: 'Top 5 Revenue Contributors', s: 'Customer analytics',
+          d: `Average growth rate of ${growth}% MoM across top customers. All on premium service plans with high satisfaction.`
+        },
+        {
+          t: `${stable.cust} - High Value`, s: '',
+          d: `${stable.type} customer showing a stable ${stable.util}% usage pattern. Excellent retention candidate — consider loyalty program enrollment.`
+        },
+        {
+          t: 'Churn Risk Detection', s: '',
+          d: `${churn.cust} shows uptime dipping to ${churn.up}% over 30 days with service degradation events. Schedule an account review.`
+        }
+      ])}
         ${nvAI('AI recommendations', 'Priority actions', 'slate', [
-          { t:'1. Immediate Capacity Upgrade', s:'',
-            d: atRisk.length ? `Contact ${atRisk[0].cust} within 24hrs for emergency capacity upgrade to prevent SLA breach.` : 'No immediate capacity action required.' },
-          { t:'2. Upsell Opportunity', s:'',
-            d:`Schedule an upsell meeting with ${premium[0].cust} — highest revenue growth potential.` },
-          { t:'3. Retention Action', s:'',
-            d:`Conduct a retention call with ${churn.cust} to address degradation concerns.` }
-        ])}
+        {
+          t: '1. Immediate Capacity Upgrade', s: '',
+          d: atRisk.length ? `Contact ${atRisk[0].cust} within 24hrs for emergency capacity upgrade to prevent SLA breach.` : 'No immediate capacity action required.'
+        },
+        {
+          t: '2. Upsell Opportunity', s: '',
+          d: `Schedule an upsell meeting with ${premium[0].cust} — highest revenue growth potential.`
+        },
+        {
+          t: '3. Retention Action', s: '',
+          d: `Conduct a retention call with ${churn.cust} to address degradation concerns.`
+        }
+      ])}
       </div>
     </div>`);
 }
 
 function nodeAlertsRouter(N) {
   const alertTab = NODE_ALERT_TAB || 'alerts';
-  const SEV = { Critical:'error', Major:'warning', Minor:'orange', Warning:'neutral' };
+  const SEV = { Critical: 'error', Major: 'warning', Minor: 'orange', Warning: 'neutral' };
   return card(`
     <div class="row vw-justify-between vw-items-center" style="margin-bottom:var(--vw-space-md)">
       <div style="display:inline-flex;align-items:center;background:var(--vw-color-slate-100, #f1f5f9);padding:4px;border-radius:10px;gap:4px">
@@ -1088,7 +1136,7 @@ function nodeAlertsRouter(N) {
       <div class="cx-panel grow">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--vw-color-slate-200,#e2e8f0);flex-wrap:nowrap">
           <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:34px;height:34px;border-radius:8px;background:${cv('red',50)};color:${cv('red',600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="width:34px;height:34px;border-radius:8px;background:${cv('red', 50)};color:${cv('red', 600)};display:flex;align-items:center;justify-content:center;flex-shrink:0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
@@ -1107,10 +1155,10 @@ function nodeAlertsRouter(N) {
             </div>` : ''}
         </div>
         ${alertTab === 'alerts' ? (() => {
-          const filtered = N.alarmsList
-            .filter(a => NODE_ALERT_SEV === 'All severity' || a.sev === NODE_ALERT_SEV)
-            .filter(a => NODE_ALERT_SRC === 'All sources' || a.src === NODE_ALERT_SRC);
-          return `
+      const filtered = N.alarmsList
+        .filter(a => NODE_ALERT_SEV === 'All severity' || a.sev === NODE_ALERT_SEV)
+        .filter(a => NODE_ALERT_SRC === 'All sources' || a.src === NODE_ALERT_SRC);
+      return `
           <div class="stack-s">
             ${filtered.length ? filtered.map(a => `
               <div class="nv-alarm" style="--nt:${cv(SEV[a.sev] === 'error' ? 'red' : SEV[a.sev] === 'warning' ? 'amber' : 'orange', 400)}">
@@ -1130,39 +1178,47 @@ function nodeAlertsRouter(N) {
                   <span class="nv-hk">Alert code</span><span class="vw-value mono">${a.code}</span>
                 </div>
               </div>`).join('')
-              : `<div class="vw-card-child-shaded" style="padding:var(--vw-space-lg);text-align:center">
+          : `<div class="vw-card-child-shaded" style="padding:var(--vw-space-lg);text-align:center">
                    <span class="vw-card-description">No active alerts match ${NODE_ALERT_SEV !== 'All severity' ? esc(NODE_ALERT_SEV) : ''}${NODE_ALERT_SEV !== 'All severity' && NODE_ALERT_SRC !== 'All sources' ? ' · ' : ''}${NODE_ALERT_SRC !== 'All sources' ? esc(NODE_ALERT_SRC) : ''}.</span>
                  </div>`}
           </div>
           <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
             <span class="legend">
-              ${[['Critical','red'],['Major','amber'],['Minor','orange'],['Warning','slate']].map(([l, t]) =>
-                `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
+              ${[['Critical', 'red'], ['Major', 'amber'], ['Minor', 'orange'], ['Warning', 'slate']].map(([l, t]) =>
+            `<span class="legend-i"><span class="legend-sw" style="background:${cv(t, t === 'slate' ? 300 : 400)}"></span>${l}</span>`).join('')}
             </span>
           </div>`;
-        })()
-        : table([{t:'Incident'},{t:'Severity'},{t:'Opened'},{t:'Owner'},{t:'SLA'},{t:'Next action'}],
-            [['INC-4471','Critical',agoStamp(40, false),'Anjali Verma','Breached','Replace SFP on ' + N.sfp[3].port],
-             ['INC-4468','Major',agoStamp(1620, false),'Harish Kumar','At risk','Raise CPU threshold, schedule review']]
-            .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
-                       `<span class="num">${r[2]}</span>`, r[3],
-                       chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
-                       `<span class="vw-card-description">${r[5]}</span>`]), 'chip-auto',
-            () => [])}
+    })()
+      : table([{ t: 'Incident' }, { t: 'Severity' }, { t: 'Opened' }, { t: 'Owner' }, { t: 'SLA' }, { t: 'Next action' }],
+        [['INC-4471', 'Critical', agoStamp(40, false), 'Anjali Verma', 'Breached', 'Replace SFP on ' + N.sfp[3].port],
+        ['INC-4468', 'Major', agoStamp(1620, false), 'Harish Kumar', 'At risk', 'Raise CPU threshold, schedule review']]
+          .map(r => [`<span class="mono">${r[0]}</span>`, chip(r[1], r[1] === 'Critical' ? 'error' : 'warning'),
+          `<span class="num">${r[2]}</span>`, r[3],
+          chip(r[4], r[4] === 'Breached' ? 'error' : 'warning'),
+          `<span class="vw-card-description">${r[5]}</span>`]), 'chip-auto',
+        () => [])}
       </div>
 
       ${nvAI('AI diagnostics', 'Intelligent root cause analysis', 'red', [
-        { t:'Root cause', s:'Most likely cause', chip:['92%','error'],
-          d:`Physical layer issue on ${N.sfp[3].port}. Flapping events suggest cable or optical degradation rather than a control-plane fault.`,
-          bar: 92 },
-        { t:'Impact assessment', s:'Customer: Enterprise Corp',
-          d:`${N.atRisk} services traverse the affected path. One premium customer is exposed; SLA headroom for the month is thin.`,
-          chip:['High','warning'] },
-        { t:'Action plan', s:'Priority order',
-          d:`1 · Replace SFP on ${N.sfp[3].port} · 2 · Follow with a 15-minute BER test · 3 · Reset counters and watch for 24 hours · 4 · Close the incident if clean.` },
-        { t:'Similar events', s:'Estate correlation', chip:['4 nodes','info'],
-          d:`Four other nodes on the same optical vendor batch show the same drift signature. Worth a batch-level RMA rather than four separate ones.` }
-      ])}
+          {
+            t: 'Root cause', s: 'Most likely cause', chip: ['92%', 'error'],
+            d: `Physical layer issue on ${N.sfp[3].port}. Flapping events suggest cable or optical degradation rather than a control-plane fault.`,
+            bar: 92
+          },
+          {
+            t: 'Impact assessment', s: 'Customer: Enterprise Corp',
+            d: `${N.atRisk} services traverse the affected path. One premium customer is exposed; SLA headroom for the month is thin.`,
+            chip: ['High', 'warning']
+          },
+          {
+            t: 'Action plan', s: 'Priority order',
+            d: `1 · Replace SFP on ${N.sfp[3].port} · 2 · Follow with a 15-minute BER test · 3 · Reset counters and watch for 24 hours · 4 · Close the incident if clean.`
+          },
+          {
+            t: 'Similar events', s: 'Estate correlation', chip: ['4 nodes', 'info'],
+            d: `Four other nodes on the same optical vendor batch show the same drift signature. Worth a batch-level RMA rather than four separate ones.`
+          }
+        ])}
     </div>`);
 }
 
@@ -1178,17 +1234,17 @@ function nodeVlans(N) {
       ${kpi('Access ports', String(N.vlans.reduce((a, v) => a + v.acc, 0)), 'untagged, one VLAN each', 'purple')}
     </div>
     ${gridBar(gridApply('vlan:' + N.name, N.vlans).length, N.vlans.length + 51, 'VLAN ID, name, type', FS.vlan, '', [], 'vlan:' + N.name)}
-    ${table([{t:'VLAN ID'},{t:'Name'},{t:'Type'},{t:'Trunk ports',r:true},{t:'Access ports',r:true},
-             {t:'STP state'},{t:'Status'},{t:'Learned MAC',r:true},{t:'Traffic utilisation',r:true}],
-      gridApply('vlan:' + N.name, N.vlans).map(v => [
-        `<span class="mono">${v.id}</span>`, `<span class="vw-value">${v.n}</span>`,
-        chip(v.t, { Data:'info', Server:'success', Wireless:'purple', Voice:'warning', Guest:'neutral', Management:'error' }[v.t] || 'neutral'),
-        v.tr, v.acc, chip(v.stp, 'success'), chip(v.st, 'success'), n(v.mac),
-        `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="vw-card-metric-label-sub">${v.bw}</span>
+    ${table([{ t: 'VLAN ID' }, { t: 'Name' }, { t: 'Type' }, { t: 'Trunk ports', r: true }, { t: 'Access ports', r: true },
+  { t: 'STP state' }, { t: 'Status' }, { t: 'Learned MAC', r: true }, { t: 'Traffic utilisation', r: true }],
+    gridApply('vlan:' + N.name, N.vlans).map(v => [
+      `<span class="mono">${v.id}</span>`, `<span class="vw-value">${v.n}</span>`,
+      chip(v.t, { Data: 'info', Server: 'success', Wireless: 'purple', Voice: 'warning', Guest: 'neutral', Management: 'error' }[v.t] || 'neutral'),
+      v.tr, v.acc, chip(v.stp, 'success'), chip(v.st, 'success'), n(v.mac),
+      `<span class="row vw-gap-sm vw-justify-end vw-nowrap"><span class="vw-card-metric-label-sub">${v.bw}</span>
           <span class="hbar-track" style="width:3.5rem;height:7px"><span class="hbar-fill"
-            style="display:block;width:${v.pct}%;background:${cv(v.pct>75?'red':v.pct>50?'amber':'emerald',400)}"></span></span>${v.pct}%</span>`
-      ]), 'chip-auto',
-      () => [])}
+            style="display:block;width:${v.pct}%;background:${cv(v.pct > 75 ? 'red' : v.pct > 50 ? 'amber' : 'emerald', 400)}"></span></span>${v.pct}%</span>`
+    ]), 'chip-auto',
+    () => [])}
     <div class="vw-card-footer-divider row vw-justify-end vw-wrap">
       <span class="vw-card-metric-label-sub num">${n(tot)} MAC addresses learned</span>
     </div>`);
@@ -1243,7 +1299,7 @@ function nodeHeaderDwdm(N) {
         </span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v:'resource', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
+        <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
@@ -1319,18 +1375,18 @@ function nodeHardwareDwdm(N) {
       <div class="cx-panel-head row vw-justify-between vw-items-baseline">
         <span class="eyebrow">Optics inventory — pluggables &amp; wavelengths</span>
       </div>
-      ${table([{t:'Port'},{t:'Optic type'},{t:'Wavelength'},{t:'Serial'},{t:'Installed'},{t:'Status'}],
-        O.opticsInventory.map(o => [
-          `<span class="mono">${o.port}</span>`, o.type, o.wl, o.serial, o.installed,
-          chip(o.status, o.status === 'Normal' ? 'success' : 'error')
-        ]), '', () => [])}
+      ${table([{ t: 'Port' }, { t: 'Optic type' }, { t: 'Wavelength' }, { t: 'Serial' }, { t: 'Installed' }, { t: 'Status' }],
+    O.opticsInventory.map(o => [
+      `<span class="mono">${o.port}</span>`, o.type, o.wl, o.serial, o.installed,
+      chip(o.status, o.status === 'Normal' ? 'success' : 'error')
+    ]), '', () => [])}
     `, '', 'margin-top:var(--vw-space-md)')}
     <div class="vw-card-footer-divider row vw-wrap" style="gap:var(--vw-space-lg);margin-top:var(--vw-space-md);padding:var(--vw-space-md) 0;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">
       <span class="vw-value">Power supplies <span class="mono">${N.env.psu[0]}/${N.env.psu[1]} Healthy</span></span>
       <span class="vw-value">Fans <span class="mono">${N.env.fans[0]}/${N.env.fans[0]} Healthy</span></span>
       <span class="vw-value">Temperature <span class="mono">${N.env.tin < N.env.tmax - 4 ? 'Normal' : 'Elevated'}</span></span>
       <span class="vw-value">Optics tracked <span class="mono">${O.opticsInventory.length} ports</span></span>
-      <span class="vw-value">Optics flagged <span class="mono"${flagged ? ` style="color:${cv('red',700)}"` : ''}>${flagged}</span></span>
+      <span class="vw-value">Optics flagged <span class="mono"${flagged ? ` style="color:${cv('red', 700)}"` : ''}>${flagged}</span></span>
       <span class="vw-value">Oldest module <span class="mono">${O.commissioned}</span></span>
     </div>`;
 }
@@ -1339,12 +1395,12 @@ function nodeTopologyDwdm(N) {
   const O = N.optical;
   return card(`
     <div class="cx-panel-head"><span class="eyebrow">Ring topology</span></div>
-    ${table([{t:'Node A'},{t:'Port A'},{t:'Node Z'},{t:'Port Z'},{t:'Status'}],
-      O.ringTopology.map(t => [
-        `<span class="vw-value">${esc(t.a)}</span>`, `<span class="mono">${t.portA}</span>`,
-        `<span class="vw-value">${esc(t.z)}</span>`, `<span class="mono">${t.portZ}</span>`,
-        chip(t.status, t.tone)
-      ]), '', () => [])}`);
+    ${table([{ t: 'Node A' }, { t: 'Port A' }, { t: 'Node Z' }, { t: 'Port Z' }, { t: 'Status' }],
+    O.ringTopology.map(t => [
+      `<span class="vw-value">${esc(t.a)}</span>`, `<span class="mono">${t.portA}</span>`,
+      `<span class="vw-value">${esc(t.z)}</span>`, `<span class="mono">${t.portZ}</span>`,
+      chip(t.status, t.tone)
+    ]), '', () => [])}`);
 }
 
 function nodeChannelsDwdm(N) {
@@ -1354,15 +1410,15 @@ function nodeChannelsDwdm(N) {
       <span class="eyebrow">Monitored line wavelengths</span>
       <span class="vw-card-metric-label-sub">${O.channels.length} of ${O.GRID_CHANNELS} channels monitored · ITU-T 100GHz grid</span>
     </div>
-    ${table([{t:'Entity'},{t:'Shelf/slot'},{t:'Signal margin',r:true},{t:'BER pre-FEC',r:true},{t:'Corrected errors',r:true},{t:'UBE',r:true},{t:'Status'}],
-      O.channels.map(c => [
-        `<span class="mono">${c.ch}</span>`, c.shelf,
-        c.margin == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono"${c.margin < 12 ? ` style="color:${cv('red',700)}"` : ''}>${c.margin} dB</span>`,
-        c.ber == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
-        c.corrected == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.corrected}</span>`,
-        c.ube == null ? `<span style="color:${cv('gray',400)}">—</span>` : `<span class="mono">${c.ube}</span>`,
-        chip(c.st, c.tone)
-      ]), '', () => [])}`);
+    ${table([{ t: 'Entity' }, { t: 'Shelf/slot' }, { t: 'Signal margin', r: true }, { t: 'BER pre-FEC', r: true }, { t: 'Corrected errors', r: true }, { t: 'UBE', r: true }, { t: 'Status' }],
+    O.channels.map(c => [
+      `<span class="mono">${c.ch}</span>`, c.shelf,
+      c.margin == null ? `<span style="color:${cv('gray', 400)}">—</span>` : `<span class="mono"${c.margin < 12 ? ` style="color:${cv('red', 700)}"` : ''}>${c.margin} dB</span>`,
+      c.ber == null ? `<span style="color:${cv('gray', 400)}">—</span>` : `<span class="mono">${c.ber}</span>`,
+      c.corrected == null ? `<span style="color:${cv('gray', 400)}">—</span>` : `<span class="mono">${c.corrected}</span>`,
+      c.ube == null ? `<span style="color:${cv('gray', 400)}">—</span>` : `<span class="mono">${c.ube}</span>`,
+      chip(c.st, c.tone)
+    ]), '', () => [])}`);
 }
 
 function nodeAmplifiersDwdm(N) {
@@ -1405,13 +1461,13 @@ function nodeAlertsDwdm(N) {
     <div class="vw-grid vw-grid-cols-6 vw-gap-md">${summary.map(([k, v, s, tone]) => nvTile(k, v, s, tone)).join('')}</div>
     ${alertTab === 'alerts' ? `
       <div class="cx-panel-head" style="margin-top:var(--vw-space-md)"><span class="eyebrow">Active alarms — ${O.openAlarms} open</span></div>
-      ${table([{t:'Sev'},{t:'Entity'},{t:'Evidence'},{t:'Action'}],
-        O.alarms.map(a => [
-          chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral'),
-          `<span class="mono">${esc(a.entity)}</span>`,
-          `<span class="vw-card-description">${esc(a.evidence)}</span>`,
-          `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
-        ]), 'chip-auto', () => [])}`
+      ${table([{ t: 'Sev' }, { t: 'Entity' }, { t: 'Evidence' }, { t: 'Action' }],
+    O.alarms.map(a => [
+      chip(a.sev, a.sev === 'Critical' ? 'error' : a.sev === 'Major' ? 'warning' : 'neutral'),
+      `<span class="mono">${esc(a.entity)}</span>`,
+      `<span class="vw-card-description">${esc(a.evidence)}</span>`,
+      `<button class="nst-btn nst-btn--xs" data-nodetab="${a.tab}">Fix</button>`
+    ]), 'chip-auto', () => [])}`
       : `<div class="vw-card-child-shaded stack-s" style="margin-top:var(--vw-space-md);padding:var(--vw-space-lg);text-align:center">
           <span class="vw-card-description">No open incidents for this element.</span></div>`}
   `);
@@ -1489,6 +1545,7 @@ function nodeSiteHealthEnodeb(N) {
     <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr);margin-top:var(--vw-space-sm)">${metrics.join('')}</div>`);
 }
 
+
 function nodeHardwareEnodeb(N) {
   const E = N.enb;
   const sel = E.hardware.find(h => h.id === NODE_HW_SEL) || E.hardware[0];
@@ -1552,11 +1609,11 @@ function nodeLinksEnodeb(N) {
         <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
         <div style="margin-top:var(--vw-space-md)">
           ${table([{ t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
-            rows.map(x => [
-              `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
-              `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
-              n(x.users), x.growth, x.created, x.modified
-            ]), '', () => [])}
+    rows.map(x => [
+      `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto,
+      `<span class="mono"${x.util > 80 ? ` style="color:${cv('red', 700)}"` : ''}>${x.util}%</span>`,
+      n(x.users), x.growth, x.created, x.modified
+    ]), '', () => [])}
         </div>`)}
       </div>
       ${nvAI('AI-Powered network insights', 'Capacity, mobility and root-cause analysis', 'slate', E.linkInsights)}
@@ -1580,11 +1637,11 @@ function nodeConfigEnodeb(N) {
         <div class="nv-tiles" style="grid-template-columns:repeat(4, 1fr)">${tiles.join('')}</div>
         <div style="margin-top:var(--vw-space-md)">
           ${table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected', r: true }, { t: 'Actual', r: true }, { t: 'Deviation', r: true }, { t: 'Created on' }, { t: 'Updated on' }],
-            E.config.map((c, i) => [
-              chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
-              c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
-              '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
-            ]), 'chip-auto', () => [])}
+    E.config.map((c, i) => [
+      chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'),
+      c.cat, c.p, `<span class="mono">${c.exp}</span>`, `<span class="mono">${c.act}</span>`, `<span class="mono">${c.dev}</span>`,
+      '12-May-2026', agoStamp(nint(N.name, 4000 + i, 60, 4320), false)
+    ]), 'chip-auto', () => [])}
         </div>`)}
       </div>
       ${nvAI('AI-Powered configuration insights', 'Drift, optimization and compliance analysis', 'slate', E.cfgInsights)}
@@ -1674,18 +1731,18 @@ function nodeAlertsEnodeb(N) {
 const NODE_VIEW = {
   router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
   switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
-  dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   alerts: nodeAlertsDwdm },
+  dwdm: { header: nodeHeaderDwdm, overview: nodeOverviewDwdm, hardware: nodeHardwareDwdm, alerts: nodeAlertsDwdm },
   enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb },
   gnodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
 };
 const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
-function nodeHeader(N)   { return nodeViewFor(N.cls).header(N); }
+function nodeHeader(N) { return nodeViewFor(N.cls).header(N); }
 function nodeOverview(N) { return nodeViewFor(N.cls).overview(N); }
 function nodeHardware(N) { return nodeViewFor(N.cls).hardware(N); }
-function nodeLinks(N)    { return nodeViewFor(N.cls).links(N); }
+function nodeLinks(N) { return nodeViewFor(N.cls).links(N); }
 function nodeServices(N) { return nodeViewFor(N.cls).services ? nodeViewFor(N.cls).services(N) : nodeServicesRouter(N); }
-function nodeAlerts(N)   { return nodeViewFor(N.cls).alerts(N); }
+function nodeAlerts(N) { return nodeViewFor(N.cls).alerts(N); }
 
 let NODE_TAB = 'overview';
 
