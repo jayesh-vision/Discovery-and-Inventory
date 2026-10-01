@@ -1,0 +1,2721 @@
+/* ── RailTel NOC Service Topology Explorer CSS ───────────────────────
+   Styling for the multi-column cascading tree (Miller columns) topology viewer
+   matching the reference design on noc.railtel.in.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.topo-explorer {
+  display: flex;
+  flex-direction: column;
+  background: var(--vw-color-white, #ffffff);
+  border: 1px solid var(--ix-border, #e2e8f0);
+  border-radius: var(--ix-radius, 12px);
+  box-shadow: var(--ix-shadow, 0 1px 3px rgba(15, 23, 42, 0.06));
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--vw-color-gray-900, #0f172a);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Top Control & Filter Bar ─────────────────────────────────────────── */
+.topo-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.topo-control-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.topo-service-radios {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topo-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vw-color-gray-700, #334155);
+  cursor: pointer;
+}
+
+.topo-radio-label input[type="radio"] {
+  accent-color: var(--vw-color-blue-600, #2563eb);
+  cursor: pointer;
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.topo-select-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topo-select-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vw-color-gray-600, #475569);
+}
+
+.topo-select-control {
+  height: 32px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--vw-color-gray-800, #1e293b);
+  outline: none;
+  cursor: pointer;
+}
+
+.topo-select-control:focus {
+  border-color: var(--vw-color-blue-500, #3b82f6);
+}
+
+.topo-search-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 6px;
+  height: 32px;
+  box-sizing: border-box;
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-search-input-group:focus-within {
+  border-color: var(--vw-color-blue-500, #3b82f6);
+  color: var(--vw-color-blue-600, #2563eb);
+}
+
+.topo-text-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--vw-color-gray-800, #1e293b);
+  width: 140px;
+}
+
+.topo-text-input::placeholder {
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-input-clear {
+  border: none;
+  background: transparent;
+  color: var(--vw-color-gray-400, #94a3b8);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topo-input-clear:hover {
+  color: var(--vw-color-gray-700, #334155);
+}
+
+.topo-control-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topo-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  color: var(--vw-color-gray-600, #475569);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.topo-action-btn:hover {
+  background: var(--vw-color-slate-50, #f8fafc);
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  color: var(--vw-color-gray-900, #0f172a);
+}
+
+.topo-action-btn.is-active {
+  background: var(--vw-color-blue-600, #2563eb);
+  border-color: var(--vw-color-blue-600, #2563eb);
+  color: #ffffff;
+}
+
+/* ── Main Cascading Topology Canvas ───────────────────────────────────── */
+.topo-canvas-container {
+  position: relative;
+  background: #f8fafc;
+  min-height: 550px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 22px 18px;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom sleek scrollbar for canvas horizontal sliding */
+.topo-canvas-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.topo-canvas-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.topo-canvas-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.topo-canvas-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* Common wrapper for SVG and columns: bounds canvas tightly to content */
+.topo-flow-wrapper {
+  position: relative;
+  display: inline-flex;
+  min-width: max-content;
+}
+
+.topo-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  overflow: visible;
+}
+
+/* ── Animated Running Thread (Forward Flow) ─────────────────────────── */
+.topo-connector-group {
+  pointer-events: none;
+}
+
+.topo-connector-glow {
+  transition: stroke 240ms ease;
+  filter: drop-shadow(0 0 2.5px currentColor);
+}
+
+.topo-connector-thread {
+  transition: stroke 240ms ease;
+}
+
+/* Marching dashes moving in forward direction (left to right) */
+.topo-thread-running {
+  stroke-dasharray: 6 4;
+  animation: topoThreadFlow 0.85s linear infinite;
+}
+
+@keyframes topoThreadFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.topo-anchor-dot {
+  transition: fill 240ms ease;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.2));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topo-thread-running {
+    animation: none;
+  }
+}
+
+.topo-columns-flow {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+  position: relative;
+  z-index: 2;
+  min-width: max-content;
+}
+
+/* ── Level 0: Root Circles Card ───────────────────────────────────────── */
+.topo-root-node-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: center;
+}
+
+.topo-circles-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 2px solid #a855f7;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.14);
+  width: 124px;
+  height: 124px;
+  box-sizing: border-box;
+  position: relative;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+
+.topo-circles-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(168, 85, 247, 0.22);
+}
+
+.topo-circles-icon {
+  width: 42px;
+  height: 42px;
+  color: #9333ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.topo-circles-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--vw-color-gray-900, #0f172a);
+  margin-bottom: 4px;
+  letter-spacing: -0.2px;
+}
+
+.topo-circles-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.topo-circles-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #f3e8ff;
+  color: #7e22ce;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Level 1: Stacked 3 Tier Cards (Data Centers / PoPs / Sites) ─────── */
+.topo-tiers-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+  align-self: center;
+}
+
+.topo-tier-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  min-width: 255px;
+  cursor: pointer;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  position: relative;
+  text-align: left;
+}
+
+.topo-tier-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.topo-tier-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+
+.topo-tier-card:hover .topo-tier-icon {
+  transform: scale(1.08);
+}
+
+.topo-tier-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topo-tier-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.topo-tier-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.topo-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Data Centers tier theme */
+.topo-tier-card.is-datacenters {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1.5px solid #e9d5ff;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.06);
+}
+
+.topo-tier-card.is-datacenters .topo-tier-icon {
+  background: #ede9fe;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.topo-tier-card.is-datacenters .topo-tier-badge {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.topo-tier-card.is-datacenters:hover {
+  border-color: #c4b5fd;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14);
+}
+
+.topo-tier-card.is-datacenters.is-selected {
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  box-shadow: 0 0 0 2px #8b5cf6, 0 6px 18px rgba(139, 92, 246, 0.22);
+}
+
+/* PoP Locations tier theme */
+.topo-tier-card.is-pops {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #bae6fd;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06);
+}
+
+.topo-tier-card.is-pops .topo-tier-icon {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.topo-tier-card.is-pops .topo-tier-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.topo-tier-card.is-pops:hover {
+  border-color: #7dd3fc;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.14);
+}
+
+.topo-tier-card.is-pops.is-selected {
+  border-color: #0284c7;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  box-shadow: 0 0 0 2px #0284c7, 0 6px 18px rgba(2, 132, 199, 0.22);
+}
+
+/* Sites tier theme */
+.topo-tier-card.is-sites {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #bbf7d0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.06);
+}
+
+.topo-tier-card.is-sites .topo-tier-icon {
+  background: #dcfce7;
+  color: #059669;
+  border: 1px solid #bbf7d0;
+}
+
+.topo-tier-card.is-sites .topo-tier-badge {
+  background: #dcfce7;
+  color: #047857;
+}
+
+.topo-tier-card.is-sites:hover {
+  border-color: #86efac;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.14);
+}
+
+.topo-tier-card.is-sites.is-selected {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  box-shadow: 0 0 0 2px #10b981, 0 6px 18px rgba(16, 185, 129, 0.22);
+}
+
+/* ── Generic Column Box (Miller Columns) ──────────────────────────────── */
+.topo-col {
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  height: 530px;
+  min-height: 530px;
+  max-height: 530px;
+}
+
+.topo-col-regions {
+  width: 280px;
+}
+
+.topo-col-territories {
+  width: 315px;
+}
+
+.topo-col-elements {
+  width: 325px;
+}
+
+.topo-col-interfaces {
+  width: 305px;
+}
+
+.topo-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 10px;
+  border-bottom: 1px solid var(--vw-color-slate-100, #f1f5f9);
+  margin-bottom: 10px;
+}
+
+.topo-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vw-color-gray-800, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topo-col-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vw-color-gray-500, #64748b);
+  background: var(--vw-color-slate-100, #f1f5f9);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.topo-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--vw-color-slate-50, #f8fafc);
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.topo-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  color: var(--vw-color-gray-800, #1e293b);
+  width: 100%;
+}
+
+.topo-search-box input::placeholder {
+  color: var(--vw-color-gray-400, #94a3b8);
+}
+
+.topo-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 2px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Custom scrollbar for column lists */
+.topo-card-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.topo-card-list::-webkit-scrollbar-thumb {
+  background: var(--vw-color-slate-300, #cbd5e1);
+  border-radius: 4px;
+}
+
+/* ── Item Cards ───────────────────────────────────────────────────────── */
+.topo-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 11px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-align: left;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.topo-item-card:hover {
+  border-color: var(--vw-color-blue-400, #60a5fa);
+  background: #f8fafc;
+}
+
+.topo-item-card.is-selected {
+  border-color: var(--vw-color-blue-600, #2563eb);
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px var(--vw-color-blue-600, #2563eb);
+}
+
+.topo-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.topo-badge-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 13px;
+  border: 1px solid var(--vw-color-blue-300, #93c5fd);
+  color: var(--vw-color-blue-700, #1d4ed8);
+  background: #eff6ff;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.topo-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.topo-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vw-color-gray-900, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-item-sub {
+  font-size: 11px;
+  color: var(--vw-color-gray-500, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--vw-color-red-600, #dc2626);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* ── Network Elements Column Customization ────────────────────────────── */
+.topo-device-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+}
+
+.topo-device-icon.is-alert {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+/* ── Modern Drill-Down Navigation Button ────────────────────────────── */
+.topo-drill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  margin-left: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  color: var(--vw-color-gray-500, #64748b);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.topo-drill-btn svg {
+  transition: transform 140ms ease;
+}
+
+.topo-drill-btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
+
+.topo-drill-btn:hover svg {
+  transform: translate(1px, -1px);
+}
+
+.topo-drill-btn:active {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+/* Card selected state styling */
+.topo-item-card.is-selected .topo-drill-btn {
+  border-color: #bfdbfe;
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+}
+
+.topo-item-card.is-selected .topo-drill-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+/* ── Interface Cards Customization ────────────────────────────────────── */
+.topo-if-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  gap: 6px;
+  transition: all 120ms ease;
+  position: relative;
+}
+
+.topo-if-card:hover {
+  border-color: var(--vw-color-blue-400, #60a5fa);
+  background: #f8fafc;
+}
+
+.topo-if-card.is-selected {
+  border-color: var(--vw-color-blue-600, #2563eb);
+  background: #eff6ff;
+}
+
+.topo-if-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topo-if-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topo-if-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vw-color-gray-900, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-if-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 3px;
+  column-gap: 8px;
+  font-size: 11px;
+  color: var(--vw-color-gray-600, #475569);
+  padding-top: 4px;
+  border-top: 1px dashed var(--vw-color-slate-100, #f1f5f9);
+}
+
+.topo-if-meta-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topo-status-tag {
+  display: inline-block;
+  font-weight: 600;
+}
+
+.topo-status-tag.is-up {
+  color: var(--vw-color-emerald-700, #047857);
+}
+
+.topo-status-tag.is-down {
+  color: var(--vw-color-red-600, #dc2626);
+}
+
+/* ── Bottom Summary KPI Bar ───────────────────────────────────────────── */
+.topo-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid var(--vw-color-slate-200, #e2e8f0);
+}
+
+.topo-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.topo-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topo-kpi-icon.is-orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.topo-kpi-icon.is-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.topo-kpi-icon.is-green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.topo-kpi-icon.is-red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.topo-kpi-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.topo-kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vw-color-gray-600, #475569);
+}
+
+.topo-kpi-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--vw-color-gray-900, #0f172a);
+  line-height: 1.2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .topo-kpi-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .topo-kpi-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Floating Hover Tooltip (Clean Minimal Micro-Chip) ───────────────── */
+.topo-floating-tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  transition: opacity 120ms ease;
+  animation: topoTooltipFade 130ms cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.12));
+}
+
+@keyframes topoTooltipFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -92%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.topo-floating-tooltip.is-bottom {
+  animation: topoTooltipFadeBottom 130ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes topoTooltipFadeBottom {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.topo-floating-tooltip-inner {
+  background: #ffffff;
+  color: var(--vw-color-gray-900, #0f172a);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+  white-space: nowrap;
+  max-width: 340px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* ── 3-Column Geographic Network Hierarchy (Region -> State -> City) ── */
+.geo-hierarchy-container {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.geo-columns-wrapper {
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  padding: 6px 2px 10px;
+}
+
+.geo-columns-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.geo-columns-grid {
+  display: grid;
+  grid-template-columns: 215px 285px 255px 325px;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+/* In collapsed side-by-side mode, adapt gracefully */
+.geo-hierarchy-container.is-collapsed .geo-columns-grid {
+  grid-template-columns: 195px 255px 240px 300px;
+  gap: 16px;
+  max-width: 1160px;
+}
+
+.geo-col-card {
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  height: 525px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.geo-col-header {
+  margin-bottom: 7px;
+  padding: 0 2px;
+}
+
+.geo-col-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.geo-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 7px;
+  padding: 4px 8px;
+  margin-bottom: 7px;
+  height: 28px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.geo-search-box:focus-within {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.geo-search-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.geo-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  color: #1e293b;
+  width: 100%;
+  font-family: inherit;
+}
+
+.geo-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.geo-search-clear {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 1px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-search-clear:hover {
+  color: #475569;
+}
+
+.geo-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Prevent horizontal scrollbars completely */
+  flex: 1;
+  padding: 2px 2px 4px 2px;
+}
+
+.geo-items-list::-webkit-scrollbar {
+  width: 3.5px;
+}
+
+.geo-items-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.geo-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #f1f5f9;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  user-select: none;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 42px;
+}
+
+.geo-card-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.geo-card-row.is-selected {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+}
+
+/* ── City Item Box: Bigger height and breathing room ───────────────── */
+.geo-card-row.geo-city-row {
+  padding: 9px 12px;
+  min-height: 60px;
+  border-radius: 9px;
+  gap: 8px;
+}
+
+.geo-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.geo-card-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.geo-card-title.geo-city-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.geo-card-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.geo-card-sub.geo-city-sub {
+  font-size: 10px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.geo-card-sub.geo-chips-sub {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6.5px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.geo-chips-sub .geo-chip {
+  padding: 2.5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+  border-radius: 6px;
+  cursor: default;
+  flex-shrink: 0;
+  min-width: 26px;
+}
+
+/* ── Interactive Small Boxes (Data Centers, PoPs, Sites) ───────────── */
+.geo-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 3px 9.5px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.14s ease;
+}
+
+.geo-chip:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.96);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.geo-chip:active {
+  transform: translateY(0);
+}
+
+/* Data Centers: Green border and text */
+.geo-chip.geo-chip-dc {
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+.geo-chip.geo-chip-dc:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+}
+
+/* PoP: Orange border and text */
+.geo-chip.geo-chip-pop {
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+}
+.geo-chip.geo-chip-pop:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+}
+
+/* Sites: Purple border and text */
+.geo-chip.geo-chip-site {
+  color: #7e22ce;
+  background: #faf5ff;
+  border: 1px solid #d8b4fe;
+}
+.geo-chip.geo-chip-site:hover {
+  background: #f3e8ff;
+  border-color: #c084fc;
+}
+
+/* Cities: Blue border and text (State card) */
+.geo-chip.geo-chip-city {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+.geo-chip.geo-chip-city:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.geo-city-sep {
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 400;
+  user-select: none;
+}
+
+.geo-card-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 999px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+.geo-card-chevron {
+  color: #94a3b8;
+  margin-left: auto;
+  font-size: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Region Column Cards ───────────────────────────────────────────── */
+.geo-col-card.geo-region-col {
+  height: auto;
+  align-self: center;
+}
+
+.geo-items-list.geo-region-list {
+  flex: none;
+  overflow-y: visible;
+  gap: 8px;
+}
+
+/* ── State Column Cards ────────────────────────────────────────────── */
+.geo-col-card.geo-state-col {
+  height: 525px;
+}
+
+.geo-items-list.geo-state-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 5px;
+}
+
+.geo-items-list.geo-state-list::-webkit-scrollbar {
+  width: 3.5px;
+}
+
+.geo-items-list.geo-state-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.geo-card-row.geo-region-row {
+  padding: 8px 10px;
+  min-height: 56px;
+  border-radius: 8px;
+  gap: 8px;
+  border: 1.5px solid #edf2f7;
+  transition: all 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.geo-card-row.geo-region-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.geo-card-row.geo-region-row.is-selected {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.14);
+}
+
+.geo-card-row.geo-state-row {
+  padding: 8px 10px;
+  min-height: 56px;
+  border-radius: 8px;
+  gap: 8px;
+  border: 1.5px solid #edf2f7;
+  transition: all 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.geo-card-row.geo-state-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.geo-card-row.geo-state-row.is-selected {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.14);
+}
+
+.geo-card-title.geo-region-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.geo-card-sub.geo-region-sub {
+  font-size: 10.5px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.geo-card-badge.geo-region-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1e293b;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 1.5px 7px;
+}
+
+.geo-card-chevron.geo-region-chevron {
+  color: #64748b;
+  margin-left: 4px;
+}
+
+/* ── 4th Column: City Infrastructure Overview & Pie Chart ─────────── */
+.geo-col-card.geo-overview-col {
+  height: 525px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  border-radius: 12px;
+  padding: 10px 12px 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Slim scrollbar for overview card if needed on small screens */
+.geo-col-card.geo-overview-col::-webkit-scrollbar {
+  width: 3.5px;
+}
+.geo-col-card.geo-overview-col::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.geo-overview-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.geo-overview-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.geo-overview-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+  font-weight: 500;
+}
+
+/* ── Square Card Box Around Donut / Pie Chart ──────────────────────── */
+.geo-pie-card-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  padding: 6px;
+  margin: 4px 0 10px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.geo-pie-card-box:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07);
+}
+
+/* ── Pie / Donut Chart Viewport ─────────────────────────────────────── */
+.geo-pie-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.geo-pie-svg {
+  overflow: visible;
+  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.05));
+}
+
+.geo-pie-slice {
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: 105px 105px;
+}
+
+.geo-pie-slice:hover,
+.geo-pie-slice.is-active {
+  filter: brightness(1.08) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18));
+}
+
+.geo-pie-slice-dc:hover,
+.geo-pie-slice-dc.is-active {
+  filter: brightness(1.06) drop-shadow(0 3px 8px rgba(16, 185, 129, 0.35));
+}
+
+.geo-pie-slice-pop:hover,
+.geo-pie-slice-pop.is-active {
+  filter: brightness(1.06) drop-shadow(0 3px 8px rgba(249, 115, 22, 0.35));
+}
+
+.geo-pie-slice-site:hover,
+.geo-pie-slice-site.is-active {
+  filter: brightness(1.06) drop-shadow(0 3px 8px rgba(168, 85, 247, 0.35));
+}
+
+/* ── Category Legend Pill Cards ────────────────────────────────────── */
+.geo-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.geo-pie-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6.5px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 36px;
+}
+
+.geo-pie-legend-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+}
+
+.geo-pie-legend-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.geo-pie-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.geo-pie-dot-dc {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.geo-pie-dot-pop {
+  background: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+
+.geo-pie-dot-site {
+  background: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+.geo-pie-legend-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.geo-pie-legend-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.geo-pie-legend-count {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.geo-pie-pct-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  line-height: 1.25;
+}
+
+.geo-pie-pct-dc {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.geo-pie-pct-pop {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.geo-pie-pct-site {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #d8b4fe;
+}
+
+.geo-pie-arrow {
+  color: #94a3b8;
+  transition: transform 0.15s ease;
+}
+
+.geo-pie-legend-item:hover .geo-pie-arrow {
+  color: #0f172a;
+  transform: translateX(2px);
+}
+
+/* Individual legend item active / hover states */
+.geo-pie-legend-dc:hover,
+.geo-pie-legend-dc.is-hovered {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.geo-pie-legend-pop:hover,
+.geo-pie-legend-pop.is-hovered {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.geo-pie-legend-site:hover,
+.geo-pie-legend-site.is-hovered {
+  background: #faf5ff;
+  border-color: #d8b4fe;
+}
+
+/* ── View All Infrastructure Footer Button (Black style) ────────────── */
+.geo-pie-view-all-btn {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 35px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f172a;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.geo-pie-view-all-btn svg {
+  color: #0f172a;
+  transition: transform 0.15s ease;
+}
+
+.geo-pie-view-all-btn:hover {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.geo-pie-view-all-btn:hover svg {
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.geo-connector-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+  /* Render on top so thread has full visibility without getting clipped by card backgrounds */
+}
+
+/* ── Animated Running Data Thread ──────────────────────────────────── */
+@keyframes threadDataFlow {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulseAnchorDot {
+  0% {
+    r: 3.5;
+    stroke-width: 1.5;
+  }
+  50% {
+    r: 4.8;
+    stroke-width: 2.2;
+  }
+  100% {
+    r: 3.5;
+    stroke-width: 1.5;
+  }
+}
+
+.geo-animated-thread {
+  stroke-dasharray: 6 4;
+  stroke-width: 2.2px;
+  animation: threadDataFlow 0.85s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(37, 99, 235, 0.45));
+}
+
+.geo-animated-anchor {
+  fill: #2563eb;
+  stroke: #ffffff;
+  animation: pulseAnchorDot 1.8s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0% {
+    r: 3.5;
+    opacity: 0.65;
+  }
+  100% {
+    r: 9;
+    opacity: 0;
+  }
+}
+
+.geo-anchor-glow {
+  animation: haloPulse 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* ── Draggable Card Header & Grips ─────────────────────────────────── */
+.geo-col-header.geo-drag-handle {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 4px 7px;
+  border-radius: 6px;
+  transition: background 0.12s ease;
+}
+
+.geo-col-header.geo-drag-handle:hover {
+  background: #f8fafc;
+}
+
+.geo-col-header.geo-drag-handle:active {
+  cursor: grabbing;
+}
+
+.geo-drag-icon {
+  color: #94a3b8;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.geo-col-header.geo-drag-handle:hover .geo-drag-icon {
+  color: #2563eb;
+  opacity: 1;
+}
+
+.geo-col-card {
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  will-change: transform;
+}
+
+.geo-col-card.is-dragging {
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18);
+  z-index: 20;
+}
+
+/* ── Top Legend: DC, PoP Locations, Sites ────────────────────────── */
+.geo-top-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3.5px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+}
+
+.geo-top-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  user-select: none;
+}
+
+.geo-top-legend-item .geo-legend-dot {
+  width: 7.5px;
+  height: 7.5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.geo-top-legend-item .geo-dot-dc {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.geo-top-legend-item .geo-dot-pop {
+  background: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+
+.geo-top-legend-item .geo-dot-site {
+  background: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+/* ── Canvas Toolbar Controls (Reset & Zoom Buttons matching Image 2 & 3) ── */
+.geo-canvas-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.geo-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  color: #52525b;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: all 0.15s ease;
+  padding: 0;
+  position: relative;
+  user-select: none;
+}
+
+.geo-icon-btn:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #1e293b;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.geo-icon-btn:active {
+  transform: translateY(0);
+  background: #f8fafc;
+}
+
+.geo-icon-btn.is-active {
+  border-color: #93c5fd;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.geo-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  border-color: #e2e8f0;
+}
+
+/* Sleek floating tooltip on hover */
+.geo-icon-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  z-index: 100;
+  letter-spacing: -0.01em;
+}
+
+.geo-icon-btn[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 4px solid transparent;
+  border-top-color: #0f172a;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+}
+
+.geo-icon-btn[data-tooltip]:hover::after,
+.geo-icon-btn[data-tooltip]:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.geo-empty-state {
+  padding: 24px 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* ── Image 2 Header, Breadcrumb Bar & Top Metric Strip ─────────────── */
+.geo-topology-root {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  position: relative;
+}
+
+.geo-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.geo-top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.geo-top-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.geo-main-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.geo-breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.geo-crumb-home {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+}
+
+.geo-crumb-sep {
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.geo-crumb-link {
+  color: #64748b;
+  font-weight: 500;
+  cursor: default;
+}
+
+.geo-crumb-current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.geo-top-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.geo-global-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 10px;
+  height: 32px;
+  box-sizing: border-box;
+  width: 240px;
+  transition: all 0.15s ease;
+}
+
+.geo-global-search:focus-within {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.geo-global-search-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.geo-global-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.geo-global-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.geo-notif-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.geo-notif-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.geo-notif-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 999px;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+}
+
+.geo-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.geo-user-badge:hover {
+  background: #f8fafc;
+}
+
+.geo-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+@media (max-width: 1200px) {
+  .geo-metrics-strip {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.geo-metric-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.geo-metric-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.geo-metric-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.geo-metric-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.geo-metric-lbl {
+  font-size: 10.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── City Details Screen (Images 3 & 4) ─────────────────────────────── */
+.city-breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.city-crumb-link {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.city-crumb-link:hover {
+  color: #2563eb;
+}
+
+.city-crumb-sep {
+  color: #cbd5e1;
+}
+
+.city-crumb-active {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.city-three-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.city-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.city-summary-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.city-summary-card.top-bar-yellow {
+  border-top: 3px solid #f59e0b;
+}
+
+.city-summary-card.top-bar-blue {
+  border-top: 3px solid #0ea5e9;
+}
+
+.city-summary-card.top-bar-cyan {
+  border-top: 3px solid #06b6d4;
+}
+
+.city-summary-card.is-active {
+  box-shadow: 0 0 0 2px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.city-card-header {
+  margin-bottom: 6px;
+}
+
+.city-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.city-card-metric-num {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.city-card-subtext {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.city-summary-card .legend-i {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.city-summary-card .legend-sw {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Network Element Listing (Image 4) ───────────────────────────────── */
+.net-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1.5px solid #e2e8f0;
+  margin-bottom: 16px;
+  padding-bottom: 2px;
+}
+
+.net-cat-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 2px 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.net-cat-tab:hover {
+  color: #0f172a;
+}
+
+.net-cat-tab.is-active {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.net-cat-tab.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: #0f172a;
+  border-radius: 2px;
+}
+
+.net-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.net-showing-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.net-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.net-search-input-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  height: 32px;
+  box-sizing: border-box;
+  width: 240px;
+  transition: all 0.15s ease;
+}
+
+.net-search-input-box:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.net-search-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.net-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12.5px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.net-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.net-search-clear {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0;
+}
+
+.net-tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.net-tool-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.net-table-container {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.net-table-container::-webkit-scrollbar {
+  height: 7px;
+}
+
+.net-table-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.net-table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.net-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.net-elements-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.net-elements-table.facility-table {
+  min-width: 1380px;
+}
+
+.net-elements-table th {
+  padding: 11px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.net-elements-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.net-table-row:last-child td {
+  border-bottom: none;
+}
+
+.net-table-row:hover {
+  background: #f8fafc;
+}
+
+.net-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.net-status-badge.is-verified {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.net-status-badge.is-drifted {
+  background: #fefce8;
+  color: #ca8a04;
+}
+
+.net-status-badge.is-stale {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.net-status-badge.is-missing {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.net-name-cell,
+.net-model-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.net-name-primary,
+.net-model-primary {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.net-ip-secondary,
+.net-vendor-secondary {
+  font-size: 11px;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.net-text-muted {
+  color: #64748b;
+}
+
+.net-text-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #334155;
+  font-size: 11.5px;
+}
+
+.net-text-desc {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #64748b;
+}
+
+.net-port-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.net-port-track {
+  width: 44px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.net-port-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 3px;
+}
+
+.net-port-text {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+}
+
+/* ── Facility Listing (Data Centers, PoPs, Sites) ───────────────────── */
+.facility-table-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.facility-table-row:hover {
+  background: #f8fafc;
+}
+
+.facility-table-row:hover .facility-name-primary {
+  color: #2563eb;
+}
+
+.facility-name-primary {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: color 0.12s ease;
+}
+
+.facility-code-pill {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 3px;
+}
+
+.facility-code-pill.facility-code-standalone {
+  margin-top: 0;
+  font-size: 11.5px;
+  padding: 2.5px 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.facility-address-cell {
+  color: #334155;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: normal;
+}
+
+.facility-badge-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.facility-chip-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.facility-drilldown-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.facility-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.facility-back-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}

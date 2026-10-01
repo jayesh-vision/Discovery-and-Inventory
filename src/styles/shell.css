@@ -1665,14 +1665,19 @@ div.kpi-progress { cursor: default; }
 /* the whole tile is the control — no separate link, so the affordance
    has to live in the tile itself: pointer, lift, a border that visibly
    deepens, and a real focus ring for keyboard users. */
-button.kpi-progress { cursor: pointer; -webkit-tap-highlight-color: transparent;
+button.kpi-progress,
+.kpi-progress.is-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
-button.kpi-progress:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, .1); border-color: var(--kpi-hover, currentColor); }
-button.kpi-progress:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(15, 23, 42, .08); }
-button.kpi-progress:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; border-color: var(--vw-color-blue-500); }
+button.kpi-progress:hover,
+.kpi-progress.is-clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, .1); border-color: var(--kpi-hover, currentColor); }
+button.kpi-progress:active,
+.kpi-progress.is-clickable:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(15, 23, 42, .08); }
+button.kpi-progress:focus-visible,
+.kpi-progress.is-clickable:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; border-color: var(--vw-color-blue-500); }
 /* a region card acting as the list's live filter — the doubled border says
    "this facet is applied" without inventing a new selected-state idiom */
-button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
+button.kpi-progress.is-on,
+.kpi-progress.is-clickable.is-on { border-color: var(--kpi-hover, currentColor);
   box-shadow: 0 0 0 1px var(--kpi-hover, currentColor), 0 1px 2px rgba(16, 24, 40, .04); }
 .kprog-label { font-size: 0.84375rem;
   font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
@@ -1818,9 +1823,12 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 /* a chip with its own drill (see invCard()) is a real button, not a
    label — same pill look as the static chip, just interactive. No
    chevron: too small a target for the generic .is-drill affordance. */
-button.cov-chip { appearance: none; -webkit-appearance: none; }
-button.cov-chip:hover { background: var(--vw-color-slate-100); border-color: var(--vw-color-slate-300); }
-button.cov-chip.is-drill::after { display: none; }
+button.cov-chip,
+.cov-chip.is-clickable { cursor: pointer; appearance: none; -webkit-appearance: none; font: inherit; }
+button.cov-chip:hover,
+.cov-chip.is-clickable:hover { background: var(--vw-color-slate-100); border-color: var(--vw-color-slate-300); }
+button.cov-chip.is-drill::after,
+.cov-chip.is-clickable::after { display: none; }
 
 .cov-stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--vw-space-sm); margin-top: var(--vw-space-sm); }
 .cov-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--vw-space-sm);

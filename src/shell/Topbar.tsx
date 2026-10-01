@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS } from '../routes';
+import { getCityById } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 
@@ -183,6 +184,23 @@ export default function Topbar() {
   /* When on detail/transcript, display just "Transcript" without duplicating the device
      name already prominent in the page header. */
   let finalLeafLabel = drill || leaf;
+  if (s.key === 'citydetails' && params.cityId) {
+    const cityName = getCityById(params.cityId)?.city.name || 'City';
+    const facilityType = sp.get('facility') || 'dc';
+    const facilityId = sp.get('facilityId');
+
+    segs = [{ label: 'Location', to: '/inventory/location' }];
+
+    if (facilityId) {
+      segs.push({
+        label: cityName,
+        to: `/inventory/location/city/${params.cityId}?facility=${facilityType}`
+      });
+      finalLeafLabel = facilityId;
+    } else {
+      finalLeafLabel = cityName;
+    }
+  }
   if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
     finalLeafLabel = 'Transcript';
   }

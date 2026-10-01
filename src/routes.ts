@@ -17,6 +17,8 @@ import RuleDefinition from './screens/RuleDefinition';
 import RuleDetails from './screens/RuleDetails';
 import { DiscoveryReports, InventoryReports } from './screens/reports/ReportsLanding';
 import { DiscoveryReportView, InventoryReportView } from './screens/reports/ReportView';
+import Location from './screens/Location';
+import CityDetails from './screens/CityDetails';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -71,7 +73,8 @@ export const SCREENS: Screen[] = [
     crumb: 'Reports · Report', rail: 'discoveryreports', component: DiscoveryReportView },
 
   { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Home', legacy: true },
-  { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', legacy: true },
+  { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
+  { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },
@@ -101,7 +104,13 @@ export const SCREENS: Screen[] = [
 ];
 
 export const screenByKey = (k: string) => SCREENS.find(s => s.key === k);
-export const isReactOwned = (k: string) => !!screenByKey(k)?.component;
+export const isReactOwned = (k: string) => {
+  if (k === 'location') {
+    const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    if (sp.get('view') === 'list') return false;
+  }
+  return !!screenByKey(k)?.component;
+};
 
 /* legacy drill queries → React search params. The prototype passes `q` as a
    query string ('cls=router', 'stock=instore'); React screens read the same

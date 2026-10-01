@@ -1111,7 +1111,7 @@ function viewHome() {
         { v:'location', l:'All locations', q:'view=list' })}
       ${kpi('Network elements', n(IL.ne), `${n(IL.discovered)} verified on the network`, 'sky',
         { v:'physical', l:'All network elements' })}
-      ${kpi('Links', n(IL.links), 'LLDP 5,549 · OSPF 1,382 · BGP 604 · ISIS 311', 'cyan',
+      ${kpi('Links', n(IL.links), LINK_TABS.map(t => `${t.n} ${n(t.c)}`).join(' · '), 'cyan',
         { v:'links', l:'All discovered links' })}
       ${kpi('Services', n(IL.services), 'L3VPN 1,815 · L2VPN 642', 'emerald',
         { v:'services', l:'All discovered services' })}
@@ -1610,10 +1610,10 @@ function locInsights() {
   const linkSegD = (nm, tab) => ({ v:'links', l:`${nm} — filtered list`, q:`tab=${tab}` });
   const svcSegD = (nm, tab) => ({ v:'services', l:`${nm} — filtered list`, q:`tab=${tab}` });
   const logicalSegs = [
-    { n:'LLDP links', c: Math.round(IL.links*0.45), tone:'purple', d: linkSegD('LLDP links','lldp') },
-    { n:'OSPF', c: Math.round(IL.links*0.25), tone:'sky', d: linkSegD('OSPF links','ospf') },
-    { n:'BGP', c: Math.round(IL.links*0.15), tone:'cyan', d: linkSegD('BGP links','bgp') },
-    { n:'ISIS', c: IL.links - Math.round(IL.links*0.45) - Math.round(IL.links*0.25) - Math.round(IL.links*0.15), tone:'slate', d: linkSegD('ISIS links','isis') },
+    { n:'LLDP links', c: LINK_TABS[0].c, tone:'purple', d: linkSegD('LLDP links','lldp') },
+    { n:'OSPF', c: LINK_TABS[1].c, tone:'sky', d: linkSegD('OSPF links','ospf') },
+    { n:'BGP', c: LINK_TABS[2].c, tone:'cyan', d: linkSegD('BGP links','bgp') },
+    { n:'ISIS', c: LINK_TABS[3].c, tone:'slate', d: linkSegD('ISIS links','isis') },
     { n:'L3VPN', c: Math.round(IL.services*0.74), tone:'teal', d: svcSegD('L3VPN services','l3vpn') },
     { n:'L2VPN', c: IL.services - Math.round(IL.services*0.74), tone:'emerald', d: svcSegD('L2VPN services','l2vpn') }
   ];

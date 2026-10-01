@@ -1038,9 +1038,10 @@ const RUN_HISTORY = [
 ];
 
 const ADJACENCY = [
-  { proto: 'LLDP', c: 19, ok: 18, chg: '1 new neighbour', tone: 'sky' },
-  { proto: 'OSPF', c: 12, ok: 12, chg: 'no change', tone: 'cyan' },
-  { proto: 'BGP', c: 4, ok: 4, chg: 'no change', tone: 'purple' },
+  { proto: 'LLDP', c: 5, ok: 4, chg: '1 new neighbour', tone: 'sky' },
+  { proto: 'OSPF', c: 3, ok: 3, chg: 'no change', tone: 'cyan' },
+  { proto: 'BGP', c: 2, ok: 2, chg: 'no change', tone: 'purple' },
+  { proto: 'ISIS', c: 3, ok: 3, chg: 'no change', tone: 'indigo' },
   { proto: 'L3VPN', c: 14, ok: 13, chg: '1 RT added', tone: 'emerald' }
 ];
 
@@ -1311,7 +1312,7 @@ const OBJECTS_BY_DOMAIN = {
    from OBJECTS_BY_DOMAIN.Transport's short labels; the other three read
    naturally in the same style. */
 const OBJECTS_SUB_BY_DOMAIN = {
-  Transport: '19 LLDP neighbours · 12 OSPF adjacencies · 4 BGP peers · 14 L3VPN instances',
+  Transport: '5 LLDP neighbours · 3 OSPF adjacencies · 2 BGP peers · 3 ISIS adjacencies · 14 L3VPN instances',
   RAN: '3 cells · 14 neighbour relations · 3 antenna sectors · 142 active sessions',
   Core: '4 NRF subscriptions · 3 core interfaces · 1,204 PDU sessions · 3 dependent NFs',
   IPMPLS: '18 interfaces · 8 IGP adjacencies · 8 OSPF · 6 LDP peers · 3 BGP peers · 13 VPN instances'
@@ -1325,11 +1326,11 @@ const PROV = [
   { f: 'Serial number', v: 'JN1236F87AFB', src: 'Hardware collector', when: '3h ago', ok: true },
   { f: 'OS version', v: '21.2R3-S8.5', src: 'Device collector', when: '3h ago', ok: true },
   { f: 'Uptime', v: '47 d 18 h', src: 'Device collector', when: '3h ago', ok: true },
-  { f: 'Adjacencies', v: '19 LLDP · 12 OSPF · 4 BGP', src: 'LLDP · OSPF · BGP', when: '3h ago', ok: true },
+  { f: 'Adjacencies', v: '5 LLDP · 3 OSPF · 2 BGP · 3 ISIS', src: 'LLDP · OSPF · BGP · ISIS', when: '3h ago', ok: true },
   { f: 'Services', v: '14 L3VPN instances', src: 'Service collector', when: '3h ago', ok: true },
   { f: 'Circle · site', v: 'Delhi · DEL-279', src: 'Manual', when: '21-Jul-2026', ok: true },
   { f: 'Stock state', v: 'Deployed', src: 'Workorder WO-2291', when: '02-Mar-2024', ok: true },
-  { f: 'Warranty ends', v: 'Not linked', src: 'ERP · not integrated', when: '—', ok: false }
+  { f: 'Warranty ends', v: '31-Mar-2028', src: 'SAP ERP · Contract 88410', when: '3h ago', ok: true }
 ];
 
 /* ── network elements: both sides of the comparison, row by row ─── */
@@ -1440,7 +1441,7 @@ const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
 
 const IL = {
   locations: 1754, central: 118, regional: 342, edge: 1294,
-  ne: 2703, discovered: 2379, links: 7846, services: 2457, vnf: 28, inactive: 412, reports: 22
+  ne: 2703, discovered: 2379, links: 64, services: 2457, vnf: 28, inactive: 412, reports: 22
 };
 
 const LOC_TIERS = [
@@ -2073,8 +2074,8 @@ const VNF_LC_STAGES = [['day0', 'Day 0'], ['grow', 'Grow'], ['events', 'Events']
   });
 
 const LINK_TABS = [
-  { k: 'lldp', n: 'LLDP', c: 5549, tone: 'sky' }, { k: 'ospf', n: 'OSPF', c: 1382, tone: 'emerald' },
-  { k: 'bgp', n: 'BGP', c: 604, tone: 'purple' }, { k: 'isis', n: 'ISIS', c: 311, tone: 'amber' }
+  { k: 'lldp', n: 'LLDP', c: 16, tone: 'sky' }, { k: 'ospf', n: 'OSPF', c: 16, tone: 'emerald' },
+  { k: 'bgp', n: 'BGP', c: 16, tone: 'purple' }, { k: 'isis', n: 'ISIS', c: 16, tone: 'amber' }
 ];
 /* every link — whichever protocol reported it — names both ends the same
    way: a real NE hostname (sne/dne) and that NE's own IP (sip/dip). OSPF,
@@ -2303,7 +2304,7 @@ const SERVICES = {
   l3vpn: [
     {
       discoveryTime: '09-22-2026 14:43:55',
-      name: 'RCIL-ILL',
+      name: 'CORP-ILL-PRIMARY',
       ip: '172.31.53.169',
       ne: 'RE-J7024-PE-T3-NR',
       ifc: 'et-0/0/10.48',
@@ -2320,7 +2321,7 @@ const SERVICES = {
     },
     {
       discoveryTime: '09-22-2026 14:43:55',
-      name: 'Railwire-Monitoring',
+      name: 'NET-OPS-MONITORING',
       ip: '172.31.53.169',
       ne: 'RE-J7024-PE-T3-NR',
       ifc: 'et-0/0/10.100',
@@ -2813,7 +2814,7 @@ LINKS.ospf = padList(LINKS.ospf, 16, (r, i) => ({
   linkId: r.linkId || `OSPF:${85320000000 + i * 1049283}`,
   areaId: r.areaId || (i % 3 === 0 ? '0.0.0.0' : `0.0.6.${100 + i * 7}`)
 }));
-LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
+LINKS.bgp = padList(LINKS.bgp, 16, (r, i) => {
   const st = ['established', 'established', 'established', 'established', 'established', 'idle', 'active', 'connect'][i % 8];
   return {
     ...r, st,
@@ -2823,7 +2824,7 @@ LINKS.bgp = padList(LINKS.bgp, 10, (r, i) => {
     reason: BGP_DOWN_REASONS[st]
   };
 });
-LINKS.isis = padList(LINKS.isis, 12, (r, i) => {
+LINKS.isis = padList(LINKS.isis, 16, (r, i) => {
   const isDown = i % 6 === 5;
   const sne = r.sne || PAD_NE[i % PAD_NE.length];
   const dne = r.dne || PAD_NE[(i + 4) % PAD_NE.length];
@@ -2847,6 +2848,10 @@ LINKS.isis = padList(LINKS.isis, 12, (r, i) => {
     v: r.v || [10, 12, 21][i % 3],
     reason: isDown ? ISIS_DOWN_REASONS[i % ISIS_DOWN_REASONS.length] : undefined
   };
+});
+
+LINK_TABS.forEach(t => {
+  if (LINKS[t.k]) t.c = LINKS[t.k].length;
 });
 
 SERVICES.l3vpn = padList(SERVICES.l3vpn, 16, (r, i) => ({
@@ -3049,7 +3054,7 @@ SERVICES.nif = padList(SERVICES.nif, 10, (r, i) => ({
 
 SERVICES.ibw = [
   {
-    name: 'IBW-RCIL-DELHI-HQ-10G',
+    name: 'IBW-CORP-DELHI-HQ-10G',
     bandwidth: '10 Gbps',
     discoveryTime: '09-22-2026 14:43:55',
     st: 'up',
@@ -3067,12 +3072,12 @@ SERVICES.ibw = [
     dstIfc: 'TenGigE0/1/0/1.48',
     dstAdmin: 'up',
     dstOper: 'up',
-    vrf: 'VRF-INTERNET-RCIL',
+    vrf: 'VRF-INTERNET-CORP',
     linkId: 'IBW:10235',
     erp: '10235'
   },
   {
-    name: 'IBW-RAILWIRE-MUM-GW-40G',
+    name: 'IBW-CORE-MUM-GW-40G',
     bandwidth: '40 Gbps',
     discoveryTime: '09-22-2026 14:43:55',
     st: 'up',
@@ -4686,7 +4691,6 @@ const IFACES = [
 const IF_CAP = { total:36, up:22, adminDown:14, operDown:2, optical:16, opticalUsed:9, opticalFree:7,
                  forecast:'4 months to exhaustion at current fill rate' };
 
-const NBR_TABS = [{k:'lldp',n:'LLDP',c:19},{k:'ospf',n:'OSPF',c:12},{k:'bgp',n:'BGP',c:4},{k:'isis',n:'ISIS',c:3}];
 const NBRS = {
   lldp: [
     { local:'xe-0/0/1', remote:'PSA-C920-WIFI1-T4-ER', rport:'Gi0/0/1',        rip:'172.31.38.41',  st:'ok',  seen:'3 h' },
@@ -4710,17 +4714,23 @@ const NBRS = {
     { local:'L2 (xe-0/3/1.0)', remote:'NCR-HQ-PRYJ-J2.2K-R1-T4', rport:'xe-0/3/0', rip:'172.31.41.155', st:'ok', seen:'3 h' }
   ]
 };
+const NBR_TABS = [
+  { k: 'lldp', n: 'LLDP', c: NBRS.lldp.length },
+  { k: 'ospf', n: 'OSPF', c: NBRS.ospf.length },
+  { k: 'bgp',  n: 'BGP',  c: NBRS.bgp.length },
+  { k: 'isis', n: 'ISIS', c: NBRS.isis.length }
+];
 
 const RES_SERVICES = [
-  { st:'Up',   chip:'success', t:'L3VPN', name:'RCIL-ILL',           rd:'24186:1023575', rt:'24186:900429', extraRt: 5, ifc:'et-0/0/10.48', erp:'10235', linkId:'L3:114031', cust:'Railtel ILL' },
-  { st:'Up',   chip:'success', t:'L3VPN', name:'Railwire-Monitoring',rd:'24186:1015770', rt:'24186:900287', extraRt: 1, ifc:'et-0/0/10.100', erp:'10157', linkId:'L3:113965', cust:'Railwire Ops' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'CORP-ILL-PRIMARY',   rd:'24186:1023575', rt:'24186:900429', extraRt: 5, ifc:'et-0/0/10.48', erp:'10235', linkId:'L3:114031', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'NET-OPS-MONITORING', rd:'24186:1015770', rt:'24186:900287', extraRt: 1, ifc:'et-0/0/10.100', erp:'10157', linkId:'L3:113965', cust:'Enterprise Ops' },
   { st:'Up',   chip:'success', t:'L3VPN', name:'VSS-MGMT-THANA',     rd:'24186:1019081', rt:'24186:900624', extraRt: 1, ifc:'et-0/0/16.100', erp:'10190', linkId:'L3:61549', cust:'Safe City' },
   { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',   rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',        vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',       vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
   { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' },
-  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RCIL-DELHI-HQ-10G', bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
-  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RAILWIRE-MUM-GW-40G', bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Railwire Backbone' }
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORP-DELHI-HQ-10G', bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORE-MUM-GW-40G',   bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Core Backbone' }
 ];
 
 const RES_ALARMS = [
@@ -6012,7 +6022,7 @@ function viewHome() {
         { v:'location', l:'All locations', q:'view=list' })}
       ${kpi('Network elements', n(IL.ne), `${n(IL.discovered)} verified on the network`, 'sky',
         { v:'physical', l:'All network elements' })}
-      ${kpi('Links', n(IL.links), 'LLDP 5,549 · OSPF 1,382 · BGP 604 · ISIS 311', 'cyan',
+      ${kpi('Links', n(IL.links), LINK_TABS.map(t => `${t.n} ${n(t.c)}`).join(' · '), 'cyan',
         { v:'links', l:'All discovered links' })}
       ${kpi('Services', n(IL.services), 'L3VPN 1,815 · L2VPN 642', 'emerald',
         { v:'services', l:'All discovered services' })}
@@ -6511,10 +6521,10 @@ function locInsights() {
   const linkSegD = (nm, tab) => ({ v:'links', l:`${nm} — filtered list`, q:`tab=${tab}` });
   const svcSegD = (nm, tab) => ({ v:'services', l:`${nm} — filtered list`, q:`tab=${tab}` });
   const logicalSegs = [
-    { n:'LLDP links', c: Math.round(IL.links*0.45), tone:'purple', d: linkSegD('LLDP links','lldp') },
-    { n:'OSPF', c: Math.round(IL.links*0.25), tone:'sky', d: linkSegD('OSPF links','ospf') },
-    { n:'BGP', c: Math.round(IL.links*0.15), tone:'cyan', d: linkSegD('BGP links','bgp') },
-    { n:'ISIS', c: IL.links - Math.round(IL.links*0.45) - Math.round(IL.links*0.25) - Math.round(IL.links*0.15), tone:'slate', d: linkSegD('ISIS links','isis') },
+    { n:'LLDP links', c: LINK_TABS[0].c, tone:'purple', d: linkSegD('LLDP links','lldp') },
+    { n:'OSPF', c: LINK_TABS[1].c, tone:'sky', d: linkSegD('OSPF links','ospf') },
+    { n:'BGP', c: LINK_TABS[2].c, tone:'cyan', d: linkSegD('BGP links','bgp') },
+    { n:'ISIS', c: LINK_TABS[3].c, tone:'slate', d: linkSegD('ISIS links','isis') },
     { n:'L3VPN', c: Math.round(IL.services*0.74), tone:'teal', d: svcSegD('L3VPN services','l3vpn') },
     { n:'L2VPN', c: IL.services - Math.round(IL.services*0.74), tone:'emerald', d: svcSegD('L2VPN services','l2vpn') }
   ];
@@ -8867,11 +8877,11 @@ function resOverview() {
     { f: 'Serial number', v: provR.sn,    src: 'Hardware collector',   ok: true },
     { f: 'OS version',    v: provR.os,    src: 'Device collector',     ok: true },
     { f: 'Uptime',        v: '47 d 18 h', src: 'Device collector',     ok: true },
-    { f: 'Adjacencies',   v: '19 LLDP · 12 OSPF · 4 BGP', src: 'LLDP · OSPF · BGP', ok: true },
+    { f: 'Adjacencies',   v: NBR_TABS.map(t=>`${t.c} ${t.n}`).join(' · '), src: NBR_TABS.map(t=>t.n).join(' · '), ok: true },
     { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', ok: true },
     { f: 'Circle · site', v: `${provLoc ? provLoc.state : PROV[8].v.split(' · ')[0]} · ${provR.loc}`, src: 'Manual', ok: true },
     { f: 'Stock state',   v: PROV[9].v,   src: 'Workorder WO-2291',    ok: true },
-    { f: 'Warranty ends', v: 'Not linked', src: 'ERP · not integrated', ok: false }
+    { f: 'Warranty ends', v: '31-Mar-2028', src: 'SAP ERP · Contract 88410', ok: true }
   ];
   return `
   <div class="row-t" style="align-items:stretch">
@@ -8888,17 +8898,17 @@ function resOverview() {
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
-          ${[['End of sale','30-Jun-2025','past','red'],['End of support','31-Dec-2028','2 y 4 mo away','amber'],
-             ['Warranty / AMC','31-Mar-2027','7 mo away','amber'],['Purchased','12-Mar-2024','PO-2024-1188','slate']]
+          ${[['End of sale','30-Jun-2028','2 y away','info'],['End of support','31-Dec-2031','5 y away','neutral'],
+             ['Warranty / AMC','31-Mar-2028','Active','success'],['Purchased','12-Mar-2024','PO-2024-1188','neutral']]
             .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
               <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
-              ${chip(s, t==='red'?'error':t==='amber'?'warning':'neutral')}</div>`).join('')}
+              ${chip(s, t==='red'?'error':t==='amber'?'warning':t==='success'?'success':t==='info'?'info':'neutral')}</div>`).join('')}
         </div>`)}
       ${card(`${headSm('Impact if this element fails')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
-          ${[['Directly attached elements','19','LLDP neighbours','sky'],
+          ${[['Directly attached elements',String(NBRS.lldp.length),'LLDP neighbours','sky'],
              ['Downstream sites isolated','3','no alternate path','red'],
-             ['Services carried','16','4 currently down','amber'],
+             ['Services carried',String(RES_SERVICES.length),`${svcDown} currently down`,'amber'],
              ['Customers affected','11','2 premium SLA','purple']]
             .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:1fr auto 8rem">
               <span class="vw-label">${k}</span>
@@ -8917,8 +8927,7 @@ function resHardware() {
     </div>
     ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
       HW_TREE.map(h => [
-        `<span class="hw-node">
-           <span class="hw-ic">${HW_ICON[h.k]}</span><span class="vw-value">${h.n}</span></span>`,
+        `<span class="vw-value">${h.n}</span>`,
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), 'chip-auto',
@@ -9043,6 +9052,11 @@ function resNbrs() {
      nested a level below Neighbours reads as a "detail" tab already, the
      same relationship those two existing uses have to their own parent. */
   const panelId = `nbrpanel-${NBR_TAB}`;
+  const newCount = rows.filter(r => r.st === 'new').length;
+  const goneCount = rows.filter(r => r.st === 'gone').length;
+  const statusChips = (newCount || goneCount)
+    ? `<div class="row">${newCount ? chip(`${newCount} new`,'info') : ''}${goneCount ? chip(`${goneCount} no longer seen`,'error') : ''}</div>`
+    : '';
   return card(`
     <nav aria-label="Protocols">
       <div class="tabbar tabbar--detail" role="tablist">${NBR_TABS.map(t=>`<button role="tab" id="nbrtab-${t.k}"
@@ -9052,7 +9066,7 @@ function resNbrs() {
     <div id="${panelId}" role="tabpanel" aria-labelledby="nbrtab-${NBR_TAB}" style="margin-top:var(--vw-space-md)">
       <div class="nst-table-toolbar row vw-justify-between" style="margin-bottom:var(--vw-space-md)">
         <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-        <div class="row">${chip('1 new','info')}${chip('1 no longer seen','error')}</div>
+        ${statusChips}
       </div>
       ${rows.length ? table([{t:'State', plain:true},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
                {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
@@ -9426,7 +9440,7 @@ function buildDwdmResourceDetail(s, r) {
     'BB:Bundle link for ae45 100G SRR MX-480 To CLT',
     'BB:SRR-MX480 to SRR-MX204 100G',
     'BB: FPC 2 is Faulty,Pls do not configure',
-    'Railwire Service for SRR-CLT Ring',
+    'Enterprise Broadband Service for SRR-CLT Ring',
     null, null
   ];
   const slug = String(r.name || s).toLowerCase();
@@ -9546,14 +9560,14 @@ function viewResource() {
 
     ${card(`<div class="meta-bar">
       <div class="chip-row">${rst(r.st)}${chip('Active · Physical','neutral')}${chip('Deployed','success')}
-        ${chip('Past end of sale','error')}</div>
+        ${chip('Active support','success')}</div>
       <span class="meta-summary mono">${r.ip} · ${r.sn} · ${r.os} · rack ${r.rack || 'A · U42-43'}</span>
     </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
       { k:'Ports used',      v:`${IF_CAP.up} / ${IF_CAP.total}`, s:`${IF_CAP.adminDown - IF_CAP.operDown} free · 4 mo headroom`, t:'sky' },
       { k:'Components',      v:'51', s:'1 failed · 1 degrading', t:'amber' },
-      { k:'Adjacencies',     v:'35', s:'LLDP 19 · OSPF 12 · BGP 4', t:'purple' },
+      { k:'Adjacencies',     v: String(NBR_TABS.reduce((a,t)=>a+t.c,0)), s: NBR_TABS.map(t=>`${t.n} ${t.c}`).join(' · '), t:'purple' },
       { k:'Services',        v:'16', s:'4 currently down', t:'emerald' },
       { k:'Open alarms',     v:'5',  s:'1 critical · 2 unacked', t:'red' }
     ])}

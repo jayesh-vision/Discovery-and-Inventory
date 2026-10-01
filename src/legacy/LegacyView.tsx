@@ -85,7 +85,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
   /* legacy → React: the prototype's go() hands React-owned screens to us */
   useEffect(() => {
     window.__nsBridge = {
-      owns: isReactOwned,
+      owns: (k: string) => k !== legacyKey && isReactOwned(k),
       navigate: (k, drill, params) => {
         const target = legacyPath(k, drill, params ?? {});
         /* once the reader is already on this React screen, a bare re-hand-off
@@ -125,7 +125,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     const L = window.__nsLegacy;
     const sp = new URLSearchParams(loc.search);
     const label = sp.get('drill');
-    const from = sp.get('from') ?? 'Inventory';
+    const from = sp.get('from') ?? (legacyKey === 'location' ? undefined : 'Inventory');
     const back = sp.get('back') ?? 'physical';
     sp.delete('drill'); sp.delete('from'); sp.delete('back');
     /* :name/:id live in the route path, not the query string, so a bare
