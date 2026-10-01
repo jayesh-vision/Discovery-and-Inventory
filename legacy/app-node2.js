@@ -45,10 +45,10 @@ function nodeHeaderSwitch(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${N.name}</span>
           ${chip(stLabel, stTone)}
         </div>
-        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500,#64748b);margin-top:2px;font-size:0.8125rem">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           ${r.loc || N.name}(${coords})
         </span>
@@ -495,22 +495,25 @@ function nodeHeaderRouter(N) {
   ];
   return card(`
     <div class="nv-head">
-      <div class="nv-thumb" aria-hidden="true">
-        ${nodeThumb(N.cls)}
+      <div class="nv-thumb" aria-hidden="true" style="width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:var(--vw-color-slate-100,#f1f5f9);border-radius:10px;padding:6px">
+        <span style="color:var(--vw-color-slate-700,#334155)">${nodeThumb('router')}</span>
       </div>
       <div class="stack-x grow" style="min-width:0">
-        <div class="row" style="gap:var(--vw-space-sm)">
-          <span class="vw-card-title">${N.name}</span>
+        <div class="row" style="gap:var(--vw-space-sm);align-items:center">
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${N.name}</span>
           ${chip(stLabel, stTone)}
           ${chip(N.meta.n, 'neutral')}
         </div>
-        <span class="vw-card-metric-label-sub">${r.loc} · ${r.ip} · ${r.sn}</span>
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500,#64748b);margin-top:2px;font-size:0.8125rem">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${r.loc} · ${r.ip} · ${r.sn}
+        </span>
       </div>
       <div class="row" style="flex-shrink:0">
         <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
-    <div class="nv-meta">${cells.map(([k, v]) => `<div class="stack-x">
+    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
@@ -777,23 +780,23 @@ function renderLinkCapacityChart(row, linkTrendFn, protoLabel) {
     <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
       ${[0, 0.25, 0.5, 0.75, 1].map(f => Math.round(floor + (ceil - floor) * f)).map(v => `
         <line x1="${PADL}" x2="${W - PADR}" y1="${y(v)}" y2="${y(v)}" stroke="#f1f5f9" stroke-width="1.2"/>
-        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="Poppins,sans-serif">${v}%</text>
+        <text x="${PADL - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10" font-weight="500" fill="#94a3b8" font-family="'Inter',sans-serif">${v}%</text>
       `).join('')}
 
       ${ceil >= 85 && floor <= 85 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(85)}" y2="${y(85)}" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4"/>
-        <text x="${W - PADR + 6}" y="${y(85) + 4}" font-size="10" font-weight="600" fill="#b45309" font-family="Poppins,sans-serif">Warning 85%</text>` : ''}
+        <text x="${W - PADR + 6}" y="${y(85) + 4}" font-size="10" font-weight="600" fill="#b45309" font-family="'Inter',sans-serif">Warning 85%</text>` : ''}
       ${ceil >= 95 && floor <= 95 ? `<line x1="${PADL}" x2="${W - PADR}" y1="${y(95)}" y2="${y(95)}" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="6 4"/>
-        <text x="${W - PADR + 6}" y="${y(95) + 4}" font-size="10" font-weight="600" fill="#b91c1c" font-family="Poppins,sans-serif">Critical 95%</text>` : ''}
+        <text x="${W - PADR + 6}" y="${y(95) + 4}" font-size="10" font-weight="600" fill="#b91c1c" font-family="'Inter',sans-serif">Critical 95%</text>` : ''}
 
       ${line('a', '#2563eb')}${dots('a', '#2563eb')}
       ${line('f', '#f59e0b')}${dots('f', '#f59e0b')}
 
       <text x="${x(aMidI)}" y="${y(trend[aMidI].a) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8"
-        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="Poppins,sans-serif">Bandwidth (actual)</text>
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="'Inter',sans-serif">Bandwidth (actual)</text>
       <text x="${x(fMidI)}" y="${y(trend[fMidI].f) - 12}" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309"
-        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="Poppins,sans-serif">Bandwidth (forecast)</text>
+        stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="'Inter',sans-serif">Bandwidth (forecast)</text>
 
-      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="Poppins,sans-serif">${m}</text>`).join('')}
+      ${months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="'Inter',sans-serif">${m}</text>`).join('')}
     </svg>`;
 }
 
@@ -1290,10 +1293,10 @@ function nodeHeaderDwdm(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${N.name}</span>
           ${chip(stLabel, stTone)}${chip('DWDM', 'purple')}
         </div>
-        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500,#64748b);margin-top:2px;font-size:0.8125rem">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           MGMT IP ${r.ip || '—'}
         </span>
@@ -1303,7 +1306,7 @@ function nodeHeaderDwdm(N) {
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 
@@ -1505,20 +1508,20 @@ function nodeHeaderEnodeb(N) {
       </div>
       <div class="stack-x grow" style="min-width:0">
         <div class="row" style="gap:var(--vw-space-sm);align-items:center">
-          <span class="vw-card-title" style="font-size:1.25rem;font-weight:500">${N.name}</span>
+          <span class="vw-card-title" style="font-size:1.25rem;font-weight:600;color:var(--vw-color-slate-900,#0f172a)">${N.name}</span>
           ${chip(stLabel, stTone)}
         </div>
-        <span class="vw-card-metric-label-sub mono" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500);margin-top:2px">
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:4px;color:var(--vw-color-slate-500,#64748b);margin-top:2px;font-size:0.8125rem">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           ${r.loc || N.name} · ${coords}
         </span>
-        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;margin-top:2px">
+        <span class="vw-card-metric-label-sub" style="display:inline-flex;align-items:center;gap:6px;margin-top:2px;font-size:0.8125rem">
           <span style="width:6px;height:6px;border-radius:50%;background:${cv('emerald', 500)}"></span>Live · Updated ${updated}
         </span>
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
-      <span class="nv-hk" style="font-size:0.75rem;color:var(--vw-color-slate-500);font-weight:500">${k}</span><span class="nv-mv mono" style="font-size:0.875rem;font-weight:400;color:var(--vw-color-slate-800);margin-top:2px">${v}</span></div>`).join('')}</div>`,
+      <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
 

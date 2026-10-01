@@ -9,7 +9,7 @@
   margin-bottom: 24px;
 }
 
-/* ── Global Font Normalization for Generic Enterprise Look ── */
+/* ── Global Font Normalization for Consistent Enterprise Look ── */
 .node-details-overview-embed,
 .node-details-overview-embed *,
 .node-details-overview-embed button,
@@ -17,8 +17,9 @@
 .node-details-overview-embed select,
 .node-details-overview-embed textarea,
 .node-details-overview-embed svg text {
-  font-family: var(--fontFamily, 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+  font-family: var(--fontFamily, 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
   -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 .node-details-overview-embed .mono,
@@ -27,19 +28,23 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }
 
-/* Base font-weight normalization to eliminate uneven bold weights */
+/* Base font-weight normalization for clean hierarchy */
 .node-details-overview-embed b,
 .node-details-overview-embed strong {
-  font-weight: 500 !important;
+  font-weight: 600 !important;
 }
 
 .node-details-overview-embed h1,
 .node-details-overview-embed h2,
-.node-details-overview-embed h3,
+.node-details-overview-embed h3 {
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+}
+
 .node-details-overview-embed h4,
 .node-details-overview-embed h5,
 .node-details-overview-embed h6 {
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   letter-spacing: -0.01em !important;
 }
 
@@ -140,12 +145,12 @@
   background: #eff6ff !important;
   color: #2563eb !important;
   border: 1px solid #bfdbfe !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 11px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   border-radius: 6px !important;
-  padding: 2px 7px !important;
+  padding: 2px 8px !important;
 }
 
 .node-details-overview-embed .nv-sec__txt {
@@ -156,8 +161,8 @@
 .node-details-overview-embed .nv-sec__txt h3 {
   margin: 0 !important;
   font-size: 15px !important;
-  font-weight: 500 !important;
-  color: #1e293b !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
   line-height: 1.35 !important;
   letter-spacing: -0.01em !important;
 }
@@ -167,7 +172,7 @@
   font-size: 13px !important;
   font-weight: 400 !important;
   color: #64748b !important;
-  line-height: 1.4 !important;
+  line-height: 1.45 !important;
 }
 
 /* ── Map Toggle Button (Black Button with Proper Corners) ── */
@@ -378,17 +383,17 @@
 }
 
 .node-details-overview-embed .tw-lbl--dim {
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   fill: #94a3b8 !important;
   paint-order: stroke !important;
   stroke: #030712 !important;
   stroke-width: 2px !important;
   stroke-linejoin: round !important;
-  font-weight: 450 !important;
+  font-weight: 500 !important;
 }
 
 .node-details-overview-embed .tw-tick {
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   fill: #94a3b8 !important;
   paint-order: stroke !important;
   stroke: #030712 !important;
@@ -467,7 +472,7 @@
 
 .node-details-overview-embed .tw-tag text {
   fill: #f8fafc !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   font-weight: 500 !important;
 }
 
@@ -517,9 +522,9 @@
 
 .node-details-overview-embed .nv-panel__h h4 {
   margin: 0 !important;
-  font-size: 13.5px !important;
-  font-weight: 500 !important;
-  color: #1e293b !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
 }
 
 .node-details-overview-embed .nv-panel__sub {
@@ -530,7 +535,7 @@
 
 .node-details-overview-embed .nv-prov {
   margin-left: auto !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   color: #0284c7 !important;
   background: #eff6ff !important;
   border: 1px solid #bae6fd !important;
@@ -564,7 +569,7 @@
 
 .node-details-overview-embed .nk-insp__k {
   font-size: 11px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   color: #64748b !important;
@@ -572,22 +577,22 @@
 
 .node-details-overview-embed .nk-insp__h h4 {
   margin: 2px 0 0 !important;
-  font-size: 13.5px !important;
-  font-weight: 500 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
   color: #0f172a !important;
   line-height: 1.35 !important;
   letter-spacing: -0.01em !important;
 }
 
 .node-details-overview-embed .nk-insp__c {
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   font-weight: 400 !important;
-  color: #475569 !important;
+  color: #64748b !important;
 }
 
 .node-details-overview-embed .nk-insp__s {
   margin: 0 !important;
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   color: #334155 !important;
   line-height: 1.5 !important;
   font-weight: 400 !important;
@@ -602,7 +607,7 @@
   display: flex !important;
   justify-content: space-between !important;
   gap: 12px !important;
-  padding: 5px 0 !important;
+  padding: 6px 0 !important;
   border-bottom: 1px dashed #e2e8f0 !important;
   font-size: 12px !important;
 }
@@ -635,14 +640,14 @@
 .node-details-overview-embed .nk-insp__bl {
   display: flex !important;
   justify-content: space-between !important;
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   color: #475569 !important;
   margin-bottom: 3px !important;
 }
 
 .node-details-overview-embed .nk-insp__bl b {
-  font-weight: 500 !important;
-  color: #1e293b !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
   font-variant-numeric: tabular-nums !important;
 }
 
@@ -780,7 +785,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* ── Tables & Lists inside Twin (Generic Enterprise Typography) ── */
+/* ── Tables & Lists inside Twin (Consistent Enterprise Typography) ── */
 .node-details-overview-embed .table-wrap {
   width: 100% !important;
   overflow-x: auto !important;
@@ -789,31 +794,34 @@
 .node-details-overview-embed table.tbl {
   width: 100% !important;
   border-collapse: collapse !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .node-details-overview-embed table.tbl th {
-  padding: 8px 12px !important;
+  padding: 9px 12px !important;
   font-size: 11px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   color: #64748b !important;
   background: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
   text-align: left !important;
+  white-space: nowrap !important;
 }
 
 .node-details-overview-embed table.tbl td {
-  padding: 8px 12px !important;
-  font-size: 12px !important;
+  padding: 9px 12px !important;
+  font-size: 13px !important;
   font-weight: 400 !important;
   color: #1e293b !important;
   border-bottom: 1px solid #f1f5f9 !important;
+  line-height: 1.4 !important;
 }
 
 .node-details-overview-embed table.tbl td.name {
   font-weight: 500 !important;
+  color: #0f172a !important;
 }
 
 /* ── Bar graphs inside Twin ── */
@@ -827,7 +835,7 @@
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
-  padding: 6px 12px !important;
+  padding: 7px 12px !important;
   border-radius: 7px !important;
   background: #f8fafc !important;
   border: 1px solid #f1f5f9 !important;
@@ -842,7 +850,7 @@
 
 .node-details-overview-embed .nv-bars__l {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
   color: #334155 !important;
   min-width: 88px !important;
@@ -874,7 +882,7 @@
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #0f172a !important;
-  min-width: 48px !important;
+  min-width: 52px !important;
   text-align: right !important;
   font-variant-numeric: tabular-nums !important;
 }
@@ -906,5 +914,134 @@
   color: #dc2626 !important;
   background: #fef2f2 !important;
   border: 1px solid #fecaca !important;
+}
+
+/* ── Alerts Tab List & Event Detail Typography ── */
+.node-details-overview-embed .nf-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.node-details-overview-embed .nf-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left-width: 4px !important;
+  background: #ffffff !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.node-details-overview-embed .nf-row:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+.node-details-overview-embed .nf-row.is-on {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+.node-details-overview-embed .nf-row__main b {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
+.node-details-overview-embed .nf-row__main span,
+.node-details-overview-embed .nf-row__main .mono {
+  font-size: 12px !important;
+  color: #64748b !important;
+}
+
+.node-details-overview-embed .nf-row__r {
+  font-size: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+}
+
+.node-details-overview-embed .nf-row__r .mono {
+  font-size: 12px !important;
+  color: #64748b !important;
+}
+
+.node-details-overview-embed .nf-detail__h h4 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+}
+
+.node-details-overview-embed .nf-detail__c {
+  font-size: 12px !important;
+  color: #64748b !important;
+  margin-top: 2px !important;
+}
+
+.node-details-overview-embed .nf-detail p {
+  font-size: 13px !important;
+  color: #334155 !important;
+  line-height: 1.45 !important;
+}
+
+.node-details-overview-embed .nf-inf h5 {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+}
+
+.node-details-overview-embed .nf-inf p {
+  font-size: 12px !important;
+  color: #475569 !important;
+  line-height: 1.45 !important;
+}
+
+.node-details-overview-embed .nf-inf__a {
+  font-size: 12px !important;
+  color: #334155 !important;
+}
+
+.node-details-overview-embed .nf-inf__e {
+  font-size: 11px !important;
+  color: #64748b !important;
+}
+
+/* ── Hardware Tab Shelves & Slots Typography ── */
+.node-details-overview-embed .nv-shelf__h {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.node-details-overview-embed .nv-slot__id {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.node-details-overview-embed .nv-slot__t {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #64748b !important;
+}
+
+.node-details-overview-embed .nv-slot__f {
+  font-size: 11px !important;
+  font-weight: 500 !important;
 }
 

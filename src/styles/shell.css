@@ -1374,8 +1374,8 @@ button.sb-row.is-drill::after { display: none; }
 .nv-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   gap: var(--vw-space-md); margin-top: var(--vw-space-lg);
   padding-top: var(--vw-space-md); border-top: 1px solid var(--vw-color-slate-200); }
-.nv-hk { font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vw-color-gray-500); line-height: 1.35; }
-.nv-mv { font-size: 0.875rem; font-weight: 400; color: var(--vw-color-gray-800); line-height: 1.4; word-break: break-all; }
+.nv-hk { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; }
+.nv-mv { font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-900, #0f172a); line-height: 1.4; word-break: break-all; }
 
 .nv-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--vw-space-sm); }
 .nv-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0;
