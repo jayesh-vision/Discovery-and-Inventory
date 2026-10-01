@@ -1,0 +1,181 @@
+/* ============================================================
+   NST Design System — Layout utilities
+   Ported from core-mixin.scss per guidelines vw-cards-ext page.
+   ============================================================ */
+
+/* Display */
+.vw-flex        { display: flex; }
+.vw-inline-flex { display: inline-flex; }
+.vw-grid        { display: grid; }
+
+/* Direction */
+.vw-flex-row { flex-direction: row; }
+.vw-flex-col { flex-direction: column; }
+
+/* Align */
+.vw-items-start    { align-items: flex-start; }
+.vw-items-center   { align-items: center; }
+.vw-items-end      { align-items: flex-end; }
+.vw-items-baseline { align-items: baseline; }
+.vw-items-stretch  { align-items: stretch; }
+
+/* Justify */
+.vw-justify-start   { justify-content: flex-start; }
+.vw-justify-center  { justify-content: center; }
+.vw-justify-end     { justify-content: flex-end; }
+.vw-justify-between { justify-content: space-between; }
+.vw-justify-around  { justify-content: space-around; }
+.vw-justify-evenly  { justify-content: space-evenly; }
+
+/* Wrap */
+.vw-wrap   { flex-wrap: wrap; }
+.vw-nowrap { flex-wrap: nowrap; }
+
+/* Page gap utilities (flex/grid gap) */
+.vw-page-gap     { gap: var(--vw-page-gap); }
+.vw-page-gap-xl  { gap: var(--vw-space-xl); }
+.vw-page-gap-md  { gap: var(--vw-space-md); }
+.vw-page-gap-sm  { gap: var(--vw-space-sm); }
+.vw-page-gap-xxs { gap: var(--vw-space-xxs); }
+
+/* Gap utilities */
+.vw-gap-none { gap: var(--vw-space-none); }
+.vw-gap-xxs  { gap: var(--vw-space-xxs); }
+.vw-gap-xs   { gap: var(--vw-space-xs); }
+.vw-gap-sm   { gap: var(--vw-space-sm); }
+.vw-gap-md   { gap: var(--vw-space-md); }
+.vw-gap-lg   { gap: var(--vw-space-lg); }
+.vw-gap-xl   { gap: var(--vw-space-xl); }
+
+/* Grid helpers */
+/* Grid children shrink below their content width by default. */
+.vw-grid > * { min-width: 0; }
+
+.vw-grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.vw-grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.vw-grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.vw-grid-cols-auto-320 {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.vw-items-start-grid {
+  align-items: start;
+}
+
+.vw-w-full {
+  width: 100%;
+}
+
+/* Field color helpers (core-mixin) */
+.field-label-color {
+  color: var(--fieldLabelColor);
+  font-weight: var(--fieldLabelFontWeight);
+}
+
+.field-text-color {
+  color: var(--fieldTextColor);
+  font-weight: var(--fieldTextFontWeight);
+}
+
+.field-disabled-label-color {
+  color: var(--fieldDisabledLabelColor);
+}
+
+.field-disabled-text-color {
+  color: var(--fieldDisabledTextColor);
+}
+
+/* ============================================================
+   Additions for this app — same token discipline as above.
+   Text colour roles (the system ships .vw-label/.vw-value but no
+   generic colour utilities), plus margin and width helpers.
+   ============================================================ */
+
+/* Text colour roles */
+.vw-text-primary   { color: var(--vw-color-gray-900); }
+.vw-text-secondary { color: var(--vw-color-gray-600); }
+.vw-text-tertiary  { color: var(--vw-color-gray-500); }
+.vw-text-inverse   { color: var(--vw-color-white); }
+.vw-text-brand     { color: var(--primaryColor500); }
+.vw-text-success   { color: var(--vw-color-emerald-700); }
+.vw-text-error     { color: var(--vw-color-red-700); }
+.vw-text-warning   { color: var(--vw-color-amber-700); }
+.vw-text-info      { color: var(--vw-color-sky-700); }
+
+/* Weight — the four the system uses */
+.vw-font-light    { font-weight: 300; }
+.vw-font-regular  { font-weight: 400; }
+.vw-font-medium   { font-weight: 500; }
+.vw-font-semibold { font-weight: 600; }
+
+/* Alignment */
+.vw-text-center { text-align: center; }
+.vw-text-right  { text-align: right; }
+.vw-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Spacing helpers */
+.vw-mt-xs  { margin-top: var(--vw-space-xs); }
+.vw-mt-sm  { margin-top: var(--vw-space-sm); }
+.vw-mt-md  { margin-top: var(--vw-space-md); }
+.vw-mt-lg  { margin-top: var(--vw-space-lg); }
+.vw-mb-sm  { margin-bottom: var(--vw-space-sm); }
+.vw-mb-md  { margin-bottom: var(--vw-space-md); }
+.vw-ml-auto { margin-left: auto; }
+
+/* Sizing */
+.vw-min-w-0 { min-width: 0; }
+.vw-flex-1  { flex: 1; }
+
+/* Grid column helpers not in the base set */
+.vw-grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
+.vw-grid-cols-auto-260 { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+/* Screen-reader only */
+.vw-sr-only {
+  /* Not absolutely positioned: inside a scroll container an abs-positioned
+     node resolves against the viewport and stretches the page. */
+  display: inline-block;
+  width: 1px; height: 1px;
+  padding: 0; margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Scrollable panel */
+.vw-scroll-panel { max-height: 380px; overflow-y: auto; }
+
+/* Identifiers, interface names, part numbers.
+   One font family across the app, so this aligns figures with tabular
+   numerals instead of switching to a monospace stack. */
+.vw-mono {
+  font-size: var(--vw-font-label-sm);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  white-space: nowrap;
+}
+
+/* Alignment + transparent surface for a table used as a key/value list. */
+.vw-text-left { text-align: left; }
+.vw-bg-transparent { background: transparent; }
+
+/* Icon tint — colours arrive as --app-tone / --app-tone-bg. */
+.vw-card-icon-tinted {
+  background: var(--app-tone-bg);
+  color: var(--app-tone);
+}

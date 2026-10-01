@@ -1,0 +1,37 @@
+/* ============================================================
+   NST Design System — Complete bundle (theme: black)
+
+   The VisionWaves token + class system, as implemented in the
+   fabric-governance app. This app composes from these classes and
+   never restyles a control itself.
+
+   Layer order matters — each layer may only reference the ones
+   above it:
+
+     1. colors.css              --vw-color-* primitives
+     2. spacing.css             --vw-space-*, --vw-radius-*
+     3. typography-tokens.css   --fontFamily, --vw-font-*, --vw-line-*
+     4. theme-tokens.css        --grayColor*, --primaryColor*, --bgColor*
+     5. theme-black.css         [data-theme="black"] scoped overrides
+     6. typography-semantic.css h1–h6, p, small, .display-*
+     7. vw-cards.css            .vw-card-*, .vw-page-*, .vw-label/.vw-value
+     8. vw-chips.css            .vw-chip-*, .common-*-chip
+     9. vw-utilities.css        .vw-flex, .vw-gap-*, .vw-grid-*
+    10. components.css          .nst-btn, .nst-input, .nst-table, .nst-surface
+    11. components-ext.css      .nst-tabs, .nst-field, .nst-select, .nst-alert…
+
+   Requires Poppins:
+     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+   ============================================================ */
+
+@import url('./colors.css');
+@import url('./spacing.css');
+@import url('./typography-tokens.css');
+@import url('./theme-tokens.css');
+@import url('./theme-black.css');
+@import url('./typography-semantic.css');
+@import url('./vw-cards.css');
+@import url('./vw-chips.css');
+@import url('./vw-utilities.css');
+@import url('./components.css');
+@import url('./components-ext.css');

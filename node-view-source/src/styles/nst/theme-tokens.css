@@ -1,0 +1,160 @@
+/* ============================================================
+   NST Design System — Theme Tokens (default)
+   Maps gx-theme semantic tokens used in guidelines:
+   --grayColor*, --primaryColor*, --accentColor*, --warnColor*, --bgColor*
+   Theme: black (#000000). The brand ramp below is the only block
+   that changes between themes.
+   ============================================================ */
+
+:root {
+  /* Gray (Material palette — from guidelines color-palette) */
+  --grayColor50:  #fafafa;
+  --grayColor100: #f5f5f5;
+  --grayColor200: #eeeeee;
+  --grayColor300: #e0e0e0;
+  --grayColor400: #bdbdbd;
+  --grayColor500: #9e9e9e;
+  --grayColor600: #757575;
+  --grayColor700: #616161;
+  --grayColor800: #424242;
+  --grayColor900: #212121;
+  --grayColor1000: #000000;
+
+  /* Primary — black brand (theme-black) */
+  --primaryColor50:  #f2f2f2;
+  --primaryColor100: #d9d9d9;
+  --primaryColor200: #bfbfbf;
+  --primaryColor300: #8c8c8c;
+  --primaryColor400: #595959;
+  --primaryColor500: #000000;
+  --primaryColor600: #0a0a0a;
+  --primaryColor700: #000000;
+  --primaryColor800: #000000;
+  --primaryColor900: #000000;
+
+  /* Accent — mirrors the black ramp */
+  --accentColor50:  #f2f2f2;
+  --accentColor100: #d9d9d9;
+  --accentColor200: #bfbfbf;
+  --accentColor300: #8c8c8c;
+  --accentColor400: #595959;
+  --accentColor500: #090909;
+  --accentColor600: #000000;
+  --accentColor700: #0a0a0a;
+  --accentColor800: #000000;
+  --accentColor900: #000000;
+
+  /* Warn */
+  --warnColor10:  #fffbeb;
+  --warnColor50:  #fff8e1;
+  --warnColor100: #ffecb3;
+  --warnColor200: #ffe082;
+  --warnColor300: #ffd54f;
+  --warnColor400: #ffca28;
+  --warnColor500: #ffc107;
+  --warnColor600: #ffb300;
+  --warnColor700: #ffa000;
+  --warnColor800: #ff8f00;
+  --warnColor900: #ff6f00;
+  --warnColor1000: #e65100;
+
+  /* Background surfaces */
+  --bgColor10:  #ffffff;
+  --bgColor50:  #fafafa;
+  --bgColor100: #f5f5f5;
+  --bgColor200: #eeeeee;
+  --bgColor300: #e0e0e0;
+
+  /* Semantic primary trio (read by .nst-btn, .nst-tab, focus rings) */
+  --color-primary:       var(--primaryColor500);
+  --color-primary-hover: var(--primaryColor400);
+  --color-primary-press: var(--primaryColor600);
+
+
+  /* ── Semantic status roles ────────────────────────────────
+     The .nst-alert / .nst-input / .nst-link rules bind to these
+     rather than to a ramp step, so a status can be restated once. */
+  --vw-color-success:       var(--vw-color-emerald-600);
+  --vw-color-success-light: var(--vw-color-emerald-50);
+  --vw-color-danger:        var(--vw-color-red-500);
+  --vw-color-danger-light:  var(--vw-color-red-50);
+  --vw-color-warning:       var(--vw-color-amber-500);
+  --vw-color-warning-light: var(--vw-color-amber-50);
+  --vw-color-info:          var(--vw-color-sky-500);
+  --vw-color-info-light:    var(--vw-color-sky-50);
+
+  /* Chip text colours, reused by the alert variants. */
+  --chipSuccessTextColor: var(--vw-color-emerald-700);
+  --chipErrorTextColor:   var(--vw-color-red-700);
+  --chipWarningTextColor: var(--vw-color-amber-700);
+  --chipInfoTextColor:    var(--vw-color-sky-800);
+
+  /* Link / interactive text. */
+  --color-status-info-text: var(--primaryColor500);
+
+  /* ── Semantic surface / text / border roles ─────────────────────────────
+     These were referenced by app components but never defined, so anything
+     bound to them fell back to the browser default (black). Mapped here onto
+     the design system's primitive ramps. */
+  --color-background-primary:   var(--bgColor10);
+  --color-background-secondary: var(--bgColor50);
+  --color-background-info:      var(--vw-color-blue-50);
+
+  --color-text-primary:   var(--grayColor900);
+  --color-text-secondary: var(--grayColor600);
+  --color-text-tertiary:  var(--grayColor500);
+
+  --color-border-primary:   var(--grayColor300);
+  --color-border-secondary: var(--grayColor200);
+  --color-border-tertiary:  var(--grayColor100);
+
+  --border-radius-sm: var(--vw-radius-sm);
+  --border-radius-md: var(--vw-radius-md);
+  --border-radius-lg: var(--vw-radius-lg);
+
+  /* Status families — bar (accent line), bg (tint), text (ink). */
+  --color-status-allow-bar:  var(--vw-color-emerald-500);
+  --color-status-allow-bg:   var(--vw-color-emerald-50);
+  --color-status-allow-text: var(--vw-color-emerald-600);
+
+  --color-status-deny-bar:   var(--vw-color-red-500);
+  --color-status-deny-bg:    var(--vw-color-red-50);
+  --color-status-deny-text:  var(--vw-color-red-600);
+
+  --color-status-warn-bar:   var(--vw-color-amber-500);
+  --color-status-warn-bg:    var(--vw-color-amber-50);
+  --color-status-warn-text:  var(--vw-color-amber-600);
+
+  --color-status-info-bar:   var(--vw-color-blue-500);
+  --color-status-info-bg:    var(--vw-color-blue-50);
+
+  --color-status-intent-bg:   var(--vw-color-violet-50);
+  --color-status-intent-text: var(--vw-color-violet-600);
+
+  /* Field tokens (core-mixin) */
+  --fieldLabelColor:       var(--grayColor800);
+  --fieldLabelFontWeight:  500;
+  --fieldTextColor:        var(--grayColor900);
+  --fieldTextFontWeight:   400;
+  --fieldDisabledLabelColor: var(--grayColor500);
+  --fieldDisabledTextColor:  var(--grayColor400);
+
+  /* vw accent remap — align the primitive accent with the black brand */
+  --vw-color-accent-50:  #f2f2f2;
+  --vw-color-accent-100: #d9d9d9;
+  --vw-color-accent-200: #bfbfbf;
+  --vw-color-accent-300: #8c8c8c;
+  --vw-color-accent-400: #595959;
+  --vw-color-accent-500: #090909;
+  --vw-color-accent-600: #000000;
+  --vw-color-accent-700: #0a0a0a;
+  --vw-color-accent-800: #000000;
+  --vw-color-accent-900: #000000;
+}
+
+html,
+body {
+  font-family: var(--fontFamily);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

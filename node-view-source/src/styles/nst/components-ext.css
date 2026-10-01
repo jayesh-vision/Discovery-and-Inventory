@@ -1,0 +1,710 @@
+/* ============================================================
+   NST Design System — Component extensions
+   Fields, selects, tabs, tables, links, alerts, overlays and
+   skeletons. Ported from the fabric-governance implementation of
+   the same system; every value resolves to a token from
+   colors.css / spacing.css / typography-tokens.css / theme-tokens.css.
+   ============================================================ */
+
+.nst-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vw-space-xs);
+  min-width: 0;
+}
+
+.nst-select-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.nst-select {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 32px 6px 8px;
+
+  border-radius: var(--vw-radius-sm);
+  border: 1px solid var(--vw-color-gray-200);
+  background: var(--vw-color-white);
+
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--vw-color-gray-700);
+
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.nst-select:hover {
+  border-color: var(--vw-color-gray-400);
+}
+
+.nst-select:focus,
+.nst-select:focus-visible {
+  outline: none;
+  border-color: var(--vw-color-accent-500);
+  box-shadow: 0 0 0 3px var(--vw-color-accent-100);
+}
+
+.nst-select:disabled {
+  background: var(--vw-color-gray-50);
+  color: var(--vw-color-gray-300);
+  cursor: not-allowed;
+}
+
+.nst-select-chevron {
+  position: absolute;
+  right: var(--vw-space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: flex;
+  color: var(--vw-color-gray-400);
+}
+
+.nst-input[type='date'],
+.nst-input[type='datetime-local'] {
+  padding-right: var(--vw-space-sm);
+}
+
+.nst-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--vw-space-3xl);
+  border-bottom: 1px solid var(--vw-color-slate-200);
+  /* A narrow surface scrolls its tabs rather than stacking them: the strip is
+     one row by definition, and a wrapped one reads as two sets of tabs. */
+  overflow-x: auto;
+}
+
+.nst-tabs--dense {
+  gap: var(--vw-space-xl);
+}
+
+.nst-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vw-space-xs);
+  padding: var(--vw-space-md) 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  /* A label that wraps splits one tab into what looks like two. */
+  white-space: nowrap;
+
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  font-weight: 500;
+  line-height: 1.43;
+  color: var(--vw-color-gray-500);
+  transition: color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.nst-tab:hover {
+  color: var(--vw-color-gray-800);
+}
+
+.nst-tab[aria-selected='true'] {
+  color: var(--vw-color-gray-900);
+  box-shadow: inset 0 -2px 0 0 var(--primaryColor500);
+}
+
+.nst-tab:focus-visible {
+  outline: 2px solid var(--vw-color-accent-500);
+  outline-offset: -2px;
+  border-radius: var(--vw-radius-xs);
+}
+
+.nst-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vw-space-xxs);
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  /* The token the rest of the app's links reference; theme.css aliases it to
+     --vw-color-text-link, so this is the design system's link colour either
+     way — named the way the surrounding screens name it. */
+  color: var(--color-status-info-text);
+  text-decoration: none;
+  border-radius: var(--vw-radius-xs);
+  transition: color 120ms ease-out;
+}
+
+.nst-link:hover {
+  color: var(--color-status-info-text);
+  text-decoration: underline;
+}
+
+.nst-link:focus-visible {
+  outline: 2px solid var(--vw-color-accent-500);
+  outline-offset: 2px;
+}
+
+.nst-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vw-space-sm);
+  padding: var(--vw-space-sm) var(--vw-space-md);
+  border: 1px solid transparent;
+  border-radius: var(--vw-radius-sm);
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-sm);
+  line-height: 1.5;
+}
+
+.nst-alert--error {
+  border-color: var(--vw-color-danger);
+  background: var(--vw-color-danger-light);
+  color: var(--chipErrorTextColor);
+}
+
+.nst-alert--warning {
+  border-color: var(--vw-color-warning);
+  background: var(--vw-color-warning-light);
+  color: var(--chipWarningTextColor);
+}
+
+.nst-alert--info {
+  border-color: var(--vw-color-info);
+  background: var(--vw-color-info-light);
+  color: var(--chipInfoTextColor);
+}
+
+.nst-alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.nst-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vw-space-sm);
+  padding: var(--vw-space-4xl) var(--vw-space-xl);
+  text-align: center;
+}
+
+.nst-empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--vw-space-xs);
+  border-radius: var(--vw-radius-full);
+  background: var(--vw-color-slate-50);
+  border: 1px solid var(--vw-color-slate-200);
+  color: var(--vw-color-gray-400);
+}
+
+.nst-skeleton {
+  display: block;
+  height: 12px;
+  border-radius: var(--vw-radius-xs);
+  background: linear-gradient(
+    90deg,
+    var(--vw-color-gray-100) 25%,
+    var(--vw-color-gray-200) 37%,
+    var(--vw-color-gray-100) 63%
+  );
+  background-size: 400% 100%;
+  animation: nst-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+
+  .nst-skeleton { animation: none; }
+
+.nst-table--sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--vw-color-white);
+}
+
+.nst-table--nowrap td {
+  white-space: nowrap;
+}
+
+.nst-table tbody tr.is-clickable:focus-within td {
+  background: var(--vw-color-gray-50);
+}
+
+.nst-table-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nst-table-link:hover {
+  text-decoration: underline;
+}
+
+.nst-table-link:focus-visible {
+  outline: 2px solid var(--vw-color-accent-500);
+  outline-offset: 2px;
+  border-radius: var(--vw-radius-xs);
+}
+
+.vw-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--vw-space-xs);
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.vw-chip-remove:hover {
+  opacity: 1;
+}
+
+.vw-chip-remove:focus-visible {
+  outline: 2px solid var(--vw-color-accent-500);
+  outline-offset: 1px;
+  border-radius: var(--vw-radius-full);
+}
+
+.nst-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--vw-color-scrim);
+  z-index: 50;
+}
+
+.nst-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100vw);
+  background: var(--vw-color-white);
+  border-left: 1px solid var(--vw-color-slate-200);
+  box-shadow: var(--vw-shadow-xl);
+}
+
+.nst-drawer--wide {
+  width: min(760px, 100vw);
+}
+
+.nst-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, calc(100vw - var(--vw-space-4xl)));
+  max-height: min(720px, calc(100vh - var(--vw-space-4xl)));
+  background: var(--vw-color-white);
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg);
+  box-shadow: var(--vw-shadow-xl);
+}
+
+.nst-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vw-space-md);
+  flex-shrink: 0;
+  padding: var(--vw-space-xl);
+  border-bottom: 1px solid var(--vw-color-slate-200);
+}
+
+.nst-overlay-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--vw-space-xl);
+}
+
+.nst-overlay-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vw-space-sm);
+  flex-shrink: 0;
+  padding: var(--vw-space-xl);
+  border-top: 1px solid var(--vw-color-slate-200);
+}
+
+.nst-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--vw-space-xl);
+  align-items: start;
+}
+
+.nst-field-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vw-space-xxs);
+  min-width: 0;
+}
+
+.nst-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--vw-space-sm);
+  align-items: stretch;
+  /* Six tiles do not divide evenly into every width, so some rows wrap. Equal
+     rows keep a wrapped tile the same height as the ones above it. */
+  grid-auto-rows: 1fr;
+}
+
+.nst-field-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--vw-space-md);
+}
+
+.nst-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.nst-tabs { gap: var(--vw-space-xl); }
+
+.nst-table th {
+  padding: var(--vw-space-lg);
+  font-weight: 600;
+  color: var(--vw-color-gray-700);
+}
+
+.nst-table td {
+  padding: var(--vw-space-lg);
+}
+
+/* ── Table ──────────────────────────────────────────────────────────────────
+   The semantic `<table class="nst-table">` idiom. The system's other table
+   (.nst-table-card / .nst-table-th in components.css) is the flex-grid variant;
+   this one is for ordinary tabular data. */
+.nst-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  background: var(--vw-color-white);
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg);
+  overflow: hidden;
+}
+
+.nst-table thead th {
+  text-align: left;
+  background: var(--vw-color-gray-50);
+  border-bottom: 1px solid var(--vw-color-slate-200);
+  white-space: nowrap;
+}
+
+.nst-table tbody td {
+  border-bottom: 1px solid var(--vw-color-slate-200);
+  color: var(--vw-color-gray-700);
+  vertical-align: middle;
+}
+
+.nst-table tbody tr:last-child td { border-bottom: 0; }
+.nst-table tbody tr:hover td { background: var(--vw-color-gray-50); }
+
+/* Inside a card that already draws the border and radius. */
+.nst-table--flush {
+  border: 0;
+  border-radius: 0;
+}
+
+.nst-table-wrap { overflow-x: auto; }
+.nst-table-cell--primary {
+  color: var(--vw-color-gray-900);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.nst-table-cell--muted { color: var(--vw-color-gray-500); }
+
+/* A table inside a card scrolls within the card, not past it. */
+.vw-card-section > .nst-table-wrap { max-width: 100%; }
+
+/* ── Form screen ────────────────────────────────────────────────────────────
+   A full-width create/edit form: a card of fields, actions below it. */
+.nst-form-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vw-space-lg);
+}
+
+.nst-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--vw-space-2xl) var(--vw-space-3xl);
+  align-items: start;
+}
+
+.nst-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vw-space-sm);
+}
+
+/* Required marker on a field label. */
+.nst-required {
+  color: var(--vw-color-red-500);
+  margin-left: 2px;
+}
+
+/* Label above a control. */
+.nst-field > label {
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--vw-color-gray-800);
+}
+.nst-field.is-disabled > label { color: var(--vw-color-gray-400); }
+
+/* Character counter under a control. */
+.nst-field-counter {
+  align-self: flex-end;
+  font-size: var(--vw-font-label-sm);
+  line-height: 1.4;
+  color: var(--vw-color-gray-500);
+}
+
+/* Input with a leading icon (search-style). */
+.nst-field > .nst-input-shell,
+.nst-input-shell.is-block {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.nst-input-shell:not(.grid-search) {
+  position: relative;
+}
+.nst-input-shell > svg {
+  position: absolute;
+  left: var(--vw-space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--vw-color-gray-400);
+}
+.nst-input-shell > .nst-input { padding-left: 30px; }
+
+/* ── Rich text editor ───────────────────────────────────────────────────── */
+.nst-editor {
+  border: 1px solid var(--vw-color-gray-900);
+  border-radius: var(--vw-radius-xs);
+  background: var(--vw-color-white);
+  overflow: hidden;
+}
+
+.nst-editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--vw-space-xxs);
+  padding: var(--vw-space-xs);
+  border-bottom: 1px solid var(--vw-color-gray-900);
+}
+
+.nst-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--vw-space-xxs);
+  border: 0;
+  border-radius: var(--vw-radius-xs);
+  background: transparent;
+  color: var(--vw-color-gray-800);
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-sm);
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+.nst-editor-btn:hover { background: var(--vw-color-gray-100); }
+.nst-editor-btn[aria-pressed='true'] {
+  background: var(--vw-color-gray-100);
+  color: var(--vw-color-gray-900);
+}
+.nst-editor-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.nst-editor-body {
+  min-height: 120px;
+  padding: var(--vw-space-sm);
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  line-height: 1.5;
+  color: var(--vw-color-gray-900);
+  outline: none;
+  overflow-y: auto;
+}
+.nst-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: var(--vw-color-gray-400);
+}
+
+@media (max-width: 900px) {
+  .nst-form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* A row that opens a detail view. */
+.nst-table tbody tr.is-clickable { cursor: pointer; }
+
+/* Colour swatch picker (cable colour, role colour). */
+.nst-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--vw-radius-full);
+  background: var(--app-tone);
+  cursor: pointer;
+  transition: box-shadow 120ms ease-out, border-color 120ms ease-out;
+}
+.nst-swatch:hover { box-shadow: 0 0 0 2px var(--vw-color-gray-200); }
+.nst-swatch.is-selected {
+  border-color: var(--vw-color-white);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+.nst-swatch:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Toolbar selects size to their content rather than filling the row. */
+.nst-select-wrap.nst-editor-select { width: auto; }
+
+/* ── Switch ─────────────────────────────────────────────────────────────
+   A boolean shown as a labelled row rather than a checkbox, for settings
+   that read as statements ("Is full depth"). */
+.nst-switch-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vw-space-md);
+  min-height: 52px;
+  padding: var(--vw-space-sm) var(--vw-space-md);
+  border-radius: var(--vw-radius-sm);
+  background: var(--vw-color-gray-50);
+}
+.nst-switch-field > label {
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--vw-color-gray-800);
+  cursor: pointer;
+}
+
+.nst-switch {
+  appearance: none;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  position: relative;
+  border: 0;
+  border-radius: var(--vw-radius-full);
+  background: var(--vw-color-gray-300);
+  cursor: pointer;
+  transition: background-color 140ms ease-out;
+}
+.nst-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--vw-radius-full);
+  background: var(--vw-color-white);
+  box-shadow: var(--vw-shadow-xs);
+  transition: left 140ms ease-out;
+}
+.nst-switch:checked { background: var(--color-primary); }
+.nst-switch:checked::after { left: 20px; }
+.nst-switch:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.nst-switch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Upload box ─────────────────────────────────────────────────────────
+   Drag-and-drop target for an image, with a Browse fallback. */
+.nst-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vw-space-xs);
+  min-height: 180px;
+  padding: var(--vw-space-2xl);
+  border: 1px dashed var(--vw-color-gray-300);
+  border-radius: var(--vw-radius-sm);
+  background: var(--vw-color-white);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 140ms ease-out, background-color 140ms ease-out;
+}
+.nst-upload:hover,
+.nst-upload.is-dragging {
+  border-color: var(--color-primary);
+  background: var(--vw-color-gray-50);
+}
+.nst-upload:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.nst-upload__icon { color: var(--vw-color-gray-400); }
+.nst-upload__prompt {
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-md);
+  color: var(--vw-color-gray-700);
+}
+.nst-upload__action {
+  font-weight: 500;
+  color: var(--vw-color-gray-900);
+}
+.nst-upload__hint {
+  font-family: var(--fontFamily);
+  font-size: var(--vw-font-label-sm);
+  color: var(--vw-color-gray-400);
+}
+.nst-upload__preview {
+  max-width: 100%;
+  max-height: 140px;
+  border-radius: var(--vw-radius-xs);
+}
+.nst-upload__filename {
+  font-size: var(--vw-font-label-sm);
+  color: var(--vw-color-gray-600);
+}
