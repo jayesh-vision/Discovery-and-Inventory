@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Discovery & Reconciliation and Inventory modules of the NetSingularity OSS platform, on the NST / Vision Waves design system.",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --configLoader runner",
+    "build": "tsc -b && vite build --configLoader runner",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "legacy:bundle": "node scripts/bundle-legacy.mjs",

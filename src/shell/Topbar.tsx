@@ -127,8 +127,14 @@ export default function Topbar() {
       if (parts.length > 1) {
         for (let i = 0; i < parts.length - 1; i++) {
           const base = targetFor(parts.slice(0, i + 1).join(' · '), hop.query);
+          let to = base;
+          if (base && (parts[i] === 'Physical Resources' || parts.slice(0, i + 1).join(' · ') === 'Resources · Physical Resources') && hop.query) {
+            const qp = new URLSearchParams(hop.query);
+            const hopCls = qp.get('cls') || qp.get('tab');
+            if (hopCls) to = `${base}?cls=${encodeURIComponent(hopCls)}`;
+          }
           if (segs.length === 0 || segs[segs.length - 1].label !== parts[i]) {
-            segs.push({ label: parts[i], to: base });
+            segs.push({ label: parts[i], to });
           }
         }
       }
@@ -158,6 +164,14 @@ export default function Topbar() {
       let to = base;
       if (base && prefix === 'Location · Site details' && sp.get('tab')) {
         to = `${base}?tab=${encodeURIComponent(sp.get('tab')!)}`;
+      }
+      if (base && (prefix === 'Resources · Physical Resources' || label === 'Physical Resources')) {
+        const reqCls = sp.get('cls')
+          || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null)
+          || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls;
+        if (reqCls) {
+          to = `${base}?cls=${encodeURIComponent(reqCls)}`;
+        }
       }
       return { label, to };
     });

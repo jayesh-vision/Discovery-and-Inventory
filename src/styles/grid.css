@@ -23,17 +23,41 @@
   display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap;
   margin: var(--vw-space-sm) 0 var(--vw-space-md);
 }
-.grid-count { white-space: nowrap; font-size: 0.9375rem; color: var(--vw-color-gray-700); }
+.grid-count { white-space: nowrap; font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-600, #475569); }
 
 /* The search box nests an .nst-input inside an .nst-input-shell for the sake
    of the icon, so the inner one draws no frame of its own. */
-.grid-search { width: 27rem; max-width: 100%; position: relative; }
-.grid-search.nst-input-shell { min-height: 40px; border-radius: var(--vw-radius-md); border-color: var(--vw-color-slate-200); }
+.grid-search,
+.grid-search.nst-input-shell,
+.grid-bar .grid-search {
+  width: 27rem;
+  max-width: 100%;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.grid-search.rpt-search {
+  width: 20rem;
+}
+.grid-search.nst-input-shell {
+  min-height: 38px;
+  border-radius: var(--vw-radius-md);
+  border-color: var(--vw-color-slate-200);
+}
 .grid-search .gs-ic {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  color: var(--vw-color-gray-400); display: flex; pointer-events: none;
+  color: var(--vw-color-slate-400, #94a3b8); display: flex; pointer-events: none;
 }
-.grid-search .nst-input { min-height: 0; padding: 0 0 0 1.75rem; border: 0; border-radius: 0; background: none; font-size: 0.9375rem; }
+.grid-search .nst-input {
+  min-height: 0;
+  padding: 0 0 0 1.75rem !important;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--vw-color-slate-800, #1e293b);
+  width: 100%;
+}
 .grid-search .nst-input:focus { outline: none; }
 
 .grid-tools { display: flex; gap: var(--vw-space-sm); position: relative; }
@@ -254,21 +278,38 @@
 
 /* header: a quiet grey band that stays put while the rows move under it */
 .nst-table th {
-  padding-top: 10px; padding-bottom: 10px;
-  font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-600);
+  padding-top: 9px; padding-bottom: 9px;
+  font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-600, #475569);
   background: var(--vw-color-slate-50);
+  border-bottom: 1px solid var(--vw-color-slate-200);
 }
 .tbl-wrap .nst-table thead th { position: sticky; top: 0; z-index: 3; background: var(--vw-color-slate-50); }
 
 /* rows */
-.nst-table td { padding-top: 10px; padding-bottom: 10px; font-size: 0.8125rem; }
+.nst-table td {
+  padding-top: 9px; padding-bottom: 9px;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--vw-color-slate-800, #1e293b);
+  border-bottom: 1px solid var(--vw-color-slate-100);
+}
+.nst-table td .vw-value {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--vw-color-slate-800, #1e293b);
+}
+.nst-table td .mono {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--vw-color-slate-700, #334155);
+}
 .nst-table tbody tr:hover td { background: var(--vw-color-slate-50); }
 .nst-table tbody tr[data-site] { cursor: pointer; }
 .nst-table tbody tr[hidden] { display: none; }
 .nst-table tbody tr.is-row-link { cursor: pointer; }
-.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
+.nst-table td .nst-input { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; color: var(--vw-color-slate-800, #1e293b); }
 .nst-table td select.nst-input { min-width: 9rem; }
-.tbl-empty { text-align: center; color: var(--vw-color-gray-500); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }
+.tbl-empty { text-align: center; color: var(--vw-color-slate-500, #64748b); font-style: italic; padding: var(--vw-space-xl) var(--vw-space-md) !important; }
 
 /* a first column of Status / State / Outcome / Result is a full-width pill */
 .st-td > .vw-chip {
@@ -315,7 +356,12 @@
 /* ── Mobile grid responsiveness ────────────────────────── */
 @media (max-width: 640px) {
   .grid-bar { flex-direction: column; align-items: stretch; gap: var(--vw-space-xs); }
-  .grid-search { width: 100%; max-width: 100%; }
+  .grid-search,
+  .grid-search.nst-input-shell,
+  .grid-bar .grid-search {
+    width: 100% !important;
+    max-width: 100%;
+  }
   .grid-tools { width: 100%; justify-content: flex-end; }
   .grid-count { width: 100%; text-align: left; }
   .tbl-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }

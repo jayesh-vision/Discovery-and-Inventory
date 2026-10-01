@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Sub, TabBar, cv } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
@@ -37,8 +37,26 @@ export default function PhysicalResources() {
   const discoveryScoped = !!(oem || model);
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
   const urlClass = sp.get('cls') || sp.get('tab');
-  const rawCls: NeClass = isClass(urlClass) ? (urlClass as NeClass) : modelClass || PHY_TABS[0].k;
+  const savedClass = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as NeClass | null;
+  const rawCls: NeClass = isClass(urlClass)
+    ? (urlClass as NeClass)
+    : (modelClass || (isClass(savedClass) ? savedClass : PHY_TABS[0].k));
   const cls: NeClass = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
+
+  useEffect(() => {
+    if (cls && typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('ns_phy_tab', cls);
+    }
+  }, [cls]);
+
+  useEffect(() => {
+    if (!urlClass && !discoveryScoped && !modelClass && isClass(savedClass) && savedClass !== 'router') {
+      const next = new URLSearchParams(sp);
+      next.set('cls', savedClass);
+      setSp(next, { replace: true });
+    }
+  }, [urlClass, discoveryScoped, modelClass, savedClass, setSp, sp]);
+
   /* Server has no meaningful drill-down here (no Node view, and its "View
      details" is already dropped below for showing the wrong element) — its
      records still exist in the ledger for the Network elements KPI, just
@@ -65,7 +83,7 @@ export default function PhysicalResources() {
      Node view and Site info leave this section, so they carry their origin —
      the breadcrumb then reads Resources > Physical Resources > … instead of
      jumping to the Location chain. */
-  const FROM = 'Resources · Physical Resources';
+  const FROM = `Resources · Physical Resources?cls=${cls}`;
   const openSite = (loc: string) => {
     /* the row's location tag is a sample city code — resolve it to the real
        roster site first, so the URL, breadcrumb and page all name one site */
@@ -82,11 +100,14 @@ export default function PhysicalResources() {
      opens the wrong element. */
   const rowActions = (r: Row): Action[] => [
     ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip })) }] : []),
-    ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}`) }]),
+    ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`) }]),
     { l: 'Site info', onClick: () => openSite(r.loc) }
   ];
 
   const selectTabClass = (targetClass: NeClass) => {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('ns_phy_tab', targetClass);
+    }
     const next = new URLSearchParams(sp);
     next.delete('tab');
     next.delete('drill');
@@ -136,7 +157,7 @@ export default function PhysicalResources() {
               <Chip tone={tone}>{label}</Chip>,
               <>{cls === 'router'
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
-                    onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}`)}>{r.name}</button>
+                    onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)}>{r.name}</button>
                 : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
               <Mono>{r.os}</Mono>,

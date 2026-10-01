@@ -46,8 +46,11 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
 
   const item = (key: string, label: string, child = false) => {
     const s = screenByKey(key)!;
+    const targetPath = (key === 'physical' && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ns_phy_tab'))
+      ? `${s.path}?cls=${encodeURIComponent(sessionStorage.getItem('ns_phy_tab')!)}`
+      : s.path;
     return (
-      <NavLink key={key} to={s.path} data-label={label}
+      <NavLink key={key} to={targetPath} data-label={label}
         className={`side-item${child ? ' is-child' : ''}${active === key ? ' is-active' : ''}`}>
         <Svg html={SIDE_ICONS[key]} /><span className="grow">{label}</span>
       </NavLink>

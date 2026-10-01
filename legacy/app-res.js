@@ -257,8 +257,9 @@ function resSvcViewDialog() {
   const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === RES_SVC_VIEW.tab);
   const r = rows[RES_SVC_VIEW.i];
   if (!r) return '';
-  const linkId = `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
-  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  const linkId = r.linkId || `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : RES_SVC_VIEW.tab === 'l2vpn' ? 'L2' : 'IBW'}:${r.erp}`;
+  const isUp = String(r.st || 'up').toLowerCase().startsWith('up');
+  const adminStatus = isUp ? 'up(1)' : 'down(2)';
   return `
     <div class="drawer-overlay" data-ressvcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
@@ -268,7 +269,7 @@ function resSvcViewDialog() {
       </div>
       <div class="linkview-body">
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
-          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip || (isUp ? 'success' : 'error'))}
         </div>
         ${svcDiagram({
           name: r.name,
@@ -276,12 +277,16 @@ function resSvcViewDialog() {
           ifc: r.ifc,
           ne: RES_ID,
           ip: (PHY.router.find(x => x.name === RES_ID) || {}).ip,
-          dstNe: r.dstNe || (RES_SVC_VIEW.tab === 'l2vpn' ? 'NDLS-J488-BNG-R-T2-NR' : 'DEL-PE-CORE-01'),
-          dstIp: r.dstIp || (RES_SVC_VIEW.tab === 'l2vpn' ? '172.31.33.59' : '172.31.60.2')
+          dstNe: r.dstNe || (RES_SVC_VIEW.tab === 'l2vpn' ? 'NDLS-J488-BNG-R-T2-NR' : RES_SVC_VIEW.tab === 'ibw' ? 'IGW-DELHI-TIER1' : 'DEL-PE-CORE-01'),
+          dstIp: r.dstIp || (RES_SVC_VIEW.tab === 'l2vpn' ? '172.31.33.59' : RES_SVC_VIEW.tab === 'ibw' ? '103.24.186.1' : '172.31.60.2')
         }, RES_SVC_VIEW.tab)}
         ${detailFieldGrid([
-          ['Equipment Name', r.ifc], ['ERP number', r.erp],
-          ['Link ID', linkId], ['Admin status', adminStatus]
+          ['Equipment Name', RES_ID],
+          ['Interface', r.ifc],
+          [RES_SVC_VIEW.tab === 'ibw' ? 'Bandwidth' : (RES_SVC_VIEW.tab === 'l2vpn' ? 'VC ID' : 'ERP number'),
+           RES_SVC_VIEW.tab === 'ibw' ? (r.bandwidth || '10 Gbps') : (RES_SVC_VIEW.tab === 'l2vpn' ? (r.vcId || r.erp) : r.erp)],
+          ['Link ID', linkId],
+          ['Admin status', adminStatus]
         ])}
       </div>
     </div>`;
@@ -292,16 +297,19 @@ function resSvcs() {
   const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
   const l3Count = RES_SERVICES.filter(s => s.t === 'L3VPN').length;
   const l2Count = RES_SERVICES.filter(s => s.t === 'L2VPN').length;
+  const ibwCount = RES_SERVICES.filter(s => s.t === 'IBW').length;
   const downCount = RES_SERVICES.filter(s => s.st === 'Down').length;
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('Services')}
-      <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
+      <div class="chip-row">${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${l3Count} L3VPN`,'info')}${chip(`${ibwCount} IBW`,'teal')}${chip(`${downCount} down`,'error')}</div>
     </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
     ${rows.length ? table(t === 'l3vpn'
       ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
-      : [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
+      : t === 'l2vpn'
+      ? [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
+      : [{t:'Status', plain:true},{t:'Service name'},{t:'Bandwidth'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
       rows.map(s => t === 'l3vpn' ? [
         chip(s.st, s.chip),
         `<span class="vw-value">${s.name}</span>`,
@@ -310,17 +318,24 @@ function resSvcs() {
         `<span class="mono">${s.ifc}</span>`,
         `<span class="mono">${s.linkId || `L3:${s.erp}`}</span>`,
         s.cust
-      ] : [
+      ] : t === 'l2vpn' ? [
         chip(s.st, s.chip),
         `<span class="vw-value">${s.name}</span>`,
         `<span class="mono">${s.vcId || s.erp}</span>`,
         `<span class="mono">${s.ifc}</span>`,
         `<span class="mono">${s.linkId || `L2:${s.erp}`}</span>`,
         s.cust
+      ] : [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="vw-chip vw-chip-primary">${s.bandwidth || '10 Gbps'}</span>`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `IBW:${s.erp}`}</span>`,
+        s.cust
       ]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
+           No ${t.toUpperCase()} services on this element.</div>`}`) + resSvcViewDialog();
 }
 
 function resAlarms() {

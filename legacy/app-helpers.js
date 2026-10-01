@@ -193,8 +193,8 @@ function donut(segs,total,top,sub,size=150){
       transform="rotate(-90 ${cx} ${cy})"><title>${s.n}: ${n(s.c)}</title></circle>`; off+=len; return el;}).join('');
   return `<svg viewBox="0 0 ${size} ${size}" style="height:${size}px;width:${size}px;flex-shrink:0;display:block" role="img" aria-label="${top} ${sub}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--vw-color-slate-100)" stroke-width="${sw}"/>${arcs}
-    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
-    ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-gray-500)" font-family="Poppins,sans-serif">${sub}</text>` : ''}</svg>`;
+    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-slate-800, #1e293b)" font-family="Inter,sans-serif">${top}</text>
+    ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-slate-500, #64748b)" font-family="Inter,sans-serif">${sub}</text>` : ''}</svg>`;
 }
 
 const legendRows = segs => `<div class="stack-x grow" style="gap:5px">${segs.map(s => {

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isReactOwned, legacyPath } from '../routes';
 import { exportTable } from '../utils/tableExport';
+import NodeDigitalTwinSection from '../components/NodeDigitalTwinSection';
 
 /* ── the prototype renderer, loaded once ────────────────── */
 declare global {
@@ -58,6 +60,27 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
   const fromLegacy = useRef(false);
   /* set while React Router URL change is actively updating the legacy screen state */
   const isUpdatingFromUrl = useRef(false);
+  const [digitalTwinsMount, setDigitalTwinsMount] = useState<HTMLElement | null>(null);
+  const [twinTab, setTwinTab] = useState<string>('overview');
+
+  useEffect(() => {
+    if (legacyKey !== 'node') {
+      setDigitalTwinsMount(null);
+      return;
+    }
+    const updateMount = () => {
+      const el = document.getElementById('node-digital-twin-mount-point');
+      const curTab = el?.getAttribute('data-twin-tab') || 'overview';
+      setDigitalTwinsMount(prev => (prev === el ? prev : el));
+      setTwinTab(curTab);
+    };
+    updateMount();
+    const observer = new MutationObserver(() => updateMount());
+    if (host.current) {
+      observer.observe(host.current, { childList: true, subtree: true, attributes: true });
+    }
+    return () => observer.disconnect();
+  }, [legacyKey, loc.pathname, loc.search, params]);
 
   /* legacy → React: the prototype's go() hands React-owned screens to us */
   useEffect(() => {
@@ -140,6 +163,19 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
       <div id="view" ref={host}>{!ready && <div className="vw-card-description" style={{ padding: "var(--vw-space-2xl)" }}>Loading…</div>}</div>
       {/* the prototype writes the breadcrumb here; the React topbar owns the visible one */}
       <span id="module" hidden /><span id="crumb" hidden />
+      {digitalTwinsMount && createPortal(
+        <NodeDigitalTwinSection
+          key={`${digitalTwinsMount.getAttribute('data-twin-name') || (params.name as string) || 'node'}-${digitalTwinsMount.getAttribute('data-twin-cls') || ''}-${twinTab}`}
+          currentNode={digitalTwinsMount.getAttribute('data-twin-name') || digitalTwinsMount.getAttribute('data-node') || (params.name as string) || 'DEL-DWM-010'}
+          nodeClass={digitalTwinsMount.getAttribute('data-twin-cls') || digitalTwinsMount.getAttribute('data-cls') || undefined}
+          vendor={digitalTwinsMount.getAttribute('data-twin-vendor') || undefined}
+          model={digitalTwinsMount.getAttribute('data-twin-model') || undefined}
+          ip={digitalTwinsMount.getAttribute('data-twin-ip') || undefined}
+          city={digitalTwinsMount.getAttribute('data-twin-city') || undefined}
+          activeTab={twinTab}
+        />,
+        digitalTwinsMount
+      )}
     </>
   );
 }

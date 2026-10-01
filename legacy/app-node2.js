@@ -757,7 +757,7 @@ function renderLinkCapacityChart(row, linkTrendFn, protoLabel) {
 
   return `
     <div class="row vw-justify-between vw-items-center" style="margin-bottom:14px">
-      <span style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity forecast – ${esc(row.n)}</span>
+      <span style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-slate-900)">Link capacity forecast – ${esc(row.n)}</span>
       ${chip(`${protoLabel} Protocol`, 'info')}
     </div>
     <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
@@ -1675,7 +1675,8 @@ const NODE_VIEW = {
   router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
   switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
   dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   alerts: nodeAlertsDwdm },
-  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
+  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb },
+  gnodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
 };
 const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
@@ -1693,10 +1694,46 @@ let NODE_TAB = 'overview';
    it gets the tabs an optical element actually has: shelves/hardware, ring
    topology, the monitored wavelength plan and the amplifier chain */
 const NODE_TABS = {
-  router: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  switch: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  dwdm:   [['overview','Overview'],['hardware','Hardware & shelves'],['topology','Topology & degrees'],['channels','Optical channels'],['amplifiers','Amplifiers'],['alerts','Alerts & diagnostics']],
-  enodeb: [['overview','Site health'],['hardware','Hardware & components'],['links','Network links'],['config','Configurations'],['alerts','Alarms & incidents']]
+  router: [
+    ['overview', 'Overview'],
+    ['peers', 'Interfaces & peers'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  switch: [
+    ['overview', 'Overview'],
+    ['ports', 'Interfaces & ports'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  dwdm: [
+    ['overview', 'Overview'],
+    ['channels', 'Spectrum & channels'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  enodeb: [
+    ['overview', 'Overview'],
+    ['mobility', 'Radio & mobility'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  gnodeb: [
+    ['overview', 'Overview'],
+    ['mobility', 'Radio & mobility'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ]
 };
 
 function viewNode() {
@@ -1726,33 +1763,28 @@ function viewNode() {
   }
 
   const tabs = NODE_TABS[N.cls] || NODE_TABS.router;
-  const activeTab = tabs.some(([k]) => k === (NODE_TAB || '').toLowerCase()) ? NODE_TAB.toLowerCase() : 'overview';
+  let curTab = (NODE_TAB || '').toLowerCase().trim();
+  if (curTab === 'services') curTab = N.cls === 'switch' ? 'ports' : 'peers';
+  if (curTab === 'config') curTab = 'mobility';
+  if (curTab === 'links' || curTab === 'topology') curTab = 'path';
+  if (curTab === 'faults' || curTab === 'alarms') curTab = 'alerts';
+  const activeTab = tabs.some(([k]) => k === curTab) ? curTab : 'overview';
 
-  let tabContent = '';
-  if (activeTab === 'hardware') {
-    /* nodeVlans() self-guards on N.vlans, so it only ever renders for a
-       class the sample data actually gives VLANs to (switch) */
-    tabContent = `${nodeHardware(N)}${nodeVlans(N)}`;
-  } else if (activeTab === 'links') {
-    tabContent = `${nodeLinks(N)}`;
-  } else if (activeTab === 'services') {
-    tabContent = `${nodeServices(N)}`;
-  } else if (activeTab === 'topology') {
-    tabContent = `${nodeTopologyDwdm(N)}`;
-  } else if (activeTab === 'channels') {
-    tabContent = `${nodeChannelsDwdm(N)}`;
-  } else if (activeTab === 'amplifiers') {
-    tabContent = `${nodeAmplifiersDwdm(N)}`;
-  } else if (activeTab === 'config') {
-    tabContent = `${nodeConfigEnodeb(N)}`;
-  } else if (activeTab === 'alerts') {
-    tabContent = `${nodeAlerts(N)}`;
-  } else {
-    /* overview default — eNodeB's Site health tab already covers 24h
-       availability in its own KPI tile, so it skips the generic ICMP/NTP
-       strip card the other three classes append here */
-    tabContent = `${nodeOverview(N)}${N.cls === 'enodeb' ? '' : nodeAvailability(N)}`;
-  }
+  const twinHost = `
+    <div
+      id="node-digital-twin-mount-point"
+      class="node-digital-twin-host"
+      data-twin-name="${N.name}"
+      data-twin-cls="${N.cls}"
+      data-twin-tab="${activeTab}"
+      data-twin-vendor="${(N.r && N.r.oem) || (N.cls === 'dwdm' ? 'CIENA' : N.cls === 'gnodeb' ? 'NOKIA' : N.cls === 'enodeb' ? 'ERICSSON' : N.cls === 'switch' ? 'CIENA' : 'JUNIPER')}"
+      data-twin-model="${(N.r && N.r.model) || (N.cls === 'dwdm' ? '6500-T12' : N.cls === 'gnodeb' ? 'AirScale 5G' : N.cls === 'enodeb' ? 'Baseband 6630' : N.cls === 'switch' ? 'L3-CORE-48P' : 'MX960')}"
+      data-twin-ip="${(N.r && N.r.ip) || N.ip || '172.31.33.100'}"
+      data-twin-city="${(N.r && (N.r.circle || N.r.loc || N.r.city)) || 'Delhi'}"
+    ></div>
+  `;
+
+  const tabContent = twinHost;
 
   return `<div class="page">
     ${drillBar()}

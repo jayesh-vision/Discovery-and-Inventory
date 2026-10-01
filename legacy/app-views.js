@@ -1055,7 +1055,7 @@ function viewReconcile() {
 }
 
 
-let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
+let TAB = { phy: 'router', link: 'lldp', svc: 'l2vpn', inact: 'ne' };
 let LLDP_RANGE = 'today';
 let OSPF_RANGE = 'today';
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
@@ -1743,10 +1743,10 @@ function mapSvg() {
     return `<g class="st-lab" pointer-events="none">
       <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="600"
         fill="var(--vw-color-gray-900)" stroke="var(--vw-color-white)" stroke-width="3" paint-order="stroke"
-        font-family="Poppins,sans-serif">${g.c}</text>
+        font-family="Inter,sans-serif">${g.c}</text>
       <text x="${x.toFixed(1)}" y="${(y+13).toFixed(1)}" text-anchor="middle" font-size="12"
         fill="var(--vw-color-gray-600)" stroke="var(--vw-color-white)" stroke-width="3" paint-order="stroke"
-        font-family="Poppins,sans-serif">${n(g.tot)}</text></g>`;
+        font-family="Inter,sans-serif">${n(g.tot)}</text></g>`;
   }).join('');
 
   let pins = '';
@@ -1772,7 +1772,7 @@ function mapSvg() {
         <title>${b.items.length} sites here — ${b.items.map(i=>i.name).join(', ')}</title>
         <circle r="13" fill="var(--vw-color-slate-800)" fill-opacity=".18"/>
         <circle r="9.5" fill="var(--vw-color-slate-800)" stroke="var(--vw-color-white)" stroke-width="1.8"/>
-        <text y="3.4" text-anchor="middle" font-size="10" font-weight="600" fill="#fff" font-family="Poppins,sans-serif">${b.items.length}</text></g>`;
+        <text y="3.4" text-anchor="middle" font-size="10" font-weight="600" fill="#fff" font-family="Inter,sans-serif">${b.items.length}</text></g>`;
     }).join('');
   }
 
@@ -3564,9 +3564,7 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
-let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or IP/MPLS; see SVC_DOMAINS. RAN is
-  first in SVC_DOMAINS, matching every other tab group on this page (TAB.phy defaults to PHY_TABS[0], TAB.link
-  to LINK_TABS[0]) — the first tab loads first, not the last one in the row. */
+let SVC_DOMAIN = 'services';
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
@@ -3593,21 +3591,27 @@ function svcDiagram(r, tab) {
     </button>`;
   const srcName = r.ne || r.srcNe;
   const srcIp = r.ip || r.srcIp;
-  const dstName = tab === 'l3vpn' ? (r.dstNe || 'PE-AGG-CORE-01') : (r.dstNe || r.ne);
-  const dstIp = tab === 'l3vpn' ? (r.dstIp || '172.31.60.1') : (r.dstIp || r.ip);
+  const dstName = tab === 'l3vpn' ? srcName : tab === 'ibw' ? (r.dstNe || 'IGW-DELHI-TIER1') : (r.dstNe || r.ne);
+  const dstIp = tab === 'l3vpn' ? srcIp : tab === 'ibw' ? (r.dstIp || '103.24.186.1') : (r.dstIp || r.ip);
   const srcNode = tab === 'l3vpn'
     ? `<span class="linkdiagram-node is-static">
         <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
         <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
       </span>`
     : nodeBtn(srcName, srcIp, 'Source');
+  const dstNode = tab === 'ibw'
+    ? `<button class="linkdiagram-node"${dA({ v: 'resource', l: dstName, q: `name=${encodeURIComponent(dstName)}${dstIp ? `&ip=${encodeURIComponent(dstIp)}` : ''}` })} title="View ${esc(dstName)}">
+        <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+        <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(dstName)}">${esc(dstName)}</span>
+      </button>`
+    : nodeBtn(dstName, dstIp, 'Destination');
   return `<div class="linkdiagram-canvas">
     ${srcNode}
     <button class="linkdiagram-wire"${dA({ v: 'resource', l: srcName, q: `name=${encodeURIComponent(srcName)}${srcIp ? `&ip=${encodeURIComponent(srcIp)}` : ''}` })}
       title="View ${esc(srcName)}" aria-label="View ${esc(srcName)}, source interface ${esc(r.ifc)}">
       <span class="linkdiagram-wire-badge">${esc(r.ifc)}</span>
     </button>
-    ${nodeBtn(dstName, dstIp, 'Destination')}
+    ${dstNode}
   </div>`;
 }
 
@@ -3655,8 +3659,9 @@ function svcViewDialog() {
   const r = { ...raw, ne: raw.ne ?? raw.srcNe, ip: raw.ip ?? raw.srcIp, ifc: raw.ifc ?? raw.srcIfc,
               dstNe: raw.dstNe, dstIp: raw.dstIp, dstIfc: raw.dstIfc };
   const cols = SVC_P2P_COLS[SVC_VIEW.tab];
-  const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : SVC_VIEW.tab === 'l2vpn' ? 'L2' : SVC_VIEW.tab.toUpperCase()}:${r.erp}`;
-  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  const linkId = r.linkId || `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : SVC_VIEW.tab === 'l2vpn' ? 'L2' : SVC_VIEW.tab === 'ibw' ? 'IBW' : SVC_VIEW.tab.toUpperCase()}:${r.erp}`;
+  const isUp = String(r.st || 'up').toLowerCase().startsWith('up');
+  const adminStatus = isUp ? 'up(1)' : 'down(2)';
   return `
     <div class="drawer-overlay" data-svcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
@@ -3666,43 +3671,52 @@ function svcViewDialog() {
       </div>
       <div class="linkview-body">
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
-          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip || (isUp ? 'success' : 'error'))}
         </div>
         ${svcDiagram(r, SVC_VIEW.tab)}
         ${detailFieldGrid([
-          ['Equipment Name', r.ifc], [cols ? cols.ref : 'ERP number', r.erp],
-          ['Link ID', linkId], ['Admin status', adminStatus]
+          ['Equipment Name', r.ne || r.srcNe],
+          ['Interface', r.ifc || r.srcIfc],
+          [SVC_VIEW.tab === 'ibw' ? 'Bandwidth' : (SVC_VIEW.tab === 'l2vpn' ? 'VC ID' : (cols ? cols.ref : 'ERP number')),
+           SVC_VIEW.tab === 'ibw' ? (r.bandwidth || '10 Gbps') : (SVC_VIEW.tab === 'l2vpn' ? (r.vcId || r.erp) : r.erp)],
+          ['Link ID', linkId],
+          ['Admin status', adminStatus]
         ])}
       </div>
     </div>`;
 }
 
 function viewServices() {
-  /* SVC_DOMAIN picks which row of tabs is showing; TAB.svc is the tab
-     within it. A stale TAB.svc (e.g. a direct URL naming a tab from a
-     different domain) falls back to the domain's own first tab rather
-     than rendering an empty SERVICES[t]. */
-  const domainTabs = SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS;
-  const t = domainTabs.some(x => x.k === TAB.svc) ? TAB.svc : domainTabs[0].k;
-  const rows = gridApply('services', SERVICES[t] || []), meta = domainTabs.find(x => x.k === t);
+  const cardStats = k => {
+    const list = SERVICES[k] || [];
+    const total = list.length;
+    const isDown = r => String(r.st || '').toLowerCase().startsWith('down') || r.chip === 'error' || String(r.srcOper || '').toLowerCase().startsWith('down') || String(r.dstOper || '').toLowerCase().startsWith('down');
+    const down = list.filter(isDown).length;
+    const active = total - down;
+    return { total, active, down, sub: `${active} active · ${down} down` };
+  };
+  const tabs = SVC_TABS.map(tab => {
+    const st = cardStats(tab.k);
+    return { ...tab, c: st.total, s: st.sub };
+  });
+  const t = tabs.some(x => x.k === TAB.svc) ? TAB.svc : tabs[0].k;
+  const rows = gridApply('services', SERVICES[t] || []);
+  const meta = tabs.find(x => x.k === t) || tabs[0];
+  const neBtn = name => name && name !== '—'
+    ? `<button class="nst-btn nst-btn--xs nst-btn--ghost mono" data-res="${name}" style="padding:0;font-weight:500;color:var(--vw-color-blue-600,#2563eb);text-align:left">${name}</button>`
+    : `<span class="mono">—</span>`;
   return `<div class="page">
 
     ${drillBar()}
 
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${SVC_DOMAINS.map(d => kpi(d.n, n(d.tabs.reduce((a, x) => a + x.c, 0)),
-        d.tabs.map(x => `${x.n} ${n(x.c)}`).join(' · '), d.tone,
-        { v:'services', l:`${d.n} services`, q:`domain=${d.k}` })).join('')}
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md">
+      ${tabs.map(tab => kpi(tab.n, n(tab.c), tab.s, tab.tone,
+        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` })).join('')}
     </div>
 
     ${card(`
-      <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
-      ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services,
-        `<div class="tabbar tabbar--chip" role="tablist" aria-label="Service type">
-          ${domainTabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" role="tab" aria-selected="${x.k === t}"
-            data-tab="svc:${x.k}">${x.n}</button>`).join('')}
-        </div>`,
-        [], 'services')}
+      <div class="tabbar" role="tablist" aria-label="Services">${tabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" role="tab" aria-selected="${x.k === t}" data-tab="svc:${x.k}">${x.n}</button>`).join('')}</div>
+      ${gridBar(rows.length, n(meta.c), 'Service name, IP, ERP number', FS.services, '', [], 'services')}
       ${t === 'l2vpn'
         ? table([
             { t: 'Name' },
@@ -3733,12 +3747,12 @@ function viewServices() {
                 `<span class="num">${s.discoveryTime || '09-22-2026 12:04:37'}</span>`,
                 statusPill(s.st),
                 `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
-                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
                 `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
                 statusPill(s.srcAdmin || 'up'),
                 statusPill(s.srcOper || s.st),
                 `<span class="mono">${s.dstIp || '—'}</span>`,
-                `<span class="mono">${s.dstNe || '—'}</span>`,
+                neBtn(s.dstNe),
                 `<span class="mono">${s.dstIfc || '—'}</span>`,
                 statusPill(s.dstAdmin || 'up'),
                 statusPill(s.dstOper || s.st),
@@ -3765,7 +3779,7 @@ function viewServices() {
                 `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
                 `<span class="vw-value">${s.name}</span>`,
                 `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
-                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
                 `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
                 `<span class="mono">${s.rd || '—'}</span>`,
                 `<span class="mono">${s.rt || '—'}</span>${rtBadge}`,
@@ -3774,7 +3788,49 @@ function viewServices() {
             }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
-        : svcP2PTable(t, rows)}`)}
+        : table([
+            { t: 'Name' },
+            { t: 'Bandwidth' },
+            { t: 'Discovery time' },
+            { t: 'Status', plain: true },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'Admin status' },
+            { t: 'Operational status' },
+            { t: 'Gateway IP' },
+            { t: 'Gateway NE' },
+            { t: 'Gateway interface' },
+            { t: 'VRF / Routing' },
+            { t: 'Link ID' },
+            { t: 'ERP number' }
+          ],
+            rows.map(s => {
+              const statusPill = val => {
+                const isUp = String(val || 'up').toLowerCase().startsWith('up');
+                return `<span class="status-pill-${isUp ? 'up' : 'down'}">${isUp ? 'up(1)' : 'down(2)'}</span>`;
+              };
+              return [
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="vw-chip vw-chip-primary">${s.bandwidth || '10 Gbps'}</span>`,
+                `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
+                statusPill(s.st),
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                statusPill(s.srcAdmin || 'up'),
+                statusPill(s.srcOper || s.st),
+                `<span class="mono">${s.dstIp || '—'}</span>`,
+                neBtn(s.dstNe),
+                `<span class="mono">${s.dstIfc || '—'}</span>`,
+                `<span class="mono">${s.vrf || 'VRF-INTERNET-IBW'}</span>`,
+                `<span class="mono">${s.linkId || (s.erp ? `IBW:${s.erp}` : '—')}</span>`,
+                `<span class="mono">${s.erp || '—'}</span>`
+              ];
+            }), 'chip-lg',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
+      }`)}
     ${svcViewDialog()}
   </div>`;
 }

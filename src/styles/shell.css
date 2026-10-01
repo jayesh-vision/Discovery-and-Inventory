@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 /* ── App shell: layout only. Colours, type and components come from the
       NST design system bundle above. No literal hex, no invented components. ── */
@@ -6,38 +6,46 @@
 :root {
   --vw-font-page-title: 1.375rem;
   --vw-font-section-title: 1.0625rem;
-  --vw-font-card-title: 0.9375rem;
-  --vw-font-card-title-sm: 0.875rem;
+  --vw-font-card-title: 0.84375rem;
+  --vw-font-card-title-sm: 0.84375rem;
   --vw-font-body: 0.875rem;
   --vw-font-card-desc: 0.8125rem;
   --vw-font-table: 0.8125rem;
   --vw-font-caption: 0.75rem;
   --vw-font-micro: 0.6875rem;
-  --vw-font-metric-xl: 1.5rem;
+  --vw-font-metric-xl: 1.75rem;
   --vw-font-metric-lg: 1.25rem;
   --vw-font-metric-md: 1.125rem;
 }
 
-*, *::before, *::after { box-sizing: border-box; overscroll-behavior: auto; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  overscroll-behavior: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 0.875rem;
-  color: var(--vw-color-gray-900);
+  color: var(--vw-color-slate-800, #1e293b);
   background: var(--vw-color-slate-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 button, input, select, textarea { font-family: inherit; }
 button { font: inherit; }
 :focus-visible { outline: 2px solid var(--vw-color-slate-500); outline-offset: 2px; border-radius: var(--vw-radius-xs); }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; color: var(--vw-color-slate-700, #334155); }
 .num  { font-variant-numeric: tabular-nums; }
 
 /* ── Universal Harmonized Card Typography ─────────────────────── */
-.vw-card-title { font-size: 0.9375rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.35; }
-.vw-card-title-sm { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-800); line-height: 1.35; }
-.vw-card-description { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); line-height: 1.4; }
-.vw-card-metric-label-sub { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); line-height: 1.35; }
+.vw-card-title { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-600, #475569); line-height: 1.35; letter-spacing: -0.01em; }
+.vw-card-title-sm { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; letter-spacing: -0.01em; }
+.vw-card-description { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.4; }
+.vw-card-metric-label-sub { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; }
 
 /* Shell grid */
 .app { display: grid; grid-template-columns: 60px 1fr; min-height: 100vh; }
@@ -234,17 +242,17 @@ button { font: inherit; }
 }
 @media (max-width: 420px) { .stile { min-width: 100%; } }
 .stile-ic {
-  flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--vw-radius-md);
+  flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
 }
 .stile-body { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 .stile-k {
-  font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-600);
+  font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .stile-v {
-  font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; margin-top: 2px;
-  color: var(--vw-color-slate-900); font-variant-numeric: tabular-nums;
+  font-size: 1.75rem; font-weight: 450; line-height: 1.2; letter-spacing: -0.025em; margin-top: 2px;
+  color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .stile-barrow { display: flex; align-items: center; gap: var(--vw-space-sm); margin-top: 8px; }
@@ -272,12 +280,12 @@ button { font: inherit; }
   flex-shrink: 0; width: 3.25rem; height: 3.25rem; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
 }
-.shdr-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-600); }
+.shdr-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-800, #1e293b); letter-spacing: -0.01em; }
 .shdr-v {
-  font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; color: var(--vw-color-slate-900);
+  font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b);
   font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.shdr-sub { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500); }
+.shdr-sub { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); }
 .shdr-chip {
   display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
   margin-top: 6px; padding: 3px var(--vw-space-md);
@@ -1093,13 +1101,10 @@ path.st.has-c:hover { fill-opacity: .78; }
 .statc-accent { position: absolute; left: var(--vw-space-md); top: calc(var(--vw-space-md) + 2px);
   width: 4px; height: 30px; border-radius: var(--vw-radius-full); }
 .statc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-sm); }
-.statc-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
-.statc-period { font-size: 0.75rem; color: var(--vw-color-gray-400); white-space: nowrap; flex-shrink: 0; }
+.statc-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-800, #1e293b); line-height: 1.3; letter-spacing: -0.01em; }
+.statc-period { font-size: 0.75rem; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; flex-shrink: 0; }
 .statc-valrow { display: flex; align-items: baseline; gap: var(--vw-space-sm); margin-top: 2px; min-width: 0; }
-/* was weight 300 — same thin-headline-number pattern already fixed for
-   kpi-progress's .vw-card-metric-xl; this card's own number needed the
-   same fix (weight only, size unchanged). */
-.statc-v { font-size: 1.375rem; font-weight: 500; line-height: 1.2; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums;
+.statc-v { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .statc-trend { font-size: 0.75rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
 .statc-map { margin-top: var(--vw-space-sm); border-radius: var(--vw-radius-md); overflow: hidden;
@@ -1112,11 +1117,9 @@ path.st.has-c:hover { fill-opacity: .78; }
 .stat-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--vw-radius-full);
   background: var(--vw-color-slate-100); overflow: hidden; }
 .stat-bar > span { display: block; height: 100%; border-radius: var(--vw-radius-full); }
-.stat-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-600); line-height: 1.3; }
-/* was weight 300, same thin-headline-number pattern as kpi-progress's
-   .vw-card-metric-xl and statc-v above — fixed the same way. */
-.stat-v { font-size: 1.375rem; font-weight: 500; line-height: 1.15; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums; }
-.stat-s { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); line-height: 1.3;
+.stat-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-800, #1e293b); line-height: 1.3; letter-spacing: -0.01em; }
+.stat-v { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; }
+.stat-s { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .stat-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .stat-cell { border-top: 1px solid var(--vw-color-slate-200); }
@@ -1217,10 +1220,9 @@ path.st.has-c:hover { fill-opacity: .78; }
   background: var(--vw-color-white); border: 1px solid var(--vw-color-gray-200);
   border-left: 4px solid var(--oc-a); border-radius: var(--vw-radius-sm); }
 .oc:hover { background: var(--oc-b); }
-.oc.is-on { background: var(--oc-b); border-color: var(--oc-a); box-shadow: inset 0 0 0 1px var(--oc-a); }
-.oc-v { font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.15; letter-spacing: -0.015em; }
-.oc-k { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900); }
-.oc-d { font-size: 0.75rem; line-height: 1.35; color: var(--vw-color-gray-500); }
+.oc-v { font-size: 1.75rem; font-weight: 450; font-variant-numeric: tabular-nums; line-height: 1.2; letter-spacing: -0.025em; color: var(--vw-color-slate-800, #1e293b); }
+.oc-k { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
+.oc-d { font-size: 0.75rem; line-height: 1.35; color: var(--vw-color-slate-500, #64748b); }
 .oc-nc { display: flex; align-items: baseline; gap: var(--vw-space-sm); flex-wrap: wrap;
   margin-top: var(--vw-space-sm); padding: var(--vw-space-sm) var(--vw-space-md);
   border: 1px dashed var(--vw-color-gray-300); border-radius: var(--vw-radius-sm);
@@ -1574,17 +1576,10 @@ button.kpi-progress:focus-visible { outline: 2px solid var(--vw-color-blue-500);
    "this facet is applied" without inventing a new selected-state idiom */
 button.kpi-progress.is-on { border-color: var(--kpi-hover, currentColor);
   box-shadow: 0 0 0 1px var(--kpi-hover, currentColor), 0 1px 2px rgba(16, 24, 40, .04); }
-.kprog-label {font-size: 0.875rem;
-  font-weight: 600; color: var(--vw-color-gray-500); letter-spacing: .01em; }
-/* the shared vw-card-metric-xl rule is weight 300 — thin enough to read as
-   faint rather than as the headline figure of the card; every other card on
-   this page reads the number first, so it's bumped here to match how the
-   rest of the app's own KPI tiles weight their big number (kpi2-v, kpi3-v).
-   Size is pulled in from the shared rule's clamp (up to 30px on a wide
-   screen) to a flat, more moderate size — now that the title/legend around
-   it read at a normal size too, the number no longer needs to be that large
-   to stand out as the card's headline figure. */
-.kpi-progress .vw-card-metric-xl { font-weight: 500; font-size: 1.5rem; }
+.kprog-label { font-size: 0.84375rem;
+  font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
+/* matches modern enterprise card reference: crisp, light-medium, tabular */
+.kpi-progress .vw-card-metric-xl { font-weight: 450; font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.025em; color: var(--vw-color-slate-800, #1e293b); }
 /* was forced onto one line (nowrap + clip) at a barely-legible 10.4px to make
    that fit — now reads at a normal legend size and wraps onto a second line
    instead of clipping when a card's own width can't fit it on one. */
@@ -1685,8 +1680,8 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 .cov-alert-card--blocked { border-left-color: var(--vw-color-red-500); }
 .cov-alert-card--delayed { border-left-color: var(--vw-color-amber-500); }
 .cov-alert-card--risk { border-left-color: var(--vw-color-sky-500); }
-.cov-alert-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
-.cov-alert-icon svg { width: 17px; height: 17px; }
+.cov-alert-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
+.cov-alert-icon svg { width: 19px; height: 19px; }
 .cov-alert-icon--blocked { background: var(--vw-color-red-50); color: var(--vw-color-red-600); }
 .cov-alert-icon--delayed { background: var(--vw-color-amber-50); color: var(--vw-color-amber-600); }
 .cov-alert-icon--risk { background: var(--vw-color-sky-50); color: var(--vw-color-sky-600); }
@@ -1713,13 +1708,12 @@ tr.is-open > td { background: var(--vw-color-slate-50); }
 .cov-inv-tile--purple { background: var(--vw-color-purple-25); border-color: var(--vw-color-purple-100); color: var(--vw-color-purple-700); }
 .cov-inv-tile--orange { background: var(--vw-color-orange-25); border-color: var(--vw-color-orange-100); color: var(--vw-color-orange-700); }
 .cov-inv-icon { width: 20px; height: 20px; }
-.cov-inv-icon svg { width: 100%; height: 100%; }
-.cov-inv-v { font-size: 1.375rem; font-weight: 300; font-variant-numeric: tabular-nums; color: var(--vw-color-gray-900); }
-.cov-inv-l { font-size: var(--vw-font-label-sm); color: var(--vw-color-gray-500); }
+.cov-inv-v { font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.15; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); }
+.cov-inv-l { font-size: 0.8125rem; color: var(--vw-color-slate-500, #64748b); font-weight: 400; }
 .cov-chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.cov-chip { font-size: var(--vw-font-label-sm); color: var(--vw-color-gray-600); background: var(--vw-color-slate-50);
+.cov-chip { font-size: 0.75rem; color: var(--vw-color-slate-600, #475569); background: var(--vw-color-slate-50);
   border: 1px solid var(--vw-color-slate-200); border-radius: 999px; padding: 3px 10px; }
-.cov-chip b { color: var(--vw-color-gray-900); font-weight: 500; margin-left: 2px; }
+.cov-chip b { color: var(--vw-color-slate-800, #1e293b); font-weight: 500; margin-left: 2px; }
 /* estate inventory cards: chips carry a colour swatch keyed to the meter */
 .inv-chip { display: inline-flex; align-items: center; gap: 5px; }
 .kpi-progress .cov-chip-row { margin-top: var(--vw-space-sm); }
@@ -1854,16 +1848,16 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .kpi2.is-click { cursor: pointer; }
 .kpi2.is-click:hover { border-color: var(--vw-color-slate-400); }
 .kpi2-head { display: flex; align-items: center; justify-content: space-between; }
-.kpi2-label { font-size: 0.9375rem; font-weight: 500; color: var(--vw-color-gray-700); }
-.kpi2-ic { width: 34px; height: 34px; border-radius: var(--vw-radius-md); display: inline-flex; align-items: center; justify-content: center; }
-.kpi2-v { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums; }
-.kpi2-d { display: flex; gap: var(--vw-space-xs); align-items: baseline; font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); }
+.kpi2-label { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
+.kpi2-ic { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+.kpi2-v { font-size: 1.75rem; font-weight: 450; line-height: 1.2; letter-spacing: -0.025em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; }
+.kpi2-d { display: flex; gap: var(--vw-space-xs); align-items: baseline; font-size: 0.75rem; font-weight: 500; color: var(--vw-color-emerald-600, #16a34a); }
 
 /* charts */
 .ch-wrap { position: relative; margin-top: var(--vw-space-md); }
 .ch-svg { width: 100%; height: auto; display: block; }
 .ch-grid { stroke: var(--vw-color-slate-200); stroke-width: 1; }
-.ch-axis { font-size: 12px; fill: var(--vw-color-gray-500); font-family: Poppins, sans-serif; }
+.ch-axis { font-size: 12px; fill: var(--vw-color-gray-500); font-family: inherit; }
 .ch-legend { display: flex; gap: var(--vw-space-lg); justify-content: center; margin-top: var(--vw-space-sm);
   font-size: var(--vw-font-size-sm); color: var(--vw-color-gray-700); }
 .ch-leg { display: inline-flex; align-items: center; gap: 6px; }
@@ -1951,7 +1945,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .geo-b.is-other:hover { opacity: 1; }
 .geo-halo { fill: var(--vw-color-white); filter: url(#geo-sh); }
 .geo-b:hover .geo-halo, .geo-b.is-sel .geo-halo { fill: var(--vw-color-gray-900); }
-.geo-n { font-size: 15px; font-weight: 600; fill: var(--vw-color-gray-900); font-family: Poppins, sans-serif; pointer-events: none; }
+.geo-n { font-size: 15px; font-weight: 600; fill: var(--vw-color-gray-900); font-family: inherit; pointer-events: none; }
 .geo-n-s { font-size: 10px; }
 .geo-top { position: absolute; top: var(--vw-space-md); left: var(--vw-space-md); z-index: 2; display: flex; gap: var(--vw-space-sm); align-items: center; }
 .geo-crumb { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--vw-color-white);
@@ -2011,7 +2005,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
   box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
 }
 .kpi3-head { display: flex; align-items: center; gap: 6px; position: relative; }
-.kpi3-title { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-700); }
+.kpi3-title { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
 .kpi3-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: 18rem;
   padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
   border-radius: var(--vw-radius-md); font-size: var(--vw-font-size-xs); line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25); }
@@ -2028,13 +2022,13 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .info-tip-btn:hover, .info-tip-btn[aria-expanded="true"] { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
 .info-tip-def { position: absolute; left: 0; top: calc(100% + 6px); z-index: 100; width: 17.5rem; max-width: 75vw;
   padding: var(--vw-space-sm) var(--vw-space-md); background: var(--vw-color-gray-900); color: var(--vw-color-white);
-  border-radius: var(--vw-radius-md); font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  border-radius: var(--vw-radius-md); font-family: inherit;
   font-size: 13px; line-height: 1.5; box-shadow: 0 8px 24px rgba(15,23,42,.25);
   font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none; }
 .info-tip-def.is-right { left: auto; right: 0; }
 .info-tip-portal { position: fixed; z-index: 99999; width: 17.5rem; max-width: calc(100vw - 24px);
   padding: 8px 12px; background: var(--vw-color-gray-900); color: var(--vw-color-white);
-  border-radius: var(--vw-radius-md); font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  border-radius: var(--vw-radius-md); font-family: inherit;
   font-size: 12.5px; line-height: 1.45; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4), 0 8px 10px -6px rgba(15, 23, 42, 0.3);
   font-weight: 400; text-transform: none; letter-spacing: normal; white-space: normal; pointer-events: none;
   box-sizing: border-box; }
@@ -2042,16 +2036,16 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .info-tip-portal.is-top::after { top: 100%; border-width: 6px 6px 0 6px; border-style: solid; border-color: var(--vw-color-gray-900) transparent transparent transparent; }
 .info-tip-portal.is-bottom::after { bottom: 100%; border-width: 0 6px 6px 6px; border-style: solid; border-color: transparent transparent var(--vw-color-gray-900) transparent; }
 .kpi3-num { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; row-gap: 2px; }
-.kpi3-v { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; color: var(--vw-color-gray-900); font-variant-numeric: tabular-nums; }
-.kpi3-u { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); }
-.kpi3-of { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); margin-top: 1px; flex-basis: 100%; }
+.kpi3-v { font-size: 1.75rem; font-weight: 450; line-height: 1.2; letter-spacing: -0.025em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; }
+.kpi3-u { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); }
+.kpi3-of { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 1px; flex-basis: 100%; }
 .kpi3-vis { margin-top: 2px; min-height: 28px; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; }
 .kpi3-seg { display: flex; height: 5px; border-radius: 2.5px; overflow: hidden; background: var(--vw-color-slate-100); gap: 2px; margin-top: 2px; }
 .kpi3-seg > span { display: block; height: 100%; }
-.kpi3-seg-l { display: flex; flex-wrap: wrap; gap: 5px; row-gap: 4px; margin-top: 4px; font-size: 0.75rem; font-weight: 400; color: var(--vw-color-gray-600); line-height: 1.35; }
+.kpi3-seg-l { display: flex; flex-wrap: wrap; gap: 6px; row-gap: 4px; margin-top: 4px; font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; }
 .kpi3-sep { margin: 0 4px 0 0; color: var(--vw-color-gray-400); }
-.kpi3-seg-l i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
-.kpi3-seg-l b { font-weight: 500; color: var(--vw-color-gray-900); }
+.kpi3-seg-l i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.kpi3-seg-l b { font-weight: 600; color: var(--vw-color-slate-800, #1e293b); }
 .kpi3-cyc { display: flex; align-items: flex-end; gap: 4px; height: 42px; position: relative; padding-bottom: 14px; }
 .kpi3-cyc-b { flex: 1 1 0; border-radius: 2px 2px 0 0; background: var(--vw-color-slate-200); cursor: default; transition: background .12s; }
 .kpi3-cyc-b.is-cur { background: var(--kpi-accent); }
@@ -2379,10 +2373,9 @@ details[open] > summary .vw-tx-chevron {
 .rpt-tile:hover, .rpt-tile:focus-within { border-color: var(--vw-color-blue-300); border-top-color: var(--rpt-accent, var(--vw-color-slate-300)); box-shadow: 0 6px 20px rgba(15,23,42,.07); z-index: 20; }
 .rpt-tile:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
 .rpt-tile .info-tip-def { left: auto; right: 0; }
-.rpt-tile-top { display: flex; align-items: center; gap: 6px; }
-.rpt-tile-t { flex: 1; min-width: 0; font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rpt-tile-v { margin-top: 4px; font-size: 1.5rem; line-height: 1.15; font-weight: 500; color: var(--vw-color-gray-900); letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
-.rpt-tile-sub { margin-top: 3px; font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+.rpt-tile-t { flex: 1; min-width: 0; font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+.rpt-tile-v { margin-top: 4px; font-size: 1.75rem; line-height: 1.2; font-weight: 450; color: var(--vw-color-slate-800, #1e293b); letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.rpt-tile-sub { margin-top: 3px; font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
 .rpt-tile-spark { margin-top: auto; padding-top: 4px; }
 .rpt-tile-spark svg { display: block; width: 100%; height: 20px; }
 
@@ -2543,26 +2536,23 @@ details[open] > summary .vw-tx-chevron {
    its own family (vw-card-title-sm, kpi3-title, kpi2-label all sit at
    500-600); brought in line so a report library card doesn't read heavier
    than every other card type. */
-.rpt-card-name { margin: 2px 0 0; font-size: 0.9375rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.35; }
+.rpt-card-name { margin: 2px 0 0; font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-800, #1e293b); line-height: 1.35; letter-spacing: -0.01em; }
 .rpt-card:hover .rpt-card-name { color: var(--vw-color-blue-700); }
-.rpt-card-q { margin: 0; font-size: 0.8125rem; line-height: 1.5; font-weight: 400; color: var(--vw-color-gray-600);
+.rpt-card-q { margin: 0; font-size: 0.8125rem; line-height: 1.5; font-weight: 400; color: var(--vw-color-slate-500, #64748b);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4rem; }
 .rpt-card-metric { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 6px; }
-/* was weight 700, same as rpt-tile-v before it got the same fix (see
-   comment there) — every other headline number in the app (kpi2-v,
-   kpi3-v, rpt-tile-v) reads at 500. */
-.rpt-card-v { font-size: 1.5rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.15; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
-.rpt-card-l { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-gray-600); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rpt-card-v { font-size: 1.75rem; font-weight: 450; color: var(--vw-color-slate-800, #1e293b); line-height: 1.2; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.rpt-card-l { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rpt-card-spark { width: 7.5rem; flex-shrink: 0; }
 .rpt-card-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--vw-color-slate-100); padding-top: 10px; flex-wrap: nowrap; min-width: 0; }
-.rpt-card-meta { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rpt-card-meta { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* export menu */
 .rpt-menu { position: relative; display: inline-flex; align-items: center; gap: 8px; }
 .rpt-menu .kmenu { min-width: 17rem; }
 .rpt-menu-i { align-items: flex-start !important; }
-.rpt-menu-hint { font-size: 0.8125rem; color: var(--vw-color-gray-500); white-space: normal; }
-.rpt-ext { flex-shrink: 0; width: 3.1rem; text-align: center; font-size: 0.6875rem; font-weight: 600; letter-spacing: .04em;
+.rpt-menu-hint { font-size: 0.8125rem; color: var(--vw-color-slate-500, #64748b); white-space: normal; }
+.rpt-ext { flex-shrink: 0; width: 3.1rem; text-align: center; font-size: 0.6875rem; font-weight: 500; letter-spacing: .04em;
   color: var(--vw-color-blue-700); background: var(--vw-color-blue-50); border: 1px solid var(--vw-color-blue-100); border-radius: 4px; padding: 3px 0; margin-top: 1px; }
 .rpt-menu-note { position: absolute; right: 0; top: calc(100% + 6px); white-space: nowrap; font-size: 0.8125rem; color: var(--vw-color-emerald-700);
   background: var(--vw-color-emerald-50); border: 1px solid var(--vw-color-emerald-200); border-radius: 6px; padding: 3px 8px; z-index: 30; }
@@ -2573,28 +2563,29 @@ details[open] > summary .vw-tx-chevron {
 .rpt-doc { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: var(--vw-space-lg); border-top: 3px solid var(--vw-color-blue-700); padding: 16px 20px; }
 @media (max-width: 1000px) { .rpt-doc { grid-template-columns: 1fr; } }
 .rpt-doc .eyebrow, .rpt-headline .eyebrow { font-size: 0.75rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
-.rpt-doc-title { margin: 8px 0 4px; font-size: 1.375rem; font-weight: 500; letter-spacing: -.015em; color: var(--vw-color-gray-900); line-height: 1.25; }
-.rpt-doc-q { margin: 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--vw-color-gray-600); max-width: 72ch; }
+.rpt-doc-title { margin: 8px 0 4px; font-size: 1.375rem; font-weight: 500; letter-spacing: -.015em; color: var(--vw-color-slate-800, #1e293b); line-height: 1.25; }
+.rpt-doc-q { margin: 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--vw-color-slate-600, #475569); max-width: 72ch; }
 .rpt-meta { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 10px 24px; margin: 14px 0 0; justify-content: start; }
 .rpt-meta > div.is-wide { grid-column: 1 / -1; }
-.rpt-meta dt { font-size: 0.6875rem; color: var(--vw-color-gray-500); margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
-.rpt-meta dd { margin: 0; font-size: 0.8125rem; color: var(--vw-color-gray-900); font-weight: 400; }
+.rpt-meta dt { font-size: 0.6875rem; color: var(--vw-color-slate-500, #64748b); margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
+.rpt-meta dd { margin: 0; font-size: 0.8125rem; color: var(--vw-color-slate-800, #1e293b); font-weight: 400; }
 .rpt-headline { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-100); border-radius: var(--vw-radius-lg); padding: 12px 14px; align-self: start; }
-.rpt-headline-v { font-size: 1.5rem; font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.15; margin-top: 4px; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
-.rpt-headline-l { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-gray-600); margin-top: 3px; line-height: 1.35; }
+.rpt-headline-v { font-size: 1.75rem; font-weight: 450; color: var(--vw-color-slate-800, #1e293b); line-height: 1.2; margin-top: 4px; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.rpt-headline-l { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 3px; line-height: 1.35; }
 .rpt-headline svg { height: 20px; }
 .rpt-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--vw-radius-md); font-size: 0.8125rem;
   border: 1px solid var(--vw-color-amber-200); background: var(--vw-color-amber-50); color: var(--vw-color-amber-900); }
 .rpt-banner[data-tone="error"] { border-color: var(--vw-color-red-200); background: var(--vw-color-red-50); color: var(--vw-color-red-900); }
 .rpt-banner[data-tone="info"] { border-color: var(--vw-color-sky-200); background: var(--vw-color-sky-50); color: var(--vw-color-sky-900); }
-.rpt-page .vw-card-title-sm { font-size: var(--vw-card-title-sm-size, 0.875rem); font-weight: 500; color: var(--vw-color-gray-900); line-height: 1.35; }
+.rpt-page .vw-card-title-sm { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; letter-spacing: -0.01em; }
 .rpt-page .rpt-section {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--vw-card-title-size, 0.9375rem);
+  font-size: 0.84375rem;
   font-weight: 500;
-  color: var(--vw-color-gray-900);
+  color: var(--vw-color-slate-700, #334155);
+  letter-spacing: -0.01em;
   line-height: 1.35;
   margin-top: 4px;
 }

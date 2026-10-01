@@ -195,8 +195,8 @@ function donut(segs,total,top,sub,size=150){
       transform="rotate(-90 ${cx} ${cy})"><title>${s.n}: ${n(s.c)}</title></circle>`; off+=len; return el;}).join('');
   return `<svg viewBox="0 0 ${size} ${size}" style="height:${size}px;width:${size}px;flex-shrink:0;display:block" role="img" aria-label="${top} ${sub}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--vw-color-slate-100)" stroke-width="${sw}"/>${arcs}
-    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-gray-900)" font-family="Poppins,sans-serif">${top}</text>
-    ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-gray-500)" font-family="Poppins,sans-serif">${sub}</text>` : ''}</svg>`;
+    <text x="${cx}" y="${cy + (sub ? 0 : fTop*0.35)}" text-anchor="middle" font-size="${fTop}" font-weight="500" fill="var(--vw-color-slate-800, #1e293b)" font-family="Inter,sans-serif">${top}</text>
+    ${sub ? `<text x="${cx}" y="${cy + fTop*0.78}" text-anchor="middle" font-size="${fSub}" fill="var(--vw-color-slate-500, #64748b)" font-family="Inter,sans-serif">${sub}</text>` : ''}</svg>`;
 }
 
 const legendRows = segs => `<div class="stack-x grow" style="gap:5px">${segs.map(s => {
@@ -2269,29 +2269,23 @@ const LINKS = {
   ]
 };
 
-const SVC_TABS = [{ k: 'l3vpn', n: 'L3VPN', c: 1815 }, { k: 'l2vpn', n: 'L2VPN', c: 642 }];
-/* Services used to be IP/MPLS-only (L3VPN/L2VPN). These round it out to
-   the same domain vocabulary the app already uses elsewhere (Discovery's
-   own Domain filter — see FS.targets/FS.jobs: RAN, Core, Transport,
-   IP/MPLS) so "domain" means the same thing on every screen. L3VPN/L2VPN
-   themselves are untouched — they just become the IP/MPLS domain's own
-   two tabs instead of the page's only two tabs. */
-const RAN_SVC_TABS = [{ k: 's1ng', n: 'S1/NG', c: 412 }, { k: 'x2xn', n: 'X2/Xn', c: 268 }];
-const TRANSPORT_SVC_TABS = [{ k: 'wave', n: 'Wavelength', c: 186 }, { k: 'otn', n: 'OTN', c: 94 }, { k: 'trunk', n: 'Trunk', c: 112 }];
-const CORE_SVC_TABS = [{ k: 'apn', n: 'APN', c: 38 }, { k: 'nif', n: 'N-Interface', c: 126 }];
-const SVC_DOMAINS = [
-  { k: 'ran', n: 'RAN', tone: 'purple', tabs: RAN_SVC_TABS },
-  { k: 'transport', n: 'Transport', tone: 'amber', tabs: TRANSPORT_SVC_TABS },
-  { k: 'core', n: 'Core', tone: 'emerald', tabs: CORE_SVC_TABS },
-  { k: 'ipmpls', n: 'IP/MPLS', tone: 'sky', tabs: SVC_TABS }
+const SVC_TABS = [
+  { k: 'l2vpn', n: 'L2VPN', c: 16, tone: 'sky', s: '14 active · 2 down' },
+  { k: 'l3vpn', n: 'L3VPN', c: 16, tone: 'indigo', s: '14 active · 2 down' },
+  { k: 'ibw', n: 'IBW', c: 16, tone: 'emerald', s: '14 active · 2 down' }
 ];
-const SVC_TABS_BY_DOMAIN = Object.fromEntries(SVC_DOMAINS.map(d => [d.k, d.tabs]));
-const domainForSvcTab = k => (SVC_DOMAINS.find(d => d.tabs.some(x => x.k === k)) || {}).k || 'ipmpls';
-/* column labels for the seven new (non-IP/MPLS) service types — every
-   one of them shares L2VPN's own point-to-point shape (src/dst NE, IP,
-   interface), so one generic table (svcP2PTable, app-views.js) renders
-   all seven; only the labels change per type. */
+const SVC_DOMAINS = [
+  { k: 'services', n: 'Services', tone: 'sky', tabs: SVC_TABS }
+];
+const SVC_TABS_BY_DOMAIN = {
+  services: SVC_TABS,
+  l2vpn: [SVC_TABS[0]],
+  l3vpn: [SVC_TABS[1]],
+  ibw: [SVC_TABS[2]]
+};
+const domainForSvcTab = k => 'services';
 const SVC_P2P_COLS = {
+  ibw: { title: 'Internet Bandwidth (IBW)', name: 'Service name', ref: 'Bandwidth' },
   s1ng: { title: 'S1/NG interface', name: 'Interface', ref: 'Bearer ID' },
   x2xn: { title: 'X2/Xn link', name: 'Link name', ref: 'Interface ID' },
   wave: { title: 'Wavelength', name: 'Circuit name', ref: 'Wavelength (nm)' },
@@ -3047,6 +3041,377 @@ SERVICES.nif = padList(SERVICES.nif, 10, (r, i) => ({
   name: ['N11', 'N4', 'N8', 'N10'][i % 4], srcIp: `10.61.1${i % 3}.${4 + i}`, dstIp: `10.61.1${(i + 1) % 3}.${5 + i}`,
   erp: `${['N11', 'N4', 'N8', 'N10'][i % 4]}-${1 + Math.floor(i / 4)}`, v: [3, 5][i % 2]
 }));
+
+SERVICES.ibw = [
+  {
+    name: 'IBW-RCIL-DELHI-HQ-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 14:43:55',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.53.169',
+    srcNe: 'RE-J7024-PE-T3-NR',
+    srcIfc: 'et-0/0/10.48',
+    ip: '172.31.53.169',
+    ne: 'RE-J7024-PE-T3-NR',
+    ifc: 'et-0/0/10.48',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.24.186.1',
+    dstNe: 'IGW-DELHI-TIER1',
+    dstIfc: 'TenGigE0/1/0/1.48',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-INTERNET-RCIL',
+    linkId: 'IBW:10235',
+    erp: '10235'
+  },
+  {
+    name: 'IBW-RAILWIRE-MUM-GW-40G',
+    bandwidth: '40 Gbps',
+    discoveryTime: '09-22-2026 14:43:55',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.42.100',
+    srcNe: 'NDLS-J960-P_R1-T1-NR',
+    srcIfc: 'xe-0/0/2.100',
+    ip: '172.31.42.100',
+    ne: 'NDLS-J960-P_R1-T1-NR',
+    ifc: 'xe-0/0/2.100',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.21.244.1',
+    dstNe: 'RAILWIRE-IGW-MUM',
+    dstIfc: 'FortyGigE0/0/0/1.100',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-RAILWIRE-BB',
+    linkId: 'IBW:10236',
+    erp: '10236'
+  },
+  {
+    name: 'IBW-NIC-CENTRAL-SEC-20G',
+    bandwidth: '20 Gbps',
+    discoveryTime: '09-22-2026 13:20:12',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.39.40',
+    srcNe: 'ONR-J2.2K-WIFI-T4-SR',
+    srcIfc: 'ge-0/0/3.150',
+    ip: '172.31.39.40',
+    ne: 'ONR-J2.2K-WIFI-T4-SR',
+    ifc: 'ge-0/0/3.150',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '164.100.1.1',
+    dstNe: 'NIC-DEL-CORE-GW',
+    dstIfc: 'TenGigE0/2/0/4.150',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-NIC-GOV-ILL',
+    linkId: 'IBW:10237',
+    erp: '10237'
+  },
+  {
+    name: 'IBW-NIXI-PEERING-DELHI-100G',
+    bandwidth: '100 Gbps',
+    discoveryTime: '09-22-2026 12:45:00',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.53.252',
+    srcNe: 'BGLK-ASR9010-PE-T1',
+    srcIfc: 'HundredGigE0/0/0/1',
+    ip: '172.31.53.252',
+    ne: 'BGLK-ASR9010-PE-T1',
+    ifc: 'HundredGigE0/0/0/1',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '218.248.255.1',
+    dstNe: 'NIXI-IX-DEL-01',
+    dstIfc: 'HundredGigE0/1/0/1',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-PEERING-NIXI',
+    linkId: 'IBW:10238',
+    erp: '10238'
+  },
+  {
+    name: 'IBW-AIRTEL-IGW-TRANSIT-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 12:04:37',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.31.209',
+    srcNe: 'NDLS-J204-T3-NR',
+    srcIfc: 'xe-0/1/7.200',
+    ip: '172.31.31.209',
+    ne: 'NDLS-J204-T3-NR',
+    ifc: 'xe-0/1/7.200',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '182.79.128.1',
+    dstNe: 'AIRTEL-IGW-CHENNAI',
+    dstIfc: 'TenGigE0/0/0/1.200',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-TRANSIT-AIRTEL',
+    linkId: 'IBW:10239',
+    erp: '10239'
+  },
+  {
+    name: 'IBW-TATA-COMM-IX-MUM-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 11:30:20',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.34.142',
+    srcNe: 'DELHI-KROHTAKRKT-J7024-PE-T3-NR',
+    srcIfc: 'et-0/0/4.200',
+    ip: '172.31.34.142',
+    ne: 'DELHI-KROHTAKRKT-J7024-PE-T3-NR',
+    ifc: 'et-0/0/4.200',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '115.112.0.1',
+    dstNe: 'TCL-MUMBAI-IXP-02',
+    dstIfc: 'TenGigE0/3/0/1.200',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-TATA-TRANSIT',
+    linkId: 'IBW:10240',
+    erp: '10240'
+  },
+  {
+    name: 'IBW-AIIMS-CAMPUS-ILL-1G',
+    bandwidth: '1 Gbps',
+    discoveryTime: '09-22-2026 10:15:10',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.53.249',
+    srcNe: 'BGLK-NCS540-PE-T3',
+    srcIfc: 'GigabitEthernet0/0/0/10.50',
+    ip: '172.31.53.249',
+    ne: 'BGLK-NCS540-PE-T3',
+    ifc: 'GigabitEthernet0/0/0/10.50',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.24.186.45',
+    dstNe: 'IGW-DELHI-TIER1',
+    dstIfc: 'GigabitEthernet0/0/0/1.50',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-AIIMS-CAMPUS',
+    linkId: 'IBW:10241',
+    erp: '10241'
+  },
+  {
+    name: 'IBW-ISRO-HQ-SECURE-ILL-5G',
+    bandwidth: '5 Gbps',
+    discoveryTime: '09-22-2026 09:40:00',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.34.230',
+    srcNe: 'IRCON-KMRYT-N540X-T4-NR',
+    srcIfc: 'TenGigE0/0/0/13.500',
+    ip: '172.31.34.230',
+    ne: 'IRCON-KMRYT-N540X-T4-NR',
+    ifc: 'TenGigE0/0/0/13.500',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.21.244.78',
+    dstNe: 'RAILWIRE-IGW-BLR',
+    dstIfc: 'TenGigE0/1/0/2.500',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-ISRO-SECURE',
+    linkId: 'IBW:10242',
+    erp: '10242'
+  },
+  {
+    name: 'IBW-DRDO-RESEARCH-NET-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 08:22:15',
+    st: 'down',
+    chip: 'error',
+    srcIp: '172.31.45.245',
+    srcNe: 'GZB-N140-T3-NR',
+    srcIfc: 'TenGigE0/0/0/13.80',
+    ip: '172.31.45.245',
+    ne: 'GZB-N140-T3-NR',
+    ifc: 'TenGigE0/0/0/13.80',
+    srcAdmin: 'up',
+    srcOper: 'down',
+    dstIp: '103.24.186.99',
+    dstNe: 'IGW-DELHI-TIER1',
+    dstIfc: 'TenGigE0/1/0/8.80',
+    dstAdmin: 'up',
+    dstOper: 'down',
+    vrf: 'VRF-DRDO-RESEARCH',
+    linkId: 'IBW:10243',
+    erp: '10243'
+  },
+  {
+    name: 'IBW-SBI-DATACENTER-ILL-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 07:11:45',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.53.2',
+    srcNe: 'Noida-N540-T3-NR',
+    srcIfc: 'TenGigE0/0/0/14.80',
+    ip: '172.31.53.2',
+    ne: 'Noida-N540-T3-NR',
+    ifc: 'TenGigE0/0/0/14.80',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.21.244.110',
+    dstNe: 'RAILWIRE-IGW-NOIDA',
+    dstIfc: 'TenGigE0/2/0/1.80',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-SBI-CORE',
+    linkId: 'IBW:10244',
+    erp: '10244'
+  },
+  {
+    name: 'IBW-IITD-NKN-GATEWAY-20G',
+    bandwidth: '20 Gbps',
+    discoveryTime: '09-22-2026 06:05:30',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.60.57',
+    srcNe: 'ONRC-BARAKHAMBA-ROAD-NL-T4-NR',
+    srcIfc: 'GigabitEthernet0/0/14.200',
+    ip: '172.31.60.57',
+    ne: 'ONRC-BARAKHAMBA-ROAD-NL-T4-NR',
+    ifc: 'GigabitEthernet0/0/14.200',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '164.100.8.1',
+    dstNe: 'NKN-DELHI-HUB',
+    dstIfc: 'TenGigE0/0/0/2.200',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-NKN-NATIONAL',
+    linkId: 'IBW:10245',
+    erp: '10245'
+  },
+  {
+    name: 'IBW-KOLKATA-METRO-ILL-2G',
+    bandwidth: '2 Gbps',
+    discoveryTime: '09-22-2026 05:44:12',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.47.158',
+    srcNe: 'SES-HQ-GSC-J2.2K-SD-T4-SR',
+    srcIfc: 'ge-0/0/2.88',
+    ip: '172.31.47.158',
+    ne: 'SES-HQ-GSC-J2.2K-SD-T4-SR',
+    ifc: 'ge-0/0/2.88',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.24.186.204',
+    dstNe: 'IGW-KOLKATA-CORE',
+    dstIfc: 'TenGigE0/1/0/5.88',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-KOL-METRO',
+    linkId: 'IBW:10246',
+    erp: '10246'
+  },
+  {
+    name: 'IBW-CHENNAI-PORT-CONNECT-5G',
+    bandwidth: '5 Gbps',
+    discoveryTime: '09-22-2026 04:30:25',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.61.135',
+    srcNe: 'NDLS-3rd FLOOR-N55A2-PE-T3-NR',
+    srcIfc: 'GigabitEthernet0/0/13.90',
+    ip: '172.31.61.135',
+    ne: 'NDLS-3rd FLOOR-N55A2-PE-T3-NR',
+    ifc: 'GigabitEthernet0/0/13.90',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.21.244.150',
+    dstNe: 'RAILWIRE-IGW-CHN',
+    dstIfc: 'TenGigE0/0/0/4.90',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-PORT-TRUST',
+    linkId: 'IBW:10247',
+    erp: '10247'
+  },
+  {
+    name: 'IBW-BANGALORE-TECHPARK-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 03:15:00',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.11.229',
+    srcNe: 'MPLS_NR-NDO-J2.2K-T4-NR',
+    srcIfc: 'ge-0/0/1.220',
+    ip: '172.31.11.229',
+    ne: 'MPLS_NR-NDO-J2.2K-T4-NR',
+    ifc: 'ge-0/0/1.220',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.21.244.188',
+    dstNe: 'RAILWIRE-IGW-BLR',
+    dstIfc: 'TenGigE0/2/0/3.220',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-ITPB-BANDWIDTH',
+    linkId: 'IBW:10248',
+    erp: '10248'
+  },
+  {
+    name: 'IBW-HYD-HITEC-DIA-10G',
+    bandwidth: '10 Gbps',
+    discoveryTime: '09-22-2026 02:50:40',
+    st: 'up',
+    chip: 'success',
+    srcIp: '172.31.35.154',
+    srcNe: 'HYD-J2.2K-WIFI-T4-NR',
+    srcIfc: 'xe-0/1/1.50',
+    ip: '172.31.35.154',
+    ne: 'HYD-J2.2K-WIFI-T4-NR',
+    ifc: 'xe-0/1/1.50',
+    srcAdmin: 'up',
+    srcOper: 'up',
+    dstIp: '103.24.186.130',
+    dstNe: 'IGW-HYD-CORE',
+    dstIfc: 'TenGigE0/1/0/2.50',
+    dstAdmin: 'up',
+    dstOper: 'up',
+    vrf: 'VRF-HITEC-DIA',
+    linkId: 'IBW:10249',
+    erp: '10249'
+  },
+  {
+    name: 'IBW-AHMEDABAD-CLOUD-CONNECT-1G',
+    bandwidth: '1 Gbps',
+    discoveryTime: '09-22-2026 01:22:18',
+    st: 'down',
+    chip: 'error',
+    srcIp: '172.31.53.182',
+    srcNe: 'CBB-CNF-N5401-T4-NR',
+    srcIfc: 'TenGigE0/0/0/21.300',
+    ip: '172.31.53.182',
+    ne: 'CBB-CNF-N5401-T4-NR',
+    ifc: 'TenGigE0/0/0/21.300',
+    srcAdmin: 'up',
+    srcOper: 'down',
+    dstIp: '103.21.244.201',
+    dstNe: 'RAILWIRE-IGW-AHM',
+    dstIfc: 'TenGigE0/0/0/6.300',
+    dstAdmin: 'up',
+    dstOper: 'down',
+    vrf: 'VRF-GIFT-CITY-ILL',
+    linkId: 'IBW:10250',
+    erp: '10250'
+  }
+];
 
 
 const INACT_TABS = [
@@ -4348,7 +4713,9 @@ const RES_SERVICES = [
   { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',   rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',        vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',       vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
-  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' }
+  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RCIL-DELHI-HQ-10G', bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RAILWIRE-MUM-GW-40G', bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Railwire Backbone' }
 ];
 
 const RES_ALARMS = [
@@ -5584,7 +5951,7 @@ function viewReconcile() {
 }
 
 
-let TAB = { phy: 'router', link: 'lldp', svc: 's1ng', inact: 'ne' };
+let TAB = { phy: 'router', link: 'lldp', svc: 'l2vpn', inact: 'ne' };
 let LLDP_RANGE = 'today';
 let OSPF_RANGE = 'today';
 let PHY_STOCK = new Set(['planned', 'instore', 'deployed', 'faulty']);
@@ -6272,10 +6639,10 @@ function mapSvg() {
     return `<g class="st-lab" pointer-events="none">
       <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="600"
         fill="var(--vw-color-gray-900)" stroke="var(--vw-color-white)" stroke-width="3" paint-order="stroke"
-        font-family="Poppins,sans-serif">${g.c}</text>
+        font-family="Inter,sans-serif">${g.c}</text>
       <text x="${x.toFixed(1)}" y="${(y+13).toFixed(1)}" text-anchor="middle" font-size="12"
         fill="var(--vw-color-gray-600)" stroke="var(--vw-color-white)" stroke-width="3" paint-order="stroke"
-        font-family="Poppins,sans-serif">${n(g.tot)}</text></g>`;
+        font-family="Inter,sans-serif">${n(g.tot)}</text></g>`;
   }).join('');
 
   let pins = '';
@@ -6301,7 +6668,7 @@ function mapSvg() {
         <title>${b.items.length} sites here — ${b.items.map(i=>i.name).join(', ')}</title>
         <circle r="13" fill="var(--vw-color-slate-800)" fill-opacity=".18"/>
         <circle r="9.5" fill="var(--vw-color-slate-800)" stroke="var(--vw-color-white)" stroke-width="1.8"/>
-        <text y="3.4" text-anchor="middle" font-size="10" font-weight="600" fill="#fff" font-family="Poppins,sans-serif">${b.items.length}</text></g>`;
+        <text y="3.4" text-anchor="middle" font-size="10" font-weight="600" fill="#fff" font-family="Inter,sans-serif">${b.items.length}</text></g>`;
     }).join('');
   }
 
@@ -8093,9 +8460,7 @@ function viewLinks() {
 
 /* ── Services ─────────────────────────────────────────── */
 let SVC_VIEW = null; /* { tab, i } of the row shown in the service linking dialog, or null */
-let SVC_DOMAIN = 'ran'; /* which domain tab is open — RAN, Transport, Core or IP/MPLS; see SVC_DOMAINS. RAN is
-  first in SVC_DOMAINS, matching every other tab group on this page (TAB.phy defaults to PHY_TABS[0], TAB.link
-  to LINK_TABS[0]) — the first tab loads first, not the last one in the row. */
+let SVC_DOMAIN = 'services';
 
 /* The service attachment (provider-side WAN boundary this terminates on)
    and the customer's own PE router as two nodes on a wire — the same canvas
@@ -8122,21 +8487,27 @@ function svcDiagram(r, tab) {
     </button>`;
   const srcName = r.ne || r.srcNe;
   const srcIp = r.ip || r.srcIp;
-  const dstName = tab === 'l3vpn' ? (r.dstNe || 'PE-AGG-CORE-01') : (r.dstNe || r.ne);
-  const dstIp = tab === 'l3vpn' ? (r.dstIp || '172.31.60.1') : (r.dstIp || r.ip);
+  const dstName = tab === 'l3vpn' ? srcName : tab === 'ibw' ? (r.dstNe || 'IGW-DELHI-TIER1') : (r.dstNe || r.ne);
+  const dstIp = tab === 'l3vpn' ? srcIp : tab === 'ibw' ? (r.dstIp || '103.24.186.1') : (r.dstIp || r.ip);
   const srcNode = tab === 'l3vpn'
     ? `<span class="linkdiagram-node is-static">
         <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
         <span class="linkdiagram-label" title="${esc(svcLabel)}">${esc(svcLabel)}</span>
       </span>`
     : nodeBtn(srcName, srcIp, 'Source');
+  const dstNode = tab === 'ibw'
+    ? `<button class="linkdiagram-node"${dA({ v: 'resource', l: dstName, q: `name=${encodeURIComponent(dstName)}${dstIp ? `&ip=${encodeURIComponent(dstIp)}` : ''}` })} title="View ${esc(dstName)}">
+        <span class="linkdiagram-icon">${nodeThumb('cloud')}</span>
+        <span class="linkdiagram-label" style="white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word" title="${esc(dstName)}">${esc(dstName)}</span>
+      </button>`
+    : nodeBtn(dstName, dstIp, 'Destination');
   return `<div class="linkdiagram-canvas">
     ${srcNode}
     <button class="linkdiagram-wire"${dA({ v: 'resource', l: srcName, q: `name=${encodeURIComponent(srcName)}${srcIp ? `&ip=${encodeURIComponent(srcIp)}` : ''}` })}
       title="View ${esc(srcName)}" aria-label="View ${esc(srcName)}, source interface ${esc(r.ifc)}">
       <span class="linkdiagram-wire-badge">${esc(r.ifc)}</span>
     </button>
-    ${nodeBtn(dstName, dstIp, 'Destination')}
+    ${dstNode}
   </div>`;
 }
 
@@ -8184,8 +8555,9 @@ function svcViewDialog() {
   const r = { ...raw, ne: raw.ne ?? raw.srcNe, ip: raw.ip ?? raw.srcIp, ifc: raw.ifc ?? raw.srcIfc,
               dstNe: raw.dstNe, dstIp: raw.dstIp, dstIfc: raw.dstIfc };
   const cols = SVC_P2P_COLS[SVC_VIEW.tab];
-  const linkId = `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : SVC_VIEW.tab === 'l2vpn' ? 'L2' : SVC_VIEW.tab.toUpperCase()}:${r.erp}`;
-  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  const linkId = r.linkId || `${SVC_VIEW.tab === 'l3vpn' ? 'L3' : SVC_VIEW.tab === 'l2vpn' ? 'L2' : SVC_VIEW.tab === 'ibw' ? 'IBW' : SVC_VIEW.tab.toUpperCase()}:${r.erp}`;
+  const isUp = String(r.st || 'up').toLowerCase().startsWith('up');
+  const adminStatus = isUp ? 'up(1)' : 'down(2)';
   return `
     <div class="drawer-overlay" data-svcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
@@ -8195,43 +8567,52 @@ function svcViewDialog() {
       </div>
       <div class="linkview-body">
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
-          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip || (isUp ? 'success' : 'error'))}
         </div>
         ${svcDiagram(r, SVC_VIEW.tab)}
         ${detailFieldGrid([
-          ['Equipment Name', r.ifc], [cols ? cols.ref : 'ERP number', r.erp],
-          ['Link ID', linkId], ['Admin status', adminStatus]
+          ['Equipment Name', r.ne || r.srcNe],
+          ['Interface', r.ifc || r.srcIfc],
+          [SVC_VIEW.tab === 'ibw' ? 'Bandwidth' : (SVC_VIEW.tab === 'l2vpn' ? 'VC ID' : (cols ? cols.ref : 'ERP number')),
+           SVC_VIEW.tab === 'ibw' ? (r.bandwidth || '10 Gbps') : (SVC_VIEW.tab === 'l2vpn' ? (r.vcId || r.erp) : r.erp)],
+          ['Link ID', linkId],
+          ['Admin status', adminStatus]
         ])}
       </div>
     </div>`;
 }
 
 function viewServices() {
-  /* SVC_DOMAIN picks which row of tabs is showing; TAB.svc is the tab
-     within it. A stale TAB.svc (e.g. a direct URL naming a tab from a
-     different domain) falls back to the domain's own first tab rather
-     than rendering an empty SERVICES[t]. */
-  const domainTabs = SVC_TABS_BY_DOMAIN[SVC_DOMAIN] || SVC_TABS;
-  const t = domainTabs.some(x => x.k === TAB.svc) ? TAB.svc : domainTabs[0].k;
-  const rows = gridApply('services', SERVICES[t] || []), meta = domainTabs.find(x => x.k === t);
+  const cardStats = k => {
+    const list = SERVICES[k] || [];
+    const total = list.length;
+    const isDown = r => String(r.st || '').toLowerCase().startsWith('down') || r.chip === 'error' || String(r.srcOper || '').toLowerCase().startsWith('down') || String(r.dstOper || '').toLowerCase().startsWith('down');
+    const down = list.filter(isDown).length;
+    const active = total - down;
+    return { total, active, down, sub: `${active} active · ${down} down` };
+  };
+  const tabs = SVC_TABS.map(tab => {
+    const st = cardStats(tab.k);
+    return { ...tab, c: st.total, s: st.sub };
+  });
+  const t = tabs.some(x => x.k === TAB.svc) ? TAB.svc : tabs[0].k;
+  const rows = gridApply('services', SERVICES[t] || []);
+  const meta = tabs.find(x => x.k === t) || tabs[0];
+  const neBtn = name => name && name !== '—'
+    ? `<button class="nst-btn nst-btn--xs nst-btn--ghost mono" data-res="${name}" style="padding:0;font-weight:500;color:var(--vw-color-blue-600,#2563eb);text-align:left">${name}</button>`
+    : `<span class="mono">—</span>`;
   return `<div class="page">
 
     ${drillBar()}
 
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md">
-      ${SVC_DOMAINS.map(d => kpi(d.n, n(d.tabs.reduce((a, x) => a + x.c, 0)),
-        d.tabs.map(x => `${x.n} ${n(x.c)}`).join(' · '), d.tone,
-        { v:'services', l:`${d.n} services`, q:`domain=${d.k}` })).join('')}
+    <div class="vw-grid vw-grid-cols-3 vw-gap-md">
+      ${tabs.map(tab => kpi(tab.n, n(tab.c), tab.s, tab.tone,
+        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` })).join('')}
     </div>
 
     ${card(`
-      <div class="tabbar">${SVC_DOMAINS.map(d => `<button class="tab${d.k === SVC_DOMAIN ? ' is-on' : ''}" data-svcdomain="${d.k}">${d.n}</button>`).join('')}</div>
-      ${gridBar(rows.length, n(meta.c), 'Service name, VRF, ERP number', FS.services,
-        `<div class="tabbar tabbar--chip" role="tablist" aria-label="Service type">
-          ${domainTabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" role="tab" aria-selected="${x.k === t}"
-            data-tab="svc:${x.k}">${x.n}</button>`).join('')}
-        </div>`,
-        [], 'services')}
+      <div class="tabbar" role="tablist" aria-label="Services">${tabs.map(x => `<button class="tab${x.k === t ? ' is-on' : ''}" role="tab" aria-selected="${x.k === t}" data-tab="svc:${x.k}">${x.n}</button>`).join('')}</div>
+      ${gridBar(rows.length, n(meta.c), 'Service name, IP, ERP number', FS.services, '', [], 'services')}
       ${t === 'l2vpn'
         ? table([
             { t: 'Name' },
@@ -8262,12 +8643,12 @@ function viewServices() {
                 `<span class="num">${s.discoveryTime || '09-22-2026 12:04:37'}</span>`,
                 statusPill(s.st),
                 `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
-                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
                 `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
                 statusPill(s.srcAdmin || 'up'),
                 statusPill(s.srcOper || s.st),
                 `<span class="mono">${s.dstIp || '—'}</span>`,
-                `<span class="mono">${s.dstNe || '—'}</span>`,
+                neBtn(s.dstNe),
                 `<span class="mono">${s.dstIfc || '—'}</span>`,
                 statusPill(s.dstAdmin || 'up'),
                 statusPill(s.dstOper || s.st),
@@ -8294,7 +8675,7 @@ function viewServices() {
                 `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
                 `<span class="vw-value">${s.name}</span>`,
                 `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
-                `<span class="mono">${s.srcNe || s.ne || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
                 `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
                 `<span class="mono">${s.rd || '—'}</span>`,
                 `<span class="mono">${s.rt || '—'}</span>${rtBadge}`,
@@ -8303,7 +8684,49 @@ function viewServices() {
             }), 'chip-lg',
             i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
             i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
-        : svcP2PTable(t, rows)}`)}
+        : table([
+            { t: 'Name' },
+            { t: 'Bandwidth' },
+            { t: 'Discovery time' },
+            { t: 'Status', plain: true },
+            { t: 'Source IP address' },
+            { t: 'Source NE' },
+            { t: 'Source interface' },
+            { t: 'Admin status' },
+            { t: 'Operational status' },
+            { t: 'Gateway IP' },
+            { t: 'Gateway NE' },
+            { t: 'Gateway interface' },
+            { t: 'VRF / Routing' },
+            { t: 'Link ID' },
+            { t: 'ERP number' }
+          ],
+            rows.map(s => {
+              const statusPill = val => {
+                const isUp = String(val || 'up').toLowerCase().startsWith('up');
+                return `<span class="status-pill-${isUp ? 'up' : 'down'}">${isUp ? 'up(1)' : 'down(2)'}</span>`;
+              };
+              return [
+                `<span class="vw-value">${s.name}</span>`,
+                `<span class="vw-chip vw-chip-primary">${s.bandwidth || '10 Gbps'}</span>`,
+                `<span class="num">${s.discoveryTime || '09-22-2026 14:43:55'}</span>`,
+                statusPill(s.st),
+                `<span class="mono">${s.srcIp || s.ip || '—'}</span>`,
+                neBtn(s.srcNe || s.ne),
+                `<span class="mono">${s.srcIfc || s.ifc || '—'}</span>`,
+                statusPill(s.srcAdmin || 'up'),
+                statusPill(s.srcOper || s.st),
+                `<span class="mono">${s.dstIp || '—'}</span>`,
+                neBtn(s.dstNe),
+                `<span class="mono">${s.dstIfc || '—'}</span>`,
+                `<span class="mono">${s.vrf || 'VRF-INTERNET-IBW'}</span>`,
+                `<span class="mono">${s.linkId || (s.erp ? `IBW:${s.erp}` : '—')}</span>`,
+                `<span class="mono">${s.erp || '—'}</span>`
+              ];
+            }), 'chip-lg',
+            i => [{ l: 'View', svcview: `${t}:${SERVICES[t].indexOf(rows[i])}` }],
+            i => ({ class: 'is-click', 'data-svcview': `${t}:${SERVICES[t].indexOf(rows[i])}` }))
+      }`)}
     ${svcViewDialog()}
   </div>`;
 }
@@ -8644,8 +9067,9 @@ function resSvcViewDialog() {
   const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === RES_SVC_VIEW.tab);
   const r = rows[RES_SVC_VIEW.i];
   if (!r) return '';
-  const linkId = `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : 'L2'}:${r.erp}`;
-  const adminStatus = r.st === 'Up' ? 'up(1)' : 'down(2)';
+  const linkId = r.linkId || `${RES_SVC_VIEW.tab === 'l3vpn' ? 'L3' : RES_SVC_VIEW.tab === 'l2vpn' ? 'L2' : 'IBW'}:${r.erp}`;
+  const isUp = String(r.st || 'up').toLowerCase().startsWith('up');
+  const adminStatus = isUp ? 'up(1)' : 'down(2)';
   return `
     <div class="drawer-overlay" data-ressvcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service attachment for ${esc(r.name)}">
@@ -8655,7 +9079,7 @@ function resSvcViewDialog() {
       </div>
       <div class="linkview-body">
         <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)">
-          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip)}
+          <span class="vw-card-description">${esc(r.name)}</span>${chip(r.st, r.chip || (isUp ? 'success' : 'error'))}
         </div>
         ${svcDiagram({
           name: r.name,
@@ -8663,12 +9087,16 @@ function resSvcViewDialog() {
           ifc: r.ifc,
           ne: RES_ID,
           ip: (PHY.router.find(x => x.name === RES_ID) || {}).ip,
-          dstNe: r.dstNe || (RES_SVC_VIEW.tab === 'l2vpn' ? 'NDLS-J488-BNG-R-T2-NR' : 'DEL-PE-CORE-01'),
-          dstIp: r.dstIp || (RES_SVC_VIEW.tab === 'l2vpn' ? '172.31.33.59' : '172.31.60.2')
+          dstNe: r.dstNe || (RES_SVC_VIEW.tab === 'l2vpn' ? 'NDLS-J488-BNG-R-T2-NR' : RES_SVC_VIEW.tab === 'ibw' ? 'IGW-DELHI-TIER1' : 'DEL-PE-CORE-01'),
+          dstIp: r.dstIp || (RES_SVC_VIEW.tab === 'l2vpn' ? '172.31.33.59' : RES_SVC_VIEW.tab === 'ibw' ? '103.24.186.1' : '172.31.60.2')
         }, RES_SVC_VIEW.tab)}
         ${detailFieldGrid([
-          ['Equipment Name', r.ifc], ['ERP number', r.erp],
-          ['Link ID', linkId], ['Admin status', adminStatus]
+          ['Equipment Name', RES_ID],
+          ['Interface', r.ifc],
+          [RES_SVC_VIEW.tab === 'ibw' ? 'Bandwidth' : (RES_SVC_VIEW.tab === 'l2vpn' ? 'VC ID' : 'ERP number'),
+           RES_SVC_VIEW.tab === 'ibw' ? (r.bandwidth || '10 Gbps') : (RES_SVC_VIEW.tab === 'l2vpn' ? (r.vcId || r.erp) : r.erp)],
+          ['Link ID', linkId],
+          ['Admin status', adminStatus]
         ])}
       </div>
     </div>`;
@@ -8679,16 +9107,19 @@ function resSvcs() {
   const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
   const l3Count = RES_SERVICES.filter(s => s.t === 'L3VPN').length;
   const l2Count = RES_SERVICES.filter(s => s.t === 'L2VPN').length;
+  const ibwCount = RES_SERVICES.filter(s => s.t === 'IBW').length;
   const downCount = RES_SERVICES.filter(s => s.st === 'Down').length;
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('Services')}
-      <div class="chip-row">${chip(`${l3Count} L3VPN`,'info')}${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${downCount} down`,'error')}</div>
+      <div class="chip-row">${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${l3Count} L3VPN`,'info')}${chip(`${ibwCount} IBW`,'teal')}${chip(`${downCount} down`,'error')}</div>
     </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
     ${rows.length ? table(t === 'l3vpn'
       ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
-      : [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
+      : t === 'l2vpn'
+      ? [{t:'Status', plain:true},{t:'Service name'},{t:'VC ID'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
+      : [{t:'Status', plain:true},{t:'Service name'},{t:'Bandwidth'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}],
       rows.map(s => t === 'l3vpn' ? [
         chip(s.st, s.chip),
         `<span class="vw-value">${s.name}</span>`,
@@ -8697,17 +9128,24 @@ function resSvcs() {
         `<span class="mono">${s.ifc}</span>`,
         `<span class="mono">${s.linkId || `L3:${s.erp}`}</span>`,
         s.cust
-      ] : [
+      ] : t === 'l2vpn' ? [
         chip(s.st, s.chip),
         `<span class="vw-value">${s.name}</span>`,
         `<span class="mono">${s.vcId || s.erp}</span>`,
         `<span class="mono">${s.ifc}</span>`,
         `<span class="mono">${s.linkId || `L2:${s.erp}`}</span>`,
         s.cust
+      ] : [
+        chip(s.st, s.chip),
+        `<span class="vw-value">${s.name}</span>`,
+        `<span class="vw-chip vw-chip-primary">${s.bandwidth || '10 Gbps'}</span>`,
+        `<span class="mono">${s.ifc}</span>`,
+        `<span class="mono">${s.linkId || `IBW:${s.erp}`}</span>`,
+        s.cust
       ]), 'chip-auto', null,
         i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${t === 'l3vpn' ? 'L3VPN' : 'L2VPN'} services on this element.</div>`}`) + resSvcViewDialog();
+           No ${t.toUpperCase()} services on this element.</div>`}`) + resSvcViewDialog();
 }
 
 function resAlarms() {
@@ -12351,28 +12789,34 @@ function nodeRecord(name, wantIp) {
     }
   } catch (err) {}
 
-  const isEnodeb = urlCls === 'enodeb' || clean.includes('ENB') || clean.includes('GNB') || clean.includes('NODEB') || clean.includes('RADIO') || clean.includes('CELL');
+  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('DWM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('OADM') || clean.includes('ILA') || clean.includes('GNE') || clean.includes('WAVE') || clean.includes('OTN');
+  const isEnodeb = urlCls === 'enodeb' || (!isDwdm && (clean.includes('ENB') || clean.includes('NODEB') || clean.includes('RADIO') || clean.includes('CELL')));
+  const isGnodeb = urlCls === 'gnodeb' || (!isDwdm && (clean.includes('GNB') || clean.includes('5G') || clean.includes('NR')));
   const isCoreNf = clean.includes('AMF') || clean.includes('UPF') || clean.includes('SMF') || clean.includes('NRF') || clean.includes('MME') || clean.includes('CORE');
-  const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('CHR') || clean.includes('ACC') || clean.includes('DIST');
+  const isSw = urlCls === 'switch' || clean.includes('SW') || clean.includes('SWITCH') || clean.includes('ACC') || clean.includes('DIST');
   const isServer = urlCls === 'server' || clean.includes('SERVER') || clean.includes('SRV') || clean.includes('HOST');
-  const isDwdm = urlCls === 'dwdm' || clean.includes('DWDM') || clean.includes('OPT') || clean.includes('ROADM') || clean.includes('OADM') || clean.includes('ILA') || clean.includes('GNE') || clean.includes('WAVE') || clean.includes('OTN');
-  const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540') || clean.includes('7750') || clean.includes('ASR');
-  const cls = isEnodeb ? 'enodeb' : isSw ? 'switch' : isDwdm ? 'dwdm' : isServer ? 'server' : isRouter ? 'router' : (urlCls || 'router');
+  const isRouter = urlCls === 'router' || clean.includes('ROUTER') || clean.includes('RTR') || clean.includes('MX') || clean.includes('ACX') || clean.includes('J960') || clean.includes('N540') || clean.includes('7750') || clean.includes('ASR') || clean.includes('PE') || clean.includes('BNG');
+  const cls = isDwdm ? 'dwdm' : isGnodeb ? 'gnodeb' : isEnodeb ? 'enodeb' : isSw ? 'switch' : isServer ? 'server' : isRouter ? 'router' : (urlCls || 'router');
 
-  const oem = isEnodeb ? (clean.includes('SAMS') ? 'SAMSUNG' : clean.includes('NOK') ? 'NOKIA' : 'ERICSSON')
+  const oem = isDwdm ? (clean.includes('ADVA') ? 'ADVA' : clean.includes('CIE') ? 'CIENA' : clean.includes('TEJ') ? 'TEJAS' : clean.includes('INF') ? 'INFINERA' : 'CIENA')
+    : isGnodeb ? (clean.includes('NOK') ? 'NOKIA' : clean.includes('SAMS') ? 'SAMSUNG' : 'ERICSSON')
+    : isEnodeb ? (clean.includes('SAMS') ? 'SAMSUNG' : clean.includes('NOK') ? 'NOKIA' : 'ERICSSON')
     : isCoreNf ? (clean.includes('DEL') || clean.includes('BLR') ? 'NOKIA' : 'CISCO')
-    : isDwdm ? (clean.includes('TEJ') ? 'TEJAS' : clean.includes('INF') ? 'INFINERA' : 'CIENA')
+    : isSw ? (clean.includes('CHR') ? 'CIENA' : clean.includes('JUN') || clean.includes('EX') ? 'JUNIPER' : 'CISCO')
     : clean.startsWith('C') || clean.includes('CISCO') || clean.includes('N540') || clean.includes('ASR') ? 'CISCO'
     : clean.startsWith('N') || clean.includes('NOKIA') || clean.includes('7750') ? 'NOKIA'
     : clean.includes('HPE') || clean.includes('DELL') ? 'HPE'
     : 'JUNIPER';
-  const model = isEnodeb ? (clean.includes('GNB') ? 'AirScale 5G gNodeB' : 'RBS 6601 eNodeB')
+  const model = isDwdm ? (clean.includes('FSP') ? 'FSP 3000' : clean.includes('6500') ? '6500-T12' : clean.includes('OTN') ? '6500 OTN' : 'Waveserver 5')
+    : isGnodeb ? 'AirScale 5G gNodeB'
+    : isEnodeb ? (clean.includes('AIR') ? 'AirScale eNodeB' : 'Baseband 6630')
     : isCoreNf ? (clean.includes('AMF') ? 'Cloud AMF 5GC' : clean.includes('UPF') ? 'Cloud UPF 5GC' : 'Cloud Native NF')
-    : isDwdm ? (clean.includes('OTN') ? '6500 OTN' : 'Waveserver 5')
+    : isSw ? (clean.includes('CHR') ? 'L3-CORE-48P' : clean.includes('EX') ? 'EX4300-48P' : 'C9300-48UXM')
     : oem === 'CISCO' ? (clean.includes('540') ? 'NCS-540' : 'ASR920')
     : oem === 'NOKIA' ? '7750'
     : clean.includes('204') ? 'MX204' : clean.includes('2200') ? 'ACX2200' : 'MX960';
-  const os = isEnodeb ? 'BB-24.Q2'
+  const os = isDwdm ? 'ONMSi 21.1'
+    : (isEnodeb || isGnodeb) ? 'BB-24.Q2'
     : isCoreNf ? 'CloudOS-5G.4'
     : isDwdm ? 'SAOS-10.8'
     : oem === 'CISCO' ? '17.9.4' : oem === 'NOKIA' ? 'TiMOS-C-22.10' : '21.2R3-S8.5';
@@ -12388,7 +12832,7 @@ const NODE_CLASS = {
   switch: { n:'Switch', live:true,  hw:'env' },
   dwdm:   { n:'DWDM',   live:true,  hw:'optical' },
   server: { n:'Server', live:false },
-  enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:false }
+  enodeb: { n:'eNodeB', live:true,  hw:'radio' }, gnodeb: { n:'gNodeB', live:true, hw:'radio' }
 };
 
 function nodeOf(name, wantIp) {
@@ -12595,7 +13039,7 @@ function nodeOf(name, wantIp) {
             fCpu: fc.cpu.vals[6], fMem: fc.mem.vals[6], fTemp: fc.temp.vals[6] },
     chassis: buildChassis(s, r, cls),
     optical: cls === 'dwdm' ? buildOptical(s, r) : null,
-    enb: cls === 'enodeb' ? buildEnodebSite(s, r) : null,
+    enb: (cls === 'enodeb' || cls === 'gnodeb') ? buildEnodebSite(s, r) : null,
     env: { psu:[2, 2], fans:[nint(s, 49, 4, 6), nint(s, 49, 4, 6)], rpm:nint(s, 50, 4200, 6800),
            tmin:nint(s, 51, 28, 34), tmax:nint(s, 52, 48, 56), tin:nint(s, 53, 38, 46) },
     sfp, protoRows, capRows, capRowsByProto, capTrend, capTrendByProto, linkTrend, linkTrendDaily,
@@ -13916,7 +14360,7 @@ function renderLinkCapacityChart(row, linkTrendFn, protoLabel) {
 
   return `
     <div class="row vw-justify-between vw-items-center" style="margin-bottom:14px">
-      <span style="font-size:0.9375rem;font-weight:600;color:var(--vw-color-slate-900)">Link capacity forecast – ${esc(row.n)}</span>
+      <span style="font-size:0.9375rem;font-weight:500;color:var(--vw-color-slate-900)">Link capacity forecast – ${esc(row.n)}</span>
       ${chip(`${protoLabel} Protocol`, 'info')}
     </div>
     <svg viewBox="0 0 ${W} ${H}" class="nv-chart" style="width:100%;height:auto;overflow:visible">
@@ -14834,7 +15278,8 @@ const NODE_VIEW = {
   router: { header: nodeHeaderRouter, overview: nodeOverviewRouter, hardware: nodeHardwareRouter, links: nodeLinksRouter, services: nodeServicesRouter, alerts: nodeAlertsRouter },
   switch: { header: nodeHeaderSwitch, overview: nodeOverviewSwitch, hardware: nodeHardwareSwitch, links: nodeLinksSwitch, services: nodeServicesSwitch, alerts: nodeAlertsSwitch },
   dwdm:   { header: nodeHeaderDwdm,   overview: nodeOverviewDwdm,   hardware: nodeHardwareDwdm,   alerts: nodeAlertsDwdm },
-  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
+  enodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb },
+  gnodeb: { header: nodeHeaderEnodeb, overview: nodeSiteHealthEnodeb, hardware: nodeHardwareEnodeb, links: nodeLinksEnodeb, alerts: nodeAlertsEnodeb }
 };
 const nodeViewFor = cls => NODE_VIEW[cls] || NODE_VIEW.router;
 
@@ -14852,10 +15297,46 @@ let NODE_TAB = 'overview';
    it gets the tabs an optical element actually has: shelves/hardware, ring
    topology, the monitored wavelength plan and the amplifier chain */
 const NODE_TABS = {
-  router: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  switch: [['overview','Overview'],['hardware','Hardware & interfaces'],['links','Links'],['services','Network services'],['alerts','Alerts & diagnostics']],
-  dwdm:   [['overview','Overview'],['hardware','Hardware & shelves'],['topology','Topology & degrees'],['channels','Optical channels'],['amplifiers','Amplifiers'],['alerts','Alerts & diagnostics']],
-  enodeb: [['overview','Site health'],['hardware','Hardware & components'],['links','Network links'],['config','Configurations'],['alerts','Alarms & incidents']]
+  router: [
+    ['overview', 'Overview'],
+    ['peers', 'Interfaces & peers'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  switch: [
+    ['overview', 'Overview'],
+    ['ports', 'Interfaces & ports'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  dwdm: [
+    ['overview', 'Overview'],
+    ['channels', 'Spectrum & channels'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  enodeb: [
+    ['overview', 'Overview'],
+    ['mobility', 'Radio & mobility'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ],
+  gnodeb: [
+    ['overview', 'Overview'],
+    ['mobility', 'Radio & mobility'],
+    ['hardware', 'Hardware'],
+    ['path', 'Service path'],
+    ['alerts', 'Alerts'],
+    ['performance', 'Performance']
+  ]
 };
 
 function viewNode() {
@@ -14885,33 +15366,28 @@ function viewNode() {
   }
 
   const tabs = NODE_TABS[N.cls] || NODE_TABS.router;
-  const activeTab = tabs.some(([k]) => k === (NODE_TAB || '').toLowerCase()) ? NODE_TAB.toLowerCase() : 'overview';
+  let curTab = (NODE_TAB || '').toLowerCase().trim();
+  if (curTab === 'services') curTab = N.cls === 'switch' ? 'ports' : 'peers';
+  if (curTab === 'config') curTab = 'mobility';
+  if (curTab === 'links' || curTab === 'topology') curTab = 'path';
+  if (curTab === 'faults' || curTab === 'alarms') curTab = 'alerts';
+  const activeTab = tabs.some(([k]) => k === curTab) ? curTab : 'overview';
 
-  let tabContent = '';
-  if (activeTab === 'hardware') {
-    /* nodeVlans() self-guards on N.vlans, so it only ever renders for a
-       class the sample data actually gives VLANs to (switch) */
-    tabContent = `${nodeHardware(N)}${nodeVlans(N)}`;
-  } else if (activeTab === 'links') {
-    tabContent = `${nodeLinks(N)}`;
-  } else if (activeTab === 'services') {
-    tabContent = `${nodeServices(N)}`;
-  } else if (activeTab === 'topology') {
-    tabContent = `${nodeTopologyDwdm(N)}`;
-  } else if (activeTab === 'channels') {
-    tabContent = `${nodeChannelsDwdm(N)}`;
-  } else if (activeTab === 'amplifiers') {
-    tabContent = `${nodeAmplifiersDwdm(N)}`;
-  } else if (activeTab === 'config') {
-    tabContent = `${nodeConfigEnodeb(N)}`;
-  } else if (activeTab === 'alerts') {
-    tabContent = `${nodeAlerts(N)}`;
-  } else {
-    /* overview default — eNodeB's Site health tab already covers 24h
-       availability in its own KPI tile, so it skips the generic ICMP/NTP
-       strip card the other three classes append here */
-    tabContent = `${nodeOverview(N)}${N.cls === 'enodeb' ? '' : nodeAvailability(N)}`;
-  }
+  const twinHost = `
+    <div
+      id="node-digital-twin-mount-point"
+      class="node-digital-twin-host"
+      data-twin-name="${N.name}"
+      data-twin-cls="${N.cls}"
+      data-twin-tab="${activeTab}"
+      data-twin-vendor="${(N.r && N.r.oem) || (N.cls === 'dwdm' ? 'CIENA' : N.cls === 'gnodeb' ? 'NOKIA' : N.cls === 'enodeb' ? 'ERICSSON' : N.cls === 'switch' ? 'CIENA' : 'JUNIPER')}"
+      data-twin-model="${(N.r && N.r.model) || (N.cls === 'dwdm' ? '6500-T12' : N.cls === 'gnodeb' ? 'AirScale 5G' : N.cls === 'enodeb' ? 'Baseband 6630' : N.cls === 'switch' ? 'L3-CORE-48P' : 'MX960')}"
+      data-twin-ip="${(N.r && N.r.ip) || N.ip || '172.31.33.100'}"
+      data-twin-city="${(N.r && (N.r.circle || N.r.loc || N.r.city)) || 'Delhi'}"
+    ></div>
+  `;
+
+  const tabContent = twinHost;
 
   return `<div class="page">
     ${drillBar()}
@@ -15078,6 +15554,9 @@ function drillTo(view, label, q) {
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
     ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
     : null;
+  const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
+    ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
@@ -15090,6 +15569,7 @@ function drillTo(view, label, q) {
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
     || siteDrillFrom
+    || phyDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
     || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
@@ -15132,7 +15612,13 @@ function applyDrillQuery(view, q, label) {
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
     else if (p.tab && PHY_TABS.some(x => x.k === p.tab)) TAB.phy = p.tab;
-    else if (!TAB.phy) TAB.phy = 'router';
+    else if (!TAB.phy) {
+      const saved = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null;
+      TAB.phy = (saved && PHY_TABS.some(x => x.k === saved)) ? saved : 'router';
+    }
+    if (TAB.phy && typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('ns_phy_tab', TAB.phy);
+    }
     PHY_OEM = p.oem || null;
     PHY_SRC = p.src || null;
     PHY_VER = p.ver || null;
@@ -15173,14 +15659,14 @@ function applyDrillQuery(view, q, label) {
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') {
-    /* ?domain= picks a whole domain (its own first tab); ?tab= (the
-       existing mechanism every other Services link already uses, e.g.
-       the Location dashboard's L3VPN/L2VPN chips) still just names a
-       tab directly — its domain is derived so those links keep working
-       unchanged now that Services has more than one domain. */
-    if (p.domain && SVC_TABS_BY_DOMAIN[p.domain]) { SVC_DOMAIN = p.domain; TAB.svc = SVC_TABS_BY_DOMAIN[p.domain][0].k; }
-    else if (p.tab) { TAB.svc = p.tab; SVC_DOMAIN = domainForSvcTab(p.tab); }
+    if (p.tab && ['l2vpn', 'l3vpn', 'ibw'].includes(p.tab.toLowerCase())) {
+      TAB.svc = p.tab.toLowerCase();
+    } else if (!TAB.svc || !['l2vpn', 'l3vpn', 'ibw'].includes(TAB.svc)) {
+      TAB.svc = 'l2vpn';
+    }
     SVC_VIEW = null;
+    gridOf('services').search = '';
+    gridOf('services').filters = {};
   }
   if (view === 'resource') {
     /* "View details" row actions elsewhere in the legacy renderer (Site
@@ -15211,7 +15697,7 @@ function applyDrillQuery(view, q, label) {
        carries its own ?tab=) must land on Overview, not whatever tab was
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
-    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab);
+    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config','digitaltwins','performance','peers','ports','mobility','path','faults'].includes(p.tab);
     NODE_TAB = p.nodetab || (isNodeSpecificTab ? p.tab : 'overview');
     if (p.site) NODE_SITE = decodeURIComponent(p.site).trim();
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
@@ -15332,12 +15818,14 @@ function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID, ...(typeof SITE_TAB !== 'undefined' && SITE_TAB ? { tab: SITE_TAB } : {}) }
     : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
     : k === 'resource' ? { name: RES_ID, ip: RES_IP }
-    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}) }
+    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}), ...(typeof NODE_TAB !== 'undefined' && NODE_TAB && NODE_TAB !== 'overview' ? { tab: NODE_TAB } : {}) }
     : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
     : k === 'rack' ? { id: RACK_ID } : k === 'power' ? { id: POWER_ID } : k === 'splice' ? { id: SPLICE_ID }
+    : k === 'services' ? { tab: TAB.svc || 'l2vpn' }
+    : k === 'physical' ? { cls: TAB.phy || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) || 'router' }
     : k === 'cord' ? { id: CORD_ID } : k === 'duct' ? { id: DUCT_ID } : k === 'fiber' ? { id: FIBER_ID } : {};
 }
 
@@ -15785,7 +16273,9 @@ document.addEventListener('click', e => {
     if (g === 'svc') {
       gridOf('services').search = '';
       gridOf('services').filters = {};
-      go('services', { label: `${k} services`, q: `tab=${k}` });
+      TAB.svc = k;
+      SVC_VIEW = null;
+      go('services');
       return;
     }
     go(CURRENT);
@@ -16084,6 +16574,20 @@ window.__nsLegacy = {
     }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
+    if (k === 'services' && p.tab) {
+      if (['l2vpn', 'l3vpn', 'ibw'].includes(p.tab.toLowerCase())) {
+        TAB.svc = p.tab.toLowerCase();
+      }
+    }
+    if (k === 'physical') {
+      const targetCls = p.cls || p.tab;
+      if (targetCls && PHY_TABS.some(x => x.k === targetCls)) {
+        TAB.phy = targetCls;
+      } else if (!TAB.phy) {
+        const saved = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null;
+        TAB.phy = (saved && PHY_TABS.some(x => x.k === saved)) ? saved : 'router';
+      }
+    }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_IP = p.ip || null; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
     if (k === 'node'  && p.name) {
       NODE_ID = p.name;
@@ -16096,7 +16600,7 @@ window.__nsLegacy = {
           if (sRec) NODE_SITE = sRec.id;
         }
       }
-      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
+      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config','digitaltwins'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_LINK_PROTO = 'LLDP';

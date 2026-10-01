@@ -4,6 +4,8 @@ import RouteTitle from './shell/RouteTitle';
 import Topbar from './shell/Topbar';
 import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
+import NodePage from '../node-view-source/src/pages/NodePage.jsx';
+import { NodeViewProvider } from '../node-view-source/src/nodeView.jsx';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -30,6 +32,14 @@ export default function App() {
           <Topbar />
           <Routes>
             <Route path="/" element={<Navigate to="/discovery/insights" replace />} />
+            <Route
+              path="/node/:ref"
+              element={
+                <NodeViewProvider>
+                  <NodePage />
+                </NodeViewProvider>
+              }
+            />
             {SCREENS.map(s => (
               <Route key={s.key} path={s.path}
                 element={s.component ? <s.component /> : <LegacyView legacyKey={s.key} />} />

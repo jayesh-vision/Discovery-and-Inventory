@@ -102,12 +102,14 @@ function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID, ...(typeof SITE_TAB !== 'undefined' && SITE_TAB ? { tab: SITE_TAB } : {}) }
     : k === 'capex' ? { id: CAPEX_ID } : k === 'opex' ? { id: OPEX_ID }
     : k === 'resource' ? { name: RES_ID, ip: RES_IP }
-    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}) }
+    : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}), ...(typeof NODE_TAB !== 'undefined' && NODE_TAB && NODE_TAB !== 'overview' ? { tab: NODE_TAB } : {}) }
     : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
     : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
     : k === 'rack' ? { id: RACK_ID } : k === 'power' ? { id: POWER_ID } : k === 'splice' ? { id: SPLICE_ID }
+    : k === 'services' ? { tab: TAB.svc || 'l2vpn' }
+    : k === 'physical' ? { cls: TAB.phy || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) || 'router' }
     : k === 'cord' ? { id: CORD_ID } : k === 'duct' ? { id: DUCT_ID } : k === 'fiber' ? { id: FIBER_ID } : {};
 }
 `, 'sync after render');
@@ -160,6 +162,20 @@ window.__nsLegacy = {
     }
     if (k === 'capex' && p.id)   { CAPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'capex'; }
     if (k === 'opex'  && p.id)   { OPEX_ID = p.id; SITE_ID = p.id; SITE_SECTION = 'opex'; }
+    if (k === 'services' && p.tab) {
+      if (['l2vpn', 'l3vpn', 'ibw'].includes(p.tab.toLowerCase())) {
+        TAB.svc = p.tab.toLowerCase();
+      }
+    }
+    if (k === 'physical') {
+      const targetCls = p.cls || p.tab;
+      if (targetCls && PHY_TABS.some(x => x.k === targetCls)) {
+        TAB.phy = targetCls;
+      } else if (!TAB.phy) {
+        const saved = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null;
+        TAB.phy = (saved && PHY_TABS.some(x => x.k === saved)) ? saved : 'router';
+      }
+    }
     if (k === 'resource' && p.name) { RES_ID = p.name; RES_IP = p.ip || null; RES_TAB = 'overview'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; }
     if (k === 'node'  && p.name) {
       NODE_ID = p.name;
@@ -172,7 +188,7 @@ window.__nsLegacy = {
           if (sRec) NODE_SITE = sRec.id;
         }
       }
-      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
+      NODE_TAB = (p.nodetab || (p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config','digitaltwins'].includes(p.tab))) ? (p.nodetab || p.tab) : 'overview';
       NODE_PERF = '24h';
       NODE_ALERT_TAB = 'alerts';
       NODE_LINK_PROTO = 'LLDP';

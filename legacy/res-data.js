@@ -68,7 +68,9 @@ const RES_SERVICES = [
   { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',   rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',        vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
   { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',       vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
-  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' }
+  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RCIL-DELHI-HQ-10G', bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-RAILWIRE-MUM-GW-40G', bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Railwire Backbone' }
 ];
 
 const RES_ALARMS = [

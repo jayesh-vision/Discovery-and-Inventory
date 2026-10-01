@@ -151,6 +151,9 @@ function drillTo(view, label, q) {
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
     ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
     : null;
+  const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
+    ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
+    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
@@ -163,6 +166,7 @@ function drillTo(view, label, q) {
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const fromName = curDrillFrom
     || siteDrillFrom
+    || phyDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
     || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
@@ -205,7 +209,13 @@ function applyDrillQuery(view, q, label) {
   if (view === 'physical')  {
     if (p.cls && PHY_TABS.some(x => x.k === p.cls)) TAB.phy = p.cls;
     else if (p.tab && PHY_TABS.some(x => x.k === p.tab)) TAB.phy = p.tab;
-    else if (!TAB.phy) TAB.phy = 'router';
+    else if (!TAB.phy) {
+      const saved = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null;
+      TAB.phy = (saved && PHY_TABS.some(x => x.k === saved)) ? saved : 'router';
+    }
+    if (TAB.phy && typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('ns_phy_tab', TAB.phy);
+    }
     PHY_OEM = p.oem || null;
     PHY_SRC = p.src || null;
     PHY_VER = p.ver || null;
@@ -246,14 +256,14 @@ function applyDrillQuery(view, q, label) {
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') {
-    /* ?domain= picks a whole domain (its own first tab); ?tab= (the
-       existing mechanism every other Services link already uses, e.g.
-       the Location dashboard's L3VPN/L2VPN chips) still just names a
-       tab directly — its domain is derived so those links keep working
-       unchanged now that Services has more than one domain. */
-    if (p.domain && SVC_TABS_BY_DOMAIN[p.domain]) { SVC_DOMAIN = p.domain; TAB.svc = SVC_TABS_BY_DOMAIN[p.domain][0].k; }
-    else if (p.tab) { TAB.svc = p.tab; SVC_DOMAIN = domainForSvcTab(p.tab); }
+    if (p.tab && ['l2vpn', 'l3vpn', 'ibw'].includes(p.tab.toLowerCase())) {
+      TAB.svc = p.tab.toLowerCase();
+    } else if (!TAB.svc || !['l2vpn', 'l3vpn', 'ibw'].includes(TAB.svc)) {
+      TAB.svc = 'l2vpn';
+    }
     SVC_VIEW = null;
+    gridOf('services').search = '';
+    gridOf('services').filters = {};
   }
   if (view === 'resource') {
     /* "View details" row actions elsewhere in the legacy renderer (Site
@@ -284,7 +294,7 @@ function applyDrillQuery(view, q, label) {
        carries its own ?tab=) must land on Overview, not whatever tab was
        last open on a previous node — only an explicit ?tab= in the URL
        should pick a different starting tab */
-    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config'].includes(p.tab);
+    const isNodeSpecificTab = p.tab && ['overview','hardware','links','services','alerts','topology','channels','amplifiers','config','digitaltwins','performance','peers','ports','mobility','path','faults'].includes(p.tab);
     NODE_TAB = p.nodetab || (isNodeSpecificTab ? p.tab : 'overview');
     if (p.site) NODE_SITE = decodeURIComponent(p.site).trim();
     const targetNode = p.name || p.node || p.ne || (label ? label.replace(/^(Node view|(Router|Switch|DWDM|eNodeB)\s*node\s*view|Router|Switch|DWDM|eNodeB)\s*·?\s*/i, '').trim() : null);
@@ -823,7 +833,9 @@ document.addEventListener('click', e => {
     if (g === 'svc') {
       gridOf('services').search = '';
       gridOf('services').filters = {};
-      go('services', { label: `${k} services`, q: `tab=${k}` });
+      TAB.svc = k;
+      SVC_VIEW = null;
+      go('services');
       return;
     }
     go(CURRENT);
