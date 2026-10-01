@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --configLoader runner",
     "build": "tsc -b && vite build --configLoader runner",
-    "preview": "vite preview",
+    "preview": "vite preview --configLoader runner",
     "typecheck": "tsc -b",
     "legacy:bundle": "node scripts/bundle-legacy.mjs",
     "gen:sites": "node scripts/gen-sites.mjs",

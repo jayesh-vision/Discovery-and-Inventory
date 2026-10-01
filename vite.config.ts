@@ -17,6 +17,31 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom', 'react-router-dom']
   },
-  build: { outDir: 'dist', sourcemap: true },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('leaflet')) {
+              return 'vendor-leaflet';
+            }
+            return undefined;
+          }
+          if (id.includes('node-view-source')) {
+            return 'digital-twin';
+          }
+          if (id.includes('src/data/reports')) {
+            return 'reports-data';
+          }
+        }
+      }
+    }
+  },
   server: { port: 5173 }
 });
