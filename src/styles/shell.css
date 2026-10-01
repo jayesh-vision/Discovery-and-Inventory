@@ -831,7 +831,7 @@ button { font: inherit; }
 @media (max-width: 560px)  { .kpi-row { grid-template-columns: 1fr; } }
 .circle-grid { display: grid; gap: var(--vw-space-md) var(--vw-space-xl);
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.vw-card-metric-xl { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.vw-card-metric-xl { font-size: 1.5rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1; }
 .meter > span { min-width: 0; }
 .health-row { display: grid; grid-template-columns: 8px 1fr auto; gap: var(--vw-space-sm);
   align-items: start; }
@@ -1133,19 +1133,92 @@ path.st.has-c:hover { fill-opacity: .78; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Tone-based Semantic Colors for Card Count (Muted, Elegant Enterprise Tones — NOT Bright/Neon) ── */
-.stat-v--cyan,    .stat-cell[data-tone="cyan"] .stat-v,    .stat-cell--cyan .stat-v    { color: var(--vw-color-cyan-700, #0e7490) !important; }
-.stat-v--emerald, .stat-cell[data-tone="emerald"] .stat-v, .stat-cell--emerald .stat-v { color: var(--vw-color-emerald-700, #047857) !important; }
-.stat-v--green,   .stat-cell[data-tone="green"] .stat-v,   .stat-cell--green .stat-v   { color: var(--vw-color-green-700, #15803d) !important; }
-.stat-v--red,     .stat-cell[data-tone="red"] .stat-v,     .stat-cell--red .stat-v     { color: var(--vw-color-red-700, #b91c1c) !important; }
-.stat-v--sky,     .stat-cell[data-tone="sky"] .stat-v,     .stat-cell--sky .stat-v     { color: var(--vw-color-sky-700, #0369a1) !important; }
-.stat-v--blue,    .stat-cell[data-tone="blue"] .stat-v,    .stat-cell--blue .stat-v    { color: var(--vw-color-blue-700, #1d4ed8) !important; }
-.stat-v--amber,   .stat-cell[data-tone="amber"] .stat-v,   .stat-cell--amber .stat-v   { color: var(--vw-color-amber-700, #b45309) !important; }
-.stat-v--orange,  .stat-cell[data-tone="orange"] .stat-v,  .stat-cell--orange .stat-v  { color: var(--vw-color-orange-700, #c2410c) !important; }
-.stat-v--purple,  .stat-cell[data-tone="purple"] .stat-v,  .stat-cell--purple .stat-v  { color: var(--vw-color-purple-700, #6d28d9) !important; }
-.stat-v--violet,  .stat-cell[data-tone="violet"] .stat-v,  .stat-cell--violet .stat-v  { color: var(--vw-color-violet-700, #6d28d9) !important; }
-.stat-v--teal,    .stat-cell[data-tone="teal"] .stat-v,    .stat-cell--teal .stat-v    { color: var(--vw-color-teal-700, #0f766e) !important; }
-.stat-v--rose,    .stat-cell[data-tone="rose"] .stat-v,    .stat-cell--rose .stat-v    { color: var(--vw-color-rose-700, #be123c) !important; }
-.stat-v--slate,   .stat-cell[data-tone="slate"] .stat-v,   .stat-cell--slate .stat-v   { color: var(--vw-color-slate-700, #334155) !important; }
+.stat-v--cyan,    [data-tone="cyan"] .stat-v,    [data-tone="cyan"] .vw-card-metric-xl,    .stat-cell--cyan .stat-v,    .stat-cell[data-tone="cyan"] .stat-v    { color: var(--vw-color-cyan-700, #0e7490) !important; }
+.stat-v--emerald, [data-tone="emerald"] .stat-v, [data-tone="emerald"] .vw-card-metric-xl, .stat-cell--emerald .stat-v, .stat-cell[data-tone="emerald"] .stat-v { color: var(--vw-color-emerald-700, #047857) !important; }
+.stat-v--green,   [data-tone="green"] .stat-v,   [data-tone="green"] .vw-card-metric-xl,   .stat-cell--green .stat-v,   .stat-cell[data-tone="green"] .stat-v   { color: var(--vw-color-green-700, #15803d) !important; }
+.stat-v--red,     [data-tone="red"] .stat-v,     [data-tone="red"] .vw-card-metric-xl,     .stat-cell--red .stat-v,     .stat-cell[data-tone="red"] .stat-v     { color: var(--vw-color-red-700, #b91c1c) !important; }
+.stat-v--sky,     [data-tone="sky"] .stat-v,     [data-tone="sky"] .vw-card-metric-xl,     .stat-cell--sky .stat-v,     .stat-cell[data-tone="sky"] .stat-v     { color: var(--vw-color-sky-700, #0369a1) !important; }
+.stat-v--blue,    [data-tone="blue"] .stat-v,    [data-tone="blue"] .vw-card-metric-xl,    .stat-cell--blue .stat-v,    .stat-cell[data-tone="blue"] .stat-v    { color: var(--vw-color-blue-700, #1d4ed8) !important; }
+.stat-v--amber,   [data-tone="amber"] .stat-v,   [data-tone="amber"] .vw-card-metric-xl,   .stat-cell--amber .stat-v,   .stat-cell[data-tone="amber"] .stat-v   { color: var(--vw-color-amber-700, #b45309) !important; }
+.stat-v--orange,  [data-tone="orange"] .stat-v,  [data-tone="orange"] .vw-card-metric-xl,  .stat-cell--orange .stat-v,  .stat-cell[data-tone="orange"] .stat-v  { color: var(--vw-color-orange-700, #c2410c) !important; }
+.stat-v--purple,  [data-tone="purple"] .stat-v,  [data-tone="purple"] .vw-card-metric-xl,  .stat-cell--purple .stat-v,  .stat-cell[data-tone="purple"] .stat-v  { color: var(--vw-color-purple-700, #6d28d9) !important; }
+.stat-v--violet,  [data-tone="violet"] .stat-v,  [data-tone="violet"] .vw-card-metric-xl,  .stat-cell--violet .stat-v,  .stat-cell[data-tone="violet"] .stat-v  { color: var(--vw-color-violet-700, #6d28d9) !important; }
+.stat-v--indigo,  [data-tone="indigo"] .stat-v,  [data-tone="indigo"] .vw-card-metric-xl,  .stat-cell--indigo .stat-v,  .stat-cell[data-tone="indigo"] .stat-v  { color: var(--vw-color-indigo-700, #4338ca) !important; }
+.stat-v--teal,    [data-tone="teal"] .stat-v,    [data-tone="teal"] .vw-card-metric-xl,    .stat-cell--teal .stat-v,    .stat-cell[data-tone="teal"] .stat-v    { color: var(--vw-color-teal-700, #0f766e) !important; }
+.stat-v--rose,    [data-tone="rose"] .stat-v,    [data-tone="rose"] .vw-card-metric-xl,    .stat-cell--rose .stat-v,    .stat-cell[data-tone="rose"] .stat-v    { color: var(--vw-color-rose-700, #be123c) !important; }
+.stat-v--slate,   [data-tone="slate"] .stat-v,   [data-tone="slate"] .vw-card-metric-xl,   .stat-cell--slate .stat-v,   .stat-cell[data-tone="slate"] .stat-v   { color: var(--vw-color-slate-700, #334155) !important; }
+
+/* ── Summary card hover & selected states ── */
+.vw-card-section.vw-card--clickable,
+.vw-card-section.is-drill {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.vw-card-section.vw-card--clickable:hover,
+.vw-card-section.is-drill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+}
+.vw-card-section.vw-card--clickable[data-tone="sky"]:hover,
+.vw-card-section.is-drill[data-tone="sky"]:hover {
+  border-color: var(--vw-color-sky-300, #7dd3fc);
+  background: var(--vw-color-sky-25, #f8fcff);
+}
+.vw-card-section.vw-card--clickable[data-tone="emerald"]:hover,
+.vw-card-section.is-drill[data-tone="emerald"]:hover {
+  border-color: var(--vw-color-emerald-300, #6ee7b7);
+  background: var(--vw-color-emerald-25, #f7fef9);
+}
+.vw-card-section.vw-card--clickable[data-tone="purple"]:hover,
+.vw-card-section.is-drill[data-tone="purple"]:hover {
+  border-color: var(--vw-color-purple-300, #d8b4fe);
+  background: var(--vw-color-purple-25, #fdfaff);
+}
+.vw-card-section.vw-card--clickable[data-tone="amber"]:hover,
+.vw-card-section.is-drill[data-tone="amber"]:hover {
+  border-color: var(--vw-color-amber-300, #fcd34d);
+  background: var(--vw-color-amber-25, #fffdfa);
+}
+.vw-card-section.vw-card--clickable[data-tone="indigo"]:hover,
+.vw-card-section.is-drill[data-tone="indigo"]:hover {
+  border-color: var(--vw-color-indigo-300, #a5b4fc);
+  background: var(--vw-color-indigo-25, #f6f6ff);
+}
+.vw-card-section.vw-card--clickable[data-tone="cyan"]:hover,
+.vw-card-section.is-drill[data-tone="cyan"]:hover {
+  border-color: var(--vw-color-cyan-300, #67e8f9);
+  background: var(--vw-color-cyan-25, #f5feff);
+}
+
+.vw-card-section.is-selected,
+.vw-card-section[data-selected="true"] {
+  border-color: var(--vw-color-slate-400, #94a3b8);
+  box-shadow: 0 0 0 1.5px var(--vw-color-slate-400, #94a3b8), 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+.vw-card-section[data-tone="sky"].is-selected,
+.vw-card-section[data-tone="sky"][data-selected="true"] {
+  border-color: var(--vw-color-sky-500, #0ea5e9);
+  box-shadow: 0 0 0 1.5px var(--vw-color-sky-500, #0ea5e9), 0 2px 8px rgba(3, 105, 161, 0.08);
+}
+.vw-card-section[data-tone="emerald"].is-selected,
+.vw-card-section[data-tone="emerald"][data-selected="true"] {
+  border-color: var(--vw-color-emerald-500, #10b981);
+  box-shadow: 0 0 0 1.5px var(--vw-color-emerald-500, #10b981), 0 2px 8px rgba(4, 120, 87, 0.08);
+}
+.vw-card-section[data-tone="purple"].is-selected,
+.vw-card-section[data-tone="purple"][data-selected="true"] {
+  border-color: var(--vw-color-purple-500, #a855f7);
+  box-shadow: 0 0 0 1.5px var(--vw-color-purple-500, #a855f7), 0 2px 8px rgba(109, 40, 217, 0.08);
+}
+.vw-card-section[data-tone="amber"].is-selected,
+.vw-card-section[data-tone="amber"][data-selected="true"] {
+  border-color: var(--vw-color-amber-500, #f59e0b);
+  box-shadow: 0 0 0 1.5px var(--vw-color-amber-500, #f59e0b), 0 2px 8px rgba(180, 83, 9, 0.08);
+}
+.vw-card-section[data-tone="indigo"].is-selected,
+.vw-card-section[data-tone="indigo"][data-selected="true"] {
+  border-color: var(--vw-color-indigo-500, #6366f1);
+  box-shadow: 0 0 0 1.5px var(--vw-color-indigo-500, #6366f1), 0 2px 8px rgba(67, 56, 202, 0.08);
+}
 @media (max-width: 900px) { .stat-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .stat-cell { border-top: 1px solid var(--vw-color-slate-200); }
   .stat-cell:nth-child(-n+2) { border-top: 0; } .stat-cell:nth-child(odd) { border-left: 0; } }

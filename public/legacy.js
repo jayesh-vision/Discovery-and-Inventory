@@ -142,15 +142,20 @@ const bars = (rows, max, tone) => rows.map(r => {
              : `<div class="hbar">${inner}</div>`;
 }).join('');
 
-const kpi = (label, value, sub, tone, d) => {
-  const inner = `<div class="vw-card-accent" style="background:${cv(tone,400)}"></div>
+const kpi = (label, value, sub, tone, d, isSelected) => {
+  const colorStyle = tone ? `color:${cv(tone, 700)};` : '';
+  const toneClass = tone ? ` stat-v--${tone}` : '';
+  const inner = `<div class="vw-card-accent" style="background:${cv(tone||'cyan', 400)}"></div>
     <div class="vw-card-metric-label">${label}</div>
-    <div class="vw-card-metric-xl num">${value}</div>
+    <div class="vw-card-metric-xl num${toneClass}" style="${colorStyle}font-weight:500">${value}</div>
     <div class="vw-card-metric-label-sub">${sub}</div>`;
-  const st = 'padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)';
+  const st = 'padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)';
+  const toneAttr = tone ? ` data-tone="${tone}"` : '';
+  const selClass = isSelected ? ' is-selected' : '';
+  const selAttr = isSelected ? ' data-selected="true" aria-current="true"' : '';
   return d
-    ? `<button class="vw-card-section vw-card--accent stack-x is-drill"${dA(d)} style="${st}">${inner}</button>`
-    : `<div class="vw-card-section vw-card--accent stack-x" style="${st}">${inner}</div>`;
+    ? `<button class="vw-card-section vw-card--clickable vw-card--accent stack-x is-drill${selClass}"${dA(d)}${toneAttr}${selAttr} style="${st}">${inner}</button>`
+    : `<div class="vw-card-section vw-card--accent stack-x${selClass}"${toneAttr}${selAttr} style="${st}">${inner}</div>`;
 };
 
 /* ── drill-down plumbing ──────────────────────────────── */
@@ -2068,8 +2073,8 @@ const VNF_LC_STAGES = [['day0', 'Day 0'], ['grow', 'Grow'], ['events', 'Events']
   });
 
 const LINK_TABS = [
-  { k: 'lldp', n: 'LLDP', c: 5549 }, { k: 'ospf', n: 'OSPF', c: 1382 },
-  { k: 'bgp', n: 'BGP', c: 604 }, { k: 'isis', n: 'ISIS', c: 311 }
+  { k: 'lldp', n: 'LLDP', c: 5549, tone: 'sky' }, { k: 'ospf', n: 'OSPF', c: 1382, tone: 'emerald' },
+  { k: 'bgp', n: 'BGP', c: 604, tone: 'purple' }, { k: 'isis', n: 'ISIS', c: 311, tone: 'amber' }
 ];
 /* every link — whichever protocol reported it — names both ends the same
    way: a real NE hostname (sne/dne) and that NE's own IP (sip/dip). OSPF,
@@ -8437,12 +8442,14 @@ function viewLinks() {
         const c = LINK_NE_FILTER
           ? (LINKS[x.k] || []).filter(r => r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER).length
           : x.c;
+        const tone = x.tone || (x.k === 'lldp' ? 'sky' : x.k === 'ospf' ? 'emerald' : x.k === 'bgp' ? 'purple' : 'amber');
+        const isSel = x.k === t;
         return `
-        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
+        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${isSel ? ' is-selected' : ''}" data-tab="link:${x.k}" data-tone="${tone}"${isSel ? ' data-selected="true" aria-current="true"' : ''}
           style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)">
-          <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
+          <div class="vw-card-accent" style="background:${cv(tone,400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-xl num">${n(c)}</span>
+          <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)};font-weight:500">${n(c)}</span>
           <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
         </button>`;
       }).join('')}
@@ -8608,7 +8615,7 @@ function viewServices() {
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${tabs.map(tab => kpi(tab.n, n(tab.c), tab.s, tab.tone,
-        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` })).join('')}
+        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` }, tab.k === t)).join('')}
     </div>
 
     ${card(`

@@ -140,15 +140,20 @@ const bars = (rows, max, tone) => rows.map(r => {
              : `<div class="hbar">${inner}</div>`;
 }).join('');
 
-const kpi = (label, value, sub, tone, d) => {
-  const inner = `<div class="vw-card-accent" style="background:${cv(tone,400)}"></div>
+const kpi = (label, value, sub, tone, d, isSelected) => {
+  const colorStyle = tone ? `color:${cv(tone, 700)};` : '';
+  const toneClass = tone ? ` stat-v--${tone}` : '';
+  const inner = `<div class="vw-card-accent" style="background:${cv(tone||'cyan', 400)}"></div>
     <div class="vw-card-metric-label">${label}</div>
-    <div class="vw-card-metric-xl num">${value}</div>
+    <div class="vw-card-metric-xl num${toneClass}" style="${colorStyle}font-weight:500">${value}</div>
     <div class="vw-card-metric-label-sub">${sub}</div>`;
-  const st = 'padding-top:calc(var(--vw-space-lg) + 3px);gap:var(--vw-space-xs)';
+  const st = 'padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)';
+  const toneAttr = tone ? ` data-tone="${tone}"` : '';
+  const selClass = isSelected ? ' is-selected' : '';
+  const selAttr = isSelected ? ' data-selected="true" aria-current="true"' : '';
   return d
-    ? `<button class="vw-card-section vw-card--accent stack-x is-drill"${dA(d)} style="${st}">${inner}</button>`
-    : `<div class="vw-card-section vw-card--accent stack-x" style="${st}">${inner}</div>`;
+    ? `<button class="vw-card-section vw-card--clickable vw-card--accent stack-x is-drill${selClass}"${dA(d)}${toneAttr}${selAttr} style="${st}">${inner}</button>`
+    : `<div class="vw-card-section vw-card--accent stack-x${selClass}"${toneAttr}${selAttr} style="${st}">${inner}</div>`;
 };
 
 /* ── drill-down plumbing ──────────────────────────────── */

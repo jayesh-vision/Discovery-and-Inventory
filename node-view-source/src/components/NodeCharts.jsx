@@ -208,7 +208,16 @@ export function AlarmTimeline({ timeline, onOpen }) {
 /* The service path as a chain of hops. Particle density on each edge follows
    the load on the hop it feeds, so a hot hop is visibly busier. */
 export function PathChain({ path }) {
+  const [hoveredPart, setHoveredPart] = useState(null)
   const total = path.budget.parts.reduce((a, p) => a + p.v, 0)
+  const target = path.budget.target
+  const roundedTotal = Math.round(total * 10) / 10
+  const headroom = Math.max(0, target - roundedTotal)
+  const roundedHeadroom = Math.round(headroom * 10) / 10
+  const pct = Math.min(100, Math.round((total / target) * 100))
+  const isExceeded = total > target
+  const isTight = !isExceeded && pct >= 85
+
   return (
     <div className="nk-path">
       <div className="nk-path__row">
@@ -239,16 +248,161 @@ export function PathChain({ path }) {
           )
         })}
       </div>
+
       <div className="nk-budget">
-        <div className="nk-budget__h">
-          {path.budget.unit === 'ms' ? 'Round-trip budget' : 'Optical budget'} · {Math.round(total * 10) / 10} {path.budget.unit} used of {path.budget.target} {path.budget.unit}
-        </div>
-        <div className="nk-budget__bar">
-          {path.budget.parts.map(p => (
-            <span key={p.label} style={{ width: `${(p.v / Math.max(total, path.budget.target)) * 100}%`, background: p.tone }} title={`${p.label} ${p.v} ${path.budget.unit}`}>
-              {p.label} {p.v} {path.budget.unit}
+        <div className="nk-budget__head">
+          <div className="nk-budget__title-group">
+            <span className="nk-budget__title">
+              {path.budget.unit === 'ms' ? 'Round-trip budget' : 'Optical budget'}
             </span>
-          ))}
+            <span className={`nk-budget__status-pill nk-budget__status-pill--${isExceeded ? 'danger' : isTight ? 'warning' : 'ok'}`}>
+              <span className="nk-budget__status-dot" />
+              {isExceeded ? 'Budget exceeded' : isTight ? 'Near limit' : 'Within budget'}
+            </span>
+          </div>
+          <div className="nk-budget__metric-group">
+            <span className="nk-budget__used-val">{roundedTotal}</span>
+            <span className="nk-budget__unit">{path.budget.unit}</span>
+            <span className="nk-budget__divider">/</span>
+            <span className="nk-budget__target-val">{target} {path.budget.unit}</span>
+            <span className="nk-budget__pct-badge">{pct}% used</span>
+          </div>
+        </div>
+
+        {/* Progress Bar with Segments */}
+        <div
+          className="nk-budget__bar-track"
+          onMouseLeave={() => setHoveredPart(null)}
+        >
+          {path.budget.parts.map((p, idx) => {
+            const w = (p.v / Math.max(total, target)) * 100
+            const isHovered = hoveredPart === idx
+            return (
+              <div
+                key={p.label}
+                className={`nk-budget__seg ${isHovered ? 'is-hovered' : ''}`}
+                style={{
+                  width: `${w}%`,
+                  background: p.tone,
+                  opacity: hoveredPart !== null && !isHovered ? 0.35 : 1,
+                }}
+                onMouseEnter={() => setHoveredPart(idx)}
+              >
+                {/* Floating Tooltip directly on segment hover */}
+                {isHovered && (
+                  <div className={`nk-budget__tooltip ${idx === 0 ? 'is-first' : idx === path.budget.parts.length - 1 ? 'is-last' : ''}`}>
+                    <span className="nk-budget__tooltip-dot" style={{ background: p.tone }} />
+                    <span className="nk-budget__tooltip-label">{p.label}</span>
+                    <strong className="nk-budget__tooltip-val num">{p.v} {path.budget.unit}</strong>
+                    <span className="nk-budget__tooltip-pct num">({Math.round((p.v / target) * 100)}%)</span>
+                  </div>
+                )}
+                {/* Adaptive label based on available space */}
+                <span className="nk-budget__seg-text">
+                  {w >= 14 ? (
+                    <>{p.label} <b className="num">{p.v}</b></>
+                  ) : w >= 6 ? (
+                    <>{p.label.split(' ')[0]} <b className="num">{p.v}</b></>
+                  ) : (
+                    <b className="num">{p.v}</b>
+                  )}
+                </span>
+              </div>
+            )
+          })}
+          {roundedHeadroom > 0 && (
+            <div
+              className={`nk-budget__seg nk-budget__seg--headroom ${hoveredPart === 'headroom' ? 'is-hovered' : ''}`}
+              style={{
+                width: `${(roundedHeadroom / Math.max(total, target)) * 100}%`,
+                opacity: hoveredPart !== null && hoveredPart !== 'headroom' ? 0.35 : 1,
+              }}
+              onMouseEnter={() => setHoveredPart('headroom')}
+            >
+              {hoveredPart === 'headroom' && (
+                <div className="nk-budget__tooltip is-last">
+                  <span className="nk-budget__tooltip-dot nk-budget__tooltip-dot--headroom" />
+                  <span className="nk-budget__tooltip-label">Available Headroom</span>
+                  <strong className="nk-budget__tooltip-val num">{roundedHeadroom} {path.budget.unit}</strong>
+                  <span className="nk-budget__tooltip-pct num">({Math.round((roundedHeadroom / target) * 100)}%)</span>
+                </div>
+              )}
+              <span className="nk-budget__seg-text nk-budget__seg-text--headroom">
+                {(roundedHeadroom / Math.max(total, target)) * 100 >= 12 ? (
+                  <>Headroom <b className="num">{roundedHeadroom}</b></>
+                ) : (
+                  <b className="num">{roundedHeadroom}</b>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Interactive Hover Detail Readout */}
+        <div className="nk-budget__hover-readout">
+          {hoveredPart !== null ? (
+            hoveredPart === 'headroom' ? (
+              <div className="nk-budget__hover-info">
+                <span className="nk-budget__hover-dot nk-budget__hover-dot--headroom" />
+                <span className="nk-budget__hover-title">Available Headroom</span>
+                <span className="nk-budget__hover-desc">
+                  <strong className="num">{roundedHeadroom} {path.budget.unit}</strong> remaining · <span className="num">{Math.round((roundedHeadroom / target) * 100)}%</span> safe margin
+                </span>
+              </div>
+            ) : (
+              <div className="nk-budget__hover-info">
+                <span className="nk-budget__hover-dot" style={{ background: path.budget.parts[hoveredPart].tone }} />
+                <span className="nk-budget__hover-title">
+                  {path.budget.parts[hoveredPart].label}
+                </span>
+                <span className="nk-budget__hover-desc">
+                  <strong className="num">{path.budget.parts[hoveredPart].v} {path.budget.unit}</strong> · consumes <span className="num">{Math.round((path.budget.parts[hoveredPart].v / target) * 100)}%</span> of target budget (<span className="num">{Math.round((path.budget.parts[hoveredPart].v / total) * 100)}%</span> of used)
+                </span>
+              </div>
+            )
+          ) : (
+            <div className="nk-budget__hover-info nk-budget__hover-info--hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.65, flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span className="nk-budget__hover-hint">Hover on any segment or category below to see values & latency share</span>
+            </div>
+          )}
+        </div>
+
+        {/* Breakdown Legend with Values */}
+        <div className="nk-budget__legend">
+          {path.budget.parts.map((p, idx) => {
+            const isHovered = hoveredPart === idx
+            const partPct = Math.round((p.v / target) * 100)
+            return (
+              <div
+                key={p.label}
+                className={`nk-budget__legend-item ${isHovered ? 'is-hovered' : ''}`}
+                onMouseEnter={() => setHoveredPart(idx)}
+                onMouseLeave={() => setHoveredPart(null)}
+              >
+                <span className="nk-budget__legend-dot" style={{ background: p.tone }} />
+                <span className="nk-budget__legend-name">{p.label}</span>
+                <span className="nk-budget__legend-val num">
+                  <b>{p.v}</b> <span className="nk-budget__legend-unit">{path.budget.unit}</span>
+                </span>
+                <span className="nk-budget__legend-pct num">({partPct}%)</span>
+              </div>
+            )
+          })}
+          {roundedHeadroom > 0 && (
+            <div
+              className={`nk-budget__legend-item nk-budget__legend-item--headroom ${hoveredPart === 'headroom' ? 'is-hovered' : ''}`}
+              onMouseEnter={() => setHoveredPart('headroom')}
+              onMouseLeave={() => setHoveredPart(null)}
+            >
+              <span className="nk-budget__legend-dot nk-budget__legend-dot--headroom" />
+              <span className="nk-budget__legend-name">Headroom</span>
+              <span className="nk-budget__legend-val num">
+                <b>{roundedHeadroom}</b> <span className="nk-budget__legend-unit">{path.budget.unit}</span>
+              </span>
+              <span className="nk-budget__legend-pct num">({Math.round((roundedHeadroom / target) * 100)}%)</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

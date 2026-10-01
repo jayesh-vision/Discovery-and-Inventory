@@ -1819,8 +1819,8 @@ const VNF_LC_STAGES = [['day0', 'Day 0'], ['grow', 'Grow'], ['events', 'Events']
   });
 
 const LINK_TABS = [
-  { k: 'lldp', n: 'LLDP', c: 5549 }, { k: 'ospf', n: 'OSPF', c: 1382 },
-  { k: 'bgp', n: 'BGP', c: 604 }, { k: 'isis', n: 'ISIS', c: 311 }
+  { k: 'lldp', n: 'LLDP', c: 5549, tone: 'sky' }, { k: 'ospf', n: 'OSPF', c: 1382, tone: 'emerald' },
+  { k: 'bgp', n: 'BGP', c: 604, tone: 'purple' }, { k: 'isis', n: 'ISIS', c: 311, tone: 'amber' }
 ];
 /* every link — whichever protocol reported it — names both ends the same
    way: a real NE hostname (sne/dne) and that NE's own IP (sip/dip). OSPF,

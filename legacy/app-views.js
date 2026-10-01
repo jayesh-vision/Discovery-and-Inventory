@@ -3541,12 +3541,14 @@ function viewLinks() {
         const c = LINK_NE_FILTER
           ? (LINKS[x.k] || []).filter(r => r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER).length
           : x.c;
+        const tone = x.tone || (x.k === 'lldp' ? 'sky' : x.k === 'ospf' ? 'emerald' : x.k === 'bgp' ? 'purple' : 'amber');
+        const isSel = x.k === t;
         return `
-        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x" data-tab="link:${x.k}"
+        <button class="vw-card-section vw-card--clickable vw-card--accent stack-x${isSel ? ' is-selected' : ''}" data-tab="link:${x.k}" data-tone="${tone}"${isSel ? ' data-selected="true" aria-current="true"' : ''}
           style="padding-top:calc(var(--vw-space-lg) + 3px);text-align:left;font:inherit;color:inherit;gap:var(--vw-space-xs)">
-          <div class="vw-card-accent" style="background:${cv('cyan',400)}"></div>
+          <div class="vw-card-accent" style="background:${cv(tone,400)}"></div>
           <span class="vw-card-metric-label">${x.n}</span>
-          <span class="vw-card-metric-xl num">${n(c)}</span>
+          <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)};font-weight:500">${n(c)}</span>
           <span class="vw-card-metric-label-sub">${LINK_NE_FILTER ? 'links for this element' : 'discovered links'}</span>
         </button>`;
       }).join('')}
@@ -3712,7 +3714,7 @@ function viewServices() {
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${tabs.map(tab => kpi(tab.n, n(tab.c), tab.s, tab.tone,
-        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` })).join('')}
+        { v:'services', l:`${tab.n} services`, q:`tab=${tab.k}` }, tab.k === t)).join('')}
     </div>
 
     ${card(`
