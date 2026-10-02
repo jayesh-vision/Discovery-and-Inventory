@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
 import LegacyView from '../legacy/LegacyView';
@@ -404,6 +404,517 @@ export default function Location() {
 }
 
 /* ── Coverage Table Sub-Component ─────────────────────────────────────── */
+const ALERT_ICONS: Record<string, React.ReactNode> = {
+  'Power': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+    </svg>
+  ),
+  'Lease / Property': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <path d="M7 3h8l4 4v14H7z" />
+      <path d="M15 3v4h4" />
+      <path d="M9 12h6M9 15.5h6M9 8.5h3" />
+    </svg>
+  ),
+  'Fiber Connectivity': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <path d="M9.5 14.5 14.5 9.5" />
+      <path d="M11 6.5 12.8 4.7a4 4 0 0 1 5.6 5.6L16.6 12" />
+      <path d="M13 17.5l-1.8 1.8a4 4 0 0 1-5.6-5.6L7.4 12" />
+    </svg>
+  ),
+  'Civil / Infrastructure': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <path d="M12 21V6" />
+      <path d="M7 10 12 5l5 5" />
+      <path d="M4 21h16" />
+      <path d="M9 21v-5M15 21v-5" />
+    </svg>
+  ),
+  'Regulatory': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <path d="M12 3.5 19 6v6c0 5-3 7.8-7 8.5-4-.7-7-3.5-7-8.5V6Z" />
+      <path d="m9.5 12 1.8 1.8 3.2-3.6" />
+    </svg>
+  ),
+  'Supply Chain': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <rect x="2.5" y="7" width="11" height="9" rx="1" />
+      <path d="M13.5 10h3.5l3 3v3h-6.5" />
+      <circle cx="7" cy="18" r="1.7" />
+      <circle cx="17.5" cy="18" r="1.7" />
+    </svg>
+  ),
+  'Commissioning': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+      <rect x="5" y="4" width="14" height="17" rx="1.5" />
+      <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+      <path d="m9 13 2 2 4-4.5" />
+    </svg>
+  )
+};
+
+const ALERT_LABEL: Record<string, string> = {
+  'Lease / Property': 'Lease issue',
+  'Power': 'Power issue',
+  'Fiber Connectivity': 'Fiber issue',
+  'Civil / Infrastructure': 'Civil work issue',
+  'Regulatory': 'Regulatory hold',
+  'Supply Chain': 'Supply delay',
+  'Commissioning': 'Commissioning hold'
+};
+
+const INV_ICONS = {
+  active: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+      <rect x="4" y="4" width="16" height="6" rx="1.6" />
+      <rect x="4" y="14" width="16" height="6" rx="1.6" />
+      <circle cx="8" cy="7" r="1" />
+      <circle cx="8" cy="17" r="1" />
+    </svg>
+  ),
+  logical: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+      <circle cx="6" cy="6" r="2.2" />
+      <circle cx="18" cy="6" r="2.2" />
+      <circle cx="12" cy="18" r="2.2" />
+      <path d="M8 6h8M7.3 8 11 16M16.7 8 13 16" />
+    </svg>
+  ),
+  passive: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+      <path d="M3 6c4 0 4 4 8 4s4-4 8-4M3 18c4 0 4-4 8-4s4 4 8 4" />
+    </svg>
+  )
+};
+
+function DonutChart({
+  segments,
+  total,
+  topLabel,
+  subLabel,
+  size = 108
+}: {
+  segments: { name: string; count: number; color: string }[];
+  total: number;
+  topLabel: string | number;
+  subLabel: string;
+  size?: number;
+}) {
+  const sw = Math.max(7, Math.round(size * 0.1));
+  const r = size / 2 - sw / 2 - 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const C = 2 * Math.PI * r;
+  const fTop = Math.max(13, Math.round(size * 0.145));
+  const fSub = Math.max(10, Math.round(size * 0.08));
+
+  let off = 0;
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ height: `${size}px`, width: `${size}px`, flexShrink: 0, display: 'block' }} role="img" aria-label={`${topLabel} ${subLabel}`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--vw-color-slate-100)" strokeWidth={sw} />
+      {segments.map((s, idx) => {
+        const len = total > 0 ? (s.count / total) * C : 0;
+        const currentOff = off;
+        off += len;
+        return (
+          <circle
+            key={idx}
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={sw}
+            strokeDasharray={`${len.toFixed(2)} ${(C - len).toFixed(2)}`}
+            strokeDashoffset={(-currentOff).toFixed(2)}
+            transform={`rotate(-90 ${cx} ${cy})`}
+          >
+            <title>{`${s.name}: ${s.count}`}</title>
+          </circle>
+        );
+      })}
+      <text x={cx} y={cy + (subLabel ? 0 : fTop * 0.35)} textAnchor="middle" fontSize={fTop} fontWeight={500} fill="var(--vw-color-slate-800, #1e293b)" fontFamily="Inter, sans-serif">
+        {topLabel}
+      </text>
+      {subLabel && (
+        <text x={cx} y={cy + fTop * 0.78} textAnchor="middle" fontSize={fSub} fill="var(--vw-color-slate-500, #64748b)" fontFamily="Inter, sans-serif">
+          {subLabel}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+function getCircleRolloutDetails(c: CoverageCircle) {
+  const onAirSites = Math.round(c.sites * (c.onAirPct / 100));
+  const atRiskSites = c.failed > 0 ? Math.max(1, Math.round(c.sites * 0.04)) : 0;
+  const cleanOnAir = Math.max(0, onAirSites - atRiskSites);
+  const blockedSites = c.failed;
+  const pendingSites = Math.max(0, c.sites - onAirSites - blockedSites);
+
+  const overview = {
+    total: c.sites,
+    onAir: cleanOnAir,
+    pending: pendingSites,
+    blocked: blockedSites,
+    atRisk: atRiskSites
+  };
+
+  const stTotal = c.sites || 1;
+  const underDeploy = Math.round(pendingSites * 0.45);
+  const atpPending = Math.round(pendingSites * 0.30);
+  const integrationPending = Math.max(0, pendingSites - underDeploy - atpPending);
+
+  const stages = [
+    { k: 'Commissioned', c: cleanOnAir, color: '#10b981' },
+    { k: 'Under Deployment', c: underDeploy, color: '#0284c7' },
+    { k: 'ATP Pending', c: atpPending, color: '#06b6d4' },
+    { k: 'Integration Pending', c: integrationPending, color: '#f59e0b' },
+    { k: 'Blocked', c: blockedSites, color: '#ef4444' }
+  ];
+
+  // Specific alerts based on state
+  const alertsByCircle: Record<string, { cat: string; count: number; sev: 'blocked' | 'delayed' | 'risk'; topReason: string }[]> = {
+    'MH': [
+      { cat: 'Power', count: 3, sev: 'blocked', topReason: 'Grid power supply delayed by local utility' },
+      { cat: 'Lease / Property', count: 2, sev: 'blocked', topReason: 'Repeated landlord access restrictions' },
+      { cat: 'Fiber Connectivity', count: 4, sev: 'delayed', topReason: 'Temporary fiber diversion in use' }
+    ],
+    'DL': [
+      { cat: 'Regulatory', count: 2, sev: 'blocked', topReason: 'Municipal corporation tower clearance pending' },
+      { cat: 'Civil / Infrastructure', count: 1, sev: 'blocked', topReason: 'Roof reinforcement structural certificate delayed' },
+      { cat: 'Lease / Property', count: 3, sev: 'delayed', topReason: 'Lease expires within 30 days' }
+    ],
+    'KA': [
+      { cat: 'Fiber Connectivity', count: 2, sev: 'blocked', topReason: 'OFC backhaul cut due to road widening' },
+      { cat: 'Power', count: 1, sev: 'blocked', topReason: 'Transformer capacity upgrade pending' },
+      { cat: 'Supply Chain', count: 3, sev: 'delayed', topReason: 'Equipment delivery delayed by vendor' }
+    ],
+    'UP': [
+      { cat: 'Power', count: 4, sev: 'blocked', topReason: 'Frequent rural grid outages requiring DG install' },
+      { cat: 'Civil / Infrastructure', count: 3, sev: 'blocked', topReason: 'GBT foundation curing inspection hold' },
+      { cat: 'Commissioning', count: 5, sev: 'delayed', topReason: 'ATP pending site acceptance sign-off' }
+    ],
+    'GJ': [
+      { cat: 'Lease / Property', count: 1, sev: 'blocked', topReason: 'Commercial agreement renewal dispute' },
+      { cat: 'Power', count: 2, sev: 'delayed', topReason: 'Battery backup below threshold' }
+    ],
+    'TN': [
+      { cat: 'Civil / Infrastructure', count: 2, sev: 'blocked', topReason: 'Coastal humidity corrosion proofing pending' },
+      { cat: 'Commissioning', count: 2, sev: 'blocked', topReason: 'ATP visit scheduling hold' }
+    ],
+    'MP': [
+      { cat: 'Fiber Connectivity', count: 3, sev: 'blocked', topReason: 'Last-mile trenching permission hold' },
+      { cat: 'Power', count: 2, sev: 'blocked', topReason: 'Substation connection fee dispute' }
+    ],
+    'AP': [
+      { cat: 'Power', count: 2, sev: 'blocked', topReason: 'High-tension power line proximity clearance' },
+      { cat: 'Supply Chain', count: 1, sev: 'blocked', topReason: 'Antenna mount bracket shortage' }
+    ],
+    'OTH': [
+      { cat: 'Lease / Property', count: 2, sev: 'blocked', topReason: 'Property owner lease negotiation hold' },
+      { cat: 'Regulatory', count: 1, sev: 'blocked', topReason: 'Local cantonment board clearance pending' }
+    ]
+  };
+
+  const alerts = alertsByCircle[c.code] || [
+    { cat: 'Power', count: Math.max(1, c.failed), sev: 'blocked', topReason: 'Power restoration escalated with utility' }
+  ];
+
+  // Specific critical sites
+  const criticalByCircle: Record<string, { id: string; status: 'Blocked' | 'Delayed' | 'At Risk'; tone: 'red' | 'amber' | 'sky'; cat: string; reason: string; impact: string }[]> = {
+    'MH': [
+      { id: 'MH-MAC-113', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Grid power supply delayed by local utility', impact: 'Equipment commissioning cannot begin without stable power' },
+      { id: 'MH-BOM-042', status: 'Delayed', tone: 'amber', cat: 'Fiber Connectivity', reason: 'Temporary fiber diversion in use', impact: 'Backhaul unavailable — site cannot carry live traffic' },
+      { id: 'MH-PUN-089', status: 'At Risk', tone: 'sky', cat: 'Lease / Property', reason: 'Lease expires within 30 days', impact: 'Site inaccessible for deployment and maintenance activities' }
+    ],
+    'DL': [
+      { id: 'DEL-279', status: 'Blocked', tone: 'red', cat: 'Regulatory', reason: 'Municipal corporation tower clearance pending', impact: 'Tower and equipment installation cannot proceed without clearance' },
+      { id: 'DEL-NDLS-014', status: 'Blocked', tone: 'red', cat: 'Civil / Infrastructure', reason: 'Roof reinforcement structural certificate delayed', impact: 'Equipment installation blocked until civil work clears' },
+      { id: 'DEL-CP-008', status: 'Delayed', tone: 'amber', cat: 'Lease / Property', reason: 'Lease expires within 30 days', impact: 'Site inaccessible for deployment and maintenance activities' }
+    ],
+    'KA': [
+      { id: 'KA-BGLK-277', status: 'Blocked', tone: 'red', cat: 'Fiber Connectivity', reason: 'OFC backhaul cut due to road widening', impact: 'Backhaul unavailable — site cannot carry live traffic' },
+      { id: 'KA-BLR-104', status: 'Delayed', tone: 'amber', cat: 'Supply Chain', reason: 'Equipment delivery delayed by vendor', impact: 'Commissioning delayed pending equipment and vendor readiness' }
+    ],
+    'UP': [
+      { id: 'UP-LKN-031', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Frequent rural grid outages requiring DG install', impact: 'Equipment commissioning cannot begin without stable power' },
+      { id: 'UP-NOI-092', status: 'Delayed', tone: 'amber', cat: 'Commissioning', reason: 'ATP pending site acceptance sign-off', impact: 'Site held at final acceptance — traffic cutover is blocked' }
+    ],
+    'GJ': [
+      { id: 'GJ-AHM-055', status: 'Blocked', tone: 'red', cat: 'Lease / Property', reason: 'Commercial agreement renewal dispute', impact: 'Site inaccessible for deployment and maintenance activities' },
+      { id: 'GJ-SUR-112', status: 'At Risk', tone: 'sky', cat: 'Power', reason: 'Battery backup below threshold', impact: 'Potential service interruption if power grid drops' }
+    ],
+    'TN': [
+      { id: 'TN-CHN-071', status: 'Blocked', tone: 'red', cat: 'Civil / Infrastructure', reason: 'Coastal humidity corrosion proofing pending', impact: 'Equipment installation blocked until civil work clears' },
+      { id: 'TN-CBE-044', status: 'Delayed', tone: 'amber', cat: 'Commissioning', reason: 'ATP visit scheduling hold', impact: 'Site held at final acceptance — traffic cutover is blocked' }
+    ],
+    'MP': [
+      { id: 'MP-INDR-275', status: 'Blocked', tone: 'red', cat: 'Fiber Connectivity', reason: 'Last-mile trenching permission hold', impact: 'Backhaul unavailable — site cannot carry live traffic' },
+      { id: 'MP-BPL-082', status: 'Delayed', tone: 'amber', cat: 'Power', reason: 'Substation connection fee dispute', impact: 'Equipment commissioning cannot begin without stable power' }
+    ],
+    'AP': [
+      { id: 'AP-VJA-118', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'High-tension power line proximity clearance', impact: 'Equipment commissioning cannot begin without stable power' },
+      { id: 'AP-VSK-067', status: 'Delayed', tone: 'amber', cat: 'Supply Chain', reason: 'Antenna mount bracket shortage', impact: 'Commissioning delayed pending equipment and vendor readiness' }
+    ],
+    'OTH': [
+      { id: 'OTH-SIT-019', status: 'Blocked', tone: 'red', cat: 'Lease / Property', reason: 'Property owner lease negotiation hold', impact: 'Site inaccessible for deployment and maintenance activities' },
+      { id: 'OTH-SIT-043', status: 'Delayed', tone: 'amber', cat: 'Regulatory', reason: 'Local cantonment board clearance pending', impact: 'Tower and equipment installation cannot proceed without clearance' }
+    ]
+  };
+
+  const critical = criticalByCircle[c.code] || [
+    { id: `${c.code}-STE-001`, status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Power grid delayed by local utility', impact: 'Equipment commissioning cannot begin without stable power' }
+  ];
+
+  // Inventory breakdown
+  const activeNe = c.total * 9 + 42;
+  const logicalTot = Math.round(c.total * 6.5);
+  const passiveTot = Math.round(c.total * 5.2);
+
+  const inventory = {
+    active: activeNe,
+    logicalTotal: logicalTot,
+    passiveTotal: passiveTot,
+    ne: [
+      ['Routers', Math.round(activeNe * 0.42)],
+      ['Switches', Math.round(activeNe * 0.28)],
+      ['gNodeB', Math.round(activeNe * 0.18)],
+      ['DWDM', Math.round(activeNe * 0.12)]
+    ] as [string, number][],
+    logical: [
+      ['LLDP', Math.round(logicalTot * 0.40)],
+      ['OSPF', Math.round(logicalTot * 0.28)],
+      ['BGP', Math.round(logicalTot * 0.18)],
+      ['L3VPN', Math.round(logicalTot * 0.14)]
+    ] as [string, number][],
+    passive: [
+      ['Fiber routes', Math.round(passiveTot * 0.35)],
+      ['ODF ports', Math.round(passiveTot * 0.28)],
+      ['Racks', Math.round(passiveTot * 0.22)],
+      ['Splice closures', Math.round(passiveTot * 0.15)]
+    ] as [string, number][]
+  };
+
+  return { overview, stages, stTotal, alerts, critical, inventory };
+}
+
+function CoverageCircleDetail({
+  circle,
+  onOpenSite
+}: {
+  circle: CoverageCircle;
+  onOpenSite: (siteId: string) => void;
+}) {
+  const ops = getCircleRolloutDetails(circle);
+  const o = ops.overview;
+
+  const overviewSegs = [
+    { name: 'On-air', count: o.onAir, color: '#10b981' },
+    { name: 'Pending', count: o.pending, color: '#0284c7' },
+    { name: 'Blocked', count: o.blocked, color: '#ef4444' },
+    { name: 'At-risk', count: o.atRisk, color: '#f59e0b' }
+  ];
+
+  return (
+    <div className="cov-detail" style={{ maxHeight: 'none', overflowY: 'visible' }}>
+      {/* 1. Alert Summary */}
+      <div className="cov-sec cov-sec--wide">
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
+            Alert Summary
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--vw-color-gray-500)', marginTop: '2px' }}>
+            across blocked, delayed and at-risk sites in this circle
+          </div>
+        </div>
+        {ops.alerts.length > 0 ? (
+          <div className="cov-alert-grid">
+            {ops.alerts.map((a, idx) => (
+              <div key={idx} className={`cov-alert-card cov-alert-card--${a.sev}`}>
+                <span className={`cov-alert-icon cov-alert-icon--${a.sev}`}>
+                  {ALERT_ICONS[a.cat] || ALERT_ICONS['Power']}
+                </span>
+                <div className="cov-alert-body">
+                  <div className="row vw-justify-between vw-items-baseline">
+                    <span className="cov-alert-label">{ALERT_LABEL[a.cat] || a.cat}</span>
+                    <span className="cov-alert-n num">{a.count}</span>
+                  </div>
+                  <div className="cov-alert-reason" title={a.topReason}>{a.topReason}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="cov-clear">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="m8.5 12.5 2.5 2.5 5-5" />
+            </svg>
+            No active alerts — every site in this circle is clean.
+          </div>
+        )}
+      </div>
+
+      {/* 2. Aggregated Inventory */}
+      <div className="cov-sec cov-sec--wide">
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
+            Aggregated Inventory
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--vw-color-gray-500)', marginTop: '2px' }}>
+            total across every site, PoP and datacenter in this circle · summary only
+          </div>
+        </div>
+        <div className="cov-inv-row">
+          <div className="cov-inv-tile cov-inv-tile--sky">
+            <span className="cov-inv-icon">{INV_ICONS.active}</span>
+            <span className="cov-inv-v num">{ops.inventory.active.toLocaleString()}</span>
+            <span className="cov-inv-l">Active devices</span>
+          </div>
+          <div className="cov-inv-tile cov-inv-tile--purple">
+            <span className="cov-inv-icon">{INV_ICONS.logical}</span>
+            <span className="cov-inv-v num">{ops.inventory.logicalTotal.toLocaleString()}</span>
+            <span className="cov-inv-l">Logical — links &amp; services</span>
+          </div>
+          <div className="cov-inv-tile cov-inv-tile--orange">
+            <span className="cov-inv-icon">{INV_ICONS.passive}</span>
+            <span className="cov-inv-v num">{ops.inventory.passiveTotal.toLocaleString()}</span>
+            <span className="cov-inv-l">Passive infrastructure</span>
+          </div>
+        </div>
+        <div className="cov-chip-row">
+          {ops.inventory.ne.map(([k, v], idx) => (
+            <span key={idx} className="cov-chip">{k} <b className="num">{v.toLocaleString()}</b></span>
+          ))}
+        </div>
+        <div className="cov-chip-row">
+          {ops.inventory.logical.map(([k, v], idx) => (
+            <span key={idx} className="cov-chip">{k} <b className="num">{v.toLocaleString()}</b></span>
+          ))}
+        </div>
+        <div className="cov-chip-row">
+          {ops.inventory.passive.map(([k, v], idx) => (
+            <span key={idx} className="cov-chip">{k} <b className="num">{v.toLocaleString()}</b></span>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Site Overview */}
+      <div className="cov-sec">
+        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vw-color-gray-900)', marginBottom: '8px' }}>
+          Site Overview
+        </div>
+        <div className="row vw-gap-md vw-items-center" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <DonutChart
+            segments={overviewSegs}
+            total={o.total}
+            topLabel={o.total.toLocaleString()}
+            subLabel="sites"
+            size={108}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1, minWidth: '120px' }}>
+            {overviewSegs.map((s, idx) => (
+              <div key={idx} className="row vw-justify-between" style={{ gap: 'var(--vw-space-sm)', fontSize: '12px' }}>
+                <span className="legend-i">
+                  <span className="legend-sw" style={{ background: s.color }} />
+                  {s.name}
+                </span>
+                <span className="vw-value num" style={{ fontWeight: 600, color: '#1e293b' }}>
+                  {s.count.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Deployment Progress */}
+      <div className="cov-sec">
+        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vw-color-gray-900)', marginBottom: '8px' }}>
+          Deployment Progress
+        </div>
+        <div className="meter" style={{ height: '10px', marginTop: 'var(--vw-space-sm)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
+          {ops.stages.map((s, idx) => (
+            <span
+              key={idx}
+              style={{
+                width: `${ops.stTotal > 0 ? (s.c / ops.stTotal * 100).toFixed(2) : 0}%`,
+                background: s.color
+              }}
+              title={`${s.k}: ${s.c}`}
+            />
+          ))}
+        </div>
+        <div className="stack-s" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {ops.stages.map((s, idx) => (
+            <div key={idx} className="row vw-justify-between" style={{ fontSize: '12px' }}>
+              <span className="legend-i">
+                <span className="legend-sw" style={{ background: s.color }} />
+                {s.k}
+              </span>
+              <span className="num vw-value" style={{ fontWeight: 500, color: '#334155' }}>
+                {s.c} <span className="vw-card-metric-label-sub" style={{ fontSize: '11px', color: '#64748b' }}>· {ops.stTotal > 0 ? (s.c / ops.stTotal * 100).toFixed(0) : 0}%</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 5. Critical Sites */}
+      <div className="cov-sec cov-sec--wide">
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
+            Critical Sites
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--vw-color-gray-500)', marginTop: '2px' }}>
+            highest-impact sites needing attention
+          </div>
+        </div>
+        {ops.critical.length > 0 ? (
+          <div className="cov-crit-grid">
+            {ops.critical.map((x, idx) => {
+              const sev = x.tone === 'red' ? 'blocked' : x.tone === 'amber' ? 'delayed' : 'risk';
+              return (
+                <div
+                  key={idx}
+                  className="cov-crit-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={e => {
+                    e.stopPropagation();
+                    onOpenSite(x.id);
+                  }}
+                  aria-label={`Open ${x.id}`}
+                >
+                  <div className="row vw-justify-between vw-items-center">
+                    <span className="row vw-gap-sm vw-items-center" style={{ minWidth: 0, gap: '6px' }}>
+                      <span className={`cov-alert-icon cov-alert-icon--${sev}`} style={{ width: '26px', height: '26px', flexShrink: 0 }}>
+                        {ALERT_ICONS[x.cat] || ALERT_ICONS['Power']}
+                      </span>
+                      <span className="mono vw-value" style={{ fontWeight: 600, color: '#1e293b' }}>{x.id}</span>
+                    </span>
+                    <span className={`vw-chip vw-chip--${x.tone === 'red' ? 'error' : x.tone === 'amber' ? 'warning' : 'info'}`}>
+                      {x.status}
+                    </span>
+                  </div>
+                  <div className="cov-crit-reason">{x.reason}</div>
+                  <div className="cov-crit-impact">{x.impact}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="vw-card-description">No critical sites flagged in this circle.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CoverageTable({
   circles,
   expandedCircle,
@@ -413,6 +924,8 @@ function CoverageTable({
   expandedCircle: string | null;
   onToggleCircle: (code: string) => void;
 }) {
+  const nav = useNavigate();
+
   return (
     <div className="tbl-wrap">
       <table className="nst-table cov-table" style={{ width: '100%', fontSize: '13px' }}>
@@ -431,47 +944,55 @@ function CoverageTable({
           {circles.map(c => {
             const isOpen = expandedCircle === c.code;
             return (
-              <tr
-                key={c.code}
-                className={isOpen ? 'is-open' : ''}
-                onClick={() => onToggleCircle(c.code)}
-                style={{ cursor: 'pointer', borderBottom: '1px solid var(--vw-color-slate-100)' }}
-              >
-                <td style={{ padding: '10px 12px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--vw-color-gray-400)' }}>{isOpen ? '▼' : '▶'}</span>
-                    <span
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: c.failed > 0 ? '#ef4444' : '#10b981',
-                        flexShrink: 0
-                      }}
-                    />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--vw-color-gray-400)' }}>
-                      <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" />
-                      <circle cx="12" cy="10" r="2.5" />
-                    </svg>
-                    <span style={{ fontWeight: 500, color: 'var(--vw-color-gray-900)' }}>{c.name}</span>
-                  </span>
-                </td>
-                <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.dc}</td>
-                <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.pop}</td>
-                <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.sites}</td>
-                <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{c.total}</td>
-                <td style={{ padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '56px', height: '6px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{ width: `${c.onAirPct}%`, height: '100%', background: '#10b981', borderRadius: '999px' }} />
+              <React.Fragment key={c.code}>
+                <tr
+                  className={isOpen ? 'is-open' : ''}
+                  onClick={() => onToggleCircle(c.code)}
+                  style={{ cursor: 'pointer', borderBottom: '1px solid var(--vw-color-slate-100)' }}
+                >
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--vw-color-gray-400)' }}>{isOpen ? '▼' : '▶'}</span>
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: c.failed > 0 ? '#ef4444' : '#10b981',
+                          flexShrink: 0
+                        }}
+                      />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--vw-color-gray-400)' }}>
+                        <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" />
+                        <circle cx="12" cy="10" r="2.5" />
+                      </svg>
+                      <span style={{ fontWeight: 500, color: 'var(--vw-color-gray-900)' }}>{c.name}</span>
+                    </span>
+                  </td>
+                  <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.dc}</td>
+                  <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.pop}</td>
+                  <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right' }}>{c.sites}</td>
+                  <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600 }}>{c.total}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '56px', height: '6px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ width: `${c.onAirPct}%`, height: '100%', background: '#10b981', borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--vw-color-gray-700)' }}>{c.onAirPct}%</span>
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--vw-color-gray-700)' }}>{c.onAirPct}%</span>
-                  </div>
-                </td>
-                <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right', color: c.failed > 0 ? '#ef4444' : 'var(--vw-color-gray-400)', fontWeight: c.failed > 0 ? 600 : 400 }}>
-                  {c.failed}
-                </td>
-              </tr>
+                  </td>
+                  <td className="t-right num" style={{ padding: '10px 8px', textAlign: 'right', color: c.failed > 0 ? '#ef4444' : 'var(--vw-color-gray-400)', fontWeight: c.failed > 0 ? 600 : 400 }}>
+                    {c.failed}
+                  </td>
+                </tr>
+                {isOpen && (
+                  <tr className="cov-detail-row" id={`cov-detail-${c.code}`}>
+                    <td colSpan={7}>
+                      <CoverageCircleDetail circle={c} onOpenSite={(siteId) => nav(`/inventory/location/site/${siteId}`)} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             );
           })}
         </tbody>

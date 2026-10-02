@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS } from '../routes';
-import { getCityById } from '../data/geographicHierarchy';
+import { getCityById, findCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 
@@ -192,9 +192,6 @@ export default function Topbar() {
         segs[segs.length - 1] = { label, to };
       }
     }
-    if (drill && !segs.some(g => g.label === leaf)) {
-      segs.unshift({ label: leaf, to: targetFor(s.crumb) || s.path });
-    }
   } else {
     const chain = ownParts.slice(0, -1);
     segs = chain.map((label, i) => {
@@ -222,6 +219,7 @@ export default function Topbar() {
   /* When on detail/transcript, display just "Transcript" without duplicating the device
      name already prominent in the page header. */
   let finalLeafLabel = drill || leaf;
+
   if (s.key === 'citydetails' && params.cityId) {
     const cityName = getCityById(params.cityId)?.city.name || 'City';
     const facilityType = sp.get('facility') || 'dc';
@@ -239,6 +237,119 @@ export default function Topbar() {
       finalLeafLabel = cityName;
     }
   }
+
+  if (s.key === 'site' && params.id) {
+    const siteId = params.id;
+    const cityMatch = findCityByFacilityCode(siteId);
+    if (drill && drill !== siteId) {
+      if (cityMatch) {
+        segs = [
+          { label: 'Location', to: '/inventory/location' },
+          {
+            label: cityMatch.city.name,
+            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+          },
+          {
+            label: siteId,
+            to: `/inventory/location/site/${siteId}`
+          }
+        ];
+      } else {
+        segs = [
+          { label: 'Location', to: '/inventory/location' },
+          { label: siteId, to: `/inventory/location/site/${siteId}` }
+        ];
+      }
+      finalLeafLabel = drill;
+    } else {
+      if (cityMatch) {
+        segs = [
+          { label: 'Location', to: '/inventory/location' },
+          {
+            label: cityMatch.city.name,
+            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+          }
+        ];
+      } else {
+        segs = [{ label: 'Location', to: '/inventory/location' }];
+      }
+      finalLeafLabel = siteId;
+    }
+  }
+
+  if ((s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment') && params.id) {
+    const siteId = params.id;
+    const cityMatch = findCityByFacilityCode(siteId);
+    const subLabel = s.key === 'capex' ? 'Capex'
+      : s.key === 'opex' ? 'Opex'
+      : s.key === 'sitedetails' ? 'Facility'
+      : 'Site equipment';
+
+    if (cityMatch) {
+      segs = [
+        { label: 'Location', to: '/inventory/location' },
+        {
+          label: cityMatch.city.name,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+        },
+        {
+          label: siteId,
+          to: `/inventory/location/site/${siteId}`
+        }
+      ];
+    } else {
+      segs = [
+        { label: 'Location', to: '/inventory/location' },
+        {
+          label: siteId,
+          to: `/inventory/location/site/${siteId}`
+        }
+      ];
+    }
+    finalLeafLabel = drill || subLabel;
+  }
+
+  const isFromLocation = !from || from.toLowerCase().startsWith('location') || sp.has('cityId') || sp.has('facility');
+  if ((s.key === 'node' || (s.key === 'resource' && isFromLocation)) && isFromLocation) {
+    const rawSite = sp.get('site') || sp.get('facilityId') || sp.get('id')
+      || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.id
+      || (window as any).__nsLegacy?.resolveSite?.(params.name)?.id;
+
+    const directCityId = sp.get('cityId');
+    const cityMatch = findCityById(directCityId) || findCityByFacilityCode(rawSite || params.name);
+    const facilityType = (sp.get('facility') as 'dc' | 'pop' | 'site') || cityMatch?.facilityType || 'dc';
+    const siteCode = rawSite || (cityMatch ? `${cityMatch.city.name.slice(0, 3).toUpperCase()}-${facilityType.toUpperCase()}-01` : null);
+    const deviceDisplayName = drill || params.name || 'Node view';
+
+    if (cityMatch && siteCode) {
+      segs = [
+        { label: 'Location', to: '/inventory/location' },
+        {
+          label: cityMatch.city.name,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}`
+        },
+        {
+          label: siteCode,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}&facilityId=${encodeURIComponent(siteCode)}`
+        }
+      ];
+      finalLeafLabel = deviceDisplayName;
+    } else if (siteCode) {
+      const tab = sp.get('tab') || sp.get('cls');
+      const siteTo = `/inventory/location/site/${encodeURIComponent(siteCode)}${tab ? `?tab=${encodeURIComponent(tab)}` : ''}`;
+      segs = [
+        { label: 'Location', to: '/inventory/location' },
+        { label: siteCode, to: siteTo }
+      ];
+      finalLeafLabel = deviceDisplayName;
+    } else {
+      segs = [
+        { label: 'Location', to: '/inventory/location' }
+      ];
+      finalLeafLabel = deviceDisplayName;
+    }
+  }
+
   if (s.key === 'target' || (drill && /^Transcript(\s*·\s*.*)?$/i.test(drill))) {
     finalLeafLabel = 'Transcript';
   }

@@ -839,6 +839,63 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
   }
 ];
 
+// Helper to look up a city item without default fallback
+export function findCityById(cityId?: string | null): { city: CityItem; state: StateItem; region: RegionItem; facilityType?: 'dc' | 'pop' | 'site' } | null {
+  if (!cityId) return null;
+  for (const reg of GEOGRAPHIC_HIERARCHY) {
+    for (const st of reg.states) {
+      const city = st.cities.find(c => c.id === cityId);
+      if (city) {
+        return { city, state: st, region: reg };
+      }
+    }
+  }
+  return null;
+}
+
+// Helper to look up city and facility type from facility code or device name
+export function findCityByFacilityCode(code?: string | null): {
+  city: CityItem;
+  state: StateItem;
+  region: RegionItem;
+  facilityType: 'dc' | 'pop' | 'site';
+} | null {
+  if (!code) return null;
+  const upper = code.trim().toUpperCase();
+  const parts = upper.split('-');
+  const pfx = parts[0]; // e.g. 'CEN', 'MUM', 'DEL'
+  const mid = parts[1]; // e.g. 'DC', 'POP', 'STE'
+
+  let facilityType: 'dc' | 'pop' | 'site' = 'site';
+  if (mid === 'DC') facilityType = 'dc';
+  else if (mid === 'POP') facilityType = 'pop';
+  else if (mid === 'STE') facilityType = 'site';
+
+  // 1. Check 3-letter prefix matching city name prefix (e.g. CEN -> Central Delhi, MUM -> Mumbai)
+  for (const reg of GEOGRAPHIC_HIERARCHY) {
+    for (const st of reg.states) {
+      for (const ct of st.cities) {
+        if (ct.name.slice(0, 3).toUpperCase() === pfx) {
+          return { city: ct, state: st, region: reg, facilityType };
+        }
+      }
+    }
+  }
+
+  // 2. Check if pfx matches city ID or city name prefix
+  for (const reg of GEOGRAPHIC_HIERARCHY) {
+    for (const st of reg.states) {
+      for (const ct of st.cities) {
+        if (ct.id.toUpperCase().startsWith(pfx) || ct.name.toUpperCase().startsWith(pfx)) {
+          return { city: ct, state: st, region: reg, facilityType };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 // Helper to look up a city item
 export function getCityById(cityId: string): { city: CityItem; state: StateItem; region: RegionItem } | null {
   for (const reg of GEOGRAPHIC_HIERARCHY) {
@@ -1311,6 +1368,14 @@ const DC_SWITCH_TEMPLATES: DeviceTemplate[] = [
   { nameSuffix: 'TOR02-N93240', model: 'Nexus 93240', vendor: 'CISCO', osVersion: '10.2(4)', serialPrefix: 'FOC2402', portsUsed: 43, portsTotal: 48, locSuffix: 'RK-D02-U42', systemDescription: 'Cisco Nexus 93240YC-FX2 Top-of-Rack Switch', status: 'Verified' },
   { nameSuffix: 'TOR03-CE6800', model: 'CloudEngine 6800', vendor: 'HUAWEI', osVersion: 'V200R020', serialPrefix: 'HW6801', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-D03-U42', systemDescription: 'Huawei CloudEngine 6857 Data Center Switch', status: 'Verified' },
   { nameSuffix: 'TOR04-CE6800', model: 'CloudEngine 6800', vendor: 'HUAWEI', osVersion: 'V200R020', serialPrefix: 'HW6802', portsUsed: 39, portsTotal: 48, locSuffix: 'RK-D04-U42', systemDescription: 'Huawei CloudEngine 6857 Data Center Switch', status: 'Drifted' },
+  { nameSuffix: 'TOR05-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2405', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-D05-U42', systemDescription: 'Cisco Nexus 93180 Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'TOR06-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2406', portsUsed: 40, portsTotal: 48, locSuffix: 'RK-D06-U42', systemDescription: 'Cisco Nexus 93180 Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'TOR07-QFX5120', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R3', serialPrefix: 'JN5127', portsUsed: 45, portsTotal: 48, locSuffix: 'RK-D07-U42', systemDescription: 'Juniper QFX5120-48Y Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'TOR08-QFX5120', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R3', serialPrefix: 'JN5128', portsUsed: 44, portsTotal: 48, locSuffix: 'RK-D08-U42', systemDescription: 'Juniper QFX5120-48Y Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'AGG-SW01-N9508', model: 'Nexus 9508', vendor: 'CISCO', osVersion: '10.2(3)', serialPrefix: 'FOC9501', portsUsed: 88, portsTotal: 96, locSuffix: 'RK-AGG01-U20', systemDescription: 'Cisco Nexus 9508 High-Density Aggregation Chassis', status: 'Verified' },
+  { nameSuffix: 'AGG-SW02-N9508', model: 'Nexus 9508', vendor: 'CISCO', osVersion: '10.2(3)', serialPrefix: 'FOC9502', portsUsed: 82, portsTotal: 96, locSuffix: 'RK-AGG02-U20', systemDescription: 'Cisco Nexus 9508 High-Density Aggregation Chassis', status: 'Verified' },
+  { nameSuffix: 'SAN-SW01-MDS', model: 'MDS 9710', vendor: 'CISCO', osVersion: '8.4(2)', serialPrefix: 'FOC9711', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-SAN01-U30', systemDescription: 'Cisco MDS 9710 Multilayer Fibre Channel SAN Director', status: 'Verified' },
+  { nameSuffix: 'SAN-SW02-MDS', model: 'MDS 9710', vendor: 'CISCO', osVersion: '8.4(2)', serialPrefix: 'FOC9712', portsUsed: 38, portsTotal: 48, locSuffix: 'RK-SAN02-U30', systemDescription: 'Cisco MDS 9710 Multilayer Fibre Channel SAN Director', status: 'Verified' },
   { nameSuffix: 'MGMT-SW01', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC2301', portsUsed: 44, portsTotal: 48, locSuffix: 'RK-M01-U42', systemDescription: 'Cisco Catalyst 9300 Out-of-Band Management Switch', status: 'Verified' },
   { nameSuffix: 'MGMT-SW02', model: 'EX3400', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JN3401', portsUsed: 41, portsTotal: 48, locSuffix: 'RK-M02-U42', systemDescription: 'Juniper EX3400 Out-of-Band Management Switch', status: 'Stale' }
 ];
@@ -1387,6 +1452,11 @@ const SITE_GNODEB_TEMPLATES: DeviceTemplate[] = [
   { nameSuffix: '5G-RRU03-n28', model: '5G Radio Unit n28', vendor: 'CISCO', osVersion: '22.3', serialPrefix: 'CSRU28', portsUsed: 4, portsTotal: 4, locSuffix: 'TOW-RRU-C1', systemDescription: 'Cisco 700MHz n28 Low-Band Radio Unit', status: 'Verified' },
   { nameSuffix: '5G-MMO-01', model: 'Massive MIMO Controller', vendor: 'CISCO', osVersion: '22.4', serialPrefix: 'CSMMO1', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R01', systemDescription: 'Cisco 5G NR Beamforming Coordinator', status: 'Verified' },
   { nameSuffix: '5G-MMO-02', model: 'Massive MIMO Controller', vendor: 'CISCO', osVersion: '22.4', serialPrefix: 'CSMMO2', portsUsed: 5, portsTotal: 8, locSuffix: 'SHELTER-R01', systemDescription: 'Cisco 5G NR Beamforming Coordinator', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-D1', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU5', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-D-TOP', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector D', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-D2', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU6', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-D-MID', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector D', status: 'Verified' },
+  { nameSuffix: '5G-RRU04-n77', model: '5G Radio Unit n77', vendor: 'NOKIA', osVersion: 'SBTS22', serialPrefix: 'NKRU771', portsUsed: 4, portsTotal: 4, locSuffix: 'TOW-RRU-D1', systemDescription: 'Nokia 3.7GHz n77 Remote Radio Unit', status: 'Verified' },
+  { nameSuffix: '5G-RRU05-n258', model: 'mmWave n258 Radio', vendor: 'HUAWEI', osVersion: 'V100', serialPrefix: 'HWRU258', portsUsed: 2, portsTotal: 4, locSuffix: 'TOW-SEC-B-MMW', systemDescription: 'Huawei 26GHz mmWave Micro-Radio', status: 'Verified' },
+  { nameSuffix: '5G-BBU05-AirScale', model: 'AirScale 5G BBU', vendor: 'NOKIA', osVersion: 'SBTS22R3', serialPrefix: 'NK5GBBU3', portsUsed: 6, portsTotal: 8, locSuffix: 'TOW-BBU-R03', systemDescription: 'Nokia AirScale 5G Expansion Baseband', status: 'Verified' },
   { nameSuffix: '5G-FR2-MMW', model: 'mmWave Radio', vendor: 'NOKIA', osVersion: '22.1', serialPrefix: 'NKMMW1', portsUsed: 2, portsTotal: 4, locSuffix: 'TOW-SEC-A-MMW', systemDescription: 'Nokia 28GHz mmWave Micro-Radio', status: 'Stale' }
 ];
 
