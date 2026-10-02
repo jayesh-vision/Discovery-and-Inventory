@@ -53,7 +53,7 @@ function resOverview() {
     { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', ok: true },
     { f: 'Circle · site', v: `${provLoc ? provLoc.state : PROV[8].v.split(' · ')[0]} · ${provR.loc}`, src: 'Manual', ok: true },
     { f: 'Stock state',   v: PROV[9].v,   src: 'Workorder WO-2291',    ok: true },
-    { f: 'Warranty ends', v: '31-Mar-2028', src: 'SAP ERP · Contract 88410', ok: true }
+    { f: 'Warranty ends', v: `31-Mar-${new Date().getFullYear() + 2}`, src: 'SAP ERP · Contract 88410', ok: true }
   ];
   return `
   <div class="row-t" style="align-items:stretch">
@@ -70,11 +70,14 @@ function resOverview() {
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
-          ${[['End of sale','30-Jun-2028','2 y away','info'],['End of support','31-Dec-2031','5 y away','neutral'],
-             ['Warranty / AMC','31-Mar-2028','Active','success'],['Purchased','12-Mar-2024','PO-2024-1188','neutral']]
-            .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
-              <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
-              ${chip(s, t==='red'?'error':t==='amber'?'warning':t==='success'?'success':t==='info'?'info':'neutral')}</div>`).join('')}
+          ${(() => {
+            const curY = new Date().getFullYear();
+            return [['End of sale',`30-Jun-${curY + 2}`,'2 y away','info'],['End of support',`31-Dec-${curY + 5}`,'5 y away','neutral'],
+              ['Warranty / AMC',`31-Mar-${curY + 2}`,'Active','success'],['Purchased',`12-Mar-${curY - 2}`,`PO-${curY - 2}-1188`,'neutral']]
+              .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
+                <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
+                ${chip(s, t==='red'?'error':t==='amber'?'warning':t==='success'?'success':t==='info'?'info':'neutral')}</div>`).join('');
+          })()}
         </div>`)}
       ${card(`${headSm('Impact if this element fails')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
@@ -420,7 +423,7 @@ function viewEnodebResource(N) {
         'chip-auto', () => []))
     : tab === 'config'
     ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
-        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), '12-May-2026', '12-May-2026']),
+        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`, `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`]),
         'chip-auto', () => []))
     : card(table([{ t: 'Status', plain:true }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
         E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),

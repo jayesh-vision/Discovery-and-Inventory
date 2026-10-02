@@ -36,6 +36,25 @@ const shortStamp = minsAgo => {
   const d = at(minsAgo)
   return `${pad2(d.getUTCDate())}-${MONTHS[d.getUTCMonth()]}-${d.getUTCFullYear()} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
 }
+
+export const formatDynamicRaisedDate = createdStr => {
+  const now = new Date()
+  const day = pad2(now.getDate())
+  const month = MONTHS[now.getMonth()]
+  const year = now.getFullYear()
+  const todayStr = `${day}-${month}-${year}`
+
+  if (!createdStr) {
+    return `${todayStr} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`
+  }
+
+  const parts = String(createdStr).trim().split(/\s+/)
+  if (parts.length >= 2) {
+    const timePart = parts[1].slice(0, 5)
+    return `${todayStr} ${timePart}`
+  }
+  return `${todayStr} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`
+}
 /* The same instant, offset by a number of seconds — an event feed whose rows
    all land on :00 reads as generated, because it is. */
 const stampSec = (minsAgo, secsBack = 0) => {
@@ -3155,7 +3174,7 @@ export function nodeDetailFor(name, external = null) {
       desc: worstRow.desc,
       component: worstRow.equipType,
       type: worstRow.cls,
-      created: worstRow.start,
+      created: formatDynamicRaisedDate(worstRow.start),
       owner: record ? `${record.domain} NOC` : `${ne.domain} NOC`,
       onNode: rows.length,
       total: record ? record.alerts : rows.length,

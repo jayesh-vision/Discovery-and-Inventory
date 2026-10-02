@@ -78,17 +78,25 @@ const RES_SERVICES = [
   { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORE-MUM-GW-40G',   bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Core Backbone' }
 ];
 
+const _dynAlarmDate = (hoursAgo, timeStr) => {
+  const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
+  const pad2 = n => String(n).padStart(2, '0');
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const t = timeStr || `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()} ${t}`;
+};
+
 const RES_ALARMS = [
-  { sev:'Critical', chip:'error',   n:'Power supply failure',       src:'PEM 1',      raised:'29-Aug-2026 04:12', age:'3 d',  ack:'Unacked' },
-  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/2',   raised:'31-Aug-2026 18:40', age:'2 d',  ack:'Acked' },
-  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/5',   raised:'01-Sep-2026 03:22', age:'6 h',  ack:'Unacked' },
-  { sev:'Minor',    chip:'info',    n:'Optical Rx below threshold', src:'xe-0/0/4',   raised:'24-Aug-2026 09:05', age:'8 d',  ack:'Acked' },
-  { sev:'Minor',    chip:'info',    n:'Config changed outside CR',  src:'commit log', raised:'19-Aug-2026 22:14', age:'13 d', ack:'Acked' }
+  { sev:'Critical', chip:'error',   n:'Power supply failure',       src:'PEM 1',      raised:_dynAlarmDate(3, '04:12'), age:'3 h',  ack:'Unacked' },
+  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/2',   raised:_dynAlarmDate(2, '18:40'), age:'2 h',  ack:'Acked' },
+  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/5',   raised:_dynAlarmDate(6, '03:22'), age:'6 h',  ack:'Unacked' },
+  { sev:'Minor',    chip:'info',    n:'Optical Rx below threshold', src:'xe-0/0/4',   raised:_dynAlarmDate(8, '09:05'), age:'8 h',  ack:'Acked' },
+  { sev:'Minor',    chip:'info',    n:'Config changed outside CR',  src:'commit log', raised:_dynAlarmDate(1, '22:14'), age:'1 h',  ack:'Acked' }
 ];
 
 const RES_CONFIG = {
   running:'21.2R3-S8.5', golden:'21.4R3-S5.5', compliant:false, behindBy:'2 releases',
-  lastBackup:'01-Sep-2026 09:20', backupSize:'412 KB', drift:[
+  lastBackup:_dynAlarmDate(2, '09:20'), backupSize:'412 KB', drift:[
     { p:'system/ntp/server',        want:'10.44.0.11, 10.44.0.12', got:'10.44.0.11',            sev:'Major' },
     { p:'snmp/v3/user',             want:'ro-inband-v3',           got:'ro-inband-v3, legacy-ro', sev:'Major' },
     { p:'system/syslog/host',       want:'10.44.2.30',             got:'—',                     sev:'Minor' },

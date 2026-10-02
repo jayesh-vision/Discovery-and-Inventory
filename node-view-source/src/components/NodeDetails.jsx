@@ -29,6 +29,24 @@ function clockOf(ts) {
   const pad = n => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
+
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function formatDynamicRaisedDate(createdStr) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const todayStr = `${pad(now.getDate())}-${MONTHS_SHORT[now.getMonth()]}-${now.getFullYear()}`;
+
+  if (!createdStr) {
+    return `${todayStr} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+
+  const parts = String(createdStr).trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const timePart = parts[1].slice(0, 5);
+    return `${todayStr} ${timePart}`;
+  }
+  return `${todayStr} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
 const statusPill = { Open: 'red', Reopen: 'amber', Closed: 'green', Acknowledged: 'blue', Resolved: 'green' }
 const entityPill = { Down: 'red', Watch: 'amber', Monitor: 'blue', Healthy: 'green', Normal: 'green' }
 const SEV_TONE = { Critical: 'var(--red)', Major: 'var(--amber)', Minor: 'var(--blue)', Warning: 'var(--purple)', Info: 'var(--slate)' }
@@ -551,7 +569,7 @@ export default function NodeDetails({ node, external = null, onClose, isDirectPa
                                 <td className="mono">{i.id}</td>
                                 <td><span className={'sev ' + (sevClass[i.sev] || 'warning')}>{i.sev}</span></td>
                                 <td><span className={'pill ' + (statusPill[i.status] || 'slate')}>{i.status}</span></td>
-                                <td>{i.title}</td><td>{i.onNode} of {i.total}</td><td>{i.owner}</td><td>{i.created}</td>
+                                <td>{i.title}</td><td>{i.onNode} of {i.total}</td><td>{i.owner}</td><td>{formatDynamicRaisedDate(i.created)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -608,7 +626,7 @@ export default function NodeDetails({ node, external = null, onClose, isDirectPa
                                 </span>
                                 <span className="nf-row__r">
                                   {live ? <span className={'sev ' + (sevClass[a.sev] || 'warning')}>{a.sev}</span> : <span className="pill slate">Cleared</span>}
-                                  <span className="mono">{live ? a.aging : a.close}</span>
+                                  <span className="mono">{live ? a.aging : formatDynamicRaisedDate(a.close)}</span>
                                 </span>
                               </button>
                             </li>
@@ -631,7 +649,7 @@ export default function NodeDetails({ node, external = null, onClose, isDirectPa
                         {focus.desc && <p>{focus.desc}</p>}
                         <dl className="nk-insp__rows">
                           <div><dt>Impact</dt><dd>{focus.cls}{focus.service === 'Yes' ? ' · service affecting' : ''}</dd></div>
-                          <div><dt>Raised</dt><dd>{focus.start}</dd></div>
+                          <div><dt>Raised</dt><dd>{formatDynamicRaisedDate(focus.start)}</dd></div>
                           <div><dt>{focus.status === 'Closed' ? 'Cleared' : 'Open for'}</dt><dd>{focus.status === 'Closed' ? focus.close : focus.aging}</dd></div>
                           <div><dt>Occurrences</dt><dd>{focus.occ}</dd></div>
                           <div><dt>Incident</dt><dd className="mono">{focus.incident && focus.incident !== '-' ? focus.incident : '—'}</dd></div>

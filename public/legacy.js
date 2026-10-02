@@ -4733,17 +4733,25 @@ const RES_SERVICES = [
   { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORE-MUM-GW-40G',   bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Core Backbone' }
 ];
 
+const _dynAlarmDate = (hoursAgo, timeStr) => {
+  const d = new Date(Date.now() - hoursAgo * 3600 * 1000);
+  const pad2 = n => String(n).padStart(2, '0');
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const t = timeStr || `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()} ${t}`;
+};
+
 const RES_ALARMS = [
-  { sev:'Critical', chip:'error',   n:'Power supply failure',       src:'PEM 1',      raised:'29-Aug-2026 04:12', age:'3 d',  ack:'Unacked' },
-  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/2',   raised:'31-Aug-2026 18:40', age:'2 d',  ack:'Acked' },
-  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/5',   raised:'01-Sep-2026 03:22', age:'6 h',  ack:'Unacked' },
-  { sev:'Minor',    chip:'info',    n:'Optical Rx below threshold', src:'xe-0/0/4',   raised:'24-Aug-2026 09:05', age:'8 d',  ack:'Acked' },
-  { sev:'Minor',    chip:'info',    n:'Config changed outside CR',  src:'commit log', raised:'19-Aug-2026 22:14', age:'13 d', ack:'Acked' }
+  { sev:'Critical', chip:'error',   n:'Power supply failure',       src:'PEM 1',      raised:_dynAlarmDate(3, '04:12'), age:'3 h',  ack:'Unacked' },
+  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/2',   raised:_dynAlarmDate(2, '18:40'), age:'2 h',  ack:'Acked' },
+  { sev:'Major',    chip:'warning', n:'Interface down',             src:'xe-0/0/5',   raised:_dynAlarmDate(6, '03:22'), age:'6 h',  ack:'Unacked' },
+  { sev:'Minor',    chip:'info',    n:'Optical Rx below threshold', src:'xe-0/0/4',   raised:_dynAlarmDate(8, '09:05'), age:'8 h',  ack:'Acked' },
+  { sev:'Minor',    chip:'info',    n:'Config changed outside CR',  src:'commit log', raised:_dynAlarmDate(1, '22:14'), age:'1 h',  ack:'Acked' }
 ];
 
 const RES_CONFIG = {
   running:'21.2R3-S8.5', golden:'21.4R3-S5.5', compliant:false, behindBy:'2 releases',
-  lastBackup:'01-Sep-2026 09:20', backupSize:'412 KB', drift:[
+  lastBackup:_dynAlarmDate(2, '09:20'), backupSize:'412 KB', drift:[
     { p:'system/ntp/server',        want:'10.44.0.11, 10.44.0.12', got:'10.44.0.11',            sev:'Major' },
     { p:'snmp/v3/user',             want:'ro-inband-v3',           got:'ro-inband-v3, legacy-ro', sev:'Major' },
     { p:'system/syslog/host',       want:'10.44.2.30',             got:'—',                     sev:'Minor' },
@@ -8881,7 +8889,7 @@ function resOverview() {
     { f: 'Services',      v: '14 L3VPN instances', src: 'Service collector', ok: true },
     { f: 'Circle · site', v: `${provLoc ? provLoc.state : PROV[8].v.split(' · ')[0]} · ${provR.loc}`, src: 'Manual', ok: true },
     { f: 'Stock state',   v: PROV[9].v,   src: 'Workorder WO-2291',    ok: true },
-    { f: 'Warranty ends', v: '31-Mar-2028', src: 'SAP ERP · Contract 88410', ok: true }
+    { f: 'Warranty ends', v: `31-Mar-${new Date().getFullYear() + 2}`, src: 'SAP ERP · Contract 88410', ok: true }
   ];
   return `
   <div class="row-t" style="align-items:stretch">
@@ -8898,11 +8906,14 @@ function resOverview() {
     <div class="stack" style="width:min(400px,100%);flex-shrink:0">
       ${card(`${headSm('Support position')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
-          ${[['End of sale','30-Jun-2028','2 y away','info'],['End of support','31-Dec-2031','5 y away','neutral'],
-             ['Warranty / AMC','31-Mar-2028','Active','success'],['Purchased','12-Mar-2024','PO-2024-1188','neutral']]
-            .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
-              <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
-              ${chip(s, t==='red'?'error':t==='amber'?'warning':t==='success'?'success':t==='info'?'info':'neutral')}</div>`).join('')}
+          ${(() => {
+            const curY = new Date().getFullYear();
+            return [['End of sale',`30-Jun-${curY + 2}`,'2 y away','info'],['End of support',`31-Dec-${curY + 5}`,'5 y away','neutral'],
+              ['Warranty / AMC',`31-Mar-${curY + 2}`,'Active','success'],['Purchased',`12-Mar-${curY - 2}`,`PO-${curY - 2}-1188`,'neutral']]
+              .map(([k,v,s,t])=>`<div class="cx-row" style="grid-template-columns:8rem 1fr auto">
+                <span class="vw-label">${k}</span><span class="vw-value mono">${v}</span>
+                ${chip(s, t==='red'?'error':t==='amber'?'warning':t==='success'?'success':t==='info'?'info':'neutral')}</div>`).join('');
+          })()}
         </div>`)}
       ${card(`${headSm('Impact if this element fails')}
         <div class="stack-s" style="margin-top:var(--vw-space-md)">
@@ -9248,7 +9259,7 @@ function viewEnodebResource(N) {
         'chip-auto', () => []))
     : tab === 'config'
     ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
-        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), '12-May-2026', '12-May-2026']),
+        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`, `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`]),
         'chip-auto', () => []))
     : card(table([{ t: 'Status', plain:true }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
         E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
