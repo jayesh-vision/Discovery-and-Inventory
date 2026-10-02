@@ -21,7 +21,7 @@ interface CoverageCircle {
 
 const COVERAGE_CIRCLES: CoverageCircle[] = [
   { code: 'MH', name: 'Maharashtra', dc: 28, pop: 86, sites: 220, total: 334, onAirPct: 70, failed: 6, severity: 'blocked' },
-  { code: 'OTH', name: 'Other circles', dc: 33, pop: 82, sites: 216, total: 331, onAirPct: 67, failed: 4, severity: 'blocked' },
+  { code: 'OTH', name: 'Other circles', dc: 33, pop: 82, sites: 216, total: 331, onAirPct: 86, failed: 4, severity: 'blocked' },
   { code: 'KA', name: 'Karnataka', dc: 26, pop: 75, sites: 198, total: 299, onAirPct: 76, failed: 4, severity: 'blocked' },
   { code: 'UP', name: 'Uttar Pradesh', dc: 25, pop: 72, sites: 196, total: 293, onAirPct: 71, failed: 8, severity: 'blocked' },
   { code: 'DL', name: 'Delhi', dc: 22, pop: 65, sites: 174, total: 261, onAirPct: 79, failed: 3, severity: 'blocked' },

@@ -295,7 +295,7 @@ export default function InventoryInsights() {
             <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500 }}>Total inventory records</span>
             <div className="ii-metric-huge">1.61M</div>
             <div style={{ fontSize: 12, color: '#94A3B8' }}>
-              <span style={{ color: '#4ADE80', fontWeight: 600 }}>+3.8%</span> vs last month · 4,218 sites · 65,680 managed elements
+              <span style={{ color: '#4ADE80', fontWeight: 600 }}>+3.8%</span> vs last month · 2,400 locations · 65,680 managed elements
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid #334155', paddingTop: 8, marginTop: 2 }}>
               <span style={{ color: '#94A3B8' }}>Overall inventory health</span>
@@ -956,7 +956,7 @@ export default function InventoryInsights() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="ii-card-title">Sites needing attention</div>
               <button type="button" onClick={() => navigate('/inventory/location')} className="ii-link-btn">
-                All 4,218 sites
+                All 2,400 locations
               </button>
             </div>
             <div className="ii-table-wrap">

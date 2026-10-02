@@ -439,5 +439,5 @@ export const BOTTOM_NAVIGATE_DATA = [
   { count: '69,730', name: 'Passive assets', where: 'Resources › Passive', color: PAS, route: '/inventory/passive' },
   { count: '2,860', name: 'Virtual functions', where: 'Resources › Virtual', color: VIR, route: '/inventory/virtual' },
   { count: '57,010', name: 'Logical objects', where: 'Connectivity · Services', color: LOG, route: '/inventory/links' },
-  { count: '4,218', name: 'Locations and sites', where: 'Location', color: '#64748B', route: '/inventory/location' }
+  { count: '2,400', name: 'Locations and sites', where: 'Location', color: '#64748B', route: '/inventory/location' }
 ];

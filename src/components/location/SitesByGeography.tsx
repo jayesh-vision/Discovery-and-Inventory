@@ -30,26 +30,26 @@ export interface CircleGeo {
 }
 
 export const LOC_GEO: CircleGeo[] = [
-  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 248, live: 174, build: 37, fail: 4 },
-  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 221, live: 158, build: 31, fail: 4 },
-  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 211, live: 161, build: 25, fail: 2 },
-  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 194, live: 118, build: 35, fail: 8 },
-  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 176, live: 139, build: 19, fail: 2 },
-  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 154, live: 112, build: 18, fail: 1 },
-  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 152, live: 104, build: 20, fail: 2 },
-  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 143, live: 96, build: 18, fail: 6 },
-  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 46, live: 30, build: 6, fail: 1 },
-  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 38, live: 26, build: 4, fail: 0 },
-  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 33, live: 22, build: 6, fail: 3 },
-  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 27, live: 18, build: 3, fail: 0 },
-  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 24, live: 17, build: 3, fail: 0 },
-  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 20, live: 14, build: 2, fail: 0 },
-  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 18, live: 12, build: 2, fail: 0 },
-  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 14, live: 9, build: 2, fail: 1 },
-  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 12, live: 8, build: 1, fail: 0 },
-  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 9, live: 5, build: 2, fail: 0 },
-  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 8, live: 5, build: 1, fail: 0 },
-  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 6, live: 4, build: 1, fail: 0 }
+  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 51, fail: 6 },
+  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 293, live: 208, build: 41, fail: 8 },
+  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 36, fail: 4 },
+  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 221, live: 135, build: 40, fail: 5 },
+  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 261, live: 206, build: 28, fail: 3 },
+  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 221, live: 161, build: 26, fail: 4 },
+  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 242, live: 165, build: 32, fail: 1 },
+  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 25, fail: 1 },
+  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 60, live: 52, build: 5, fail: 1 },
+  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 49, live: 42, build: 4, fail: 1 },
+  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 43, live: 37, build: 4, fail: 1 },
+  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 35, live: 30, build: 4, fail: 0 },
+  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 31, live: 27, build: 3, fail: 0 },
+  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 26, live: 23, build: 2, fail: 1 },
+  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 23, live: 20, build: 2, fail: 0 },
+  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 18, live: 16, build: 2, fail: 0 },
+  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 16, live: 14, build: 2, fail: 0 },
+  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 12, live: 10, build: 2, fail: 0 },
+  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 10, live: 8, build: 1, fail: 0 },
+  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 8, live: 7, build: 1, fail: 0 }
 ];
 
 const STATE_CIRCLE: Record<string, CircleGeo> = Object.fromEntries(LOC_GEO.map(g => [g.st, g]));
@@ -201,11 +201,11 @@ export default function SitesByGeography() {
   }, [mapLayer, zoom.k]);
 
   // Overall totals
-  const totalSites = LOC_GEO.reduce((a, x) => a + x.tot, 0); // 1,754
-  const liveSites = LOC_GEO.reduce((a, x) => a + x.live, 0); // 1,232
-  const buildSites = LOC_GEO.reduce((a, x) => a + x.build, 0); // 236
-  const failSites = LOC_GEO.reduce((a, x) => a + x.fail, 0); // 34
-  const planSites = totalSites - liveSites - buildSites - failSites; // 252
+  const totalSites = LOC_GEO.reduce((a, x) => a + x.tot, 0); // 2,400
+  const liveSites = LOC_GEO.reduce((a, x) => a + x.live, 0); // 1,755
+  const buildSites = LOC_GEO.reduce((a, x) => a + x.build, 0); // 311
+  const failSites = LOC_GEO.reduce((a, x) => a + x.fail, 0); // 36
+  const planSites = totalSites - liveSites - buildSites - failSites; // 298
 
   const activeGeo = selectedCircle ? LOC_GEO.find(x => x.c === selectedCircle) : null;
   const activeSites = useMemo(() => {

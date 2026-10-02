@@ -1186,14 +1186,14 @@ const RSTATE = {
 const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
 
 const IL = {
-  locations: 1754, central: 118, regional: 342, edge: 1294,
+  locations: 2400, central: 206, regional: 600, edge: 1594,
   ne: 2703, discovered: 2379, links: 64, services: 2457, vnf: 28, inactive: 412, reports: 22
 };
 
 const LOC_TIERS = [
-  { n: 'Central', c: 118, planned: 9, building: 14, live: 92, failed: 3, tone: 'amber' },
-  { n: 'Regional', c: 342, planned: 31, building: 44, live: 259, failed: 8, tone: 'sky' },
-  { n: 'Edge', c: 1294, planned: 212, building: 178, live: 881, failed: 23, tone: 'emerald' }
+  { n: 'Central', c: 206, planned: 8, building: 17, live: 181, failed: 0, tone: 'amber' },
+  { n: 'Regional', c: 600, planned: 41, building: 77, live: 474, failed: 8, tone: 'sky' },
+  { n: 'Edge', c: 1594, planned: 249, building: 217, live: 1100, failed: 28, tone: 'emerald' }
 ];
 const LOC_HEALTH = [
   { n: 'Sites where discovery found fewer NE than inventory holds', c: 214, tone: 'amber', act: 'Reconcile' },
@@ -1204,26 +1204,26 @@ const LOC_HEALTH = [
 
 /* ── geography: circle centroids, site counts, build state ── */
 const LOC_GEO = [
-  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 248, live: 174, build: 37, fail: 4 },
-  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 221, live: 158, build: 31, fail: 4 },
-  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 211, live: 161, build: 25, fail: 2 },
-  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 194, live: 118, build: 35, fail: 8 },
-  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 176, live: 139, build: 19, fail: 2 },
-  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 154, live: 112, build: 18, fail: 1 },
-  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 152, live: 104, build: 20, fail: 2 },
-  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 143, live: 96, build: 18, fail: 6 },
-  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 46, live: 30, build: 6, fail: 1 },
-  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 38, live: 26, build: 4, fail: 0 },
-  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 33, live: 22, build: 6, fail: 3 },
-  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 27, live: 18, build: 3, fail: 0 },
-  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 24, live: 17, build: 3, fail: 0 },
-  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 20, live: 14, build: 2, fail: 0 },
-  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 18, live: 12, build: 2, fail: 0 },
-  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 14, live: 9, build: 2, fail: 1 },
-  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 12, live: 8, build: 1, fail: 0 },
-  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 9, live: 5, build: 2, fail: 0 },
-  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 8, live: 5, build: 1, fail: 0 },
-  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 6, live: 4, build: 1, fail: 0 }
+  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 51, fail: 6 },
+  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 293, live: 208, build: 41, fail: 8 },
+  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 36, fail: 4 },
+  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 221, live: 135, build: 40, fail: 5 },
+  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 261, live: 206, build: 28, fail: 3 },
+  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 221, live: 161, build: 26, fail: 4 },
+  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 242, live: 165, build: 32, fail: 1 },
+  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 25, fail: 1 },
+  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 60, live: 52, build: 5, fail: 1 },
+  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 49, live: 42, build: 4, fail: 1 },
+  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 43, live: 37, build: 4, fail: 1 },
+  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 35, live: 30, build: 4, fail: 0 },
+  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 31, live: 27, build: 3, fail: 0 },
+  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 26, live: 23, build: 2, fail: 1 },
+  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 23, live: 20, build: 2, fail: 0 },
+  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 18, live: 16, build: 2, fail: 0 },
+  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 16, live: 14, build: 2, fail: 0 },
+  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 12, live: 10, build: 2, fail: 0 },
+  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 10, live: 8, build: 1, fail: 0 },
+  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 8, live: 7, build: 1, fail: 0 }
 ];
 const STATE_CIRCLE = Object.fromEntries(LOC_GEO.map(g => [g.st, g]));
 
@@ -1236,11 +1236,11 @@ const INDIA = [[77.0, 35.5], [75.9, 34.7], [74.2, 34.3], [73.9, 32.6], [74.6, 31
 [88.2, 26.5], [85.0, 27.0], [81.0, 30.3], [79.0, 31.4], [78.7, 32.6], [79.2, 34.5]];
 
 const LOC_CIRCLES_OLD = [
-  { n: 'Maharashtra', c: 248, live: 174 }, { n: 'Uttar Pradesh', c: 221, live: 158 },
-  { n: 'Karnataka', c: 211, live: 161 }, { n: 'Madhya Pradesh', c: 194, live: 118 },
-  { n: 'Delhi', c: 176, live: 139 }, { n: 'Tamil Nadu', c: 154, live: 112 },
-  { n: 'Gujarat', c: 152, live: 104 }, { n: 'Andhra Pradesh', c: 143, live: 96 },
-  { n: 'Other circles', c: 255, live: 170 }
+  { n: 'Maharashtra', c: 334, live: 234 }, { n: 'Uttar Pradesh', c: 293, live: 208 },
+  { n: 'Karnataka', c: 299, live: 227 }, { n: 'Madhya Pradesh', c: 221, live: 135 },
+  { n: 'Delhi', c: 261, live: 206 }, { n: 'Tamil Nadu', c: 221, live: 161 },
+  { n: 'Gujarat', c: 242, live: 165 }, { n: 'Andhra Pradesh', c: 198, live: 133 },
+  { n: 'Other circles', c: 331, live: 286 }
 ];
 const LOC_AGING = [
   { n: 'Under 30 days', c: 96, tone: 'emerald' }, { n: '30 – 90 days', c: 79, tone: 'amber' },
@@ -1256,9 +1256,9 @@ const TYPE_GROUP = { 'Datacenter': 'dc', 'POP': 'pop', 'Macro-O': 'site', 'Micro
 const typeGroupOf = t => TYPE_GROUP[t] || 'site';
 
 const LOC_TYPES = [
-  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 24, live: 21, building: 2, planned: 1, failed: 0 },
-  { k: 'pop', n: 'PoP locations', tone: 'sky', total: 210, live: 165, building: 27, planned: 15, failed: 3 },
-  { k: 'site', n: 'Sites', tone: 'teal', total: 1520, live: 1046, building: 207, planned: 236, failed: 31 }
+  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 206, live: 181, building: 17, planned: 8, failed: 0 },
+  { k: 'pop', n: 'PoP locations', tone: 'sky', total: 600, live: 474, building: 77, planned: 41, failed: 8 },
+  { k: 'site', n: 'Sites', tone: 'teal', total: 1594, live: 1100, building: 217, planned: 249, failed: 28 }
 ];
 
 /* per-circle DC/PoP/Site split — derived from LOC_GEO so the three counts
@@ -1266,8 +1266,8 @@ const LOC_TYPES = [
    hand-set, sites and the "other circles" remainder are the difference. */
 const LOC_HIER = (() => {
   const seed = {
-    MH: { dc: 4, pop: 32 }, UP: { dc: 3, pop: 27 }, KA: { dc: 3, pop: 26 }, MP: { dc: 2, pop: 24 },
-    DL: { dc: 3, pop: 22 }, TN: { dc: 2, pop: 19 }, GJ: { dc: 2, pop: 18 }, AP: { dc: 2, pop: 17 }
+    MH: { dc: 28, pop: 86 }, UP: { dc: 25, pop: 72 }, KA: { dc: 26, pop: 75 }, MP: { dc: 18, pop: 55 },
+    DL: { dc: 22, pop: 65 }, TN: { dc: 18, pop: 55 }, GJ: { dc: 20, pop: 60 }, AP: { dc: 16, pop: 50 }
   };
   const top = LOC_GEO.slice(0, 8).map(g => {
     const s = seed[g.c] || { dc: 0, pop: 0 };
@@ -1287,9 +1287,9 @@ const LOC_STATES = [
 ];
 
 /* Sites split into the same three build classes the estate is actually
-   built from; counts foot to LOC_TYPES' site total (1,520). */
+   built from; counts foot to LOC_TYPES' site total (1,594). */
 const SITE_SUBTYPES = [
-  { n: 'Macro-O', c: 641 }, { n: 'Micro-CO', c: 512 }, { n: 'Cell Site', c: 367 }
+  { n: 'Macro-O', c: 672 }, { n: 'Micro-CO', c: 538 }, { n: 'Cell Site', c: 384 }
 ];
 
 /* the eight named circles the hierarchy widget and the coverage table

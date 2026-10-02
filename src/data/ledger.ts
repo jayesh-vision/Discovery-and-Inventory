@@ -3,7 +3,7 @@
    nothing derives a total from an array length. */
 
 export const IL = {
-  locations: 1754, central: 118, regional: 342, edge: 1294,
+  locations: 2400, central: 206, regional: 600, edge: 1594,
   ne: 2703, discovered: 2379, links: 7846, services: 2457, vnf: 28, inactive: 412, reports: 22
 } as const;
 
