@@ -283,7 +283,9 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   const ink: [number, number, number] = [15, 23, 42], muted: [number, number, number] = [100, 116, 139], brand: [number, number, number] = [29, 78, 216];
   let y = 0;
   const lastY = () => (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
-  const ensure = (h: number) => { if (y + h > 297 - 18) { doc.addPage(); y = 18; } };
+  const pageH = () => doc.internal.pageSize.getHeight();
+  const pageW = () => doc.internal.pageSize.getWidth();
+  const ensure = (h: number) => { if (y + h > pageH() - 18) { doc.addPage(); y = 18; } };
   const para = (text: string, size = 10, color = ink, gap = 1.5) => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
     const lines = doc.splitTextToSize(pdfText(text), CW) as string[];
@@ -294,7 +296,7 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   const h2 = (t: string) => {
     ensure(16); y += 4;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...ink); doc.text(pdfText(t), M, y);
-    doc.setDrawColor(...brand); doc.setLineWidth(0.6); doc.line(M, y + 2, M + CW, y + 2);
+    doc.setDrawColor(...brand); doc.setLineWidth(0.6); doc.line(M, y + 2, pageW() - M, y + 2);
     y += 8;
   };
   const table = (head: string[], body: string[][], opts: { right?: boolean[]; colWidths?: number[]; fontSize?: number } = {}) => {
@@ -377,7 +379,7 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
       /* reserve the whole chart (title included) so a chart never splits from its title */
       const est = v.kind === 'bars' ? 12 + v.rows.length * 5.6 : v.kind === 'ramp' ? 12 + v.buckets.length * 5.6
         : v.kind === 'lines' || v.kind === 'projection' ? 76 : v.kind === 'stacked' ? 70 : v.kind === 'heat' ? 18 + (v.rows.length + 1) * 7.5
-          : v.kind === 'composition' || v.kind === 'donut' ? 28 : 30;
+          : v.kind === 'composition' || v.kind === 'donut' ? 28 : v.kind === 'steps' ? 14 + v.steps.length * 5.6 : 30;
       ensure(Math.min(est, 240));
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...ink); doc.text(pdfText(v.title), M, y);
       if (v.sub) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...muted); doc.text(pdfText(v.sub), M, y + 4); y += 4; }
@@ -478,6 +480,31 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
           doc.setFontSize(7.5); doc.setTextColor(51, 65, 85); doc.text(pdfText(sr.n), lx + 3.5, y); lx += 6 + doc.getTextWidth(pdfText(sr.n));
         });
         y += 6;
+      } else if (v.kind === 'steps') {
+        const lo = v.start, hi = Math.max(v.target, ...v.steps.map(s => s.cum));
+        const frac = (x: number) => Math.max(0, Math.min(1, (x - lo) / ((hi - lo) || 1)));
+        ensure(7);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...muted);
+        doc.text(pdfText(`Start ${fmtValue(v.start, v.fmt)}`), M, y + 3.4);
+        doc.setTextColor(4, 120, 87);
+        doc.text(pdfText(`Target ${fmtValue(v.target, v.fmt)}`), W - M, y + 3.4, { align: 'right' });
+        y += 7;
+        let prevCum = v.start;
+        v.steps.forEach((s, i) => {
+          ensure(6);
+          const reached = s.cum >= v.target;
+          const col: [number, number, number] = reached ? [4, 120, 87] : [29, 78, 216];
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(51, 65, 85);
+          doc.text((doc.splitTextToSize(pdfText(`${i + 1}. ${s.label}`), 62) as string[])[0], M, y + 3.4);
+          doc.setFillColor(241, 245, 249); doc.rect(M + 64, y + 0.6, CW - 90, 3.8, 'F');
+          const bx0 = M + 64 + (CW - 90) * frac(prevCum), bx1 = M + 64 + (CW - 90) * frac(s.cum);
+          doc.setFillColor(...col); doc.rect(bx0, y + 0.6, Math.max(0.6, bx1 - bx0), 3.8, 'F');
+          doc.setFont('helvetica', 'bold'); doc.setTextColor(...ink);
+          doc.text(pdfText(`+${s.gain.toFixed(2)} -> ${fmtValue(s.cum, v.fmt)}`), W - M, y + 3.4, { align: 'right' });
+          prevCum = s.cum;
+          y += 5.6;
+        });
+        y += 3;
       } else if (v.kind === 'heat') {
         const max = Math.max(1, ...v.values.flat());
         const ramp = ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8'];
@@ -507,19 +534,15 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   h2('Recommended actions');
   table(['Priority', 'Action', 'Owner', 'Impact'], c.actions.map(a => [a.priority, a.action, a.owner, a.impact]), { colWidths: [16, 72, 40, 54] });
 
-  /* detail: landscape when the table is wide */
+  /* every page stays A4 portrait, including a wide detail table — autoTable
+     wraps long headers onto a second line rather than overflowing, and a
+     smaller font keeps a 9+ column table legible at the narrower width */
   const cols = c.table.columns;
   const wide = cols.length > 7;
-  if (wide) doc.addPage('a4', 'landscape'); else h2(c.table.title);
-  if (wide) {
-    y = 18;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...ink); doc.text(pdfText(c.table.title), M, y);
-    y += 7;
-  }
+  h2(c.table.title);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...muted);
   doc.text(pdfText(`${c.table.sub} · ${c.table.rows.length} rows`), M, y); y += 4;
-  table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), { right: cols.map(col => !!col.right), fontSize: wide ? 7 : 7.8 });
-  if (wide) { doc.addPage('a4', 'portrait'); y = 18; }
+  table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), { right: cols.map(col => !!col.right), fontSize: wide ? 6.5 : 7.8 });
 
   h2('Methodology & definitions');
   table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]), { colWidths: [44, CW - 44] });
