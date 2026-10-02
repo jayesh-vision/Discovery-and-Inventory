@@ -665,15 +665,15 @@ export default function NetworkHierarchyTopology({
         <div className="geo-top-right">
           {/* ── Top Legend: DC, PoP Locations, Sites ────────────────── */}
           <div className="geo-top-legend" role="note" aria-label="Network infrastructure types legend">
-            <span className="geo-top-legend-item">
+            <span className="geo-top-legend-item geo-chip-dc">
               <span className="geo-legend-dot geo-dot-dc" />
               <span>Data Centers</span>
             </span>
-            <span className="geo-top-legend-item">
+            <span className="geo-top-legend-item geo-chip-pop">
               <span className="geo-legend-dot geo-dot-pop" />
               <span>PoP Locations</span>
             </span>
-            <span className="geo-top-legend-item">
+            <span className="geo-top-legend-item geo-chip-site">
               <span className="geo-legend-dot geo-dot-site" />
               <span>Sites</span>
             </span>

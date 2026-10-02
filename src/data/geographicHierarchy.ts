@@ -61,6 +61,8 @@ export interface FacilityItem {
   facilityType: 'dc' | 'pop' | 'site';
   subType: string;
   tierOrClassification: string;
+  siteType?: string;
+  siteStructure?: string;
   address: string;
   rackOrCapacity: string;
   racksTotal?: number;
@@ -1232,7 +1234,9 @@ export function getFacilitiesForCity(cityId: string, facilityType: 'dc' | 'pop' 
       });
     } else {
       const nameTemplate = siteNames[(i - 1) % siteNames.length];
-      const siteType = i % 4 === 1 ? 'Macro Tower (40m GBT)' : i % 4 === 2 ? 'Rooftop 5G (25m RTT)' : i % 4 === 3 ? 'Small Cell Street Pole' : 'IBS In-Building Hub';
+      const typeKind = i % 4 === 1 ? 'Macro Tower' : i % 4 === 2 ? 'Rooftop 5G' : i % 4 === 3 ? 'Small Cell' : 'IBS In-Building Hub';
+      const structKind = i % 4 === 1 ? '40m GBT' : i % 4 === 2 ? '25m RTT' : i % 4 === 3 ? 'Street Pole' : 'In-Building Hub';
+      const siteTypeFull = `${typeKind} (${structKind})`;
       const power = i % 2 === 0 ? 'Grid + 25kVA DG' : 'Grid + Li-Ion UPS';
       const devCount = 4 + (i % 6);
       const status: FacilityItem['status'] = i % 9 === 0 ? 'Drifted' : 'Verified';
@@ -1242,8 +1246,10 @@ export function getFacilitiesForCity(cityId: string, facilityType: 'dc' | 'pop' 
         code: `${cityCode}-STE-${String(i).padStart(3, '0')}`,
         name: `${cityName} ${nameTemplate} #${i}`,
         facilityType: 'site',
-        subType: siteType,
-        tierOrClassification: siteType,
+        subType: typeKind,
+        tierOrClassification: siteTypeFull,
+        siteType: typeKind,
+        siteStructure: structKind,
         address: `Area Block ${String.fromCharCode(65 + (i % 8))}-${(i % 30) + 1}, ${cityName}`,
         rackOrCapacity: i % 2 === 0 ? '4 Equipment Bays' : '2 Wall Racks',
         powerOrUplink: power,

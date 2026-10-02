@@ -12,6 +12,86 @@ import '../styles/topology.css';
 type FacilityType = 'dc' | 'pop' | 'site';
 type DeviceCategory = 'All' | 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB';
 
+export interface SiteFilterState {
+  status: string;
+  name: string;
+  code: string;
+  type: string;
+  structure: string;
+}
+
+export const DEFAULT_SITE_FILTERS: SiteFilterState = {
+  status: 'all',
+  name: '',
+  code: '',
+  type: 'all',
+  structure: 'all'
+};
+
+export interface DcFilterState {
+  status: string;
+  name: string;
+  code: string;
+  classification: string;
+  rackCapacity: string;
+  power: string;
+}
+
+export const DEFAULT_DC_FILTERS: DcFilterState = {
+  status: 'all',
+  name: '',
+  code: '',
+  classification: 'all',
+  rackCapacity: 'all',
+  power: 'all'
+};
+
+export interface PopFilterState {
+  status: string;
+  name: string;
+  code: string;
+  popType: string;
+  uplink: string;
+}
+
+export const DEFAULT_POP_FILTERS: PopFilterState = {
+  status: 'all',
+  name: '',
+  code: '',
+  popType: 'all',
+  uplink: 'all'
+};
+
+export interface ElementFilterState {
+  status: string;
+  category: string;
+  nameOrIp: string;
+  vendor: string;
+  osVersion: string;
+  locationCode: string;
+}
+
+export const DEFAULT_ELEMENT_FILTERS: ElementFilterState = {
+  status: 'all',
+  category: 'All',
+  nameOrIp: '',
+  vendor: 'all',
+  osVersion: '',
+  locationCode: ''
+};
+
+export function getSiteAttributes(fac: FacilityItem): { type: string; structure: string } {
+  if (fac.siteType && fac.siteStructure) {
+    return { type: fac.siteType, structure: fac.siteStructure };
+  }
+  const raw = fac.tierOrClassification || fac.subType || '';
+  if (raw.includes('Macro')) return { type: 'Macro Tower', structure: '40m GBT' };
+  if (raw.includes('Rooftop')) return { type: 'Rooftop 5G', structure: '25m RTT' };
+  if (raw.includes('Small Cell')) return { type: 'Small Cell', structure: 'Street Pole' };
+  if (raw.includes('IBS')) return { type: 'IBS In-Building Hub', structure: 'In-Building Hub' };
+  return { type: 'Macro Tower', structure: '40m GBT' };
+}
+
 export default function CityDetails() {
   const { cityId } = useParams<{ cityId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,12 +118,93 @@ export default function CityDetails() {
 
   // ── Facility Listing Search & Filter ────────────────────────────────
   const [facilitySearch, setFacilitySearch] = useState('');
-  const [facilityStatusFilter, setFacilityStatusFilter] = useState<string>('all');
+
+  // ── Site Column Filters Modal State (Exact match to Image 4) ────────
+  const [appliedSiteFilters, setAppliedSiteFilters] = useState<SiteFilterState>(DEFAULT_SITE_FILTERS);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState<'status' | 'name' | 'code' | 'type' | 'structure'>('status');
+
+  const activeSiteFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedSiteFilters.status !== 'all') count++;
+    if (appliedSiteFilters.name.trim() !== '') count++;
+    if (appliedSiteFilters.code.trim() !== '') count++;
+    if (appliedSiteFilters.type !== 'all') count++;
+    if (appliedSiteFilters.structure !== 'all') count++;
+    return count;
+  }, [appliedSiteFilters]);
+
+  // ── DC Column Filters Modal State ────────────────────────────────────
+  const [appliedDcFilters, setAppliedDcFilters] = useState<DcFilterState>(DEFAULT_DC_FILTERS);
+  const [isDcFilterModalOpen, setIsDcFilterModalOpen] = useState(false);
+  const [activeDcFilterTab, setActiveDcFilterTab] = useState<'status' | 'name' | 'code' | 'classification' | 'rackCapacity' | 'power'>('status');
+
+  const activeDcFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedDcFilters.status !== 'all') count++;
+    if (appliedDcFilters.name.trim() !== '') count++;
+    if (appliedDcFilters.code.trim() !== '') count++;
+    if (appliedDcFilters.classification !== 'all') count++;
+    if (appliedDcFilters.rackCapacity !== 'all') count++;
+    if (appliedDcFilters.power !== 'all') count++;
+    return count;
+  }, [appliedDcFilters]);
+
+  // ── PoP Column Filters Modal State ───────────────────────────────────
+  const [appliedPopFilters, setAppliedPopFilters] = useState<PopFilterState>(DEFAULT_POP_FILTERS);
+  const [isPopFilterModalOpen, setIsPopFilterModalOpen] = useState(false);
+  const [activePopFilterTab, setActivePopFilterTab] = useState<'status' | 'name' | 'code' | 'popType' | 'uplink'>('status');
+
+  const activePopFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedPopFilters.status !== 'all') count++;
+    if (appliedPopFilters.name.trim() !== '') count++;
+    if (appliedPopFilters.code.trim() !== '') count++;
+    if (appliedPopFilters.popType !== 'all') count++;
+    if (appliedPopFilters.uplink !== 'all') count++;
+    return count;
+  }, [appliedPopFilters]);
 
   // ── Network Elements Filter State (when drilled down) ──────────────
   const [selectedCategory, setSelectedCategory] = useState<DeviceCategory>('All');
   const [elementSearch, setElementSearch] = useState('');
-  const [elementStatusFilter, setElementStatusFilter] = useState<string>('all');
+  const [appliedElementFilters, setAppliedElementFilters] = useState<ElementFilterState>(DEFAULT_ELEMENT_FILTERS);
+  const [isElementFilterModalOpen, setIsElementFilterModalOpen] = useState(false);
+  const [activeElementFilterTab, setActiveElementFilterTab] = useState<'status' | 'category' | 'nameOrIp' | 'vendor' | 'osVersion' | 'locationCode'>('status');
+
+  const activeElementFilterCount = useMemo(() => {
+    let count = 0;
+    if (appliedElementFilters.status !== 'all') count++;
+    if (appliedElementFilters.category !== 'All') count++;
+    if (appliedElementFilters.nameOrIp.trim() !== '') count++;
+    if (appliedElementFilters.vendor !== 'all') count++;
+    if (appliedElementFilters.osVersion.trim() !== '') count++;
+    if (appliedElementFilters.locationCode.trim() !== '') count++;
+    return count;
+  }, [appliedElementFilters]);
+
+  const activeCurrentFacilityFilterCount = useMemo(() => {
+    if (selectedFacility === 'dc') return activeDcFilterCount;
+    if (selectedFacility === 'pop') return activePopFilterCount;
+    return activeSiteFilterCount;
+  }, [selectedFacility, activeDcFilterCount, activePopFilterCount, activeSiteFilterCount]);
+
+  // Real-time filter update helpers (immediately refreshes table data)
+  const updateSiteFilter = (patch: Partial<SiteFilterState>) => {
+    setAppliedSiteFilters(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateDcFilter = (patch: Partial<DcFilterState>) => {
+    setAppliedDcFilters(prev => ({ ...prev, ...patch }));
+  };
+
+  const updatePopFilter = (patch: Partial<PopFilterState>) => {
+    setAppliedPopFilters(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateElementFilter = (patch: Partial<ElementFilterState>) => {
+    setAppliedElementFilters(prev => ({ ...prev, ...patch }));
+  };
 
   // Fetch lists for all 3 facility types to calculate rich summary telemetry
   const dcList = useMemo(() => getFacilitiesForCity(city.id, 'dc'), [city.id]);
@@ -112,12 +273,84 @@ export default function CityDetails() {
     }
   }, [searchParams, facilities]);
 
-  // Filter facilities based on search & status
+  // Filter facilities based on search & column filters
   const filteredFacilities = useMemo(() => {
     let list = facilities;
-    if (facilityStatusFilter !== 'all') {
-      list = list.filter(f => f.status.toLowerCase() === facilityStatusFilter.toLowerCase());
+
+    // Apply Site filters
+    if (selectedFacility === 'site') {
+      if (appliedSiteFilters.status !== 'all') {
+        list = list.filter(f => f.status.toLowerCase() === appliedSiteFilters.status.toLowerCase());
+      }
+      if (appliedSiteFilters.name.trim() !== '') {
+        const qName = appliedSiteFilters.name.trim().toLowerCase();
+        list = list.filter(f => f.name.toLowerCase().includes(qName));
+      }
+      if (appliedSiteFilters.code.trim() !== '') {
+        const qCode = appliedSiteFilters.code.trim().toLowerCase();
+        list = list.filter(f => f.code.toLowerCase().includes(qCode));
+      }
+      if (appliedSiteFilters.type !== 'all') {
+        list = list.filter(f => getSiteAttributes(f).type === appliedSiteFilters.type);
+      }
+      if (appliedSiteFilters.structure !== 'all') {
+        list = list.filter(f => getSiteAttributes(f).structure === appliedSiteFilters.structure);
+      }
+    } else if (selectedFacility === 'dc') {
+      // Apply DC filters
+      if (appliedDcFilters.status !== 'all') {
+        list = list.filter(f => f.status.toLowerCase() === appliedDcFilters.status.toLowerCase());
+      }
+      if (appliedDcFilters.name.trim() !== '') {
+        const qName = appliedDcFilters.name.trim().toLowerCase();
+        list = list.filter(f => f.name.toLowerCase().includes(qName));
+      }
+      if (appliedDcFilters.code.trim() !== '') {
+        const qCode = appliedDcFilters.code.trim().toLowerCase();
+        list = list.filter(f => f.code.toLowerCase().includes(qCode));
+      }
+      if (appliedDcFilters.classification !== 'all') {
+        list = list.filter(f => f.tierOrClassification.includes(appliedDcFilters.classification));
+      }
+      if (appliedDcFilters.rackCapacity !== 'all') {
+        list = list.filter(f => {
+          const pct = f.racksTotal ? (f.racksUsed || 0) / f.racksTotal : 0.75;
+          if (appliedDcFilters.rackCapacity === 'high') return pct >= 0.8;
+          if (appliedDcFilters.rackCapacity === 'normal') return pct >= 0.6 && pct < 0.8;
+          if (appliedDcFilters.rackCapacity === 'low') return pct < 0.6;
+          return true;
+        });
+      }
+      if (appliedDcFilters.power !== 'all') {
+        list = list.filter(f => {
+          const pVal = parseFloat(f.powerOrUplink || '2.0');
+          if (appliedDcFilters.power === 'high') return pVal >= 3.0;
+          if (appliedDcFilters.power === 'mid') return pVal >= 1.5 && pVal < 3.0;
+          if (appliedDcFilters.power === 'low') return pVal < 1.5;
+          return true;
+        });
+      }
+    } else if (selectedFacility === 'pop') {
+      // Apply PoP filters
+      if (appliedPopFilters.status !== 'all') {
+        list = list.filter(f => f.status.toLowerCase() === appliedPopFilters.status.toLowerCase());
+      }
+      if (appliedPopFilters.name.trim() !== '') {
+        const qName = appliedPopFilters.name.trim().toLowerCase();
+        list = list.filter(f => f.name.toLowerCase().includes(qName));
+      }
+      if (appliedPopFilters.code.trim() !== '') {
+        const qCode = appliedPopFilters.code.trim().toLowerCase();
+        list = list.filter(f => f.code.toLowerCase().includes(qCode));
+      }
+      if (appliedPopFilters.popType !== 'all') {
+        list = list.filter(f => f.tierOrClassification.toLowerCase().includes(appliedPopFilters.popType.toLowerCase()) || f.subType.toLowerCase().includes(appliedPopFilters.popType.toLowerCase()));
+      }
+      if (appliedPopFilters.uplink !== 'all') {
+        list = list.filter(f => f.powerOrUplink.toLowerCase().includes(appliedPopFilters.uplink.toLowerCase()));
+      }
     }
+
     const q = facilitySearch.trim().toLowerCase();
     if (q) {
       list = list.filter(f =>
@@ -129,7 +362,7 @@ export default function CityDetails() {
       );
     }
     return list;
-  }, [facilities, facilitySearch, facilityStatusFilter]);
+  }, [facilities, selectedFacility, appliedSiteFilters, appliedDcFilters, appliedPopFilters, facilitySearch]);
 
   // Fetch network elements for the selected individual facility
   const facilityElements = useMemo(() => {
@@ -143,8 +376,26 @@ export default function CityDetails() {
     if (selectedCategory !== 'All') {
       list = list.filter(el => el.category === selectedCategory);
     }
-    if (elementStatusFilter !== 'all') {
-      list = list.filter(el => el.status.toLowerCase() === elementStatusFilter.toLowerCase());
+    if (appliedElementFilters.status !== 'all') {
+      list = list.filter(el => el.status.toLowerCase() === appliedElementFilters.status.toLowerCase());
+    }
+    if (appliedElementFilters.category !== 'All') {
+      list = list.filter(el => el.category === appliedElementFilters.category);
+    }
+    if (appliedElementFilters.nameOrIp.trim() !== '') {
+      const q = appliedElementFilters.nameOrIp.trim().toLowerCase();
+      list = list.filter(el => el.name.toLowerCase().includes(q) || el.ip.toLowerCase().includes(q));
+    }
+    if (appliedElementFilters.vendor !== 'all') {
+      list = list.filter(el => el.vendor.toLowerCase() === appliedElementFilters.vendor.toLowerCase());
+    }
+    if (appliedElementFilters.osVersion.trim() !== '') {
+      const q = appliedElementFilters.osVersion.trim().toLowerCase();
+      list = list.filter(el => el.osVersion.toLowerCase().includes(q));
+    }
+    if (appliedElementFilters.locationCode.trim() !== '') {
+      const q = appliedElementFilters.locationCode.trim().toLowerCase();
+      list = list.filter(el => el.locationCode.toLowerCase().includes(q));
     }
     const q = elementSearch.trim().toLowerCase();
     if (q) {
@@ -159,14 +410,17 @@ export default function CityDetails() {
       );
     }
     return list;
-  }, [facilityElements, selectedCategory, elementStatusFilter, elementSearch]);
+  }, [facilityElements, selectedCategory, appliedElementFilters, elementSearch]);
 
   // Card click handler
   const handleCardClick = (type: FacilityType) => {
     setSelectedFacility(type);
     setSelectedFacilityItem(null); // Return to facility listing of the new card
     setFacilitySearch('');
-    setFacilityStatusFilter('all');
+    setIsFilterModalOpen(false);
+    setIsDcFilterModalOpen(false);
+    setIsPopFilterModalOpen(false);
+    setIsElementFilterModalOpen(false);
     setSearchParams({ facility: type }, { replace: true });
   };
 
@@ -175,7 +429,10 @@ export default function CityDetails() {
     setSelectedFacilityItem(fac);
     setSelectedCategory('All');
     setElementSearch('');
-    setElementStatusFilter('all');
+    setIsFilterModalOpen(false);
+    setIsDcFilterModalOpen(false);
+    setIsPopFilterModalOpen(false);
+    setIsElementFilterModalOpen(false);
     setSearchParams({ facility: selectedFacility, facilityId: fac.code }, { replace: true });
   };
 
@@ -385,7 +642,7 @@ export default function CityDetails() {
       </section>
 
       {/* ── Main Content Section: Facility Listing OR Facility Elements ── */}
-      <section className="vw-card-section" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--vw-color-slate-200)', padding: '20px' }}>
+      <section className="vw-card-section city-table-card" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
         
         {/* ── VIEW 1: Listing of Facilities (Data Centers, PoPs, Sites) ──── */}
         {!selectedFacilityItem && (
@@ -442,19 +699,608 @@ export default function CityDetails() {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  className="net-tool-btn"
-                  title="Filter status (All / Verified / Drifted)"
-                  onClick={() => {
-                    const next = facilityStatusFilter === 'all' ? 'verified' : facilityStatusFilter === 'verified' ? 'drifted' : 'all';
-                    setFacilityStatusFilter(next);
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  </svg>
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className={`net-tool-btn${activeCurrentFacilityFilterCount > 0 ? ' is-active' : ''}`}
+                    title={`Open ${selectedFacility === 'dc' ? 'data center' : selectedFacility === 'pop' ? 'PoP' : 'site'} column filters`}
+                    onClick={() => {
+                      if (selectedFacility === 'site') {
+                        setIsFilterModalOpen(prev => !prev);
+                        setIsDcFilterModalOpen(false);
+                        setIsPopFilterModalOpen(false);
+                      } else if (selectedFacility === 'dc') {
+                        setIsDcFilterModalOpen(prev => !prev);
+                        setIsFilterModalOpen(false);
+                        setIsPopFilterModalOpen(false);
+                      } else if (selectedFacility === 'pop') {
+                        setIsPopFilterModalOpen(prev => !prev);
+                        setIsFilterModalOpen(false);
+                        setIsDcFilterModalOpen(false);
+                      }
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    {activeCurrentFacilityFilterCount > 0 && (
+                      <span className="net-filter-badge-counter">{activeCurrentFacilityFilterCount}</span>
+                    )}
+                  </button>
+
+                  {/* ── Two-Column Filter Modal for Sites (Exact Match to Reference Image 4) ── */}
+                  {selectedFacility === 'site' && isFilterModalOpen && (
+                    <>
+                      <div
+                        className="column-filter-backdrop"
+                        onClick={() => setIsFilterModalOpen(false)}
+                      />
+                      <div className="column-filter-popover" role="dialog" aria-label="Filters">
+                        {/* Header */}
+                        <div className="column-filter-header">
+                          <span className="column-filter-title">Filters</span>
+                          <button
+                            type="button"
+                            className="column-filter-close-btn"
+                            onClick={() => setIsFilterModalOpen(false)}
+                            aria-label="Close filters"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Two-Column Body */}
+                        <div className="column-filter-body">
+                          {/* Left Panel: Category Tabs */}
+                          <div className="column-filter-tabs">
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeFilterTab === 'status' ? ' is-active' : ''}`}
+                              onClick={() => setActiveFilterTab('status')}
+                            >
+                              <span>Status</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeFilterTab === 'name' ? ' is-active' : ''}`}
+                              onClick={() => setActiveFilterTab('name')}
+                            >
+                              <span>Site Name</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeFilterTab === 'code' ? ' is-active' : ''}`}
+                              onClick={() => setActiveFilterTab('code')}
+                            >
+                              <span>Site Code</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeFilterTab === 'type' ? ' is-active' : ''}`}
+                              onClick={() => setActiveFilterTab('type')}
+                            >
+                              <span>Type</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeFilterTab === 'structure' ? ' is-active' : ''}`}
+                              onClick={() => setActiveFilterTab('structure')}
+                            >
+                              <span>Structure</span>
+                            </button>
+                          </div>
+
+                          {/* Right Panel: Controls for Selected Tab */}
+                          <div className="column-filter-pane">
+                            {activeFilterTab === 'status' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Status</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedSiteFilters.status}
+                                  onChange={e => updateSiteFilter({ status: e.target.value })}
+                                >
+                                  <option value="all">Status (All)</option>
+                                  <option value="Verified">Verified</option>
+                                  <option value="Drifted">Drifted</option>
+                                  <option value="Stale">Stale</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeFilterTab === 'name' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Site Name</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="Filter by site name..."
+                                    value={appliedSiteFilters.name}
+                                    onChange={e => updateSiteFilter({ name: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedSiteFilters.name && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateSiteFilter({ name: '' })}
+                                      className="net-search-clear"
+                                      title="Clear site name"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeFilterTab === 'code' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Site Code</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. CEN-STE-001..."
+                                    value={appliedSiteFilters.code}
+                                    onChange={e => updateSiteFilter({ code: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedSiteFilters.code && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateSiteFilter({ code: '' })}
+                                      className="net-search-clear"
+                                      title="Clear site code"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeFilterTab === 'type' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Site Type</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedSiteFilters.type}
+                                  onChange={e => updateSiteFilter({ type: e.target.value })}
+                                >
+                                  <option value="all">Type (All)</option>
+                                  <option value="Macro Tower">Macro Tower</option>
+                                  <option value="Rooftop 5G">Rooftop 5G</option>
+                                  <option value="Small Cell">Small Cell</option>
+                                  <option value="IBS In-Building Hub">IBS In-Building Hub</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeFilterTab === 'structure' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Structure</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedSiteFilters.structure}
+                                  onChange={e => updateSiteFilter({ structure: e.target.value })}
+                                >
+                                  <option value="all">Structure (All)</option>
+                                  <option value="40m GBT">40m GBT (Ground Based Tower)</option>
+                                  <option value="25m RTT">25m RTT (Rooftop Tower)</option>
+                                  <option value="Street Pole">Street Pole</option>
+                                  <option value="In-Building Hub">In-Building Hub</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="column-filter-footer">
+                          <button
+                            type="button"
+                            className="column-filter-apply-btn"
+                            onClick={() => {
+                              setIsFilterModalOpen(false);
+                            }}
+                          >
+                            Apply filters
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Two-Column Filter Modal for Data Centers ── */}
+                  {selectedFacility === 'dc' && isDcFilterModalOpen && (
+                    <>
+                      <div
+                        className="column-filter-backdrop"
+                        onClick={() => setIsDcFilterModalOpen(false)}
+                      />
+                      <div className="column-filter-popover" role="dialog" aria-label="Filters">
+                        {/* Header */}
+                        <div className="column-filter-header">
+                          <span className="column-filter-title">Filters</span>
+                          <button
+                            type="button"
+                            className="column-filter-close-btn"
+                            onClick={() => setIsDcFilterModalOpen(false)}
+                            aria-label="Close filters"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Two-Column Body */}
+                        <div className="column-filter-body">
+                          {/* Left Panel: Category Tabs */}
+                          <div className="column-filter-tabs">
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'status' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('status')}
+                            >
+                              <span>Status</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'name' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('name')}
+                            >
+                              <span>DC Name</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'code' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('code')}
+                            >
+                              <span>DC Code</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'classification' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('classification')}
+                            >
+                              <span>Classification</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'rackCapacity' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('rackCapacity')}
+                            >
+                              <span>Rack Space</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeDcFilterTab === 'power' ? ' is-active' : ''}`}
+                              onClick={() => setActiveDcFilterTab('power')}
+                            >
+                              <span>Power Spec</span>
+                            </button>
+                          </div>
+
+                          {/* Right Panel: Controls */}
+                          <div className="column-filter-pane">
+                            {activeDcFilterTab === 'status' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Status</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedDcFilters.status}
+                                  onChange={e => updateDcFilter({ status: e.target.value })}
+                                >
+                                  <option value="all">Status (All)</option>
+                                  <option value="Verified">Verified</option>
+                                  <option value="Drifted">Drifted</option>
+                                  <option value="Stale">Stale</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeDcFilterTab === 'name' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Data Center Name</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="Filter by DC name..."
+                                    value={appliedDcFilters.name}
+                                    onChange={e => updateDcFilter({ name: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedDcFilters.name && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateDcFilter({ name: '' })}
+                                      className="net-search-clear"
+                                      title="Clear DC name"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeDcFilterTab === 'code' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">DC Code</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. DEL-DC-001..."
+                                    value={appliedDcFilters.code}
+                                    onChange={e => updateDcFilter({ code: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedDcFilters.code && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateDcFilter({ code: '' })}
+                                      className="net-search-clear"
+                                      title="Clear DC code"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeDcFilterTab === 'classification' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Tier / Classification</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedDcFilters.classification}
+                                  onChange={e => updateDcFilter({ classification: e.target.value })}
+                                >
+                                  <option value="all">Classification (All)</option>
+                                  <option value="Tier-4 Hyperscale">Tier-4 Hyperscale</option>
+                                  <option value="Tier-3 Edge">Tier-3 Edge</option>
+                                  <option value="Regional Core">Regional Core</option>
+                                  <option value="Modular Edge">Modular Edge</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeDcFilterTab === 'rackCapacity' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Rack Utilization</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedDcFilters.rackCapacity}
+                                  onChange={e => updateDcFilter({ rackCapacity: e.target.value })}
+                                >
+                                  <option value="all">Rack Space (All)</option>
+                                  <option value="high">High Usage (≥ 80%)</option>
+                                  <option value="normal">Normal (60% - 80%)</option>
+                                  <option value="low">Low (&lt; 60%)</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeDcFilterTab === 'power' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Power Specification</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedDcFilters.power}
+                                  onChange={e => updateDcFilter({ power: e.target.value })}
+                                >
+                                  <option value="all">Power Spec (All)</option>
+                                  <option value="high">High (&gt; 3.0 MW)</option>
+                                  <option value="mid">Medium (1.5 - 3.0 MW)</option>
+                                  <option value="low">Low (&lt; 1.5 MW)</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="column-filter-footer">
+                          <button
+                            type="button"
+                            className="column-filter-apply-btn"
+                            onClick={() => {
+                              setIsDcFilterModalOpen(false);
+                            }}
+                          >
+                            Apply filters
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Two-Column Filter Modal for PoP Locations ── */}
+                  {selectedFacility === 'pop' && isPopFilterModalOpen && (
+                    <>
+                      <div
+                        className="column-filter-backdrop"
+                        onClick={() => setIsPopFilterModalOpen(false)}
+                      />
+                      <div className="column-filter-popover" role="dialog" aria-label="Filters">
+                        {/* Header */}
+                        <div className="column-filter-header">
+                          <span className="column-filter-title">Filters</span>
+                          <button
+                            type="button"
+                            className="column-filter-close-btn"
+                            onClick={() => setIsPopFilterModalOpen(false)}
+                            aria-label="Close filters"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Two-Column Body */}
+                        <div className="column-filter-body">
+                          {/* Left Panel: Category Tabs */}
+                          <div className="column-filter-tabs">
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activePopFilterTab === 'status' ? ' is-active' : ''}`}
+                              onClick={() => setActivePopFilterTab('status')}
+                            >
+                              <span>Status</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activePopFilterTab === 'name' ? ' is-active' : ''}`}
+                              onClick={() => setActivePopFilterTab('name')}
+                            >
+                              <span>PoP Name</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activePopFilterTab === 'code' ? ' is-active' : ''}`}
+                              onClick={() => setActivePopFilterTab('code')}
+                            >
+                              <span>PoP Code</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activePopFilterTab === 'popType' ? ' is-active' : ''}`}
+                              onClick={() => setActivePopFilterTab('popType')}
+                            >
+                              <span>PoP Type</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activePopFilterTab === 'uplink' ? ' is-active' : ''}`}
+                              onClick={() => setActivePopFilterTab('uplink')}
+                            >
+                              <span>Uplink</span>
+                            </button>
+                          </div>
+
+                          {/* Right Panel: Controls */}
+                          <div className="column-filter-pane">
+                            {activePopFilterTab === 'status' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Status</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedPopFilters.status}
+                                  onChange={e => updatePopFilter({ status: e.target.value })}
+                                >
+                                  <option value="all">Status (All)</option>
+                                  <option value="Verified">Verified</option>
+                                  <option value="Drifted">Drifted</option>
+                                  <option value="Stale">Stale</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activePopFilterTab === 'name' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">PoP Name</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="Filter by PoP name..."
+                                    value={appliedPopFilters.name}
+                                    onChange={e => updatePopFilter({ name: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedPopFilters.name && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updatePopFilter({ name: '' })}
+                                      className="net-search-clear"
+                                      title="Clear PoP name"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activePopFilterTab === 'code' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">PoP Code</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. DEL-POP-001..."
+                                    value={appliedPopFilters.code}
+                                    onChange={e => updatePopFilter({ code: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedPopFilters.code && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updatePopFilter({ code: '' })}
+                                      className="net-search-clear"
+                                      title="Clear PoP code"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activePopFilterTab === 'popType' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">PoP Type / Classification</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedPopFilters.popType}
+                                  onChange={e => updatePopFilter({ popType: e.target.value })}
+                                >
+                                  <option value="all">PoP Type (All)</option>
+                                  <option value="Metro Core">Metro Core</option>
+                                  <option value="Transit Hub">Transit Hub</option>
+                                  <option value="Edge Gateway">Edge Gateway</option>
+                                  <option value="Colocation Facility">Colocation Facility</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activePopFilterTab === 'uplink' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Uplink Capacity</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedPopFilters.uplink}
+                                  onChange={e => updatePopFilter({ uplink: e.target.value })}
+                                >
+                                  <option value="all">Uplink (All)</option>
+                                  <option value="400G">400G Uplink</option>
+                                  <option value="100G">100G Uplink</option>
+                                  <option value="40G">40G Uplink</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="column-filter-footer">
+                          <button
+                            type="button"
+                            className="column-filter-apply-btn"
+                            onClick={() => {
+                              setIsPopFilterModalOpen(false);
+                            }}
+                          >
+                            Apply filters
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -470,10 +1316,17 @@ export default function CityDetails() {
                     <th style={{ width: '140px', minWidth: '130px' }}>
                       {selectedFacility === 'dc' ? 'Data Center Code' : selectedFacility === 'pop' ? 'PoP Code' : 'Site Code'}
                     </th>
-                    <th style={{ width: '180px', minWidth: '170px' }}>
-                      {selectedFacility === 'dc' ? 'Tier / Classification' : selectedFacility === 'pop' ? 'PoP Type' : 'Structure / Type'}
-                    </th>
-                    <th style={{ width: '360px', minWidth: '320px' }}>Address / Location</th>
+                    {selectedFacility === 'site' ? (
+                      <>
+                        <th style={{ width: '160px', minWidth: '150px' }}>Type</th>
+                        <th style={{ width: '150px', minWidth: '140px' }}>Structure</th>
+                      </>
+                    ) : (
+                      <th style={{ width: '180px', minWidth: '170px' }}>
+                        {selectedFacility === 'dc' ? 'Tier / Classification' : 'PoP Type'}
+                      </th>
+                    )}
+                    <th style={{ width: '340px', minWidth: '300px' }}>Address / Location</th>
                     <th style={{ width: '170px', minWidth: '160px' }}>
                       {selectedFacility === 'dc' ? 'Rack Capacity' : selectedFacility === 'pop' ? 'Rack Space' : 'Equipment Mount'}
                     </th>
@@ -498,9 +1351,24 @@ export default function CityDetails() {
                       <td>
                         <span className="facility-code-pill facility-code-standalone">{fac.code}</span>
                       </td>
-                      <td>
-                        <span className="facility-badge-sub">{fac.tierOrClassification}</span>
-                      </td>
+                      {selectedFacility === 'site' ? (
+                        <>
+                          <td>
+                            <span className="facility-badge-sub" style={{ background: '#f8fafc', color: '#1e293b', border: '1px solid #e2e8f0', fontWeight: 600 }}>
+                              {getSiteAttributes(fac).type}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ color: '#475569', fontWeight: 500, fontSize: '12.5px' }}>
+                              {getSiteAttributes(fac).structure}
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <td>
+                          <span className="facility-badge-sub">{fac.tierOrClassification}</span>
+                        </td>
+                      )}
                       <td className="facility-address-cell" title={fac.address}>
                         {fac.address}
                       </td>
@@ -529,7 +1397,7 @@ export default function CityDetails() {
                   ))}
                   {filteredFacilities.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '36px 12px', color: '#94a3b8', fontSize: '13px' }}>
+                      <td colSpan={selectedFacility === 'site' ? 9 : 8} style={{ textAlign: 'center', padding: '36px 12px', color: '#94a3b8', fontSize: '13px' }}>
                         No {selectedFacility === 'dc' ? 'data centers' : selectedFacility === 'pop' ? 'PoPs' : 'sites'} match the search filters.
                       </td>
                     </tr>
@@ -625,19 +1493,242 @@ export default function CityDetails() {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  className="net-tool-btn"
-                  title="Filter status"
-                  onClick={() => {
-                    const next = elementStatusFilter === 'all' ? 'verified' : elementStatusFilter === 'verified' ? 'drifted' : 'all';
-                    setElementStatusFilter(next);
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  </svg>
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className={`net-tool-btn${activeElementFilterCount > 0 ? ' is-active' : ''}`}
+                    title="Open network element column filters"
+                    onClick={() => {
+                      setIsElementFilterModalOpen(prev => !prev);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    {activeElementFilterCount > 0 && (
+                      <span className="net-filter-badge-counter">{activeElementFilterCount}</span>
+                    )}
+                  </button>
+
+                  {/* ── Two-Column Filter Modal for Network Elements ── */}
+                  {isElementFilterModalOpen && (
+                    <>
+                      <div
+                        className="column-filter-backdrop"
+                        onClick={() => setIsElementFilterModalOpen(false)}
+                      />
+                      <div className="column-filter-popover" role="dialog" aria-label="Filters">
+                        {/* Header */}
+                        <div className="column-filter-header">
+                          <span className="column-filter-title">Filters</span>
+                          <button
+                            type="button"
+                            className="column-filter-close-btn"
+                            onClick={() => setIsElementFilterModalOpen(false)}
+                            aria-label="Close filters"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Two-Column Body */}
+                        <div className="column-filter-body">
+                          {/* Left Panel: Category Tabs */}
+                          <div className="column-filter-tabs">
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'status' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('status')}
+                            >
+                              <span>Status</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'category' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('category')}
+                            >
+                              <span>Category</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'nameOrIp' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('nameOrIp')}
+                            >
+                              <span>Name / IP</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'vendor' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('vendor')}
+                            >
+                              <span>Vendor</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'osVersion' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('osVersion')}
+                            >
+                              <span>OS Version</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`column-filter-tab-btn${activeElementFilterTab === 'locationCode' ? ' is-active' : ''}`}
+                              onClick={() => setActiveElementFilterTab('locationCode')}
+                            >
+                              <span>Location Code</span>
+                            </button>
+                          </div>
+
+                          {/* Right Panel: Controls */}
+                          <div className="column-filter-pane">
+                            {activeElementFilterTab === 'status' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Status</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedElementFilters.status}
+                                  onChange={e => updateElementFilter({ status: e.target.value })}
+                                >
+                                  <option value="all">Status (All)</option>
+                                  <option value="Verified">Verified</option>
+                                  <option value="Drifted">Drifted</option>
+                                  <option value="Stale">Stale</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeElementFilterTab === 'category' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Device Category</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedElementFilters.category}
+                                  onChange={e => updateElementFilter({ category: e.target.value as DeviceCategory })}
+                                >
+                                  <option value="All">Category (All)</option>
+                                  <option value="Routers">Routers</option>
+                                  <option value="Switches">Switches</option>
+                                  <option value="Firewalls">Firewalls</option>
+                                  <option value="Access Points">Access Points</option>
+                                  <option value="Servers">Servers</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeElementFilterTab === 'nameOrIp' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Name or IP Address</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. DEL-CR-01 or 10.42..."
+                                    value={appliedElementFilters.nameOrIp}
+                                    onChange={e => updateElementFilter({ nameOrIp: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedElementFilters.nameOrIp && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateElementFilter({ nameOrIp: '' })}
+                                      className="net-search-clear"
+                                      title="Clear name or IP"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeElementFilterTab === 'vendor' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Equipment Vendor</label>
+                                <select
+                                  className="column-filter-select"
+                                  value={appliedElementFilters.vendor}
+                                  onChange={e => updateElementFilter({ vendor: e.target.value })}
+                                >
+                                  <option value="all">Vendor (All)</option>
+                                  <option value="Cisco">Cisco</option>
+                                  <option value="Juniper">Juniper</option>
+                                  <option value="Arista">Arista</option>
+                                  <option value="Nokia">Nokia</option>
+                                  <option value="Huawei">Huawei</option>
+                                </select>
+                              </div>
+                            )}
+
+                            {activeElementFilterTab === 'osVersion' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Operating System / Firmware</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. IOS-XR 7.3, Junos 21.4..."
+                                    value={appliedElementFilters.osVersion}
+                                    onChange={e => updateElementFilter({ osVersion: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedElementFilters.osVersion && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateElementFilter({ osVersion: '' })}
+                                      className="net-search-clear"
+                                      title="Clear OS version"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeElementFilterTab === 'locationCode' && (
+                              <div className="filter-field-group">
+                                <label className="column-filter-field-label">Location / Rack Position</label>
+                                <div style={{ position: 'relative' }}>
+                                  <input
+                                    type="text"
+                                    className="column-filter-input"
+                                    placeholder="e.g. RK-A01, POD-1..."
+                                    value={appliedElementFilters.locationCode}
+                                    onChange={e => updateElementFilter({ locationCode: e.target.value })}
+                                    autoFocus
+                                  />
+                                  {appliedElementFilters.locationCode && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateElementFilter({ locationCode: '' })}
+                                      className="net-search-clear"
+                                      title="Clear location code"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="column-filter-footer">
+                          <button
+                            type="button"
+                            className="column-filter-apply-btn"
+                            onClick={() => {
+                              setIsElementFilterModalOpen(false);
+                            }}
+                          >
+                            Apply filters
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 

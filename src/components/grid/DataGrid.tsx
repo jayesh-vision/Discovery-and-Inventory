@@ -85,8 +85,8 @@ function useOutsideClose(open: boolean, close: () => void) {
   return ref;
 }
 
-export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset, compact, hideReset }: {
-  fields: FilterField[]; activeFilters?: Record<string, string>; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset: () => void;
+export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: _onReset, compact, hideReset: _hideReset }: {
+  fields: FilterField[]; activeFilters?: Record<string, string>; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset?: () => void;
   compact?: boolean;
   hideReset?: boolean;
 }) {
@@ -96,22 +96,23 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset, 
   const [values, setValues] = useState<Record<string, string>>(() => (activeFilters ? { ...activeFilters } : {}));
   const f = fields[Math.min(fi, fields.length - 1)];
 
-  /* When switching filter tab, reset local values and reset applied filter to default */
+  /* When switching filter tab, switch without resetting applied filters */
   const handleTabClick = (i: number) => {
     if (i !== fi) {
       setFi(i);
-      setValues({});
-      onReset();
     }
   };
 
-  /* When selecting a filter value, keep only that filter (without prematurely resetting applied filter) */
+  /* When selecting a filter value, update that specific filter */
   const setField = (v: string) => {
-    if (!v) {
-      setValues({});
-    } else {
-      setValues({ [f.n]: v });
-    }
+    setValues(prev => {
+      if (!v) {
+        const next = { ...prev };
+        delete next[f.n];
+        return next;
+      }
+      return { ...prev, [f.n]: v };
+    });
   };
 
   const handleApply = () => {
@@ -144,9 +145,6 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset, 
       </div>
       <div className="fpanel-foot">
         <span className="grow" />
-        {!hideReset && (
-          <button className="nst-btn nst-btn--sm" onClick={() => { setValues({}); onReset(); onClose(); }}>Reset to default</button>
-        )}
         <button className="nst-btn nst-btn--sm fp-apply" onClick={handleApply}>Apply filters</button>
       </div>
     </div>
