@@ -26,3 +26,5 @@ export const SIDE_CHEVRON = `<svg class="side-chevron" width="16" height="16" vi
 
 /* Discovery and reconciliation's Reports shares Inventory's report glyph */
 SIDE_ICONS.discoveryreports = SIDE_ICONS.reports;
+SIDE_ICONS.home = SIDE_ICONS.insights;
+SIDE_ICONS.inventoryinsights = SIDE_ICONS.insights;

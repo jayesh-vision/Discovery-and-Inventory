@@ -20,15 +20,15 @@ interface CoverageCircle {
 }
 
 const COVERAGE_CIRCLES: CoverageCircle[] = [
-  { code: 'OTH', name: 'Other circles', dc: 3, pop: 25, sites: 227, total: 255, onAirPct: 67, failed: 3, severity: 'blocked' },
-  { code: 'MH', name: 'Maharashtra', dc: 4, pop: 32, sites: 212, total: 248, onAirPct: 70, failed: 5, severity: 'blocked' },
-  { code: 'UP', name: 'Uttar Pradesh', dc: 3, pop: 27, sites: 191, total: 221, onAirPct: 71, failed: 7, severity: 'blocked' },
-  { code: 'KA', name: 'Karnataka', dc: 3, pop: 26, sites: 182, total: 211, onAirPct: 76, failed: 3, severity: 'blocked' },
-  { code: 'MP', name: 'Madhya Pradesh', dc: 2, pop: 24, sites: 168, total: 194, onAirPct: 61, failed: 5, severity: 'blocked' },
-  { code: 'DL', name: 'Delhi', dc: 3, pop: 22, sites: 151, total: 176, onAirPct: 79, failed: 3, severity: 'blocked' },
-  { code: 'TN', name: 'Tamil Nadu', dc: 2, pop: 19, sites: 133, total: 154, onAirPct: 73, failed: 4, severity: 'blocked' },
-  { code: 'GJ', name: 'Gujarat', dc: 2, pop: 18, sites: 132, total: 152, onAirPct: 68, failed: 1, severity: 'blocked' },
-  { code: 'AP', name: 'Andhra Pradesh', dc: 2, pop: 17, sites: 124, total: 143, onAirPct: 67, failed: 3, severity: 'blocked' },
+  { code: 'MH', name: 'Maharashtra', dc: 28, pop: 86, sites: 220, total: 334, onAirPct: 70, failed: 6, severity: 'blocked' },
+  { code: 'OTH', name: 'Other circles', dc: 33, pop: 82, sites: 216, total: 331, onAirPct: 67, failed: 4, severity: 'blocked' },
+  { code: 'KA', name: 'Karnataka', dc: 26, pop: 75, sites: 198, total: 299, onAirPct: 76, failed: 4, severity: 'blocked' },
+  { code: 'UP', name: 'Uttar Pradesh', dc: 25, pop: 72, sites: 196, total: 293, onAirPct: 71, failed: 8, severity: 'blocked' },
+  { code: 'DL', name: 'Delhi', dc: 22, pop: 65, sites: 174, total: 261, onAirPct: 79, failed: 3, severity: 'blocked' },
+  { code: 'GJ', name: 'Gujarat', dc: 20, pop: 60, sites: 162, total: 242, onAirPct: 68, failed: 1, severity: 'blocked' },
+  { code: 'TN', name: 'Tamil Nadu', dc: 18, pop: 55, sites: 148, total: 221, onAirPct: 73, failed: 4, severity: 'blocked' },
+  { code: 'MP', name: 'Madhya Pradesh', dc: 18, pop: 55, sites: 148, total: 221, onAirPct: 61, failed: 5, severity: 'blocked' },
+  { code: 'AP', name: 'Andhra Pradesh', dc: 16, pop: 50, sites: 132, total: 198, onAirPct: 67, failed: 1, severity: 'blocked' },
 ];
 
 export default function Location() {
@@ -68,23 +68,23 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-slate-200)', '--kpi-hover': 'var(--vw-color-slate-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick(undefined, 'All locations')}
-          aria-label="Total locations: 1,754 locations, 1,232 on-air"
+          aria-label="Total locations: 2,400 locations, 1,755 on-air"
         >
           <div className="vw-card-metric-label kprog-label">Total locations</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">1,754</span>
+            <span className="vw-card-metric-xl num">2,400</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>1,232 on-air</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>1,755 on-air</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '1.37%', background: '#a855f7' }} title="Datacenters: 24" />
-            <span style={{ width: '11.97%', background: '#0284c7' }} title="PoP locations: 210" />
-            <span style={{ width: '86.66%', background: '#0d9488' }} title="Sites: 1,520" />
+            <span style={{ width: '8.58%', background: '#a855f7' }} title="Datacenters: 206" />
+            <span style={{ width: '25%', background: '#0284c7' }} title="PoP locations: 600" />
+            <span style={{ width: '66.42%', background: '#0d9488' }} title="Sites: 1,594" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />24 datacenters</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />210 pop locations</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />1,520 sites</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />206 datacenters</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />600 pop locations</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />1,594 sites</span>
           </div>
         </button>
 
@@ -94,23 +94,23 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('dc', 'Datacenters — filtered list')}
-          aria-label="Datacenters: 24 locations, 88% on-air · 0 failed"
+          aria-label="Datacenters: 206 locations, 88% on-air · 0 failed"
         >
           <div className="vw-card-metric-label kprog-label">Datacenters</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">24</span>
+            <span className="vw-card-metric-xl num">206</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>88% on-air · 0 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '87.5%', background: '#10b981' }} title="On-air: 21" />
-            <span style={{ width: '8.33%', background: '#f59e0b' }} title="In progress: 2" />
-            <span style={{ width: '4.17%', background: '#0ea5e9' }} title="Planned: 1" />
+            <span style={{ width: '87.86%', background: '#10b981' }} title="On-air: 181" />
+            <span style={{ width: '8.25%', background: '#f59e0b' }} title="In progress: 17" />
+            <span style={{ width: '3.88%', background: '#0ea5e9' }} title="Planned: 8" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />21 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />2 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />1 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />181 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />17 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />8 planned</span>
             <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />0 failed</span>
           </div>
         </button>
@@ -121,25 +121,25 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-sky-200)', '--kpi-hover': 'var(--vw-color-sky-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('pop', 'PoP locations — filtered list')}
-          aria-label="PoP locations: 210 locations, 79% on-air · 3 failed"
+          aria-label="PoP locations: 600 locations, 79% on-air · 8 failed"
         >
           <div className="vw-card-metric-label kprog-label">PoP locations</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">210</span>
+            <span className="vw-card-metric-xl num">600</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>79% on-air · 3 failed</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>79% on-air · 8 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '78.57%', background: '#10b981' }} title="On-air: 165" />
-            <span style={{ width: '12.86%', background: '#f59e0b' }} title="In progress: 27" />
-            <span style={{ width: '7.14%', background: '#0ea5e9' }} title="Planned: 15" />
-            <span style={{ width: '1.43%', background: '#ef4444' }} title="Failed: 3" />
+            <span style={{ width: '79%', background: '#10b981' }} title="On-air: 474" />
+            <span style={{ width: '12.83%', background: '#f59e0b' }} title="In progress: 77" />
+            <span style={{ width: '6.83%', background: '#0ea5e9' }} title="Planned: 41" />
+            <span style={{ width: '1.33%', background: '#ef4444' }} title="Failed: 8" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />165 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />27 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />15 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />3 failed</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />474 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />77 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />41 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />8 failed</span>
           </div>
         </button>
 
@@ -149,25 +149,25 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-teal-200)', '--kpi-hover': 'var(--vw-color-teal-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('site', 'Sites — filtered list')}
-          aria-label="Sites: 1,520 locations, 69% on-air · 31 failed"
+          aria-label="Sites: 1,594 locations, 69% on-air · 28 failed"
         >
           <div className="vw-card-metric-label kprog-label">Sites</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">1,520</span>
+            <span className="vw-card-metric-xl num">1,594</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>69% on-air · 31 failed</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>69% on-air · 28 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '68.82%', background: '#10b981' }} title="On-air: 1,046" />
-            <span style={{ width: '13.62%', background: '#f59e0b' }} title="In progress: 207" />
-            <span style={{ width: '15.53%', background: '#0ea5e9' }} title="Planned: 236" />
-            <span style={{ width: '2.03%', background: '#ef4444' }} title="Failed: 31" />
+            <span style={{ width: '69.01%', background: '#10b981' }} title="On-air: 1,100" />
+            <span style={{ width: '13.61%', background: '#f59e0b' }} title="In progress: 217" />
+            <span style={{ width: '15.62%', background: '#0ea5e9' }} title="Planned: 249" />
+            <span style={{ width: '1.76%', background: '#ef4444' }} title="Failed: 28" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />1,046 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />207 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />236 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />31 failed</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />1,100 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />217 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />249 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />28 failed</span>
           </div>
         </button>
       </section>
@@ -222,7 +222,7 @@ export default function Location() {
             style={{ borderColor: 'var(--vw-color-sky-200)', '--kpi-hover': 'var(--vw-color-sky-400)' } as React.CSSProperties}
             onClick={() => nav('/inventory/physical')}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/physical'); } }}
-            aria-label="Active inventory: 2,497. Physical elements across the estate"
+            aria-label="Active inventory: 3,421. Physical elements across the estate"
           >
             <div className="row vw-gap-sm vw-items-center">
               <span className="cov-alert-icon" style={{ background: 'var(--vw-color-sky-50)', color: 'var(--vw-color-sky-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
@@ -233,15 +233,15 @@ export default function Location() {
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="vw-card-metric-label">Active inventory</span>
-                <span className="vw-card-metric-xl num">2,497</span>
+                <span className="vw-card-metric-xl num">3,421</span>
               </div>
             </div>
             <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
-              Physical elements across the estate · 2,603 verified on the network
+              Physical elements across the estate · 3,567 verified on the network
             </div>
             <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '86%', background: '#0284c7' }} title="Router: 2,148" />
-              <span style={{ width: '14%', background: '#0ea5e9' }} title="Switch: 349" />
+              <span style={{ width: '86%', background: '#0284c7' }} title="Router: 2,943" />
+              <span style={{ width: '14%', background: '#0ea5e9' }} title="Switch: 478" />
             </div>
             <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
@@ -251,7 +251,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/physical?tab=router'); }}
                 title="View Routers in inventory"
               >
-                Router <b>2,148</b>
+                Router <b>2,943</b>
               </button>
               <button
                 type="button"
@@ -260,7 +260,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/physical?tab=switch'); }}
                 title="View Switches in inventory"
               >
-                Switch <b>349</b>
+                Switch <b>478</b>
               </button>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function Location() {
             style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)' } as React.CSSProperties}
             onClick={() => nav('/inventory/virtual')}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/virtual'); } }}
-            aria-label="Logical inventory: 6,732. Virtual resources and services"
+            aria-label="Logical inventory: 9,222. Virtual resources and services"
           >
             <div className="row vw-gap-sm vw-items-center">
               <span className="cov-alert-icon" style={{ background: 'var(--vw-color-purple-50)', color: 'var(--vw-color-purple-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
@@ -284,17 +284,18 @@ export default function Location() {
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="vw-card-metric-label">Logical inventory</span>
-                <span className="vw-card-metric-xl num">6,732</span>
+                <span className="vw-card-metric-xl num">9,222</span>
               </div>
             </div>
             <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
-              4,892 links and 1,840 provisioned services · plus 312 VNFs
+              6,705 links and 2,517 provisioned services · plus 428 VNFs
             </div>
             <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '45%', background: '#a855f7' }} title="LLDP: 2,201" />
-              <span style={{ width: '25%', background: '#0284c7' }} title="OSPF: 1,223" />
-              <span style={{ width: '15%', background: '#06b6d4' }} title="BGP: 734" />
-              <span style={{ width: '15%', background: '#0d9488' }} title="L3VPN: 1,361" />
+              <span style={{ width: '40%', background: '#a855f7' }} title="LLDP: 3,015" />
+              <span style={{ width: '22%', background: '#0284c7' }} title="OSPF: 1,675" />
+              <span style={{ width: '13%', background: '#06b6d4' }} title="BGP: 1,006" />
+              <span style={{ width: '18%', background: '#0d9488' }} title="L3VPN: 1,865" />
+              <span style={{ width: '7%', background: '#7c3aed' }} title="L2VPN: 661" />
             </div>
             <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
@@ -304,7 +305,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/links?tab=lldp'); }}
                 title="View LLDP links"
               >
-                LLDP <b>2,201</b>
+                LLDP <b>3,015</b>
               </button>
               <button
                 type="button"
@@ -313,7 +314,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/links?tab=ospf'); }}
                 title="View OSPF links"
               >
-                OSPF <b>1,223</b>
+                OSPF <b>1,675</b>
               </button>
               <button
                 type="button"
@@ -322,7 +323,16 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/services?tab=l3vpn'); }}
                 title="View L3VPN services"
               >
-                L3VPN <b>1,361</b>
+                L3VPN <b>1,865</b>
+              </button>
+              <button
+                type="button"
+                className="cov-chip inv-chip is-clickable"
+                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                onClick={e => { e.stopPropagation(); nav('/inventory/services?tab=l2vpn'); }}
+                title="View L2VPN services"
+              >
+                L2VPN <b>661</b>
               </button>
             </div>
           </div>
@@ -335,7 +345,7 @@ export default function Location() {
             style={{ borderColor: 'var(--vw-color-amber-200)', '--kpi-hover': 'var(--vw-color-amber-400)' } as React.CSSProperties}
             onClick={() => nav('/inventory/passive')}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/passive'); } }}
-            aria-label="Passive inventory: 1,420. Physical plant across 7 categories"
+            aria-label="Passive inventory: 1,945. Physical plant across 7 categories"
           >
             <div className="row vw-gap-sm vw-items-center">
               <span className="cov-alert-icon" style={{ background: 'var(--vw-color-amber-50)', color: 'var(--vw-color-amber-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
@@ -346,17 +356,17 @@ export default function Location() {
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="vw-card-metric-label">Passive inventory</span>
-                <span className="vw-card-metric-xl num">1,420</span>
+                <span className="vw-card-metric-xl num">1,945</span>
               </div>
             </div>
             <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
               Physical plant across 7 categories
             </div>
             <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '35%', background: '#f59e0b' }} title="ODF: 497" />
-              <span style={{ width: '30%', background: '#64748b' }} title="Racks: 426" />
-              <span style={{ width: '20%', background: '#06b6d4' }} title="Fiber spans: 284" />
-              <span style={{ width: '15%', background: '#a855f7' }} title="Splice closures: 213" />
+              <span style={{ width: '35%', background: '#f59e0b' }} title="ODF: 680" />
+              <span style={{ width: '30%', background: '#64748b' }} title="Racks: 584" />
+              <span style={{ width: '20%', background: '#06b6d4' }} title="Fiber spans: 389" />
+              <span style={{ width: '15%', background: '#a855f7' }} title="Splice closures: 292" />
             </div>
             <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
@@ -366,7 +376,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=odf'); }}
                 title="View ODF in passive infrastructure"
               >
-                ODF <b>497</b>
+                ODF <b>680</b>
               </button>
               <button
                 type="button"
@@ -375,7 +385,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=rack'); }}
                 title="View Racks in passive infrastructure"
               >
-                Racks <b>426</b>
+                Racks <b>584</b>
               </button>
               <button
                 type="button"
@@ -384,7 +394,7 @@ export default function Location() {
                 onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=fiber'); }}
                 title="View Fiber spans in passive infrastructure"
               >
-                Fiber <b>284</b>
+                Fiber <b>389</b>
               </button>
             </div>
           </div>

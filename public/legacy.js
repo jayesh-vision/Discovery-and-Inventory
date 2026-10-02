@@ -6971,7 +6971,7 @@ function viewSite() {
       { k:'Discovered',       v:n(l.disc), s:`${((l.disc/Math.max(l.ne,1))*100).toFixed(0)}% of record`, t:'emerald' },
       { k:'Drifted',          v:n(drift), s:'incl. duplicate serials', t:'amber' },
       { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
-      { k:'Links terminating',v:l.disc ? n(l.disc*4+7) : '0', s:'LLDP · OSPF · BGP', t:'purple' },
+      { k:'Links terminating',v:l.disc ? n(Math.round((l.disc*4+7)*1.37)) : '0', s:'LLDP · OSPF · BGP · L2VPN · L3VPN', t:'purple' },
       { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan' },
       { k:'Opex run rate',    v:inrShort(oxRun) + ' / mo', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
     ])}
@@ -7081,7 +7081,7 @@ function siteHeadData(id) {
         drill: { v: 'reconcile', l: `Drift at ${l.name}`, q: 'ne=Differ' } },
       { k: 'Not discovered', v: n(notDisc), s: 'planned or no collector', t: 'red',
         drill: { v: 'reconcile', l: `Not discovered at ${l.name}`, q: 'ne=Only in inventory' } },
-      { k: 'Links terminating', v: l.disc ? n(l.disc * 4 + 7) : '0', s: 'LLDP · OSPF · BGP', t: 'purple',
+      { k: 'Links terminating', v: l.disc ? n(Math.round((l.disc * 4 + 7) * 1.37)) : '0', s: 'LLDP · OSPF · BGP · L2VPN · L3VPN', t: 'purple',
         drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
       { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
       { k: 'Opex run rate', v: inrShort(oxRun) + ' / mo', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
@@ -9507,9 +9507,8 @@ function viewDwdmResource(N) {
         D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
         '', () => []));
 
-  const nodeViewBtn = `<button class="nst-btn nst-btn--sm is-drill"${dA({ v:'node', l:`${nodeClassName('dwdm')} · ${N.name}`, q:`name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>Node view</button>`;
   return `<div class="page">
-    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`, nodeViewBtn)}
+    ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}
 
     ${card(`
       <div class="nv-head">

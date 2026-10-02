@@ -40,6 +40,7 @@ export default function App() {
                 </NodeViewProvider>
               }
             />
+            <Route path="/inventory" element={<Navigate to="/inventory/insights" replace />} />
             {SCREENS.map(s => (
               <Route key={s.key} path={s.path}
                 element={s.component ? <s.component /> : <LegacyView legacyKey={s.key} />} />

@@ -6,8 +6,8 @@ import { REGIONS, STATE_DEVICES, VENDORS, filterIdentified, type IdentifiedDevic
 
 const isRegion = (v: string | null): v is Region => !!v && REGIONS.some(r => r.region === v);
 
-/* The wider identified estate (2,603 devices) behind the state map and the
-   vendor table — a separate, larger population than the 2,308 targets this
+/* The wider identified estate (3,567 devices) behind the state map and the
+   vendor table — a separate, larger population than the 3,162 targets this
    cycle polled (identification also comes from topology). state/vendor/model
    in the URL are the same filter scopeDiscovery and this list both run
    through filterIdentified, so "Maharashtra — 233" and this grid's row count

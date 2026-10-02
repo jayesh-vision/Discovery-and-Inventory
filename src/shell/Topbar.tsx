@@ -42,7 +42,7 @@ export default function Topbar() {
 
   /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
   shallower to drill back to from here, so there's no real trail to show. */
-  if (s.key === 'insights' || s.key === 'reconcile') {
+  if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'home' || s.key === 'inventoryinsights') {
     return null;
   }
   /* Every other sidebar-rail landing page has the same "second page title"

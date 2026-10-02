@@ -9,7 +9,7 @@ const isStatus = (v: string | null): v is DeviceStatus => v === 'Answered' || v 
 
 /* Every device the region's tile counts, failures included — the tile says
    "636 devices · 52 failed" and this is those 636 rows; with no region (the
-   /discovery/insights/devices route) it is every one of the 2,308 polled
+   /discovery/insights/devices route) it is every one of the 3,162 polled
    targets network-wide. status/vendor/model/reason in the URL arrive
    pre-applied — the same query a dashboard count was computed with — so the
    number that was clicked and the rows behind it are never two different
