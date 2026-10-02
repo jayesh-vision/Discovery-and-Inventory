@@ -16,6 +16,7 @@ const RAIL: { section: string; items: Item[] }[] = [
       { key: 'rules', label: 'Rules' } ] },
     { key: 'discoveryreports', label: 'Reports' } ] },
   { section: 'Inventory', items: [
+    { key: 'inventoryinsights', label: 'Insights' },
     { key: 'location', label: 'Location' },
     { group: 'res', label: 'Resources', children: [
       { key: 'virtual', label: 'Virtual Resources' }, { key: 'physical', label: 'Physical Resources' }, { key: 'passive', label: 'Passive Infrastructure' } ] },
@@ -62,7 +63,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
       <div className="side-top">
         <button className="side-toggle" onClick={onToggle} aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
           aria-expanded={!collapsed} title={collapsed ? 'Expand menu' : 'Collapse menu'}><Svg html={SIDE_GRID} /></button>
-        <button className="side-home" onClick={() => nav('/inventory')}>Home</button>
+        <button className="side-home" onClick={() => nav('/inventory/insights')}>Home</button>
         <span className="grow" />
         <span onClick={onToggle} style={{ display: 'contents', cursor: 'pointer' }}><Svg html={SIDE_CHEVRON} /></span>
       </div>

@@ -155,13 +155,13 @@ export interface DiscoveryJobRow {
 }
 export const DISCOVERY_JOB_ROWS: DiscoveryJobRow[] = [
   { domain: 'RAN', protocols: 'SNMP v2c/v3', schedule: 'Continuous · 6 hrs sweep',
-    targets: 8450, coveragePct: 99.55, status: 'Healthy', lastRun: '6 hrs ago', nextRun: 'sweeping now' },
+    targets: 11577, coveragePct: 99.55, status: 'Healthy', lastRun: '6 hrs ago', nextRun: 'sweeping now' },
   { domain: 'Core', protocols: 'REST (NRF), NETCONF', schedule: 'Continuous · 2 hrs sweep',
-    targets: 340, coveragePct: 100, status: 'Healthy', lastRun: '2 hrs ago', nextRun: 'sweeping now' },
+    targets: 466, coveragePct: 100, status: 'Healthy', lastRun: '2 hrs ago', nextRun: 'sweeping now' },
   { domain: 'Transport', protocols: 'SNMP, LLDP, TL1', schedule: 'Nightly 01:00 + 12 min delta',
-    targets: 2180, coveragePct: 98.62, status: 'Credential warning', lastRun: '32 min ago', nextRun: '01:00 · in 5h 49m' },
+    targets: 2987, coveragePct: 98.62, status: 'Credential warning', lastRun: '32 min ago', nextRun: '01:00 · in 5h 49m' },
   { domain: 'IPMPLS', protocols: 'NETCONF/YANG, LLDP', schedule: 'Continuous · 60s delta',
-    targets: 1284, coveragePct: 100, status: 'Healthy', lastRun: '48 sec ago', nextRun: 'sweeping now' }
+    targets: 1759, coveragePct: 100, status: 'Healthy', lastRun: '48 sec ago', nextRun: 'sweeping now' }
 ];
 
 /* ── All discovery scan jobs (individual fleet across domains) ──────── */
@@ -188,118 +188,118 @@ export const DISCOVERY_SCAN_JOBS: DiscoveryScanJob[] = [
   {
     id: 'DSC-RAN-BLR', domain: 'RAN', site: 'Karnataka · RAN cluster', scope: 'gNodeB/eNodeB · Bengaluru-East',
     collector: 'clr-blr-04', cred: 'ro-ran-v1', schedule: 'Continuous · 6 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:05', duration: '5 m 51 s', targets: 2350, clean: 2309, partial: 30, fail: 11, status: 'Completed'
+    lastRun: '25-Sep-2026 03:05', duration: '5 m 51 s', targets: 3221, clean: 3165, partial: 41, fail: 15, status: 'Completed'
   },
   {
     id: 'DSC-RAN-DEL', domain: 'RAN', site: 'Delhi NCR · RAN cluster', scope: 'gNodeB/eNodeB · Delhi-Central',
     collector: 'clr-del-04', cred: 'ro-ran-v1', schedule: 'Continuous · 6 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:04', duration: '5 m 22 s', targets: 2200, clean: 2163, partial: 28, fail: 9, status: 'Completed'
+    lastRun: '25-Sep-2026 03:04', duration: '5 m 22 s', targets: 3014, clean: 2964, partial: 38, fail: 12, status: 'Completed'
   },
   {
     id: 'DSC-RAN-MUM', domain: 'RAN', site: 'Maharashtra · RAN cluster', scope: 'gNodeB/eNodeB · Mumbai-West',
     collector: 'clr-mum-01', cred: 'ro-ran-v1', schedule: 'Continuous · 6 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:03', duration: '4 m 58 s', targets: 2050, clean: 2016, partial: 26, fail: 8, status: 'Completed'
+    lastRun: '25-Sep-2026 03:03', duration: '4 m 58 s', targets: 2808, clean: 2761, partial: 36, fail: 11, status: 'Completed'
   },
   {
     id: 'DSC-RAN-HYD', domain: 'RAN', site: 'Telangana · RAN cluster', scope: 'gNodeB/eNodeB · Hyderabad-South',
     collector: 'clr-hyd-01', cred: 'ro-ran-v1', schedule: 'Continuous · 6 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:02', duration: '4 m 41 s', targets: 1850, clean: 1818, partial: 24, fail: 8, status: 'Completed'
+    lastRun: '25-Sep-2026 03:02', duration: '4 m 41 s', targets: 2534, clean: 2490, partial: 33, fail: 11, status: 'Completed'
   },
 
   // Core fleet (3 jobs, 340 targets)
   {
     id: 'DSC-CORE-NRF', domain: 'Core', site: 'Karnataka · 5GC core', scope: 'AMF/UPF · NRF-registered NFs',
     collector: 'clr-blr-05', cred: 'ro-core-v1', schedule: 'Continuous · 2 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:02', duration: '1 m 40 s', targets: 130, clean: 130, partial: 0, fail: 0, status: 'Completed'
+    lastRun: '25-Sep-2026 03:02', duration: '1 m 40 s', targets: 178, clean: 178, partial: 0, fail: 0, status: 'Completed'
   },
   {
     id: 'DSC-CORE-DEL', domain: 'Core', site: 'Delhi · 5GC core (secondary)', scope: 'AMF/UPF · NRF-registered NFs',
     collector: 'clr-del-05', cred: 'ro-core-v1', schedule: 'Continuous · 2 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 03:01', duration: '1 m 22 s', targets: 115, clean: 114, partial: 1, fail: 0, status: 'Completed'
+    lastRun: '25-Sep-2026 03:01', duration: '1 m 22 s', targets: 158, clean: 157, partial: 1, fail: 0, status: 'Completed'
   },
   {
     id: 'DSC-CORE-MUM', domain: 'Core', site: 'Maharashtra · 5GC core (tertiary)', scope: 'AMF/UPF/SMF · NRF-registered NFs',
     collector: 'clr-mum-02', cred: 'ro-core-v1', schedule: 'Continuous · 2 hrs sweep', nextRun: 'sweeping now',
-    lastRun: '25-Sep-2026 02:58', duration: '1 m 15 s', targets: 95, clean: 94, partial: 1, fail: 0, status: 'Completed'
+    lastRun: '25-Sep-2026 02:58', duration: '1 m 15 s', targets: 130, clean: 129, partial: 1, fail: 0, status: 'Completed'
   },
 
   // Transport fleet (5 jobs, 2,180 targets)
   {
     id: 'DSC-TRANSPORT-BLR', domain: 'Transport', site: 'Karnataka · transport ring', scope: '172.31.162.0/24 · 172.31.165.0/24',
     collector: 'clr-blr-06', cred: 'ro-optical-v3', schedule: 'Nightly 01:00', nextRun: 'tomorrow 01:00',
-    lastRun: '25-Sep-2026 01:00', duration: '15 m 40 s', targets: 650, clean: 598, partial: 41, fail: 11, status: 'Completed'
+    lastRun: '25-Sep-2026 01:00', duration: '15 m 40 s', targets: 891, clean: 820, partial: 56, fail: 15, status: 'Completed'
   },
   {
     id: 'DSC-TRANSPORT-DEL', domain: 'Transport', site: 'Delhi · transport ring', scope: '172.31.166.0/24 · 172.31.169.0/24',
     collector: 'clr-del-06', cred: 'ro-optical-v3', schedule: 'Nightly 01:30', nextRun: 'tomorrow 01:30',
-    lastRun: '25-Sep-2026 01:30', duration: '13 m 58 s', targets: 600, clean: 561, partial: 30, fail: 9, status: 'Completed'
+    lastRun: '25-Sep-2026 01:30', duration: '13 m 58 s', targets: 822, clean: 769, partial: 41, fail: 12, status: 'Completed'
   },
   {
     id: 'DSC-TRANSPORT-CHE', domain: 'Transport', site: 'Tamil Nadu · transport ring', scope: '172.31.170.0/24 · 172.31.174.0/24',
     collector: 'clr-mas-02', cred: 'ro-optical-v3', schedule: 'Nightly 02:00', nextRun: 'tomorrow 02:00',
-    lastRun: '25-Sep-2026 02:00', duration: '16 m 12 s', targets: 676, clean: 612, partial: 47, fail: 17, status: 'Completed'
+    lastRun: '25-Sep-2026 02:00', duration: '16 m 12 s', targets: 926, clean: 839, partial: 64, fail: 23, status: 'Completed'
   },
   {
     id: 'DSC-DWDM-RING', domain: 'Transport', site: 'Maharashtra · transport ring', scope: '172.31.175.0/24 · 172.31.179.255/24',
     collector: 'clr-blr-02', cred: 'ro-optical-v3', schedule: 'Weekly Sun 04:00', nextRun: 'Sun 04:00',
-    lastRun: '19-Nov-2025 04:00', duration: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18, status: 'No adapter'
+    lastRun: '19-Nov-2025 04:00', duration: '08 m 51 s', targets: 241, clean: 180, partial: 36, fail: 25, status: 'No adapter'
   },
   {
     id: 'DSC-DWDM-OPTICAL', domain: 'Transport', site: 'All circles · optical layer', scope: '172.31.180.0/24 · 172.31.189.255/24',
     collector: 'clr-blr-03', cred: 'netconf-optical', schedule: 'Weekly', nextRun: '26-Sep-2026 01:00',
-    lastRun: '19-Sep-2026 01:00', duration: '21 m 18 s', targets: 78, clean: 61, partial: 12, fail: 5, status: 'Completed'
+    lastRun: '19-Sep-2026 01:00', duration: '21 m 18 s', targets: 107, clean: 84, partial: 16, fail: 7, status: 'Completed'
   },
 
   // IP/MPLS fleet (10 jobs)
   {
     id: 'DSC-SOUTH-CORE', domain: 'IPMPLS', site: 'Karnataka · south core', scope: '172.31.31.0/24 · 172.31.34.255/24',
     collector: 'clr-blr-02', cred: 'ro-inband-v3', schedule: 'Every 6 h', nextRun: 'today 15:00',
-    lastRun: '25-Sep-2026 09:10', duration: '13 m 44 s', targets: 412, clean: 355, partial: 43, fail: 14, status: 'Completed'
+    lastRun: '25-Sep-2026 09:10', duration: '13 m 44 s', targets: 564, clean: 486, partial: 59, fail: 19, status: 'Completed'
   },
   {
     id: 'DSC-INDR-ACCESS', domain: 'IPMPLS', site: 'Madhya Pradesh · Indore access', scope: '172.31.35.0/24 · 172.31.41.255/24',
     collector: 'clr-indr-01', cred: 'ro-inband-v3', schedule: 'Daily 02:00', nextRun: 'tomorrow 02:00',
-    lastRun: '25-Sep-2026 02:00', duration: '41 m 02 s', targets: 388, clean: 289, partial: 62, fail: 37, status: 'Completed with errors'
+    lastRun: '25-Sep-2026 02:00', duration: '41 m 02 s', targets: 532, clean: 396, partial: 85, fail: 51, status: 'Completed with errors'
   },
   {
     id: 'DSC-DEL-EDGE', domain: 'IPMPLS', site: 'Delhi · edge', scope: '172.31.42.0/24 · 172.31.49.255/24',
     collector: 'clr-del-01', cred: 'ro-oob-v2', schedule: 'Daily 03:00', nextRun: 'tomorrow 03:00',
-    lastRun: '25-Sep-2026 03:00', duration: '22 m 18 s', targets: 341, clean: 305, partial: 32, fail: 4, status: 'Completed'
+    lastRun: '25-Sep-2026 03:00', duration: '22 m 18 s', targets: 467, clean: 418, partial: 44, fail: 5, status: 'Completed'
   },
   {
     id: 'DSC-AP-ACCESS', domain: 'IPMPLS', site: 'Andhra Pradesh · access', scope: '172.31.50.0/24 · 172.31.59.255/24',
     collector: 'clr-vzg-01', cred: 'ro-inband-v3', schedule: 'Daily 02:30', nextRun: 'held',
-    lastRun: '25-Sep-2026 02:30', duration: '58 m 11 s', targets: 356, clean: 241, partial: 44, fail: 71, status: 'Completed with errors'
+    lastRun: '25-Sep-2026 02:30', duration: '58 m 11 s', targets: 488, clean: 331, partial: 60, fail: 97, status: 'Completed with errors'
   },
   {
     id: 'DSC-ODI-ACCESS', domain: 'IPMPLS', site: 'Odisha · access', scope: '172.31.60.0/24 · 172.31.69.255/24',
     collector: 'clr-bbs-01', cred: 'ro-inband-v3', schedule: 'Daily 02:30', nextRun: 'tomorrow 02:30',
-    lastRun: '24-Sep-2026 02:30', duration: '19 m 46 s', targets: 264, clean: 214, partial: 33, fail: 17, status: 'Completed'
+    lastRun: '24-Sep-2026 02:30', duration: '19 m 46 s', targets: 362, clean: 294, partial: 45, fail: 23, status: 'Completed'
   },
   {
     id: 'DSC-TN-ACCESS', domain: 'IPMPLS', site: 'Tamil Nadu · access', scope: '172.31.70.0/24 · 172.31.74.255/24',
     collector: 'clr-mas-01', cred: 'ro-inband-v3', schedule: 'Weekly Sun 02:00', nextRun: 'Sun 02:00',
-    lastRun: '20-Sep-2026 02:14', duration: '24 m 09 s', targets: 285, clean: 246, partial: 30, fail: 9, status: 'Completed'
+    lastRun: '20-Sep-2026 02:14', duration: '24 m 09 s', targets: 390, clean: 337, partial: 41, fail: 12, status: 'Completed'
   },
   {
     id: 'DSC-LAB-SEED', domain: 'IPMPLS', site: 'Lab · CNOC', scope: 'Seed 172.31.86.61 · depth 3',
     collector: 'clr-lab-01', cred: 'lab-rw-v2', schedule: 'On demand', nextRun: '—',
-    lastRun: '25-Sep-2026 09:19', duration: '02 m 07 s', targets: 86, clean: 60, partial: 21, fail: 5, status: 'Running'
+    lastRun: '25-Sep-2026 09:19', duration: '02 m 07 s', targets: 118, clean: 82, partial: 29, fail: 7, status: 'Running'
   },
   {
     id: 'DSC-WEST-EDGE', domain: 'IPMPLS', site: 'Maharashtra · west edge', scope: '172.31.80.0/24 · 172.31.84.0/24',
     collector: 'clr-pun-01', cred: 'ro-inband-v3', schedule: 'Every 12 h', nextRun: 'today 21:00',
-    lastRun: '25-Sep-2026 09:00', duration: '9 m 12 s', targets: 268, clean: 231, partial: 29, fail: 8, status: 'Completed'
+    lastRun: '25-Sep-2026 09:00', duration: '9 m 12 s', targets: 367, clean: 316, partial: 40, fail: 11, status: 'Completed'
   },
   {
     id: 'DSC-EAST-AGG', domain: 'IPMPLS', site: 'West Bengal · aggregation', scope: '172.31.85.0/24 · 172.31.89.0/24',
     collector: 'clr-kol-01', cred: 'ro-inband-v3', schedule: 'Daily', nextRun: 'tomorrow 02:00',
-    lastRun: '25-Sep-2026 02:00', duration: '11 m 40 s', targets: 196, clean: 164, partial: 24, fail: 8, status: 'Completed'
+    lastRun: '25-Sep-2026 02:00', duration: '11 m 40 s', targets: 269, clean: 225, partial: 33, fail: 11, status: 'Completed'
   },
   {
     id: 'DSC-NORTH-ACCESS', domain: 'IPMPLS', site: 'Delhi NCR · access', scope: '172.31.90.0/24 · 172.31.95.255/24',
     collector: 'clr-del-02', cred: 'ro-oob-v3', schedule: 'Every 6 h', nextRun: 'today 18:00',
-    lastRun: '25-Sep-2026 12:04', duration: '7 m 02 s', targets: 324, clean: 289, partial: 26, fail: 9, status: 'Completed'
+    lastRun: '25-Sep-2026 12:04', duration: '7 m 02 s', targets: 444, clean: 396, partial: 36, fail: 12, status: 'Completed'
   }
 ];
 
@@ -338,11 +338,11 @@ export const COVERAGE_FUNNEL: FunnelStat[] = [
 /* ── Discovery adapters ───────────────────────────────────────────────── */
 export interface AdapterRow { adapter: string; proto: string; domains: DomainKey[]; endpoints: string; successPct: number; status: 'Healthy' | 'Credential warning' }
 export const ADAPTER_ROWS: AdapterRow[] = [
-  { adapter: 'SNMP v2c/v3', proto: 'UDP 161', domains: ['RAN', 'Transport'], endpoints: '8,742', successPct: 99.5, status: 'Healthy' },
-  { adapter: 'NETCONF/YANG', proto: 'TCP 830', domains: ['IPMPLS', 'Core'], endpoints: '1,544', successPct: 99.9, status: 'Healthy' },
-  { adapter: 'LLDP / CDP', proto: 'Link-layer', domains: ['Transport', 'IPMPLS'], endpoints: '3,354', successPct: 99.8, status: 'Healthy' },
-  { adapter: 'REST (NRF)', proto: 'HTTPS', domains: ['Core'], endpoints: '340 NFs', successPct: 100, status: 'Healthy' },
-  { adapter: 'TL1 (legacy)', proto: 'TCP 3083', domains: ['Transport'], endpoints: '68', successPct: 73.5, status: 'Credential warning' }
+  { adapter: 'SNMP v2c/v3', proto: 'UDP 161', domains: ['RAN', 'Transport'], endpoints: '11,977', successPct: 99.5, status: 'Healthy' },
+  { adapter: 'NETCONF/YANG', proto: 'TCP 830', domains: ['IPMPLS', 'Core'], endpoints: '2,115', successPct: 99.9, status: 'Healthy' },
+  { adapter: 'LLDP / CDP', proto: 'Link-layer', domains: ['Transport', 'IPMPLS'], endpoints: '4,590', successPct: 99.8, status: 'Healthy' },
+  { adapter: 'REST (NRF)', proto: 'HTTPS', domains: ['Core'], endpoints: '466 NFs', successPct: 100, status: 'Healthy' },
+  { adapter: 'TL1 (legacy)', proto: 'TCP 3083', domains: ['Transport'], endpoints: '93', successPct: 73.5, status: 'Credential warning' }
 ];
 
 /* ── Collector health ─────────────────────────────────────────────────── */

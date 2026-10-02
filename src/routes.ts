@@ -19,6 +19,7 @@ import { DiscoveryReports, InventoryReports } from './screens/reports/ReportsLan
 import { DiscoveryReportView, InventoryReportView } from './screens/reports/ReportView';
 import Location from './screens/Location';
 import CityDetails from './screens/CityDetails';
+import InventoryInsights from './screens/InventoryInsights';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -72,7 +73,8 @@ export const SCREENS: Screen[] = [
   { key: 'discoveryreport', path: '/discovery/reports/:id', module: 'Discovery and reconciliation',
     crumb: 'Reports · Report', rail: 'discoveryreports', component: DiscoveryReportView },
 
-  { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Home', legacy: true },
+  { key: 'inventoryinsights', path: '/inventory/insights', module: 'Inventory', crumb: 'Insights', component: InventoryInsights },
+  { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },

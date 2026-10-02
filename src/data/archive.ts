@@ -46,13 +46,25 @@ const DECOMM_SEEDS: Record<InactiveTab, ArchiveRow[]> = {
     { name: 'L2VPN-MAS-DEL-E-LINE-01', ip: '172.31.31.240', model: 'E-Line / VPWS', sn: 'VC-L2-990412', oem: 'JUNIPER', loc: 'MAS-041', why: 'Service decommissioned by customer request', on: '14-May-2026', by: 'Anjali Verma', wo: 'WO-2026-9412', zombie: false },
     { name: 'L2VPN-BLR-CHE-VPLS-04', ip: '172.31.41.118', model: 'E-LAN / VPLS', sn: 'VC-L2-884102', oem: 'CISCO', loc: 'BGLK-277', why: 'Migrated to EVPN-VPWS', on: '22-Mar-2026', by: 'Gaurav Shukla', wo: 'WO-2026-8841', zombie: false },
     { name: 'L2VPN-INDR-DEL-PSEUDOWIRE-09', ip: '172.31.38.99', model: 'PW-E1', sn: 'VC-L2-771904', oem: 'NOKIA', loc: 'INDR-275', why: 'Circuit retired', on: '11-Jan-2026', by: 'Amit Sharma', wo: 'WO-2026-7719', zombie: false },
-    { name: 'L2VPN-PUN-HYD-EVPN-12', ip: '172.31.52.88', model: 'EVPN-VPWS', sn: 'VC-L2-663201', oem: 'JUNIPER', loc: 'PUN-162', why: 'Capacity migration', on: '04-Dec-2025', by: 'Sai Krishna', wo: 'WO-2025-6632', zombie: false }
+    { name: 'L2VPN-PUN-HYD-EVPN-12', ip: '172.31.52.88', model: 'EVPN-VPWS', sn: 'VC-L2-663201', oem: 'JUNIPER', loc: 'PUN-162', why: 'Capacity migration', on: '04-Dec-2025', by: 'Sai Krishna', wo: 'WO-2025-6632', zombie: false },
+    { name: 'L2VPN-HDFC-BLR-CHE-ELINE-07', ip: '172.31.41.219', model: 'E-Line / VPWS', sn: 'VC-L2-112207', oem: 'JUNIPER', loc: 'BGLK-277', why: 'Bank consolidated to MPLS L3VPN', on: '15-Aug-2026', by: 'Priya Nair', wo: 'WO-2026-1122', zombie: false },
+    { name: 'L2VPN-ITPARK-HYD-MUM-VPLS-12', ip: '172.31.47.88', model: 'E-LAN / VPLS', sn: 'VC-L2-223412', oem: 'CISCO', loc: 'HYD-093', why: 'IT park decommissioned', on: '28-Jun-2026', by: 'Suresh Pillai', wo: 'WO-2026-2234', zombie: false },
+    { name: 'L2VPN-METRO-AHM-SUR-PW-19', ip: '172.31.22.144', model: 'PW-E1', sn: 'VC-L2-334819', oem: 'NOKIA', loc: 'AHM-131', why: 'TDM circuit migrated to packet', on: '10-Apr-2026', by: 'Rohan Mehta', wo: 'WO-2026-3348', zombie: false },
+    { name: 'L2VPN-GOV-RAIL-DEL-AGR-EVPN-3', ip: '172.31.35.167', model: 'EVPN-VPWS', sn: 'VC-L2-445603', oem: 'CISCO', loc: 'DEL-279', why: 'Station decommissioned from TEN', on: '05-Mar-2026', by: 'Harish Kumar', wo: 'WO-2026-4456', zombie: false },
+    { name: 'L2VPN-PORT-KOL-VIS-ELINE-08', ip: '172.31.67.211', model: 'E-Line / VPWS', sn: 'VC-L2-556308', oem: 'JUNIPER', loc: 'KOL-204', why: 'Port authority switched to dark fiber', on: '19-Dec-2025', by: 'Sai Krishna', wo: 'WO-2025-5563', zombie: false },
+    { name: 'L2VPN-MEDIA-MUM-DEL-VPLS-21', ip: '172.31.14.89', model: 'E-LAN / VPLS', sn: 'VC-L2-667821', oem: 'NOKIA', loc: 'MAS-041', why: 'Broadcast network migrated to IP multicast', on: '03-Oct-2025', by: 'Anjali Verma', wo: 'WO-2025-6678', zombie: false }
   ],
   l3vpn: [
     { name: 'L3VPN-ENT-CORP-DEL-01', ip: '172.31.35.101', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-550119', oem: 'CISCO', loc: 'DEL-279', why: 'Contract expired, service terminated', on: '18-Jun-2026', by: 'Harish Kumar', wo: 'WO-2026-5501', zombie: false },
     { name: 'L3VPN-BANK-HQ-MAS-02', ip: '172.31.33.204', model: 'IP-VPN / BGP-MPLS', sn: 'VRF-L3-441028', oem: 'JUNIPER', loc: 'MAS-041', why: 'Site migration', on: '04-Apr-2026', by: 'Sai Krishna', wo: 'WO-2026-4410', zombie: false },
     { name: 'L3VPN-GOVT-SECURE-BGLK-07', ip: '172.31.31.199', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-339104', oem: 'NOKIA', loc: 'BGLK-277', why: 'Upgraded to SD-WAN overlay', on: '29-Nov-2025', by: 'Anjali Verma', wo: 'WO-2025-3391', zombie: false },
-    { name: 'L3VPN-RETAIL-CHAIN-KOL-15', ip: '172.31.67.142', model: 'BGP-MPLS L3VPN', sn: 'VRF-L3-228109', oem: 'CISCO', loc: 'KOL-204', why: 'Hardware refresh', on: '15-Aug-2025', by: 'Amit Sharma', wo: 'WO-2025-2281', zombie: false }
+    { name: 'L3VPN-RETAIL-CHAIN-KOL-15', ip: '172.31.67.142', model: 'BGP-MPLS L3VPN', sn: 'VRF-L3-228109', oem: 'CISCO', loc: 'KOL-204', why: 'Hardware refresh', on: '15-Aug-2025', by: 'Amit Sharma', wo: 'WO-2025-2281', zombie: false },
+    { name: 'L3VPN-BANK-SBI-MUM-09', ip: '172.31.14.201', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-112009', oem: 'JUNIPER', loc: 'MAS-041', why: 'Bank migrated to SD-WAN', on: '12-Jul-2026', by: 'Rohan Mehta', wo: 'WO-2026-1120', zombie: false },
+    { name: 'L3VPN-GOVT-RAIL-DEL-03', ip: '172.31.35.118', model: 'IP-VPN / BGP-MPLS', sn: 'VRF-L3-223003', oem: 'CISCO', loc: 'DEL-279', why: 'Indian Railways own MPLS deployed', on: '08-May-2026', by: 'Anjali Verma', wo: 'WO-2026-2230', zombie: false },
+    { name: 'L3VPN-RETAIL-DMART-GJ-11', ip: '172.31.22.177', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-334011', oem: 'NOKIA', loc: 'AHM-131', why: 'Retail chain internal WAN deployed', on: '19-Feb-2026', by: 'Suresh Pillai', wo: 'WO-2026-3340', zombie: false },
+    { name: 'L3VPN-HOSP-APOLLO-HYD-06', ip: '172.31.47.233', model: 'BGP-MPLS L3VPN', sn: 'VRF-L3-445006', oem: 'CISCO', loc: 'HYD-093', why: 'Hospital chain upgraded to EVPN', on: '30-Sep-2025', by: 'Amit Sharma', wo: 'WO-2025-4450', zombie: false },
+    { name: 'L3VPN-EDU-IIT-CHE-04', ip: '172.31.70.155', model: 'MPLS L3VPN / VRF', sn: 'VRF-L3-556004', oem: 'JUNIPER', loc: 'CHE-118', why: 'University campus network privatized', on: '14-Nov-2025', by: 'Priya Nair', wo: 'WO-2025-5560', zombie: false },
+    { name: 'L3VPN-MFGR-TATA-PUN-07', ip: '172.31.42.198', model: 'IP-VPN / BGP-MPLS', sn: 'VRF-L3-667007', oem: 'NOKIA', loc: 'PUN-162', why: 'Manufacturing plant shut down', on: '22-Jan-2026', by: 'Gaurav Shukla', wo: 'WO-2026-6670', zombie: false }
   ]
 };
 

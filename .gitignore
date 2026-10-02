@@ -17,3 +17,6 @@ tsconfig.app.tsbuildinfo
 
 # vite transpile cache used by tests/unit (node --test)
 tests/unit/.vite-cache/
+.cache/
+.vite-cache-dev/
+.vite-user-cache/

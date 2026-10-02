@@ -20,11 +20,11 @@ const getClosedTime = () => {
 export const CYCLE = { closed: getClosedTime(), durationH: 4.2 };
 
 export const DL = {
-  targets: 2308,                              /* gateway / seed IPs polled          */
-  runFull: 1842, runPartial: 291, runFail: 175, /* = targets                        */
-  identified: 2603,                           /* devices that answered and were identified */
-  discRouter: 2212, discSwitch: 391,          /* = identified                       */
-  newThisCycle: 68,                           /* identified, no record last cycle   */
+  targets: 3162,                              /* gateway / seed IPs polled          */
+  runFull: 2524, runPartial: 399, runFail: 239, /* = targets                        */
+  identified: 3567,                           /* devices that answered and were identified */
+  discRouter: 3032, discSwitch: 535,          /* = identified                       */
+  newThisCycle: 93,                           /* identified, no record last cycle   */
 } as const;
 
 export const discoveryRate = () => (DL.runFull + DL.runPartial) / DL.targets;   /* answered at all */
@@ -42,12 +42,12 @@ export type DiscClass = typeof DISC_CLASSES[number]['k'];
    polled = targets, answered = full + partial, fresh = identified for the first time */
 export interface Cycle { day: string; router: number; switch: number; polled: number; answered: number; fresh: number; hours: number }
 export const DAILY: Cycle[] = [
-  { day: getPastDayLabel(6), router: 2166, switch: 379, polled: 2217, answered: 2029, fresh: 52, hours: 5.1 },
-  { day: getPastDayLabel(5), router: 2171, switch: 383, polled: 2231, answered: 2044, fresh: 41, hours: 5.4 },
-  { day: getPastDayLabel(4), router: 2158, switch: 380, polled: 2240, answered: 2038, fresh: 36, hours: 5.6 },
-  { day: getPastDayLabel(3), router: 2190, switch: 386, polled: 2262, answered: 2071, fresh: 58, hours: 5.0 },
-  { day: getPastDayLabel(2), router: 2181, switch: 384, polled: 2274, answered: 2079, fresh: 47, hours: 5.2 },
-  { day: getPastDayLabel(1), router: 2203, switch: 389, polled: 2289, answered: 2098, fresh: 66, hours: 5.3 },
+  { day: getPastDayLabel(6), router: 2967, switch: 519, polled: 3037, answered: 2779, fresh: 71, hours: 5.1 },
+  { day: getPastDayLabel(5), router: 2974, switch: 524, polled: 3056, answered: 2800, fresh: 56, hours: 5.4 },
+  { day: getPastDayLabel(4), router: 2956, switch: 521, polled: 3069, answered: 2792, fresh: 49, hours: 5.6 },
+  { day: getPastDayLabel(3), router: 3001, switch: 529, polled: 3099, answered: 2837, fresh: 79, hours: 5.0 },
+  { day: getPastDayLabel(2), router: 2988, switch: 526, polled: 3115, answered: 2849, fresh: 64, hours: 5.2 },
+  { day: getPastDayLabel(1), router: 3018, switch: 533, polled: 3136, answered: 2875, fresh: 90, hours: 5.3 },
   { day: getPastDayLabel(0), router: DL.discRouter, switch: DL.discSwitch, polled: DL.targets, answered: DL.runFull + DL.runPartial, fresh: DL.newThisCycle, hours: CYCLE.durationH }
 ];
 export const CYCLE_SLA_H = 6;                    /* a cycle must close inside six hours */
@@ -56,12 +56,12 @@ export const LAST = DAILY[DAILY.length - 1], PREV = DAILY[DAILY.length - 2];
 /* ── typed failure reasons — sum to runFail ───────────────── */
 export interface Reason { k: string; n: string; c: number; stage: string; hex: string }
 export const REASONS: Reason[] = [
-  { k: 'unreach', n: 'Host unreachable',      c: 68, stage: 'Reachability', hex: 'var(--vw-color-blue-500)' },
-  { k: 'timeout', n: 'SNMP timeout',          c: 41, stage: 'Reachability', hex: 'var(--vw-color-emerald-500)' },
-  { k: 'auth',    n: 'Authentication failed', c: 33, stage: 'Credential',   hex: 'var(--vw-color-purple-500)' },
-  { k: 'adapter', n: 'No adapter for model',  c: 18, stage: 'Collect',      hex: 'var(--vw-color-amber-500)' },
-  { k: 'parse',   n: 'Response parse error',  c: 9,  stage: 'Parse',        hex: 'var(--vw-color-pink-500)' },
-  { k: 'dupip',   n: 'Duplicate management IP', c: 6, stage: 'Identity',    hex: 'var(--vw-color-slate-400)' }
+  { k: 'unreach', n: 'Host unreachable',      c: 93, stage: 'Reachability', hex: 'var(--vw-color-blue-500)' },
+  { k: 'timeout', n: 'SNMP timeout',          c: 56, stage: 'Reachability', hex: 'var(--vw-color-emerald-500)' },
+  { k: 'auth',    n: 'Authentication failed', c: 45, stage: 'Credential',   hex: 'var(--vw-color-purple-500)' },
+  { k: 'adapter', n: 'No adapter for model',  c: 25, stage: 'Collect',      hex: 'var(--vw-color-amber-500)' },
+  { k: 'parse',   n: 'Response parse error',  c: 12, stage: 'Parse',        hex: 'var(--vw-color-pink-500)' },
+  { k: 'dupip',   n: 'Duplicate management IP', c: 8, stage: 'Identity',    hex: 'var(--vw-color-slate-400)' }
 ];
 export const REASON_CHIP: Record<string, 'pink' | 'purple' | 'info' | 'cyan' | 'warning' | 'neutral'> = {
   auth: 'pink', unreach: 'purple', timeout: 'cyan', adapter: 'warning', parse: 'info', dupip: 'neutral'
@@ -70,12 +70,12 @@ export const REASON_CHIP: Record<string, 'pink' | 'purple' | 'info' | 'cyan' | '
 /* ── by vendor: identified + failed, identified sums to DL.identified ── */
 export interface Vendor { n: string; ok: number; fail: number }
 export const VENDORS: Vendor[] = [
-  { n: 'Juniper',   ok: 1612, fail: 96 },
-  { n: 'Cisco',     ok: 806,  fail: 52 },
-  { n: 'Cisco SDN', ok: 98,   fail: 11 },
-  { n: 'Nokia',     ok: 54,   fail: 8 },
-  { n: 'Adva',      ok: 21,   fail: 5 },
-  { n: 'Edgecore',  ok: 12,   fail: 3 }
+  { n: 'Juniper',   ok: 2208, fail: 131 },
+  { n: 'Cisco',     ok: 1104, fail: 71 },
+  { n: 'Cisco SDN', ok: 134,  fail: 15 },
+  { n: 'Nokia',     ok: 74,   fail: 11 },
+  { n: 'Adva',      ok: 29,   fail: 7 },
+  { n: 'Edgecore',  ok: 18,   fail: 4 }
 ];
 
 /* ── by model: the models carrying the most failures ──────── */
@@ -93,10 +93,10 @@ export const MODELS: ModelRow[] = [
 export type Region = 'North' | 'East' | 'West' | 'South';
 export interface RegionRow { region: Region; total: number; fail: number; trend: number }
 export const REGIONS: RegionRow[] = [
-  { region: 'North', total: 636, fail: 52, trend: -0.9 },
-  { region: 'East',  total: 601, fail: 47, trend:  1.8 },
-  { region: 'West',  total: 538, fail: 38, trend:  2.4 },
-  { region: 'South', total: 533, fail: 38, trend:  1.2 }
+  { region: 'North', total: 871, fail: 71, trend: -0.9 },
+  { region: 'East',  total: 823, fail: 64, trend:  1.8 },
+  { region: 'West',  total: 737, fail: 52, trend:  2.4 },
+  { region: 'South', total: 731, fail: 52, trend:  1.2 }
 ];
 export const successRate = (r: RegionRow) => 1 - r.fail / r.total;
 
@@ -131,31 +131,31 @@ export const ATTENTION: AttentionRow[] = [
 /* ── geo: identified devices per state, split by class ─────── */
 export interface StateDot { st: string; c: string; region: Region; lat: number; lon: number; router: number; switch: number }
 export const STATE_DEVICES: StateDot[] = [
-  { st: 'Maharashtra',    c: 'MH', region: 'West',  lat: 19.75, lon: 75.71, router: 196, switch: 37 },
-  { st: 'Uttar Pradesh',  c: 'UP', region: 'North', lat: 26.85, lon: 80.95, router: 174, switch: 33 },
-  { st: 'Karnataka',      c: 'KA', region: 'South', lat: 15.32, lon: 75.71, router: 180, switch: 31 },
-  { st: 'Madhya Pradesh', c: 'MP', region: 'East',  lat: 23.47, lon: 77.95, router: 155, switch: 26 },
-  { st: 'Delhi',          c: 'DL', region: 'North', lat: 28.61, lon: 77.21, router: 150, switch: 26 },
-  { st: 'Tamil Nadu',     c: 'TN', region: 'South', lat: 11.13, lon: 78.66, router: 131, switch: 23 },
-  { st: 'Gujarat',        c: 'GJ', region: 'West',  lat: 22.26, lon: 71.19, router: 129, switch: 23 },
-  { st: 'Andhra Pradesh', c: 'AP', region: 'South', lat: 15.91, lon: 79.74, router: 122, switch: 21 },
-  { st: 'Rajasthan',      c: 'RJ', region: 'North', lat: 27.02, lon: 74.22, router: 117, switch: 21 },
-  { st: 'West Bengal',    c: 'WB', region: 'East',  lat: 22.99, lon: 87.86, router: 108, switch: 19 },
-  { st: 'Odisha',         c: 'OR', region: 'East',  lat: 20.95, lon: 85.10, router: 103, switch: 18 },
-  { st: 'Telangana',      c: 'TS', region: 'South', lat: 17.12, lon: 79.02, router: 114, switch: 20 },
-  { st: 'Bihar',          c: 'BR', region: 'East',  lat: 25.10, lon: 85.31, router: 95,  switch: 17 },
-  { st: 'Punjab',         c: 'PB', region: 'North', lat: 31.15, lon: 75.34, router: 75,  switch: 13 },
-  { st: 'Kerala',         c: 'KL', region: 'South', lat: 10.85, lon: 76.27, router: 78,  switch: 14 },
-  { st: 'Haryana',        c: 'HR', region: 'North', lat: 29.06, lon: 76.09, router: 63,  switch: 11 },
-  { st: 'Chhattisgarh',   c: 'CG', region: 'East',  lat: 21.28, lon: 81.87, router: 52,  switch: 9 },
-  { st: 'Jharkhand',      c: 'JH', region: 'East',  lat: 23.61, lon: 85.28, router: 46,  switch: 8 },
-  { st: 'Assam',          c: 'AS', region: 'East',  lat: 26.20, lon: 92.94, router: 58,  switch: 10 },
-  { st: 'Jammu and Kashmir', c: 'JK', region: 'North', lat: 33.78, lon: 76.58, router: 35, switch: 6 },
-  { st: 'Uttarakhand',    c: 'UK', region: 'North', lat: 30.07, lon: 79.09, router: 31,  switch: 5 }
+  { st: 'Maharashtra',    c: 'MH', region: 'West',  lat: 19.75, lon: 75.71, router: 271, switch: 49 },
+  { st: 'Uttar Pradesh',  c: 'UP', region: 'North', lat: 26.85, lon: 80.95, router: 238, switch: 45 },
+  { st: 'Karnataka',      c: 'KA', region: 'South', lat: 15.32, lon: 75.71, router: 247, switch: 42 },
+  { st: 'Madhya Pradesh', c: 'MP', region: 'East',  lat: 23.47, lon: 77.95, router: 212, switch: 36 },
+  { st: 'Delhi',          c: 'DL', region: 'North', lat: 28.61, lon: 77.21, router: 206, switch: 36 },
+  { st: 'Tamil Nadu',     c: 'TN', region: 'South', lat: 11.13, lon: 78.66, router: 179, switch: 32 },
+  { st: 'Gujarat',        c: 'GJ', region: 'West',  lat: 22.26, lon: 71.19, router: 177, switch: 32 },
+  { st: 'Andhra Pradesh', c: 'AP', region: 'South', lat: 15.91, lon: 79.74, router: 167, switch: 29 },
+  { st: 'Rajasthan',      c: 'RJ', region: 'North', lat: 27.02, lon: 74.22, router: 160, switch: 29 },
+  { st: 'West Bengal',    c: 'WB', region: 'East',  lat: 22.99, lon: 87.86, router: 148, switch: 26 },
+  { st: 'Odisha',         c: 'OR', region: 'East',  lat: 20.95, lon: 85.10, router: 141, switch: 25 },
+  { st: 'Telangana',      c: 'TS', region: 'South', lat: 17.12, lon: 79.02, router: 156, switch: 27 },
+  { st: 'Bihar',          c: 'BR', region: 'East',  lat: 25.10, lon: 85.31, router: 130, switch: 23 },
+  { st: 'Punjab',         c: 'PB', region: 'North', lat: 31.15, lon: 75.34, router: 103, switch: 18 },
+  { st: 'Kerala',         c: 'KL', region: 'South', lat: 10.85, lon: 76.27, router: 107, switch: 19 },
+  { st: 'Haryana',        c: 'HR', region: 'North', lat: 29.06, lon: 76.09, router: 86,  switch: 15 },
+  { st: 'Chhattisgarh',   c: 'CG', region: 'East',  lat: 21.28, lon: 81.87, router: 71,  switch: 12 },
+  { st: 'Jharkhand',      c: 'JH', region: 'East',  lat: 23.61, lon: 85.28, router: 63,  switch: 11 },
+  { st: 'Assam',          c: 'AS', region: 'East',  lat: 26.20, lon: 92.94, router: 79,  switch: 14 },
+  { st: 'Jammu and Kashmir', c: 'JK', region: 'North', lat: 33.78, lon: 76.58, router: 48, switch: 8 },
+  { st: 'Uttarakhand',    c: 'UK', region: 'North', lat: 30.07, lon: 79.09, router: 43,  switch: 7 }
 ];
 
 /* Grown after ATTENTION's own declaration — the twelve hand-written rows there
-   stay for their narrative detail; the rest of the runFail figure (175, quoted
+   stay for their narrative detail; the rest of the runFail figure (239, quoted
    throughout Insights) is filled in here so the grid is something you can
    actually open, search and filter, not just a number. Region, vendor and
    reason are each distributed to close exactly on REGIONS.fail, VENDORS.fail
@@ -180,9 +180,9 @@ const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) =
   const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
 
   /* remaining share once the twelve hand-written rows above are subtracted */
-  const regions = flatten<Region>([['North', 49], ['East', 45], ['West', 35], ['South', 34]]);
-  const vendors = flatten([['Juniper', 92], ['Cisco', 45], ['Cisco SDN', 11], ['Nokia', 7], ['Adva', 5], ['Edgecore', 3]]);
-  const reasons = flatten([['unreach', 65], ['timeout', 38], ['auth', 30], ['adapter', 17], ['parse', 8], ['dupip', 5]]);
+  const regions = flatten<Region>([['North', 68], ['East', 62], ['West', 49], ['South', 48]]);
+  const vendors = flatten([['Juniper', 127], ['Cisco', 64], ['Cisco SDN', 15], ['Nokia', 10], ['Adva', 7], ['Edgecore', 4]]);
+  const reasons = flatten([['unreach', 90], ['timeout', 53], ['auth', 42], ['adapter', 24], ['parse', 11], ['dupip', 7]]);
 
   regions.forEach((region, i) => {
     const vendor = vendors[i % vendors.length];
@@ -210,7 +210,7 @@ MODELS.forEach(m => { m.fail = ATTENTION.filter(a => a.model === m.model).length
    Each region tile on Insights quotes two numbers — North is "636 devices,
    52 failed" — and until now nothing stood behind them: the tile could only
    hand off to a screen that counted something else (sites). This roster gives
-   every one of the 2,308 polled targets a row, and the failures in it *are*
+   every one of the 3,162 polled targets a row, and the failures in it *are*
    the ATTENTION rows, so a region's grid holds exactly the devices its tile
    counts, failures included and marked. The ledger check at the bottom of the
    file is what keeps that true. */
@@ -279,8 +279,8 @@ export function filterRegionDevices(f: DeviceFilter): RegionDevice[] {
 
 /* ── the wider estate: every identified device, by state ────
    STATE_DEVICES and VENDORS.ok are the only ledgers that carry the network's
-   full identified count (2,603 — a larger, separately-tracked population
-   than the 2,308 devices actually polled this cycle: identification also
+   full identified count (3,567 — a larger, separately-tracked population
+   than the 3,162 devices actually polled this cycle: identification also
    comes from topology, not only from the seed list). Neither the state map
    nor the vendor table had a roster behind it before, so a click could only
    land on an unrelated screen with an unrelated count. This one roster

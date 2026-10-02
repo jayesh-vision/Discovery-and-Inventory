@@ -92,6 +92,12 @@ export function getSiteAttributes(fac: FacilityItem): { type: string; structure:
   return { type: 'Macro Tower', structure: '40m GBT' };
 }
 
+/* a DWDM element's location code is "<facility code>-<shelf> · slot <n>" */
+const dwdmShelfSlot = (code: string) => {
+  const m = code.match(/(OT-\d+ · slot \d+)$/);
+  return m ? { shelfSlot: m[1], facility: code.slice(0, m.index).replace(/-$/, '') } : { shelfSlot: code, facility: code };
+};
+
 export default function CityDetails() {
   const { cityId } = useParams<{ cityId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -313,39 +319,39 @@ export default function CityDetails() {
 
   // ── Calculate Clean Insights for Each Facility Type ──────────────────
   const dcStats = useMemo(() => {
-    const total = dcList.length || city.dcCount || 10;
+    const total = dcList.length;
     const verified = dcList.filter(f => f.status === 'Verified').length;
     const inProgress = dcList.filter(f => f.status === 'Drifted').length;
     const planned = dcList.filter(f => f.status === 'Stale').length;
     const failed = Math.max(0, total - verified - inProgress - planned);
-    const onAirPct = Math.round((verified / total) * 100);
-    const racksUsed = dcList.reduce((acc, f) => acc + (f.racksUsed || 0), 0) || total * 24;
-    const racksTotal = dcList.reduce((acc, f) => acc + (f.racksTotal || 0), 0) || total * 32;
-    const rackPct = racksTotal > 0 ? Math.round((racksUsed / racksTotal) * 100) : 75;
-    const powerMW = (dcList.reduce((acc, f) => acc + parseFloat(f.powerOrUplink || '1.4'), 0) || total * 1.5).toFixed(1);
+    const onAirPct = total ? Math.round((verified / total) * 100) : 0;
+    const racksUsed = dcList.reduce((acc, f) => acc + (f.racksUsed || 0), 0);
+    const racksTotal = dcList.reduce((acc, f) => acc + (f.racksTotal || 0), 0);
+    const rackPct = racksTotal > 0 ? Math.round((racksUsed / racksTotal) * 100) : 0;
+    const powerMW = dcList.reduce((acc, f) => acc + parseFloat(f.powerOrUplink || '0'), 0).toFixed(1);
     return { total, verified, inProgress, planned, failed, onAirPct, racksUsed, racksTotal, rackPct, powerMW };
   }, [dcList, city.dcCount]);
 
   const popStats = useMemo(() => {
-    const total = popList.length || city.popCount || 38;
+    const total = popList.length;
     const verified = popList.filter(f => f.status === 'Verified').length;
     const inProgress = popList.filter(f => f.status === 'Drifted').length;
     const planned = popList.filter(f => f.status === 'Stale').length;
     const failed = Math.max(0, total - verified - inProgress - planned);
-    const onAirPct = Math.round((verified / total) * 100);
-    const homedElements = popList.reduce((acc, f) => acc + (f.deviceCount || 10), 0);
-    const metroHubs = popList.filter(f => f.tierOrClassification?.includes('Core') || f.subType?.includes('Core')).length || Math.round(total * 0.35);
+    const onAirPct = total ? Math.round((verified / total) * 100) : 0;
+    const homedElements = popList.reduce((acc, f) => acc + f.deviceCount, 0);
+    const metroHubs = popList.filter(f => f.tierOrClassification?.includes('Core') || f.subType?.includes('Core')).length;
     const transitNodes = total - metroHubs;
     return { total, verified, inProgress, planned, failed, onAirPct, homedElements, metroHubs, transitNodes };
   }, [popList, city.popCount]);
 
   const siteStats = useMemo(() => {
-    const total = siteList.length || city.siteCount || 262;
+    const total = siteList.length;
     const verified = siteList.filter(f => f.status === 'Verified').length;
     const inProgress = siteList.filter(f => f.status === 'Drifted').length;
-    const planned = Math.max(0, Math.round(total * 0.03));
+    const planned = Math.max(0, Math.min(Math.round(total * 0.03), total - verified - inProgress));
     const failed = Math.max(0, total - verified - inProgress - planned);
-    const onAirPct = Math.round((verified / total) * 100);
+    const onAirPct = total ? Math.round((verified / total) * 100) : 0;
     const macroCount = Math.round(total * 0.65);
     const rooftopCount = Math.round(total * 0.22);
     const smallCellCount = total - macroCount - rooftopCount;
@@ -716,10 +722,10 @@ export default function CityDetails() {
 
               {/* Meter progress bar */}
               <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                <span style={{ width: `${(dcStats.verified / dcStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
-                <span style={{ width: `${(dcStats.inProgress / dcStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
-                {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / dcStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
-                {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / dcStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
+                <span style={{ width: `${(dcStats.verified / (dcStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
+                <span style={{ width: `${(dcStats.inProgress / (dcStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
+                {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / (dcStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
+                {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / (dcStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
               </div>
 
               {/* Dot Legend */}
@@ -763,10 +769,10 @@ export default function CityDetails() {
 
               {/* Meter progress bar */}
               <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                <span style={{ width: `${(popStats.verified / popStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
-                <span style={{ width: `${(popStats.inProgress / popStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
-                {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / popStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
-                {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / popStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
+                <span style={{ width: `${(popStats.verified / (popStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
+                <span style={{ width: `${(popStats.inProgress / (popStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
+                {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / (popStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
+                {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / (popStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
               </div>
 
               {/* Dot Legend */}
@@ -810,10 +816,10 @@ export default function CityDetails() {
 
               {/* Meter progress bar */}
               <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                <span style={{ width: `${(siteStats.verified / siteStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
-                <span style={{ width: `${(siteStats.inProgress / siteStats.total) * 100}%`, background: '#f59e0b' }} title={`In build: ${siteStats.inProgress}`} />
-                {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / siteStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
-                {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / siteStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
+                <span style={{ width: `${(siteStats.verified / (siteStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
+                <span style={{ width: `${(siteStats.inProgress / (siteStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In build: ${siteStats.inProgress}`} />
+                {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / (siteStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
+                {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / (siteStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
               </div>
 
               {/* Dot Legend */}
@@ -1789,6 +1795,8 @@ export default function CityDetails() {
                                   <option value="Verified">Verified</option>
                                   <option value="Drifted">Drifted</option>
                                   <option value="Stale">Stale</option>
+                                  <option value="Missing">Missing</option>
+                                  <option value="Not discovered">Not discovered</option>
                                 </select>
                               </div>
                             )}
@@ -1847,7 +1855,6 @@ export default function CityDetails() {
                                   <option value="all">Vendor (All)</option>
                                   <option value="Cisco">Cisco</option>
                                   <option value="Juniper">Juniper</option>
-                                  <option value="Arista">Arista</option>
                                   <option value="Nokia">Nokia</option>
                                   <option value="Huawei">Huawei</option>
                                 </select>
@@ -1929,20 +1936,51 @@ export default function CityDetails() {
             <div className="net-table-container">
               <table className="net-elements-table">
                 <thead>
-                  <tr>
-                    <th style={{ width: '90px' }}>Status</th>
-                    <th style={{ width: '220px' }}>Name / IP</th>
-                    <th style={{ width: '140px' }}>Model / Vendor</th>
-                    <th style={{ width: '110px' }}>OS version</th>
-                    <th style={{ width: '130px' }}>Serial number</th>
-                    <th style={{ width: '90px' }}>Region</th>
-                    <th style={{ width: '100px' }}>Ports</th>
-                    <th style={{ width: '110px' }}>Location Code</th>
-                    <th>System description</th>
-                  </tr>
+                  {selectedCategory !== 'DWDM' ? (
+                    <tr>
+                      <th style={{ width: '90px' }}>Status</th>
+                      <th style={{ width: '220px' }}>Name / IP</th>
+                      <th style={{ width: '140px' }}>Model / Vendor</th>
+                      <th style={{ width: '110px' }}>OS version</th>
+                      <th style={{ width: '130px' }}>Serial number</th>
+                      <th style={{ width: '90px' }}>Region</th>
+                      <th style={{ width: '100px' }}>Ports</th>
+                      <th style={{ width: '110px' }}>Location Code</th>
+                      <th>System description</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th style={{ width: '110px' }}>Status</th>
+                      <th style={{ width: '220px' }}>Name / IP</th>
+                      <th style={{ width: '120px' }}>Type</th>
+                      <th style={{ width: '90px' }}>Vendor</th>
+                      <th style={{ width: '130px' }}>Software version</th>
+                      <th style={{ width: '130px' }}>Serial number</th>
+                      <th style={{ width: '120px' }}>Shelf · Slot</th>
+                      <th style={{ width: '130px' }}>Location Code</th>
+                      <th>Source</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody>
-                  {filteredElements.map(el => (
+                  {filteredElements.map(el => selectedCategory === 'DWDM' ? (
+                    <tr key={el.id} className="net-table-row">
+                      <td>{renderStatusBadge(el.status)}</td>
+                      <td>
+                        <div className="net-name-cell">
+                          <span className="net-name-primary">{el.name}</span>
+                          <span className="net-ip-secondary">{el.ip}</span>
+                        </div>
+                      </td>
+                      <td className="net-model-primary">{el.model}</td>
+                      <td className="net-text-muted">{el.vendor}</td>
+                      <td className="net-text-muted">{el.osVersion}</td>
+                      <td className="net-text-mono">{el.serialNumber}</td>
+                      <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).shelfSlot}</td>
+                      <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).facility}</td>
+                      <td className="net-text-muted">{el.status === 'Verified' || el.status === 'Drifted' ? 'Discovered' : 'Manual'}</td>
+                    </tr>
+                  ) : (
                     <tr key={el.id} className="net-table-row">
                       <td>{renderStatusBadge(el.status)}</td>
                       <td>
