@@ -1264,328 +1264,261 @@ export function getFacilitiesForCity(cityId: string, facilityType: 'dc' | 'pop' 
 }
 
 // Generates high fidelity network elements housed specifically within an individual facility
+interface DeviceTemplate {
+  nameSuffix: string;
+  model: string;
+  vendor: 'CISCO' | 'JUNIPER' | 'NOKIA' | 'HUAWEI';
+  osVersion: string;
+  serialPrefix: string;
+  portsUsed: number;
+  portsTotal: number;
+  locSuffix: string;
+  systemDescription: string;
+  status: 'Verified' | 'Drifted' | 'Stale' | 'Missing';
+}
+
+const DC_ROUTER_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'CR01-NCS5504', model: 'NCS-5504', vendor: 'CISCO', osVersion: '7.10.1', serialPrefix: 'FOC2518', portsUsed: 28, portsTotal: 36, locSuffix: 'RK-A01-U12', systemDescription: 'Cisco IOS-XR 7.10.1 NCS-5504 High-Capacity Core Router', status: 'Verified' },
+  { nameSuffix: 'CR02-MX960', model: 'MX960', vendor: 'JUNIPER', osVersion: '21.4R3-S5', serialPrefix: 'JN1239', portsUsed: 32, portsTotal: 36, locSuffix: 'RK-A01-U24', systemDescription: 'Juniper Networks mx960 core internet transit router', status: 'Verified' },
+  { nameSuffix: 'CR03-PTX10K', model: 'PTX10008', vendor: 'JUNIPER', osVersion: '22.2R1', serialPrefix: 'JN8831', portsUsed: 48, portsTotal: 64, locSuffix: 'RK-A02-U10', systemDescription: 'Juniper PTX10008 Terabit Packet Transport Router', status: 'Verified' },
+  { nameSuffix: 'CR04-8808', model: '8808', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'FOC2610', portsUsed: 54, portsTotal: 64, locSuffix: 'RK-A02-U28', systemDescription: 'Cisco 8808 High-Density Cloud Scale Core Router', status: 'Verified' },
+  { nameSuffix: 'PE01-ASR9904', model: 'ASR9904', vendor: 'CISCO', osVersion: '7.9.2', serialPrefix: 'CAT2394', portsUsed: 22, portsTotal: 36, locSuffix: 'RK-A03-U14', systemDescription: 'Cisco ASR9904 Edge Aggregation & MPLS Router', status: 'Drifted' },
+  { nameSuffix: 'PE02-7750', model: '7750 SR-12', vendor: 'NOKIA', osVersion: '21.10.R1', serialPrefix: 'NK7750', portsUsed: 30, portsTotal: 36, locSuffix: 'RK-A03-U26', systemDescription: 'Nokia 7750 Service Router Multiservice Edge Peering', status: 'Verified' },
+  { nameSuffix: 'PE03-MX10003', model: 'MX10003', vendor: 'JUNIPER', osVersion: '21.4R3', serialPrefix: 'JN9921', portsUsed: 24, portsTotal: 24, locSuffix: 'RK-A04-U16', systemDescription: 'Juniper MX10003 Edge & Universal Metro Router', status: 'Verified' },
+  { nameSuffix: 'PE04-ASR9906', model: 'ASR9906', vendor: 'CISCO', osVersion: '7.10.1', serialPrefix: 'CAT2501', portsUsed: 40, portsTotal: 48, locSuffix: 'RK-A04-U30', systemDescription: 'Cisco ASR9906 Edge Aggregation Chassis Router', status: 'Verified' },
+  { nameSuffix: 'GW01-NCS55A2', model: 'NCS-55A2', vendor: 'CISCO', osVersion: '7.9.1', serialPrefix: 'FOC2490', portsUsed: 18, portsTotal: 24, locSuffix: 'RK-B01-U10', systemDescription: 'Cisco NCS-55A2 Data Center Border Gateway', status: 'Verified' },
+  { nameSuffix: 'GW02-MX480', model: 'MX480', vendor: 'JUNIPER', osVersion: '20.4R3', serialPrefix: 'JN4802', portsUsed: 16, portsTotal: 24, locSuffix: 'RK-B01-U22', systemDescription: 'Juniper MX480 Carrier Routing Gateway', status: 'Verified' },
+  { nameSuffix: 'BORDER01-NE8K', model: 'NetEngine 8000', vendor: 'HUAWEI', osVersion: 'V800R021', serialPrefix: 'HW8000', portsUsed: 26, portsTotal: 32, locSuffix: 'RK-B02-U12', systemDescription: 'Huawei NetEngine 8000 High-End Border Router', status: 'Verified' },
+  { nameSuffix: 'BORDER02-8201', model: '8201-32FH', vendor: 'CISCO', osVersion: '7.7.1', serialPrefix: 'FOC2589', portsUsed: 28, portsTotal: 32, locSuffix: 'RK-B02-U24', systemDescription: 'Cisco 8201 Fixed Chassis Border Router', status: 'Verified' },
+  { nameSuffix: 'INTER-DC-R01', model: 'NCS-5508', vendor: 'CISCO', osVersion: '7.10.1', serialPrefix: 'FOC2510', portsUsed: 56, portsTotal: 72, locSuffix: 'RK-B03-U15', systemDescription: 'Cisco NCS-5508 Inter-DC Core Transport Router', status: 'Verified' },
+  { nameSuffix: 'INTER-DC-R02', model: 'PTX10002', vendor: 'JUNIPER', osVersion: '21.3R2', serialPrefix: 'JN1002', portsUsed: 50, portsTotal: 72, locSuffix: 'RK-B03-U32', systemDescription: 'Juniper PTX10002 Inter-DC Backbone Interconnect', status: 'Drifted' },
+  { nameSuffix: 'CORE-AGG01', model: 'ASR9910', vendor: 'CISCO', osVersion: '7.8.1', serialPrefix: 'CAT2910', portsUsed: 36, portsTotal: 48, locSuffix: 'RK-B04-U14', systemDescription: 'Cisco ASR9910 Core Aggregation Chassis', status: 'Verified' },
+  { nameSuffix: 'CORE-AGG02', model: '7750 SR-7', vendor: 'NOKIA', osVersion: '22.5.R1', serialPrefix: 'NK7707', portsUsed: 34, portsTotal: 48, locSuffix: 'RK-B04-U28', systemDescription: 'Nokia 7750 SR-7 Regional Aggregator', status: 'Stale' }
+];
+
+const DC_SWITCH_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'SPINE01-N9336', model: 'Nexus 9336C', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2510', portsUsed: 34, portsTotal: 36, locSuffix: 'RK-C01-U40', systemDescription: 'Cisco NX-OS Nexus 9336C-FX2 Spine Switch', status: 'Verified' },
+  { nameSuffix: 'SPINE02-N9336', model: 'Nexus 9336C', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2511', portsUsed: 32, portsTotal: 36, locSuffix: 'RK-C01-U42', systemDescription: 'Cisco NX-OS Nexus 9336C-FX2 Spine Switch', status: 'Verified' },
+  { nameSuffix: 'SPINE03-QFX5200', model: 'QFX5200', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JN5200', portsUsed: 30, portsTotal: 32, locSuffix: 'RK-C02-U40', systemDescription: 'Juniper QFX5200 100G Spine Switch', status: 'Verified' },
+  { nameSuffix: 'SPINE04-QFX5200', model: 'QFX5200', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JN5201', portsUsed: 31, portsTotal: 32, locSuffix: 'RK-C02-U42', systemDescription: 'Juniper QFX5200 100G Spine Switch', status: 'Verified' },
+  { nameSuffix: 'LEAF01-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2520', portsUsed: 44, portsTotal: 48, locSuffix: 'RK-C03-U18', systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch', status: 'Verified' },
+  { nameSuffix: 'LEAF02-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2521', portsUsed: 41, portsTotal: 48, locSuffix: 'RK-C03-U20', systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch', status: 'Verified' },
+  { nameSuffix: 'LEAF03-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2522', portsUsed: 46, portsTotal: 48, locSuffix: 'RK-C04-U18', systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch', status: 'Verified' },
+  { nameSuffix: 'LEAF04-N93180', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.3(2)', serialPrefix: 'FOC2523', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-C04-U20', systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch', status: 'Drifted' },
+  { nameSuffix: 'LEAF05-QFX5120', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R3', serialPrefix: 'JN5120', portsUsed: 40, portsTotal: 48, locSuffix: 'RK-C05-U18', systemDescription: 'Juniper QFX5120-48Y Leaf Switch', status: 'Verified' },
+  { nameSuffix: 'LEAF06-QFX5120', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R3', serialPrefix: 'JN5121', portsUsed: 38, portsTotal: 48, locSuffix: 'RK-C05-U20', systemDescription: 'Juniper QFX5120-48Y Leaf Switch', status: 'Verified' },
+  { nameSuffix: 'TOR01-N93240', model: 'Nexus 93240', vendor: 'CISCO', osVersion: '10.2(4)', serialPrefix: 'FOC2401', portsUsed: 45, portsTotal: 48, locSuffix: 'RK-D01-U42', systemDescription: 'Cisco Nexus 93240YC-FX2 Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'TOR02-N93240', model: 'Nexus 93240', vendor: 'CISCO', osVersion: '10.2(4)', serialPrefix: 'FOC2402', portsUsed: 43, portsTotal: 48, locSuffix: 'RK-D02-U42', systemDescription: 'Cisco Nexus 93240YC-FX2 Top-of-Rack Switch', status: 'Verified' },
+  { nameSuffix: 'TOR03-CE6800', model: 'CloudEngine 6800', vendor: 'HUAWEI', osVersion: 'V200R020', serialPrefix: 'HW6801', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-D03-U42', systemDescription: 'Huawei CloudEngine 6857 Data Center Switch', status: 'Verified' },
+  { nameSuffix: 'TOR04-CE6800', model: 'CloudEngine 6800', vendor: 'HUAWEI', osVersion: 'V200R020', serialPrefix: 'HW6802', portsUsed: 39, portsTotal: 48, locSuffix: 'RK-D04-U42', systemDescription: 'Huawei CloudEngine 6857 Data Center Switch', status: 'Drifted' },
+  { nameSuffix: 'MGMT-SW01', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC2301', portsUsed: 44, portsTotal: 48, locSuffix: 'RK-M01-U42', systemDescription: 'Cisco Catalyst 9300 Out-of-Band Management Switch', status: 'Verified' },
+  { nameSuffix: 'MGMT-SW02', model: 'EX3400', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JN3401', portsUsed: 41, portsTotal: 48, locSuffix: 'RK-M02-U42', systemDescription: 'Juniper EX3400 Out-of-Band Management Switch', status: 'Stale' }
+];
+
+const DC_DWDM_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'DWDM01-PSS32', model: 'PSS-32', vendor: 'NOKIA', osVersion: '22.3.1', serialPrefix: 'NK1830', portsUsed: 26, portsTotal: 32, locSuffix: 'RK-OPT01-U10', systemDescription: 'Nokia 1830 Photonic Service Switch Core Optical Transport', status: 'Verified' },
+  { nameSuffix: 'DWDM02-PSS32', model: 'PSS-32', vendor: 'NOKIA', osVersion: '22.3.1', serialPrefix: 'NK1831', portsUsed: 28, portsTotal: 32, locSuffix: 'RK-OPT01-U22', systemDescription: 'Nokia 1830 Photonic Service Switch Core Optical Transport', status: 'Verified' },
+  { nameSuffix: 'DWDM03-PSS64', model: 'PSS-64', vendor: 'NOKIA', osVersion: '22.4.0', serialPrefix: 'NK1864', portsUsed: 52, portsTotal: 64, locSuffix: 'RK-OPT02-U12', systemDescription: 'Nokia 1830 PSS-64 High Capacity Optical Cross-Connect', status: 'Verified' },
+  { nameSuffix: 'DWDM04-PSS64', model: 'PSS-64', vendor: 'NOKIA', osVersion: '22.4.0', serialPrefix: 'NK1865', portsUsed: 48, portsTotal: 64, locSuffix: 'RK-OPT02-U28', systemDescription: 'Nokia 1830 PSS-64 High Capacity Optical Cross-Connect', status: 'Verified' },
+  { nameSuffix: 'ROADM01-NCS2K', model: 'NCS-2000', vendor: 'CISCO', osVersion: '11.1.2', serialPrefix: 'FOC2801', portsUsed: 18, portsTotal: 24, locSuffix: 'RK-OPT03-U14', systemDescription: 'Cisco NCS-2000 FlexSpectrum Multi-Degree ROADM', status: 'Verified' },
+  { nameSuffix: 'ROADM02-NCS2K', model: 'NCS-2000', vendor: 'CISCO', osVersion: '11.1.2', serialPrefix: 'FOC2802', portsUsed: 20, portsTotal: 24, locSuffix: 'RK-OPT03-U26', systemDescription: 'Cisco NCS-2000 FlexSpectrum Multi-Degree ROADM', status: 'Verified' },
+  { nameSuffix: 'ROADM03-OSN9800', model: 'OSN-9800', vendor: 'HUAWEI', osVersion: 'V100R021', serialPrefix: 'HW9801', portsUsed: 38, portsTotal: 48, locSuffix: 'RK-OPT04-U12', systemDescription: 'Huawei OptiX OSN 9800 Optical Switching Platform', status: 'Verified' },
+  { nameSuffix: 'ROADM04-OSN9800', model: 'OSN-9800', vendor: 'HUAWEI', osVersion: 'V100R021', serialPrefix: 'HW9802', portsUsed: 34, portsTotal: 48, locSuffix: 'RK-OPT04-U26', systemDescription: 'Huawei OptiX OSN 9800 Optical Switching Platform', status: 'Drifted' },
+  { nameSuffix: 'MUX-DEMUX01', model: '1830-PSS', vendor: 'NOKIA', osVersion: '21.8.1', serialPrefix: 'NK1801', portsUsed: 14, portsTotal: 16, locSuffix: 'RK-OPT05-U10', systemDescription: 'Nokia 1830 16-Channel Optical Multiplexer/Demultiplexer', status: 'Verified' },
+  { nameSuffix: 'MUX-DEMUX02', model: '1830-PSS', vendor: 'NOKIA', osVersion: '21.8.1', serialPrefix: 'NK1802', portsUsed: 15, portsTotal: 16, locSuffix: 'RK-OPT05-U18', systemDescription: 'Nokia 1830 16-Channel Optical Multiplexer/Demultiplexer', status: 'Verified' },
+  { nameSuffix: 'AMP-EDFA01', model: 'NCS-2K-EDFA', vendor: 'CISCO', osVersion: '11.1.0', serialPrefix: 'FOC2805', portsUsed: 8, portsTotal: 8, locSuffix: 'RK-OPT05-U26', systemDescription: 'Cisco NCS-2000 Optical In-Line Raman/EDFA Amplifier', status: 'Verified' },
+  { nameSuffix: 'AMP-EDFA02', model: 'NCS-2K-EDFA', vendor: 'CISCO', osVersion: '11.1.0', serialPrefix: 'FOC2806', portsUsed: 7, portsTotal: 8, locSuffix: 'RK-OPT05-U32', systemDescription: 'Cisco NCS-2000 Optical In-Line Raman/EDFA Amplifier', status: 'Verified' },
+  { nameSuffix: 'TRANS-100G01', model: 'NCS-1004', vendor: 'CISCO', osVersion: '7.8.1', serialPrefix: 'FOC1001', portsUsed: 12, portsTotal: 16, locSuffix: 'RK-OPT06-U10', systemDescription: 'Cisco NCS-1004 Multi-Haul 100G/400G Transponder', status: 'Verified' },
+  { nameSuffix: 'TRANS-100G02', model: 'NCS-1004', vendor: 'CISCO', osVersion: '7.8.1', serialPrefix: 'FOC1002', portsUsed: 14, portsTotal: 16, locSuffix: 'RK-OPT06-U20', systemDescription: 'Cisco NCS-1004 Multi-Haul 100G/400G Transponder', status: 'Verified' },
+  { nameSuffix: 'TRANS-400G01', model: '1830-PSI-M', vendor: 'NOKIA', osVersion: '22.1.0', serialPrefix: 'NK4001', portsUsed: 16, portsTotal: 16, locSuffix: 'RK-OPT07-U14', systemDescription: 'Nokia 1830 Photonic Service Interconnect 400G Coherent', status: 'Verified' },
+  { nameSuffix: 'TRANS-400G02', model: '1830-PSI-M', vendor: 'NOKIA', osVersion: '22.1.0', serialPrefix: 'NK4002', portsUsed: 15, portsTotal: 16, locSuffix: 'RK-OPT07-U24', systemDescription: 'Nokia 1830 Photonic Service Interconnect 400G Coherent', status: 'Stale' }
+];
+
+const POP_ROUTER_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'AGG-R01-NCS540', model: 'NCS-540', vendor: 'CISCO', osVersion: '7.9.2', serialPrefix: 'FOC2419', portsUsed: 22, portsTotal: 28, locSuffix: 'RK-P01-U12', systemDescription: 'Cisco NCS-540 Metro Aggregation Router', status: 'Verified' },
+  { nameSuffix: 'AGG-R02-MX204', model: 'MX204', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JNMX20', portsUsed: 18, portsTotal: 24, locSuffix: 'RK-P01-U24', systemDescription: 'Juniper MX204 Metro Transit Router', status: 'Verified' },
+  { nameSuffix: 'AGG-R03-NCS540', model: 'NCS-540', vendor: 'CISCO', osVersion: '7.9.2', serialPrefix: 'FOC2420', portsUsed: 24, portsTotal: 28, locSuffix: 'RK-P02-U12', systemDescription: 'Cisco NCS-540 Metro Aggregation Router', status: 'Verified' },
+  { nameSuffix: 'AGG-R04-MX204', model: 'MX204', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JNMX21', portsUsed: 20, portsTotal: 24, locSuffix: 'RK-P02-U24', systemDescription: 'Juniper MX204 Metro Transit Router', status: 'Verified' },
+  { nameSuffix: 'PEER-R01-7750', model: '7750', vendor: 'NOKIA', osVersion: '21.10.R1', serialPrefix: 'NK7750', portsUsed: 20, portsTotal: 24, locSuffix: 'RK-P03-U14', systemDescription: 'Nokia 7750 Service Router Edge Peering', status: 'Drifted' },
+  { nameSuffix: 'PEER-R02-7750', model: '7750', vendor: 'NOKIA', osVersion: '21.10.R1', serialPrefix: 'NK7751', portsUsed: 21, portsTotal: 24, locSuffix: 'RK-P03-U26', systemDescription: 'Nokia 7750 Service Router Edge Peering', status: 'Verified' },
+  { nameSuffix: 'EDGE-R01-ASR9001', model: 'ASR-9001', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'CAT9001', portsUsed: 14, portsTotal: 16, locSuffix: 'RK-P04-U16', systemDescription: 'Cisco ASR-9001 Metro Edge Router', status: 'Verified' },
+  { nameSuffix: 'EDGE-R02-ASR9001', model: 'ASR-9001', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'CAT9002', portsUsed: 12, portsTotal: 16, locSuffix: 'RK-P04-U28', systemDescription: 'Cisco ASR-9001 Metro Edge Router', status: 'Verified' },
+  { nameSuffix: 'BNG-R01-MX480', model: 'MX480', vendor: 'JUNIPER', osVersion: '21.4R1', serialPrefix: 'JN4801', portsUsed: 32, portsTotal: 36, locSuffix: 'RK-P05-U10', systemDescription: 'Juniper MX480 Broadband Network Gateway', status: 'Verified' },
+  { nameSuffix: 'BNG-R02-MX480', model: 'MX480', vendor: 'JUNIPER', osVersion: '21.4R1', serialPrefix: 'JN4802', portsUsed: 29, portsTotal: 36, locSuffix: 'RK-P05-U24', systemDescription: 'Juniper MX480 Broadband Network Gateway', status: 'Verified' },
+  { nameSuffix: 'TRANSIT-R01', model: 'NCS-55A1', vendor: 'CISCO', osVersion: '7.9.1', serialPrefix: 'FOC5501', portsUsed: 22, portsTotal: 28, locSuffix: 'RK-P06-U14', systemDescription: 'Cisco NCS-55A1 Regional Transit Router', status: 'Verified' },
+  { nameSuffix: 'TRANSIT-R02', model: 'NetEngine 8000', vendor: 'HUAWEI', osVersion: 'V800R021', serialPrefix: 'HW8001', portsUsed: 24, portsTotal: 28, locSuffix: 'RK-P06-U26', systemDescription: 'Huawei NetEngine 8000 Regional Peering Gateway', status: 'Verified' },
+  { nameSuffix: 'METRO-R01-7210', model: '7210 SAS', vendor: 'NOKIA', osVersion: '21.7.R1', serialPrefix: 'NK7210', portsUsed: 16, portsTotal: 20, locSuffix: 'RK-P07-U16', systemDescription: 'Nokia 7210 Service Access Switch-Router', status: 'Verified' },
+  { nameSuffix: 'METRO-R02-7210', model: '7210 SAS', vendor: 'NOKIA', osVersion: '21.7.R1', serialPrefix: 'NK7211', portsUsed: 17, portsTotal: 20, locSuffix: 'RK-P07-U28', systemDescription: 'Nokia 7210 Service Access Switch-Router', status: 'Drifted' },
+  { nameSuffix: 'GATEWAY-R01', model: 'ASR9902', vendor: 'CISCO', osVersion: '7.10.1', serialPrefix: 'CAT9902', portsUsed: 18, portsTotal: 24, locSuffix: 'RK-P08-U18', systemDescription: 'Cisco ASR9902 Compact Edge Gateway', status: 'Verified' },
+  { nameSuffix: 'GATEWAY-R02', model: 'MX150', vendor: 'JUNIPER', osVersion: '21.3R1', serialPrefix: 'JN1501', portsUsed: 10, portsTotal: 12, locSuffix: 'RK-P08-U28', systemDescription: 'Juniper MX150 Compact Edge Router', status: 'Stale' }
+];
+
+const POP_SWITCH_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'DIST-SW01-N9K', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.2(3)', serialPrefix: 'FOC2419', portsUsed: 36, portsTotal: 48, locSuffix: 'RK-P09-U18', systemDescription: 'Cisco Nexus Distribution Switch', status: 'Verified' },
+  { nameSuffix: 'DIST-SW02-N9K', model: 'Nexus 93180', vendor: 'CISCO', osVersion: '10.2(3)', serialPrefix: 'FOC2420', portsUsed: 38, portsTotal: 48, locSuffix: 'RK-P09-U28', systemDescription: 'Cisco Nexus Distribution Switch', status: 'Verified' },
+  { nameSuffix: 'DIST-SW03-QFX', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JN5123', portsUsed: 40, portsTotal: 48, locSuffix: 'RK-P10-U18', systemDescription: 'Juniper QFX5120 Distribution Switch', status: 'Verified' },
+  { nameSuffix: 'DIST-SW04-QFX', model: 'QFX5120', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JN5124', portsUsed: 35, portsTotal: 48, locSuffix: 'RK-P10-U28', systemDescription: 'Juniper QFX5120 Distribution Switch', status: 'Verified' },
+  { nameSuffix: 'AGG-SW01-C9500', model: 'Catalyst 9500', vendor: 'CISCO', osVersion: '17.9.3', serialPrefix: 'FOC9501', portsUsed: 38, portsTotal: 48, locSuffix: 'RK-P11-U16', systemDescription: 'Cisco Catalyst 9500 Metro Aggregator', status: 'Verified' },
+  { nameSuffix: 'AGG-SW02-C9500', model: 'Catalyst 9500', vendor: 'CISCO', osVersion: '17.9.3', serialPrefix: 'FOC9502', portsUsed: 41, portsTotal: 48, locSuffix: 'RK-P11-U26', systemDescription: 'Cisco Catalyst 9500 Metro Aggregator', status: 'Verified' },
+  { nameSuffix: 'AGG-SW03-EX4650', model: 'EX4650', vendor: 'JUNIPER', osVersion: '21.3R2', serialPrefix: 'JN4651', portsUsed: 42, portsTotal: 48, locSuffix: 'RK-P12-U16', systemDescription: 'Juniper EX4650 Aggregation Switch', status: 'Drifted' },
+  { nameSuffix: 'AGG-SW04-EX4650', model: 'EX4650', vendor: 'JUNIPER', osVersion: '21.3R2', serialPrefix: 'JN4652', portsUsed: 39, portsTotal: 48, locSuffix: 'RK-P12-U26', systemDescription: 'Juniper EX4650 Aggregation Switch', status: 'Verified' },
+  { nameSuffix: 'LAN-SW01-C9300', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC9301', portsUsed: 44, portsTotal: 48, locSuffix: 'RK-P13-U14', systemDescription: 'Cisco Catalyst 9300 Local LAN Switch', status: 'Verified' },
+  { nameSuffix: 'LAN-SW02-C9300', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC9302', portsUsed: 40, portsTotal: 48, locSuffix: 'RK-P13-U24', systemDescription: 'Cisco Catalyst 9300 Local LAN Switch', status: 'Verified' },
+  { nameSuffix: 'LAN-SW03-CE5800', model: 'CloudEngine 5800', vendor: 'HUAWEI', osVersion: 'V200R019', serialPrefix: 'HW5801', portsUsed: 36, portsTotal: 48, locSuffix: 'RK-P14-U14', systemDescription: 'Huawei CloudEngine 5855 Access Switch', status: 'Verified' },
+  { nameSuffix: 'LAN-SW04-CE5800', model: 'CloudEngine 5800', vendor: 'HUAWEI', osVersion: 'V200R019', serialPrefix: 'HW5802', portsUsed: 32, portsTotal: 48, locSuffix: 'RK-P14-U24', systemDescription: 'Huawei CloudEngine 5855 Access Switch', status: 'Verified' },
+  { nameSuffix: 'OOB-SW01', model: 'EX2300', vendor: 'JUNIPER', osVersion: '20.4R3', serialPrefix: 'JN2301', portsUsed: 22, portsTotal: 24, locSuffix: 'RK-P15-U42', systemDescription: 'Juniper EX2300 Out-of-Band Switch', status: 'Verified' },
+  { nameSuffix: 'OOB-SW02', model: 'Catalyst 2960X', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC2961', portsUsed: 20, portsTotal: 24, locSuffix: 'RK-P15-U44', systemDescription: 'Cisco Catalyst 2960-X Management Switch', status: 'Verified' },
+  { nameSuffix: 'PEER-SW01', model: 'Nexus 9336C', vendor: 'CISCO', osVersion: '10.3(1)', serialPrefix: 'FOC9331', portsUsed: 26, portsTotal: 36, locSuffix: 'RK-P16-U20', systemDescription: 'Cisco Nexus 9336C IX Peering Switch', status: 'Verified' },
+  { nameSuffix: 'PEER-SW02', model: 'Nexus 9336C', vendor: 'CISCO', osVersion: '10.3(1)', serialPrefix: 'FOC9332', portsUsed: 24, portsTotal: 36, locSuffix: 'RK-P16-U30', systemDescription: 'Cisco Nexus 9336C IX Peering Switch', status: 'Stale' }
+];
+
+const POP_DWDM_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'OPT-PSS16-01', model: 'PSS-16', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NK1816', portsUsed: 12, portsTotal: 16, locSuffix: 'RK-POPT01-U12', systemDescription: 'Nokia 1830 Photonic Service Switch Metro Transport', status: 'Verified' },
+  { nameSuffix: 'OPT-PSS16-02', model: 'PSS-16', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NK1817', portsUsed: 14, portsTotal: 16, locSuffix: 'RK-POPT01-U24', systemDescription: 'Nokia 1830 Photonic Service Switch Metro Transport', status: 'Verified' },
+  { nameSuffix: 'OPT-ROADM01', model: 'NCS-2000', vendor: 'CISCO', osVersion: '11.0.1', serialPrefix: 'FOC2001', portsUsed: 10, portsTotal: 16, locSuffix: 'RK-POPT02-U14', systemDescription: 'Cisco NCS-2000 Metro ROADM Terminal', status: 'Verified' },
+  { nameSuffix: 'OPT-ROADM02', model: 'NCS-2000', vendor: 'CISCO', osVersion: '11.0.1', serialPrefix: 'FOC2002', portsUsed: 11, portsTotal: 16, locSuffix: 'RK-POPT02-U26', systemDescription: 'Cisco NCS-2000 Metro ROADM Terminal', status: 'Verified' },
+  { nameSuffix: 'METRO-MUX01', model: '1830-PSS', vendor: 'NOKIA', osVersion: '21.9.0', serialPrefix: 'NK1821', portsUsed: 15, portsTotal: 16, locSuffix: 'RK-POPT03-U10', systemDescription: 'Nokia 1830 Metro Multiplexer Unit', status: 'Verified' },
+  { nameSuffix: 'METRO-MUX02', model: '1830-PSS', vendor: 'NOKIA', osVersion: '21.9.0', serialPrefix: 'NK1822', portsUsed: 14, portsTotal: 16, locSuffix: 'RK-POPT03-U20', systemDescription: 'Nokia 1830 Metro Multiplexer Unit', status: 'Drifted' },
+  { nameSuffix: 'METRO-MUX03', model: 'OSN-1800', vendor: 'HUAWEI', osVersion: 'V100R020', serialPrefix: 'HW1801', portsUsed: 16, portsTotal: 16, locSuffix: 'RK-POPT04-U10', systemDescription: 'Huawei OptiX OSN 1800 Compact WDM', status: 'Verified' },
+  { nameSuffix: 'METRO-MUX04', model: 'OSN-1800', vendor: 'HUAWEI', osVersion: 'V100R020', serialPrefix: 'HW1802', portsUsed: 13, portsTotal: 16, locSuffix: 'RK-POPT04-U20', systemDescription: 'Huawei OptiX OSN 1800 Compact WDM', status: 'Verified' },
+  { nameSuffix: 'TRANS-10G01', model: '1830-PSS', vendor: 'NOKIA', osVersion: '22.0.1', serialPrefix: 'NK1001', portsUsed: 8, portsTotal: 8, locSuffix: 'RK-POPT05-U12', systemDescription: 'Nokia 1830 10G Multi-Service Transponder', status: 'Verified' },
+  { nameSuffix: 'TRANS-10G02', model: '1830-PSS', vendor: 'NOKIA', osVersion: '22.0.1', serialPrefix: 'NK1002', portsUsed: 7, portsTotal: 8, locSuffix: 'RK-POPT05-U20', systemDescription: 'Nokia 1830 10G Multi-Service Transponder', status: 'Verified' },
+  { nameSuffix: 'TRANS-100G01', model: 'NCS-1004', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'FOC1011', portsUsed: 8, portsTotal: 8, locSuffix: 'RK-POPT06-U14', systemDescription: 'Cisco NCS-1004 Metro 100G Optical Transponder', status: 'Verified' },
+  { nameSuffix: 'TRANS-100G02', model: 'NCS-1004', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'FOC1012', portsUsed: 6, portsTotal: 8, locSuffix: 'RK-POPT06-U24', systemDescription: 'Cisco NCS-1004 Metro 100G Optical Transponder', status: 'Verified' },
+  { nameSuffix: 'AMP-METRO01', model: 'NCS-2K-EDFA', vendor: 'CISCO', osVersion: '11.0.0', serialPrefix: 'FOC2011', portsUsed: 4, portsTotal: 4, locSuffix: 'RK-POPT07-U16', systemDescription: 'Cisco NCS Optical Pre-Amplifier', status: 'Verified' },
+  { nameSuffix: 'AMP-METRO02', model: 'NCS-2K-EDFA', vendor: 'CISCO', osVersion: '11.0.0', serialPrefix: 'FOC2012', portsUsed: 4, portsTotal: 4, locSuffix: 'RK-POPT07-U24', systemDescription: 'Cisco NCS Optical Booster Amplifier', status: 'Verified' },
+  { nameSuffix: 'OPT-TERMINAL01', model: 'PSS-4', vendor: 'NOKIA', osVersion: '21.8.2', serialPrefix: 'NK1804', portsUsed: 4, portsTotal: 4, locSuffix: 'RK-POPT08-U18', systemDescription: 'Nokia 1830 PSS-4 Compact Optical Terminal', status: 'Verified' },
+  { nameSuffix: 'OPT-TERMINAL02', model: 'PSS-4', vendor: 'NOKIA', osVersion: '21.8.2', serialPrefix: 'NK1805', portsUsed: 3, portsTotal: 4, locSuffix: 'RK-POPT08-U26', systemDescription: 'Nokia 1830 PSS-4 Compact Optical Terminal', status: 'Stale' }
+];
+
+const SITE_GNODEB_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: '5G-gNB01-vDU', model: '5G gNodeB vDU', vendor: 'CISCO', osVersion: '22.4.1', serialPrefix: 'CSGNB5G', portsUsed: 6, portsTotal: 8, locSuffix: 'TOW-BBU-R01', systemDescription: 'Cisco Virtualized 5G NR Distributed Unit', status: 'Verified' },
+  { nameSuffix: '5G-gNB02-CU', model: '5G gNodeB CU', vendor: 'CISCO', osVersion: '22.4.1', serialPrefix: 'CSGNB5H', portsUsed: 4, portsTotal: 8, locSuffix: 'TOW-BBU-R01', systemDescription: 'Cisco Virtualized 5G Centralized Unit', status: 'Verified' },
+  { nameSuffix: '5G-gNB03-AirScale', model: 'AirScale 5G BBU', vendor: 'NOKIA', osVersion: 'SBTS22R3', serialPrefix: 'NK5GBBU1', portsUsed: 7, portsTotal: 8, locSuffix: 'TOW-BBU-R02', systemDescription: 'Nokia AirScale 5G Sub-6GHz Baseband', status: 'Verified' },
+  { nameSuffix: '5G-gNB04-AirScale', model: 'AirScale 5G BBU', vendor: 'NOKIA', osVersion: 'SBTS22R3', serialPrefix: 'NK5GBBU2', portsUsed: 6, portsTotal: 8, locSuffix: 'TOW-BBU-R02', systemDescription: 'Nokia AirScale 5G Sub-6GHz Baseband', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-A1', model: 'AAU5613', vendor: 'HUAWEI', osVersion: 'V100R017', serialPrefix: 'HWAAU51', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-A-TOP', systemDescription: 'Huawei 5G Massive MIMO Active Antenna Unit Sector A', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-A2', model: 'AAU5613', vendor: 'HUAWEI', osVersion: 'V100R017', serialPrefix: 'HWAAU52', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-A-MID', systemDescription: 'Huawei 5G Massive MIMO Active Antenna Unit Sector A', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-B1', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU1', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-B-TOP', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector B', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-B2', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU2', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-B-MID', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector B', status: 'Verified' },
+  { nameSuffix: '5G-AAU-SEC-C1', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU3', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-C-TOP', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector C', status: 'Drifted' },
+  { nameSuffix: '5G-AAU-SEC-C2', model: 'AirScale AAU', vendor: 'NOKIA', osVersion: '22.2.1', serialPrefix: 'NKAAU4', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-SEC-C-MID', systemDescription: 'Nokia 5G 64T64R Massive MIMO Sector C', status: 'Verified' },
+  { nameSuffix: '5G-RRU01-n78', model: '5G Radio Unit n78', vendor: 'NOKIA', osVersion: 'SBTS22', serialPrefix: 'NKRU781', portsUsed: 4, portsTotal: 4, locSuffix: 'TOW-RRU-A1', systemDescription: 'Nokia 3.5GHz n78 Remote Radio Unit', status: 'Verified' },
+  { nameSuffix: '5G-RRU02-n78', model: '5G Radio Unit n78', vendor: 'NOKIA', osVersion: 'SBTS22', serialPrefix: 'NKRU782', portsUsed: 4, portsTotal: 4, locSuffix: 'TOW-RRU-B1', systemDescription: 'Nokia 3.5GHz n78 Remote Radio Unit', status: 'Verified' },
+  { nameSuffix: '5G-RRU03-n28', model: '5G Radio Unit n28', vendor: 'CISCO', osVersion: '22.3', serialPrefix: 'CSRU28', portsUsed: 4, portsTotal: 4, locSuffix: 'TOW-RRU-C1', systemDescription: 'Cisco 700MHz n28 Low-Band Radio Unit', status: 'Verified' },
+  { nameSuffix: '5G-MMO-01', model: 'Massive MIMO Controller', vendor: 'CISCO', osVersion: '22.4', serialPrefix: 'CSMMO1', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R01', systemDescription: 'Cisco 5G NR Beamforming Coordinator', status: 'Verified' },
+  { nameSuffix: '5G-MMO-02', model: 'Massive MIMO Controller', vendor: 'CISCO', osVersion: '22.4', serialPrefix: 'CSMMO2', portsUsed: 5, portsTotal: 8, locSuffix: 'SHELTER-R01', systemDescription: 'Cisco 5G NR Beamforming Coordinator', status: 'Verified' },
+  { nameSuffix: '5G-FR2-MMW', model: 'mmWave Radio', vendor: 'NOKIA', osVersion: '22.1', serialPrefix: 'NKMMW1', portsUsed: 2, portsTotal: 4, locSuffix: 'TOW-SEC-A-MMW', systemDescription: 'Nokia 28GHz mmWave Micro-Radio', status: 'Stale' }
+];
+
+const SITE_ENODEB_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: '4G-eNB01-BBU', model: 'AirScale BBU', vendor: 'NOKIA', osVersion: 'SBTS21B', serialPrefix: 'ASIA204', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R02', systemDescription: 'Nokia AirScale eNodeB LTE Baseband Unit', status: 'Verified' },
+  { nameSuffix: '4G-eNB02-BBU', model: 'AirScale BBU', vendor: 'NOKIA', osVersion: 'SBTS21B', serialPrefix: 'ASIA205', portsUsed: 5, portsTotal: 8, locSuffix: 'SHELTER-R02', systemDescription: 'Nokia AirScale eNodeB LTE Baseband Unit', status: 'Verified' },
+  { nameSuffix: '4G-eNB03-BBU3900', model: 'BBU3900', vendor: 'HUAWEI', osVersion: 'V100R016', serialPrefix: 'HWBBU31', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R03', systemDescription: 'Huawei BBU3900 Multi-Mode Baseband Unit', status: 'Verified' },
+  { nameSuffix: '4G-eNB04-BBU3900', model: 'BBU3900', vendor: 'HUAWEI', osVersion: 'V100R016', serialPrefix: 'HWBBU32', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R03', systemDescription: 'Huawei BBU3900 Multi-Mode Baseband Unit', status: 'Verified' },
+  { nameSuffix: '4G-RRU-SEC-A1', model: 'RRU3953', vendor: 'HUAWEI', osVersion: 'V100R016', serialPrefix: 'HWRRU11', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-A2', systemDescription: 'Huawei 1800MHz LTE Remote Radio Unit Sector A', status: 'Verified' },
+  { nameSuffix: '4G-RRU-SEC-A2', model: 'RRU3953', vendor: 'HUAWEI', osVersion: 'V100R016', serialPrefix: 'HWRRU12', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-A3', systemDescription: 'Huawei 2100MHz LTE Remote Radio Unit Sector A', status: 'Verified' },
+  { nameSuffix: '4G-RRU-SEC-B1', model: 'AirScale RRU', vendor: 'NOKIA', osVersion: 'SBTS21', serialPrefix: 'NKRRU21', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-B2', systemDescription: 'Nokia Flexi 1800MHz LTE Radio Sector B', status: 'Verified' },
+  { nameSuffix: '4G-RRU-SEC-B2', model: 'AirScale RRU', vendor: 'NOKIA', osVersion: 'SBTS21', serialPrefix: 'NKRRU22', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-B3', systemDescription: 'Nokia Flexi 2100MHz LTE Radio Sector B', status: 'Drifted' },
+  { nameSuffix: '4G-RRU-SEC-C1', model: 'AirScale RRU', vendor: 'NOKIA', osVersion: 'SBTS21', serialPrefix: 'NKRRU31', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-C2', systemDescription: 'Nokia Flexi 1800MHz LTE Radio Sector C', status: 'Verified' },
+  { nameSuffix: '4G-RRU-SEC-C2', model: 'AirScale RRU', vendor: 'NOKIA', osVersion: 'SBTS21', serialPrefix: 'NKRRU32', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-C3', systemDescription: 'Nokia Flexi 2100MHz LTE Radio Sector C', status: 'Verified' },
+  { nameSuffix: '4G-RRH01-850M', model: 'RRH-850', vendor: 'CISCO', osVersion: '16.12', serialPrefix: 'CSRRH81', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-A4', systemDescription: 'Cisco 850MHz Band 5 Remote Radio Head', status: 'Verified' },
+  { nameSuffix: '4G-RRH02-850M', model: 'RRH-850', vendor: 'CISCO', osVersion: '16.12', serialPrefix: 'CSRRH82', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-B4', systemDescription: 'Cisco 850MHz Band 5 Remote Radio Head', status: 'Verified' },
+  { nameSuffix: '4G-RRH03-850M', model: 'RRH-850', vendor: 'CISCO', osVersion: '16.12', serialPrefix: 'CSRRH83', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-RRU-C4', systemDescription: 'Cisco 850MHz Band 5 Remote Radio Head', status: 'Verified' },
+  { nameSuffix: '4G-MIMO-CTRL', model: 'LTE MIMO Unit', vendor: 'NOKIA', osVersion: 'SBTS21B', serialPrefix: 'NKMIMO1', portsUsed: 4, portsTotal: 4, locSuffix: 'SHELTER-R02', systemDescription: 'Nokia 4T4R Carrier Aggregation Module', status: 'Verified' },
+  { nameSuffix: '4G-RET-CTRL01', model: 'SmartRET', vendor: 'HUAWEI', osVersion: 'V100', serialPrefix: 'HWRET1', portsUsed: 2, portsTotal: 2, locSuffix: 'TOW-MAST-TOP', systemDescription: 'Remote Electrical Tilt Antenna Controller', status: 'Verified' },
+  { nameSuffix: '4G-FEMTO01', model: 'Flexi Zone', vendor: 'NOKIA', osVersion: '20.3', serialPrefix: 'NKFEMTO', portsUsed: 2, portsTotal: 2, locSuffix: 'SHELTER-EXT', systemDescription: 'Nokia Flexi Zone Indoor Small Cell Gateway', status: 'Stale' }
+];
+
+const SITE_ROUTER_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'CSR01-ASR920', model: 'ASR920', vendor: 'CISCO', osVersion: '17.6.4', serialPrefix: 'CAT2034', portsUsed: 14, portsTotal: 24, locSuffix: 'SHELTER-R04', systemDescription: 'Cisco ASR920 Primary Cell Site Router', status: 'Verified' },
+  { nameSuffix: 'CSR02-ASR920', model: 'ASR920', vendor: 'CISCO', osVersion: '17.6.4', serialPrefix: 'CAT2035', portsUsed: 12, portsTotal: 24, locSuffix: 'SHELTER-R04', systemDescription: 'Cisco ASR920 Redundant Cell Site Router', status: 'Verified' },
+  { nameSuffix: 'CSR-BH01-NCS540', model: 'NCS-540', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'FOC5401', portsUsed: 16, portsTotal: 24, locSuffix: 'SHELTER-R04', systemDescription: 'Cisco NCS-540 Front-Haul Cell Site Aggregator', status: 'Verified' },
+  { nameSuffix: 'CSR-BH02-NCS540', model: 'NCS-540', vendor: 'CISCO', osVersion: '7.8.2', serialPrefix: 'FOC5402', portsUsed: 15, portsTotal: 24, locSuffix: 'SHELTER-R04', systemDescription: 'Cisco NCS-540 Front-Haul Cell Site Aggregator', status: 'Verified' },
+  { nameSuffix: 'CSR-ACX01', model: 'ACX2200', vendor: 'JUNIPER', osVersion: '21.2R2', serialPrefix: 'JNACX21', portsUsed: 14, portsTotal: 16, locSuffix: 'SHELTER-R05', systemDescription: 'Juniper ACX2200 Universal Metro Access Router', status: 'Verified' },
+  { nameSuffix: 'CSR-ACX02', model: 'ACX2200', vendor: 'JUNIPER', osVersion: '21.2R2', serialPrefix: 'JNACX22', portsUsed: 13, portsTotal: 16, locSuffix: 'SHELTER-R05', systemDescription: 'Juniper ACX2200 Universal Metro Access Router', status: 'Verified' },
+  { nameSuffix: 'IPRAN-R01-ATN', model: 'ATN910', vendor: 'HUAWEI', osVersion: 'V300R006', serialPrefix: 'HWATN1', portsUsed: 12, portsTotal: 16, locSuffix: 'SHELTER-R05', systemDescription: 'Huawei ATN 910 Multi-Service Access Router', status: 'Verified' },
+  { nameSuffix: 'IPRAN-R02-ATN', model: 'ATN910', vendor: 'HUAWEI', osVersion: 'V300R006', serialPrefix: 'HWATN2', portsUsed: 10, portsTotal: 16, locSuffix: 'SHELTER-R05', systemDescription: 'Huawei ATN 910 Multi-Service Access Router', status: 'Drifted' },
+  { nameSuffix: 'MICROWAVE-R01', model: '7210 SAS-M', vendor: 'NOKIA', osVersion: '21.5.R1', serialPrefix: 'NK7211', portsUsed: 8, portsTotal: 12, locSuffix: 'TOW-MW-BRKT1', systemDescription: 'Nokia 7210 Microwave Packet Transport Node', status: 'Verified' },
+  { nameSuffix: 'MICROWAVE-R02', model: '7210 SAS-M', vendor: 'NOKIA', osVersion: '21.5.R1', serialPrefix: 'NK7212', portsUsed: 7, portsTotal: 12, locSuffix: 'TOW-MW-BRKT2', systemDescription: 'Nokia 7210 Microwave Packet Transport Node', status: 'Verified' },
+  { nameSuffix: 'FTTS-R01', model: 'ASR901', vendor: 'CISCO', osVersion: '15.6(2)SP', serialPrefix: 'CAT9011', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R06', systemDescription: 'Cisco ASR 901 Fiber-to-the-Site Router', status: 'Verified' },
+  { nameSuffix: 'FTTS-R02', model: 'ASR901', vendor: 'CISCO', osVersion: '15.6(2)SP', serialPrefix: 'CAT9012', portsUsed: 5, portsTotal: 8, locSuffix: 'SHELTER-R06', systemDescription: 'Cisco ASR 901 Fiber-to-the-Site Router', status: 'Verified' },
+  { nameSuffix: 'SEC-GW01', model: 'SRX345', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JNSRX31', portsUsed: 6, portsTotal: 8, locSuffix: 'SHELTER-R06', systemDescription: 'Juniper SRX345 Site Security IPSec Gateway', status: 'Verified' },
+  { nameSuffix: 'SEC-GW02', model: 'SRX345', vendor: 'JUNIPER', osVersion: '21.4R2', serialPrefix: 'JNSRX32', portsUsed: 5, portsTotal: 8, locSuffix: 'SHELTER-R06', systemDescription: 'Juniper SRX345 Site Security IPSec Gateway', status: 'Verified' },
+  { nameSuffix: 'CSR-ACC01', model: '7210 SAS-D', vendor: 'NOKIA', osVersion: '21.4.R1', serialPrefix: 'NK7215', portsUsed: 8, portsTotal: 10, locSuffix: 'SHELTER-R07', systemDescription: 'Nokia 7210 Service Access Demarcation', status: 'Verified' },
+  { nameSuffix: 'CSR-ACC02', model: '7210 SAS-D', vendor: 'NOKIA', osVersion: '21.4.R1', serialPrefix: 'NK7216', portsUsed: 7, portsTotal: 10, locSuffix: 'SHELTER-R07', systemDescription: 'Nokia 7210 Service Access Demarcation', status: 'Stale' }
+];
+
+const SITE_SWITCH_TEMPLATES: DeviceTemplate[] = [
+  { nameSuffix: 'ACC-SW01-C9300', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC2402', portsUsed: 18, portsTotal: 24, locSuffix: 'SHELTER-SW01', systemDescription: 'Cisco Catalyst 9300 Site Access Switch', status: 'Verified' },
+  { nameSuffix: 'ACC-SW02-C9300', model: 'Catalyst 9300', vendor: 'CISCO', osVersion: '17.9.2', serialPrefix: 'FOC2403', portsUsed: 16, portsTotal: 24, locSuffix: 'SHELTER-SW01', systemDescription: 'Cisco Catalyst 9300 Site Access Switch', status: 'Verified' },
+  { nameSuffix: 'POE-SW01-C2960', model: 'Catalyst 2960X', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC2965', portsUsed: 22, portsTotal: 24, locSuffix: 'SHELTER-SW02', systemDescription: 'Cisco Catalyst 2960X PoE+ Antenna Feeder Switch', status: 'Verified' },
+  { nameSuffix: 'POE-SW02-C2960', model: 'Catalyst 2960X', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC2966', portsUsed: 20, portsTotal: 24, locSuffix: 'SHELTER-SW02', systemDescription: 'Cisco Catalyst 2960X PoE+ Antenna Feeder Switch', status: 'Verified' },
+  { nameSuffix: 'TOWER-SW01-EX', model: 'EX2300-C', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JN2305', portsUsed: 10, portsTotal: 12, locSuffix: 'TOW-JUNCT-BOX', systemDescription: 'Juniper EX2300 Compact Masthead Switch', status: 'Verified' },
+  { nameSuffix: 'TOWER-SW02-EX', model: 'EX2300-C', vendor: 'JUNIPER', osVersion: '21.2R3', serialPrefix: 'JN2306', portsUsed: 9, portsTotal: 12, locSuffix: 'TOW-JUNCT-BOX', systemDescription: 'Juniper EX2300 Compact Masthead Switch', status: 'Drifted' },
+  { nameSuffix: 'SHELTER-SW01', model: 'CloudEngine 5800', vendor: 'HUAWEI', osVersion: 'V200R019', serialPrefix: 'HW5805', portsUsed: 14, portsTotal: 24, locSuffix: 'SHELTER-SW03', systemDescription: 'Huawei CloudEngine Site Aggregation Switch', status: 'Verified' },
+  { nameSuffix: 'SHELTER-SW02', model: 'CloudEngine 5800', vendor: 'HUAWEI', osVersion: 'V200R019', serialPrefix: 'HW5806', portsUsed: 12, portsTotal: 24, locSuffix: 'SHELTER-SW03', systemDescription: 'Huawei CloudEngine Site Aggregation Switch', status: 'Verified' },
+  { nameSuffix: 'CCTV-SW01', model: 'Catalyst 1000', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC1005', portsUsed: 8, portsTotal: 8, locSuffix: 'SECURITY-CAB', systemDescription: 'Cisco Catalyst 1000 Site Perimeter Surveillance Switch', status: 'Verified' },
+  { nameSuffix: 'CCTV-SW02', model: 'Catalyst 1000', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC1006', portsUsed: 7, portsTotal: 8, locSuffix: 'SECURITY-CAB', systemDescription: 'Cisco Catalyst 1000 Site Perimeter Surveillance Switch', status: 'Verified' },
+  { nameSuffix: 'ENV-SW01-IE', model: 'IE-4000', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC4001', portsUsed: 6, portsTotal: 8, locSuffix: 'ENV-CAB-01', systemDescription: 'Cisco Industrial Ethernet 4000 Climate Monitoring Switch', status: 'Verified' },
+  { nameSuffix: 'ENV-SW02-IE', model: 'IE-4000', vendor: 'CISCO', osVersion: '15.2(7)E', serialPrefix: 'FOC4002', portsUsed: 5, portsTotal: 8, locSuffix: 'ENV-CAB-01', systemDescription: 'Cisco Industrial Ethernet 4000 Climate Monitoring Switch', status: 'Verified' },
+  { nameSuffix: 'RECTIFIER-SW01', model: 'EX2300', vendor: 'JUNIPER', osVersion: '20.4R3', serialPrefix: 'JN2311', portsUsed: 6, portsTotal: 8, locSuffix: 'POWER-BAY-A', systemDescription: 'Power System & Rectifier Telemetry Switch', status: 'Verified' },
+  { nameSuffix: 'RECTIFIER-SW02', model: 'EX2300', vendor: 'JUNIPER', osVersion: '20.4R3', serialPrefix: 'JN2312', portsUsed: 6, portsTotal: 8, locSuffix: 'POWER-BAY-B', systemDescription: 'Power System & Rectifier Telemetry Switch', status: 'Verified' },
+  { nameSuffix: 'BMS-SW01', model: 'Catalyst 2960L', vendor: 'CISCO', osVersion: '15.2(6)E', serialPrefix: 'FOC2968', portsUsed: 7, portsTotal: 8, locSuffix: 'BMS-CAB-01', systemDescription: 'Building Management & Li-Ion Battery Controller Switch', status: 'Verified' },
+  { nameSuffix: 'BMS-SW02', model: 'Catalyst 2960L', vendor: 'CISCO', osVersion: '15.2(6)E', serialPrefix: 'FOC2969', portsUsed: 6, portsTotal: 8, locSuffix: 'BMS-CAB-02', systemDescription: 'Building Management & Generator Telemetry Switch', status: 'Stale' }
+];
+
 export function getNetworkElementsForFacility(cityId: string, facility: FacilityItem): NetworkElementRow[] {
   const info = getCityById(cityId);
   const regionName = info?.region.name.replace(' Region', '') || 'North';
   const code = facility.code;
 
+  const mapTemplates = (
+    templates: DeviceTemplate[],
+    category: 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB',
+    ipSubnet: number,
+    facilityType: 'dc' | 'pop' | 'site'
+  ): NetworkElementRow[] => {
+    return templates.map((tmpl, idx) => ({
+      id: `${facility.id}-${category.toLowerCase()}-${idx + 1}`,
+      status: tmpl.status,
+      name: `${code}-${tmpl.nameSuffix}`,
+      ip: `172.31.${ipSubnet}.${idx + 1}`,
+      model: tmpl.model,
+      vendor: tmpl.vendor,
+      osVersion: tmpl.osVersion,
+      serialNumber: `${tmpl.serialPrefix}${1000 + idx * 17}`,
+      region: regionName,
+      portsUsed: tmpl.portsUsed,
+      portsTotal: tmpl.portsTotal,
+      locationCode: `${code}-${tmpl.locSuffix}`,
+      systemDescription: tmpl.systemDescription,
+      category,
+      facilityType,
+      cityId
+    }));
+  };
+
   if (facility.facilityType === 'dc') {
     return [
-      {
-        id: `${facility.id}-el-1`,
-        status: 'Verified',
-        name: `${code}-CR01-MX960`,
-        ip: '172.31.10.1',
-        model: 'MX960',
-        vendor: 'JUNIPER',
-        osVersion: '21.4R3-S5.5',
-        serialNumber: 'JN123984A01',
-        region: regionName,
-        portsUsed: 32,
-        portsTotal: 36,
-        locationCode: code,
-        systemDescription: 'Juniper Networks, Inc. mx960 core internet router',
-        category: 'Router',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-2`,
-        status: 'Verified',
-        name: `${code}-CR02-NCS5504`,
-        ip: '172.31.10.2',
-        model: 'NCS-5504',
-        vendor: 'CISCO',
-        osVersion: '7.10.1',
-        serialNumber: 'FOC25184K92',
-        region: regionName,
-        portsUsed: 28,
-        portsTotal: 36,
-        locationCode: code,
-        systemDescription: 'Cisco IOS-XR 7.10.1 NCS-5504 High-Capacity Core Router',
-        category: 'Router',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-3`,
-        status: 'Verified',
-        name: `${code}-SPINE01-N9K`,
-        ip: '172.31.10.11',
-        model: 'Nexus 9336C',
-        vendor: 'CISCO',
-        osVersion: '10.3(2)',
-        serialNumber: 'FOC25102X44',
-        region: regionName,
-        portsUsed: 34,
-        portsTotal: 36,
-        locationCode: code,
-        systemDescription: 'Cisco NX-OS Nexus 9336C-FX2 Spine Switch',
-        category: 'Switch',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-4`,
-        status: 'Verified',
-        name: `${code}-LEAF01-N9K`,
-        ip: '172.31.10.21',
-        model: 'Nexus 93180',
-        vendor: 'CISCO',
-        osVersion: '10.3(2)',
-        serialNumber: 'FOC25102X55',
-        region: regionName,
-        portsUsed: 44,
-        portsTotal: 48,
-        locationCode: code,
-        systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch',
-        category: 'Switch',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-5`,
-        status: 'Verified',
-        name: `${code}-LEAF02-N9K`,
-        ip: '172.31.10.22',
-        model: 'Nexus 93180',
-        vendor: 'CISCO',
-        osVersion: '10.3(2)',
-        serialNumber: 'FOC25102X56',
-        region: regionName,
-        portsUsed: 41,
-        portsTotal: 48,
-        locationCode: code,
-        systemDescription: 'Cisco NX-OS Nexus 93180YC-EX Leaf Switch',
-        category: 'Switch',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-6`,
-        status: 'Verified',
-        name: `${code}-DWDM01-PSS32`,
-        ip: '172.31.10.31',
-        model: 'PSS-32',
-        vendor: 'NOKIA',
-        osVersion: '22.3.1',
-        serialNumber: 'NK1830PSS32A',
-        region: regionName,
-        portsUsed: 26,
-        portsTotal: 32,
-        locationCode: code,
-        systemDescription: 'Nokia 1830 Photonic Service Switch Core Optical Transport',
-        category: 'DWDM',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-7`,
-        status: 'Drifted',
-        name: `${code}-PE01-ASR9904`,
-        ip: '172.31.10.41',
-        model: 'ASR9904',
-        vendor: 'CISCO',
-        osVersion: '7.9.2',
-        serialNumber: 'CAT239401PL',
-        region: regionName,
-        portsUsed: 22,
-        portsTotal: 36,
-        locationCode: code,
-        systemDescription: 'Cisco ASR9904 Edge Aggregation Router',
-        category: 'Router',
-        facilityType: 'dc',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-8`,
-        status: 'Verified',
-        name: `${code}-TOR01-QFX5120`,
-        ip: '172.31.10.51',
-        model: 'QFX5120',
-        vendor: 'JUNIPER',
-        osVersion: '21.4R3',
-        serialNumber: 'JNQFX512009',
-        region: regionName,
-        portsUsed: 42,
-        portsTotal: 48,
-        locationCode: code,
-        systemDescription: 'Juniper QFX5120 Top-of-Rack Switch',
-        category: 'Switch',
-        facilityType: 'dc',
-        cityId
-      }
+      ...mapTemplates(DC_ROUTER_TEMPLATES, 'Router', 10, 'dc'),
+      ...mapTemplates(DC_SWITCH_TEMPLATES, 'Switch', 11, 'dc'),
+      ...mapTemplates(DC_DWDM_TEMPLATES, 'DWDM', 12, 'dc')
     ];
   }
 
   if (facility.facilityType === 'pop') {
     return [
-      {
-        id: `${facility.id}-el-1`,
-        status: 'Verified',
-        name: `${code}-AGG-R01-NCS540`,
-        ip: '172.31.20.1',
-        model: 'NCS-540',
-        vendor: 'CISCO',
-        osVersion: '7.9.2',
-        serialNumber: 'FOC24194R2L',
-        region: regionName,
-        portsUsed: 22,
-        portsTotal: 28,
-        locationCode: code,
-        systemDescription: 'Cisco NCS-540 Metro Aggregation Router',
-        category: 'Router',
-        facilityType: 'pop',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-2`,
-        status: 'Verified',
-        name: `${code}-AGG-R02-MX204`,
-        ip: '172.31.20.2',
-        model: 'MX204',
-        vendor: 'JUNIPER',
-        osVersion: '21.2R3',
-        serialNumber: 'JNMX2049911',
-        region: regionName,
-        portsUsed: 18,
-        portsTotal: 24,
-        locationCode: code,
-        systemDescription: 'Juniper MX204 Metro Transit Router',
-        category: 'Router',
-        facilityType: 'pop',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-3`,
-        status: 'Verified',
-        name: `${code}-DIST-SW01`,
-        ip: '172.31.20.11',
-        model: 'Nexus 93180',
-        vendor: 'CISCO',
-        osVersion: '10.2(3)',
-        serialNumber: 'FOC24194R8M',
-        region: regionName,
-        portsUsed: 36,
-        portsTotal: 48,
-        locationCode: code,
-        systemDescription: 'Cisco Nexus Distribution Switch',
-        category: 'Switch',
-        facilityType: 'pop',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-4`,
-        status: 'Verified',
-        name: `${code}-OPT-PSS16`,
-        ip: '172.31.20.21',
-        model: 'PSS-16',
-        vendor: 'NOKIA',
-        osVersion: '22.1.2',
-        serialNumber: 'NK1830PSS16',
-        region: regionName,
-        portsUsed: 12,
-        portsTotal: 16,
-        locationCode: code,
-        systemDescription: 'Nokia 1830 Photonic Service Switch Metro Transport',
-        category: 'DWDM',
-        facilityType: 'pop',
-        cityId
-      },
-      {
-        id: `${facility.id}-el-5`,
-        status: 'Drifted',
-        name: `${code}-PEER-R01-7750`,
-        ip: '172.31.20.31',
-        model: '7750',
-        vendor: 'NOKIA',
-        osVersion: '21.10.R1',
-        serialNumber: 'NK7750SR12',
-        region: regionName,
-        portsUsed: 20,
-        portsTotal: 24,
-        locationCode: code,
-        systemDescription: 'Nokia 7750 Service Router Edge Peering',
-        category: 'Router',
-        facilityType: 'pop',
-        cityId
-      }
+      ...mapTemplates(POP_ROUTER_TEMPLATES, 'Router', 20, 'pop'),
+      ...mapTemplates(POP_SWITCH_TEMPLATES, 'Switch', 21, 'pop'),
+      ...mapTemplates(POP_DWDM_TEMPLATES, 'DWDM', 22, 'pop')
     ];
   }
 
   // Sites (Cell Towers, Rooftops, IBS)
   return [
-    {
-      id: `${facility.id}-el-1`,
-      status: 'Verified',
-      name: `${code}-5G-gNB01`,
-      ip: '172.31.95.10',
-      model: '5G gNodeB vDU',
-      vendor: 'CISCO',
-      osVersion: '22.4.1',
-      serialNumber: 'CSGNB5G101',
-      region: regionName,
-      portsUsed: 6,
-      portsTotal: 8,
-      locationCode: code,
-      systemDescription: 'Cisco Virtualized 5G NR Distributed Baseband Unit',
-      category: 'gNodeB',
-      facilityType: 'site',
-      cityId
-    },
-    {
-      id: `${facility.id}-el-2`,
-      status: 'Verified',
-      name: `${code}-4G-eNB01`,
-      ip: '172.31.90.10',
-      model: 'AirScale BBU',
-      vendor: 'NOKIA',
-      osVersion: 'SBTS21B',
-      serialNumber: 'ASIA2049102',
-      region: regionName,
-      portsUsed: 6,
-      portsTotal: 8,
-      locationCode: code,
-      systemDescription: 'Nokia AirScale eNodeB LTE Baseband Unit',
-      category: 'eNodeB',
-      facilityType: 'site',
-      cityId
-    },
-    {
-      id: `${facility.id}-el-3`,
-      status: 'Verified',
-      name: `${code}-CSR01-ASR920`,
-      ip: '172.31.70.10',
-      model: 'ASR920',
-      vendor: 'CISCO',
-      osVersion: '17.6.4',
-      serialNumber: 'CAT2034U1PP',
-      region: regionName,
-      portsUsed: 14,
-      portsTotal: 24,
-      locationCode: code,
-      systemDescription: 'Cisco ASR920 Cell Site Router',
-      category: 'Router',
-      facilityType: 'site',
-      cityId
-    },
-    {
-      id: `${facility.id}-el-4`,
-      status: 'Verified',
-      name: `${code}-ACC-SW01`,
-      ip: '172.31.60.10',
-      model: 'Catalyst 9300',
-      vendor: 'CISCO',
-      osVersion: '17.9.2',
-      serialNumber: 'FOC24029411',
-      region: regionName,
-      portsUsed: 18,
-      portsTotal: 24,
-      locationCode: code,
-      systemDescription: 'Cisco Catalyst 9300 Site Access Switch',
-      category: 'Switch',
-      facilityType: 'site',
-      cityId
-    }
+    ...mapTemplates(SITE_GNODEB_TEMPLATES, 'gNodeB', 95, 'site'),
+    ...mapTemplates(SITE_ENODEB_TEMPLATES, 'eNodeB', 90, 'site'),
+    ...mapTemplates(SITE_ROUTER_TEMPLATES, 'Router', 70, 'site'),
+    ...mapTemplates(SITE_SWITCH_TEMPLATES, 'Switch', 60, 'site')
   ];
 }

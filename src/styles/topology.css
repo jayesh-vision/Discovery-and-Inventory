@@ -2300,6 +2300,14 @@
   border-top: 3px solid #06b6d4;
 }
 
+.city-summary-card.top-bar-purple {
+  border-top: 3px solid #8b5cf6;
+}
+
+.city-summary-card.top-bar-emerald {
+  border-top: 3px solid #10b981;
+}
+
 .city-summary-card.is-active {
   box-shadow: 0 0 0 2px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.1);
 }
@@ -2483,7 +2491,7 @@
 .net-table-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: min(580px, calc(100vh - 330px));
+  height: 540px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #ffffff;

@@ -369,6 +369,10 @@ export default function CityDetails() {
       const match = facilities.find(item => item.code === fId || item.id === fId);
       if (match) {
         setSelectedFacilityItem(match);
+        setSelectedCategory(prev => {
+          if (prev !== 'All') return prev;
+          return match.facilityType === 'site' ? 'gNodeB' : 'Router';
+        });
       }
     } else {
       setSelectedFacilityItem(null);
@@ -539,7 +543,7 @@ export default function CityDetails() {
   // Facility row click handler
   const handleSelectFacility = (fac: FacilityItem) => {
     setSelectedFacilityItem(fac);
-    setSelectedCategory('All');
+    setSelectedCategory(fac.facilityType === 'site' ? 'gNodeB' : 'Router');
     setElementSearch('');
     setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
     setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
@@ -549,14 +553,6 @@ export default function CityDetails() {
     setIsPopFilterModalOpen(false);
     setIsElementFilterModalOpen(false);
     setSearchParams({ facility: selectedFacility, facilityId: fac.code }, { replace: true });
-  };
-
-  const handleBackToFacilityList = () => {
-    setSelectedFacilityItem(null);
-    setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
-    setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
-    setActiveElementFilterTab('status');
-    setSearchParams({ facility: selectedFacility }, { replace: true });
   };
 
   // Status badge style helper
@@ -593,11 +589,11 @@ export default function CityDetails() {
     if (!total || !used) return <span className="net-text-muted">—</span>;
     const pct = Math.min(100, Math.round((used / total) * 100));
     return (
-      <div className="net-port-cell" title={`${pct}% rack space occupied`}>
-        <div className="net-port-track" style={{ width: '48px' }}>
-          <div className="net-port-fill" style={{ width: `${pct}%`, background: pct > 85 ? '#f59e0b' : '#3b82f6' }} />
+      <div className="net-port-cell">
+        <div className="net-port-track">
+          <div className="net-port-fill" style={{ width: `${pct}%`, background: '#f59e0b' }} />
         </div>
-        <span className="net-port-text">{used}/{total} Racks ({pct}%)</span>
+        <span className="net-port-text">{used}/{total}</span>
       </div>
     );
   };
@@ -611,152 +607,289 @@ export default function CityDetails() {
     return ['All', 'Router', 'Switch', 'DWDM'];
   }, [selectedFacilityItem]);
 
+  // Clean device tabs for facility view (matching Router, Switch, DWDM tabbar style)
+  const deviceTabs: { key: DeviceCategory; label: string }[] = useMemo(() => {
+    if (!selectedFacilityItem) return [];
+    if (selectedFacilityItem.facilityType === 'site') {
+      return [
+        { key: 'gNodeB', label: 'gNodeB' },
+        { key: 'eNodeB', label: 'eNodeB' },
+        { key: 'Router', label: 'Router' },
+        { key: 'Switch', label: 'Switch' }
+      ];
+    }
+    return [
+      { key: 'Router', label: 'Router' },
+      { key: 'Switch', label: 'Switch' },
+      { key: 'DWDM', label: 'DWDM' }
+    ];
+  }, [selectedFacilityItem]);
+
+  // Category-specific statistics for the currently selected facility
+  const deviceCategoryCards = useMemo(() => {
+    if (!selectedFacilityItem) return [];
+
+    const categories: { cat: DeviceCategory; title: string; subtitle: string; colorClass: string }[] =
+      selectedFacilityItem.facilityType === 'site'
+        ? [
+            { cat: 'gNodeB', title: '5G gNodeB', subtitle: '5G NR Radio Baseband', colorClass: 'top-bar-emerald' },
+            { cat: 'eNodeB', title: '4G eNodeB', subtitle: 'LTE Radio Baseband', colorClass: 'top-bar-cyan' },
+            { cat: 'Router', title: 'Cell Site Routers', subtitle: 'Backhaul / CSR', colorClass: 'top-bar-blue' },
+            { cat: 'Switch', title: 'Site Access Switches', subtitle: 'Access / Aggregation', colorClass: 'top-bar-purple' }
+          ]
+        : selectedFacilityItem.facilityType === 'dc'
+        ? [
+            { cat: 'Router', title: 'Core Routers', subtitle: 'Core & Edge Transit', colorClass: 'top-bar-blue' },
+            { cat: 'Switch', title: 'Fabric Switches', subtitle: 'Spine & Leaf Mesh', colorClass: 'top-bar-purple' },
+            { cat: 'DWDM', title: 'Optical / DWDM', subtitle: 'Photonic Transport', colorClass: 'top-bar-yellow' }
+          ]
+        : [
+            { cat: 'Router', title: 'Metro Routers', subtitle: 'Aggregation & Transit', colorClass: 'top-bar-blue' },
+            { cat: 'Switch', title: 'Distribution Switches', subtitle: 'Metro Distribution', colorClass: 'top-bar-purple' },
+            { cat: 'DWDM', title: 'Optical Transport', subtitle: 'WDM Transponders', colorClass: 'top-bar-yellow' }
+          ];
+
+    return categories.map(item => {
+      const catElements = facilityElements.filter(el => el.category === item.cat);
+      const total = catElements.length;
+      const verified = catElements.filter(el => el.status === 'Verified').length;
+      const drifted = catElements.filter(el => el.status === 'Drifted').length;
+      const stale = catElements.filter(el => el.status === 'Stale').length;
+      const missing = catElements.filter(el => el.status === 'Missing').length;
+      const portsUsed = catElements.reduce((acc, el) => acc + (el.portsUsed || 0), 0);
+      const portsTotal = catElements.reduce((acc, el) => acc + (el.portsTotal || 0), 0);
+      const portPct = portsTotal > 0 ? Math.round((portsUsed / portsTotal) * 100) : 0;
+      const models = Array.from(new Set(catElements.map(el => el.model))).slice(0, 2).join(' · ');
+
+      return {
+        ...item,
+        total,
+        verified,
+        drifted,
+        stale,
+        missing,
+        portsUsed,
+        portsTotal,
+        portPct,
+        models: models || '—'
+      };
+    });
+  }, [selectedFacilityItem, facilityElements]);
+
   return (
     <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
-      {/* ── 3 Top Summary Cards (Data Centers | PoP Locations | Sites) ── */}
-      <section className="city-three-cards-grid" style={{ marginBottom: '24px' }}>
-        
-        {/* Card 1: Data Centers */}
-        <div
-          className={`city-summary-card top-bar-yellow${selectedFacility === 'dc' ? ' is-active' : ''}`}
-          onClick={() => handleCardClick('dc')}
-          role="button"
-          tabIndex={0}
-          title="Click to view listing of all Data Centers in this city"
-        >
-          <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-            <span className="city-card-title">Data Centers</span>
-            {selectedFacility === 'dc' && (
-              <span className="nst-badge nst-badge--xs" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                Active view
-              </span>
-            )}
-          </div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-            <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.total}</span>
-            <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-            {dcStats.onAirPct}% on-air · {dcStats.failed} failed
-          </div>
+      {/* ── Top Summary Cards (City-Level Facilities OR Facility-Level Devices) ── */}
+      <section
+        className="city-three-cards-grid"
+        style={{
+          marginBottom: '24px',
+          ...(selectedFacilityItem && deviceCategoryCards.length > 3
+            ? { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }
+            : {})
+        }}
+      >
+        {!selectedFacilityItem ? (
+          <>
+            {/* Card 1: Data Centers */}
+            <div
+              className={`city-summary-card top-bar-yellow${selectedFacility === 'dc' ? ' is-active' : ''}`}
+              onClick={() => handleCardClick('dc')}
+              role="button"
+              tabIndex={0}
+              title="Click to view listing of all Data Centers in this city"
+            >
+              <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                <span className="city-card-title">Data Centers</span>
+                {selectedFacility === 'dc' && (
+                  <span className="nst-badge nst-badge--xs" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                    Active view
+                  </span>
+                )}
+              </div>
+              <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.total}</span>
+                <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+              </div>
+              <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                {dcStats.onAirPct}% on-air · {dcStats.failed} failed
+              </div>
 
-          {/* Meter progress bar */}
-          <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-            <span style={{ width: `${(dcStats.verified / dcStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
-            <span style={{ width: `${(dcStats.inProgress / dcStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
-            {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / dcStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
-            {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / dcStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
-          </div>
+              {/* Meter progress bar */}
+              <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                <span style={{ width: `${(dcStats.verified / dcStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
+                <span style={{ width: `${(dcStats.inProgress / dcStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
+                {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / dcStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
+                {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / dcStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
+              </div>
 
-          {/* Dot Legend */}
-          <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.verified} on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.inProgress} in progress</span>
-            {dcStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.planned} planned</span>}
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.failed} failed</span>
-          </div>
+              {/* Dot Legend */}
+              <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.verified} on-air</span>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.inProgress} in progress</span>
+                {dcStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.planned} planned</span>}
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.failed} failed</span>
+              </div>
 
-          {/* Clean secondary capacity insight */}
-          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Racks: <strong style={{ color: '#1e293b' }}>{dcStats.racksUsed}/{dcStats.racksTotal}</strong> ({dcStats.rackPct}%)</span>
-            <span>Power: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
-          </div>
-        </div>
+              {/* Clean secondary capacity insight */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Racks: <strong style={{ color: '#1e293b' }}>{dcStats.racksUsed}/{dcStats.racksTotal}</strong> ({dcStats.rackPct}%)</span>
+                <span>Power: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
+              </div>
+            </div>
 
-        {/* Card 2: PoP Locations */}
-        <div
-          className={`city-summary-card top-bar-blue${selectedFacility === 'pop' ? ' is-active' : ''}`}
-          onClick={() => handleCardClick('pop')}
-          role="button"
-          tabIndex={0}
-          title="Click to view listing of all PoP Locations in this city"
-        >
-          <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-            <span className="city-card-title">PoP Locations</span>
-            {selectedFacility === 'pop' && (
-              <span className="nst-badge nst-badge--xs" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                Active view
-              </span>
-            )}
-          </div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-            <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{popStats.total}</span>
-            <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-            {popStats.onAirPct}% on-air · {popStats.failed} failed
-          </div>
+            {/* Card 2: PoP Locations */}
+            <div
+              className={`city-summary-card top-bar-blue${selectedFacility === 'pop' ? ' is-active' : ''}`}
+              onClick={() => handleCardClick('pop')}
+              role="button"
+              tabIndex={0}
+              title="Click to view listing of all PoP Locations in this city"
+            >
+              <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                <span className="city-card-title">PoP Locations</span>
+                {selectedFacility === 'pop' && (
+                  <span className="nst-badge nst-badge--xs" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                    Active view
+                  </span>
+                )}
+              </div>
+              <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{popStats.total}</span>
+                <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+              </div>
+              <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                {popStats.onAirPct}% on-air · {popStats.failed} failed
+              </div>
 
-          {/* Meter progress bar */}
-          <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-            <span style={{ width: `${(popStats.verified / popStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
-            <span style={{ width: `${(popStats.inProgress / popStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
-            {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / popStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
-            {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / popStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
-          </div>
+              {/* Meter progress bar */}
+              <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                <span style={{ width: `${(popStats.verified / popStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
+                <span style={{ width: `${(popStats.inProgress / popStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
+                {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / popStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
+                {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / popStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
+              </div>
 
-          {/* Dot Legend */}
-          <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.verified} on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.inProgress} in progress</span>
-            {popStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.planned} planned</span>}
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.failed} failed</span>
-          </div>
+              {/* Dot Legend */}
+              <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.verified} on-air</span>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.inProgress} in progress</span>
+                {popStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.planned} planned</span>}
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.failed} failed</span>
+              </div>
 
-          {/* Clean secondary connectivity insight */}
-          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Homed NEs: <strong style={{ color: '#1e293b' }}>{popStats.homedElements}</strong></span>
-            <span>Tiers: <strong style={{ color: '#1e293b' }}>{popStats.metroHubs} Hub · {popStats.transitNodes} Transit</strong></span>
-          </div>
-        </div>
+              {/* Clean secondary connectivity insight */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Homed NEs: <strong style={{ color: '#1e293b' }}>{popStats.homedElements}</strong></span>
+                <span>Tiers: <strong style={{ color: '#1e293b' }}>{popStats.metroHubs} Hub · {popStats.transitNodes} Transit</strong></span>
+              </div>
+            </div>
 
-        {/* Card 3: Sites */}
-        <div
-          className={`city-summary-card top-bar-cyan${selectedFacility === 'site' ? ' is-active' : ''}`}
-          onClick={() => handleCardClick('site')}
-          role="button"
-          tabIndex={0}
-          title="Click to view listing of all Sites in this city"
-        >
-          <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-            <span className="city-card-title">Sites</span>
-            {selectedFacility === 'site' && (
-              <span className="nst-badge nst-badge--xs" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                Active view
-              </span>
-            )}
-          </div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-            <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{siteStats.total}</span>
-            <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-            {siteStats.onAirPct}% on-air · {siteStats.failed} failed
-          </div>
+            {/* Card 3: Sites */}
+            <div
+              className={`city-summary-card top-bar-cyan${selectedFacility === 'site' ? ' is-active' : ''}`}
+              onClick={() => handleCardClick('site')}
+              role="button"
+              tabIndex={0}
+              title="Click to view listing of all Sites in this city"
+            >
+              <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                <span className="city-card-title">Sites</span>
+                {selectedFacility === 'site' && (
+                  <span className="nst-badge nst-badge--xs" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                    Active view
+                  </span>
+                )}
+              </div>
+              <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{siteStats.total}</span>
+                <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+              </div>
+              <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                {siteStats.onAirPct}% on-air · {siteStats.failed} failed
+              </div>
 
-          {/* Meter progress bar */}
-          <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-            <span style={{ width: `${(siteStats.verified / siteStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
-            <span style={{ width: `${(siteStats.inProgress / siteStats.total) * 100}%`, background: '#f59e0b' }} title={`In progress: ${siteStats.inProgress}`} />
-            {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / siteStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
-            {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / siteStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
-          </div>
+              {/* Meter progress bar */}
+              <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                <span style={{ width: `${(siteStats.verified / siteStats.total) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
+                <span style={{ width: `${(siteStats.inProgress / siteStats.total) * 100}%`, background: '#f59e0b' }} title={`In build: ${siteStats.inProgress}`} />
+                {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / siteStats.total) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
+                {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / siteStats.total) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
+              </div>
 
-          {/* Dot Legend */}
-          <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.verified} on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.inProgress} in build</span>
-            {siteStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.planned} planned</span>}
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.failed} failed</span>
-          </div>
+              {/* Dot Legend */}
+              <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.verified} on-air</span>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.inProgress} in build</span>
+                {siteStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.planned} planned</span>}
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.failed} failed</span>
+              </div>
 
-          {/* Clean secondary structure insight */}
-          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Types: <strong style={{ color: '#1e293b' }}>{siteStats.macroCount} Macro · {siteStats.rooftopCount} Rooftop</strong></span>
-            <span>Small cell: <strong style={{ color: '#1e293b' }}>{siteStats.smallCellCount}</strong></span>
-          </div>
-        </div>
+              {/* Clean secondary structure insight */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Types: <strong style={{ color: '#1e293b' }}>{siteStats.macroCount} Macro · {siteStats.rooftopCount} Rooftop</strong></span>
+                <span>Small cell: <strong style={{ color: '#1e293b' }}>{siteStats.smallCellCount}</strong></span>
+              </div>
+            </div>
+          </>
+        ) : (
+          deviceCategoryCards.map(card => (
+            <div
+              key={card.cat}
+              className={`city-summary-card ${card.colorClass}${selectedCategory === card.cat ? ' is-active' : ''}`}
+              onClick={() => setSelectedCategory(card.cat)}
+              role="button"
+              tabIndex={0}
+              title={`Click to filter elements by ${card.title}`}
+            >
+              <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                <span className="city-card-title">{card.title}</span>
+                {selectedCategory === card.cat ? (
+                  <span className="nst-badge nst-badge--xs" style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                    Active view
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    {card.subtitle}
+                  </span>
+                )}
+              </div>
+              <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{card.total}</span>
+                <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>devices</span>
+              </div>
+              <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                {card.verified} verified{card.drifted > 0 ? ` · ${card.drifted} drifted` : ''}
+              </div>
 
+              {/* Meter progress bar */}
+              <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                <span style={{ width: `${(card.verified / (card.total || 1)) * 100}%`, background: '#10b981' }} title={`Verified: ${card.verified}`} />
+                {card.drifted > 0 && <span style={{ width: `${(card.drifted / (card.total || 1)) * 100}%`, background: '#f59e0b' }} title={`Drifted: ${card.drifted}`} />}
+                {card.stale > 0 && <span style={{ width: `${(card.stale / (card.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Stale: ${card.stale}`} />}
+                {card.missing > 0 && <span style={{ width: `${(card.missing / (card.total || 1)) * 100}%`, background: '#ef4444' }} title={`Missing: ${card.missing}`} />}
+              </div>
+
+              {/* Dot Legend */}
+              <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{card.verified} verified</span>
+                {card.drifted > 0 && (
+                  <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{card.drifted} drifted</span>
+                )}
+                {card.stale > 0 && (
+                  <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{card.stale} planned</span>
+                )}
+              </div>
+
+              {/* Clean secondary telemetry insight */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Ports: <strong style={{ color: '#1e293b' }}>{card.portsUsed}/{card.portsTotal}</strong> ({card.portPct}%)</span>
+                <span style={{ maxWidth: '52%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#475569', fontWeight: 500 }} title={card.models}>
+                  {card.models}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       {/* ── Main Content Section: Facility Listing OR Facility Elements ── */}
@@ -1506,54 +1639,27 @@ export default function CityDetails() {
         {/* ── VIEW 2: Network Element Listing for Selected Facility ─────── */}
         {selectedFacilityItem && (
           <div>
-            {/* Facility Header Drilldown Banner */}
-            <div className="facility-drilldown-banner">
-              <div className="row vw-items-center" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="facility-back-btn"
-                  onClick={handleBackToFacilityList}
-                  title={`Return to ${selectedFacility === 'dc' ? 'Data Centers' : selectedFacility === 'pop' ? 'PoP Locations' : 'Sites'} listing`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                  </svg>
-                  Back to {selectedFacility === 'dc' ? 'Data Centers' : selectedFacility === 'pop' ? 'PoP Locations' : 'Sites'}
-                </button>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
-                    {selectedFacilityItem.code} — {selectedFacilityItem.name}
-                  </h3>
-                  <div style={{ margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: '#64748b' }}>
-                    <span>{selectedFacilityItem.tierOrClassification}</span>
-                    <span>·</span>
-                    <span>{selectedFacilityItem.address}</span>
-                    <span>·</span>
-                    <span style={{ fontWeight: 600, color: '#2563eb' }}>{selectedFacilityItem.powerOrUplink}</span>
-                  </div>
-                </div>
+            {/* Device Category Tabs Bar (Router, Switch, DWDM, etc.) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                borderBottom: '1px solid var(--vw-color-slate-200)',
+                marginBottom: '16px'
+              }}
+            >
+              <div className="tabbar" style={{ borderBottom: 'none', padding: 0 }}>
+                {deviceTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    className={`tab${selectedCategory === tab.key ? ' is-on' : ''}`}
+                    onClick={() => setSelectedCategory(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-              <div className="row vw-items-center" style={{ gap: '8px' }}>
-                {renderStatusBadge(selectedFacilityItem.status)}
-                <span className="facility-chip-count">
-                  {facilityElements.length} Network Elements
-                </span>
-              </div>
-            </div>
-
-            {/* Device Category Tabs */}
-            <div className="net-category-tabs">
-              {availableCategories.map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`net-cat-tab${selectedCategory === cat ? ' is-active' : ''}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat === 'All' ? 'All Categories' : cat}
-                </button>
-              ))}
             </div>
 
             {/* Search, Filter & Stats Bar */}
@@ -1695,12 +1801,11 @@ export default function CityDetails() {
                                   value={draftElementFilters.category}
                                   onChange={e => updateDraftElementFilter({ category: e.target.value as DeviceCategory })}
                                 >
-                                  <option value="All">Category (All)</option>
-                                  <option value="Routers">Routers</option>
-                                  <option value="Switches">Switches</option>
-                                  <option value="Firewalls">Firewalls</option>
-                                  <option value="Access Points">Access Points</option>
-                                  <option value="Servers">Servers</option>
+                                  {availableCategories.map(cat => (
+                                    <option key={cat} value={cat}>
+                                      {cat === 'All' ? 'Category (All)' : cat}
+                                    </option>
+                                  ))}
                                 </select>
                               </div>
                             )}
