@@ -123,7 +123,42 @@ export default function Topbar() {
     const ancestors = hops.slice().reverse();
     for (const hop of ancestors) {
       const originScreen = screenForCrumb(hop.crumb);
-      if (originScreen && originScreen.crumb.toLowerCase() === s.crumb.toLowerCase()) continue;
+      if (originScreen && originScreen.crumb.toLowerCase() === s.crumb.toLowerCase()) {
+        const rootTarget = targetFor(s.crumb) || s.path;
+        if (!segs.some(g => g.label === leaf)) {
+          const parts = s.crumb.split(' · ');
+          if (parts.length > 1) {
+            for (let i = 0; i < parts.length - 1; i++) {
+              const base = targetFor(parts.slice(0, i + 1).join(' · '));
+              if (segs.length === 0 || segs[segs.length - 1].label !== parts[i]) {
+                segs.push({ label: parts[i], to: base });
+              }
+            }
+          }
+          segs.push({ label: leaf, to: rootTarget });
+        }
+        const hopLabel = hop.drill;
+        if (hopLabel && hopLabel !== leaf && hopLabel !== (drill || leaf)) {
+          const isSiblingRegion = hopLabel.startsWith('Locations in ') && (drill || '').startsWith('Locations in ');
+          if (!isSiblingRegion) {
+            const base = targetFor(originScreen.crumb, hop.query);
+            let toQuery = '';
+            if (hop.query) {
+              const qp = new URLSearchParams(hop.query);
+              if (originScreen.path.includes(':id')) {
+                qp.delete('id');
+                qp.delete('site');
+              }
+              toQuery = qp.toString();
+            }
+            const to = base ? (toQuery ? `${base}?${toQuery}` : base) : null;
+            if (segs.length === 0 || segs[segs.length - 1].label !== hopLabel) {
+              segs.push({ label: hopLabel, to });
+            }
+          }
+        }
+        continue;
+      }
       const parts = originScreen ? originScreen.crumb.split(' · ') : [hop.crumb];
       if (parts.length > 1) {
         for (let i = 0; i < parts.length - 1; i++) {
@@ -156,6 +191,9 @@ export default function Topbar() {
       } else {
         segs[segs.length - 1] = { label, to };
       }
+    }
+    if (drill && !segs.some(g => g.label === leaf)) {
+      segs.unshift({ label: leaf, to: targetFor(s.crumb) || s.path });
     }
   } else {
     const chain = ownParts.slice(0, -1);

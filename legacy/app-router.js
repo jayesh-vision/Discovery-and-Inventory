@@ -164,7 +164,9 @@ function drillTo(view, label, q) {
      Topbar.tsx's cross-section "from" handling then reads as a self-referencing
      hop and collapses to a bare, non-clickable label. Only a genuine jump to a
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
-  const fromName = curDrillFrom
+  const sameScreenDrillFrom = (DRILL && DRILL.view === CURRENT && view === CURRENT && DRILL.from) ? DRILL.from : null;
+  const fromName = sameScreenDrillFrom
+    || curDrillFrom
     || siteDrillFrom
     || phyDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)

@@ -119,8 +119,9 @@ export default function CityDetails() {
   // ── Facility Listing Search & Filter ────────────────────────────────
   const [facilitySearch, setFacilitySearch] = useState('');
 
-  // ── Site Column Filters Modal State (Exact match to Image 4) ────────
+  // ── Site Column Filters Modal State ────────
   const [appliedSiteFilters, setAppliedSiteFilters] = useState<SiteFilterState>(DEFAULT_SITE_FILTERS);
+  const [draftSiteFilters, setDraftSiteFilters] = useState<SiteFilterState>(DEFAULT_SITE_FILTERS);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState<'status' | 'name' | 'code' | 'type' | 'structure'>('status');
 
@@ -136,6 +137,7 @@ export default function CityDetails() {
 
   // ── DC Column Filters Modal State ────────────────────────────────────
   const [appliedDcFilters, setAppliedDcFilters] = useState<DcFilterState>(DEFAULT_DC_FILTERS);
+  const [draftDcFilters, setDraftDcFilters] = useState<DcFilterState>(DEFAULT_DC_FILTERS);
   const [isDcFilterModalOpen, setIsDcFilterModalOpen] = useState(false);
   const [activeDcFilterTab, setActiveDcFilterTab] = useState<'status' | 'name' | 'code' | 'classification' | 'rackCapacity' | 'power'>('status');
 
@@ -152,6 +154,7 @@ export default function CityDetails() {
 
   // ── PoP Column Filters Modal State ───────────────────────────────────
   const [appliedPopFilters, setAppliedPopFilters] = useState<PopFilterState>(DEFAULT_POP_FILTERS);
+  const [draftPopFilters, setDraftPopFilters] = useState<PopFilterState>(DEFAULT_POP_FILTERS);
   const [isPopFilterModalOpen, setIsPopFilterModalOpen] = useState(false);
   const [activePopFilterTab, setActivePopFilterTab] = useState<'status' | 'name' | 'code' | 'popType' | 'uplink'>('status');
 
@@ -169,6 +172,7 @@ export default function CityDetails() {
   const [selectedCategory, setSelectedCategory] = useState<DeviceCategory>('All');
   const [elementSearch, setElementSearch] = useState('');
   const [appliedElementFilters, setAppliedElementFilters] = useState<ElementFilterState>(DEFAULT_ELEMENT_FILTERS);
+  const [draftElementFilters, setDraftElementFilters] = useState<ElementFilterState>(DEFAULT_ELEMENT_FILTERS);
   const [isElementFilterModalOpen, setIsElementFilterModalOpen] = useState(false);
   const [activeElementFilterTab, setActiveElementFilterTab] = useState<'status' | 'category' | 'nameOrIp' | 'vendor' | 'osVersion' | 'locationCode'>('status');
 
@@ -189,21 +193,112 @@ export default function CityDetails() {
     return activeSiteFilterCount;
   }, [selectedFacility, activeDcFilterCount, activePopFilterCount, activeSiteFilterCount]);
 
-  // Real-time filter update helpers (immediately refreshes table data)
-  const updateSiteFilter = (patch: Partial<SiteFilterState>) => {
-    setAppliedSiteFilters(prev => ({ ...prev, ...patch }));
+  // Draft filter update helpers (updates draft ONLY; does not filter table until "Apply filters" is clicked)
+  const updateDraftSiteFilter = (patch: Partial<SiteFilterState>) => {
+    setDraftSiteFilters(prev => ({ ...prev, ...patch }));
   };
 
-  const updateDcFilter = (patch: Partial<DcFilterState>) => {
-    setAppliedDcFilters(prev => ({ ...prev, ...patch }));
+  const updateDraftDcFilter = (patch: Partial<DcFilterState>) => {
+    setDraftDcFilters(prev => ({ ...prev, ...patch }));
   };
 
-  const updatePopFilter = (patch: Partial<PopFilterState>) => {
-    setAppliedPopFilters(prev => ({ ...prev, ...patch }));
+  const updateDraftPopFilter = (patch: Partial<PopFilterState>) => {
+    setDraftPopFilters(prev => ({ ...prev, ...patch }));
   };
 
-  const updateElementFilter = (patch: Partial<ElementFilterState>) => {
-    setAppliedElementFilters(prev => ({ ...prev, ...patch }));
+  const updateDraftElementFilter = (patch: Partial<ElementFilterState>) => {
+    setDraftElementFilters(prev => ({ ...prev, ...patch }));
+  };
+
+  // Switching tab on the left panel resets filter to default (matching DataGrid pattern)
+  const handleSwitchSiteTab = (tab: 'status' | 'name' | 'code' | 'type' | 'structure') => {
+    setActiveFilterTab(tab);
+    setDraftSiteFilters(DEFAULT_SITE_FILTERS);
+    setAppliedSiteFilters(DEFAULT_SITE_FILTERS);
+  };
+
+  const handleSwitchDcTab = (tab: 'status' | 'name' | 'code' | 'classification' | 'rackCapacity' | 'power') => {
+    setActiveDcFilterTab(tab);
+    setDraftDcFilters(DEFAULT_DC_FILTERS);
+    setAppliedDcFilters(DEFAULT_DC_FILTERS);
+  };
+
+  const handleSwitchPopTab = (tab: 'status' | 'name' | 'code' | 'popType' | 'uplink') => {
+    setActivePopFilterTab(tab);
+    setDraftPopFilters(DEFAULT_POP_FILTERS);
+    setAppliedPopFilters(DEFAULT_POP_FILTERS);
+  };
+
+  const handleSwitchElementTab = (tab: 'status' | 'category' | 'nameOrIp' | 'vendor' | 'osVersion' | 'locationCode') => {
+    setActiveElementFilterTab(tab);
+    setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
+    setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
+  };
+
+  // Applying filters: updates applied state to filter the table and closes modal
+  const handleApplySiteFilters = () => {
+    setAppliedSiteFilters(draftSiteFilters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleApplyDcFilters = () => {
+    setAppliedDcFilters(draftDcFilters);
+    setIsDcFilterModalOpen(false);
+  };
+
+  const handleApplyPopFilters = () => {
+    setAppliedPopFilters(draftPopFilters);
+    setIsPopFilterModalOpen(false);
+  };
+
+  const handleApplyElementFilters = () => {
+    setAppliedElementFilters(draftElementFilters);
+    setIsElementFilterModalOpen(false);
+  };
+
+  // Opening the filter again resets it to default
+  const handleToggleFacilityFilter = () => {
+    if (selectedFacility === 'site') {
+      const willOpen = !isFilterModalOpen;
+      if (willOpen) {
+        setDraftSiteFilters(DEFAULT_SITE_FILTERS);
+        setAppliedSiteFilters(DEFAULT_SITE_FILTERS);
+        setActiveFilterTab('status');
+      }
+      setIsFilterModalOpen(willOpen);
+      setIsDcFilterModalOpen(false);
+      setIsPopFilterModalOpen(false);
+    } else if (selectedFacility === 'dc') {
+      const willOpen = !isDcFilterModalOpen;
+      if (willOpen) {
+        setDraftDcFilters(DEFAULT_DC_FILTERS);
+        setAppliedDcFilters(DEFAULT_DC_FILTERS);
+        setActiveDcFilterTab('status');
+      }
+      setIsDcFilterModalOpen(willOpen);
+      setIsFilterModalOpen(false);
+      setIsPopFilterModalOpen(false);
+    } else if (selectedFacility === 'pop') {
+      const willOpen = !isPopFilterModalOpen;
+      if (willOpen) {
+        setDraftPopFilters(DEFAULT_POP_FILTERS);
+        setAppliedPopFilters(DEFAULT_POP_FILTERS);
+        setActivePopFilterTab('status');
+      }
+      setIsPopFilterModalOpen(willOpen);
+      setIsFilterModalOpen(false);
+      setIsDcFilterModalOpen(false);
+    }
+  };
+
+  const handleToggleElementFilter = () => {
+    const willOpen = !isElementFilterModalOpen;
+    if (willOpen) {
+      setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
+      setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
+      setActiveElementFilterTab('status');
+    }
+    setIsElementFilterModalOpen(willOpen);
   };
 
   // Fetch lists for all 3 facility types to calculate rich summary telemetry
@@ -261,6 +356,13 @@ export default function CityDetails() {
     const f = searchParams.get('facility');
     if (f === 'dc' || f === 'pop' || f === 'site') {
       setSelectedFacility(f);
+      // Switching facility view resets all filters to default
+      setAppliedSiteFilters(DEFAULT_SITE_FILTERS);
+      setDraftSiteFilters(DEFAULT_SITE_FILTERS);
+      setAppliedDcFilters(DEFAULT_DC_FILTERS);
+      setDraftDcFilters(DEFAULT_DC_FILTERS);
+      setAppliedPopFilters(DEFAULT_POP_FILTERS);
+      setDraftPopFilters(DEFAULT_POP_FILTERS);
     }
     const fId = searchParams.get('facilityId');
     if (fId) {
@@ -417,6 +519,16 @@ export default function CityDetails() {
     setSelectedFacility(type);
     setSelectedFacilityItem(null); // Return to facility listing of the new card
     setFacilitySearch('');
+    // Switching facility views resets all filters to default
+    setAppliedSiteFilters(DEFAULT_SITE_FILTERS);
+    setDraftSiteFilters(DEFAULT_SITE_FILTERS);
+    setAppliedDcFilters(DEFAULT_DC_FILTERS);
+    setDraftDcFilters(DEFAULT_DC_FILTERS);
+    setAppliedPopFilters(DEFAULT_POP_FILTERS);
+    setDraftPopFilters(DEFAULT_POP_FILTERS);
+    setActiveFilterTab('status');
+    setActiveDcFilterTab('status');
+    setActivePopFilterTab('status');
     setIsFilterModalOpen(false);
     setIsDcFilterModalOpen(false);
     setIsPopFilterModalOpen(false);
@@ -429,6 +541,9 @@ export default function CityDetails() {
     setSelectedFacilityItem(fac);
     setSelectedCategory('All');
     setElementSearch('');
+    setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
+    setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
+    setActiveElementFilterTab('status');
     setIsFilterModalOpen(false);
     setIsDcFilterModalOpen(false);
     setIsPopFilterModalOpen(false);
@@ -438,6 +553,9 @@ export default function CityDetails() {
 
   const handleBackToFacilityList = () => {
     setSelectedFacilityItem(null);
+    setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
+    setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
+    setActiveElementFilterTab('status');
     setSearchParams({ facility: selectedFacility }, { replace: true });
   };
 
@@ -704,28 +822,11 @@ export default function CityDetails() {
                     type="button"
                     className={`net-tool-btn${activeCurrentFacilityFilterCount > 0 ? ' is-active' : ''}`}
                     title={`Open ${selectedFacility === 'dc' ? 'data center' : selectedFacility === 'pop' ? 'PoP' : 'site'} column filters`}
-                    onClick={() => {
-                      if (selectedFacility === 'site') {
-                        setIsFilterModalOpen(prev => !prev);
-                        setIsDcFilterModalOpen(false);
-                        setIsPopFilterModalOpen(false);
-                      } else if (selectedFacility === 'dc') {
-                        setIsDcFilterModalOpen(prev => !prev);
-                        setIsFilterModalOpen(false);
-                        setIsPopFilterModalOpen(false);
-                      } else if (selectedFacility === 'pop') {
-                        setIsPopFilterModalOpen(prev => !prev);
-                        setIsFilterModalOpen(false);
-                        setIsDcFilterModalOpen(false);
-                      }
-                    }}
+                    onClick={handleToggleFacilityFilter}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                     </svg>
-                    {activeCurrentFacilityFilterCount > 0 && (
-                      <span className="net-filter-badge-counter">{activeCurrentFacilityFilterCount}</span>
-                    )}
                   </button>
 
                   {/* ── Two-Column Filter Modal for Sites (Exact Match to Reference Image 4) ── */}
@@ -756,35 +857,35 @@ export default function CityDetails() {
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeFilterTab === 'status' ? ' is-active' : ''}`}
-                              onClick={() => setActiveFilterTab('status')}
+                              onClick={() => handleSwitchSiteTab('status')}
                             >
                               <span>Status</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeFilterTab === 'name' ? ' is-active' : ''}`}
-                              onClick={() => setActiveFilterTab('name')}
+                              onClick={() => handleSwitchSiteTab('name')}
                             >
                               <span>Site Name</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeFilterTab === 'code' ? ' is-active' : ''}`}
-                              onClick={() => setActiveFilterTab('code')}
+                              onClick={() => handleSwitchSiteTab('code')}
                             >
                               <span>Site Code</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeFilterTab === 'type' ? ' is-active' : ''}`}
-                              onClick={() => setActiveFilterTab('type')}
+                              onClick={() => handleSwitchSiteTab('type')}
                             >
                               <span>Type</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeFilterTab === 'structure' ? ' is-active' : ''}`}
-                              onClick={() => setActiveFilterTab('structure')}
+                              onClick={() => handleSwitchSiteTab('structure')}
                             >
                               <span>Structure</span>
                             </button>
@@ -797,8 +898,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Status</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedSiteFilters.status}
-                                  onChange={e => updateSiteFilter({ status: e.target.value })}
+                                  value={draftSiteFilters.status}
+                                  onChange={e => updateDraftSiteFilter({ status: e.target.value })}
                                 >
                                   <option value="all">Status (All)</option>
                                   <option value="Verified">Verified</option>
@@ -816,14 +917,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="Filter by site name..."
-                                    value={appliedSiteFilters.name}
-                                    onChange={e => updateSiteFilter({ name: e.target.value })}
+                                    value={draftSiteFilters.name}
+                                    onChange={e => updateDraftSiteFilter({ name: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedSiteFilters.name && (
+                                  {draftSiteFilters.name && (
                                     <button
                                       type="button"
-                                      onClick={() => updateSiteFilter({ name: '' })}
+                                      onClick={() => updateDraftSiteFilter({ name: '' })}
                                       className="net-search-clear"
                                       title="Clear site name"
                                     >
@@ -842,14 +943,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. CEN-STE-001..."
-                                    value={appliedSiteFilters.code}
-                                    onChange={e => updateSiteFilter({ code: e.target.value })}
+                                    value={draftSiteFilters.code}
+                                    onChange={e => updateDraftSiteFilter({ code: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedSiteFilters.code && (
+                                  {draftSiteFilters.code && (
                                     <button
                                       type="button"
-                                      onClick={() => updateSiteFilter({ code: '' })}
+                                      onClick={() => updateDraftSiteFilter({ code: '' })}
                                       className="net-search-clear"
                                       title="Clear site code"
                                     >
@@ -865,8 +966,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Site Type</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedSiteFilters.type}
-                                  onChange={e => updateSiteFilter({ type: e.target.value })}
+                                  value={draftSiteFilters.type}
+                                  onChange={e => updateDraftSiteFilter({ type: e.target.value })}
                                 >
                                   <option value="all">Type (All)</option>
                                   <option value="Macro Tower">Macro Tower</option>
@@ -882,8 +983,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Structure</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedSiteFilters.structure}
-                                  onChange={e => updateSiteFilter({ structure: e.target.value })}
+                                  value={draftSiteFilters.structure}
+                                  onChange={e => updateDraftSiteFilter({ structure: e.target.value })}
                                 >
                                   <option value="all">Structure (All)</option>
                                   <option value="40m GBT">40m GBT (Ground Based Tower)</option>
@@ -901,9 +1002,7 @@ export default function CityDetails() {
                           <button
                             type="button"
                             className="column-filter-apply-btn"
-                            onClick={() => {
-                              setIsFilterModalOpen(false);
-                            }}
+                            onClick={handleApplySiteFilters}
                           >
                             Apply filters
                           </button>
@@ -940,42 +1039,42 @@ export default function CityDetails() {
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'status' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('status')}
+                              onClick={() => handleSwitchDcTab('status')}
                             >
                               <span>Status</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'name' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('name')}
+                              onClick={() => handleSwitchDcTab('name')}
                             >
                               <span>DC Name</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'code' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('code')}
+                              onClick={() => handleSwitchDcTab('code')}
                             >
                               <span>DC Code</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'classification' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('classification')}
+                              onClick={() => handleSwitchDcTab('classification')}
                             >
                               <span>Classification</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'rackCapacity' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('rackCapacity')}
+                              onClick={() => handleSwitchDcTab('rackCapacity')}
                             >
                               <span>Rack Space</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeDcFilterTab === 'power' ? ' is-active' : ''}`}
-                              onClick={() => setActiveDcFilterTab('power')}
+                              onClick={() => handleSwitchDcTab('power')}
                             >
                               <span>Power Spec</span>
                             </button>
@@ -988,8 +1087,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Status</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedDcFilters.status}
-                                  onChange={e => updateDcFilter({ status: e.target.value })}
+                                  value={draftDcFilters.status}
+                                  onChange={e => updateDraftDcFilter({ status: e.target.value })}
                                 >
                                   <option value="all">Status (All)</option>
                                   <option value="Verified">Verified</option>
@@ -1007,14 +1106,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="Filter by DC name..."
-                                    value={appliedDcFilters.name}
-                                    onChange={e => updateDcFilter({ name: e.target.value })}
+                                    value={draftDcFilters.name}
+                                    onChange={e => updateDraftDcFilter({ name: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedDcFilters.name && (
+                                  {draftDcFilters.name && (
                                     <button
                                       type="button"
-                                      onClick={() => updateDcFilter({ name: '' })}
+                                      onClick={() => updateDraftDcFilter({ name: '' })}
                                       className="net-search-clear"
                                       title="Clear DC name"
                                     >
@@ -1033,14 +1132,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. DEL-DC-001..."
-                                    value={appliedDcFilters.code}
-                                    onChange={e => updateDcFilter({ code: e.target.value })}
+                                    value={draftDcFilters.code}
+                                    onChange={e => updateDraftDcFilter({ code: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedDcFilters.code && (
+                                  {draftDcFilters.code && (
                                     <button
                                       type="button"
-                                      onClick={() => updateDcFilter({ code: '' })}
+                                      onClick={() => updateDraftDcFilter({ code: '' })}
                                       className="net-search-clear"
                                       title="Clear DC code"
                                     >
@@ -1056,8 +1155,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Tier / Classification</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedDcFilters.classification}
-                                  onChange={e => updateDcFilter({ classification: e.target.value })}
+                                  value={draftDcFilters.classification}
+                                  onChange={e => updateDraftDcFilter({ classification: e.target.value })}
                                 >
                                   <option value="all">Classification (All)</option>
                                   <option value="Tier-4 Hyperscale">Tier-4 Hyperscale</option>
@@ -1073,8 +1172,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Rack Utilization</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedDcFilters.rackCapacity}
-                                  onChange={e => updateDcFilter({ rackCapacity: e.target.value })}
+                                  value={draftDcFilters.rackCapacity}
+                                  onChange={e => updateDraftDcFilter({ rackCapacity: e.target.value })}
                                 >
                                   <option value="all">Rack Space (All)</option>
                                   <option value="high">High Usage (≥ 80%)</option>
@@ -1089,8 +1188,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Power Specification</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedDcFilters.power}
-                                  onChange={e => updateDcFilter({ power: e.target.value })}
+                                  value={draftDcFilters.power}
+                                  onChange={e => updateDraftDcFilter({ power: e.target.value })}
                                 >
                                   <option value="all">Power Spec (All)</option>
                                   <option value="high">High (&gt; 3.0 MW)</option>
@@ -1107,9 +1206,7 @@ export default function CityDetails() {
                           <button
                             type="button"
                             className="column-filter-apply-btn"
-                            onClick={() => {
-                              setIsDcFilterModalOpen(false);
-                            }}
+                            onClick={handleApplyDcFilters}
                           >
                             Apply filters
                           </button>
@@ -1146,35 +1243,35 @@ export default function CityDetails() {
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activePopFilterTab === 'status' ? ' is-active' : ''}`}
-                              onClick={() => setActivePopFilterTab('status')}
+                              onClick={() => handleSwitchPopTab('status')}
                             >
                               <span>Status</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activePopFilterTab === 'name' ? ' is-active' : ''}`}
-                              onClick={() => setActivePopFilterTab('name')}
+                              onClick={() => handleSwitchPopTab('name')}
                             >
                               <span>PoP Name</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activePopFilterTab === 'code' ? ' is-active' : ''}`}
-                              onClick={() => setActivePopFilterTab('code')}
+                              onClick={() => handleSwitchPopTab('code')}
                             >
                               <span>PoP Code</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activePopFilterTab === 'popType' ? ' is-active' : ''}`}
-                              onClick={() => setActivePopFilterTab('popType')}
+                              onClick={() => handleSwitchPopTab('popType')}
                             >
                               <span>PoP Type</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activePopFilterTab === 'uplink' ? ' is-active' : ''}`}
-                              onClick={() => setActivePopFilterTab('uplink')}
+                              onClick={() => handleSwitchPopTab('uplink')}
                             >
                               <span>Uplink</span>
                             </button>
@@ -1187,8 +1284,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Status</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedPopFilters.status}
-                                  onChange={e => updatePopFilter({ status: e.target.value })}
+                                  value={draftPopFilters.status}
+                                  onChange={e => updateDraftPopFilter({ status: e.target.value })}
                                 >
                                   <option value="all">Status (All)</option>
                                   <option value="Verified">Verified</option>
@@ -1206,14 +1303,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="Filter by PoP name..."
-                                    value={appliedPopFilters.name}
-                                    onChange={e => updatePopFilter({ name: e.target.value })}
+                                    value={draftPopFilters.name}
+                                    onChange={e => updateDraftPopFilter({ name: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedPopFilters.name && (
+                                  {draftPopFilters.name && (
                                     <button
                                       type="button"
-                                      onClick={() => updatePopFilter({ name: '' })}
+                                      onClick={() => updateDraftPopFilter({ name: '' })}
                                       className="net-search-clear"
                                       title="Clear PoP name"
                                     >
@@ -1232,14 +1329,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. DEL-POP-001..."
-                                    value={appliedPopFilters.code}
-                                    onChange={e => updatePopFilter({ code: e.target.value })}
+                                    value={draftPopFilters.code}
+                                    onChange={e => updateDraftPopFilter({ code: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedPopFilters.code && (
+                                  {draftPopFilters.code && (
                                     <button
                                       type="button"
-                                      onClick={() => updatePopFilter({ code: '' })}
+                                      onClick={() => updateDraftPopFilter({ code: '' })}
                                       className="net-search-clear"
                                       title="Clear PoP code"
                                     >
@@ -1255,8 +1352,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">PoP Type / Classification</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedPopFilters.popType}
-                                  onChange={e => updatePopFilter({ popType: e.target.value })}
+                                  value={draftPopFilters.popType}
+                                  onChange={e => updateDraftPopFilter({ popType: e.target.value })}
                                 >
                                   <option value="all">PoP Type (All)</option>
                                   <option value="Metro Core">Metro Core</option>
@@ -1272,8 +1369,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Uplink Capacity</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedPopFilters.uplink}
-                                  onChange={e => updatePopFilter({ uplink: e.target.value })}
+                                  value={draftPopFilters.uplink}
+                                  onChange={e => updateDraftPopFilter({ uplink: e.target.value })}
                                 >
                                   <option value="all">Uplink (All)</option>
                                   <option value="400G">400G Uplink</option>
@@ -1290,9 +1387,7 @@ export default function CityDetails() {
                           <button
                             type="button"
                             className="column-filter-apply-btn"
-                            onClick={() => {
-                              setIsPopFilterModalOpen(false);
-                            }}
+                            onClick={handleApplyPopFilters}
                           >
                             Apply filters
                           </button>
@@ -1498,16 +1593,11 @@ export default function CityDetails() {
                     type="button"
                     className={`net-tool-btn${activeElementFilterCount > 0 ? ' is-active' : ''}`}
                     title="Open network element column filters"
-                    onClick={() => {
-                      setIsElementFilterModalOpen(prev => !prev);
-                    }}
+                    onClick={handleToggleElementFilter}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                     </svg>
-                    {activeElementFilterCount > 0 && (
-                      <span className="net-filter-badge-counter">{activeElementFilterCount}</span>
-                    )}
                   </button>
 
                   {/* ── Two-Column Filter Modal for Network Elements ── */}
@@ -1538,42 +1628,42 @@ export default function CityDetails() {
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'status' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('status')}
+                              onClick={() => handleSwitchElementTab('status')}
                             >
                               <span>Status</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'category' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('category')}
+                              onClick={() => handleSwitchElementTab('category')}
                             >
                               <span>Category</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'nameOrIp' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('nameOrIp')}
+                              onClick={() => handleSwitchElementTab('nameOrIp')}
                             >
                               <span>Name / IP</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'vendor' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('vendor')}
+                              onClick={() => handleSwitchElementTab('vendor')}
                             >
                               <span>Vendor</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'osVersion' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('osVersion')}
+                              onClick={() => handleSwitchElementTab('osVersion')}
                             >
                               <span>OS Version</span>
                             </button>
                             <button
                               type="button"
                               className={`column-filter-tab-btn${activeElementFilterTab === 'locationCode' ? ' is-active' : ''}`}
-                              onClick={() => setActiveElementFilterTab('locationCode')}
+                              onClick={() => handleSwitchElementTab('locationCode')}
                             >
                               <span>Location Code</span>
                             </button>
@@ -1586,8 +1676,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Status</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedElementFilters.status}
-                                  onChange={e => updateElementFilter({ status: e.target.value })}
+                                  value={draftElementFilters.status}
+                                  onChange={e => updateDraftElementFilter({ status: e.target.value })}
                                 >
                                   <option value="all">Status (All)</option>
                                   <option value="Verified">Verified</option>
@@ -1602,8 +1692,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Device Category</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedElementFilters.category}
-                                  onChange={e => updateElementFilter({ category: e.target.value as DeviceCategory })}
+                                  value={draftElementFilters.category}
+                                  onChange={e => updateDraftElementFilter({ category: e.target.value as DeviceCategory })}
                                 >
                                   <option value="All">Category (All)</option>
                                   <option value="Routers">Routers</option>
@@ -1623,14 +1713,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. DEL-CR-01 or 10.42..."
-                                    value={appliedElementFilters.nameOrIp}
-                                    onChange={e => updateElementFilter({ nameOrIp: e.target.value })}
+                                    value={draftElementFilters.nameOrIp}
+                                    onChange={e => updateDraftElementFilter({ nameOrIp: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedElementFilters.nameOrIp && (
+                                  {draftElementFilters.nameOrIp && (
                                     <button
                                       type="button"
-                                      onClick={() => updateElementFilter({ nameOrIp: '' })}
+                                      onClick={() => updateDraftElementFilter({ nameOrIp: '' })}
                                       className="net-search-clear"
                                       title="Clear name or IP"
                                     >
@@ -1646,8 +1736,8 @@ export default function CityDetails() {
                                 <label className="column-filter-field-label">Equipment Vendor</label>
                                 <select
                                   className="column-filter-select"
-                                  value={appliedElementFilters.vendor}
-                                  onChange={e => updateElementFilter({ vendor: e.target.value })}
+                                  value={draftElementFilters.vendor}
+                                  onChange={e => updateDraftElementFilter({ vendor: e.target.value })}
                                 >
                                   <option value="all">Vendor (All)</option>
                                   <option value="Cisco">Cisco</option>
@@ -1667,14 +1757,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. IOS-XR 7.3, Junos 21.4..."
-                                    value={appliedElementFilters.osVersion}
-                                    onChange={e => updateElementFilter({ osVersion: e.target.value })}
+                                    value={draftElementFilters.osVersion}
+                                    onChange={e => updateDraftElementFilter({ osVersion: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedElementFilters.osVersion && (
+                                  {draftElementFilters.osVersion && (
                                     <button
                                       type="button"
-                                      onClick={() => updateElementFilter({ osVersion: '' })}
+                                      onClick={() => updateDraftElementFilter({ osVersion: '' })}
                                       className="net-search-clear"
                                       title="Clear OS version"
                                     >
@@ -1693,14 +1783,14 @@ export default function CityDetails() {
                                     type="text"
                                     className="column-filter-input"
                                     placeholder="e.g. RK-A01, POD-1..."
-                                    value={appliedElementFilters.locationCode}
-                                    onChange={e => updateElementFilter({ locationCode: e.target.value })}
+                                    value={draftElementFilters.locationCode}
+                                    onChange={e => updateDraftElementFilter({ locationCode: e.target.value })}
                                     autoFocus
                                   />
-                                  {appliedElementFilters.locationCode && (
+                                  {draftElementFilters.locationCode && (
                                     <button
                                       type="button"
-                                      onClick={() => updateElementFilter({ locationCode: '' })}
+                                      onClick={() => updateDraftElementFilter({ locationCode: '' })}
                                       className="net-search-clear"
                                       title="Clear location code"
                                     >
@@ -1718,9 +1808,7 @@ export default function CityDetails() {
                           <button
                             type="button"
                             className="column-filter-apply-btn"
-                            onClick={() => {
-                              setIsElementFilterModalOpen(false);
-                            }}
+                            onClick={handleApplyElementFilters}
                           >
                             Apply filters
                           </button>
