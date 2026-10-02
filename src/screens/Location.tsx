@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
+import SitesByGeography from '../components/location/SitesByGeography';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
@@ -389,6 +390,9 @@ export default function Location() {
           </div>
         </div>
       </section>
+
+      {/* ── Sites by geography Map Card ─────────────────────────── */}
+      <SitesByGeography />
     </div>
   );
 }
