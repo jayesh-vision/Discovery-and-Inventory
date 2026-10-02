@@ -61,15 +61,15 @@
   max-height: none !important;
   height: auto !important;
   margin: 0 !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--vw-color-slate-200, #e2e8f0) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
-  background: var(--vw-color-surface, #ffffff) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
   color: var(--vw-color-slate-800, #1e293b) !important;
   z-index: 1 !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 
   /* Theme tokens override for embedded container */
   --canvas: #f8fafc;
@@ -117,8 +117,8 @@
 .node-details-overview-embed .nodal.nv.is-embedded .nodal__b {
   flex: 1 !important;
   overflow-y: visible !important;
-  padding: 18px 24px 22px 24px !important;
-  background: #ffffff !important;
+  padding: 6px 0 24px 0 !important;
+  background: transparent !important;
   color: #0f172a !important;
 }
 
@@ -513,11 +513,11 @@
   align-items: center !important;
   gap: 8px !important;
   flex-wrap: wrap !important;
-  padding: 8px 16px !important;
+  padding: 10px 18px !important;
   border-top-left-radius: 11px !important;
   border-top-right-radius: 11px !important;
-  background: #f8fafc !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
 }
 
 .node-details-overview-embed .nv-panel__h h4 {
@@ -607,8 +607,8 @@
   display: flex !important;
   justify-content: space-between !important;
   gap: 12px !important;
-  padding: 6px 0 !important;
-  border-bottom: 1px dashed #e2e8f0 !important;
+  padding: 7px 0 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
   font-size: 12px !important;
 }
 
@@ -926,37 +926,66 @@
 .node-details-overview-embed .nf-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 2px !important;
   list-style: none !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+
+.node-details-overview-embed .nf-list > li {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.node-details-overview-embed .nf-list > li + li {
+  border-top: 1px solid #f8fafc !important;
 }
 
 .node-details-overview-embed .nf-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 14px !important;
-  border-radius: 8px !important;
+  padding: 9px 12px !important;
+  border-radius: 6px !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
-  border: 1px solid #e2e8f0 !important;
-  border-left-width: 4px !important;
-  background: #ffffff !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
   width: 100% !important;
   text-align: left !important;
+  position: relative !important;
 }
 
 .node-details-overview-embed .nf-row:hover {
   background: #f8fafc !important;
-  border-color: #cbd5e1 !important;
+  border-color: transparent !important;
 }
 
 .node-details-overview-embed .nf-row.is-on {
   background: #eff6ff !important;
-  border-color: #93c5fd !important;
+  border-color: #bfdbfe !important;
+}
+
+.node-details-overview-embed .nf-row.is-on::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 6px !important;
+  bottom: 6px !important;
+  width: 3px !important;
+  border-radius: 0 2px 2px 0 !important;
+  background: #2563eb !important;
+}
+
+.node-details-overview-embed .nf-row.is-cleared {
+  opacity: 0.85 !important;
+}
+
+.node-details-overview-embed .nf-row.is-cleared:hover {
+  opacity: 1 !important;
 }
 
 .node-details-overview-embed .nf-row__main b {
@@ -1024,6 +1053,34 @@
 .node-details-overview-embed .nf-inf__e {
   font-size: 11px !important;
   color: #64748b !important;
+}
+
+.node-details-overview-embed .nf-inf__c {
+  padding: 12px 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid #fee2e2 !important;
+  border-left: 3px solid #ef4444 !important;
+  background: #fef2f2 !important;
+  display: grid !important;
+  gap: 6px !important;
+}
+
+.node-details-overview-embed .nf-inf__c--amber {
+  border-color: #fef3c7 !important;
+  border-left-color: #f59e0b !important;
+  background: #fffbeb !important;
+}
+
+.node-details-overview-embed .nf-inf__c--blue {
+  border-color: #dbeafe !important;
+  border-left-color: #3b82f6 !important;
+  background: #eff6ff !important;
+}
+
+.node-details-overview-embed .nf-inf__c--green {
+  border-color: #dcfce7 !important;
+  border-left-color: #10b981 !important;
+  background: #f0fdf4 !important;
 }
 
 /* ── Hardware Tab Shelves & Slots Typography ── */

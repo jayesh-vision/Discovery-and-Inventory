@@ -13679,7 +13679,7 @@ function nodeHeaderSwitch(N) {
         </span>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
@@ -14138,7 +14138,7 @@ function nodeHeaderRouter(N) {
         <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}` })}>Node resources</button>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+    <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
@@ -14930,7 +14930,7 @@ function nodeHeaderDwdm(N) {
         <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
@@ -15145,7 +15145,7 @@ function nodeHeaderEnodeb(N) {
         </span>
       </div>
     </div>
-    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-200,#e2e8f0)">${cells.map(([k, v]) => `<div class="stack-x">
+    <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv mono">${v}</span></div>`).join('')}</div>`,
     '', 'padding:var(--vw-space-lg)');
 }
@@ -15471,11 +15471,11 @@ function viewNode() {
 
   const tabContent = twinHost;
 
-  return `<div class="page">
+  return `<div class="page node-page">
     ${drillBar()}
     ${nodeHeader(N)}
 
-    <div class="tabbar" style="margin-top:var(--vw-space-sm);margin-bottom:var(--vw-space-md)">
+    <div class="tabbar tabbar--node" style="margin-top:var(--vw-space-sm);margin-bottom:var(--vw-space-md)">
       ${tabs.map(([k, l]) => `<button class="tab${activeTab === k ? ' is-on' : ''}" data-nodetab="${k}">${l}</button>`).join('')}
     </div>
 

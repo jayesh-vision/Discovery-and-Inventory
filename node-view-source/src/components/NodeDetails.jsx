@@ -23,6 +23,12 @@ import { IcRack, IcConn, IcPulse, IcDevice } from './Icons.jsx'
  */
 
 const sevClass = { Critical: 'critical', Major: 'major', Minor: 'minor', Warning: 'warning', Info: 'warning' }
+
+function clockOf(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 const statusPill = { Open: 'red', Reopen: 'amber', Closed: 'green', Acknowledged: 'blue', Resolved: 'green' }
 const entityPill = { Down: 'red', Watch: 'amber', Monitor: 'blue', Healthy: 'green', Normal: 'green' }
 const SEV_TONE = { Critical: 'var(--red)', Major: 'var(--amber)', Minor: 'var(--blue)', Warning: 'var(--purple)', Info: 'var(--slate)' }

@@ -1027,6 +1027,46 @@ path.st.has-c:hover { fill-opacity: .78; }
 .tabbar--chip .tab.is-on { background: var(--vw-color-blue-50); border-color: var(--vw-color-blue-200); color: var(--vw-color-blue-700); }
 .tabbar--chip .tab:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
 
+/* ── Node View Screen: highlighted tab bar & white background ── */
+.node-page,
+#view:has(.node-page),
+main:has(.node-page) {
+  background: var(--vw-color-white, #ffffff) !important;
+}
+
+.node-page {
+  min-height: 100%;
+}
+
+.tabbar--node {
+  background: var(--vw-color-white, #ffffff);
+  border-bottom: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  gap: var(--vw-space-xl, 28px);
+  padding: 0 var(--vw-space-xs, 4px);
+  width: 100%;
+}
+
+.tabbar--node .tab {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vw-color-gray-500, #64748b);
+  padding: 0.5rem 0.25rem 0.75rem 0.25rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.tabbar--node .tab:hover {
+  color: var(--vw-color-gray-900, #0f172a);
+}
+
+.tabbar--node .tab.is-on {
+  color: var(--vw-color-gray-900, #0f172a) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--vw-color-gray-900, #0f172a) !important;
+  box-shadow: inset 0 -2px 0 0 var(--vw-color-gray-900, #0f172a) !important;
+}
+
 .pin { cursor: pointer; pointer-events: all; }
 .pin circle { pointer-events: all; }
 .pin:hover circle:last-of-type { stroke-width: 3; }
