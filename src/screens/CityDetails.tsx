@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   getCityById,
   getFacilitiesForCity,
@@ -7,6 +7,8 @@ import {
   type FacilityItem,
   type NetworkElementRow
 } from '../data/geographicHierarchy';
+import { legacyPath } from '../routes';
+import { ActionIcon, IcKebab } from '../components/grid/icons';
 import '../styles/topology.css';
 
 type FacilityType = 'dc' | 'pop' | 'site';
@@ -92,9 +94,163 @@ export function getSiteAttributes(fac: FacilityItem): { type: string; structure:
   return { type: 'Macro Tower', structure: '40m GBT' };
 }
 
+function getElementCls(category: string): string {
+  const c = (category || '').toLowerCase();
+  if (c.includes('router')) return 'router';
+  if (c.includes('switch')) return 'switch';
+  if (c.includes('dwdm') || c.includes('optical')) return 'dwdm';
+  if (c.includes('gnodeb') || c.includes('5g')) return 'gnodeb';
+  if (c.includes('enodeb') || c.includes('4g')) return 'enodeb';
+  return 'router';
+}
+
+function ElementRowMenu({
+  open,
+  onToggle,
+  onClose,
+  onOpenNode,
+  onOpenDetails
+}: {
+  open: boolean;
+  onToggle: (e: React.MouseEvent) => void;
+  onClose: () => void;
+  onOpenNode: () => void;
+  onOpenDetails: () => void;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const b = btnRef.current, m = menuRef.current;
+      if (!b || !m) return;
+      const r = b.getBoundingClientRect(), h = m.offsetHeight, w = m.offsetWidth, gap = 4;
+      const below = r.bottom + gap + h <= window.innerHeight;
+      m.style.top = `${below ? r.bottom + gap : Math.max(gap, r.top - gap - h)}px`;
+      m.style.left = `${Math.max(gap, Math.min(r.right - w, window.innerWidth - w - gap))}px`;
+    };
+    place();
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open, onClose]);
+
+  return (
+    <td
+      className="kb-td"
+      onClick={e => e.stopPropagation()}
+      style={{ width: '44px', minWidth: '44px', textAlign: 'center', position: 'relative' }}
+    >
+      <button
+        ref={btnRef}
+        type="button"
+        className={`kb${open ? ' is-on' : ''}`}
+        onClick={onToggle}
+        aria-label="Row actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="More actions"
+      >
+        <IcKebab />
+      </button>
+      {open && (
+        <div
+          ref={menuRef}
+          className="kmenu kmenu--fixed"
+          role="menu"
+          style={{ zIndex: 9999, minWidth: '150px', padding: '4px' }}
+        >
+          <button
+            type="button"
+            className="kmenu-i"
+            onClick={e => {
+              e.stopPropagation();
+              onClose();
+              onOpenNode();
+            }}
+          >
+            <ActionIcon label="Node view" />
+            <span style={{ fontSize: '13px' }}>Node view</span>
+          </button>
+          <button
+            type="button"
+            className="kmenu-i"
+            onClick={e => {
+              e.stopPropagation();
+              onClose();
+              onOpenDetails();
+            }}
+          >
+            <ActionIcon label="View details" />
+            <span style={{ fontSize: '13px' }}>View details</span>
+          </button>
+        </div>
+      )}
+    </td>
+  );
+}
+
 export default function CityDetails() {
+  const navigate = useNavigate();
   const { cityId } = useParams<{ cityId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+
+  const openNodeView = (el: NetworkElementRow) => {
+    const cls = getElementCls(el.category);
+    const facilityCode = selectedFacilityItem?.code || el.name.split('-').slice(0, 3).join('-');
+    const target = legacyPath(
+      'node',
+      { label: `${el.category} · ${el.name}`, from: 'Location · City details' },
+      {
+        name: el.name,
+        ip: el.ip,
+        cls: cls,
+        site: facilityCode,
+        facilityId: facilityCode,
+        cityId: city.id,
+        facility: selectedFacility
+      }
+    );
+    navigate(target);
+  };
+
+  const openResourceDetails = (el: NetworkElementRow) => {
+    const cls = getElementCls(el.category);
+    const facilityCode = selectedFacilityItem?.code || el.name.split('-').slice(0, 3).join('-');
+    const target = legacyPath(
+      'resource',
+      { label: `${el.category} · ${el.name}`, from: 'Location · City details' },
+      {
+        name: el.name,
+        ip: el.ip,
+        cls: cls,
+        site: facilityCode,
+        facilityId: facilityCode,
+        cityId: city.id,
+        facility: selectedFacility
+      }
+    );
+    navigate(target);
+  };
 
   // Look up city details
   const cityInfo = useMemo(() => {
@@ -908,13 +1064,13 @@ export default function CityDetails() {
                     ? `PoP Locations in ${city.name} (${filteredFacilities.length})`
                     : `Sites in ${city.name} (${filteredFacilities.length})`}
                 </h3>
-                <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#64748b' }}>
+                {/* <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#64748b' }}>
                   {selectedFacility === 'dc'
                     ? `Click any Data Center to view its homed routers, switches, and DWDM equipment`
                     : selectedFacility === 'pop'
                     ? `Click any Point of Presence to view its aggregation and transit network elements`
                     : `Click any Site to view its cell towers, eNodeB/gNodeB, and access switches`}
-                </p>
+                </p> */}
               </div>
             </div>
 
@@ -1939,11 +2095,17 @@ export default function CityDetails() {
                     <th style={{ width: '100px' }}>Ports</th>
                     <th style={{ width: '110px' }}>Location Code</th>
                     <th>System description</th>
+                    <th style={{ width: '44px', minWidth: '44px', textAlign: 'center' }} className="kb-th"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredElements.map(el => (
-                    <tr key={el.id} className="net-table-row">
+                    <tr
+                      key={el.id}
+                      className="net-table-row is-clickable"
+                      onClick={() => openNodeView(el)}
+                      title={`Click to open Node view for ${el.name}`}
+                    >
                       <td>{renderStatusBadge(el.status)}</td>
                       <td>
                         <div className="net-name-cell">
@@ -1965,11 +2127,21 @@ export default function CityDetails() {
                       <td className="net-text-desc" title={el.systemDescription}>
                         {el.systemDescription}
                       </td>
+                      <ElementRowMenu
+                        open={openRowMenuId === el.id}
+                        onToggle={(e) => {
+                          e.stopPropagation();
+                          setOpenRowMenuId(prev => prev === el.id ? null : el.id);
+                        }}
+                        onClose={() => setOpenRowMenuId(null)}
+                        onOpenNode={() => openNodeView(el)}
+                        onOpenDetails={() => openResourceDetails(el)}
+                      />
                     </tr>
                   ))}
                   {filteredElements.length === 0 && (
                     <tr>
-                      <td colSpan={9} style={{ textAlign: 'center', padding: '36px 12px', color: '#94a3b8', fontSize: '13px' }}>
+                      <td colSpan={10} style={{ textAlign: 'center', padding: '36px 12px', color: '#94a3b8', fontSize: '13px' }}>
                         No network elements match the selected category and search filters.
                       </td>
                     </tr>

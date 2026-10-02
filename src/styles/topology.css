@@ -2559,6 +2559,22 @@
   background: #f8fafc;
 }
 
+.net-table-row.is-clickable {
+  cursor: pointer;
+}
+
+.net-table-row.is-clickable:hover td {
+  background: #f1f5f9;
+}
+
+.net-elements-table th.kb-th,
+.net-elements-table td.kb-td {
+  width: 44px;
+  min-width: 44px;
+  padding: 0 6px;
+  text-align: center;
+}
+
 .net-status-badge {
   display: inline-block;
   padding: 3px 8px;
