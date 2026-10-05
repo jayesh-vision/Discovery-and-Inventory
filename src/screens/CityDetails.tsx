@@ -794,18 +794,18 @@ export default function CityDetails() {
     const categories: { cat: DeviceCategory; title: string; subtitle: string; colorClass: string }[] =
       selectedFacilityItem.facilityType === 'site'
         ? [
-            { cat: 'gNodeB', title: '5G gNodeB', subtitle: '5G NR Radio Baseband', colorClass: 'top-bar-emerald' },
-            { cat: 'eNodeB', title: '4G eNodeB', subtitle: 'LTE Radio Baseband', colorClass: 'top-bar-cyan' },
-            { cat: 'Router', title: 'Cell Site Routers', subtitle: 'Backhaul / CSR', colorClass: 'top-bar-blue' },
-            { cat: 'Switch', title: 'Site Access Switches', subtitle: 'Access / Aggregation', colorClass: 'top-bar-purple' }
-          ]
+          { cat: 'gNodeB', title: '5G gNodeB', subtitle: '5G NR Radio Baseband', colorClass: 'top-bar-emerald' },
+          { cat: 'eNodeB', title: '4G eNodeB', subtitle: 'LTE Radio Baseband', colorClass: 'top-bar-cyan' },
+          { cat: 'Router', title: 'Cell Site Routers', subtitle: 'Backhaul / CSR', colorClass: 'top-bar-blue' },
+          { cat: 'Switch', title: 'Site Access Switches', subtitle: 'Access / Aggregation', colorClass: 'top-bar-purple' }
+        ]
         : selectedFacilityItem.facilityType === 'dc'
-        ? [
+          ? [
             { cat: 'Router', title: 'Core Routers', subtitle: 'Core & Edge Transit', colorClass: 'top-bar-blue' },
             { cat: 'Switch', title: 'Fabric Switches', subtitle: 'Spine & Leaf Mesh', colorClass: 'top-bar-purple' },
             { cat: 'DWDM', title: 'Optical / DWDM', subtitle: 'Photonic Transport', colorClass: 'top-bar-yellow' }
           ]
-        : [
+          : [
             { cat: 'Router', title: 'Metro Routers', subtitle: 'Aggregation & Transit', colorClass: 'top-bar-blue' },
             { cat: 'Switch', title: 'Distribution Switches', subtitle: 'Metro Distribution', colorClass: 'top-bar-purple' },
             { cat: 'DWDM', title: 'Optical Transport', subtitle: 'WDM Transponders', colorClass: 'top-bar-yellow' }
@@ -1056,7 +1056,7 @@ export default function CityDetails() {
 
       {/* ── Main Content Section: Facility Listing OR Facility Elements ── */}
       <section className="vw-card-section city-table-card" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
-        
+
         {/* ── VIEW 1: Listing of Facilities (Data Centers, PoPs, Sites) ──── */}
         {!selectedFacilityItem && (
           <div>
@@ -1067,8 +1067,8 @@ export default function CityDetails() {
                   {selectedFacility === 'dc'
                     ? `Data Centers in ${city.name} (${filteredFacilities.length})`
                     : selectedFacility === 'pop'
-                    ? `PoP Locations in ${city.name} (${filteredFacilities.length})`
-                    : `Sites in ${city.name} (${filteredFacilities.length})`}
+                      ? `PoP Locations in ${city.name} (${filteredFacilities.length})`
+                      : `Sites in ${city.name} (${filteredFacilities.length})`}
                 </h3>
                 {/* <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#64748b' }}>
                   {selectedFacility === 'dc'
@@ -2121,77 +2121,79 @@ export default function CityDetails() {
                   )}
                 </thead>
                 <tbody>
-                  {filteredElements.map(el => selectedCategory === 'DWDM' ? (
-                    <tr
-                      key={el.id}
-                      className="net-table-row is-clickable"
-                      onClick={() => openNodeView(el)}
-                      title={`Click to open Node view for ${el.name}`}
-                    >
-                      <td>{renderStatusBadge(el.status)}</td>
-                      <td>
-                        <div className="net-name-cell">
-                          <span className="net-name-primary">{el.name}</span>
-                          <span className="net-ip-secondary">{el.ip}</span>
-                        </div>
-                      </td>
-                      <td className="net-model-primary">{el.model}</td>
-                      <td className="net-text-muted">{el.vendor}</td>
-                      <td className="net-text-muted">{el.osVersion}</td>
-                      <td className="net-text-mono">{el.serialNumber}</td>
-                      <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).shelfSlot}</td>
-                      <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).facility}</td>
-                      <td className="net-text-muted">{el.status === 'Verified' || el.status === 'Drifted' ? 'Discovered' : 'Manual'}</td>
-                      <ElementRowMenu
-                        open={openRowMenuId === el.id}
-                        onToggle={(e) => {
-                          e.stopPropagation();
-                          setOpenRowMenuId(prev => prev === el.id ? null : el.id);
-                        }}
-                        onClose={() => setOpenRowMenuId(null)}
-                        onOpenNode={() => openNodeView(el)}
-                        onOpenDetails={() => openResourceDetails(el)}
-                      />
-                    </tr>
-                  ) : (
-                    <tr
-                      key={el.id}
-                      className="net-table-row is-clickable"
-                      onClick={() => openNodeView(el)}
-                      title={`Click to open Node view for ${el.name}`}
-                    >
-                      <td>{renderStatusBadge(el.status)}</td>
-                      <td>
-                        <div className="net-name-cell">
-                          <span className="net-name-primary">{el.name}</span>
-                          <span className="net-ip-secondary">{el.ip}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="net-model-cell">
-                          <span className="net-model-primary">{el.model}</span>
-                          <span className="net-vendor-secondary">{el.vendor}</span>
-                        </div>
-                      </td>
-                      <td className="net-text-muted">{el.osVersion}</td>
-                      <td className="net-text-mono">{el.serialNumber}</td>
-                      <td className="net-text-muted">{el.region}</td>
-                      <td>{renderPortBar(el.portsUsed, el.portsTotal)}</td>
-                      <td className="net-text-mono">{el.locationCode}</td>
-                      <td className="net-text-desc" title={el.systemDescription}>
-                        {el.systemDescription}
-                      </td>
-                      <ElementRowMenu
-                        open={openRowMenuId === el.id}
-                        onToggle={(e) => {
-                          e.stopPropagation();
-                          setOpenRowMenuId(prev => prev === el.id ? null : el.id);
-                        }}
-                        onClose={() => setOpenRowMenuId(null)}
-                        onOpenNode={() => openNodeView(el)}
-                        onOpenDetails={() => openResourceDetails(el)}
-                      />
-                    </tr>
+                  {filteredElements.map(el => (
+                    selectedCategory === 'DWDM' ? (
+                      <tr
+                        key={el.id}
+                        className="net-table-row is-clickable"
+                        onClick={() => openNodeView(el)}
+                        title={`Click to open Node view for ${el.name}`}
+                      >
+                        <td>{renderStatusBadge(el.status)}</td>
+                        <td>
+                          <div className="net-name-cell">
+                            <span className="net-name-primary">{el.name}</span>
+                            <span className="net-ip-secondary">{el.ip}</span>
+                          </div>
+                        </td>
+                        <td className="net-model-primary">{el.model}</td>
+                        <td className="net-text-muted">{el.vendor}</td>
+                        <td className="net-text-muted">{el.osVersion}</td>
+                        <td className="net-text-mono">{el.serialNumber}</td>
+                        <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).shelfSlot}</td>
+                        <td className="net-text-mono">{dwdmShelfSlot(el.locationCode).facility}</td>
+                        <td className="net-text-muted">{el.status === 'Verified' || el.status === 'Drifted' ? 'Discovered' : 'Manual'}</td>
+                        <ElementRowMenu
+                          open={openRowMenuId === el.id}
+                          onToggle={(e) => {
+                            e.stopPropagation();
+                            setOpenRowMenuId(prev => prev === el.id ? null : el.id);
+                          }}
+                          onClose={() => setOpenRowMenuId(null)}
+                          onOpenNode={() => openNodeView(el)}
+                          onOpenDetails={() => openResourceDetails(el)}
+                        />
+                      </tr>
+                    ) : (
+                      <tr
+                        key={el.id}
+                        className="net-table-row is-clickable"
+                        onClick={() => openNodeView(el)}
+                        title={`Click to open Node view for ${el.name}`}
+                      >
+                        <td>{renderStatusBadge(el.status)}</td>
+                        <td>
+                          <div className="net-name-cell">
+                            <span className="net-name-primary">{el.name}</span>
+                            <span className="net-ip-secondary">{el.ip}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="net-model-cell">
+                            <span className="net-model-primary">{el.model}</span>
+                            <span className="net-vendor-secondary">{el.vendor}</span>
+                          </div>
+                        </td>
+                        <td className="net-text-muted">{el.osVersion}</td>
+                        <td className="net-text-mono">{el.serialNumber}</td>
+                        <td className="net-text-muted">{el.region}</td>
+                        <td>{renderPortBar(el.portsUsed, el.portsTotal)}</td>
+                        <td className="net-text-mono">{el.locationCode}</td>
+                        <td className="net-text-desc" title={el.systemDescription}>
+                          {el.systemDescription}
+                        </td>
+                        <ElementRowMenu
+                          open={openRowMenuId === el.id}
+                          onToggle={(e) => {
+                            e.stopPropagation();
+                            setOpenRowMenuId(prev => prev === el.id ? null : el.id);
+                          }}
+                          onClose={() => setOpenRowMenuId(null)}
+                          onOpenNode={() => openNodeView(el)}
+                          onOpenDetails={() => openResourceDetails(el)}
+                        />
+                      </tr>
+                    )
                   ))}
                   {filteredElements.length === 0 && (
                     <tr>

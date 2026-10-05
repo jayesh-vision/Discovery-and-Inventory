@@ -12,7 +12,7 @@ const leafletPath = fs.existsSync(localLeaflet)
   : path.resolve(__dirname, 'node_modules/leaflet');
 
 export default defineConfig({
-  cacheDir: path.resolve(__dirname, '.vite-cache-user'),
+  cacheDir: path.resolve(__dirname, '.vite-cache-local'),
   plugins: [react()],
   resolve: {
     alias: {

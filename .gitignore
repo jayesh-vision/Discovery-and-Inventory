@@ -20,3 +20,5 @@ tests/unit/.vite-cache/
 .cache/
 .vite-cache-dev/
 .vite-user-cache/
+.vite-cache-local/
+.vite-cache-user/

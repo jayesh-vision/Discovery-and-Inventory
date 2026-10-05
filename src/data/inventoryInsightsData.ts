@@ -109,31 +109,31 @@ export interface SparesRow {
   color: string;
 }
 
-export const ACCENT = '#2563EB';
-export const GOOD = '#16A34A';
-export const WARN = '#D97706';
-export const CRIT = '#DC2626';
-export const INFO = '#3B82F6';
-export const PURP = '#6366F1';
-export const TEAL = '#0D9488';
+export const ACCENT = '#1C81EF';
+export const GOOD = '#15803D';
+export const WARN = '#B45309';
+export const CRIT = '#B91C1C';
+export const INFO = '#1C81EF';
+export const PURP = '#6D28D9';
+export const TEAL = '#0F766E';
 export const GREY = '#64748B';
 
-export const ACT = '#3B82F6';
-export const PHY = '#0D9488';
-export const LOG = '#6366F1';
-export const PAS = '#D97706';
-export const VIR = '#0D9488';
+export const ACT = '#1C81EF';
+export const PHY = '#0F766E';
+export const LOG = '#B45309';
+export const PAS = '#0F766E';
+export const VIR = '#6D28D9';
 
 export const hc = (n: number) => (n >= 90 ? GOOD : n >= 80 ? WARN : CRIT);
 export const ic = (n: number) => (n <= 1 ? GOOD : n <= 2 ? WARN : CRIT);
 export const sevColor = (s: string) => (s === 'Critical' ? CRIT : s === 'High' ? WARN : s === 'Medium' ? INFO : '#475569');
-export const sevBg = (s: string) => (s === 'Critical' ? '#FEF2F2' : s === 'High' ? '#FFFBEB' : s === 'Medium' ? '#EFF6FF' : '#F1F5F9');
-export const statusBg = (s: string) => (s === 'Healthy' ? '#F0FDF4' : s === 'Watch' ? '#FFFBEB' : '#FEF2F2');
+export const sevBg = (s: string) => (s === 'Critical' ? '#fee2e2' : s === 'High' ? '#fef3c7' : s === 'Medium' ? '#eff6ff' : '#f1f5f9');
+export const statusBg = (s: string) => (s === 'Healthy' ? '#dcfce7' : s === 'Watch' ? '#fef3c7' : '#fee2e2');
 export const statusFg = (s: string) => (s === 'Healthy' ? GOOD : s === 'Watch' ? WARN : CRIT);
 export const tagBg = (t: string) =>
-  t === 'ADD' ? '#F0FDF4' : t === 'FIX' ? '#EFF6FF' : t === 'DECOM' ? '#FEF2F2' : t === 'UPD' ? '#EEF2FF' : t === 'SURVEY' ? '#FFFBEB' : '#F1F5F9';
+  t === 'ADD' ? '#dcfce7' : t === 'FIX' ? '#eff6ff' : t === 'DECOM' ? '#fee2e2' : t === 'UPD' ? '#ede9fe' : t === 'SURVEY' ? '#fef3c7' : '#f1f5f9';
 export const tagFg = (t: string) =>
-  t === 'ADD' ? GOOD : t === 'FIX' ? '#2563EB' : t === 'DECOM' ? CRIT : t === 'UPD' ? PURP : t === 'SURVEY' ? WARN : '#475569';
+  t === 'ADD' ? GOOD : t === 'FIX' ? INFO : t === 'DECOM' ? CRIT : t === 'UPD' ? PURP : t === 'SURVEY' ? WARN : '#334155';
 
 const bars = (rows: [string, string, number][], _color?: string): PanelItem[] => {
   const max = Math.max(...rows.map(r => r[2]));
@@ -148,7 +148,7 @@ const leaf = (k: [string, string, number, string, string, string, number, number
   name: k[0],
   count: k[1],
   health: `${k[2]}%`,
-  badgeBg: k[2] >= 90 ? '#F0FDF4' : k[2] >= 80 ? '#FFFBEB' : '#FEF2F2',
+  badgeBg: k[2] >= 90 ? '#DCFCE7' : k[2] >= 80 ? '#FEF3C7' : '#FEE2E2',
   badgeFg: hc(k[2]),
   scope: k[3],
   covLabel: k[4],
@@ -354,7 +354,7 @@ export const EOL_VENDORS = [
   { name: 'Ericsson', color: PURP },
   { name: 'Nokia', color: INFO },
   { name: 'Cisco', color: TEAL },
-  { name: 'Ciena', color: '#0284C7' },
+  { name: 'Ciena', color: '#0891B2' },
   { name: 'Huawei', color: WARN },
   { name: 'Others', color: GREY }
 ];
@@ -394,7 +394,7 @@ export const STALE_ITEMS = [
 export const VERIFY_TREND = [58, 61, 63, 66, 69, 72].map((v, i, arr) => ({
   label: `${v}%`,
   h: `${Math.round(((v - 40) / 40) * 34)}px`,
-  color: i === arr.length - 1 ? WARN : '#CBD5E1'
+  color: i === arr.length - 1 ? PAS : '#F5D0A5'
 }));
 
 export const WINDOWS_TREND: Record<string, [string, number][]> = {
@@ -439,5 +439,5 @@ export const BOTTOM_NAVIGATE_DATA = [
   { count: '69,730', name: 'Passive assets', where: 'Resources › Passive', color: PAS, route: '/inventory/passive' },
   { count: '2,860', name: 'Virtual functions', where: 'Resources › Virtual', color: VIR, route: '/inventory/virtual' },
   { count: '57,010', name: 'Logical objects', where: 'Connectivity · Services', color: LOG, route: '/inventory/links' },
-  { count: '2,400', name: 'Locations and sites', where: 'Location', color: '#64748B', route: '/inventory/location' }
+  { count: '4,218', name: 'Locations and sites', where: 'Location', color: '#374151', route: '/inventory/location' }
 ];

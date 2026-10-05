@@ -1,22 +1,78 @@
 /* ── Inventory Insights: Landing Page Styles ───────────────────────────────
-   Faithfully replicates the design mockup in Inventory Insights — landing page-html
-   using clean, scoped CSS with responsive grid layouts and subtle micro-interactions.
+   Refined to match the application's clean, enterprise-grade typography and palette:
+   - Font weights: Medium (500) for titles and metrics, regular (400) for text.
+     Never overly bold (600/700) or shouting.
+   - Font colors: Soft slate tones (#1e293b, #334155, #64748b) that blend naturally
+     with the screen background (#f8fafc) without aggressive, glowing contrast.
+   - Semantic highlights: Gentle status tones (emerald/green, amber, soft red/danger)
+     with soft background tints matching the NST design tokens.
 ─────────────────────────────────────────────────────────────────────────── */
 
 .ii-container {
+  /* ── Typography Tokens from Theme ── */
+  --ii-font-sans: var(--fontFamily, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --ii-font-heading: var(--ii-font-sans);
+  --ii-font-mono: var(--ii-font-sans);
+
+  /* ── Background & Surface Tokens ── */
+  --ii-bg-page: var(--vw-color-slate-50, #f8fafc);
+  --ii-bg-card: var(--vw-color-white, #ffffff);
+  --ii-bg-subtle: var(--vw-color-slate-100, #f1f5f9);
+  --ii-bg-hover: var(--vw-color-slate-50, #f8fafc);
+  --ii-bg-dark: #0f172a;
+  --ii-bg-dark-subtle: #1e293b;
+  --ii-bg-dark-hover: #334155;
+
+  /* ── Border Tokens ── */
+  --ii-border: var(--vw-color-slate-200, #e2e8f0);
+  --ii-border-light: var(--vw-color-slate-100, #f1f5f9);
+  --ii-border-hover: var(--vw-color-slate-300, #cbd5e1);
+  --ii-border-focus: var(--vw-color-accent-500, #1C81EF);
+
+  /* ── Typography Colors (Soft, Muted Enterprise Palette) ── */
+  --ii-text-heading: var(--vw-color-slate-800, #1e293b);
+  --ii-text-title: var(--vw-color-slate-700, #334155);
+  --ii-text-body: var(--vw-color-slate-700, #334155);
+  --ii-text-subtle: var(--vw-color-slate-600, #475569);
+  --ii-text-muted: var(--vw-color-slate-500, #64748b);
+  --ii-text-faint: var(--vw-color-slate-400, #94a3b8);
+
+  /* ── Brand & Accent ── */
+  --ii-primary: var(--vw-color-accent-500, #1C81EF);
+  --ii-primary-hover: var(--vw-color-accent-600, #2563eb);
+  --ii-primary-light: var(--vw-color-accent-50, #eff6ff);
+  --ii-primary-border: var(--vw-color-accent-200, #bfdbfe);
+
+  /* ── Semantic Status Colors (Clean & Refined) ── */
+  --ii-success: var(--vw-color-green-700, #15803d);
+  --ii-success-light: var(--vw-color-green-100, #dcfce7);
+  --ii-warning: var(--vw-color-amber-700, #b45309);
+  --ii-warning-light: var(--vw-color-amber-100, #fef3c7);
+  --ii-danger: var(--vw-color-red-700, #b91c1c);
+  --ii-danger-light: var(--vw-color-red-100, #fee2e2);
+
+  /* ── Radius & Shadows ── */
+  --ii-radius-xs: var(--vw-radius-xs, 4px);
+  --ii-radius-sm: var(--vw-radius-sm, 6px);
+  --ii-radius-md: var(--vw-radius-md, 8px);
+  --ii-radius-lg: var(--vw-radius-lg, 12px);
+  --ii-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ii-shadow-md: 0 3px 8px rgba(15, 23, 42, 0.06);
+
   display: flex;
   width: 100%;
   min-height: 100vh;
-  background: #F3F5F8;
-  font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  color: #111827;
+  background: var(--ii-bg-page);
+  font-family: var(--ii-font-sans);
+  color: var(--ii-text-body);
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.45;
   box-sizing: border-box;
 }
 
 .ii-mono {
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--ii-font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .ii-main {
@@ -24,8 +80,8 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px 28px 36px;
+  gap: 16px;
+  padding: 18px 24px 32px;
   box-sizing: border-box;
 }
 
@@ -40,16 +96,19 @@
 
 .ii-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: #111827;
-  letter-spacing: -0.01em;
+  font-family: var(--ii-font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ii-text-heading);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 
 .ii-subtitle {
-  margin: 4px 0 0;
-  color: #4B5563;
+  margin: 3px 0 0;
+  color: var(--ii-text-muted);
   font-size: 13px;
+  font-weight: 400;
 }
 
 .ii-controls {
@@ -60,13 +119,13 @@
 }
 
 .ii-search-input {
-  min-height: 40px;
-  width: 300px;
+  min-height: 36px;
+  width: 280px;
   padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #D5DAE2;
-  background: #FFFFFF;
-  color: #111827;
+  border-radius: var(--ii-radius-sm);
+  border: 1px solid var(--ii-border);
+  background: var(--ii-bg-card);
+  color: var(--ii-text-heading);
   font: inherit;
   font-size: 13px;
   box-sizing: border-box;
@@ -75,44 +134,45 @@
 
 .ii-search-input:focus {
   outline: none;
-  border-color: #2563EB;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: var(--ii-border-focus);
+  box-shadow: 0 0 0 2px rgba(28, 129, 239, 0.16);
 }
 
 .ii-sync-text {
   font-size: 12px;
-  color: #4B5563;
+  color: var(--ii-text-muted);
   margin: 0 6px;
   white-space: nowrap;
+  font-weight: 400;
 }
 
 .ii-select {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 28px 0 10px;
-  border-radius: 8px;
-  border: 1px solid #D5DAE2;
-  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
-  color: #111827;
+  border-radius: var(--ii-radius-sm);
+  border: 1px solid var(--ii-border);
+  background: var(--ii-bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+  color: var(--ii-text-heading);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
   appearance: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ii-select:focus {
   outline: none;
-  border-color: #2563EB;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: var(--ii-border-focus);
+  box-shadow: 0 0 0 2px rgba(28, 129, 239, 0.16);
 }
 
 .ii-btn-primary {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 14px;
-  border-radius: 8px;
+  border-radius: var(--ii-radius-sm);
   border: 0;
-  background: #2563EB;
+  background: var(--ii-primary);
   color: #FFFFFF;
   font: inherit;
   font-size: 13px;
@@ -125,7 +185,7 @@
 }
 
 .ii-btn-primary:hover {
-  background: #1D4ED8;
+  background: var(--ii-primary-hover);
 }
 
 /* ── Filter Banner ────────────────────────────────────────────────────── */
@@ -135,22 +195,22 @@
   gap: 10px;
   flex-wrap: wrap;
   font-size: 12px;
-  color: #374151;
-  background: #FFFFFF;
-  border: 1px solid #E2E6EC;
-  border-radius: 10px;
+  color: var(--ii-text-subtle);
+  background: var(--ii-bg-card);
+  border: 1px solid var(--ii-border);
+  border-radius: var(--ii-radius-md);
   padding: 8px 12px;
   animation: iiFadeIn 0.2s ease;
 }
 
 .ii-btn-reset {
   margin-left: auto;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 6px;
-  border: 1px solid #D5DAE2;
-  background: #FFFFFF;
-  color: #111827;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid var(--ii-border);
+  background: var(--ii-bg-card);
+  color: var(--ii-text-body);
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -159,55 +219,63 @@
 }
 
 .ii-btn-reset:hover {
-  background: #F3F5F8;
-  border-color: #9CA3AF;
+  background: var(--ii-bg-subtle);
+  border-color: var(--ii-border-hover);
 }
 
 /* ── Section Headers ──────────────────────────────────────────────────── */
 .ii-section-eyebrow {
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4B5563;
-  font-weight: 600;
-  margin-top: 6px;
+  color: var(--ii-text-muted);
+  font-weight: 500;
+  margin-top: 4px;
 }
 
 /* ── Base Card ────────────────────────────────────────────────────────── */
 .ii-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E6EC;
-  border-radius: 12px;
-  padding: 16px 18px;
+  background: var(--ii-bg-card);
+  border: 1px solid var(--ii-border);
+  border-radius: var(--ii-radius-lg);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   min-width: 0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
-  transition: box-shadow 0.2s ease;
+  box-shadow: var(--ii-shadow);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .ii-card:hover {
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--ii-shadow-md);
+  border-color: var(--ii-border-hover);
 }
 
 .ii-card-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: #111827;
+  font-family: var(--ii-font-heading);
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--ii-text-title);
+  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 .ii-card-desc {
   font-size: 12px;
-  color: #4B5563;
+  font-weight: 400;
+  color: var(--ii-text-muted);
+  line-height: 1.4;
 }
 
 .ii-note-box {
-  background: #F3F5F8;
-  border-radius: 8px;
-  padding: 10px 12px;
+  background: var(--ii-bg-subtle);
+  border: 1px solid var(--ii-border);
+  border-radius: var(--ii-radius-sm);
+  padding: 9px 11px;
   font-size: 12px;
-  color: #374151;
+  font-weight: 400;
+  color: var(--ii-text-subtle);
   line-height: 1.45;
 }
 
@@ -223,6 +291,7 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
 @media (max-width: 768px) {
   .ii-kpi-grid {
     grid-template-columns: 1fr;
@@ -230,30 +299,34 @@
 }
 
 .ii-card-dark {
-  background: #1E293B;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 16px;
+  background: var(--ii-bg-dark);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--ii-radius-lg);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   color: #FFFFFF;
+  box-shadow: var(--ii-shadow);
 }
 
 .ii-metric-huge {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+  font-family: var(--ii-font-mono);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: #F8FAFC;
 }
 
 .ii-metric-big {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+  font-family: var(--ii-font-mono);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Tables ───────────────────────────────────────────────────────────── */
@@ -269,57 +342,62 @@
 }
 
 .ii-table th {
+  font-family: var(--ii-font-sans);
   font-weight: 500;
-  padding: 7px 8px;
-  border-bottom: 1px solid #E2E6EC;
-  color: #4B5563;
+  font-size: 11.5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ii-border);
+  color: var(--ii-text-muted);
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 .ii-table td {
-  padding: 8px 8px;
-  border-bottom: 1px solid #EEF1F5;
-  color: #111827;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--ii-border-light);
+  color: var(--ii-text-body);
   white-space: nowrap;
+  font-weight: 400;
 }
 
 .ii-table tr:hover td {
-  background-color: #F8FAFC;
+  background-color: var(--ii-bg-hover);
 }
 
 /* ── Progress Bars & Mini Visuals ──────────────────────────────────────── */
 .ii-prog-track {
-  height: 5px;
-  border-radius: 3px;
-  background: #EEF1F5;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ii-border-light);
   overflow: hidden;
   position: relative;
 }
 
 .ii-prog-bar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
 
 /* ── Badges & Chips ───────────────────────────────────────────────────── */
 .ii-pill {
   font-size: 11px;
-  padding: 2.5px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
-  font-weight: 600;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+  border: 1px solid transparent;
 }
 
 .ii-tag {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 3px 7px;
-  border-radius: 6px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 5px;
   height: fit-content;
   flex-shrink: 0;
 }
@@ -327,14 +405,14 @@
 /* ── Link Buttons ─────────────────────────────────────────────────────── */
 .ii-link-btn {
   font-size: 12px;
-  font-weight: 600;
-  min-height: 32px;
+  font-weight: 500;
+  min-height: 28px;
   display: inline-flex;
   align-items: center;
   background: none;
   border: 0;
   padding: 0;
-  color: #2563EB;
+  color: var(--ii-primary);
   font-family: inherit;
   cursor: pointer;
   text-decoration: none;
@@ -342,22 +420,22 @@
 }
 
 .ii-link-btn:hover {
-  color: #1D4ED8;
+  color: var(--ii-primary-hover);
   text-decoration: underline;
 }
 
 /* ── Bottom Navigation Tiles ─────────────────────────────────────────── */
 .ii-nav-tile {
-  background: #FFFFFF;
-  border: 1px solid #E2E6EC;
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: var(--ii-bg-card);
+  border: 1px solid var(--ii-border);
+  border-radius: var(--ii-radius-md);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  color: #111827;
-  min-height: 82px;
+  gap: 3px;
+  color: var(--ii-text-heading);
+  min-height: 76px;
   font: inherit;
   cursor: pointer;
   text-align: left;
@@ -365,8 +443,9 @@
 }
 
 .ii-nav-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+  box-shadow: var(--ii-shadow-md);
+  border-color: var(--ii-border-hover);
 }
 
 /* ── Toast ────────────────────────────────────────────────────────────── */
@@ -375,13 +454,14 @@
   right: 24px;
   bottom: 24px;
   max-width: 440px;
-  background: #1E293B;
+  background: var(--ii-bg-dark);
   color: #FFFFFF;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--ii-radius-md);
+  padding: 10px 14px;
   font-size: 13px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-weight: 400;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -390,14 +470,14 @@
 }
 
 .ii-toast-dismiss {
-  min-width: 28px;
-  min-height: 28px;
-  border-radius: 6px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 5px;
   border: 0;
-  background: #334155;
+  background: var(--ii-bg-dark-subtle);
   color: #FFFFFF;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -405,15 +485,144 @@
 }
 
 .ii-toast-dismiss:hover {
-  background: #475569;
+  background: var(--ii-bg-dark-hover);
 }
 
 @keyframes iiFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes iiSlideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Export Dropdown Menu ─────────────────────────────────────────────── */
+.ii-export-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.ii-export-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  min-width: 280px;
+  background: var(--ii-bg-card);
+  border: 1px solid var(--ii-border);
+  border-radius: var(--ii-radius-md);
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.1), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+  padding: 5px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: iiDropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes iiDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ii-export-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ii-text-heading);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ii-export-item:hover {
+  background: var(--ii-bg-subtle);
+}
+
+.ii-export-ext {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--ii-primary-light);
+  color: var(--ii-primary-hover);
+  font-family: var(--ii-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.ii-export-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ii-export-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ii-text-heading);
+  white-space: nowrap;
+}
+
+.ii-export-desc {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ii-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Print Media Styles ───────────────────────────────────────────────── */
+@media print {
+
+  .ii-controls,
+  .ii-filter-banner,
+  .ii-toast {
+    display: none !important;
+  }
+
+  .ii-container {
+    background: #FFFFFF !important;
+  }
+
+  .ii-main {
+    padding: 0 !important;
+  }
 }
