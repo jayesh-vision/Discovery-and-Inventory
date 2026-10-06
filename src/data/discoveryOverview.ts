@@ -9,6 +9,7 @@
    color and name on both. */
 
 import type { ColorTone } from './ledger';
+import { DL } from './discovery';
 
 export type DomainKey = 'RAN' | 'Core' | 'Transport' | 'IPMPLS';
 
@@ -132,13 +133,16 @@ export function domainFilterMatches(rowDomain: unknown, filterValue: string | nu
 })();
 
 /* ── Inventory trust hero row ─────────────────────────────────────────── */
-export interface TrustMetric { label: string; value: string; sub: string; trend: number[]; hero?: boolean; tone?: 'up' | 'down' }
+export interface TrustMetric { label: string; value: string; sub: string; trend: number[]; hero?: boolean; tone?: 'up' | 'down'; chip?: string }
 export const TRUST_METRICS: TrustMetric[] = [
   { label: 'Inventory trust index', value: '98.23%', hero: true,
     sub: '▲ 0.41 pt vs 7 days ago · target 99.00%',
     trend: [96.9, 97.1, 97.4, 97.3, 97.6, 97.8, 97.9, 98.0, 98.1, 97.9, 98.1, 98.23] },
   { label: 'Discovery coverage', value: '99.44%',
     sub: '12,106 of 12,174 reached and classified today',
+    /* the multi-domain figure above and the IP/MPLS collector's own polled targets (data/discovery.ts, DL) are two
+       different populations — both are stated, so neither has to be inferred from the other */
+    chip: `IP/MPLS polled targets: ${DL.targets.toLocaleString('en-IN')} (${DL.runFull.toLocaleString('en-IN')} full · ${DL.runPartial} partial · ${DL.runFail} failed)`,
     trend: [98.6, 98.8, 98.9, 99.0, 99.1, 99.0, 99.2, 99.1, 99.3, 99.2, 99.3, 99.44] },
   { label: 'Open discrepancy backlog', value: '147',
     sub: '53 raised today · 94 carried from earlier cycles',

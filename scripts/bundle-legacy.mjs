@@ -84,6 +84,11 @@ patch(`    \${pageBar(\`<div class="seg">\${segs.map(([k,l]) => \`<button class=
 patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`,
       `  if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;`, 'run-now icon');
 
+/* 2f. Ingest the full 12,475 locations from src/data/allLocations.json into LOCATIONS */
+const allLocationsData = readFileSync(join(root, 'src/data/allLocations.json'), 'utf8');
+patch(/const LOCATIONS = \(\(\) => \{[\s\S]*?return out;\s*\}\)\(\);/, `const LOCATIONS = ${allLocationsData};`, 'allLocations 12475 injection');
+
+
 /* 3. after an in-place render, tell React so the URL follows the screen */
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });
@@ -230,6 +235,19 @@ window.__nsLegacy = {
   setCollapsed
 };
 `;
+
+/* 6. the unified device repository (src/data/masterDevices.json, written by
+   scripts/generate-synced-devices.mjs): the register Inventory and Discovery are
+   both built from. The prototype looks elements up in it by hostname / IP
+   (nodeRecord) and draws its IP/MPLS failed scan targets from it (growTargets). */
+const master = JSON.parse(readFileSync(join(root, 'src/data/masterDevices.json'), 'utf8'));
+const masterFailed = master.tgt.filter(t => !t.ok).map(t => ({ ip: t.ip, rk: t.rk, ne: master.ne[t.ne] }));
+src = `/* unified device repository — generated, see scripts/generate-synced-devices.mjs */
+const MASTER_NE = ${JSON.stringify(master.ne)};
+const MASTER_BY_NAME = new Map(MASTER_NE.map(n => [n.name.toUpperCase(), n]));
+const MASTER_BY_IP = new Map(MASTER_NE.flatMap(n => n.ip2 ? [[n.ip, n], [n.ip2, n]] : [[n.ip, n]]));
+const MASTER_FAILED = ${JSON.stringify(masterFailed)};
+` + src;
 
 mkdirSync(join(root, 'public'), { recursive: true });
 writeFileSync(join(root, 'public', 'legacy.js'), src);

@@ -1186,14 +1186,14 @@ const RSTATE = {
 const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
 
 const IL = {
-  locations: 2400, central: 206, regional: 600, edge: 1594,
+  locations: 12475, central: 829, regional: 2711, edge: 8935,
   ne: 2703, discovered: 2379, links: 64, services: 2457, vnf: 28, inactive: 412, reports: 22
 };
 
 const LOC_TIERS = [
-  { n: 'Central', c: 206, planned: 8, building: 17, live: 181, failed: 0, tone: 'amber' },
-  { n: 'Regional', c: 600, planned: 41, building: 77, live: 474, failed: 8, tone: 'sky' },
-  { n: 'Edge', c: 1594, planned: 249, building: 217, live: 1100, failed: 28, tone: 'emerald' }
+  { n: 'Central', c: 829, planned: 35, building: 73, live: 718, failed: 3, tone: 'amber' },
+  { n: 'Regional', c: 2711, planned: 175, building: 385, live: 2120, failed: 31, tone: 'sky' },
+  { n: 'Edge', c: 8935, planned: 1060, building: 1390, live: 6375, failed: 110, tone: 'emerald' }
 ];
 const LOC_HEALTH = [
   { n: 'Sites where discovery found fewer NE than inventory holds', c: 214, tone: 'amber', act: 'Reconcile' },
@@ -1204,26 +1204,34 @@ const LOC_HEALTH = [
 
 /* ── geography: circle centroids, site counts, build state ── */
 const LOC_GEO = [
-  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 51, fail: 6 },
-  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 293, live: 208, build: 41, fail: 8 },
-  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 36, fail: 4 },
-  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 221, live: 135, build: 40, fail: 5 },
-  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 261, live: 206, build: 28, fail: 3 },
-  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 221, live: 161, build: 26, fail: 4 },
-  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 242, live: 165, build: 32, fail: 1 },
-  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 25, fail: 1 },
-  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 60, live: 52, build: 5, fail: 1 },
-  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 49, live: 42, build: 4, fail: 1 },
-  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 43, live: 37, build: 4, fail: 1 },
-  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 35, live: 30, build: 4, fail: 0 },
-  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 31, live: 27, build: 3, fail: 0 },
-  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 26, live: 23, build: 2, fail: 1 },
-  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 23, live: 20, build: 2, fail: 0 },
-  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 18, live: 16, build: 2, fail: 0 },
-  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 16, live: 14, build: 2, fail: 0 },
-  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 12, live: 10, build: 2, fail: 0 },
-  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 10, live: 8, build: 1, fail: 0 },
-  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 8, live: 7, build: 1, fail: 0 }
+  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 1297, live: 973, build: 192, fail: 16 },
+  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 884, live: 654, build: 131, fail: 12 },
+  { c: 'HP', n: 'Himachal Pradesh', st: 'Himachal Pradesh', lat: 31.90, lon: 77.27, tot: 730, live: 555, build: 108, fail: 7 },
+  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 554, live: 416, build: 82, fail: 11 },
+  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 527, live: 401, build: 78, fail: 6 },
+  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 514, live: 386, build: 76, fail: 6 },
+  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 508, live: 376, build: 75, fail: 6 },
+  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 457, live: 338, build: 68, fail: 6 },
+  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 441, live: 326, build: 65, fail: 5 },
+  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 429, live: 313, build: 64, fail: 5 },
+  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 413, live: 310, build: 61, fail: 4 },
+  { c: 'NL', n: 'Nagaland', st: 'Nagaland', lat: 26.16, lon: 94.56, tot: 405, live: 300, build: 60, fail: 5 },
+  { c: 'MN', n: 'Manipur', st: 'Manipur', lat: 24.66, lon: 93.91, tot: 399, live: 291, build: 59, fail: 5 },
+  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 396, live: 281, build: 59, fail: 6 },
+  { c: 'TR', n: 'Tripura', st: 'Tripura', lat: 23.94, lon: 91.99, tot: 396, live: 297, build: 59, fail: 4 },
+  { c: 'ML', n: 'Meghalaya', st: 'Meghalaya', lat: 25.47, lon: 91.37, tot: 393, live: 295, build: 58, fail: 4 },
+  { c: 'MZ', n: 'Mizoram', st: 'Mizoram', lat: 23.16, lon: 92.94, tot: 393, live: 291, build: 58, fail: 4 },
+  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 389, live: 292, build: 58, fail: 4 },
+  { c: 'GA', n: 'Goa', st: 'Goa', lat: 15.30, lon: 74.12, tot: 386, live: 290, build: 57, fail: 4 },
+  { c: 'AR', n: 'Arunachal Pradesh', st: 'Arunachal Pradesh', lat: 28.22, lon: 94.73, tot: 386, live: 290, build: 57, fail: 4 },
+  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 383, live: 276, build: 57, fail: 4 },
+  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 379, live: 262, build: 56, fail: 5 },
+  { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 50, fail: 6 },
+  { c: 'SK', n: 'Sikkim', st: 'Sikkim', lat: 27.53, lon: 88.51, tot: 309, live: 241, build: 46, fail: 2 },
+  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 44, fail: 4 },
+  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 257, live: 177, build: 38, fail: 1 },
+  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 29, fail: 1 },
+  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 19, live: 16, build: 3, fail: 1 }
 ];
 const STATE_CIRCLE = Object.fromEntries(LOC_GEO.map(g => [g.st, g]));
 
@@ -1256,9 +1264,9 @@ const TYPE_GROUP = { 'Datacenter': 'dc', 'POP': 'pop', 'Macro-O': 'site', 'Micro
 const typeGroupOf = t => TYPE_GROUP[t] || 'site';
 
 const LOC_TYPES = [
-  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 206, live: 181, building: 17, planned: 8, failed: 0 },
-  { k: 'pop', n: 'PoP locations', tone: 'sky', total: 600, live: 474, building: 77, planned: 41, failed: 8 },
-  { k: 'site', n: 'Sites', tone: 'teal', total: 1594, live: 1100, building: 217, planned: 249, failed: 28 }
+  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 829, live: 718, building: 73, planned: 35, failed: 3 },
+  { k: 'pop', n: 'PoP locations', tone: 'sky', total: 2711, live: 2120, building: 385, planned: 175, failed: 31 },
+  { k: 'site', n: 'Sites', tone: 'teal', total: 8935, live: 6375, building: 1390, planned: 1060, failed: 110 }
 ];
 
 /* per-circle DC/PoP/Site split — derived from LOC_GEO so the three counts
@@ -1287,9 +1295,9 @@ const LOC_STATES = [
 ];
 
 /* Sites split into the same three build classes the estate is actually
-   built from; counts foot to LOC_TYPES' site total (1,594). */
+   built from; counts foot to LOC_TYPES' site total (8,935). */
 const SITE_SUBTYPES = [
-  { n: 'Macro-O', c: 672 }, { n: 'Micro-CO', c: 538 }, { n: 'Cell Site', c: 384 }
+  { n: 'Macro-O', c: 3768 }, { n: 'Micro-CO', c: 3016 }, { n: 'Cell Site', c: 2151 }
 ];
 
 /* the eight named circles the hierarchy widget and the coverage table
@@ -1543,7 +1551,7 @@ const stockCount = (cls, s) => (PHY_MATRIX[cls] || {})[s] || 0;
 const stockTotal = s => Object.keys(PHY_MATRIX).reduce((a, c) => a + stockCount(c, s), 0);
 
 const PHY_TABS = [
-  { k: 'router', n: 'Router', c: 2148, disc: 2114 }, { k: 'switch', n: 'Switch', c: 349, disc: 283 },
+  { k: 'router', n: 'Router', c: 2148, disc: 2096 }, { k: 'switch', n: 'Switch', c: 349, disc: 283 },
   { k: 'server', n: 'Server', c: 96, disc: 0 }, { k: 'dwdm', n: 'DWDM', c: 78, disc: 0 },
   { k: 'enodeb', n: 'eNodeB', c: 18, disc: 0 }, { k: 'gnodeb', n: 'gNodeB', c: 14, disc: 0 }
 ];
@@ -3601,11 +3609,36 @@ REPORTS.push(
      the generated share is trimmed by one apiece to land on 175 in total */
   const reasons = flatten([['unreach', 67], ['timeout', 40], ['auth', 32], ['adapter', 17], ['parse', 8], ['dupip', 6]]);
 
+  /* IP/MPLS failures are real elements of the unified device repository (the
+     same 239 the Insights failure grid lists): the address, and — where the
+     device answered far enough to be named — the hostname, vendor, model and
+     circle are the repository's, so a failed target here is findable by the same
+     IP in Inventory. One failure per element; each reason draws from its own pool. */
+  const masterPool = {};
+  const haveIp = new Set(TARGETS.map(t => t.ip));
+  if (typeof MASTER_FAILED !== 'undefined') MASTER_FAILED.filter(f => !haveIp.has(f.ip)).forEach(f => (masterPool[f.rk] = masterPool[f.rk] || []).push(f));
+  const takeMaster = (reason, state) => {
+    const pool = masterPool[reason] || [];
+    const i = Math.max(0, pool.findIndex(f => f.ne.state === state));
+    return pool.length ? pool.splice(i, 1)[0] : null;
+  };
+
   reasons.forEach((reason, i) => {
     const circle = CIRCLES[i % CIRCLES.length];
     const jobRow = JOBS[i % JOBS.length];
     const job = jobRow.id;
     const dom = jobRow.domain || 'IPMPLS';
+    const mf = dom === 'IPMPLS' ? takeMaster(reason, circle.n) : null;
+    if (mf) {
+      const known = reason !== 'unreach' && reason !== 'timeout';
+      TARGETS.push({
+        ip: mf.ip, host: known ? mf.ne.name : '—', oem: known ? mf.ne.oem : '—', model: known ? mf.ne.model : '—',
+        circle: mf.ne.state, sync: getLiveDateSync(2 + i % 7, (i * 11) % 60),
+        fresh: 1 + i % 18, job, domain: jobRow.domain,
+        ch: chForDomain(['fail', 'na', 'na', 'na', 'na', 'na'], jobRow.domain), out: 'Missing', chip: 'error', reason
+      });
+      return;
+    }
     const domModels = MODELS_BY_DOMAIN[dom] || MODELS_BY_DOMAIN.IPMPLS;
     const domOems = Object.keys(domModels);
     const oem = pick(domOems);
@@ -3667,6 +3700,24 @@ REPORTS.push(
       fresh: 1 + i % 12, job, domain: jobRow.domain,
       ch: chForDomain(i % 3 === 0 ? ['ok', 'ok', 'ok', 'na', 'na', 'na'] : ['ok', 'ok', 'ok', 'ok', 'na', 'na'], jobRow.domain),
       out: 'Rogue', chip: 'pink', isNew: true
+    });
+  }
+
+  /* the hand-written rows above name a circle and, for IP/MPLS 'Missing' rows,
+     an address from before the unified device repository existed. Where a
+     target names a repository element its circle is that element's state; an
+     IP/MPLS 'Missing' row (an element the network no longer answers for) is
+     pinned to a real unreachable element, so every non-rogue IP/MPLS target
+     resolves to an Inventory record by IP. 'Rogue' and 'Unclaimed' are the
+     exceptions by definition — devices Discovery found that Inventory does not hold. */
+  if (typeof MASTER_BY_NAME !== 'undefined') {
+    TARGETS.forEach(t => {
+      const m = t.host && t.host !== '—' ? MASTER_BY_NAME.get(String(t.host).toUpperCase()) : null;
+      if (m && (m.ip === t.ip || m.ip2 === t.ip)) t.circle = m.state;
+      else if (t.domain === 'IPMPLS' && t.out === 'Missing' && !MASTER_BY_IP.has(t.ip)) {
+        const mf = takeMaster('unreach', t.circle);
+        if (mf) { t.ip = mf.ip; t.circle = mf.ne.state; }
+      }
     });
   }
 })();

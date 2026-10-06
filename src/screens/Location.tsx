@@ -20,21 +20,114 @@ interface CoverageCircle {
 }
 
 const COVERAGE_CIRCLES: CoverageCircle[] = [
+  { code: 'PB', name: 'Punjab', dc: 81, pop: 282, sites: 934, total: 1297, onAirPct: 75, failed: 16, severity: 'delayed' },
+  { code: 'TN', name: 'Tamil Nadu', dc: 62, pop: 176, sites: 646, total: 884, onAirPct: 74, failed: 12, severity: 'blocked' },
+  { code: 'HP', name: 'Himachal Pradesh', dc: 45, pop: 152, sites: 533, total: 730, onAirPct: 76, failed: 7, severity: 'delayed' },
+  { code: 'UP', name: 'Uttar Pradesh', dc: 47, pop: 137, sites: 370, total: 554, onAirPct: 75, failed: 11, severity: 'blocked' },
+  { code: 'KL', name: 'Kerala', dc: 33, pop: 119, sites: 375, total: 527, onAirPct: 76, failed: 6, severity: 'delayed' },
+  { code: 'RJ', name: 'Rajasthan', dc: 32, pop: 114, sites: 368, total: 514, onAirPct: 75, failed: 6, severity: 'delayed' },
+  { code: 'MP', name: 'Madhya Pradesh', dc: 33, pop: 114, sites: 361, total: 508, onAirPct: 74, failed: 6, severity: 'delayed' },
+  { code: 'HR', name: 'Haryana', dc: 30, pop: 102, sites: 325, total: 457, onAirPct: 74, failed: 6, severity: 'blocked' },
+  { code: 'WB', name: 'West Bengal', dc: 31, pop: 95, sites: 315, total: 441, onAirPct: 74, failed: 5, severity: 'blocked' },
+  { code: 'CG', name: 'Chhattisgarh', dc: 27, pop: 92, sites: 310, total: 429, onAirPct: 73, failed: 5, severity: 'delayed' },
+  { code: 'UK', name: 'Uttarakhand', dc: 26, pop: 89, sites: 298, total: 413, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'NL', name: 'Nagaland', dc: 25, pop: 86, sites: 294, total: 405, onAirPct: 74, failed: 5, severity: 'delayed' },
+  { code: 'MN', name: 'Manipur', dc: 24, pop: 85, sites: 290, total: 399, onAirPct: 73, failed: 5, severity: 'delayed' },
+  { code: 'BR', name: 'Bihar', dc: 25, pop: 81, sites: 290, total: 396, onAirPct: 71, failed: 6, severity: 'blocked' },
+  { code: 'TR', name: 'Tripura', dc: 24, pop: 84, sites: 288, total: 396, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'ML', name: 'Meghalaya', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'MZ', name: 'Mizoram', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 74, failed: 4, severity: 'delayed' },
+  { code: 'JH', name: 'Jharkhand', dc: 26, pop: 80, sites: 283, total: 389, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'GA', name: 'Goa', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'AR', name: 'Arunachal Pradesh', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
+  { code: 'OR', name: 'Odisha', dc: 27, pop: 78, sites: 278, total: 383, onAirPct: 72, failed: 4, severity: 'delayed' },
+  { code: 'AS', name: 'Assam', dc: 26, pop: 78, sites: 275, total: 379, onAirPct: 69, failed: 5, severity: 'blocked' },
   { code: 'MH', name: 'Maharashtra', dc: 28, pop: 86, sites: 220, total: 334, onAirPct: 70, failed: 6, severity: 'blocked' },
-  { code: 'OTH', name: 'Other circles', dc: 33, pop: 82, sites: 216, total: 331, onAirPct: 86, failed: 4, severity: 'blocked' },
+  { code: 'SK', name: 'Sikkim', dc: 20, pop: 59, sites: 230, total: 309, onAirPct: 78, failed: 2, severity: 'risk' },
   { code: 'KA', name: 'Karnataka', dc: 26, pop: 75, sites: 198, total: 299, onAirPct: 76, failed: 4, severity: 'blocked' },
-  { code: 'UP', name: 'Uttar Pradesh', dc: 25, pop: 72, sites: 196, total: 293, onAirPct: 71, failed: 8, severity: 'blocked' },
-  { code: 'DL', name: 'Delhi', dc: 22, pop: 65, sites: 174, total: 261, onAirPct: 79, failed: 3, severity: 'blocked' },
-  { code: 'GJ', name: 'Gujarat', dc: 20, pop: 60, sites: 162, total: 242, onAirPct: 68, failed: 1, severity: 'blocked' },
-  { code: 'TN', name: 'Tamil Nadu', dc: 18, pop: 55, sites: 148, total: 221, onAirPct: 73, failed: 4, severity: 'blocked' },
-  { code: 'MP', name: 'Madhya Pradesh', dc: 18, pop: 55, sites: 148, total: 221, onAirPct: 61, failed: 5, severity: 'blocked' },
+  { code: 'GJ', name: 'Gujarat', dc: 20, pop: 63, sites: 174, total: 257, onAirPct: 69, failed: 1, severity: 'blocked' },
   { code: 'AP', name: 'Andhra Pradesh', dc: 16, pop: 50, sites: 132, total: 198, onAirPct: 67, failed: 1, severity: 'blocked' },
+  { code: 'TS', name: 'Telangana', dc: 1, pop: 6, sites: 12, total: 19, onAirPct: 84, failed: 1, severity: 'risk' }
 ];
+
+const STATE_ID_TO_CIRCLE: Record<string, string> = {
+  punjab: 'PB',
+  chandigarh: 'PB',
+  jk: 'PB',
+  haryana: 'HR',
+  'up-west': 'UP',
+  up: 'UP',
+  'uttar-pradesh': 'UP',
+  delhi: 'UP',
+  uttarakhand: 'UK',
+  himachal: 'HP',
+  ladakh: 'HP',
+  maharashtra: 'MH',
+  gujarat: 'GJ',
+  dnh: 'GJ',
+  rajasthan: 'RJ',
+  goa: 'GA',
+  mp: 'MP',
+  chhattisgarh: 'CG',
+  'west-bengal': 'WB',
+  bihar: 'BR',
+  odisha: 'OR',
+  jharkhand: 'JH',
+  assam: 'AS',
+  sikkim: 'SK',
+  arunachal: 'AR',
+  meghalaya: 'ML',
+  nagaland: 'NL',
+  manipur: 'MN',
+  mizoram: 'MZ',
+  tripura: 'TR',
+  karnataka: 'KA',
+  'tamil-nadu': 'TN',
+  tamilnadu: 'TN',
+  puducherry: 'TN',
+  andaman: 'TN',
+  telangana: 'TS',
+  ap: 'AP',
+  kerala: 'KL',
+  lakshadweep: 'KL'
+};
+
+const CIRCLE_TO_STATE_ID: Record<string, string> = {
+  PB: 'punjab',
+  HR: 'haryana',
+  UP: 'up-west',
+  UK: 'uttarakhand',
+  HP: 'himachal',
+  MH: 'maharashtra',
+  GJ: 'gujarat',
+  RJ: 'rajasthan',
+  GA: 'goa',
+  MP: 'mp',
+  CG: 'chhattisgarh',
+  WB: 'west-bengal',
+  BR: 'bihar',
+  OR: 'odisha',
+  JH: 'jharkhand',
+  AS: 'assam',
+  SK: 'sikkim',
+  AR: 'arunachal',
+  ML: 'meghalaya',
+  NL: 'nagaland',
+  MN: 'manipur',
+  MZ: 'mizoram',
+  TR: 'tripura',
+  KA: 'karnataka',
+  TN: 'tamilnadu',
+  TS: 'telangana',
+  AP: 'ap',
+  KL: 'kerala'
+};
 
 export default function Location() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
+  const [selectedCircle, setSelectedCircle] = useState<string | null>(null);
 
   const isListView = searchParams.get('view') === 'list';
 
@@ -68,23 +161,23 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-slate-200)', '--kpi-hover': 'var(--vw-color-slate-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick(undefined, 'All locations')}
-          aria-label="Total locations: 2,400 locations, 1,755 on-air"
+          aria-label="Total locations: 12,475 locations, 9,213 on-air"
         >
           <div className="vw-card-metric-label kprog-label">Total locations</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">2,400</span>
+            <span className="vw-card-metric-xl num">12,475</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>1,755 on-air</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>9,213 on-air</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '8.58%', background: '#a855f7' }} title="Datacenters: 206" />
-            <span style={{ width: '25%', background: '#0284c7' }} title="PoP locations: 600" />
-            <span style={{ width: '66.42%', background: '#0d9488' }} title="Sites: 1,594" />
+            <span style={{ width: '6.65%', background: '#a855f7' }} title="Datacenters: 829" />
+            <span style={{ width: '21.73%', background: '#0284c7' }} title="PoP locations: 2,711" />
+            <span style={{ width: '71.62%', background: '#0d9488' }} title="Sites: 8,935" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />206 datacenters</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />600 pop locations</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />1,594 sites</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />829 datacenters</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />2,711 pop locations</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />8,935 sites</span>
           </div>
         </button>
 
@@ -94,24 +187,25 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('dc', 'Datacenters — filtered list')}
-          aria-label="Datacenters: 206 locations, 88% on-air · 0 failed"
+          aria-label="Datacenters: 829 locations, 87% on-air · 3 failed"
         >
           <div className="vw-card-metric-label kprog-label">Datacenters</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">206</span>
+            <span className="vw-card-metric-xl num">829</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>88% on-air · 0 failed</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>87% on-air · 3 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '87.86%', background: '#10b981' }} title="On-air: 181" />
-            <span style={{ width: '8.25%', background: '#f59e0b' }} title="In progress: 17" />
-            <span style={{ width: '3.88%', background: '#0ea5e9' }} title="Planned: 8" />
+            <span style={{ width: '86.61%', background: '#10b981' }} title="On-air: 718" />
+            <span style={{ width: '8.81%', background: '#f59e0b' }} title="In progress: 73" />
+            <span style={{ width: '4.22%', background: '#0ea5e9' }} title="Planned: 35" />
+            <span style={{ width: '0.36%', minWidth: '4px', background: '#ef4444' }} title="Failed: 3" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />181 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />17 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />8 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />0 failed</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />718 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />73 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />35 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />3 failed</span>
           </div>
         </button>
 
@@ -121,25 +215,25 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-sky-200)', '--kpi-hover': 'var(--vw-color-sky-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('pop', 'PoP locations — filtered list')}
-          aria-label="PoP locations: 600 locations, 79% on-air · 8 failed"
+          aria-label="PoP locations: 2,711 locations, 78% on-air · 31 failed"
         >
           <div className="vw-card-metric-label kprog-label">PoP locations</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">600</span>
+            <span className="vw-card-metric-xl num">2,711</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>79% on-air · 8 failed</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>78% on-air · 31 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '79%', background: '#10b981' }} title="On-air: 474" />
-            <span style={{ width: '12.83%', background: '#f59e0b' }} title="In progress: 77" />
-            <span style={{ width: '6.83%', background: '#0ea5e9' }} title="Planned: 41" />
-            <span style={{ width: '1.33%', background: '#ef4444' }} title="Failed: 8" />
+            <span style={{ width: '78.20%', background: '#10b981' }} title="On-air: 2,120" />
+            <span style={{ width: '14.20%', background: '#f59e0b' }} title="In progress: 385" />
+            <span style={{ width: '6.46%', background: '#0ea5e9' }} title="Planned: 175" />
+            <span style={{ width: '1.14%', background: '#ef4444' }} title="Failed: 31" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />474 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />77 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />41 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />8 failed</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />2,120 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />385 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />175 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />31 failed</span>
           </div>
         </button>
 
@@ -149,25 +243,25 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-teal-200)', '--kpi-hover': 'var(--vw-color-teal-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('site', 'Sites — filtered list')}
-          aria-label="Sites: 1,594 locations, 69% on-air · 28 failed"
+          aria-label="Sites: 8,935 locations, 71% on-air · 110 failed"
         >
           <div className="vw-card-metric-label kprog-label">Sites</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">1,594</span>
+            <span className="vw-card-metric-xl num">8,935</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>69% on-air · 28 failed</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>71% on-air · 110 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '69.01%', background: '#10b981' }} title="On-air: 1,100" />
-            <span style={{ width: '13.61%', background: '#f59e0b' }} title="In progress: 217" />
-            <span style={{ width: '15.62%', background: '#0ea5e9' }} title="Planned: 249" />
-            <span style={{ width: '1.76%', background: '#ef4444' }} title="Failed: 28" />
+            <span style={{ width: '71.35%', background: '#10b981' }} title="On-air: 6,375" />
+            <span style={{ width: '15.56%', background: '#f59e0b' }} title="In progress: 1,390" />
+            <span style={{ width: '11.86%', background: '#0ea5e9' }} title="Planned: 1,060" />
+            <span style={{ width: '1.23%', background: '#ef4444' }} title="Failed: 110" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />1,100 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />217 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />249 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />28 failed</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />6,375 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />1,390 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />1,060 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />110 failed</span>
           </div>
         </button>
       </section>
@@ -179,6 +273,8 @@ export default function Location() {
           <div className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', border: '1px solid var(--vw-color-slate-200)' }}>
             <NetworkHierarchyTopology
               isExpanded={true}
+              selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
+              onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
               onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
                 nav(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`)
               }
@@ -189,9 +285,14 @@ export default function Location() {
           <div className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid var(--vw-color-slate-200)' }}>
             <div className="row vw-justify-between vw-items-start" style={{ marginBottom: '16px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
-                  Coverage by circle
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
+                    Coverage by circle
+                  </h3>
+                  <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', color: '#475569', fontWeight: 500 }}>
+                    {COVERAGE_CIRCLES.length} circles
+                  </span>
+                </div>
                 <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--vw-color-gray-500)' }}>
                   ranked by total · click a circle for rollout detail
                 </p>
@@ -402,7 +503,10 @@ export default function Location() {
       </section>
 
       {/* ── Sites by geography Map Card ─────────────────────────── */}
-      <SitesByGeography />
+      <SitesByGeography
+        selectedCircle={selectedCircle}
+        onSelectCircle={setSelectedCircle}
+      />
     </div>
   );
 }
@@ -582,15 +686,15 @@ function getCircleRolloutDetails(c: CoverageCircle) {
 
   // Specific alerts based on state
   const alertsByCircle: Record<string, { cat: string; count: number; sev: 'blocked' | 'delayed' | 'risk'; topReason: string }[]> = {
+    'PB': [
+      { cat: 'Power', count: 5, sev: 'blocked', topReason: 'Substation connection fee dispute & rural grid stability' },
+      { cat: 'Fiber Connectivity', count: 4, sev: 'delayed', topReason: 'Highway widening OFC diversion pending' },
+      { cat: 'Regulatory', count: 3, sev: 'delayed', topReason: 'Cantonment board tower clearance pending' }
+    ],
     'MH': [
       { cat: 'Power', count: 3, sev: 'blocked', topReason: 'Grid power supply delayed by local utility' },
       { cat: 'Lease / Property', count: 2, sev: 'blocked', topReason: 'Repeated landlord access restrictions' },
       { cat: 'Fiber Connectivity', count: 4, sev: 'delayed', topReason: 'Temporary fiber diversion in use' }
-    ],
-    'DL': [
-      { cat: 'Regulatory', count: 2, sev: 'blocked', topReason: 'Municipal corporation tower clearance pending' },
-      { cat: 'Civil / Infrastructure', count: 1, sev: 'blocked', topReason: 'Roof reinforcement structural certificate delayed' },
-      { cat: 'Lease / Property', count: 3, sev: 'delayed', topReason: 'Lease expires within 30 days' }
     ],
     'KA': [
       { cat: 'Fiber Connectivity', count: 2, sev: 'blocked', topReason: 'OFC backhaul cut due to road widening' },
@@ -599,6 +703,7 @@ function getCircleRolloutDetails(c: CoverageCircle) {
     ],
     'UP': [
       { cat: 'Power', count: 4, sev: 'blocked', topReason: 'Frequent rural grid outages requiring DG install' },
+      { cat: 'Regulatory', count: 3, sev: 'blocked', topReason: 'Municipal corporation tower clearance pending' },
       { cat: 'Civil / Infrastructure', count: 3, sev: 'blocked', topReason: 'GBT foundation curing inspection hold' },
       { cat: 'Commissioning', count: 5, sev: 'delayed', topReason: 'ATP pending site acceptance sign-off' }
     ],
@@ -607,6 +712,7 @@ function getCircleRolloutDetails(c: CoverageCircle) {
       { cat: 'Power', count: 2, sev: 'delayed', topReason: 'Battery backup below threshold' }
     ],
     'TN': [
+      { cat: 'Power', count: 3, sev: 'blocked', topReason: 'Substation HT transformer failure at Core DC facility' },
       { cat: 'Civil / Infrastructure', count: 2, sev: 'blocked', topReason: 'Coastal humidity corrosion proofing pending' },
       { cat: 'Commissioning', count: 2, sev: 'blocked', topReason: 'ATP visit scheduling hold' }
     ],
@@ -630,21 +736,22 @@ function getCircleRolloutDetails(c: CoverageCircle) {
 
   // Specific critical sites
   const criticalByCircle: Record<string, { id: string; status: 'Blocked' | 'Delayed' | 'At Risk'; tone: 'red' | 'amber' | 'sky'; cat: string; reason: string; impact: string }[]> = {
+    'PB': [
+      { id: 'PB-LDH-019', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Substation connection fee dispute', impact: 'Equipment commissioning cannot begin without stable power' },
+      { id: 'PB-ASR-044', status: 'Delayed', tone: 'amber', cat: 'Fiber Connectivity', reason: 'Highway widening OFC diversion pending', impact: 'Backhaul unavailable — site cannot carry live traffic' },
+      { id: 'PB-CHD-008', status: 'At Risk', tone: 'sky', cat: 'Regulatory', reason: 'Cantonment clearance renewal pending', impact: 'Site held at final acceptance' }
+    ],
     'MH': [
       { id: 'MH-MAC-113', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Grid power supply delayed by local utility', impact: 'Equipment commissioning cannot begin without stable power' },
       { id: 'MH-BOM-042', status: 'Delayed', tone: 'amber', cat: 'Fiber Connectivity', reason: 'Temporary fiber diversion in use', impact: 'Backhaul unavailable — site cannot carry live traffic' },
       { id: 'MH-PUN-089', status: 'At Risk', tone: 'sky', cat: 'Lease / Property', reason: 'Lease expires within 30 days', impact: 'Site inaccessible for deployment and maintenance activities' }
-    ],
-    'DL': [
-      { id: 'DEL-279', status: 'Blocked', tone: 'red', cat: 'Regulatory', reason: 'Municipal corporation tower clearance pending', impact: 'Tower and equipment installation cannot proceed without clearance' },
-      { id: 'DEL-NDLS-014', status: 'Blocked', tone: 'red', cat: 'Civil / Infrastructure', reason: 'Roof reinforcement structural certificate delayed', impact: 'Equipment installation blocked until civil work clears' },
-      { id: 'DEL-CP-008', status: 'Delayed', tone: 'amber', cat: 'Lease / Property', reason: 'Lease expires within 30 days', impact: 'Site inaccessible for deployment and maintenance activities' }
     ],
     'KA': [
       { id: 'KA-BGLK-277', status: 'Blocked', tone: 'red', cat: 'Fiber Connectivity', reason: 'OFC backhaul cut due to road widening', impact: 'Backhaul unavailable — site cannot carry live traffic' },
       { id: 'KA-BLR-104', status: 'Delayed', tone: 'amber', cat: 'Supply Chain', reason: 'Equipment delivery delayed by vendor', impact: 'Commissioning delayed pending equipment and vendor readiness' }
     ],
     'UP': [
+      { id: 'DEL-279', status: 'Blocked', tone: 'red', cat: 'Regulatory', reason: 'Municipal corporation tower clearance pending', impact: 'Tower and equipment installation cannot proceed without clearance' },
       { id: 'UP-LKN-031', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Frequent rural grid outages requiring DG install', impact: 'Equipment commissioning cannot begin without stable power' },
       { id: 'UP-NOI-092', status: 'Delayed', tone: 'amber', cat: 'Commissioning', reason: 'ATP pending site acceptance sign-off', impact: 'Site held at final acceptance — traffic cutover is blocked' }
     ],
@@ -653,6 +760,8 @@ function getCircleRolloutDetails(c: CoverageCircle) {
       { id: 'GJ-SUR-112', status: 'At Risk', tone: 'sky', cat: 'Power', reason: 'Battery backup below threshold', impact: 'Potential service interruption if power grid drops' }
     ],
     'TN': [
+      { id: 'CHE-DC-06', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Substation HT transformer failure & utility feeder fault', impact: 'Core Data Center on emergency DG backup — commissioning halted' },
+      { id: 'CBE-DC-04', status: 'Blocked', tone: 'red', cat: 'Power', reason: 'Chiller plant HVAC dual compressor breakdown', impact: 'Equipment rack powering blocked pending thermal cooling resolution' },
       { id: 'TN-CHN-071', status: 'Blocked', tone: 'red', cat: 'Civil / Infrastructure', reason: 'Coastal humidity corrosion proofing pending', impact: 'Equipment installation blocked until civil work clears' },
       { id: 'TN-CBE-044', status: 'Delayed', tone: 'amber', cat: 'Commissioning', reason: 'ATP visit scheduling hold', impact: 'Site held at final acceptance — traffic cutover is blocked' }
     ],
@@ -931,17 +1040,26 @@ function CoverageTable({
   const nav = useNavigate();
 
   return (
-    <div className="tbl-wrap">
-      <table className="nst-table cov-table" style={{ width: '100%', fontSize: '13px' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--vw-color-slate-200)', color: 'var(--vw-color-gray-500)', textAlign: 'left' }}>
-            <th style={{ width: '34%', padding: '10px 12px' }}>Circle</th>
-            <th className="t-right" style={{ width: '9%', padding: '10px 8px', textAlign: 'right' }}>DC</th>
-            <th className="t-right" style={{ width: '9%', padding: '10px 8px', textAlign: 'right' }}>PoP</th>
-            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right' }}>Sites</th>
-            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right' }}>Total</th>
-            <th style={{ width: '18%', padding: '10px 12px' }}>On-air</th>
-            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right' }}>Failed</th>
+    <div
+      className="tbl-wrap"
+      style={{
+        maxHeight: '480px',
+        overflowY: 'auto',
+        borderRadius: '8px',
+        border: '1px solid var(--vw-color-slate-200)',
+        position: 'relative'
+      }}
+    >
+      <table className="nst-table cov-table" style={{ width: '100%', fontSize: '13px', borderCollapse: 'separate', borderSpacing: 0 }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff' }}>
+          <tr style={{ borderBottom: '1px solid var(--vw-color-slate-200)', color: 'var(--vw-color-gray-500)', textAlign: 'left', background: '#f8fafc' }}>
+            <th style={{ width: '34%', padding: '10px 12px', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>Circle</th>
+            <th className="t-right" style={{ width: '9%', padding: '10px 8px', textAlign: 'right', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>DC</th>
+            <th className="t-right" style={{ width: '9%', padding: '10px 8px', textAlign: 'right', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>PoP</th>
+            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>Sites</th>
+            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>Total</th>
+            <th style={{ width: '18%', padding: '10px 12px', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>On-air</th>
+            <th className="t-right" style={{ width: '10%', padding: '10px 8px', textAlign: 'right', background: '#f8fafc', borderBottom: '1px solid var(--vw-color-slate-200)' }}>Failed</th>
           </tr>
         </thead>
         <tbody>

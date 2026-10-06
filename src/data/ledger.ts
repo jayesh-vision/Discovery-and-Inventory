@@ -3,7 +3,7 @@
    nothing derives a total from an array length. */
 
 export const IL = {
-  locations: 2400, central: 206, regional: 600, edge: 1594,
+  locations: 12475, central: 829, regional: 2711, edge: 8935,
   ne: 2703, discovered: 2379, links: 7846, services: 2457, vnf: 28, inactive: 412, reports: 22
 } as const;
 
@@ -23,7 +23,7 @@ export const ACTIVE_STATES: ActiveStock[] = ['planned', 'instore', 'deployed', '
 
 export interface ClassMeta { k: NeClass; n: string; c: number; disc: number }
 export const PHY_TABS: ClassMeta[] = [
-  { k: 'router', n: 'Router', c: 2148, disc: 2114 }, { k: 'switch', n: 'Switch', c: 349, disc: 283 },
+  { k: 'router', n: 'Router', c: 2148, disc: 2096 }, { k: 'switch', n: 'Switch', c: 349, disc: 283 },
   { k: 'server', n: 'Server', c: 96,  disc: 0 },     { k: 'dwdm',   n: 'DWDM',   c: 78,  disc: 0 },
   { k: 'enodeb', n: 'eNodeB', c: 18,  disc: 0 },     { k: 'gnodeb', n: 'gNodeB', c: 14,  disc: 0 }
 ];
@@ -93,6 +93,8 @@ export const stockTotal = (s: StockState): number => NE_CLASSES.reduce((a, c) =>
   }
   const grand = NE_CLASSES.reduce((a, c) => a + phyCount(c, ACTIVE_STATES), 0);
   if (grand !== IL.ne) throw new Error(`ledger: active grand total ${grand} ≠ IL.ne ${IL.ne}`);
+  const disc = PHY_TABS.reduce((a, t) => a + t.disc, 0);
+  if (disc !== IL.discovered) throw new Error(`ledger: discovered by class ${disc} ≠ IL.discovered ${IL.discovered}`);
 })();
 
 /* source of a record and freshness of its last verification — the bridge from Discovery */

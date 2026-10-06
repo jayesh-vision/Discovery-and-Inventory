@@ -84,17 +84,43 @@ interface NetworkHierarchyTopologyProps {
   isExpanded?: boolean;
   onNavigateToCity?: (cityId: string, facility?: 'dc' | 'pop' | 'site') => void;
   onNavigateToSite?: (siteId: string) => void;
+  selectedStateId?: string;
+  onSelectState?: (stateId: string, stateName: string) => void;
 }
 
 export default function NetworkHierarchyTopology({
-  onNavigateToCity
+  onNavigateToCity,
+  selectedStateId: propSelectedStateId,
+  onSelectState
 }: NetworkHierarchyTopologyProps) {
   const nav = useNavigate();
 
   // ── Hierarchy Selection State (Defaults matching reference design) ──
   const [selectedRegionId, setSelectedRegionId] = useState<string>('north');
-  const [selectedStateId, setSelectedStateId] = useState<string>('delhi');
-  const [selectedCityId, setSelectedCityId] = useState<string>('delhi-central');
+  const [selectedStateId, setSelectedStateId] = useState<string>(() => propSelectedStateId || 'punjab');
+  const [selectedCityId, setSelectedCityId] = useState<string>('pb-ludhiana');
+
+  const prevPropSelectedStateId = useRef<string | undefined>(propSelectedStateId);
+
+  useEffect(() => {
+    if (propSelectedStateId && propSelectedStateId !== selectedStateId) {
+      for (const r of GEOGRAPHIC_HIERARCHY) {
+        const found = r.states.find(s => s.id === propSelectedStateId);
+        if (found) {
+          setSelectedRegionId(r.id);
+          setSelectedStateId(found.id);
+          setSelectedCityId(found.cities[0]?.id || '');
+          break;
+        }
+      }
+    } else if (prevPropSelectedStateId.current && !propSelectedStateId) {
+      // Circle selection cleared -> restore default North -> Punjab -> Ludhiana
+      setSelectedRegionId('north');
+      setSelectedStateId('punjab');
+      setSelectedCityId('pb-ludhiana');
+    }
+    prevPropSelectedStateId.current = propSelectedStateId;
+  }, [propSelectedStateId, selectedStateId]);
 
   // ── Hovered facility state on the donut chart (dc | pop | site) ─────
   const [hoveredFacility, setHoveredFacility] = useState<'dc' | 'pop' | 'site' | null>(null);
@@ -240,13 +266,13 @@ export default function NetworkHierarchyTopology({
       return currentState.cities[0];
     }
     return {
-      id: 'delhi-central',
-      name: 'Central Delhi',
-      count: 340,
-      stateId: 'delhi',
-      dcCount: 14,
-      popCount: 42,
-      siteCount: 284
+      id: 'pb-ludhiana',
+      name: 'Ludhiana',
+      count: 140,
+      stateId: 'punjab',
+      dcCount: 6,
+      popCount: 18,
+      siteCount: 48
     };
   }, [currentState, selectedCityId]);
 
@@ -320,6 +346,7 @@ export default function NetworkHierarchyTopology({
     if (firstState) {
       setSelectedStateId(firstState.id);
       setSelectedCityId(firstState.cities[0]?.id || '');
+      onSelectState?.(firstState.id, firstState.name);
     } else {
       setSelectedStateId('');
       setSelectedCityId('');
@@ -342,6 +369,7 @@ export default function NetworkHierarchyTopology({
     if (cityListRef.current) {
       cityListRef.current.scrollTop = 0;
     }
+    onSelectState?.(state.id, state.name);
   };
 
   const handleSelectCity = (city: CityItem, facility?: 'dc' | 'pop' | 'site') => {
@@ -406,9 +434,26 @@ export default function NetworkHierarchyTopology({
     const container = containerRef.current;
     if (!container) return;
     const cRect = container.getBoundingClientRect();
+    if (cRect.width === 0 || cRect.height === 0) {
+      requestAnimationFrame(updateConnectors);
+      return;
+    }
 
-    const regEl = regionItemRefs.current[selectedRegionId];
-    const stEl = stateItemRefs.current[selectedStateId];
+    // Direct ref lookup with fallback to data-id and is-selected DOM queries
+    const regEl =
+      regionItemRefs.current[selectedRegionId] ||
+      (container.querySelector(`.geo-region-row[data-id="${selectedRegionId}"]`) as HTMLElement | null) ||
+      (container.querySelector('.geo-region-row.is-selected') as HTMLElement | null);
+
+    const effectiveStateId =
+      (selectedStateId && stateItemRefs.current[selectedStateId])
+        ? selectedStateId
+        : currentState?.id;
+
+    const stEl =
+      (effectiveStateId ? stateItemRefs.current[effectiveStateId] : null) ||
+      (effectiveStateId ? (container.querySelector(`.geo-state-row[data-id="${effectiveStateId}"]`) as HTMLElement | null) : null) ||
+      (container.querySelector('.geo-state-row.is-selected') as HTMLElement | null);
 
     let line1: ConnectorLine | null = null;
     let line2: ConnectorLine | null = null;
@@ -417,6 +462,7 @@ export default function NetworkHierarchyTopology({
     const clampYToList = (y: number, listEl: HTMLElement | null): number => {
       if (!listEl) return y;
       const lR = listEl.getBoundingClientRect();
+      if (lR.height === 0) return y;
       const minY = (lR.top - cRect.top + 8) / zoomLevel;
       const maxY = (lR.bottom - cRect.top - 8) / zoomLevel;
       return Math.max(minY, Math.min(maxY, y));
@@ -446,7 +492,10 @@ export default function NetworkHierarchyTopology({
     if (stEl) {
       // Determine the city element to connect to
       let activeCityId = selectedCityId;
-      let ctEl = activeCityId ? cityItemRefs.current[activeCityId] : null;
+      let ctEl =
+        (activeCityId ? cityItemRefs.current[activeCityId] : null) ||
+        (activeCityId ? (container.querySelector(`.geo-city-row[data-id="${activeCityId}"]`) as HTMLElement | null) : null) ||
+        (container.querySelector('.geo-city-row.is-selected') as HTMLElement | null);
 
       // If active city element is not present or scrolled out of view,
       // fallback to the first visible city in the scrolled list so thread never disappears!
@@ -455,6 +504,7 @@ export default function NetworkHierarchyTopology({
         if (!listEl) return true;
         const eR = el.getBoundingClientRect();
         const lR = listEl.getBoundingClientRect();
+        if (lR.height === 0 || eR.height === 0) return true;
         const midY = eR.top + eR.height / 2;
         return midY >= lR.top - 2 && midY <= lR.bottom + 2;
       };
@@ -463,7 +513,10 @@ export default function NetworkHierarchyTopology({
         const firstVis = getFirstVisibleCity();
         if (firstVis) {
           activeCityId = firstVis.id;
-          ctEl = cityItemRefs.current[firstVis.id] || null;
+          ctEl =
+            cityItemRefs.current[firstVis.id] ||
+            (container.querySelector(`.geo-city-row[data-id="${firstVis.id}"]`) as HTMLElement | null) ||
+            null;
         }
       }
 
@@ -488,7 +541,7 @@ export default function NetworkHierarchyTopology({
         };
 
         // Line 3: City -> Square Border Box around Pie Chart in Overview card
-        const pEl = pieBoxRef.current;
+        const pEl = pieBoxRef.current || (container.querySelector('.geo-pie-card-box') as HTMLElement | null);
         if (pEl) {
           const pRect = pEl.getBoundingClientRect();
           const ox1 = (ctRect.right - cRect.left) / zoomLevel;
@@ -512,8 +565,16 @@ export default function NetworkHierarchyTopology({
 
   useLayoutEffect(() => {
     updateConnectors();
-    const timer = setTimeout(updateConnectors, 40);
-    return () => clearTimeout(timer);
+    const t1 = setTimeout(updateConnectors, 20);
+    const t2 = setTimeout(updateConnectors, 80);
+    const t3 = setTimeout(updateConnectors, 200);
+    const t4 = setTimeout(updateConnectors, 450);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
   }, [
     selectedRegionId,
     selectedStateId,
@@ -525,14 +586,35 @@ export default function NetworkHierarchyTopology({
     zoomLevel
   ]);
 
-  // Recalculate connectors smoothly on window resize or scroll
+  // Recalculate connectors smoothly on window resize, observer notifications, or scroll
   useEffect(() => {
     let rafId: number;
-    const handleScrollOrResize = () => {
+    const scheduleUpdate = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         updateConnectors();
       });
+    };
+
+    // ResizeObserver watches containers and lists when dimensions settle
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
+      scheduleUpdate();
+    }) : null;
+
+    if (containerRef.current) ro?.observe(containerRef.current);
+    if (wrapperRef.current) ro?.observe(wrapperRef.current);
+    if (regionListRef.current) ro?.observe(regionListRef.current);
+    if (stateListRef.current) ro?.observe(stateListRef.current);
+    if (cityListRef.current) ro?.observe(cityListRef.current);
+    if (pieBoxRef.current) ro?.observe(pieBoxRef.current);
+
+    // Also trigger when fonts finish loading (critical for text-driven row heights)
+    if (document.fonts) {
+      document.fonts.ready.then(scheduleUpdate).catch(() => {});
+    }
+
+    const handleScrollOrResize = () => {
+      scheduleUpdate();
     };
 
     const handleCityListScroll = () => {
@@ -572,8 +654,19 @@ export default function NetworkHierarchyTopology({
     sList?.addEventListener('scroll', handleScrollOrResize, { passive: true });
     cList?.addEventListener('scroll', handleCityListScroll, { passive: true });
 
+    // Initial mount staggered timers
+    const initialT1 = setTimeout(scheduleUpdate, 50);
+    const initialT2 = setTimeout(scheduleUpdate, 150);
+    const initialT3 = setTimeout(scheduleUpdate, 350);
+    const initialT4 = setTimeout(scheduleUpdate, 700);
+
     return () => {
       cancelAnimationFrame(rafId);
+      ro?.disconnect();
+      clearTimeout(initialT1);
+      clearTimeout(initialT2);
+      clearTimeout(initialT3);
+      clearTimeout(initialT4);
       window.removeEventListener('resize', handleScrollOrResize);
       window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
       wrapper?.removeEventListener('scroll', handleScrollOrResize);
@@ -584,7 +677,7 @@ export default function NetworkHierarchyTopology({
   }, [selectedRegionId, selectedStateId, selectedCityId, filteredCities]);
 
   // ── Selected City Distribution Stats for Pie Chart (Column 4) ─────
-  const totalElements = selectedCity.count || (selectedCity.dcCount + selectedCity.popCount + selectedCity.siteCount) || 1;
+  const totalElements = (selectedCity.dcCount + selectedCity.popCount + selectedCity.siteCount) || selectedCity.count || 1;
   const dcVal = selectedCity.dcCount || 0;
   const popVal = selectedCity.popCount || 0;
   const siteVal = selectedCity.siteCount || 0;
@@ -783,6 +876,27 @@ export default function NetworkHierarchyTopology({
                 stroke="#ffffff"
                 strokeWidth="1.8"
               />
+              {/* End anchor dot on selected State row */}
+              {connectors.regionToState.endX !== undefined && (
+                <>
+                  <circle
+                    className="geo-anchor-glow"
+                    cx={connectors.regionToState.endX}
+                    cy={connectors.regionToState.endY}
+                    r="4"
+                    fill="#3b82f6"
+                  />
+                  <circle
+                    className="geo-animated-anchor"
+                    cx={connectors.regionToState.endX}
+                    cy={connectors.regionToState.endY}
+                    r="3.8"
+                    fill="#2563eb"
+                    stroke="#ffffff"
+                    strokeWidth="1.8"
+                  />
+                </>
+              )}
             </g>
           )}
           {connectors.stateToCity && (
@@ -966,6 +1080,7 @@ export default function NetworkHierarchyTopology({
                   return (
                     <div
                       key={region.id}
+                      data-id={region.id}
                       ref={el => {
                         regionItemRefs.current[region.id] = el;
                       }}
@@ -1072,6 +1187,7 @@ export default function NetworkHierarchyTopology({
                   return (
                     <div
                       key={state.id}
+                      data-id={state.id}
                       ref={el => {
                         stateItemRefs.current[state.id] = el;
                       }}
@@ -1180,6 +1296,7 @@ export default function NetworkHierarchyTopology({
                   return (
                     <div
                       key={city.id}
+                      data-id={city.id}
                       ref={el => {
                         cityItemRefs.current[city.id] = el;
                       }}

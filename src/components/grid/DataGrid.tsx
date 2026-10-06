@@ -15,7 +15,7 @@ import { exportTable } from '../../utils/tableExport';
     stretching the chip across the whole column reads as oversized rather
     than as the intended full-width status summary). */
 export interface Column { t: string; r?: boolean; w?: string; plain?: boolean }
-export interface Action { l: string; onClick?: () => void; danger?: boolean; primary?: boolean }
+export interface Action { l: string; onClick?: () => void; danger?: boolean; primary?: boolean; disabled?: boolean; hint?: string }
 /* a select option: a plain string, or {v, l} when the visible text differs
    from the value (the Domain tree indents sub-domains: value 'IP/MPLS',
    label '   └ IP/MPLS') */
@@ -190,6 +190,7 @@ function showRefreshToast(x: number, y: number) {
 function MenuItem({ a, onDone, onTriggerRefresh }: { a: Action; onDone: () => void; onTriggerRefresh?: (r?: DOMRect) => void }) {
   return (
     <button className={`kmenu-i${a.danger ? ' is-danger' : ''}${a.primary ? ' is-primary' : ''}`}
+      disabled={a.disabled} title={a.hint} style={a.disabled ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
       onClick={e => {
         const r = e.currentTarget.getBoundingClientRect();
         if (a.l === 'Refresh' && onTriggerRefresh) {

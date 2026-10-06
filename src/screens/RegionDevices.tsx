@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { Card, Chip, Mono, Sub, cv } from '../components/ui';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Card, Chip, Mono, StatStrip, Sub, cv } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
-import { REASONS, REGIONS, STATE_DEVICES, VENDORS, filterRegionDevices, type DeviceStatus, type Region, type RegionDevice } from '../data/discovery';
+import { fmt } from '../data/ledger';
+import { DL, REASONS, REGIONS, STATE_DEVICES, VENDORS, filterRegionDevices, type DeviceStatus, type Region, type RegionDevice } from '../data/discovery';
 
 const isRegion = (v: string | null | undefined): v is Region => !!v && REGIONS.some(r => r.region === v);
 const isStatus = (v: string | null): v is DeviceStatus => v === 'Answered' || v === 'Failed';
@@ -16,6 +17,7 @@ const isStatus = (v: string | null): v is DeviceStatus => v === 'Answered' || v 
    answers. filterRegionDevices is the same predicate scopeDiscovery uses to
    build those counts. */
 export default function RegionDevices() {
+  const nav = useNavigate();
   const { region: regionParam } = useParams();
   const [sp] = useSearchParams();
   const region = isRegion(regionParam) ? regionParam : undefined;
@@ -42,7 +44,8 @@ export default function RegionDevices() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter(d => {
-      if (q && !(d.name.toLowerCase().includes(q) || d.ip.includes(q) || d.model.toLowerCase().includes(q))) return false;
+      if (q && !(d.name.toLowerCase().includes(q) || d.ip.includes(q) || d.model.toLowerCase().includes(q) ||
+        d.sn.toLowerCase().includes(q) || d.loc.toLowerCase().includes(q) || d.city.toLowerCase().includes(q))) return false;
       if (filters.Status && d.status !== filters.Status) return false;
       if (filters.State && d.state !== filters.State) return false;
       if (filters.Vendor && d.vendor !== filters.Vendor) return false;
@@ -56,13 +59,24 @@ export default function RegionDevices() {
 
   return (
     <div className="page">
+      {/* the four regions' polled targets, the same figures the region tiles quote — one click opens that region */}
+      {!region && (
+        <StatStrip cells={[
+          ...REGIONS.map((r, i) => ({
+            k: `${r.region} region`, v: fmt(r.total), s: `${fmt(r.fail)} failed`,
+            t: (['sky', 'emerald', 'amber', 'purple'] as const)[i],
+            onClick: () => nav(`/discovery/insights/region/${r.region}`)
+          })),
+          { k: 'Total targets', v: fmt(DL.targets), s: `${fmt(DL.runFull + DL.runPartial)} answered · ${fmt(DL.runFail)} failed`, t: 'slate' as const }
+        ]} />
+      )}
       <Card>
         <DataGrid<RegionDevice> chipWidth="auto"
-          columns={[{ t: 'Status', plain: true }, { t: 'Device name' }, { t: 'IP address' }, { t: 'Region' }, { t: 'State' },
+          columns={[{ t: 'Status', plain: true }, { t: 'Device name' }, { t: 'IP address' }, { t: 'Serial number' }, { t: 'Location' }, { t: 'Region' }, { t: 'State' },
             { t: 'Vendor' }, { t: 'Model' }, { t: 'Failure reason' }, { t: 'Last attempt' }]}
           rows={rows} total={rows.length} rowKey={(d, i) => `${d.name}-${i}`}
           resetKey={`${region ?? ''}|${query}|${JSON.stringify(filters)}`}
-          searchPlaceholder="Device, IP, model"
+          searchPlaceholder="Hostname, IP, serial, location"
           filters={[
             { n: 'Status', o: ['Answered', 'Failed'] },
             { n: 'State', o: (region ? STATE_DEVICES.filter(s => s.region === region) : STATE_DEVICES).map(s => s.st) },
@@ -75,6 +89,8 @@ export default function RegionDevices() {
             <Chip tone={d.status === 'Failed' ? 'error' : 'success'}>{d.status}</Chip>,
             <span className="vw-value">{d.name}</span>,
             <Mono>{d.ip}</Mono>,
+            <Mono>{d.sn}</Mono>,
+            <Mono>{d.loc}</Mono>,
             d.region,
             d.state,
             d.vendor,

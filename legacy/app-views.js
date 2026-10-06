@@ -1064,12 +1064,18 @@ let PHY_OEM = null, PHY_SRC = null, PHY_VER = null;
 let LOC_ST = null, LOC_CAT = null, LOC_STATE = null, LOC_REGION = null, LOC_TYPEGRP = null, LOC_GROUP = null;
 /* state → operating region, the same grouping Insights uses */
 const STATE_REGION = {
-  'Maharashtra': 'West', 'Uttar Pradesh': 'North', 'Karnataka': 'South', 'Madhya Pradesh': 'East',
-  'Delhi': 'North', 'Tamil Nadu': 'South', 'Gujarat': 'West', 'Andhra Pradesh': 'South',
-  'Rajasthan': 'North', 'West Bengal': 'East', 'Odisha': 'East', 'Telangana': 'South',
-  'Bihar': 'East', 'Punjab': 'North', 'Kerala': 'South', 'Haryana': 'North',
-  'Chhattisgarh': 'East', 'Jharkhand': 'East', 'Assam': 'East', 'Jammu and Kashmir': 'North',
-  'Uttarakhand': 'North'
+  // North (5 States)
+  'Punjab': 'North', 'Haryana': 'North', 'Uttar Pradesh': 'North', 'Uttarakhand': 'North', 'Himachal Pradesh': 'North',
+  'Delhi': 'North', 'Chandigarh': 'North', 'Jammu and Kashmir': 'North', 'Ladakh': 'North',
+  // West (6 States)
+  'Maharashtra': 'West', 'Gujarat': 'West', 'Rajasthan': 'West', 'Goa': 'West', 'Madhya Pradesh': 'West', 'Chhattisgarh': 'West',
+  'Dadra and Nagar Haveli and Daman and Diu': 'West',
+  // East (12 States)
+  'West Bengal': 'East', 'Bihar': 'East', 'Odisha': 'East', 'Jharkhand': 'East', 'Assam': 'East', 'Sikkim': 'East',
+  'Arunachal Pradesh': 'East', 'Meghalaya': 'East', 'Nagaland': 'East', 'Manipur': 'East', 'Mizoram': 'East', 'Tripura': 'East',
+  // South (5 States)
+  'Karnataka': 'South', 'Tamil Nadu': 'South', 'Telangana': 'South', 'Andhra Pradesh': 'South', 'Kerala': 'South',
+  'Puducherry': 'South', 'Andaman and Nicobar Islands': 'South', 'Lakshadweep': 'South'
 };
 
 const tabs = (list, cur, group) => `<div class="tabbar">${list.map(t =>

@@ -30,29 +30,83 @@ export interface CircleGeo {
 }
 
 export const LOC_GEO: CircleGeo[] = [
+  // North Region (5)
+  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.10, lon: 75.40, tot: 1297, live: 976, build: 305, fail: 16 },
+  { c: 'HP', n: 'Himachal Pradesh', st: 'Himachal Pradesh', lat: 31.80, lon: 77.20, tot: 730, live: 552, build: 171, fail: 7 },
+  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 554, live: 414, build: 69, fail: 11 },
+  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.20, lon: 76.30, tot: 457, live: 338, build: 113, fail: 6 },
+  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.10, lon: 79.20, tot: 413, live: 310, build: 99, fail: 4 },
+
+  // West Region (6)
+  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 26.50, lon: 73.80, tot: 514, live: 386, build: 122, fail: 6 },
+  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 508, live: 376, build: 126, fail: 6 },
+  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.30, lon: 81.80, tot: 429, live: 313, build: 111, fail: 5 },
+  { c: 'GA', n: 'Goa', st: 'Goa', lat: 15.35, lon: 74.05, tot: 386, live: 290, build: 92, fail: 4 },
   { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 51, fail: 6 },
-  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 293, live: 208, build: 41, fail: 8 },
+  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 257, live: 179, build: 33, fail: 1 },
+
+  // East Region (12)
+  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 23.50, lon: 87.80, tot: 441, live: 326, build: 105, fail: 10 },
+  { c: 'NL', n: 'Nagaland', st: 'Nagaland', lat: 25.67, lon: 94.12, tot: 405, live: 300, build: 100, fail: 5 },
+  { c: 'MN', n: 'Manipur', st: 'Manipur', lat: 24.81, lon: 93.93, tot: 399, live: 291, build: 103, fail: 5 },
+  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.60, lon: 85.50, tot: 396, live: 281, build: 105, fail: 10 },
+  { c: 'TR', n: 'Tripura', st: 'Tripura', lat: 23.83, lon: 91.28, tot: 396, live: 297, build: 95, fail: 4 },
+  { c: 'ML', n: 'Meghalaya', st: 'Meghalaya', lat: 25.57, lon: 91.88, tot: 393, live: 295, build: 94, fail: 4 },
+  { c: 'MZ', n: 'Mizoram', st: 'Mizoram', lat: 23.73, lon: 92.71, tot: 393, live: 291, build: 98, fail: 4 },
+  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.60, lon: 85.30, tot: 389, live: 292, build: 89, fail: 8 },
+  { c: 'AR', n: 'Arunachal Pradesh', st: 'Arunachal Pradesh', lat: 27.10, lon: 93.60, tot: 386, live: 290, build: 92, fail: 4 },
+  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.50, lon: 84.40, tot: 383, live: 276, build: 99, fail: 8 },
+  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.90, tot: 379, live: 262, build: 107, fail: 10 },
+  { c: 'SK', n: 'Sikkim', st: 'Sikkim', lat: 27.50, lon: 88.50, tot: 309, live: 241, build: 64, fail: 4 },
+
+  // South Region (5)
+  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.50, lon: 76.40, tot: 527, live: 400, build: 121, fail: 6 },
   { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 36, fail: 4 },
-  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 221, live: 135, build: 40, fail: 5 },
-  { c: 'DL', n: 'Delhi', st: 'Delhi', lat: 28.61, lon: 77.21, tot: 261, live: 206, build: 28, fail: 3 },
-  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 221, live: 161, build: 26, fail: 4 },
-  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 242, live: 165, build: 32, fail: 1 },
+  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 884, live: 652, build: 185, fail: 12 },
   { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 25, fail: 1 },
-  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 60, live: 52, build: 5, fail: 1 },
-  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 49, live: 42, build: 4, fail: 1 },
-  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 43, live: 37, build: 4, fail: 1 },
-  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 35, live: 30, build: 4, fail: 0 },
-  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 31, live: 27, build: 3, fail: 0 },
-  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 26, live: 23, build: 2, fail: 1 },
-  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 23, live: 20, build: 2, fail: 0 },
-  { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 18, live: 16, build: 2, fail: 0 },
-  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 16, live: 14, build: 2, fail: 0 },
-  { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 12, live: 10, build: 2, fail: 0 },
-  { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 10, live: 8, build: 1, fail: 0 },
-  { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 8, live: 7, build: 1, fail: 0 }
+  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.80, lon: 79.10, tot: 19, live: 16, build: 2, fail: 1 }
 ];
 
-const STATE_CIRCLE: Record<string, CircleGeo> = Object.fromEntries(LOC_GEO.map(g => [g.st, g]));
+export const PATH_TO_CIRCLE_CODE: Record<string, string> = {
+  'Jammu and Kashmir': 'PB',
+  'Ladakh': 'HP',
+  'Himachal Pradesh': 'HP',
+  'Punjab': 'PB',
+  'Chandigarh': 'PB',
+  'Uttarakhand': 'UK',
+  'Haryana': 'HR',
+  'Delhi': 'UP',
+  'Rajasthan': 'RJ',
+  'Uttar Pradesh': 'UP',
+  'Bihar': 'BR',
+  'Jharkhand': 'JH',
+  'West Bengal': 'WB',
+  'Sikkim': 'SK',
+  'Assam': 'AS',
+  'Arunachal Pradesh': 'AR',
+  'Nagaland': 'NL',
+  'Manipur': 'MN',
+  'Mizoram': 'MZ',
+  'Tripura': 'TR',
+  'Meghalaya': 'ML',
+  'Madhya Pradesh': 'MP',
+  'Chhattisgarh': 'CG',
+  'Odisha': 'OR',
+  'Gujarat': 'GJ',
+  'Maharashtra': 'MH',
+  'Goa': 'GA',
+  'Karnataka': 'KA',
+  'Andhra Pradesh': 'AP',
+  'Telangana': 'TS',
+  'Kerala': 'KL',
+  'Lakshadweep': 'KL',
+  'Tamil Nadu': 'TN',
+  'Puducherry': 'TN',
+  'Dadra and Nagar Haveli and Daman and Diu': 'GJ',
+  'Andaman and Nicobar Islands': 'TN'
+};
+
+const CIRCLE_BY_CODE: Record<string, CircleGeo> = Object.fromEntries(LOC_GEO.map(g => [g.c, g]));
 
 const MAP_MODES = [
   { k: 'onair', n: 'On-air rate' },
@@ -100,11 +154,25 @@ function stateFill(g?: CircleGeo, mapColor: MapMode = 'onair') {
     : 'var(--vw-color-slate-100)';
 }
 
-export default function SitesByGeography() {
+export interface SitesByGeographyProps {
+  selectedCircle?: string | null;
+  onSelectCircle?: (circleCode: string | null) => void;
+}
+
+export default function SitesByGeography({
+  selectedCircle: propSelectedCircle,
+  onSelectCircle
+}: SitesByGeographyProps = {}) {
   const nav = useNavigate();
   const [mapColor, setMapColor] = useState<MapMode>('onair');
   const [mapLayer, setMapLayer] = useState<'sites' | 'off'>('sites');
-  const [selectedCircle, setSelectedCircle] = useState<string | null>(null);
+  const [internalSelectedCircle, setInternalSelectedCircle] = useState<string | null>(null);
+  const selectedCircle = propSelectedCircle !== undefined ? propSelectedCircle : internalSelectedCircle;
+  const setSelectedCircle = (val: string | null | ((prev: string | null) => string | null)) => {
+    const next = typeof val === 'function' ? val(selectedCircle) : val;
+    setInternalSelectedCircle(next);
+    onSelectCircle?.(next);
+  };
   const [pinGroup, setPinGroup] = useState<string[] | null>(null);
   const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
 
@@ -210,7 +278,17 @@ export default function SitesByGeography() {
   const activeGeo = selectedCircle ? LOC_GEO.find(x => x.c === selectedCircle) : null;
   const activeSites = useMemo(() => {
     if (!activeGeo) return [];
-    return allLocations.filter(l => l.state === activeGeo.st);
+    return allLocations.filter(
+      l =>
+        l.state === activeGeo.st ||
+        l.state === activeGeo.n ||
+        (activeGeo.c === 'PB' && (l.state === 'Punjab' || l.state === 'Chandigarh' || l.state === 'Jammu & Kashmir' || l.state === 'Jammu and Kashmir')) ||
+        (activeGeo.c === 'HP' && (l.state === 'Himachal Pradesh' || l.state === 'Ladakh')) ||
+        (activeGeo.c === 'UP' && (l.state === 'Uttar Pradesh' || l.state.includes('Uttar Pradesh') || l.state === 'Delhi')) ||
+        (activeGeo.c === 'GJ' && (l.state === 'Gujarat' || l.state === 'Dadra & Nagar Haveli' || l.state.includes('Dadra'))) ||
+        (activeGeo.c === 'TN' && (l.state === 'Tamil Nadu' || l.state === 'Puducherry' || l.state === 'Andaman & Nicobar' || l.state.includes('Andaman'))) ||
+        (activeGeo.c === 'KL' && (l.state === 'Kerala' || l.state === 'Lakshadweep'))
+    );
   }, [activeGeo]);
 
   const pinGroupItems = useMemo(() => {
@@ -273,8 +351,11 @@ export default function SitesByGeography() {
             <rect width={GEO.W} height={GEO.H} fill="var(--vw-color-slate-25, #f8fafc)" />
             <g id="mapzoom" transform={`translate(${zoom.x} ${zoom.y}) scale(${zoom.k})`}>
               {/* State Shapes */}
-              {Object.entries(GEO.paths).map(([st, dPath]) => {
-                const g = STATE_CIRCLE[st];
+              {Object.entries(GEO.paths)
+                .filter(([st]) => st !== 'Andaman and Nicobar Islands' && st !== 'Lakshadweep')
+                .map(([st, dPath]) => {
+                const code = PATH_TO_CIRCLE_CODE[st];
+                const g = code ? CIRCLE_BY_CODE[code] : undefined;
                 const isSel = g && g.c === selectedCircle;
                 return (
                   <path
@@ -292,28 +373,30 @@ export default function SitesByGeography() {
                     }}
                   >
                     <title>
-                      {st}
+                      {g?.n || st}
                       {g ? ` — ${fmt(g.tot)} sites, ${fmt(g.live)} on-air, ${g.fail} failed` : ' — no sites'}
                     </title>
                   </path>
                 );
               })}
 
-              {/* State Labels (tot >= 14) */}
-              {LOC_GEO.filter(g => g.tot >= 14).map(g => {
+              {/* State Labels */}
+              {LOC_GEO.filter(g => g.c !== 'AN').map(g => {
                 const x = mpx(g.lon);
                 const y = mpy(g.lat);
+                const isSel = g.c === selectedCircle;
+                const isTiny = g.c === 'GA' || g.c === 'SK' || g.c === 'TS';
                 return (
                   <g key={g.c} className="st-lab" pointerEvents="none">
                     <text
                       x={x.toFixed(1)}
                       y={(y - 2).toFixed(1)}
                       textAnchor="middle"
-                      fontSize="15"
-                      fontWeight="600"
-                      fill="var(--vw-color-gray-900)"
+                      fontSize={isTiny ? '12' : '15'}
+                      fontWeight={isSel ? '700' : '600'}
+                      fill={isSel ? 'var(--vw-color-blue-700, #1d4ed8)' : 'var(--vw-color-gray-900)'}
                       stroke="var(--vw-color-white)"
-                      strokeWidth="3"
+                      strokeWidth="3.2"
                       paintOrder="stroke"
                       fontFamily="Inter, sans-serif"
                     >
@@ -321,10 +404,11 @@ export default function SitesByGeography() {
                     </text>
                     <text
                       x={x.toFixed(1)}
-                      y={(y + 13).toFixed(1)}
+                      y={(y + (isTiny ? 10 : 13)).toFixed(1)}
                       textAnchor="middle"
-                      fontSize="12"
-                      fill="var(--vw-color-gray-600)"
+                      fontSize={isTiny ? '10' : '12'}
+                      fontWeight={isSel ? '600' : '400'}
+                      fill={isSel ? 'var(--vw-color-blue-700, #1d4ed8)' : 'var(--vw-color-gray-600)'}
                       stroke="var(--vw-color-white)"
                       strokeWidth="3"
                       paintOrder="stroke"

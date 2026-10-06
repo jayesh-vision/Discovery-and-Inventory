@@ -46,6 +46,17 @@ function nodeRecord(name, wantIp) {
   const findByNameThenIp = arr => (cleanIp && arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean && x.ip === cleanIp))
     || arr.find(x => x.name && String(x.name).trim().toUpperCase() === clean);
 
+  /* the unified device repository (src/data/masterDevices.json, injected by
+     scripts/bundle-legacy.mjs) is the register Inventory and Discovery are both
+     built from — an element in it resolves to its own record, by hostname and
+     IP, before any of the older hand-authored arrays below are consulted */
+  if (typeof MASTER_BY_NAME !== 'undefined') {
+    const m = (cleanIp && MASTER_BY_IP.get(cleanIp) && MASTER_BY_IP.get(cleanIp).name.toUpperCase() === clean && MASTER_BY_IP.get(cleanIp))
+      || MASTER_BY_NAME.get(clean);
+    if (m) return { st: m.st, name: m.name, ip: cleanIp || m.ip, model: m.model, os: m.os, sn: m.sn, oem: m.oem, loc: m.loc,
+      s: m.s, stock: m.stock, v: m.v, cls: m.cls, city: m.city, state: m.state, region: m.region };
+  }
+
   if (typeof PHY !== 'undefined' && PHY) {
     for (const k of Object.keys(PHY)) {
       const found = findByNameThenIp(PHY[k] || []);

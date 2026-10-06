@@ -57,12 +57,10 @@ export default function PhysicalResources() {
     }
   }, [urlClass, discoveryScoped, modelClass, savedClass, setSp, sp]);
 
-  /* Server has no meaningful drill-down here (no Node view, and its "View
-     details" is already dropped below for showing the wrong element) — its
-     records still exist in the ledger for the Network elements KPI, just
-     not as a tab a reader can land on from this screen. */
-  const tabs = (discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS)
-    .filter(t => t.k !== 'server');
+  /* Every class is a tab. Server has no node-level digital twin, so its Node
+     view stays in the row menu, disabled, rather than the whole class being
+     hidden — its elements are real records (96 of them) and searchable here. */
+  const tabs = discoveryScoped ? PHY_TABS.filter(t => t.k === 'router' || t.k === 'switch') : PHY_TABS;
   const stockParam = sp.get('stock');
   const stock = useMemo<Set<StockState>>(() => {
     const req = (stockParam ? stockParam.split(',') : []).filter(isActive);
@@ -101,7 +99,8 @@ export default function PhysicalResources() {
   const rowActions = (r: Row): Action[] => [
     ...(hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip })) }] : []),
     ...(cls === 'server' ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`) }]),
-    { l: 'Site info', onClick: () => openSite(r.loc) }
+    { l: 'Site info', onClick: () => openSite(r.loc) },
+    ...(hasNodeView(cls) ? [] : [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }])
   ];
 
   const selectTabClass = (targetClass: NeClass) => {
@@ -123,7 +122,7 @@ export default function PhysicalResources() {
       <Card>
         <TabBar
           tabs={tabs.map(x => ({
-            k: x.k, n: x.n, count: phyCount(x.k, stock),
+            k: x.k, n: `${x.n} (${fmt(phyCount(x.k, stock))})`, count: phyCount(x.k, stock),
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
               x.disc ? ` · ${fmt(x.disc)} discovered` : ''}`
           }))}
@@ -158,7 +157,7 @@ export default function PhysicalResources() {
               <>{cls === 'router'
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
                     onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)}>{r.name}</button>
-                : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}</Sub></>,
+                : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}{r.ip2 ? ` · ${r.ip2}` : ''}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
               <Mono>{r.os}</Mono>,
               <Mono>{r.sn}</Mono>,

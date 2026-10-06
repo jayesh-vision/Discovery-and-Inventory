@@ -1,47 +1,17 @@
-import { NE_CLASSES, INACTIVE_TABS, type NeClass, type InactiveTab, stockCount } from './ledger';
+import { NE_CLASSES, INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
+import { MASTER_NE } from './master';
 
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
   why: string; on: string; by: string; wo: string; zombie: boolean;
 }
 
-/* The seeds are hand-written. The archive holds the full decommissioned
-   population, expanded deterministically. */
-const DECOMM_SEEDS: Record<InactiveTab, ArchiveRow[]> = {
-  router: [
-    { name: 'MAS-J960-P-R2-T1-SR', ip: '172.31.31.140', model: 'MX960', sn: 'JN1231A55AFB', oem: 'JUNIPER', loc: 'MAS-041', why: 'Replaced under CR-8802', on: '14-Jun-2026', by: 'Anjali Verma', wo: 'WO-2026-4412', zombie: false },
-    { name: 'DEL-N540X-SPARE', ip: '172.31.42.207', model: 'NCS-540', sn: 'CAT2077U1XX', oem: 'CISCO', loc: 'DEL-279', why: 'End of life', on: '02-May-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4188', zombie: true },
-    { name: 'INDR-ASR920-R7', ip: '172.31.38.77', model: 'ASR920', sn: 'CAT2034U7RR', oem: 'CISCO', loc: 'INDR-275', why: 'Faulty, returned to OEM', on: '11-Feb-2026', by: 'Amit Sharma', wo: 'WO-2026-3901', zombie: false },
-    { name: 'VZG-7750-BNG-02', ip: '172.31.49.202', model: '7750', sn: 'NSN7750VZG022', oem: 'NOKIA', loc: 'VJA-118', why: 'Capacity migration', on: '08-Jan-2026', by: 'Sai Krishna', wo: 'WO-2026-3644', zombie: true },
-    { name: 'CHE-MX204-EDGE-11', ip: '172.31.61.88', model: 'MX204', sn: 'JN1188C21DDA', oem: 'JUNIPER', loc: 'CHE-118', why: 'Site consolidation', on: '22-Nov-2025', by: 'Harish Kumar', wo: 'WO-2025-9120', zombie: false }
-  ],
-  switch: [
-    { name: 'BGLK-EX2200-OLD-03', ip: '172.31.31.44', model: 'EX2200-24T', sn: 'CHR-SN-441122', oem: 'JUNIPER', loc: 'BGLK-277', why: 'Site consolidation', on: '19-Mar-2026', by: 'Harish Kumar', wo: 'WO-2026-4021', zombie: false },
-    { name: 'DEL-C9300-ACC-07', ip: '172.31.35.61', model: 'C9300-48UXM', sn: 'CAT2091U4KK', oem: 'CISCO', loc: 'DEL-279', why: 'End of support', on: '05-Feb-2026', by: 'Anjali Verma', wo: 'WO-2026-3877', zombie: false },
-    { name: 'MAS-EX4300-DIST-02', ip: '172.31.33.19', model: 'EX4300-48P', sn: 'SW-PRO-CHR-1188', oem: 'JUNIPER', loc: 'MAS-041', why: 'Replaced under CR-8640', on: '12-Dec-2025', by: 'Sai Krishna', wo: 'WO-2025-9366', zombie: false },
-    { name: 'INDR-EX2200-ACC-14', ip: '172.31.39.203', model: 'EX2200-24T', sn: 'CHR-SN-338710', oem: 'JUNIPER', loc: 'INDR-275', why: 'Water ingress, written off', on: '30-Aug-2025', by: 'Amit Sharma', wo: 'WO-2025-8455', zombie: false }
-  ],
-  server: [
-    { name: 'BGLK-CDC-SRV-04', ip: '172.31.31.211', model: 'DL380 Gen10', sn: 'HPE380BG0441', oem: 'HPE', loc: 'BGLK-277', why: 'Hardware refresh', on: '28-Apr-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4155', zombie: false },
-    { name: 'DEL-CDC-SRV-09', ip: '172.31.35.118', model: 'R740xd', sn: 'DELLR740D9022', oem: 'DELL', loc: 'DEL-279', why: 'Workload migrated to cloud', on: '17-Jan-2026', by: 'Anjali Verma', wo: 'WO-2026-3702', zombie: false },
-    { name: 'MAS-CDC-SRV-02', ip: '172.31.33.88', model: 'DL360 Gen9', sn: 'HPE360MA1129', oem: 'HPE', loc: 'MAS-041', why: 'End of support', on: '09-Oct-2025', by: 'Amit Sharma', wo: 'WO-2025-8811', zombie: false },
-    { name: 'VJA-CDC-SRV-01', ip: '172.31.53.44', model: 'R640', sn: 'DELLR640V4410', oem: 'DELL', loc: 'VJA-118', why: 'Site consolidation', on: '21-Jul-2025', by: 'Sai Krishna', wo: 'WO-2025-8102', zombie: false }
-  ],
-  dwdm: [
-    { name: 'WR-ADVA-FSP3000-04', ip: '172.31.47.150', model: 'FSP 3000', sn: 'ADV3000WR0417', oem: 'ADVA', loc: 'DEL-279', why: 'Ring re-engineered', on: '06-Mar-2026', by: 'Harish Kumar', wo: 'WO-2026-3988', zombie: false },
-    { name: 'BGLK-OADM-100-02', ip: '172.31.31.164', model: 'FSP 3000', sn: 'ADV3000BG1002', oem: 'ADVA', loc: 'BGLK-277', why: 'Capacity migration to C-band', on: '14-Nov-2025', by: 'Gaurav Shukla', wo: 'WO-2025-9044', zombie: false },
-    { name: 'CHE-OADM-100-01', ip: '172.31.61.201', model: 'FSP 3000', sn: 'ADV3000CH1001', oem: 'ADVA', loc: 'CHE-118', why: 'End of support', on: '02-Jun-2025', by: 'Amit Sharma', wo: 'WO-2025-7660', zombie: false }
-  ],
-  enodeb: [
-    { name: 'MP-INDR-ENB-118', ip: '172.31.39.118', model: 'BBU 3900', sn: 'ENB3900IN0118', oem: 'NOKIA', loc: 'INDR-275', why: '4G to 5G upgrade', on: '25-May-2026', by: 'Sai Krishna', wo: 'WO-2026-4260', zombie: false },
-    { name: 'KA-BGLK-ENB-041', ip: '172.31.31.241', model: 'BBU 3900', sn: 'ENB3900BG0041', oem: 'NOKIA', loc: 'BGLK-277', why: 'Site decommissioned', on: '11-Jan-2026', by: 'Anjali Verma', wo: 'WO-2026-3688', zombie: false },
-    { name: 'TN-CHE-ENB-207', ip: '172.31.61.207', model: 'BBU 3900', sn: 'ENB3900CH0207', oem: 'NOKIA', loc: 'CHE-118', why: '4G to 5G upgrade', on: '18-Sep-2025', by: 'Harish Kumar', wo: 'WO-2025-8702', zombie: false }
-  ],
-  gnodeb: [
-    { name: 'BLR-SOUTH-GNB-014', ip: '172.31.41.114', model: 'AirScale', sn: 'GNB5GBL00014', oem: 'NOKIA', loc: 'BGLK-277', why: 'Replaced under CR-9014', on: '02-Jun-2026', by: 'Gaurav Shukla', wo: 'WO-2026-4318', zombie: false },
-    { name: 'DEL-CENTRAL-GNB-003', ip: '172.31.35.203', model: 'AirScale', sn: 'GNB5GDL00003', oem: 'NOKIA', loc: 'DEL-279', why: 'Antenna re-siting', on: '19-Feb-2026', by: 'Amit Sharma', wo: 'WO-2026-3844', zombie: false },
-    { name: 'MAS-NORTH-GNB-008', ip: '172.31.33.208', model: 'AirScale', sn: 'GNB5GMA00008', oem: 'NOKIA', loc: 'MAS-041', why: 'Site consolidation', on: '07-Dec-2025', by: 'Anjali Verma', wo: 'WO-2025-9288', zombie: false }
-  ],
+/* Decommissioned network elements come from the unified device repository
+   (masterDevices.json) — the same register Inventory and Discovery are built
+   from, so an archived element keeps the hostname, IP, serial and location id it
+   had while live. Only the two service tabs (L2VPN / L3VPN) are circuits rather
+   than elements; they stay hand-written seeds, expanded deterministically. */
+const DECOMM_SEEDS: Record<'l2vpn' | 'l3vpn', ArchiveRow[]> = {
   l2vpn: [
     { name: 'L2VPN-MAS-DEL-E-LINE-01', ip: '172.31.31.240', model: 'E-Line / VPWS', sn: 'VC-L2-990412', oem: 'JUNIPER', loc: 'MAS-041', why: 'Service decommissioned by customer request', on: '14-May-2026', by: 'Anjali Verma', wo: 'WO-2026-9412', zombie: false },
     { name: 'L2VPN-BLR-CHE-VPLS-04', ip: '172.31.41.118', model: 'E-LAN / VPLS', sn: 'VC-L2-884102', oem: 'CISCO', loc: 'BGLK-277', why: 'Migrated to EVPN-VPWS', on: '22-Mar-2026', by: 'Gaurav Shukla', wo: 'WO-2026-8841', zombie: false },
@@ -122,11 +92,16 @@ function expand(cls: InactiveTab, seeds: ArchiveRow[], total: number): ArchiveRo
   return out.sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
 }
 
+const fromMaster = (cls: NeClass): ArchiveRow[] => MASTER_NE
+  .filter(n => n.cls === cls && n.stock === 'decomm')
+  .map(n => ({ name: n.name, ip: n.ip, model: n.model, sn: n.sn, oem: n.oem, loc: n.loc,
+    why: n.why ?? '', on: n.on ?? '', by: n.by ?? '', wo: n.wo ?? '', zombie: !!n.zombie }))
+  .sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
+
 export const DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
   INACTIVE_TABS.map(t => {
     const k = t.k;
-    const count = (NE_CLASSES as string[]).includes(k) ? stockCount(k as NeClass, 'decomm') : 18;
-    return [k, expand(k, DECOMM_SEEDS[k], count)];
+    return [k, (NE_CLASSES as string[]).includes(k) ? fromMaster(k as NeClass) : expand(k, DECOMM_SEEDS[k as 'l2vpn' | 'l3vpn'], 18)];
   })
 ) as Record<InactiveTab, ArchiveRow[]>;
 

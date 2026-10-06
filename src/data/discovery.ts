@@ -1,3 +1,5 @@
+import { MASTER_NE, MASTER_STATES, MASTER_SUB, MASTER_TGT, type MasterNe } from './master';
+
 /* ── Discovery ledger ─────────────────────────────────────
    The last daily cycle, closed at 01-Sep-2026 09:19. Every figure on the
    Insights screen is read from here; nothing is typed into a widget. */
@@ -78,7 +80,9 @@ export const VENDORS: Vendor[] = [
   { n: 'Edgecore',  ok: 18,   fail: 4 }
 ];
 
-/* ── by model: the models carrying the most failures ──────── */
+/* ── by model: the models carrying the most failures ────────
+   Declared here AND derived from the unified device repository below; the
+   ledger self-check at the foot of the file fails if the two ever differ. */
 export interface ModelRow { model: string; oem: string; total: number; fail: number }
 export const MODELS: ModelRow[] = [
   { model: 'MX960',   oem: 'Juniper', total: 412, fail: 41 },
@@ -100,7 +104,14 @@ export const REGIONS: RegionRow[] = [
 ];
 export const successRate = (r: RegionRow) => 1 - r.fail / r.total;
 
-/* ── devices needing attention: the failed targets ─────────── */
+/* ── Discovery is a view of the unified device repository ────
+   masterDevices.json holds the one population Inventory registers and Discovery
+   polls (see scripts/generate-synced-devices.mjs). Nothing below invents a
+   device: the 3,162 polled targets, the 239 failures, the 3,567 identified
+   devices and the state map are all read from it, so a hostname, IP, serial or
+   location id searched here finds the identical element in Inventory. */
+const elem = (i: number): MasterNe => MASTER_NE[i];
+
 export const getLiveDateStr = (hh: number, mm: number) => {
   const d = new Date();
   const day = String(d.getDate()).padStart(2, '0');
@@ -110,116 +121,43 @@ export const getLiveDateStr = (hh: number, mm: number) => {
   return `${day} ${month} ${yy}, ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 };
 
+/* ── devices needing attention: the failed targets ─────────── */
 export interface AttentionRow {
   name: string; ip: string; region: Region; vendor: string; model: string; reason: string; last: string;
+  sn: string; loc: string; city: string; state: string;
 }
-export const ATTENTION: AttentionRow[] = [
-  { name: 'RTR-WEST-2045', ip: '172.31.84.45',  region: 'West',  vendor: 'Cisco',   model: 'ASR920',     reason: 'auth',    last: getLiveDateStr(9, 12) },
-  { name: 'SW-WEST-1120',  ip: '172.31.124.20', region: 'West',  vendor: 'Cisco',   model: 'C9300-48UXM',reason: 'unreach', last: getLiveDateStr(9, 8) },
-  { name: 'BGLK-EX4300-T-CHR-07', ip: '172.31.31.2', region: 'South', vendor: 'Juniper', model: 'EX4300-48P', reason: 'timeout', last: getLiveDateStr(9, 5) },
-  { name: 'EDGE-RTR-012',  ip: '172.31.88.10',  region: 'East',  vendor: 'Juniper', model: 'MX204',      reason: 'timeout', last: getLiveDateStr(8, 58) },
-  { name: 'MAS-N7750-BNG-R-T1-SR', ip: '172.31.33.130', region: 'South', vendor: 'Nokia', model: '7750', reason: 'adapter', last: getLiveDateStr(8, 51) },
-  { name: 'DEL-C9300-ACC-07', ip: '172.31.35.61', region: 'North', vendor: 'Cisco', model: 'C9300-48UXM', reason: 'auth', last: getLiveDateStr(8, 47) },
-  { name: 'KOL-NCS540-AGG-91', ip: '172.31.145.215', region: 'East', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 44) },
-  { name: 'PUN-MX204-AGG-07', ip: '172.31.106.37', region: 'West', vendor: 'Juniper', model: 'MX204', reason: 'parse', last: getLiveDateStr(8, 40) },
-  { name: 'HYD-NCS540-PE-T4', ip: '172.31.132.7', region: 'South', vendor: 'Cisco', model: 'NCS-540', reason: 'unreach', last: getLiveDateStr(8, 36) },
-  { name: 'JAI-MX204-PE-T2', ip: '172.31.101.115', region: 'North', vendor: 'Juniper', model: 'MX204', reason: 'auth', last: getLiveDateStr(8, 31) },
-  { name: 'CHE-920-WIFI-R2', ip: '172.31.70.43', region: 'South', vendor: 'Cisco', model: 'ASR920', reason: 'timeout', last: getLiveDateStr(8, 27) },
-  { name: 'DEL-N540X-SPARE', ip: '172.31.42.207', region: 'North', vendor: 'Cisco', model: 'NCS-540', reason: 'dupip', last: getLiveDateStr(8, 22) }
-];
-
-/* ── geo: identified devices per state, split by class ─────── */
-export interface StateDot { st: string; c: string; region: Region; lat: number; lon: number; router: number; switch: number }
-export const STATE_DEVICES: StateDot[] = [
-  { st: 'Maharashtra',    c: 'MH', region: 'West',  lat: 19.75, lon: 75.71, router: 271, switch: 49 },
-  { st: 'Uttar Pradesh',  c: 'UP', region: 'North', lat: 26.85, lon: 80.95, router: 238, switch: 45 },
-  { st: 'Karnataka',      c: 'KA', region: 'South', lat: 15.32, lon: 75.71, router: 247, switch: 42 },
-  { st: 'Madhya Pradesh', c: 'MP', region: 'East',  lat: 23.47, lon: 77.95, router: 212, switch: 36 },
-  { st: 'Delhi',          c: 'DL', region: 'North', lat: 28.61, lon: 77.21, router: 206, switch: 36 },
-  { st: 'Tamil Nadu',     c: 'TN', region: 'South', lat: 11.13, lon: 78.66, router: 179, switch: 32 },
-  { st: 'Gujarat',        c: 'GJ', region: 'West',  lat: 22.26, lon: 71.19, router: 177, switch: 32 },
-  { st: 'Andhra Pradesh', c: 'AP', region: 'South', lat: 15.91, lon: 79.74, router: 167, switch: 29 },
-  { st: 'Rajasthan',      c: 'RJ', region: 'North', lat: 27.02, lon: 74.22, router: 160, switch: 29 },
-  { st: 'West Bengal',    c: 'WB', region: 'East',  lat: 22.99, lon: 87.86, router: 148, switch: 26 },
-  { st: 'Odisha',         c: 'OR', region: 'East',  lat: 20.95, lon: 85.10, router: 141, switch: 25 },
-  { st: 'Telangana',      c: 'TS', region: 'South', lat: 17.12, lon: 79.02, router: 156, switch: 27 },
-  { st: 'Bihar',          c: 'BR', region: 'East',  lat: 25.10, lon: 85.31, router: 130, switch: 23 },
-  { st: 'Punjab',         c: 'PB', region: 'North', lat: 31.15, lon: 75.34, router: 103, switch: 18 },
-  { st: 'Kerala',         c: 'KL', region: 'South', lat: 10.85, lon: 76.27, router: 107, switch: 19 },
-  { st: 'Haryana',        c: 'HR', region: 'North', lat: 29.06, lon: 76.09, router: 86,  switch: 15 },
-  { st: 'Chhattisgarh',   c: 'CG', region: 'East',  lat: 21.28, lon: 81.87, router: 71,  switch: 12 },
-  { st: 'Jharkhand',      c: 'JH', region: 'East',  lat: 23.61, lon: 85.28, router: 63,  switch: 11 },
-  { st: 'Assam',          c: 'AS', region: 'East',  lat: 26.20, lon: 92.94, router: 79,  switch: 14 },
-  { st: 'Jammu and Kashmir', c: 'JK', region: 'North', lat: 33.78, lon: 76.58, router: 48, switch: 8 },
-  { st: 'Uttarakhand',    c: 'UK', region: 'North', lat: 30.07, lon: 79.09, router: 43,  switch: 7 }
-];
-
-/* Grown after ATTENTION's own declaration — the twelve hand-written rows there
-   stay for their narrative detail; the rest of the runFail figure (239, quoted
-   throughout Insights) is filled in here so the grid is something you can
-   actually open, search and filter, not just a number. Region, vendor and
-   reason are each distributed to close exactly on REGIONS.fail, VENDORS.fail
-   and REASONS.c once the twelve hand-written rows are accounted for. */
-const MODELS_BY_VENDOR: Record<string, string[]> = {
-  Juniper: ['MX960', 'MX204', 'ACX2200', 'ACX7024', 'EX4300-48P', 'EX2200-24T'],
-  Cisco: ['ASR920', 'NCS-540', 'C9300-48UXM', 'C9400-LC-48T'],
-  'Cisco SDN': ['N9K-C93180YC'],
-  Nokia: ['7750', '7750 SR-7'],
-  Adva: ['FSP 3000'],
-  Edgecore: ['AS7712-32X']
-};
-const ROLE = ['PE', 'AGG', 'ACC', 'CORE', 'EDGE', 'BNG'];
-const slug = (model: string) => model.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase();
-const pad2 = (v: number) => String(v).padStart(2, '0');
-/* a small deterministic source, so every reload lists the same estate */
-const lcg = (seed: number) => () => { seed = (seed * 48271) % 2147483647; return seed / 2147483647; };
-const flatten = <K extends string>(mix: [K, number][]) => mix.flatMap(([k, c]) => Array(c).fill(k)) as K[];
-
-(() => {
-  const rnd = lcg(34811);
-  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
-
-  /* remaining share once the twelve hand-written rows above are subtracted */
-  const regions = flatten<Region>([['North', 68], ['East', 62], ['West', 49], ['South', 48]]);
-  const vendors = flatten([['Juniper', 127], ['Cisco', 64], ['Cisco SDN', 15], ['Nokia', 10], ['Adva', 7], ['Edgecore', 4]]);
-  const reasons = flatten([['unreach', 90], ['timeout', 53], ['auth', 42], ['adapter', 24], ['parse', 11], ['dupip', 7]]);
-
-  regions.forEach((region, i) => {
-    const vendor = vendors[i % vendors.length];
-    const model = pick(MODELS_BY_VENDOR[vendor]);
-    const reason = reasons[i % reasons.length];
-    const st = STATE_DEVICES.filter(s => s.region === region);
-    const code = st.length ? st[i % st.length].c : region.slice(0, 2).toUpperCase();
-    const h = 9 - Math.floor(i / 12), m = 59 - (i * 7) % 60;
-    ATTENTION.push({
-      name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 88)}`,
-      ip: `172.31.${100 + (i * 7) % 140}.${20 + (i * 13) % 230}`,
-      region, vendor, model, reason,
-      last: getLiveDateStr(Math.max(0, h), m)
-    });
-  });
-})();
-
-/* MODELS.fail was hand-typed and only ever checked to sum below DL.runFail —
-   never against the actual rows that name each model. Recomputed here, from
-   the failures that now exist, so the number on screen and the row count
-   behind its link are the same query, not two guesses that happen to be close. */
-MODELS.forEach(m => { m.fail = ATTENTION.filter(a => a.model === m.model).length; });
+export const ATTENTION: AttentionRow[] = MASTER_TGT.filter(t => !t.ok).map(t => {
+  const n = elem(t.ne);
+  return { name: n.name, ip: t.ip, region: n.region, vendor: n.vendor, model: n.model, reason: t.rk ?? '', last: getLiveDateStr(t.h, t.m),
+    sn: n.sn, loc: n.loc, city: n.city, state: n.state };
+});
 
 /* ── the estate, device by device, by region ────────────────
-   Each region tile on Insights quotes two numbers — North is "636 devices,
-   52 failed" — and until now nothing stood behind them: the tile could only
-   hand off to a screen that counted something else (sites). This roster gives
-   every one of the 3,162 polled targets a row, and the failures in it *are*
-   the ATTENTION rows, so a region's grid holds exactly the devices its tile
-   counts, failures included and marked. The ledger check at the bottom of the
-   file is what keeps that true. */
+   Each region tile quotes two numbers — "871 devices, 71 failed" — and this
+   roster gives every one of the 3,162 polled targets a row. A target is an
+   address: an element's management IP, or the loopback of a dual-homed one, so
+   a dual-homed element appears once per address it was polled on. The failures
+   in it *are* the ATTENTION rows, so a region's grid holds exactly the devices
+   its tile counts, failures included and marked. */
 export type DeviceStatus = 'Answered' | 'Failed';
 export interface RegionDevice {
   name: string; ip: string; region: Region; state: string;
   vendor: string; model: string; status: DeviceStatus; reason: string | null; reasonKey: string | null; last: string;
+  sn: string; loc: string; city: string;
 }
-export const REGION_DEVICES: RegionDevice[] = [];
+export const REGION_DEVICES: RegionDevice[] = MASTER_TGT.map((t): RegionDevice => {
+  const n = elem(t.ne);
+  return {
+    name: n.name, ip: t.ip, region: n.region, state: n.state, vendor: n.vendor, model: n.model,
+    status: t.ok ? 'Answered' : 'Failed',
+    reason: t.rk ? REASONS.find(r => r.k === t.rk)?.n ?? t.rk : null, reasonKey: t.rk ?? null,
+    last: getLiveDateStr(t.h, t.m), sn: n.sn, loc: n.loc, city: n.city
+  };
+});
+/* ordered as an estate roster — by state, then by name — rather than failures
+   first, which would open a 91.8%-healthy region on a page of nothing but red.
+   The Status filter and the toolbar's failed count are how you get to them. */
+REGION_DEVICES.sort((a, c) => a.state.localeCompare(c.state) || a.name.localeCompare(c.name) || a.ip.localeCompare(c.ip));
 export const devicesIn = (region: Region) => REGION_DEVICES.filter(d => d.region === region);
 
 /** the one filter predicate every screen that reads REGION_DEVICES uses —
@@ -233,114 +171,41 @@ export function filterRegionDevices(f: DeviceFilter): RegionDevice[] {
     (!f.reasonKey || d.reasonKey === f.reasonKey));
 }
 
-(() => {
-  const rnd = lcg(90217);
-  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
-  /* the answered estate leans the same way the vendor ledger does */
-  const vendors = flatten(VENDORS.map(v => [v.n, Math.max(1, Math.round(v.ok / 40))] as [string, number]));
-
-  REGIONS.forEach(({ region, total }) => {
-    const states = STATE_DEVICES.filter(s => s.region === region);
-    const weighted = flatten(states.map(s => [s.st, Math.max(1, Math.round((s.router + s.switch) / 10))] as [string, number]));
-    const stateOf = (i: number) => weighted[i % weighted.length] ?? states[0]?.st ?? region;
-
-    const failed = ATTENTION.filter(a => a.region === region);
-    const list: RegionDevice[] = [];
-
-    /* the region's failures, carried over whole from the attention list */
-    failed.forEach((a, i) => list.push({
-      name: a.name, ip: a.ip, region, state: stateOf(i * 3),
-      vendor: a.vendor, model: a.model, status: 'Failed',
-      reason: REASONS.find(r => r.k === a.reason)?.n ?? a.reason, reasonKey: a.reason, last: a.last
-    }));
-
-    /* and everything that answered cleanly */
-    for (let i = 0; i < total - failed.length; i++) {
-      const vendor = vendors[i % vendors.length];
-      const model = pick(MODELS_BY_VENDOR[vendor]);
-      const st = stateOf(i);
-      const code = states.find(s => s.st === st)?.c ?? region.slice(0, 2).toUpperCase();
-      list.push({
-        name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
-        ip: `10.${20 + REGIONS.findIndex(r => r.region === region)}.${(i * 3) % 250}.${1 + (i * 11) % 253}`,
-        region, state: st, vendor, model, status: 'Answered', reason: null, reasonKey: null,
-        last: getLiveDateStr(2 + (i * 3) % 10, (i * 11) % 60)
-      });
-    }
-
-    /* Ordered as an estate roster — by state, then by name — rather than
-       failures first, which would open a 91.8%-healthy region on a page of
-       nothing but red. The Status filter and the toolbar's failed count are
-       how you get to the failures. */
-    list.sort((a, c) => a.state.localeCompare(c.state) || a.name.localeCompare(c.name));
-    REGION_DEVICES.push(...list);
-  });
-})();
-
-/* ── the wider estate: every identified device, by state ────
-   STATE_DEVICES and VENDORS.ok are the only ledgers that carry the network's
-   full identified count (3,567 — a larger, separately-tracked population
-   than the 3,162 devices actually polled this cycle: identification also
-   comes from topology, not only from the seed list). Neither the state map
-   nor the vendor table had a roster behind it before, so a click could only
-   land on an unrelated screen with an unrelated count. This one roster
-   backs both: it is built from two pools sized exactly to STATE_DEVICES and
-   to VENDORS.ok and then paired off, so grouping it by state reproduces
-   STATE_DEVICES exactly and grouping it by vendor reproduces VENDORS.ok
-   exactly — both at once, by construction, not by coincidence. */
-export interface IdentifiedDevice { name: string; ip: string; state: string; region: Region; cls: DiscClass; vendor: string; model: string }
+/* ── the wider estate: every identified device ──────────────
+   3,567 identified = the 2,379 discovered network elements (the very records
+   Inventory registers) + 1,188 sub-elements Discovery finds under them —
+   routing engines, logical systems, stack members. A sub-element answers on its
+   parent's management IP and sits at its parent's location, so every identified
+   router and switch resolves to an Inventory element by IP and location id. */
+export interface IdentifiedDevice {
+  name: string; ip: string; state: string; region: Region; cls: DiscClass; vendor: string; model: string;
+  sn: string; loc: string; city: string; kind: 'element' | 'sub'; parent?: string;
+}
 export const IDENTIFIED_DEVICES: IdentifiedDevice[] = [];
 export const filterIdentified = (f: { state?: string; region?: Region; vendor?: string; model?: string }) =>
   IDENTIFIED_DEVICES.filter(d => (!f.state || d.state === f.state) && (!f.region || d.region === f.region) &&
     (!f.vendor || d.vendor === f.vendor) && (!f.model || d.model === f.model));
 
 (() => {
-  const rnd = lcg(52411);
-  const shuffle = <T,>(a: T[]) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
-  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
-
-  /* pool 1: one slot per state, per class — sums to STATE_DEVICES exactly */
-  const statePool = shuffle(STATE_DEVICES.flatMap(s => [
-    ...Array(s.router).fill({ st: s.st, region: s.region, cls: 'router' as DiscClass }),
-    ...Array(s.switch).fill({ st: s.st, region: s.region, cls: 'switch' as DiscClass })
-  ]));
-  /* pool 2: one slot per vendor — sums to VENDORS.ok exactly */
-  const vendorPool = shuffle(flatten(VENDORS.map(v => [v.n, v.ok] as [string, number])));
-
-  /* the model each vendor's models were originally weighted by MODELS'
-     hand-picked totals; every other model in its catalog splits what is left */
-  const modelWeight: Record<string, [string, number][]> = {};
-  for (const [vendor, models] of Object.entries(MODELS_BY_VENDOR)) {
-    const named = MODELS.filter(m => m.oem === vendor);
-    const namedTotal = named.reduce((a, m) => a + m.total, 0);
-    const vendorTotal = VENDORS.find(v => v.n === vendor)?.ok ?? 0;
-    const rest = models.filter(m => !named.some(n => n.model === m));
-    const restShare = Math.max(0, vendorTotal - namedTotal) / Math.max(1, rest.length);
-    modelWeight[vendor] = [...named.map(m => [m.model, m.total] as [string, number]), ...rest.map(m => [m, restShare] as [string, number])];
-  }
-  const modelFor = (vendor: string) => {
-    const w = modelWeight[vendor] ?? [[MODELS_BY_VENDOR[vendor][0], 1]];
-    const total = w.reduce((a, [, c]) => a + c, 0), r = rnd() * total;
-    let acc = 0; for (const [m, c] of w) { acc += c; if (r <= acc) return m; }
-    return w[w.length - 1][0];
-  };
-
-  statePool.forEach((slot, i) => {
-    const vendor = vendorPool[i];
-    const model = modelFor(vendor);
-    const code = STATE_DEVICES.find(s => s.st === slot.st)?.c ?? slot.region.slice(0, 2).toUpperCase();
-    IDENTIFIED_DEVICES.push({
-      name: `${code}-${slug(model)}-${pick(ROLE)}-${pad2(10 + i % 89)}`,
-      ip: `10.${30 + STATE_DEVICES.findIndex(s => s.st === slot.st)}.${(i * 7) % 250}.${1 + (i * 17) % 253}`,
-      state: slot.st, region: slot.region, cls: slot.cls, vendor, model
-    });
+  const subsOf = new Map<number, typeof MASTER_SUB>();
+  MASTER_SUB.forEach(sb => subsOf.set(sb.parent, [...(subsOf.get(sb.parent) ?? []), sb]));
+  MASTER_NE.forEach((n, i) => {
+    if (n.stock === 'decomm' || n.s !== 'd' || (n.cls !== 'router' && n.cls !== 'switch')) return;
+    const base = { ip: n.ip, state: n.state, region: n.region, cls: n.cls as DiscClass, vendor: n.vendor, model: n.model, loc: n.loc, city: n.city };
+    IDENTIFIED_DEVICES.push({ ...base, name: n.name, sn: n.sn, kind: 'element' });
+    for (const sb of subsOf.get(i) ?? [])
+      IDENTIFIED_DEVICES.push({ ...base, name: sb.name, sn: `${n.sn}-${sb.name.slice(n.name.length + 1)}`, kind: 'sub', parent: n.name });
   });
-
-  /* the display table only ever quoted the six models it names — recompute
-     their totals from the roster that now actually backs them, so a click
-     on "526" (say) opens exactly the rows counted to make 526 */
-  MODELS.forEach(m => { m.total = IDENTIFIED_DEVICES.filter(d => d.model === m.model).length; });
 })();
+
+/* ── geo: identified devices per state, split by class ───────
+   The 28 telecom circles, counted off the identified roster itself. */
+export interface StateDot { st: string; c: string; region: Region; lat: number; lon: number; router: number; switch: number }
+export const STATE_DEVICES: StateDot[] = MASTER_STATES.map(s => ({
+  st: s.st, c: s.c, region: s.region, lat: s.lat, lon: s.lon,
+  router: IDENTIFIED_DEVICES.filter(d => d.state === s.st && d.cls === 'router').length,
+  switch: IDENTIFIED_DEVICES.filter(d => d.state === s.st && d.cls === 'switch').length
+})).filter(s => s.router + s.switch > 0).sort((a, b) => (b.router + b.switch) - (a.router + a.switch) || a.st.localeCompare(b.st));
 
 /* ── scoping the whole page to one circle/region ───────────
    Only REGIONS (totals + failures) and STATE_DEVICES (identified, split by
@@ -439,22 +304,37 @@ export function scopeDiscovery(scope: Scope): DiscoveryScope {
   chk(sum(STATE_DEVICES.map(s => s.router)) === DL.discRouter && sum(STATE_DEVICES.map(s => s.switch)) === DL.discSwitch, 'states ≠ classes');
   chk(sum(MODELS.map(m => m.fail)) <= DL.runFail, 'model failures exceed failures');
   chk(ATTENTION.length === DL.runFail, 'attention rows ≠ failures');
-  /* the region grids must hold exactly what the region tiles count */
+  /* the polled outcomes in the repository are the ledger's outcomes */
   chk(REGION_DEVICES.length === DL.targets, 'region roster ≠ targets');
+  chk(MASTER_TGT.filter(t => t.ok && t.partial).length === DL.runPartial, 'partial targets ≠ runPartial');
+  chk(MASTER_TGT.filter(t => t.ok && !t.partial).length === DL.runFull, 'full targets ≠ runFull');
+  REASONS.forEach(r => chk(ATTENTION.filter(a => a.reason === r.k).length === r.c, `${r.n} rows ≠ its failure count`));
+  VENDORS.forEach(v => chk(ATTENTION.filter(a => a.vendor === v.n).length === v.fail, `${v.n} failures ≠ its failure count`));
+  /* the region grids must hold exactly what the region tiles count */
   REGIONS.forEach(r => {
     const d = devicesIn(r.region);
     chk(d.length === r.total, `${r.region} roster ≠ its device count`);
     chk(d.filter(x => x.status === 'Failed').length === r.fail, `${r.region} failures ≠ its failure count`);
   });
-  /* the identified-estate roster must reproduce, exactly, every marginal the
-     state map and the vendor table quote — a click on either must land on
-     precisely that many rows */
+  /* the identified roster must reproduce, exactly, every marginal the state
+     map, the vendor table and the model table quote — a click on any of them
+     must land on precisely that many rows */
   chk(IDENTIFIED_DEVICES.length === DL.identified, 'identified roster ≠ identified');
+  chk(IDENTIFIED_DEVICES.filter(d => d.cls === 'router').length === DL.discRouter, 'identified routers ≠ discRouter');
+  chk(IDENTIFIED_DEVICES.filter(d => d.kind === 'element').length === 2379, 'discovered elements ≠ 2,379');
   STATE_DEVICES.forEach(s => {
     const d = filterIdentified({ state: s.st });
     chk(d.length === s.router + s.switch, `${s.st} roster ≠ its device count`);
-    chk(d.filter(x => x.cls === 'router').length === s.router && d.filter(x => x.cls === 'switch').length === s.switch, `${s.st} roster class split ≠ router/switch counts`);
   });
   VENDORS.forEach(v => chk(filterIdentified({ vendor: v.n }).length === v.ok, `${v.n} identified roster ≠ its identified count`));
-  MODELS.forEach(m => chk(filterIdentified({ model: m.model }).length === m.total, `${m.model} identified roster ≠ its device count`));
+  /* the declared model table is the roster's own count, not a second opinion */
+  MODELS.forEach(m => {
+    chk(filterIdentified({ model: m.model }).length === m.total, `${m.model} identified roster ≠ its declared total ${m.total}`);
+    chk(ATTENTION.filter(a => a.model === m.model).length === m.fail, `${m.model} failures ≠ its declared fail count ${m.fail}`);
+  });
+  /* every polled address resolves to an Inventory element */
+  MASTER_TGT.forEach(t => {
+    const n = MASTER_NE[t.ne];
+    chk(!!n && (n.ip === t.ip || n.ip2 === t.ip) && n.stock !== 'decomm', `target ${t.ip} has no Inventory element`);
+  });
 })();

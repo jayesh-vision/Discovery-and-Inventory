@@ -361,6 +361,19 @@ button.ix-kpi:focus-visible { outline: 2px solid var(--vw-color-blue-500); outli
   -webkit-box-orient: vertical;
   min-height: 0;
 }
+.ix-kpi-chip {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--vw-color-sky-50, #f0f9ff);
+  color: var(--vw-color-sky-800, #075985);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+}
 .ix-kpi-foot {
   margin-top: auto;
   padding-top: 2px;

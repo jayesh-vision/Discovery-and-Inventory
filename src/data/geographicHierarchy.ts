@@ -76,763 +76,5275 @@ export interface FacilityItem {
 export const TOP_HIERARCHY_METRICS = [
   { id: 'regions', label: 'Regions', count: '4', icon: 'regions', color: '#9333ea', bg: '#f3e8ff' },
   { id: 'states', label: 'States', count: '28', icon: 'states', color: '#2563eb', bg: '#eff6ff' },
-  { id: 'cities', label: 'Cities', count: '429', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
-  { id: 'datacenters', label: 'Data Centers', count: '206', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
-  { id: 'pops', label: 'PoP Locations', count: '600', icon: 'pop', color: '#0284c7', bg: '#e0f2fe' },
-  { id: 'sites', label: 'Sites', count: '1,594', icon: 'site', color: '#16a34a', bg: '#f0fdf4' },
+  { id: 'cities', label: 'Cities', count: '549', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
+  { id: 'datacenters', label: 'Data Centers', count: '829', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
+  { id: 'pops', label: 'PoP Locations', count: '2,711', icon: 'pop', color: '#0284c7', bg: '#e0f2fe' },
+  { id: 'sites', label: 'Sites', count: '8,935', icon: 'site', color: '#16a34a', bg: '#f0fdf4' },
   { id: 'alarms', label: 'Active Alarms', count: '1,712', icon: 'alarm', color: '#ef4444', bg: '#fef2f2' },
 ];
 
 export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
   {
-    id: 'north',
-    name: 'North Region',
-    stateCount: 7,
-    cityCount: 107,
-    themeColor: '#9333ea',
-    bgColor: '#f3e8ff',
-    iconType: 'north',
-    states: [
+    "id": "north",
+    "name": "North Region",
+    "stateCount": 5,
+    "cityCount": 137,
+    "themeColor": "#9333ea",
+    "bgColor": "#f3e8ff",
+    "iconType": "north",
+    "states": [
       {
-        id: 'delhi',
-        name: 'Delhi NCR',
-        cityCount: 15,
-        regionId: 'north',
-        themeColor: '#3b82f6',
-        bgColor: '#eff6ff',
-        cities: [
-          { id: 'delhi-central', name: 'Central Delhi', count: 37, stateId: 'delhi', dcCount: 4, popCount: 9, siteCount: 24 },
-          { id: 'delhi-south', name: 'South Delhi', count: 34, stateId: 'delhi', dcCount: 3, popCount: 8, siteCount: 23 },
-          { id: 'delhi-noida', name: 'Noida', count: 28, stateId: 'delhi', dcCount: 2, popCount: 7, siteCount: 19 },
-          { id: 'delhi-gurgaon', name: 'Gurugram', count: 31, stateId: 'delhi', dcCount: 3, popCount: 7, siteCount: 21 },
-          { id: 'delhi-north', name: 'North Delhi', count: 20, stateId: 'delhi', dcCount: 2, popCount: 5, siteCount: 13 },
-          { id: 'delhi-west', name: 'West Delhi', count: 19, stateId: 'delhi', dcCount: 1, popCount: 5, siteCount: 13 },
-          { id: 'delhi-east', name: 'East Delhi', count: 17, stateId: 'delhi', dcCount: 1, popCount: 4, siteCount: 12 },
-          { id: 'delhi-faridabad', name: 'Faridabad', count: 15, stateId: 'delhi', dcCount: 1, popCount: 4, siteCount: 10 },
-          { id: 'delhi-ghaziabad', name: 'Ghaziabad', count: 14, stateId: 'delhi', dcCount: 1, popCount: 3, siteCount: 10 },
-          { id: 'delhi-sonipat', name: 'Sonipat', count: 9, stateId: 'delhi', dcCount: 1, popCount: 2, siteCount: 6 },
-          { id: 'delhi-panipat', name: 'Panipat', count: 7, stateId: 'delhi', dcCount: 0, popCount: 2, siteCount: 5 },
-          { id: 'delhi-new-delhi', name: 'New Delhi', count: 7, stateId: 'delhi', dcCount: 1, popCount: 2, siteCount: 4 },
-          { id: 'delhi-greater-noida', name: 'Greater Noida', count: 7, stateId: 'delhi', dcCount: 1, popCount: 2, siteCount: 4 },
-          { id: 'delhi-meerut-south', name: 'Meerut South', count: 7, stateId: 'delhi', dcCount: 0, popCount: 2, siteCount: 5 },
-          { id: 'delhi-manesar', name: 'Manesar', count: 9, stateId: 'delhi', dcCount: 1, popCount: 3, siteCount: 5 }
+        "id": "punjab",
+        "name": "Punjab",
+        "cityCount": 46,
+        "regionId": "north",
+        "themeColor": "#0ea5e9",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "pb-ludhiana",
+            "name": "Ludhiana",
+            "count": 140,
+            "stateId": "punjab",
+            "dcCount": 6,
+            "popCount": 18,
+            "siteCount": 48
+          },
+          {
+            "id": "pb-amritsar",
+            "name": "Amritsar",
+            "count": 118,
+            "stateId": "punjab",
+            "dcCount": 4,
+            "popCount": 14,
+            "siteCount": 36
+          },
+          {
+            "id": "pb-jalandhar",
+            "name": "Jalandhar",
+            "count": 108,
+            "stateId": "punjab",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "pb-mohali",
+            "name": "Mohali",
+            "count": 116,
+            "stateId": "punjab",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 32
+          },
+          {
+            "id": "pb-patiala",
+            "name": "Patiala",
+            "count": 96,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "pb-bathinda",
+            "name": "Bathinda",
+            "count": 96,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "pb-pathankot",
+            "name": "Pathankot",
+            "count": 92,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "pb-hoshiarpur",
+            "name": "Hoshiarpur",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "pb-moga",
+            "name": "Moga",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "pb-firozpur",
+            "name": "Firozpur",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "punjab-batala",
+            "name": "Batala",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "punjab-abohar",
+            "name": "Abohar",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "punjab-malerkotla",
+            "name": "Malerkotla",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "punjab-khanna",
+            "name": "Khanna",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "punjab-muktsar",
+            "name": "Muktsar",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "punjab-barnala",
+            "name": "Barnala",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ch-sector17",
+            "name": "Sector 17 (City Centre)",
+            "count": 110,
+            "stateId": "punjab",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 32
+          },
+          {
+            "id": "ch-itpark",
+            "name": "IT Park Chandigarh",
+            "count": 104,
+            "stateId": "punjab",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "ch-indarea1",
+            "name": "Industrial Area Phase 1",
+            "count": 96,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "ch-sector35",
+            "name": "Sector 35",
+            "count": 92,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "ch-sector22",
+            "name": "Sector 22",
+            "count": 90,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "ch-sector43",
+            "name": "Sector 43 (ISBT)",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ch-sector34",
+            "name": "Sector 34",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ch-indarea2",
+            "name": "Industrial Area Phase 2",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ch-manimajra",
+            "name": "Manimajra",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ch-sector8",
+            "name": "Sector 8",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ch-sector26",
+            "name": "Sector 26",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ch-sector9",
+            "name": "Sector 9",
+            "count": 84,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ch-dhanas",
+            "name": "Dhanas",
+            "count": 84,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ch-maloya",
+            "name": "Maloya",
+            "count": 84,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ch-hallomajra",
+            "name": "Hallomajra",
+            "count": 84,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jk-srinagar",
+            "name": "Srinagar",
+            "count": 120,
+            "stateId": "punjab",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "jk-jammu",
+            "name": "Jammu",
+            "count": 120,
+            "stateId": "punjab",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "jk-anantnag",
+            "name": "Anantnag",
+            "count": 98,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "jk-baramulla",
+            "name": "Baramulla",
+            "count": 98,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "jk-udhampur",
+            "name": "Udhampur",
+            "count": 95,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "jk-kathua",
+            "name": "Kathua",
+            "count": 95,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "jk-sopore",
+            "name": "Sopore",
+            "count": 92,
+            "stateId": "punjab",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "jk-rajouri",
+            "name": "Rajouri",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "jk-poonch",
+            "name": "Poonch",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "jk-pulwama",
+            "name": "Pulwama",
+            "count": 88,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "jk-samba",
+            "name": "Samba",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "jk-kupwara",
+            "name": "Kupwara",
+            "count": 86,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "jk-budgam",
+            "name": "Budgam",
+            "count": 85,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "jk-ganderbal",
+            "name": "Ganderbal",
+            "count": 85,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "jk-bandipora",
+            "name": "Bandipora",
+            "count": 84,
+            "stateId": "punjab",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'punjab',
-        name: 'Punjab',
-        cityCount: 16,
-        regionId: 'north',
-        themeColor: '#0ea5e9',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'pb-ludhiana', name: 'Ludhiana', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'pb-amritsar', name: 'Amritsar', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'pb-jalandhar', name: 'Jalandhar', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'pb-mohali', name: 'Mohali', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'pb-patiala', name: 'Patiala', count: 1, stateId: 'punjab', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'pb-bathinda', name: 'Bathinda', count: 1, stateId: 'punjab', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'pb-pathankot', name: 'Pathankot', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'pb-hoshiarpur', name: 'Hoshiarpur', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'pb-moga', name: 'Moga', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'pb-firozpur', name: 'Firozpur', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'punjab-batala', name: 'Batala', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'punjab-abohar', name: 'Abohar', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'punjab-malerkotla', name: 'Malerkotla', count: 1, stateId: 'punjab', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'punjab-khanna', name: 'Khanna', count: 1, stateId: 'punjab', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'punjab-muktsar', name: 'Muktsar', count: 1, stateId: 'punjab', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'punjab-barnala', name: 'Barnala', count: 1, stateId: 'punjab', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "haryana",
+        "name": "Haryana",
+        "cityCount": 15,
+        "regionId": "north",
+        "themeColor": "#f97316",
+        "bgColor": "#ffedd5",
+        "cities": [
+          {
+            "id": "hr-karnal",
+            "name": "Karnal",
+            "count": 118,
+            "stateId": "haryana",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "hr-rohtak",
+            "name": "Rohtak",
+            "count": 110,
+            "stateId": "haryana",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "hr-hisar",
+            "name": "Hisar",
+            "count": 106,
+            "stateId": "haryana",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "hr-ambala",
+            "name": "Ambala",
+            "count": 106,
+            "stateId": "haryana",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "hr-yamunanagar",
+            "name": "Yamunanagar",
+            "count": 98,
+            "stateId": "haryana",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "hr-panchkula",
+            "name": "Panchkula",
+            "count": 104,
+            "stateId": "haryana",
+            "dcCount": 3,
+            "popCount": 9,
+            "siteCount": 26
+          },
+          {
+            "id": "hr-kurukshetra",
+            "name": "Kurukshetra",
+            "count": 92,
+            "stateId": "haryana",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "haryana-bahadurgarh",
+            "name": "Bahadurgarh",
+            "count": 95,
+            "stateId": "haryana",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "haryana-rewari",
+            "name": "Rewari",
+            "count": 92,
+            "stateId": "haryana",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "haryana-palwal",
+            "name": "Palwal",
+            "count": 88,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "hr-bhiwani",
+            "name": "Bhiwani",
+            "count": 86,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "hr-sirsa",
+            "name": "Sirsa",
+            "count": 86,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "haryana-jind",
+            "name": "Jind",
+            "count": 85,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "haryana-thanesar",
+            "name": "Thanesar",
+            "count": 84,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "haryana-kaithal",
+            "name": "Kaithal",
+            "count": 84,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'haryana',
-        name: 'Haryana',
-        cityCount: 15,
-        regionId: 'north',
-        themeColor: '#f97316',
-        bgColor: '#ffedd5',
-        cities: [
-          { id: 'hr-karnal', name: 'Karnal', count: 1, stateId: 'haryana', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'hr-rohtak', name: 'Rohtak', count: 1, stateId: 'haryana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'hr-hisar', name: 'Hisar', count: 1, stateId: 'haryana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'hr-ambala', name: 'Ambala', count: 1, stateId: 'haryana', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'hr-yamunanagar', name: 'Yamunanagar', count: 1, stateId: 'haryana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'hr-panchkula', name: 'Panchkula', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hr-kurukshetra', name: 'Kurukshetra', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hr-bhiwani', name: 'Bhiwani', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hr-sirsa', name: 'Sirsa', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'haryana-bahadurgarh', name: 'Bahadurgarh', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'haryana-jind', name: 'Jind', count: 1, stateId: 'haryana', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'haryana-thanesar', name: 'Thanesar', count: 1, stateId: 'haryana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'haryana-kaithal', name: 'Kaithal', count: 1, stateId: 'haryana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'haryana-rewari', name: 'Rewari', count: 1, stateId: 'haryana', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'haryana-palwal', name: 'Palwal', count: 1, stateId: 'haryana', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "up-west",
+        "name": "Uttar Pradesh",
+        "cityCount": 31,
+        "regionId": "north",
+        "themeColor": "#f43f5e",
+        "bgColor": "#ffe4e6",
+        "cities": [
+          {
+            "id": "upw-meerut",
+            "name": "Meerut",
+            "count": 34,
+            "stateId": "up-west",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 23
+          },
+          {
+            "id": "upw-agra",
+            "name": "Agra",
+            "count": 32,
+            "stateId": "up-west",
+            "dcCount": 3,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "upw-aligarh",
+            "name": "Aligarh",
+            "count": 23,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 16
+          },
+          {
+            "id": "upw-mathura",
+            "name": "Mathura",
+            "count": 22,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 15
+          },
+          {
+            "id": "upw-moradabad",
+            "name": "Moradabad",
+            "count": 21,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 14
+          },
+          {
+            "id": "upw-bareilly",
+            "name": "Bareilly",
+            "count": 21,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 14
+          },
+          {
+            "id": "upw-saharanpur",
+            "name": "Saharanpur",
+            "count": 19,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 13
+          },
+          {
+            "id": "upw-muzaffarnagar",
+            "name": "Muzaffarnagar",
+            "count": 16,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "upw-firozabad",
+            "name": "Firozabad",
+            "count": 16,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "upw-jhansi",
+            "name": "Jhansi",
+            "count": 15,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 10
+          },
+          {
+            "id": "upw-rampur",
+            "name": "Rampur",
+            "count": 13,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 9
+          },
+          {
+            "id": "upw-shahjahanpur",
+            "name": "Shahjahanpur",
+            "count": 13,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 9
+          },
+          {
+            "id": "up-west-budaun",
+            "name": "Budaun",
+            "count": 9,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 6
+          },
+          {
+            "id": "up-west-hapur",
+            "name": "Hapur",
+            "count": 12,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 3,
+            "siteCount": 7
+          },
+          {
+            "id": "up-west-sambhal",
+            "name": "Sambhal",
+            "count": 13,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 8
+          },
+          {
+            "id": "up-west-etawah",
+            "name": "Etawah",
+            "count": 14,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 8
+          },
+          {
+            "id": "delhi-central",
+            "name": "Central Delhi",
+            "count": 37,
+            "stateId": "up-west",
+            "dcCount": 4,
+            "popCount": 9,
+            "siteCount": 24
+          },
+          {
+            "id": "delhi-south",
+            "name": "South Delhi",
+            "count": 34,
+            "stateId": "up-west",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 23
+          },
+          {
+            "id": "delhi-noida",
+            "name": "Noida",
+            "count": 28,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 19
+          },
+          {
+            "id": "delhi-gurgaon",
+            "name": "Gurugram",
+            "count": 31,
+            "stateId": "up-west",
+            "dcCount": 3,
+            "popCount": 7,
+            "siteCount": 21
+          },
+          {
+            "id": "delhi-north",
+            "name": "North Delhi",
+            "count": 20,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 13
+          },
+          {
+            "id": "delhi-west",
+            "name": "West Delhi",
+            "count": 19,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 13
+          },
+          {
+            "id": "delhi-east",
+            "name": "East Delhi",
+            "count": 17,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 12
+          },
+          {
+            "id": "delhi-faridabad",
+            "name": "Faridabad",
+            "count": 15,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 10
+          },
+          {
+            "id": "delhi-ghaziabad",
+            "name": "Ghaziabad",
+            "count": 14,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 10
+          },
+          {
+            "id": "delhi-sonipat",
+            "name": "Sonipat",
+            "count": 9,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 6
+          },
+          {
+            "id": "delhi-panipat",
+            "name": "Panipat",
+            "count": 7,
+            "stateId": "up-west",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "delhi-new-delhi",
+            "name": "New Delhi",
+            "count": 7,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 4
+          },
+          {
+            "id": "delhi-greater-noida",
+            "name": "Greater Noida",
+            "count": 7,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 4
+          },
+          {
+            "id": "delhi-meerut-south",
+            "name": "Meerut South",
+            "count": 7,
+            "stateId": "up-west",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "delhi-manesar",
+            "name": "Manesar",
+            "count": 9,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 5
+          }
         ]
       },
       {
-        id: 'up-west',
-        name: 'Uttar Pradesh (West)',
-        cityCount: 16,
-        regionId: 'north',
-        themeColor: '#f43f5e',
-        bgColor: '#ffe4e6',
-        cities: [
-          { id: 'upw-meerut', name: 'Meerut', count: 34, stateId: 'up-west', dcCount: 3, popCount: 8, siteCount: 23 },
-          { id: 'upw-agra', name: 'Agra', count: 32, stateId: 'up-west', dcCount: 3, popCount: 7, siteCount: 22 },
-          { id: 'upw-aligarh', name: 'Aligarh', count: 23, stateId: 'up-west', dcCount: 2, popCount: 5, siteCount: 16 },
-          { id: 'upw-mathura', name: 'Mathura', count: 22, stateId: 'up-west', dcCount: 2, popCount: 5, siteCount: 15 },
-          { id: 'upw-moradabad', name: 'Moradabad', count: 21, stateId: 'up-west', dcCount: 2, popCount: 5, siteCount: 14 },
-          { id: 'upw-bareilly', name: 'Bareilly', count: 21, stateId: 'up-west', dcCount: 2, popCount: 5, siteCount: 14 },
-          { id: 'upw-saharanpur', name: 'Saharanpur', count: 19, stateId: 'up-west', dcCount: 1, popCount: 5, siteCount: 13 },
-          { id: 'upw-muzaffarnagar', name: 'Muzaffarnagar', count: 16, stateId: 'up-west', dcCount: 1, popCount: 4, siteCount: 11 },
-          { id: 'upw-firozabad', name: 'Firozabad', count: 16, stateId: 'up-west', dcCount: 1, popCount: 4, siteCount: 11 },
-          { id: 'upw-jhansi', name: 'Jhansi', count: 15, stateId: 'up-west', dcCount: 1, popCount: 4, siteCount: 10 },
-          { id: 'upw-rampur', name: 'Rampur', count: 13, stateId: 'up-west', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'upw-shahjahanpur', name: 'Shahjahanpur', count: 13, stateId: 'up-west', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'up-west-budaun', name: 'Budaun', count: 9, stateId: 'up-west', dcCount: 1, popCount: 2, siteCount: 6 },
-          { id: 'up-west-hapur', name: 'Hapur', count: 12, stateId: 'up-west', dcCount: 2, popCount: 3, siteCount: 7 },
-          { id: 'up-west-sambhal', name: 'Sambhal', count: 13, stateId: 'up-west', dcCount: 1, popCount: 4, siteCount: 8 },
-          { id: 'up-west-etawah', name: 'Etawah', count: 14, stateId: 'up-west', dcCount: 1, popCount: 5, siteCount: 8 }
+        "id": "uttarakhand",
+        "name": "Uttarakhand",
+        "cityCount": 15,
+        "regionId": "north",
+        "themeColor": "#0284c7",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "uk-dehradun",
+            "name": "Dehradun",
+            "count": 120,
+            "stateId": "uttarakhand",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "uk-haridwar",
+            "name": "Haridwar",
+            "count": 106,
+            "stateId": "uttarakhand",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "uk-roorkee",
+            "name": "Roorkee",
+            "count": 98,
+            "stateId": "uttarakhand",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "uk-haldwani",
+            "name": "Haldwani",
+            "count": 104,
+            "stateId": "uttarakhand",
+            "dcCount": 3,
+            "popCount": 9,
+            "siteCount": 26
+          },
+          {
+            "id": "uk-rishikesh",
+            "name": "Rishikesh",
+            "count": 96,
+            "stateId": "uttarakhand",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "uttarakhand-rudrapur",
+            "name": "Rudrapur",
+            "count": 95,
+            "stateId": "uttarakhand",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "uttarakhand-kashipur",
+            "name": "Kashipur",
+            "count": 92,
+            "stateId": "uttarakhand",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "uk-nainital",
+            "name": "Nainital",
+            "count": 88,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "uttarakhand-kotdwar",
+            "name": "Kotdwar",
+            "count": 86,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "uttarakhand-ramnagar",
+            "name": "Ramnagar",
+            "count": 86,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "uttarakhand-manglaur",
+            "name": "Manglaur",
+            "count": 85,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "uttarakhand-mussoorie",
+            "name": "Mussoorie",
+            "count": 85,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "uttarakhand-pithoragarh",
+            "name": "Pithoragarh",
+            "count": 84,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "uttarakhand-almora",
+            "name": "Almora",
+            "count": 84,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "uttarakhand-tehri",
+            "name": "Tehri",
+            "count": 84,
+            "stateId": "uttarakhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'uttarakhand',
-        name: 'Uttarakhand',
-        cityCount: 15,
-        regionId: 'north',
-        themeColor: '#0284c7',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'uk-dehradun', name: 'Dehradun', count: 1, stateId: 'uttarakhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'uk-haridwar', name: 'Haridwar', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uk-roorkee', name: 'Roorkee', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uk-haldwani', name: 'Haldwani', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uk-rishikesh', name: 'Rishikesh', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uk-nainital', name: 'Nainital', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uttarakhand-rudrapur', name: 'Rudrapur', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uttarakhand-kashipur', name: 'Kashipur', count: 1, stateId: 'uttarakhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'uttarakhand-pithoragarh', name: 'Pithoragarh', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uttarakhand-almora', name: 'Almora', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'uttarakhand-kotdwar', name: 'Kotdwar', count: 1, stateId: 'uttarakhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'uttarakhand-ramnagar', name: 'Ramnagar', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uttarakhand-manglaur', name: 'Manglaur', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'uttarakhand-mussoorie', name: 'Mussoorie', count: 1, stateId: 'uttarakhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'uttarakhand-tehri', name: 'Tehri', count: 1, stateId: 'uttarakhand', dcCount: 0, popCount: 0, siteCount: 1 }
-        ]
-      },
-      {
-        id: 'himachal',
-        name: 'Himachal Pradesh',
-        cityCount: 15,
-        regionId: 'north',
-        themeColor: '#059669',
-        bgColor: '#d1fae5',
-        cities: [
-          { id: 'hp-shimla', name: 'Shimla', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-dharamshala', name: 'Dharamshala', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-mandi', name: 'Mandi', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-solan', name: 'Solan', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-kullu', name: 'Kullu', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-baddi', name: 'Baddi', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'hp-manali', name: 'Manali', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'himachal-bilaspur', name: 'Bilaspur', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'himachal-hamirpur', name: 'Hamirpur', count: 1, stateId: 'himachal', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'himachal-nahan', name: 'Nahan', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'himachal-una', name: 'Una', count: 1, stateId: 'himachal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'himachal-chamba', name: 'Chamba', count: 1, stateId: 'himachal', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'himachal-paonta-sahib', name: 'Paonta Sahib', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'himachal-palampur', name: 'Palampur', count: 1, stateId: 'himachal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'himachal-sundernagar', name: 'Sundernagar', count: 1, stateId: 'himachal', dcCount: 0, popCount: 1, siteCount: 0 }
-        ]
-      },
-      {
-        id: 'jk',
-        name: 'Jammu & Kashmir',
-        cityCount: 15,
-        regionId: 'north',
-        themeColor: '#6366f1',
-        bgColor: '#e0e7ff',
-        cities: [
-          { id: 'jk-srinagar', name: 'Srinagar', count: 1, stateId: 'jk', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'jk-jammu', name: 'Jammu', count: 1, stateId: 'jk', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'jk-anantnag', name: 'Anantnag', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-baramulla', name: 'Baramulla', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-udhampur', name: 'Udhampur', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-kathua', name: 'Kathua', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-sopore', name: 'Sopore', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-rajouri', name: 'Rajouri', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-poonch', name: 'Poonch', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-kupwara', name: 'Kupwara', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-pulwama', name: 'Pulwama', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-samba', name: 'Samba', count: 1, stateId: 'jk', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'jk-budgam', name: 'Budgam', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-ganderbal', name: 'Ganderbal', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jk-bandipora', name: 'Bandipora', count: 1, stateId: 'jk', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "himachal",
+        "name": "Himachal Pradesh",
+        "cityCount": 30,
+        "regionId": "north",
+        "themeColor": "#059669",
+        "bgColor": "#d1fae5",
+        "cities": [
+          {
+            "id": "hp-shimla",
+            "name": "Shimla",
+            "count": 118,
+            "stateId": "himachal",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "hp-baddi",
+            "name": "Baddi",
+            "count": 110,
+            "stateId": "himachal",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "hp-dharamshala",
+            "name": "Dharamshala",
+            "count": 106,
+            "stateId": "himachal",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "hp-solan",
+            "name": "Solan",
+            "count": 98,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "hp-mandi",
+            "name": "Mandi",
+            "count": 98,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "hp-kullu",
+            "name": "Kullu",
+            "count": 95,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "hp-manali",
+            "name": "Manali",
+            "count": 92,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 20
+          },
+          {
+            "id": "himachal-paonta-sahib",
+            "name": "Paonta Sahib",
+            "count": 90,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 18
+          },
+          {
+            "id": "himachal-una",
+            "name": "Una",
+            "count": 88,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "himachal-hamirpur",
+            "name": "Hamirpur",
+            "count": 86,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "himachal-bilaspur",
+            "name": "Bilaspur",
+            "count": 86,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "himachal-nahan",
+            "name": "Nahan",
+            "count": 85,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "himachal-palampur",
+            "name": "Palampur",
+            "count": 85,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "himachal-sundernagar",
+            "name": "Sundernagar",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "himachal-chamba",
+            "name": "Chamba",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "la-leh",
+            "name": "Leh",
+            "count": 98,
+            "stateId": "himachal",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "la-kargil",
+            "name": "Kargil",
+            "count": 92,
+            "stateId": "himachal",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "ladakh-diskit",
+            "name": "Diskit (Nubra)",
+            "count": 88,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ladakh-padum",
+            "name": "Padum (Zanskar)",
+            "count": 86,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ladakh-dras",
+            "name": "Dras",
+            "count": 86,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ladakh-nyoma",
+            "name": "Nyoma",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-khalatse",
+            "name": "Khalatse",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-sankoo",
+            "name": "Sankoo",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-hunder",
+            "name": "Hunder",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-turtuk",
+            "name": "Turtuk",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-chushul",
+            "name": "Chushul",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ladakh-tangste",
+            "name": "Tangste",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "ladakh-shey",
+            "name": "Shey",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "ladakh-thiksey",
+            "name": "Thiksey",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "ladakh-upshi",
+            "name": "Upshi",
+            "count": 84,
+            "stateId": "himachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          }
         ]
       }
     ]
   },
   {
-    id: 'west',
-    name: 'West Region',
-    stateCount: 7,
-    cityCount: 109,
-    themeColor: '#2563eb',
-    bgColor: '#dbeafe',
-    iconType: 'west',
-    states: [
+    "id": "west",
+    "name": "West Region",
+    "stateCount": 6,
+    "cityCount": 109,
+    "themeColor": "#2563eb",
+    "bgColor": "#dbeafe",
+    "iconType": "west",
+    "states": [
       {
-        id: 'maharashtra',
-        name: 'Maharashtra',
-        cityCount: 16,
-        regionId: 'west',
-        themeColor: '#8b5cf6',
-        bgColor: '#ede9fe',
-        cities: [
-          { id: 'mh-mumbai', name: 'Mumbai', count: 57, stateId: 'maharashtra', dcCount: 6, popCount: 14, siteCount: 37 },
-          { id: 'mh-pune', name: 'Pune', count: 43, stateId: 'maharashtra', dcCount: 5, popCount: 11, siteCount: 27 },
-          { id: 'mh-nagpur', name: 'Nagpur', count: 38, stateId: 'maharashtra', dcCount: 3, popCount: 10, siteCount: 25 },
-          { id: 'mh-nashik', name: 'Nashik', count: 29, stateId: 'maharashtra', dcCount: 2, popCount: 7, siteCount: 20 },
-          { id: 'mh-thane', name: 'Thane', count: 24, stateId: 'maharashtra', dcCount: 2, popCount: 6, siteCount: 16 },
-          { id: 'mh-aurangabad', name: 'Aurangabad', count: 20, stateId: 'maharashtra', dcCount: 1, popCount: 5, siteCount: 14 },
-          { id: 'mh-solapur', name: 'Solapur', count: 16, stateId: 'maharashtra', dcCount: 1, popCount: 4, siteCount: 11 },
-          { id: 'mh-kolhapur', name: 'Kolhapur', count: 15, stateId: 'maharashtra', dcCount: 1, popCount: 4, siteCount: 10 },
-          { id: 'mh-amravati', name: 'Amravati', count: 13, stateId: 'maharashtra', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'mh-navi-mumbai', name: 'Navi Mumbai', count: 22, stateId: 'maharashtra', dcCount: 2, popCount: 6, siteCount: 14 },
-          { id: 'maharashtra-akola', name: 'Akola', count: 8, stateId: 'maharashtra', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'maharashtra-latur', name: 'Latur', count: 9, stateId: 'maharashtra', dcCount: 1, popCount: 3, siteCount: 5 },
-          { id: 'maharashtra-dhule', name: 'Dhule', count: 9, stateId: 'maharashtra', dcCount: 0, popCount: 3, siteCount: 6 },
-          { id: 'maharashtra-ahmednagar', name: 'Ahmednagar', count: 11, stateId: 'maharashtra', dcCount: 1, popCount: 4, siteCount: 6 },
-          { id: 'maharashtra-chandrapur', name: 'Chandrapur', count: 10, stateId: 'maharashtra', dcCount: 1, popCount: 2, siteCount: 7 },
-          { id: 'maharashtra-parbhani', name: 'Parbhani', count: 10, stateId: 'maharashtra', dcCount: 0, popCount: 2, siteCount: 8 }
+        "id": "maharashtra",
+        "name": "Maharashtra",
+        "cityCount": 16,
+        "regionId": "west",
+        "themeColor": "#8b5cf6",
+        "bgColor": "#ede9fe",
+        "cities": [
+          {
+            "id": "mh-mumbai",
+            "name": "Mumbai",
+            "count": 57,
+            "stateId": "maharashtra",
+            "dcCount": 6,
+            "popCount": 14,
+            "siteCount": 37
+          },
+          {
+            "id": "mh-pune",
+            "name": "Pune",
+            "count": 43,
+            "stateId": "maharashtra",
+            "dcCount": 5,
+            "popCount": 11,
+            "siteCount": 27
+          },
+          {
+            "id": "mh-nagpur",
+            "name": "Nagpur",
+            "count": 38,
+            "stateId": "maharashtra",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 25
+          },
+          {
+            "id": "mh-nashik",
+            "name": "Nashik",
+            "count": 29,
+            "stateId": "maharashtra",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 20
+          },
+          {
+            "id": "mh-thane",
+            "name": "Thane",
+            "count": 24,
+            "stateId": "maharashtra",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 16
+          },
+          {
+            "id": "mh-aurangabad",
+            "name": "Aurangabad",
+            "count": 20,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 14
+          },
+          {
+            "id": "mh-solapur",
+            "name": "Solapur",
+            "count": 16,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "mh-kolhapur",
+            "name": "Kolhapur",
+            "count": 15,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 10
+          },
+          {
+            "id": "mh-amravati",
+            "name": "Amravati",
+            "count": 13,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 9
+          },
+          {
+            "id": "mh-navi-mumbai",
+            "name": "Navi Mumbai",
+            "count": 22,
+            "stateId": "maharashtra",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 14
+          },
+          {
+            "id": "maharashtra-akola",
+            "name": "Akola",
+            "count": 8,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "maharashtra-latur",
+            "name": "Latur",
+            "count": 9,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 5
+          },
+          {
+            "id": "maharashtra-dhule",
+            "name": "Dhule",
+            "count": 9,
+            "stateId": "maharashtra",
+            "dcCount": 0,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "maharashtra-ahmednagar",
+            "name": "Ahmednagar",
+            "count": 11,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 6
+          },
+          {
+            "id": "maharashtra-chandrapur",
+            "name": "Chandrapur",
+            "count": 10,
+            "stateId": "maharashtra",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 7
+          },
+          {
+            "id": "maharashtra-parbhani",
+            "name": "Parbhani",
+            "count": 10,
+            "stateId": "maharashtra",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 8
+          }
         ]
       },
       {
-        id: 'gujarat',
-        name: 'Gujarat',
-        cityCount: 16,
-        regionId: 'west',
-        themeColor: '#0ea5e9',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'gj-ahmedabad', name: 'Ahmedabad', count: 39, stateId: 'gujarat', dcCount: 4, popCount: 9, siteCount: 26 },
-          { id: 'gj-surat', name: 'Surat', count: 32, stateId: 'gujarat', dcCount: 3, popCount: 8, siteCount: 21 },
-          { id: 'gj-vadodara', name: 'Vadodara', count: 25, stateId: 'gujarat', dcCount: 2, popCount: 6, siteCount: 17 },
-          { id: 'gj-rajkot', name: 'Rajkot', count: 20, stateId: 'gujarat', dcCount: 1, popCount: 5, siteCount: 14 },
-          { id: 'gj-gandhinagar', name: 'Gandhinagar', count: 17, stateId: 'gujarat', dcCount: 2, popCount: 4, siteCount: 11 },
-          { id: 'gujarat-bhavnagar', name: 'Bhavnagar', count: 8, stateId: 'gujarat', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'gujarat-jamnagar', name: 'Jamnagar', count: 9, stateId: 'gujarat', dcCount: 1, popCount: 3, siteCount: 5 },
-          { id: 'gujarat-junagadh', name: 'Junagadh', count: 9, stateId: 'gujarat', dcCount: 0, popCount: 3, siteCount: 6 },
-          { id: 'gujarat-anand', name: 'Anand', count: 10, stateId: 'gujarat', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'gujarat-navsari', name: 'Navsari', count: 10, stateId: 'gujarat', dcCount: 1, popCount: 2, siteCount: 7 },
-          { id: 'gujarat-morbi', name: 'Morbi', count: 10, stateId: 'gujarat', dcCount: 0, popCount: 2, siteCount: 8 },
-          { id: 'gujarat-nadiad', name: 'Nadiad', count: 12, stateId: 'gujarat', dcCount: 1, popCount: 3, siteCount: 8 },
-          { id: 'gujarat-surendranagar', name: 'Surendranagar', count: 13, stateId: 'gujarat', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'gujarat-bharuch', name: 'Bharuch', count: 11, stateId: 'gujarat', dcCount: 0, popCount: 2, siteCount: 9 },
-          { id: 'gujarat-mehsana', name: 'Mehsana', count: 8, stateId: 'gujarat', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'gujarat-bhuj', name: 'Bhuj', count: 9, stateId: 'gujarat', dcCount: 1, popCount: 3, siteCount: 5 }
+        "id": "gujarat",
+        "name": "Gujarat",
+        "cityCount": 31,
+        "regionId": "west",
+        "themeColor": "#0ea5e9",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "gj-ahmedabad",
+            "name": "Ahmedabad",
+            "count": 39,
+            "stateId": "gujarat",
+            "dcCount": 4,
+            "popCount": 9,
+            "siteCount": 26
+          },
+          {
+            "id": "gj-surat",
+            "name": "Surat",
+            "count": 32,
+            "stateId": "gujarat",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 21
+          },
+          {
+            "id": "gj-vadodara",
+            "name": "Vadodara",
+            "count": 25,
+            "stateId": "gujarat",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 17
+          },
+          {
+            "id": "gj-rajkot",
+            "name": "Rajkot",
+            "count": 20,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 14
+          },
+          {
+            "id": "gj-gandhinagar",
+            "name": "Gandhinagar",
+            "count": 17,
+            "stateId": "gujarat",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "gujarat-bhavnagar",
+            "name": "Bhavnagar",
+            "count": 8,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "gujarat-jamnagar",
+            "name": "Jamnagar",
+            "count": 9,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 5
+          },
+          {
+            "id": "gujarat-junagadh",
+            "name": "Junagadh",
+            "count": 9,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "gujarat-anand",
+            "name": "Anand",
+            "count": 10,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "gujarat-navsari",
+            "name": "Navsari",
+            "count": 10,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 7
+          },
+          {
+            "id": "gujarat-morbi",
+            "name": "Morbi",
+            "count": 10,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 8
+          },
+          {
+            "id": "gujarat-nadiad",
+            "name": "Nadiad",
+            "count": 12,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 8
+          },
+          {
+            "id": "gujarat-surendranagar",
+            "name": "Surendranagar",
+            "count": 13,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 9
+          },
+          {
+            "id": "gujarat-bharuch",
+            "name": "Bharuch",
+            "count": 11,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 9
+          },
+          {
+            "id": "gujarat-mehsana",
+            "name": "Mehsana",
+            "count": 8,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "gujarat-bhuj",
+            "name": "Bhuj",
+            "count": 9,
+            "stateId": "gujarat",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 5
+          },
+          {
+            "id": "dnh-silvassa",
+            "name": "Silvassa",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-daman",
+            "name": "Daman",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-diu",
+            "name": "Diu",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-dadra",
+            "name": "Dadra",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-nani-daman",
+            "name": "Nani Daman",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-moti-daman",
+            "name": "Moti Daman",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-amli",
+            "name": "Amli",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 0
+          },
+          {
+            "id": "dnh-naroli",
+            "name": "Naroli",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-kachigam",
+            "name": "Kachigam",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-dunetha",
+            "name": "Dunetha",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-kilvani",
+            "name": "Kilvani",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 0
+          },
+          {
+            "id": "dnh-masat",
+            "name": "Masat",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-samarvarni",
+            "name": "Samarvarni",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-rakholi",
+            "name": "Rakholi",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "dnh-vapi-border-zone",
+            "name": "Vapi Border Zone",
+            "count": 1,
+            "stateId": "gujarat",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 0
+          }
         ]
       },
       {
-        id: 'rajasthan',
-        name: 'Rajasthan',
-        cityCount: 16,
-        regionId: 'west',
-        themeColor: '#f97316',
-        bgColor: '#ffedd5',
-        cities: [
-          { id: 'rj-jaipur', name: 'Jaipur', count: 1, stateId: 'rajasthan', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'rj-jodhpur', name: 'Jodhpur', count: 1, stateId: 'rajasthan', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'rj-udaipur', name: 'Udaipur', count: 1, stateId: 'rajasthan', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'rj-kota', name: 'Kota', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'rajasthan-bikaner', name: 'Bikaner', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-ajmer', name: 'Ajmer', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-bhilwara', name: 'Bhilwara', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-alwar', name: 'Alwar', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'rajasthan-bharatpur', name: 'Bharatpur', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-sikar', name: 'Sikar', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-pali', name: 'Pali', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-sri-ganganagar', name: 'Sri Ganganagar', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'rajasthan-beawar', name: 'Beawar', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-hanumangarh', name: 'Hanumangarh', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-dholpur', name: 'Dholpur', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'rajasthan-tonk', name: 'Tonk', count: 1, stateId: 'rajasthan', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "rajasthan",
+        "name": "Rajasthan",
+        "cityCount": 16,
+        "regionId": "west",
+        "themeColor": "#f97316",
+        "bgColor": "#ffedd5",
+        "cities": [
+          {
+            "id": "rj-jaipur",
+            "name": "Jaipur",
+            "count": 142,
+            "stateId": "rajasthan",
+            "dcCount": 6,
+            "popCount": 18,
+            "siteCount": 52
+          },
+          {
+            "id": "rj-jodhpur",
+            "name": "Jodhpur",
+            "count": 118,
+            "stateId": "rajasthan",
+            "dcCount": 4,
+            "popCount": 14,
+            "siteCount": 40
+          },
+          {
+            "id": "rj-kota",
+            "name": "Kota",
+            "count": 108,
+            "stateId": "rajasthan",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "rj-udaipur",
+            "name": "Udaipur",
+            "count": 108,
+            "stateId": "rajasthan",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "rajasthan-bikaner",
+            "name": "Bikaner",
+            "count": 98,
+            "stateId": "rajasthan",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "rajasthan-ajmer",
+            "name": "Ajmer",
+            "count": 98,
+            "stateId": "rajasthan",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "rajasthan-bhilwara",
+            "name": "Bhilwara",
+            "count": 95,
+            "stateId": "rajasthan",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "rajasthan-alwar",
+            "name": "Alwar",
+            "count": 95,
+            "stateId": "rajasthan",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "rajasthan-bharatpur",
+            "name": "Bharatpur",
+            "count": 88,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "rajasthan-sikar",
+            "name": "Sikar",
+            "count": 88,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "rajasthan-pali",
+            "name": "Pali",
+            "count": 86,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "rajasthan-sri-ganganagar",
+            "name": "Sri Ganganagar",
+            "count": 86,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "rajasthan-beawar",
+            "name": "Beawar",
+            "count": 84,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "rajasthan-hanumangarh",
+            "name": "Hanumangarh",
+            "count": 84,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "rajasthan-dholpur",
+            "name": "Dholpur",
+            "count": 84,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "rajasthan-tonk",
+            "name": "Tonk",
+            "count": 84,
+            "stateId": "rajasthan",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'goa',
-        name: 'Goa',
-        cityCount: 15,
-        regionId: 'west',
-        themeColor: '#f43f5e',
-        bgColor: '#ffe4e6',
-        cities: [
-          { id: 'ga-panaji', name: 'Panaji', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'ga-margao', name: 'Margao', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'ga-vasco', name: 'Vasco da Gama', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-mapusa', name: 'Mapusa', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-ponda', name: 'Ponda', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-bicholim', name: 'Bicholim', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-curchorem', name: 'Curchorem', count: 1, stateId: 'goa', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'goa-cuncolim', name: 'Cuncolim', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-valpoi', name: 'Valpoi', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-pernem', name: 'Pernem', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-canacona', name: 'Canacona', count: 1, stateId: 'goa', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'goa-quepem', name: 'Quepem', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-sanguem', name: 'Sanguem', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-porvorim', name: 'Porvorim', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'goa-calangute', name: 'Calangute', count: 1, stateId: 'goa', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "goa",
+        "name": "Goa",
+        "cityCount": 15,
+        "regionId": "west",
+        "themeColor": "#f43f5e",
+        "bgColor": "#ffe4e6",
+        "cities": [
+          {
+            "id": "ga-panaji",
+            "name": "Panaji",
+            "count": 118,
+            "stateId": "goa",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "ga-margao",
+            "name": "Margao",
+            "count": 108,
+            "stateId": "goa",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "ga-vasco",
+            "name": "Vasco da Gama",
+            "count": 98,
+            "stateId": "goa",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "goa-mapusa",
+            "name": "Mapusa",
+            "count": 95,
+            "stateId": "goa",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "goa-ponda",
+            "name": "Ponda",
+            "count": 92,
+            "stateId": "goa",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "goa-porvorim",
+            "name": "Porvorim",
+            "count": 88,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "goa-calangute",
+            "name": "Calangute",
+            "count": 88,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "goa-bicholim",
+            "name": "Bicholim",
+            "count": 86,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "goa-curchorem",
+            "name": "Curchorem",
+            "count": 86,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "goa-cuncolim",
+            "name": "Cuncolim",
+            "count": 85,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "goa-canacona",
+            "name": "Canacona",
+            "count": 85,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "goa-valpoi",
+            "name": "Valpoi",
+            "count": 84,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "goa-pernem",
+            "name": "Pernem",
+            "count": 84,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "goa-quepem",
+            "name": "Quepem",
+            "count": 84,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "goa-sanguem",
+            "name": "Sanguem",
+            "count": 84,
+            "stateId": "goa",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'mp',
-        name: 'Madhya Pradesh',
-        cityCount: 16,
-        regionId: 'west',
-        themeColor: '#0284c7',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'mp-bhopal', name: 'Bhopal', count: 28, stateId: 'mp', dcCount: 3, popCount: 7, siteCount: 18 },
-          { id: 'mp-indore', name: 'Indore', count: 30, stateId: 'mp', dcCount: 3, popCount: 7, siteCount: 20 },
-          { id: 'mp-jabalpur', name: 'Jabalpur', count: 19, stateId: 'mp', dcCount: 1, popCount: 5, siteCount: 13 },
-          { id: 'mp-gwalior', name: 'Gwalior', count: 17, stateId: 'mp', dcCount: 1, popCount: 4, siteCount: 12 },
-          { id: 'mp-ujjain', name: 'Ujjain', count: 8, stateId: 'mp', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'mp-sagar', name: 'Sagar', count: 10, stateId: 'mp', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'mp-dewas', name: 'Dewas', count: 10, stateId: 'mp', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'mp-satna', name: 'Satna', count: 12, stateId: 'mp', dcCount: 1, popCount: 4, siteCount: 7 },
-          { id: 'mp-ratlam', name: 'Ratlam', count: 11, stateId: 'mp', dcCount: 1, popCount: 2, siteCount: 8 },
-          { id: 'mp-rewa', name: 'Rewa', count: 11, stateId: 'mp', dcCount: 1, popCount: 2, siteCount: 8 },
-          { id: 'mp-katni', name: 'Katni', count: 13, stateId: 'mp', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'mp-singrauli', name: 'Singrauli', count: 13, stateId: 'mp', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'mp-burhanpur', name: 'Burhanpur', count: 12, stateId: 'mp', dcCount: 0, popCount: 2, siteCount: 10 },
-          { id: 'mp-khandwa', name: 'Khandwa', count: 8, stateId: 'mp', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'mp-morena', name: 'Morena', count: 10, stateId: 'mp', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'mp-bhind', name: 'Bhind', count: 9, stateId: 'mp', dcCount: 0, popCount: 3, siteCount: 6 }
+        "id": "mp",
+        "name": "Madhya Pradesh",
+        "cityCount": 16,
+        "regionId": "west",
+        "themeColor": "#0284c7",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "mp-indore",
+            "name": "Indore",
+            "count": 142,
+            "stateId": "mp",
+            "dcCount": 6,
+            "popCount": 18,
+            "siteCount": 48
+          },
+          {
+            "id": "mp-bhopal",
+            "name": "Bhopal",
+            "count": 134,
+            "stateId": "mp",
+            "dcCount": 5,
+            "popCount": 16,
+            "siteCount": 42
+          },
+          {
+            "id": "mp-jabalpur",
+            "name": "Jabalpur",
+            "count": 108,
+            "stateId": "mp",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "mp-gwalior",
+            "name": "Gwalior",
+            "count": 106,
+            "stateId": "mp",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "mp-ujjain",
+            "name": "Ujjain",
+            "count": 98,
+            "stateId": "mp",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "mp-sagar",
+            "name": "Sagar",
+            "count": 95,
+            "stateId": "mp",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "mp-dewas",
+            "name": "Dewas",
+            "count": 95,
+            "stateId": "mp",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "mp-satna",
+            "name": "Satna",
+            "count": 92,
+            "stateId": "mp",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "mp-ratlam",
+            "name": "Ratlam",
+            "count": 88,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mp-rewa",
+            "name": "Rewa",
+            "count": 88,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mp-katni",
+            "name": "Katni",
+            "count": 86,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mp-singrauli",
+            "name": "Singrauli",
+            "count": 86,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mp-burhanpur",
+            "name": "Burhanpur",
+            "count": 85,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "mp-khandwa",
+            "name": "Khandwa",
+            "count": 84,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mp-morena",
+            "name": "Morena",
+            "count": 84,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mp-bhind",
+            "name": "Bhind",
+            "count": 84,
+            "stateId": "mp",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'chhattisgarh',
-        name: 'Chhattisgarh',
-        cityCount: 15,
-        regionId: 'west',
-        themeColor: '#059669',
-        bgColor: '#d1fae5',
-        cities: [
-          { id: 'cg-raipur', name: 'Raipur', count: 1, stateId: 'chhattisgarh', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'cg-bhilai', name: 'Bhilai', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'cg-bilaspur', name: 'Bilaspur', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-korba', name: 'Korba', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-rajnandgaon', name: 'Rajnandgaon', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-jagdalpur', name: 'Jagdalpur', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-raigarh', name: 'Raigarh', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'chhattisgarh-ambikapur', name: 'Ambikapur', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-durg', name: 'Durg', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-dhamtari', name: 'Dhamtari', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-mahasamund', name: 'Mahasamund', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'chhattisgarh-chirmiri', name: 'Chirmiri', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-bhatapara', name: 'Bhatapara', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-kanker', name: 'Kanker', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'chhattisgarh-kawardha', name: 'Kawardha', count: 1, stateId: 'chhattisgarh', dcCount: 0, popCount: 0, siteCount: 1 }
-        ]
-      },
-      {
-        id: 'dnh',
-        name: 'Dadra & Nagar Haveli',
-        cityCount: 15,
-        regionId: 'west',
-        themeColor: '#16a34a',
-        bgColor: '#dcfce7',
-        cities: [
-          { id: 'dnh-silvassa', name: 'Silvassa', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-daman', name: 'Daman', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-diu', name: 'Diu', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-dadra', name: 'Dadra', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-nani-daman', name: 'Nani Daman', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-moti-daman', name: 'Moti Daman', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-amli', name: 'Amli', count: 1, stateId: 'dnh', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'dnh-naroli', name: 'Naroli', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-kachigam', name: 'Kachigam', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-dunetha', name: 'Dunetha', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-kilvani', name: 'Kilvani', count: 1, stateId: 'dnh', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'dnh-masat', name: 'Masat', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-samarvarni', name: 'Samarvarni', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-rakholi', name: 'Rakholi', count: 1, stateId: 'dnh', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'dnh-vapi-border-zone', name: 'Vapi Border Zone', count: 1, stateId: 'dnh', dcCount: 0, popCount: 1, siteCount: 0 }
+        "id": "chhattisgarh",
+        "name": "Chhattisgarh",
+        "cityCount": 15,
+        "regionId": "west",
+        "themeColor": "#059669",
+        "bgColor": "#d1fae5",
+        "cities": [
+          {
+            "id": "cg-raipur",
+            "name": "Raipur",
+            "count": 134,
+            "stateId": "chhattisgarh",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 42
+          },
+          {
+            "id": "cg-bhilai",
+            "name": "Bhilai",
+            "count": 108,
+            "stateId": "chhattisgarh",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 30
+          },
+          {
+            "id": "chhattisgarh-durg",
+            "name": "Durg",
+            "count": 108,
+            "stateId": "chhattisgarh",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 30
+          },
+          {
+            "id": "cg-bilaspur",
+            "name": "Bilaspur",
+            "count": 102,
+            "stateId": "chhattisgarh",
+            "dcCount": 3,
+            "popCount": 9,
+            "siteCount": 26
+          },
+          {
+            "id": "chhattisgarh-korba",
+            "name": "Korba",
+            "count": 95,
+            "stateId": "chhattisgarh",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "chhattisgarh-raigarh",
+            "name": "Raigarh",
+            "count": 92,
+            "stateId": "chhattisgarh",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "chhattisgarh-rajnandgaon",
+            "name": "Rajnandgaon",
+            "count": 88,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "chhattisgarh-jagdalpur",
+            "name": "Jagdalpur",
+            "count": 88,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "chhattisgarh-ambikapur",
+            "name": "Ambikapur",
+            "count": 86,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "chhattisgarh-dhamtari",
+            "name": "Dhamtari",
+            "count": 86,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "chhattisgarh-mahasamund",
+            "name": "Mahasamund",
+            "count": 85,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "chhattisgarh-bhatapara",
+            "name": "Bhatapara",
+            "count": 85,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "chhattisgarh-chirmiri",
+            "name": "Chirmiri",
+            "count": 84,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "chhattisgarh-kanker",
+            "name": "Kanker",
+            "count": 84,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "chhattisgarh-kawardha",
+            "name": "Kawardha",
+            "count": 84,
+            "stateId": "chhattisgarh",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       }
     ]
   },
   {
-    id: 'east',
-    name: 'East Region',
-    stateCount: 7,
-    cityCount: 107,
-    themeColor: '#16a34a',
-    bgColor: '#dcfce7',
-    iconType: 'east',
-    states: [
+    "id": "east",
+    "name": "East Region",
+    "stateCount": 12,
+    "cityCount": 182,
+    "themeColor": "#16a34a",
+    "bgColor": "#dcfce7",
+    "iconType": "east",
+    "states": [
       {
-        id: 'west-bengal',
-        name: 'West Bengal',
-        cityCount: 16,
-        regionId: 'east',
-        themeColor: '#16a34a',
-        bgColor: '#dcfce7',
-        cities: [
-          { id: 'wb-kolkata', name: 'Kolkata', count: 1, stateId: 'west-bengal', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'wb-howrah', name: 'Howrah', count: 1, stateId: 'west-bengal', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'wb-siliguri', name: 'Siliguri', count: 1, stateId: 'west-bengal', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'wb-durgapur', name: 'Durgapur', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-asansol', name: 'Asansol', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-bardhaman', name: 'Bardhaman', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-malda', name: 'Malda', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-baharampur', name: 'Baharampur', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-habra', name: 'Habra', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-kharagpur', name: 'Kharagpur', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-shantipur', name: 'Shantipur', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-dankuni', name: 'Dankuni', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-dhulian', name: 'Dhulian', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-ranaghat', name: 'Ranaghat', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'west-bengal-haldia', name: 'Haldia', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'west-bengal-darjeeling', name: 'Darjeeling', count: 1, stateId: 'west-bengal', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "west-bengal",
+        "name": "West Bengal",
+        "cityCount": 16,
+        "regionId": "east",
+        "themeColor": "#16a34a",
+        "bgColor": "#dcfce7",
+        "cities": [
+          {
+            "id": "wb-kolkata",
+            "name": "Kolkata",
+            "count": 142,
+            "stateId": "west-bengal",
+            "dcCount": 6,
+            "popCount": 18,
+            "siteCount": 48
+          },
+          {
+            "id": "wb-howrah",
+            "name": "Howrah",
+            "count": 104,
+            "stateId": "west-bengal",
+            "dcCount": 3,
+            "popCount": 9,
+            "siteCount": 26
+          },
+          {
+            "id": "wb-siliguri",
+            "name": "Siliguri",
+            "count": 100,
+            "stateId": "west-bengal",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "wb-durgapur",
+            "name": "Durgapur",
+            "count": 98,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 21
+          },
+          {
+            "id": "west-bengal-asansol",
+            "name": "Asansol",
+            "count": 96,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "west-bengal-bardhaman",
+            "name": "Bardhaman",
+            "count": 94,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "west-bengal-malda",
+            "name": "Malda",
+            "count": 92,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "west-bengal-baharampur",
+            "name": "Baharampur",
+            "count": 90,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "west-bengal-habra",
+            "name": "Habra",
+            "count": 88,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "west-bengal-kharagpur",
+            "name": "Kharagpur",
+            "count": 95,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "west-bengal-shantipur",
+            "name": "Shantipur",
+            "count": 88,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "west-bengal-dankuni",
+            "name": "Dankuni",
+            "count": 88,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "west-bengal-dhulian",
+            "name": "Dhulian",
+            "count": 86,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "west-bengal-ranaghat",
+            "name": "Ranaghat",
+            "count": 88,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "west-bengal-haldia",
+            "name": "Haldia",
+            "count": 92,
+            "stateId": "west-bengal",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "west-bengal-darjeeling",
+            "name": "Darjeeling",
+            "count": 90,
+            "stateId": "west-bengal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          }
         ]
       },
       {
-        id: 'bihar',
-        name: 'Bihar',
-        cityCount: 16,
-        regionId: 'east',
-        themeColor: '#0ea5e9',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'br-patna', name: 'Patna', count: 1, stateId: 'bihar', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'br-gaya', name: 'Gaya', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'br-muzaffarpur', name: 'Muzaffarpur', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'bihar-purnia', name: 'Purnia', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-darbhanga', name: 'Darbhanga', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-bihar-sharif', name: 'Bihar Sharif', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-arrah', name: 'Arrah', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'bihar-begusarai', name: 'Begusarai', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-katihar', name: 'Katihar', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-munger', name: 'Munger', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-chhapra', name: 'Chhapra', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'bihar-danapur', name: 'Danapur', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-bettiah', name: 'Bettiah', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-saharsa', name: 'Saharsa', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'bihar-sasaram', name: 'Sasaram', count: 1, stateId: 'bihar', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'bihar-siwan', name: 'Siwan', count: 1, stateId: 'bihar', dcCount: 0, popCount: 1, siteCount: 0 }
+        "id": "bihar",
+        "name": "Bihar",
+        "cityCount": 16,
+        "regionId": "east",
+        "themeColor": "#0ea5e9",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "br-patna",
+            "name": "Patna",
+            "count": 135,
+            "stateId": "bihar",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 42
+          },
+          {
+            "id": "br-gaya",
+            "name": "Gaya",
+            "count": 98,
+            "stateId": "bihar",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "br-muzaffarpur",
+            "name": "Muzaffarpur",
+            "count": 98,
+            "stateId": "bihar",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "bihar-purnia",
+            "name": "Purnia",
+            "count": 94,
+            "stateId": "bihar",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "bihar-darbhanga",
+            "name": "Darbhanga",
+            "count": 94,
+            "stateId": "bihar",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "bihar-bihar-sharif",
+            "name": "Bihar Sharif",
+            "count": 90,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "bihar-arrah",
+            "name": "Arrah",
+            "count": 90,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "bihar-begusarai",
+            "name": "Begusarai",
+            "count": 92,
+            "stateId": "bihar",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "bihar-katihar",
+            "name": "Katihar",
+            "count": 90,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "bihar-munger",
+            "name": "Munger",
+            "count": 88,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "bihar-chhapra",
+            "name": "Chhapra",
+            "count": 88,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "bihar-danapur",
+            "name": "Danapur",
+            "count": 92,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "bihar-bettiah",
+            "name": "Bettiah",
+            "count": 86,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "bihar-saharsa",
+            "name": "Saharsa",
+            "count": 86,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "bihar-sasaram",
+            "name": "Sasaram",
+            "count": 86,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "bihar-siwan",
+            "name": "Siwan",
+            "count": 86,
+            "stateId": "bihar",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'odisha',
-        name: 'Odisha',
-        cityCount: 15,
-        regionId: 'east',
-        themeColor: '#f59e0b',
-        bgColor: '#fef3c7',
-        cities: [
-          { id: 'od-bhubaneswar', name: 'Bhubaneswar', count: 1, stateId: 'odisha', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'od-cuttack', name: 'Cuttack', count: 1, stateId: 'odisha', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'od-rourkela', name: 'Rourkela', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-berhampur', name: 'Berhampur', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-sambalpur', name: 'Sambalpur', count: 1, stateId: 'odisha', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'odisha-puri', name: 'Puri', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-balasore', name: 'Balasore', count: 1, stateId: 'odisha', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'odisha-bhadrak', name: 'Bhadrak', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-baripada', name: 'Baripada', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-jharsuguda', name: 'Jharsuguda', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-jeypore', name: 'Jeypore', count: 1, stateId: 'odisha', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'odisha-bargarh', name: 'Bargarh', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-rayagada', name: 'Rayagada', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-bolangir', name: 'Bolangir', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'odisha-angul', name: 'Angul', count: 1, stateId: 'odisha', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "odisha",
+        "name": "Odisha",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#f59e0b",
+        "bgColor": "#fef3c7",
+        "cities": [
+          {
+            "id": "od-bhubaneswar",
+            "name": "Bhubaneswar",
+            "count": 130,
+            "stateId": "odisha",
+            "dcCount": 5,
+            "popCount": 14,
+            "siteCount": 40
+          },
+          {
+            "id": "od-cuttack",
+            "name": "Cuttack",
+            "count": 102,
+            "stateId": "odisha",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 25
+          },
+          {
+            "id": "od-rourkela",
+            "name": "Rourkela",
+            "count": 98,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "odisha-berhampur",
+            "name": "Berhampur",
+            "count": 96,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "odisha-sambalpur",
+            "name": "Sambalpur",
+            "count": 95,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 19
+          },
+          {
+            "id": "odisha-puri",
+            "name": "Puri",
+            "count": 94,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "odisha-balasore",
+            "name": "Balasore",
+            "count": 90,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "odisha-bhadrak",
+            "name": "Bhadrak",
+            "count": 88,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "odisha-baripada",
+            "name": "Baripada",
+            "count": 86,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "odisha-jharsuguda",
+            "name": "Jharsuguda",
+            "count": 92,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "odisha-jeypore",
+            "name": "Jeypore",
+            "count": 86,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "odisha-bargarh",
+            "name": "Bargarh",
+            "count": 86,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "odisha-rayagada",
+            "name": "Rayagada",
+            "count": 86,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "odisha-bolangir",
+            "name": "Bolangir",
+            "count": 86,
+            "stateId": "odisha",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "odisha-angul",
+            "name": "Angul",
+            "count": 90,
+            "stateId": "odisha",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 16
+          }
         ]
       },
       {
-        id: 'jharkhand',
-        name: 'Jharkhand',
-        cityCount: 15,
-        regionId: 'east',
-        themeColor: '#8b5cf6',
-        bgColor: '#ede9fe',
-        cities: [
-          { id: 'jh-ranchi', name: 'Ranchi', count: 1, stateId: 'jharkhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'jh-jamshedpur', name: 'Jamshedpur', count: 1, stateId: 'jharkhand', dcCount: 1, popCount: 0, siteCount: 0 },
-          { id: 'jharkhand-bokaro-steel-city', name: 'Bokaro Steel City', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-deoghar', name: 'Deoghar', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'jharkhand-phusro', name: 'Phusro', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-hazaribagh', name: 'Hazaribagh', count: 2, stateId: 'jharkhand', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'jharkhand-giridih', name: 'Giridih', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-ramgarh', name: 'Ramgarh', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-medininagar', name: 'Medininagar', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-chirkunda', name: 'Chirkunda', count: 2, stateId: 'jharkhand', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'jharkhand-chaibasa', name: 'Chaibasa', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-gumla', name: 'Gumla', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-dumka', name: 'Dumka', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'jharkhand-godda', name: 'Godda', count: 1, stateId: 'jharkhand', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'jharkhand-dhanbad', name: 'Dhanbad', count: 2, stateId: 'jharkhand', dcCount: 0, popCount: 1, siteCount: 1 }
+        "id": "jharkhand",
+        "name": "Jharkhand",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#8b5cf6",
+        "bgColor": "#ede9fe",
+        "cities": [
+          {
+            "id": "jh-ranchi",
+            "name": "Ranchi",
+            "count": 128,
+            "stateId": "jharkhand",
+            "dcCount": 5,
+            "popCount": 14,
+            "siteCount": 38
+          },
+          {
+            "id": "jh-jamshedpur",
+            "name": "Jamshedpur",
+            "count": 120,
+            "stateId": "jharkhand",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "jharkhand-bokaro-steel-city",
+            "name": "Bokaro Steel City",
+            "count": 98,
+            "stateId": "jharkhand",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "jharkhand-deoghar",
+            "name": "Deoghar",
+            "count": 94,
+            "stateId": "jharkhand",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "jharkhand-phusro",
+            "name": "Phusro",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-hazaribagh",
+            "name": "Hazaribagh",
+            "count": 90,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "jharkhand-giridih",
+            "name": "Giridih",
+            "count": 88,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "jharkhand-ramgarh",
+            "name": "Ramgarh",
+            "count": 88,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "jharkhand-medininagar",
+            "name": "Medininagar",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-chirkunda",
+            "name": "Chirkunda",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-chaibasa",
+            "name": "Chaibasa",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-gumla",
+            "name": "Gumla",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-dumka",
+            "name": "Dumka",
+            "count": 88,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "jharkhand-godda",
+            "name": "Godda",
+            "count": 86,
+            "stateId": "jharkhand",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "jharkhand-dhanbad",
+            "name": "Dhanbad",
+            "count": 104,
+            "stateId": "jharkhand",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 26
+          }
         ]
       },
       {
-        id: 'assam',
-        name: 'Assam',
-        cityCount: 15,
-        regionId: 'east',
-        themeColor: '#059669',
-        bgColor: '#d1fae5',
-        cities: [
-          { id: 'as-guwahati', name: 'Guwahati', count: 2, stateId: 'assam', dcCount: 1, popCount: 1, siteCount: 0 },
-          { id: 'as-silchar', name: 'Silchar', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-dibrugarh', name: 'Dibrugarh', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-jorhat', name: 'Jorhat', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-nagaon', name: 'Nagaon', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-tinsukia', name: 'Tinsukia', count: 2, stateId: 'assam', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'assam-tezpur', name: 'Tezpur', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-bongaigaon', name: 'Bongaigaon', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-dhubri', name: 'Dhubri', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-diphu', name: 'Diphu', count: 2, stateId: 'assam', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'assam-north-lakhimpur', name: 'North Lakhimpur', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-karimganj', name: 'Karimganj', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-sivasagar', name: 'Sivasagar', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-goalpara', name: 'Goalpara', count: 1, stateId: 'assam', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'assam-barpeta', name: 'Barpeta', count: 2, stateId: 'assam', dcCount: 0, popCount: 1, siteCount: 1 }
+        "id": "assam",
+        "name": "Assam",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#059669",
+        "bgColor": "#d1fae5",
+        "cities": [
+          {
+            "id": "as-guwahati",
+            "name": "Guwahati",
+            "count": 132,
+            "stateId": "assam",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 40
+          },
+          {
+            "id": "as-silchar",
+            "name": "Silchar",
+            "count": 98,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "assam-dibrugarh",
+            "name": "Dibrugarh",
+            "count": 98,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "assam-jorhat",
+            "name": "Jorhat",
+            "count": 96,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "assam-nagaon",
+            "name": "Nagaon",
+            "count": 94,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "assam-tinsukia",
+            "name": "Tinsukia",
+            "count": 94,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "assam-tezpur",
+            "name": "Tezpur",
+            "count": 92,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "assam-bongaigaon",
+            "name": "Bongaigaon",
+            "count": 90,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "assam-dhubri",
+            "name": "Dhubri",
+            "count": 88,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "assam-diphu",
+            "name": "Diphu",
+            "count": 86,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "assam-north-lakhimpur",
+            "name": "North Lakhimpur",
+            "count": 88,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "assam-karimganj",
+            "name": "Karimganj",
+            "count": 86,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "assam-sivasagar",
+            "name": "Sivasagar",
+            "count": 90,
+            "stateId": "assam",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "assam-goalpara",
+            "name": "Goalpara",
+            "count": 86,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "assam-barpeta",
+            "name": "Barpeta",
+            "count": 86,
+            "stateId": "assam",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       },
       {
-        id: 'sikkim',
-        name: 'Sikkim',
-        cityCount: 15,
-        regionId: 'east',
-        themeColor: '#10b981',
-        bgColor: '#d1fae5',
-        cities: [
-          { id: 'sk-gangtok', name: 'Gangtok', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sk-namchi', name: 'Namchi', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sk-geyzing', name: 'Geyzing', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'sk-mangan', name: 'Mangan', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'sikkim-rangpo', name: 'Rangpo', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'sikkim-jorethang', name: 'Jorethang', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-singtam', name: 'Singtam', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-ravangla', name: 'Ravangla', count: 2, stateId: 'sikkim', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'sikkim-pakyong', name: 'Pakyong', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-soreng', name: 'Soreng', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-yuksom', name: 'Yuksom', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-lachung', name: 'Lachung', count: 2, stateId: 'sikkim', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'sikkim-chungthang', name: 'Chungthang', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-rhenock', name: 'Rhenock', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'sikkim-nayabazar', name: 'Nayabazar', count: 1, stateId: 'sikkim', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "sikkim",
+        "name": "Sikkim",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#10b981",
+        "bgColor": "#d1fae5",
+        "cities": [
+          {
+            "id": "sk-gangtok",
+            "name": "Gangtok",
+            "count": 102,
+            "stateId": "sikkim",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "sk-namchi",
+            "name": "Namchi",
+            "count": 92,
+            "stateId": "sikkim",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "sk-geyzing",
+            "name": "Geyzing",
+            "count": 88,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "sk-mangan",
+            "name": "Mangan",
+            "count": 86,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "sikkim-rangpo",
+            "name": "Rangpo",
+            "count": 94,
+            "stateId": "sikkim",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "sikkim-jorethang",
+            "name": "Jorethang",
+            "count": 90,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "sikkim-singtam",
+            "name": "Singtam",
+            "count": 90,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "sikkim-ravangla",
+            "name": "Ravangla",
+            "count": 86,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "sikkim-pakyong",
+            "name": "Pakyong",
+            "count": 92,
+            "stateId": "sikkim",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 17
+          },
+          {
+            "id": "sikkim-soreng",
+            "name": "Soreng",
+            "count": 86,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "sikkim-yuksom",
+            "name": "Yuksom",
+            "count": 84,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "sikkim-lachung",
+            "name": "Lachung",
+            "count": 84,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "sikkim-chungthang",
+            "name": "Chungthang",
+            "count": 84,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "sikkim-rhenock",
+            "name": "Rhenock",
+            "count": 84,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "sikkim-nayabazar",
+            "name": "Nayabazar",
+            "count": 84,
+            "stateId": "sikkim",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          }
         ]
       },
       {
-        id: 'northeast',
-        name: 'North East (Other)',
-        cityCount: 15,
-        regionId: 'east',
-        themeColor: '#6366f1',
-        bgColor: '#e0e7ff',
-        cities: [
-          { id: 'ne-shillong', name: 'Shillong', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'ne-imphal', name: 'Imphal', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-aizawl', name: 'Aizawl', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-kohima', name: 'Kohima', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-agartala', name: 'Agartala', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-itanagar', name: 'Itanagar', count: 2, stateId: 'northeast', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'northeast-dimapur', name: 'Dimapur', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-tura', name: 'Tura', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-lunglei', name: 'Lunglei', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-churachandpur', name: 'Churachandpur', count: 2, stateId: 'northeast', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'northeast-mokokchung', name: 'Mokokchung', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-dharmanagar', name: 'Dharmanagar', count: 1, stateId: 'northeast', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'northeast-pasighat', name: 'Pasighat', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-naharlagun', name: 'Naharlagun', count: 1, stateId: 'northeast', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'northeast-along', name: 'Along', count: 2, stateId: 'northeast', dcCount: 0, popCount: 1, siteCount: 1 }
+        "id": "arunachal",
+        "name": "Arunachal Pradesh",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#0ea5e9",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "ar-itanagar",
+            "name": "Itanagar",
+            "count": 118,
+            "stateId": "arunachal",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "ar-naharlagun",
+            "name": "Naharlagun",
+            "count": 108,
+            "stateId": "arunachal",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "ar-pasighat",
+            "name": "Pasighat",
+            "count": 98,
+            "stateId": "arunachal",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "ar-tawang",
+            "name": "Tawang",
+            "count": 95,
+            "stateId": "arunachal",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "ar-ziro",
+            "name": "Ziro",
+            "count": 92,
+            "stateId": "arunachal",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "ar-along",
+            "name": "Along (Aalo)",
+            "count": 88,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ar-tezu",
+            "name": "Tezu",
+            "count": 88,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ar-roing",
+            "name": "Roing",
+            "count": 86,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ar-bomdila",
+            "name": "Bomdila",
+            "count": 86,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ar-changlang",
+            "name": "Changlang",
+            "count": 85,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ar-khonsa",
+            "name": "Khonsa",
+            "count": 85,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ar-lemmi",
+            "name": "Lemmi",
+            "count": 84,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ar-palin",
+            "name": "Palin",
+            "count": 84,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ar-koloriang",
+            "name": "Koloriang",
+            "count": 84,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ar-hawai",
+            "name": "Hawai",
+            "count": 84,
+            "stateId": "arunachal",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
+        ]
+      },
+      {
+        "id": "meghalaya",
+        "name": "Meghalaya",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#3b82f6",
+        "bgColor": "#dbeafe",
+        "cities": [
+          {
+            "id": "ml-shillong",
+            "name": "Shillong",
+            "count": 128,
+            "stateId": "meghalaya",
+            "dcCount": 5,
+            "popCount": 14,
+            "siteCount": 38
+          },
+          {
+            "id": "ml-tura",
+            "name": "Tura",
+            "count": 108,
+            "stateId": "meghalaya",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "ml-jowai",
+            "name": "Jowai",
+            "count": 98,
+            "stateId": "meghalaya",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "ml-byrnihat",
+            "name": "Byrnihat",
+            "count": 95,
+            "stateId": "meghalaya",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "ml-nongpoh",
+            "name": "Nongpoh",
+            "count": 92,
+            "stateId": "meghalaya",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "ml-williamnagar",
+            "name": "Williamnagar",
+            "count": 88,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ml-cherrapunji",
+            "name": "Cherrapunji",
+            "count": 88,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "ml-nongstoin",
+            "name": "Nongstoin",
+            "count": 86,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ml-baghmara",
+            "name": "Baghmara",
+            "count": 86,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "ml-resubelpara",
+            "name": "Resubelpara",
+            "count": 85,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ml-mairang",
+            "name": "Mairang",
+            "count": 85,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "ml-khliehriat",
+            "name": "Khliehriat",
+            "count": 84,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ml-mawkyrwat",
+            "name": "Mawkyrwat",
+            "count": 84,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ml-ampati",
+            "name": "Ampati",
+            "count": 84,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ml-dawki",
+            "name": "Dawki",
+            "count": 84,
+            "stateId": "meghalaya",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
+        ]
+      },
+      {
+        "id": "nagaland",
+        "name": "Nagaland",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#8b5cf6",
+        "bgColor": "#ede9fe",
+        "cities": [
+          {
+            "id": "nl-dimapur",
+            "name": "Dimapur",
+            "count": 132,
+            "stateId": "nagaland",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 40
+          },
+          {
+            "id": "nl-kohima",
+            "name": "Kohima",
+            "count": 118,
+            "stateId": "nagaland",
+            "dcCount": 4,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "nl-mokokchung",
+            "name": "Mokokchung",
+            "count": 98,
+            "stateId": "nagaland",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "nl-chumukedima",
+            "name": "Chumukedima",
+            "count": 95,
+            "stateId": "nagaland",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "nl-tuensang",
+            "name": "Tuensang",
+            "count": 92,
+            "stateId": "nagaland",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "nl-wokha",
+            "name": "Wokha",
+            "count": 88,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "nl-zunheboto",
+            "name": "Zunheboto",
+            "count": 88,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "nl-mon",
+            "name": "Mon",
+            "count": 86,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "nl-phek",
+            "name": "Phek",
+            "count": 86,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "nl-kiphire",
+            "name": "Kiphire",
+            "count": 85,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "nl-longleng",
+            "name": "Longleng",
+            "count": 85,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "nl-peren",
+            "name": "Peren",
+            "count": 84,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "nl-tseminyu",
+            "name": "Tseminyu",
+            "count": 84,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "nl-niuland",
+            "name": "Niuland",
+            "count": 84,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "nl-medziphema",
+            "name": "Medziphema",
+            "count": 84,
+            "stateId": "nagaland",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
+        ]
+      },
+      {
+        "id": "manipur",
+        "name": "Manipur",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#ec4899",
+        "bgColor": "#fce7f3",
+        "cities": [
+          {
+            "id": "mn-imphal",
+            "name": "Imphal",
+            "count": 128,
+            "stateId": "manipur",
+            "dcCount": 5,
+            "popCount": 14,
+            "siteCount": 38
+          },
+          {
+            "id": "mn-churachandpur",
+            "name": "Churachandpur",
+            "count": 108,
+            "stateId": "manipur",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "mn-thoubal",
+            "name": "Thoubal",
+            "count": 98,
+            "stateId": "manipur",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "mn-bishnupur",
+            "name": "Bishnupur",
+            "count": 95,
+            "stateId": "manipur",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "mn-kakching",
+            "name": "Kakching",
+            "count": 92,
+            "stateId": "manipur",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "mn-ukhrul",
+            "name": "Ukhrul",
+            "count": 88,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mn-senapati",
+            "name": "Senapati",
+            "count": 88,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mn-moreh",
+            "name": "Moreh",
+            "count": 88,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mn-tamenglong",
+            "name": "Tamenglong",
+            "count": 86,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mn-chandel",
+            "name": "Chandel",
+            "count": 86,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mn-jiribam",
+            "name": "Jiribam",
+            "count": 85,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "mn-kangpokpi",
+            "name": "Kangpokpi",
+            "count": 85,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "mn-noney",
+            "name": "Noney",
+            "count": 84,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mn-pherzawl",
+            "name": "Pherzawl",
+            "count": 84,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mn-kamjong",
+            "name": "Kamjong",
+            "count": 84,
+            "stateId": "manipur",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
+        ]
+      },
+      {
+        "id": "mizoram",
+        "name": "Mizoram",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#f97316",
+        "bgColor": "#ffedd5",
+        "cities": [
+          {
+            "id": "mz-aizawl",
+            "name": "Aizawl",
+            "count": 128,
+            "stateId": "mizoram",
+            "dcCount": 5,
+            "popCount": 14,
+            "siteCount": 38
+          },
+          {
+            "id": "mz-lunglei",
+            "name": "Lunglei",
+            "count": 108,
+            "stateId": "mizoram",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "mz-champhai",
+            "name": "Champhai",
+            "count": 98,
+            "stateId": "mizoram",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "mz-serchhip",
+            "name": "Serchhip",
+            "count": 95,
+            "stateId": "mizoram",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "mz-kolasib",
+            "name": "Kolasib",
+            "count": 92,
+            "stateId": "mizoram",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "mz-lawngtlai",
+            "name": "Lawngtlai",
+            "count": 88,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mz-saiha",
+            "name": "Saiha",
+            "count": 88,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "mz-mamit",
+            "name": "Mamit",
+            "count": 86,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mz-hnahthial",
+            "name": "Hnahthial",
+            "count": 86,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "mz-khawzawl",
+            "name": "Khawzawl",
+            "count": 85,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "mz-saitual",
+            "name": "Saitual",
+            "count": 85,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "mz-vairengte",
+            "name": "Vairengte",
+            "count": 84,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mz-bairabi",
+            "name": "Bairabi",
+            "count": 84,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mz-north-vanlaiphai",
+            "name": "North Vanlaiphai",
+            "count": 84,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "mz-tlabung",
+            "name": "Tlabung",
+            "count": 84,
+            "stateId": "mizoram",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
+        ]
+      },
+      {
+        "id": "tripura",
+        "name": "Tripura",
+        "cityCount": 15,
+        "regionId": "east",
+        "themeColor": "#14b8a6",
+        "bgColor": "#ccfbf1",
+        "cities": [
+          {
+            "id": "tr-agartala",
+            "name": "Agartala",
+            "count": 132,
+            "stateId": "tripura",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 40
+          },
+          {
+            "id": "tr-dharmanagar",
+            "name": "Dharmanagar",
+            "count": 108,
+            "stateId": "tripura",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "tr-udaipur",
+            "name": "Udaipur",
+            "count": 98,
+            "stateId": "tripura",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "tr-kailashahar",
+            "name": "Kailashahar",
+            "count": 95,
+            "stateId": "tripura",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "tr-teliamura",
+            "name": "Teliamura",
+            "count": 92,
+            "stateId": "tripura",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "tr-khowai",
+            "name": "Khowai",
+            "count": 88,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "tr-belonia",
+            "name": "Belonia",
+            "count": 88,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "tr-melaghar",
+            "name": "Melaghar",
+            "count": 86,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "tr-ambassa",
+            "name": "Ambassa",
+            "count": 86,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "tr-bishalgarh",
+            "name": "Bishalgarh",
+            "count": 85,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tr-sabroom",
+            "name": "Sabroom",
+            "count": 85,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tr-santirbazar",
+            "name": "Santirbazar",
+            "count": 84,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "tr-kumarghat",
+            "name": "Kumarghat",
+            "count": 84,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "tr-ranirbazar",
+            "name": "Ranirbazar",
+            "count": 84,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "tr-sonamura",
+            "name": "Sonamura",
+            "count": 84,
+            "stateId": "tripura",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          }
         ]
       }
     ]
   },
   {
-    id: 'south',
-    name: 'South Region',
-    stateCount: 7,
-    cityCount: 106,
-    themeColor: '#f97316',
-    bgColor: '#ffedd5',
-    iconType: 'south',
-    states: [
+    "id": "south",
+    "name": "South Region",
+    "stateCount": 5,
+    "cityCount": 121,
+    "themeColor": "#f97316",
+    "bgColor": "#ffedd5",
+    "iconType": "south",
+    "states": [
       {
-        id: 'karnataka',
-        name: 'Karnataka',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#3b82f6',
-        bgColor: '#eff6ff',
-        cities: [
-          { id: 'ka-bengaluru', name: 'Bengaluru', count: 76, stateId: 'karnataka', dcCount: 8, popCount: 18, siteCount: 50 },
-          { id: 'ka-mysuru', name: 'Mysuru', count: 30, stateId: 'karnataka', dcCount: 3, popCount: 8, siteCount: 19 },
-          { id: 'ka-mangalore', name: 'Mangaluru', count: 24, stateId: 'karnataka', dcCount: 2, popCount: 6, siteCount: 16 },
-          { id: 'ka-hubballi', name: 'Hubballi', count: 21, stateId: 'karnataka', dcCount: 2, popCount: 5, siteCount: 14 },
-          { id: 'karnataka-belagavi', name: 'Belagavi', count: 11, stateId: 'karnataka', dcCount: 1, popCount: 3, siteCount: 7 },
-          { id: 'karnataka-kalaburagi', name: 'Kalaburagi', count: 13, stateId: 'karnataka', dcCount: 2, popCount: 4, siteCount: 7 },
-          { id: 'karnataka-davanagere', name: 'Davanagere', count: 12, stateId: 'karnataka', dcCount: 0, popCount: 4, siteCount: 8 },
-          { id: 'karnataka-ballari', name: 'Ballari', count: 15, stateId: 'karnataka', dcCount: 1, popCount: 5, siteCount: 9 },
-          { id: 'karnataka-vijayapura', name: 'Vijayapura', count: 14, stateId: 'karnataka', dcCount: 2, popCount: 2, siteCount: 10 },
-          { id: 'karnataka-shivamogga', name: 'Shivamogga', count: 13, stateId: 'karnataka', dcCount: 0, popCount: 3, siteCount: 10 },
-          { id: 'karnataka-tumakuru', name: 'Tumakuru', count: 16, stateId: 'karnataka', dcCount: 1, popCount: 4, siteCount: 11 },
-          { id: 'karnataka-raichur', name: 'Raichur', count: 19, stateId: 'karnataka', dcCount: 2, popCount: 5, siteCount: 12 },
-          { id: 'karnataka-bidar', name: 'Bidar', count: 14, stateId: 'karnataka', dcCount: 0, popCount: 2, siteCount: 12 },
-          { id: 'karnataka-hosapete', name: 'Hosapete', count: 10, stateId: 'karnataka', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'karnataka-gadag', name: 'Gadag', count: 11, stateId: 'karnataka', dcCount: 1, popCount: 3, siteCount: 7 }
+        "id": "karnataka",
+        "name": "Karnataka",
+        "cityCount": 15,
+        "regionId": "south",
+        "themeColor": "#3b82f6",
+        "bgColor": "#eff6ff",
+        "cities": [
+          {
+            "id": "ka-bengaluru",
+            "name": "Bengaluru",
+            "count": 76,
+            "stateId": "karnataka",
+            "dcCount": 8,
+            "popCount": 18,
+            "siteCount": 50
+          },
+          {
+            "id": "ka-mysuru",
+            "name": "Mysuru",
+            "count": 30,
+            "stateId": "karnataka",
+            "dcCount": 3,
+            "popCount": 8,
+            "siteCount": 19
+          },
+          {
+            "id": "ka-mangalore",
+            "name": "Mangaluru",
+            "count": 24,
+            "stateId": "karnataka",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 16
+          },
+          {
+            "id": "ka-hubballi",
+            "name": "Hubballi",
+            "count": 21,
+            "stateId": "karnataka",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 14
+          },
+          {
+            "id": "karnataka-belagavi",
+            "name": "Belagavi",
+            "count": 11,
+            "stateId": "karnataka",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 7
+          },
+          {
+            "id": "karnataka-kalaburagi",
+            "name": "Kalaburagi",
+            "count": 13,
+            "stateId": "karnataka",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 7
+          },
+          {
+            "id": "karnataka-davanagere",
+            "name": "Davanagere",
+            "count": 12,
+            "stateId": "karnataka",
+            "dcCount": 0,
+            "popCount": 4,
+            "siteCount": 8
+          },
+          {
+            "id": "karnataka-ballari",
+            "name": "Ballari",
+            "count": 15,
+            "stateId": "karnataka",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 9
+          },
+          {
+            "id": "karnataka-vijayapura",
+            "name": "Vijayapura",
+            "count": 14,
+            "stateId": "karnataka",
+            "dcCount": 2,
+            "popCount": 2,
+            "siteCount": 10
+          },
+          {
+            "id": "karnataka-shivamogga",
+            "name": "Shivamogga",
+            "count": 13,
+            "stateId": "karnataka",
+            "dcCount": 0,
+            "popCount": 3,
+            "siteCount": 10
+          },
+          {
+            "id": "karnataka-tumakuru",
+            "name": "Tumakuru",
+            "count": 16,
+            "stateId": "karnataka",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "karnataka-raichur",
+            "name": "Raichur",
+            "count": 19,
+            "stateId": "karnataka",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 12
+          },
+          {
+            "id": "karnataka-bidar",
+            "name": "Bidar",
+            "count": 14,
+            "stateId": "karnataka",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 12
+          },
+          {
+            "id": "karnataka-hosapete",
+            "name": "Hosapete",
+            "count": 10,
+            "stateId": "karnataka",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "karnataka-gadag",
+            "name": "Gadag",
+            "count": 11,
+            "stateId": "karnataka",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 7
+          }
         ]
       },
       {
-        id: 'tamilnadu',
-        name: 'Tamil Nadu',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#8b5cf6',
-        bgColor: '#ede9fe',
-        cities: [
-          { id: 'tn-chennai', name: 'Chennai', count: 51, stateId: 'tamilnadu', dcCount: 5, popCount: 12, siteCount: 34 },
-          { id: 'tn-coimbatore', name: 'Coimbatore', count: 29, stateId: 'tamilnadu', dcCount: 3, popCount: 7, siteCount: 19 },
-          { id: 'tn-madurai', name: 'Madurai', count: 19, stateId: 'tamilnadu', dcCount: 1, popCount: 5, siteCount: 13 },
-          { id: 'tn-salem', name: 'Salem', count: 15, stateId: 'tamilnadu', dcCount: 1, popCount: 4, siteCount: 10 },
-          { id: 'tamilnadu-tiruchirappalli', name: 'Tiruchirappalli', count: 8, stateId: 'tamilnadu', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'tamilnadu-tiruppur', name: 'Tiruppur', count: 9, stateId: 'tamilnadu', dcCount: 1, popCount: 3, siteCount: 5 },
-          { id: 'tamilnadu-erode', name: 'Erode', count: 9, stateId: 'tamilnadu', dcCount: 0, popCount: 3, siteCount: 6 },
-          { id: 'tamilnadu-tirunelveli', name: 'Tirunelveli', count: 11, stateId: 'tamilnadu', dcCount: 1, popCount: 4, siteCount: 6 },
-          { id: 'tamilnadu-vellore', name: 'Vellore', count: 10, stateId: 'tamilnadu', dcCount: 1, popCount: 2, siteCount: 7 },
-          { id: 'tamilnadu-thoothukudi', name: 'Thoothukudi', count: 9, stateId: 'tamilnadu', dcCount: 0, popCount: 2, siteCount: 7 },
-          { id: 'tamilnadu-dindigul', name: 'Dindigul', count: 12, stateId: 'tamilnadu', dcCount: 1, popCount: 3, siteCount: 8 },
-          { id: 'tamilnadu-thanjavur', name: 'Thanjavur', count: 13, stateId: 'tamilnadu', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'tamilnadu-karur', name: 'Karur', count: 10, stateId: 'tamilnadu', dcCount: 0, popCount: 1, siteCount: 9 },
-          { id: 'tamilnadu-sivakasi', name: 'Sivakasi', count: 8, stateId: 'tamilnadu', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'tamilnadu-ooty', name: 'Ooty', count: 8, stateId: 'tamilnadu', dcCount: 1, popCount: 2, siteCount: 5 }
+        "id": "tamilnadu",
+        "name": "Tamil Nadu",
+        "cityCount": 45,
+        "regionId": "south",
+        "themeColor": "#8b5cf6",
+        "bgColor": "#ede9fe",
+        "cities": [
+          {
+            "id": "tn-chennai",
+            "name": "Chennai",
+            "count": 52,
+            "stateId": "tamilnadu",
+            "dcCount": 6,
+            "popCount": 12,
+            "siteCount": 34
+          },
+          {
+            "id": "tn-coimbatore",
+            "name": "Coimbatore",
+            "count": 33,
+            "stateId": "tamilnadu",
+            "dcCount": 4,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "tn-madurai",
+            "name": "Madurai",
+            "count": 29,
+            "stateId": "tamilnadu",
+            "dcCount": 3,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "tn-salem",
+            "name": "Salem",
+            "count": 25,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "tamilnadu-tiruchirappalli",
+            "name": "Tiruchirappalli",
+            "count": 25,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "tamilnadu-tiruppur",
+            "name": "Tiruppur",
+            "count": 23,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 16
+          },
+          {
+            "id": "tamilnadu-erode",
+            "name": "Erode",
+            "count": 21,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "tamilnadu-tirunelveli",
+            "name": "Tirunelveli",
+            "count": 21,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tamilnadu-vellore",
+            "name": "Vellore",
+            "count": 22,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "tamilnadu-thoothukudi",
+            "name": "Thoothukudi",
+            "count": 20,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tamilnadu-dindigul",
+            "name": "Dindigul",
+            "count": 20,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tamilnadu-thanjavur",
+            "name": "Thanjavur",
+            "count": 20,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 15
+          },
+          {
+            "id": "tamilnadu-karur",
+            "name": "Karur",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "tamilnadu-sivakasi",
+            "name": "Sivakasi",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "tamilnadu-ooty",
+            "name": "Ooty",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "py-pondicherry",
+            "name": "Puducherry",
+            "count": 25,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "puducherry-karaikal",
+            "name": "Karaikal",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "puducherry-mahe",
+            "name": "Mahe",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-yanam",
+            "name": "Yanam",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-ozhukarai",
+            "name": "Ozhukarai",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "puducherry-villianur",
+            "name": "Villianur",
+            "count": 17,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "puducherry-ariyankuppam",
+            "name": "Ariyankuppam",
+            "count": 17,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 13
+          },
+          {
+            "id": "puducherry-bahour",
+            "name": "Bahour",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-mannadipet",
+            "name": "Mannadipet",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-nettapakkam",
+            "name": "Nettapakkam",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-kottucherry",
+            "name": "Kottucherry",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-thirunallar",
+            "name": "Thirunallar",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-neravy",
+            "name": "Neravy",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-kirumampakkam",
+            "name": "Kirumampakkam",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "puducherry-lawspet",
+            "name": "Lawspet",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "an-portblair",
+            "name": "Port Blair",
+            "count": 25,
+            "stateId": "tamilnadu",
+            "dcCount": 2,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "andaman-diglipur",
+            "name": "Diglipur",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-mayabunder",
+            "name": "Mayabunder",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-rangat",
+            "name": "Rangat",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-havelock",
+            "name": "Havelock (Swaraj Dweep)",
+            "count": 18,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 13
+          },
+          {
+            "id": "andaman-neil-island",
+            "name": "Neil Island (Shaheed Dweep)",
+            "count": 15,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 11
+          },
+          {
+            "id": "andaman-car-nicobar",
+            "name": "Car Nicobar",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-campbell-bay",
+            "name": "Campbell Bay",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-little-andaman",
+            "name": "Little Andaman",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-baratang",
+            "name": "Baratang",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-wandoor",
+            "name": "Wandoor",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          },
+          {
+            "id": "andaman-garacharma",
+            "name": "Garacharma",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "andaman-prothrapur",
+            "name": "Prothrapur",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "andaman-bambooflat",
+            "name": "Bambooflat",
+            "count": 19,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 14
+          },
+          {
+            "id": "andaman-ferrargunj",
+            "name": "Ferrargunj",
+            "count": 16,
+            "stateId": "tamilnadu",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 12
+          }
         ]
       },
       {
-        id: 'telangana',
-        name: 'Telangana',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#0ea5e9',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'tg-hyderabad', name: 'Hyderabad', count: 2, stateId: 'telangana', dcCount: 1, popCount: 1, siteCount: 0 },
-          { id: 'tg-warangal', name: 'Warangal', count: 2, stateId: 'telangana', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'tg-nizamabad', name: 'Nizamabad', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-khammam', name: 'Khammam', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-karimnagar', name: 'Karimnagar', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-ramagundam', name: 'Ramagundam', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-mahbubnagar', name: 'Mahbubnagar', count: 2, stateId: 'telangana', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'telangana-nalgonda', name: 'Nalgonda', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-adilabad', name: 'Adilabad', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-suryapet', name: 'Suryapet', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-miryalaguda', name: 'Miryalaguda', count: 2, stateId: 'telangana', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'telangana-siddipet', name: 'Siddipet', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-jagtial', name: 'Jagtial', count: 1, stateId: 'telangana', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'telangana-nirmal', name: 'Nirmal', count: 1, stateId: 'telangana', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'telangana-kamareddy', name: 'Kamareddy', count: 1, stateId: 'telangana', dcCount: 0, popCount: 1, siteCount: 0 }
+        "id": "telangana",
+        "name": "Telangana",
+        "cityCount": 15,
+        "regionId": "south",
+        "themeColor": "#0ea5e9",
+        "bgColor": "#e0f2fe",
+        "cities": [
+          {
+            "id": "tg-hyderabad",
+            "name": "Hyderabad",
+            "count": 2,
+            "stateId": "telangana",
+            "dcCount": 1,
+            "popCount": 1,
+            "siteCount": 0
+          },
+          {
+            "id": "tg-warangal",
+            "name": "Warangal",
+            "count": 2,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 1
+          },
+          {
+            "id": "tg-nizamabad",
+            "name": "Nizamabad",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-khammam",
+            "name": "Khammam",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-karimnagar",
+            "name": "Karimnagar",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-ramagundam",
+            "name": "Ramagundam",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-mahbubnagar",
+            "name": "Mahbubnagar",
+            "count": 2,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-nalgonda",
+            "name": "Nalgonda",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-adilabad",
+            "name": "Adilabad",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-suryapet",
+            "name": "Suryapet",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-miryalaguda",
+            "name": "Miryalaguda",
+            "count": 2,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-siddipet",
+            "name": "Siddipet",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-jagtial",
+            "name": "Jagtial",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "telangana-nirmal",
+            "name": "Nirmal",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 0
+          },
+          {
+            "id": "telangana-kamareddy",
+            "name": "Kamareddy",
+            "count": 1,
+            "stateId": "telangana",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 0
+          }
         ]
       },
       {
-        id: 'ap',
-        name: 'Andhra Pradesh',
-        cityCount: 16,
-        regionId: 'south',
-        themeColor: '#f97316',
-        bgColor: '#ffedd5',
-        cities: [
-          { id: 'ap-visakhapatnam', name: 'Visakhapatnam', count: 30, stateId: 'ap', dcCount: 3, popCount: 7, siteCount: 20 },
-          { id: 'ap-vijayawada', name: 'Vijayawada', count: 25, stateId: 'ap', dcCount: 2, popCount: 6, siteCount: 17 },
-          { id: 'ap-guntur', name: 'Guntur', count: 16, stateId: 'ap', dcCount: 1, popCount: 4, siteCount: 11 },
-          { id: 'ap-nellore', name: 'Nellore', count: 8, stateId: 'ap', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'ap-kurnool', name: 'Kurnool', count: 9, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 5 },
-          { id: 'ap-kakinada', name: 'Kakinada', count: 10, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'ap-rajamahendravaram', name: 'Rajamahendravaram', count: 10, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 6 },
-          { id: 'ap-tirupati', name: 'Tirupati', count: 10, stateId: 'ap', dcCount: 1, popCount: 2, siteCount: 7 },
-          { id: 'ap-kadapa', name: 'Kadapa', count: 9, stateId: 'ap', dcCount: 0, popCount: 2, siteCount: 7 },
-          { id: 'ap-anantapur', name: 'Anantapur', count: 12, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 8 },
-          { id: 'ap-vizianagaram', name: 'Vizianagaram', count: 13, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 9 },
-          { id: 'ap-eluru', name: 'Eluru', count: 11, stateId: 'ap', dcCount: 0, popCount: 2, siteCount: 9 },
-          { id: 'ap-ongole', name: 'Ongole', count: 8, stateId: 'ap', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'ap-nandyal', name: 'Nandyal', count: 8, stateId: 'ap', dcCount: 1, popCount: 2, siteCount: 5 },
-          { id: 'ap-machilipatnam', name: 'Machilipatnam', count: 9, stateId: 'ap', dcCount: 0, popCount: 3, siteCount: 6 },
-          { id: 'ap-srikakulam', name: 'Srikakulam', count: 10, stateId: 'ap', dcCount: 1, popCount: 3, siteCount: 6 }
+        "id": "ap",
+        "name": "Andhra Pradesh",
+        "cityCount": 16,
+        "regionId": "south",
+        "themeColor": "#f97316",
+        "bgColor": "#ffedd5",
+        "cities": [
+          {
+            "id": "ap-visakhapatnam",
+            "name": "Visakhapatnam",
+            "count": 30,
+            "stateId": "ap",
+            "dcCount": 3,
+            "popCount": 7,
+            "siteCount": 20
+          },
+          {
+            "id": "ap-vijayawada",
+            "name": "Vijayawada",
+            "count": 25,
+            "stateId": "ap",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 17
+          },
+          {
+            "id": "ap-guntur",
+            "name": "Guntur",
+            "count": 16,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 11
+          },
+          {
+            "id": "ap-nellore",
+            "name": "Nellore",
+            "count": 8,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "ap-kurnool",
+            "name": "Kurnool",
+            "count": 9,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 5
+          },
+          {
+            "id": "ap-kakinada",
+            "name": "Kakinada",
+            "count": 10,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "ap-rajamahendravaram",
+            "name": "Rajamahendravaram",
+            "count": 10,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "ap-tirupati",
+            "name": "Tirupati",
+            "count": 10,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 7
+          },
+          {
+            "id": "ap-kadapa",
+            "name": "Kadapa",
+            "count": 9,
+            "stateId": "ap",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 7
+          },
+          {
+            "id": "ap-anantapur",
+            "name": "Anantapur",
+            "count": 12,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 8
+          },
+          {
+            "id": "ap-vizianagaram",
+            "name": "Vizianagaram",
+            "count": 13,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 9
+          },
+          {
+            "id": "ap-eluru",
+            "name": "Eluru",
+            "count": 11,
+            "stateId": "ap",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 9
+          },
+          {
+            "id": "ap-ongole",
+            "name": "Ongole",
+            "count": 8,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "ap-nandyal",
+            "name": "Nandyal",
+            "count": 8,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 2,
+            "siteCount": 5
+          },
+          {
+            "id": "ap-machilipatnam",
+            "name": "Machilipatnam",
+            "count": 9,
+            "stateId": "ap",
+            "dcCount": 0,
+            "popCount": 3,
+            "siteCount": 6
+          },
+          {
+            "id": "ap-srikakulam",
+            "name": "Srikakulam",
+            "count": 10,
+            "stateId": "ap",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 6
+          }
         ]
       },
       {
-        id: 'kerala',
-        name: 'Kerala',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#059669',
-        bgColor: '#d1fae5',
-        cities: [
-          { id: 'kl-kochi', name: 'Kochi', count: 2, stateId: 'kerala', dcCount: 1, popCount: 1, siteCount: 0 },
-          { id: 'kl-thiruvananthapuram', name: 'Thiruvananthapuram', count: 2, stateId: 'kerala', dcCount: 1, popCount: 1, siteCount: 0 },
-          { id: 'kl-kozhikode', name: 'Kozhikode', count: 2, stateId: 'kerala', dcCount: 1, popCount: 1, siteCount: 0 },
-          { id: 'kerala-kollam', name: 'Kollam', count: 1, stateId: 'kerala', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'kerala-thrissur', name: 'Thrissur', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-kannur', name: 'Kannur', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-alappuzha', name: 'Alappuzha', count: 2, stateId: 'kerala', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'kerala-kottayam', name: 'Kottayam', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-palakkad', name: 'Palakkad', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-manjeri', name: 'Manjeri', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-thalassery', name: 'Thalassery', count: 2, stateId: 'kerala', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'kerala-ponnani', name: 'Ponnani', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-vatakara', name: 'Vatakara', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-kanhangad', name: 'Kanhangad', count: 1, stateId: 'kerala', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'kerala-payyanur', name: 'Payyanur', count: 1, stateId: 'kerala', dcCount: 0, popCount: 1, siteCount: 0 }
-        ]
-      },
-      {
-        id: 'puducherry',
-        name: 'Puducherry',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#f43f5e',
-        bgColor: '#ffe4e6',
-        cities: [
-          { id: 'py-pondicherry', name: 'Puducherry', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-karaikal', name: 'Karaikal', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-mahe', name: 'Mahe', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-yanam', name: 'Yanam', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-ozhukarai', name: 'Ozhukarai', count: 2, stateId: 'puducherry', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'puducherry-villianur', name: 'Villianur', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-ariyankuppam', name: 'Ariyankuppam', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-bahour', name: 'Bahour', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-mannadipet', name: 'Mannadipet', count: 2, stateId: 'puducherry', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'puducherry-nettapakkam', name: 'Nettapakkam', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-kottucherry', name: 'Kottucherry', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-thirunallar', name: 'Thirunallar', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-neravy', name: 'Neravy', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'puducherry-kirumampakkam', name: 'Kirumampakkam', count: 2, stateId: 'puducherry', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'puducherry-lawspet', name: 'Lawspet', count: 1, stateId: 'puducherry', dcCount: 0, popCount: 0, siteCount: 1 }
-        ]
-      },
-      {
-        id: 'andaman',
-        name: 'Andaman & Nicobar',
-        cityCount: 15,
-        regionId: 'south',
-        themeColor: '#0284c7',
-        bgColor: '#e0f2fe',
-        cities: [
-          { id: 'an-portblair', name: 'Port Blair', count: 1, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'andaman-diglipur', name: 'Diglipur', count: 1, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'andaman-mayabunder', name: 'Mayabunder', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-rangat', name: 'Rangat', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-havelock', name: 'Havelock (Swaraj Dweep)', count: 2, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'andaman-neil-island', name: 'Neil Island (Shaheed Dweep)', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-car-nicobar', name: 'Car Nicobar', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-campbell-bay', name: 'Campbell Bay', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-little-andaman', name: 'Little Andaman', count: 2, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'andaman-baratang', name: 'Baratang', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-wandoor', name: 'Wandoor', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 },
-          { id: 'andaman-garacharma', name: 'Garacharma', count: 1, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'andaman-prothrapur', name: 'Prothrapur', count: 1, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 0 },
-          { id: 'andaman-bambooflat', name: 'Bambooflat', count: 2, stateId: 'andaman', dcCount: 0, popCount: 1, siteCount: 1 },
-          { id: 'andaman-ferrargunj', name: 'Ferrargunj', count: 1, stateId: 'andaman', dcCount: 0, popCount: 0, siteCount: 1 }
+        "id": "kerala",
+        "name": "Kerala",
+        "cityCount": 30,
+        "regionId": "south",
+        "themeColor": "#059669",
+        "bgColor": "#d1fae5",
+        "cities": [
+          {
+            "id": "kl-kochi",
+            "name": "Kochi",
+            "count": 142,
+            "stateId": "kerala",
+            "dcCount": 6,
+            "popCount": 18,
+            "siteCount": 48
+          },
+          {
+            "id": "kl-thiruvananthapuram",
+            "name": "Thiruvananthapuram",
+            "count": 134,
+            "stateId": "kerala",
+            "dcCount": 5,
+            "popCount": 15,
+            "siteCount": 42
+          },
+          {
+            "id": "kl-kozhikode",
+            "name": "Kozhikode",
+            "count": 108,
+            "stateId": "kerala",
+            "dcCount": 3,
+            "popCount": 11,
+            "siteCount": 30
+          },
+          {
+            "id": "kerala-thrissur",
+            "name": "Thrissur",
+            "count": 106,
+            "stateId": "kerala",
+            "dcCount": 3,
+            "popCount": 10,
+            "siteCount": 28
+          },
+          {
+            "id": "kerala-kollam",
+            "name": "Kollam",
+            "count": 98,
+            "stateId": "kerala",
+            "dcCount": 2,
+            "popCount": 8,
+            "siteCount": 24
+          },
+          {
+            "id": "kerala-kannur",
+            "name": "Kannur",
+            "count": 95,
+            "stateId": "kerala",
+            "dcCount": 2,
+            "popCount": 7,
+            "siteCount": 22
+          },
+          {
+            "id": "kerala-alappuzha",
+            "name": "Alappuzha",
+            "count": 92,
+            "stateId": "kerala",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "kerala-kottayam",
+            "name": "Kottayam",
+            "count": 92,
+            "stateId": "kerala",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "kerala-palakkad",
+            "name": "Palakkad",
+            "count": 92,
+            "stateId": "kerala",
+            "dcCount": 2,
+            "popCount": 6,
+            "siteCount": 20
+          },
+          {
+            "id": "kerala-manjeri",
+            "name": "Manjeri",
+            "count": 88,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "kerala-thalassery",
+            "name": "Thalassery",
+            "count": 88,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 5,
+            "siteCount": 18
+          },
+          {
+            "id": "kerala-ponnani",
+            "name": "Ponnani",
+            "count": 86,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "kerala-vatakara",
+            "name": "Vatakara",
+            "count": 86,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 4,
+            "siteCount": 16
+          },
+          {
+            "id": "kerala-kanhangad",
+            "name": "Kanhangad",
+            "count": 84,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "kerala-payyanur",
+            "name": "Payyanur",
+            "count": 84,
+            "stateId": "kerala",
+            "dcCount": 1,
+            "popCount": 3,
+            "siteCount": 14
+          },
+          {
+            "id": "ld-kavaratti",
+            "name": "Kavaratti",
+            "count": 18,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 2,
+            "siteCount": 4
+          },
+          {
+            "id": "ld-agatti",
+            "name": "Agatti",
+            "count": 14,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 3
+          },
+          {
+            "id": "ld-amini",
+            "name": "Amini",
+            "count": 12,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 2
+          },
+          {
+            "id": "ld-andrott",
+            "name": "Andrott",
+            "count": 12,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 2
+          },
+          {
+            "id": "ld-kadmat",
+            "name": "Kadmat",
+            "count": 12,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 2
+          },
+          {
+            "id": "ld-kalpeni",
+            "name": "Kalpeni",
+            "count": 12,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 2
+          },
+          {
+            "id": "ld-minicoy",
+            "name": "Minicoy",
+            "count": 12,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 1,
+            "siteCount": 2
+          },
+          {
+            "id": "ld-kiltan",
+            "name": "Kiltan",
+            "count": 10,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-chetlat",
+            "name": "Chetlat",
+            "count": 10,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-bitra",
+            "name": "Bitra",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-bangaram",
+            "name": "Bangaram",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-suhelipar",
+            "name": "Suheli Par",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-cheriyam",
+            "name": "Cheriyam",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-tinakara",
+            "name": "Tinakara",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          },
+          {
+            "id": "ld-pitti",
+            "name": "Pitti",
+            "count": 8,
+            "stateId": "kerala",
+            "dcCount": 0,
+            "popCount": 0,
+            "siteCount": 1
+          }
         ]
       }
     ]

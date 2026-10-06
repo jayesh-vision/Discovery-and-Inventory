@@ -11,6 +11,8 @@
     "typecheck": "tsc -b",
     "legacy:bundle": "node scripts/bundle-legacy.mjs",
     "gen:sites": "node scripts/gen-sites.mjs",
+    "gen:devices": "node scripts/generate-synced-devices.mjs",
+    "audit:estate": "node tests/verify-all-estate-data.mjs",
     "build:single": "VITE_ROUTER=hash vite build && node scripts/single-file.mjs",
     "test": "node tests/run.mjs",
     "test:unit": "node --test tests/unit/",

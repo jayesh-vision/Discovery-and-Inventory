@@ -306,6 +306,7 @@ export default function Insights() {
                   )}
                 </div>
                 <div className="ix-kpi-sub">{m.hero ? hero.rest : m.sub}</div>
+                {m.chip && <div className="ix-kpi-chip" title={m.chip}>{m.chip}</div>}
                 {r.target !== null && r.scaleMin !== undefined && (
                   <div className="ix-kpi-foot">
                     <TargetBar value={r.value} target={r.target} min={r.scaleMin} max={r.scaleMax!} hex={hex}
