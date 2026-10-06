@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/inventory-insights.css';
 import {
-  ACCENT,
   GOOD,
   WARN,
   CRIT,
@@ -33,9 +33,6 @@ import {
   SPARES_DYNAMIC,
   NOT_RECONFIRMED_DYNAMIC,
   QUALITY_ROWS_DYNAMIC,
-  CROSS_LINKS_DYNAMIC,
-  RECON_DYNAMIC,
-  SUPPORT_DYNAMIC,
   BOTTOM_NAVIGATE_DYNAMIC,
   SITES_DYNAMIC,
   SERVICES_DYNAMIC,
@@ -251,6 +248,42 @@ export default function InventoryInsights() {
   const [toast, setToast] = useState<string>('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Chart Hover & Tooltip State ──
+  const [tooltip, setTooltip] = useState<{
+    title: string;
+    badge?: string | number;
+    badgeColor?: string;
+    dotColor?: string;
+    rows?: Array<{ label: string; value: string }>;
+    note?: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const [hoveredBucket, setHoveredBucket] = useState<string | null>(null);
+  const [hoveredVendor, setHoveredVendor] = useState<string | null>(null);
+  const [hoveredLifecycle, setHoveredLifecycle] = useState<string | null>(null);
+  const [hoveredPanelItemKey, setHoveredPanelItemKey] = useState<string | null>(null);
+
+  const showTip = (payload: {
+    title: string;
+    badge?: string | number;
+    badgeColor?: string;
+    dotColor?: string;
+    rows?: Array<{ label: string; value: string }>;
+    note?: string;
+  }, e: React.MouseEvent) => {
+    setTooltip({ ...payload, x: e.clientX, y: e.clientY });
+  };
+
+  const moveTip = (e: React.MouseEvent) => {
+    setTooltip(prev => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null));
+  };
+
+  const hideTip = () => {
+    setTooltip(null);
+  };
+
   const say = (msg: string) => {
     setToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -315,12 +348,6 @@ export default function InventoryInsights() {
     setTimeout(() => {
       window.print();
     }, 100);
-  };
-
-  const handleRunRecon = () => {
-    say(
-      `Reconciliation run queued across all four buckets: ${RECON_DYNAMIC[dayRange].invOnly} inventory-only and ${RECON_DYNAMIC[dayRange].netOnly} network-only records will be re-matched. Results land in Discovery & Reconciliation.`
-    );
   };
 
   // ── Donut Calculations ──
@@ -419,17 +446,6 @@ export default function InventoryInsights() {
         color: r < 1 ? CRIT : WARN
       };
     });
-  }, [dayRange]);
-
-  // ── Operational Trend Chart ──
-  const trendPoints = useMemo(() => {
-    const win = TREND_SERIES[dayRange] || TREND_SERIES['30d'];
-    const maxVal = Math.max(...win.map(w => w[1]));
-    return win.map((w, i) => ({
-      label: w[0],
-      h: `${Math.max(Math.round((w[1] / maxVal) * 96), 4)}px`,
-      color: i === win.length - 1 ? ACCENT : '#BFD0FF'
-    }));
   }, [dayRange]);
 
   // ── Sites Needing Attention ──
@@ -619,7 +635,25 @@ export default function InventoryInsights() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
                 {p.children.map(k => (
-                  <div key={k.name} style={{ borderLeft: `2.5px solid ${k.color}`, paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                  <div
+                    key={k.name}
+                    style={{ borderLeft: `2.5px solid ${k.color}`, paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, cursor: 'pointer' }}
+                    onMouseEnter={(e) => {
+                      showTip({
+                        title: `${k.name} Coverage & Health`,
+                        dotColor: k.color,
+                        badge: k.health,
+                        rows: [
+                          { label: 'Category volume', value: k.count },
+                          { label: k.covLabel, value: k.coverage },
+                          { label: 'Open defects', value: `${k.critical} critical · ${k.high} high` }
+                        ],
+                        note: k.scope
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{k.name}</span>
                       <span style={{ fontSize: 10.5, padding: '1.5px 6px', borderRadius: 999, background: 'var(--ii-bg-subtle)', color: 'var(--ii-text-body)', border: '1px solid var(--ii-border)', fontWeight: 500 }}>
@@ -657,11 +691,80 @@ export default function InventoryInsights() {
               const iss = ISSUES_DYNAMIC[dayRange];
               const tot = Math.max(iss.crit + iss.high + iss.med + iss.low, 1);
               return (
-                <div style={{ display: 'flex', height: 5, borderRadius: 2.5, overflow: 'hidden', gap: 2, marginTop: 2 }}>
-                  <div style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)' }} />
-                  <div style={{ width: `${((iss.high / tot) * 100).toFixed(1)}%`, background: 'var(--ii-warning)' }} />
-                  <div style={{ width: `${((iss.med / tot) * 100).toFixed(1)}%`, background: 'var(--ii-primary)' }} />
-                  <div style={{ width: `${((iss.low / tot) * 100).toFixed(1)}%`, background: 'var(--ii-text-faint)' }} />
+                <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2, marginTop: 2 }}>
+                  <div
+                    className="ii-severity-seg"
+                    style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)' }}
+                    onMouseEnter={(e) => {
+                      showTip({
+                        title: 'Critical Open Issues',
+                        dotColor: 'var(--ii-danger)',
+                        badge: `${iss.crit}`,
+                        rows: [
+                          { label: 'Count', value: `${iss.crit} defects` },
+                          { label: 'Backlog share', value: `${((iss.crit / tot) * 100).toFixed(1)}%` },
+                          { label: 'Median resolution', value: `${iss.medianDays} days` }
+                        ],
+                        note: 'Immediate risk to network availability, redundant link loss, or customer traffic.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  />
+                  <div
+                    className="ii-severity-seg"
+                    style={{ width: `${((iss.high / tot) * 100).toFixed(1)}%`, background: 'var(--ii-warning)' }}
+                    onMouseEnter={(e) => {
+                      showTip({
+                        title: 'High Severity Issues',
+                        dotColor: 'var(--ii-warning)',
+                        badge: `${iss.high}`,
+                        rows: [
+                          { label: 'Count', value: `${iss.high} defects` },
+                          { label: 'Backlog share', value: `${((iss.high / tot) * 100).toFixed(1)}%` }
+                        ],
+                        note: 'High impact: unmapped topology link, missing card slot, or unconfirmed route.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  />
+                  <div
+                    className="ii-severity-seg"
+                    style={{ width: `${((iss.med / tot) * 100).toFixed(1)}%`, background: 'var(--ii-primary)' }}
+                    onMouseEnter={(e) => {
+                      showTip({
+                        title: 'Medium Severity Issues',
+                        dotColor: 'var(--ii-primary)',
+                        badge: `${iss.med}`,
+                        rows: [
+                          { label: 'Count', value: `${iss.med} defects` },
+                          { label: 'Backlog share', value: `${((iss.med / tot) * 100).toFixed(1)}%` }
+                        ],
+                        note: 'Medium impact: version drift or missing administrative attributes.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  />
+                  <div
+                    className="ii-severity-seg"
+                    style={{ width: `${((iss.low / tot) * 100).toFixed(1)}%`, background: 'var(--ii-text-faint)' }}
+                    onMouseEnter={(e) => {
+                      showTip({
+                        title: 'Low Severity Issues',
+                        dotColor: 'var(--ii-text-faint)',
+                        badge: `${iss.low}`,
+                        rows: [
+                          { label: 'Count', value: `${iss.low} defects` },
+                          { label: 'Backlog share', value: `${((iss.low / tot) * 100).toFixed(1)}%` }
+                        ],
+                        note: 'Low impact: non-critical naming conventions or minor catalog gaps.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  />
                 </div>
               );
             })()}
@@ -685,31 +788,101 @@ export default function InventoryInsights() {
             <div className="ii-card-title">Inventory by bucket</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Bucket share donut">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" />
-                {bucketShare.map(b => (
-                  <circle
-                    key={b.name}
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke={b.color}
-                    strokeWidth="14"
-                    strokeDasharray={b.dash}
-                    strokeDashoffset={b.offset}
-                    transform="rotate(-90 50 50)"
-                  />
-                ))}
-                <text x="50" y="47" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-mono, ui-monospace, monospace)', fontSize: 12, fontWeight: 500, fill: 'var(--ii-text-heading, #1e293b)' }}>
-                  {BUCKET_SHARE_DATA[dayRange].centerLabel}
-                </text>
-                <text x="50" y="60" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-sans, Inter, sans-serif)', fontSize: 7, fill: 'var(--ii-text-muted, #64748b)' }}>
-                  records
-                </text>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" pointerEvents="none" />
+                <g transform="rotate(-90 50 50)">
+                  {bucketShare.map(b => {
+                    const isHov = hoveredBucket === b.name;
+                    const isDimmed = hoveredBucket !== null && !isHov;
+                    return (
+                      <circle
+                        key={b.name}
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke={b.color}
+                        strokeWidth={isHov ? 16 : 14}
+                        strokeDasharray={b.dash}
+                        strokeDashoffset={b.offset}
+                        className={`ii-donut-segment ${isHov ? 'is-active' : ''}`}
+                        style={{
+                          opacity: isDimmed ? 0.35 : 1,
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => {
+                          setHoveredBucket(b.name);
+                          showTip({
+                            title: `${b.name} Inventory`,
+                            dotColor: b.color,
+                            badge: b.pctLabel,
+                            rows: [
+                              { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Logical Layer' },
+                              { label: 'Total count', value: b.count },
+                              { label: 'Share of total', value: b.pctLabel }
+                            ],
+                            note: b.name === 'Active'
+                              ? 'Physical routers, switches, RAN, optical nodes & hardware components.'
+                              : b.name === 'Passive'
+                              ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
+                              : b.name === 'Virtual'
+                              ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
+                              : 'Software-defined cells, tunnels, VRFs, and wavelength services.'
+                          }, e);
+                        }}
+                        onMouseMove={moveTip}
+                        onMouseLeave={() => {
+                          setHoveredBucket(null);
+                          hideTip();
+                        }}
+                      />
+                    );
+                  })}
+                </g>
+                {(() => {
+                  const actB = bucketShare.find(b => b.name === hoveredBucket);
+                  return (
+                    <g className="ii-donut-center-group" pointerEvents="none">
+                      <text x="50" y="47" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-mono, ui-monospace, monospace)', fontSize: actB ? 11 : 12, fontWeight: 500, fill: 'var(--ii-text-heading, #1e293b)' }}>
+                        {actB ? actB.count : BUCKET_SHARE_DATA[dayRange].centerLabel}
+                      </text>
+                      <text x="50" y="60" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-sans, Inter, sans-serif)', fontSize: 7, fill: 'var(--ii-text-muted, #64748b)' }}>
+                        {actB ? `${actB.pctLabel} ${actB.name}` : 'records'}
+                      </text>
+                    </g>
+                  );
+                })()}
               </svg>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexGrow: 1 }}>
                 {bucketShare.map(b => (
-                  <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                  <div
+                    key={b.name}
+                    className={`ii-donut-legend-row ${hoveredBucket === b.name ? 'is-active' : ''}`}
+                    onMouseEnter={(e) => {
+                      setHoveredBucket(b.name);
+                      showTip({
+                        title: `${b.name} Inventory`,
+                        dotColor: b.color,
+                        badge: b.pctLabel,
+                        rows: [
+                          { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Logical Layer' },
+                          { label: 'Total count', value: b.count },
+                          { label: 'Share of total', value: b.pctLabel }
+                        ],
+                        note: b.name === 'Active'
+                          ? 'Physical routers, switches, RAN, optical nodes & hardware components.'
+                          : b.name === 'Passive'
+                          ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
+                          : b.name === 'Virtual'
+                          ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
+                          : 'Software-defined cells, tunnels, VRFs, and wavelength services.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={() => {
+                      setHoveredBucket(null);
+                      hideTip();
+                    }}
+                  >
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: b.color, flexShrink: 0 }} />
                     <span style={{ flexGrow: 1, color: 'var(--ii-text-body)' }}>{b.name}</span>
                     <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{b.count}</span>
@@ -726,18 +899,69 @@ export default function InventoryInsights() {
           {/* Panel 2: Lifecycle */}
           <div className="ii-card" style={{ gap: 12 }}>
             <div className="ii-card-title">Lifecycle</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
               {LIFECYCLE_DYNAMIC[dayRange].states.map(l => (
-                <div key={l.name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  key={l.name}
+                  className={`ii-lifecycle-card ${hoveredLifecycle === l.name ? 'is-active' : ''}`}
+                  onMouseEnter={(e) => {
+                    setHoveredLifecycle(l.name);
+                    showTip({
+                      title: `${l.name} State`,
+                      dotColor: l.color,
+                      badge: l.count,
+                      rows: [
+                        { label: 'Volume', value: `${l.count} assets` },
+                        { label: 'Lifecycle phase', value: l.name }
+                      ],
+                      note: l.name === 'Faulty'
+                        ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
+                        : l.name === 'Planned'
+                        ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
+                        : 'Tracked continuously across active discovery and manual work orders.'
+                    }, e);
+                  }}
+                  onMouseMove={moveTip}
+                  onMouseLeave={() => {
+                    setHoveredLifecycle(null);
+                    hideTip();
+                  }}
+                >
                   <div style={{ height: 4, borderRadius: 2, background: l.color }} />
-                  <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{l.count}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ii-text-muted, #64748b)' }}>{l.name}</div>
+                  <div className="ii-mono" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{l.count}</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--ii-text-muted, #64748b)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
               {LIFECYCLE_DYNAMIC[dayRange].bars.map(l => (
-                <div key={l.name} style={{ width: l.w, background: l.color }} title={`${l.name}: ${l.count} (${l.pct})`} />
+                <div
+                  key={l.name}
+                  className={`ii-lifecycle-seg ${hoveredLifecycle === l.name ? 'is-active' : ''}`}
+                  style={{ width: l.w, background: l.color }}
+                  onMouseEnter={(e) => {
+                    setHoveredLifecycle(l.name);
+                    showTip({
+                      title: `${l.name} State`,
+                      dotColor: l.color,
+                      badge: l.pct,
+                      rows: [
+                        { label: 'Asset count', value: l.count },
+                        { label: 'Fleet proportion', value: l.pct }
+                      ],
+                      note: l.name === 'Faulty'
+                        ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
+                        : l.name === 'Planned'
+                        ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
+                        : 'Network element status synchronized via EMS / NMS telemetry.'
+                    }, e);
+                  }}
+                  onMouseMove={moveTip}
+                  onMouseLeave={() => {
+                    setHoveredLifecycle(null);
+                    hideTip();
+                  }}
+                />
               ))}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted, #64748b)' }}>
@@ -753,31 +977,89 @@ export default function InventoryInsights() {
             <div className="ii-card-title">Vendor mix (active equipment)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Vendor share donut">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" />
-                {vendorMix.map(v => (
-                  <circle
-                    key={v.name}
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke={v.color}
-                    strokeWidth="14"
-                    strokeDasharray={v.dash}
-                    strokeDashoffset={v.offset}
-                    transform="rotate(-90 50 50)"
-                  />
-                ))}
-                <text x="50" y="47" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-mono, ui-monospace, monospace)', fontSize: 12, fontWeight: 500, fill: 'var(--ii-text-heading, #1e293b)' }}>
-                  {VENDOR_MIX_DATA[dayRange].activeNEs}
-                </text>
-                <text x="50" y="60" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-sans, Inter, sans-serif)', fontSize: 7, fill: 'var(--ii-text-muted, #64748b)' }}>
-                  active NEs
-                </text>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" pointerEvents="none" />
+                <g transform="rotate(-90 50 50)">
+                  {vendorMix.map(v => {
+                    const isHov = hoveredVendor === v.name;
+                    const isDimmed = hoveredVendor !== null && !isHov;
+                    return (
+                      <circle
+                        key={v.name}
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke={v.color}
+                        strokeWidth={isHov ? 16 : 14}
+                        strokeDasharray={v.dash}
+                        strokeDashoffset={v.offset}
+                        className={`ii-donut-segment ${isHov ? 'is-active' : ''}`}
+                        style={{
+                          opacity: isDimmed ? 0.35 : 1,
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => {
+                          setHoveredVendor(v.name);
+                          showTip({
+                            title: `${v.name} Hardware`,
+                            dotColor: v.color,
+                            badge: v.pctLabel,
+                            rows: [
+                              { label: 'Vendor share', value: v.pctLabel },
+                              { label: 'Catalogued models', value: `${VENDOR_MIX_DATA[dayRange].models} models` },
+                              { label: 'Active NE baseline', value: 'Approved manufacturer' }
+                            ],
+                            note: 'Vendor mix calculated across managed physical and virtual network elements.'
+                          }, e);
+                        }}
+                        onMouseMove={moveTip}
+                        onMouseLeave={() => {
+                          setHoveredVendor(null);
+                          hideTip();
+                        }}
+                      />
+                    );
+                  })}
+                </g>
+                {(() => {
+                  const actV = vendorMix.find(v => v.name === hoveredVendor);
+                  return (
+                    <g className="ii-donut-center-group" pointerEvents="none">
+                      <text x="50" y="47" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-mono, ui-monospace, monospace)', fontSize: actV ? 14 : 12, fontWeight: 500, fill: 'var(--ii-text-heading, #1e293b)' }}>
+                        {actV ? actV.pctLabel : VENDOR_MIX_DATA[dayRange].activeNEs}
+                      </text>
+                      <text x="50" y="60" textAnchor="middle" style={{ fontFamily: 'var(--ii-font-sans, Inter, sans-serif)', fontSize: 7, fill: 'var(--ii-text-muted, #64748b)' }}>
+                        {actV ? actV.name : 'active NEs'}
+                      </text>
+                    </g>
+                  );
+                })()}
               </svg>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexGrow: 1 }}>
                 {vendorMix.map(v => (
-                  <div key={v.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                  <div
+                    key={v.name}
+                    className={`ii-donut-legend-row ${hoveredVendor === v.name ? 'is-active' : ''}`}
+                    onMouseEnter={(e) => {
+                      setHoveredVendor(v.name);
+                      showTip({
+                        title: `${v.name} Hardware`,
+                        dotColor: v.color,
+                        badge: v.pctLabel,
+                        rows: [
+                          { label: 'Vendor share', value: v.pctLabel },
+                          { label: 'Catalogued models', value: `${VENDOR_MIX_DATA[dayRange].models} models` },
+                          { label: 'Active NE baseline', value: 'Approved manufacturer' }
+                        ],
+                        note: 'Vendor mix calculated across managed physical and virtual network elements.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={() => {
+                      setHoveredVendor(null);
+                      hideTip();
+                    }}
+                  >
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: v.color, flexShrink: 0 }} />
                     <span style={{ flexGrow: 1, color: 'var(--ii-text-body)' }}>{v.name}</span>
                     <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{v.pctLabel}</span>
@@ -811,19 +1093,45 @@ export default function InventoryInsights() {
               </div>
               <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{p.desc}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {p.items.map(t => (
-                  <div key={t.name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, gap: 8 }}>
-                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ii-text-body)' }}>
-                        {t.name}
-                      </span>
-                      <span className="ii-mono" style={{ flexShrink: 0, color: 'var(--ii-text-muted)' }}>{t.count}</span>
+                {p.items.map(t => {
+                  const itemKey = `${p.title}-${t.name}`;
+                  const isHov = hoveredPanelItemKey === itemKey;
+                  return (
+                    <div
+                      key={t.name}
+                      className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
+                      onMouseEnter={(e) => {
+                        setHoveredPanelItemKey(itemKey);
+                        showTip({
+                          title: t.name,
+                          dotColor: p.color,
+                          badge: t.count,
+                          rows: [
+                            { label: 'Category', value: p.title },
+                            { label: 'Installed units', value: `${t.count} items` },
+                            { label: 'Category proportion', value: t.w }
+                          ],
+                          note: p.desc
+                        }, e);
+                      }}
+                      onMouseMove={moveTip}
+                      onMouseLeave={() => {
+                        setHoveredPanelItemKey(null);
+                        hideTip();
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, gap: 8 }}>
+                        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ii-text-body)' }}>
+                          {t.name}
+                        </span>
+                        <span className="ii-mono" style={{ flexShrink: 0, color: 'var(--ii-text-muted)' }}>{t.count}</span>
+                      </div>
+                      <div className="ii-panel-bar-track">
+                        <div className="ii-panel-bar-fill" style={{ width: t.w, background: p.color }} />
+                      </div>
                     </div>
-                    <div style={{ height: 4, borderRadius: 2, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: t.w, background: p.color }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ borderTop: '1px solid var(--ii-border-light)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
                 {p.facts.map(f => (
@@ -846,17 +1154,58 @@ export default function InventoryInsights() {
             <div className="ii-card-title">Decommission &amp; disposal pipeline</div>
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{DECOM_DYNAMIC[dayRange].periodLabel}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 14px 1fr 14px 1fr', gap: 6, alignItems: 'center' }}>
-              <div style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+              <div
+                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                onMouseEnter={(e) => showTip({
+                  title: 'Marked Decommissioned',
+                  badge: DECOM_DYNAMIC[dayRange].marked,
+                  rows: [
+                    { label: 'Pipeline state', value: 'Phase 1: Staged for removal' },
+                    { label: 'Queued records', value: `${DECOM_DYNAMIC[dayRange].marked} elements` }
+                  ],
+                  note: 'Service deprovisioned; work orders dispatched for physical decoupling.'
+                }, e)}
+                onMouseMove={moveTip}
+                onMouseLeave={hideTip}
+              >
                 <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].marked}</div>
                 <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Marked decommissioned</div>
               </div>
               <div style={{ textAlign: 'center', color: 'var(--ii-text-faint)' }}>→</div>
-              <div style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+              <div
+                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                onMouseEnter={(e) => showTip({
+                  title: 'Still Live in Discovery',
+                  badge: DECOM_DYNAMIC[dayRange].live,
+                  badgeColor: 'var(--ii-warning)',
+                  rows: [
+                    { label: 'Pipeline state', value: 'Phase 2: Ghost presence' },
+                    { label: 'Active in EMS', value: `${DECOM_DYNAMIC[dayRange].live} elements` }
+                  ],
+                  note: 'Power/links remain connected in field despite formal decommissioning.'
+                }, e)}
+                onMouseMove={moveTip}
+                onMouseLeave={hideTip}
+              >
                 <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].live}</div>
                 <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Still live in discovery — removal pending</div>
               </div>
               <div style={{ textAlign: 'center', color: 'var(--ii-text-faint)' }}>→</div>
-              <div style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+              <div
+                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                onMouseEnter={(e) => showTip({
+                  title: 'Confirmed Removed',
+                  badge: DECOM_DYNAMIC[dayRange].confirmed,
+                  badgeColor: 'var(--ii-success)',
+                  rows: [
+                    { label: 'Pipeline state', value: 'Phase 3: Fully retired' },
+                    { label: 'Recovered hardware', value: `${DECOM_DYNAMIC[dayRange].confirmed} elements` }
+                  ],
+                  note: 'Verified absent in network and decommission records archived.'
+                }, e)}
+                onMouseMove={moveTip}
+                onMouseLeave={hideTip}
+              >
                 <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].confirmed}</div>
                 <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Confirmed removed</div>
               </div>
@@ -864,13 +1213,29 @@ export default function InventoryInsights() {
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>Decommissions by bucket</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px 14px' }}>
               {decomByBucket.map(d => (
-                <div key={d.name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div
+                  key={d.name}
+                  className="ii-panel-bar-row"
+                  onMouseEnter={(e) => showTip({
+                    title: `${d.name} Decommissions`,
+                    dotColor: d.color,
+                    badge: `${d.count}`,
+                    rows: [
+                      { label: 'Bucket', value: d.name },
+                      { label: 'Decommission count', value: `${d.count} elements` },
+                      { label: 'Relative pipeline share', value: d.w }
+                    ],
+                    note: 'Decommission volume tracked during current analysis window.'
+                  }, e)}
+                  onMouseMove={moveTip}
+                  onMouseLeave={hideTip}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                     <span style={{ color: 'var(--ii-text-body)' }}>{d.name}</span>
                     <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{d.count}</span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: d.w, background: d.color }} />
+                  <div className="ii-panel-bar-track">
+                    <div className="ii-panel-bar-fill" style={{ width: d.w, background: d.color }} />
                   </div>
                 </div>
               ))}
@@ -892,7 +1257,24 @@ export default function InventoryInsights() {
                   <span style={{ textAlign: 'right', color: 'var(--ii-text-body)' }}>{r.name}</span>
                   <div style={{ width: r.w, height: 12, display: 'flex', gap: 1, borderRadius: 3, overflow: 'hidden' }}>
                     {r.segs.map((s, idx) => (
-                      <div key={idx} style={{ width: s.w, background: s.color }} />
+                      <div
+                        key={idx}
+                        className="ii-eol-seg"
+                        style={{ width: s.w, background: s.color }}
+                        onMouseEnter={(e) => showTip({
+                          title: `${r.name} · ${EOL_VENDORS[idx]?.name || 'Vendor'}`,
+                          dotColor: s.color,
+                          badge: s.w,
+                          rows: [
+                            { label: 'Category', value: r.name },
+                            { label: 'Vendor proportion', value: s.w },
+                            { label: 'Category total exposed', value: r.count }
+                          ],
+                          note: 'Hardware models reaching vendor End-of-Life / End-of-Support milestone.'
+                        }, e)}
+                        onMouseMove={moveTip}
+                        onMouseLeave={hideTip}
+                      />
                     ))}
                   </div>
                   <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{r.count}</span>
@@ -901,7 +1283,21 @@ export default function InventoryInsights() {
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--ii-text-body)', marginTop: 2 }}>
               {EOL_VENDORS.map(v => (
-                <span key={v.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span
+                  key={v.name}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', padding: '2px 4px', borderRadius: 4 }}
+                  onMouseEnter={(e) => showTip({
+                    title: `${v.name} Lifecycle Exposure`,
+                    dotColor: v.color,
+                    rows: [
+                      { label: 'Vendor', value: v.name },
+                      { label: 'Lifecycle status', value: 'Active EOL milestones catalogued' }
+                    ],
+                    note: 'Filtered across vendor hardware platforms.'
+                  }, e)}
+                  onMouseMove={moveTip}
+                  onMouseLeave={hideTip}
+                >
                   <span style={{ width: 9, height: 9, borderRadius: 2, background: v.color }} />
                   {v.name}
                 </span>
@@ -920,10 +1316,25 @@ export default function InventoryInsights() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
               {driftRows.map(d => (
-                <div key={d.name} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 44px', gap: 10, alignItems: 'center', fontSize: 12 }}>
+                <div
+                  key={d.name}
+                  className="ii-drift-row"
+                  onMouseEnter={(e) => showTip({
+                    title: `${d.name} Firmware Drift`,
+                    badge: d.w,
+                    rows: [
+                      { label: 'Vendor', value: d.name },
+                      { label: 'Off-baseline elements', value: `${d.count} units` },
+                      { label: 'Proportion of total drift', value: d.w }
+                    ],
+                    note: 'Active OS build differs from network architecture golden baseline.'
+                  }, e)}
+                  onMouseMove={moveTip}
+                  onMouseLeave={hideTip}
+                >
                   <span style={{ textAlign: 'right', color: 'var(--ii-text-body)' }}>{d.name}</span>
                   <div style={{ height: 12, borderRadius: 3, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: d.w, background: 'var(--ii-border-hover)' }} />
+                    <div className="ii-drift-bar-fill" style={{ height: '100%', width: d.w, background: 'var(--ii-border-hover)', transition: 'background-color 0.2s ease, width 0.3s ease' }} />
                   </div>
                   <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{d.count}</span>
                 </div>
@@ -965,11 +1376,30 @@ export default function InventoryInsights() {
                 </thead>
                 <tbody>
                   {sparesList.map(s => (
-                    <tr key={s.model}>
+                    <tr
+                      key={s.model}
+                      className="ii-spares-row"
+                      onMouseEnter={(e) => showTip({
+                        title: s.model,
+                        dotColor: s.color,
+                        badge: s.ratio,
+                        rows: [
+                          { label: 'Deployed in network', value: s.deployed },
+                          { label: 'Spares in stock', value: s.spares },
+                          { label: 'Coverage ratio', value: s.ratio },
+                          { label: 'Safe threshold', value: '≥ 2.0%' }
+                        ],
+                        note: s.color === CRIT
+                          ? 'Critical spare parts shortage (< 1.0% buffer). Immediate order required.'
+                          : 'Below recommended 2% buffer threshold. Review warehouse lead time.'
+                      }, e)}
+                      onMouseMove={moveTip}
+                      onMouseLeave={hideTip}
+                    >
                       <td style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.model}</td>
                       <td className="ii-mono" style={{ textAlign: 'right', color: 'var(--ii-text-muted)' }}>{s.deployed}</td>
                       <td className="ii-mono" style={{ textAlign: 'right', fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.spares}</td>
-                      <td className="ii-mono" style={{ textAlign: 'right', fontWeight: 500, color: 'var(--ii-text-body)' }}>{s.ratio}</td>
+                      <td className="ii-mono" style={{ textAlign: 'right', fontWeight: 500, color: s.color }}>{s.ratio}</td>
                     </tr>
                   ))}
                   {sparesList.length === 0 && (
@@ -1018,9 +1448,24 @@ export default function InventoryInsights() {
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 48, flexGrow: 1 }}>
                 {VERIFY_TREND.map(v => (
-                  <div key={v.label} style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: 2 }}>
+                  <div
+                    key={v.label}
+                    className="ii-trend-bar-col"
+                    onMouseEnter={(e) => showTip({
+                      title: `${v.label} Survey Audit`,
+                      dotColor: v.color,
+                      badge: `${parseInt(v.h, 10)}%`,
+                      rows: [
+                        { label: 'Field-verified share', value: `${parseInt(v.h, 10)}%` },
+                        { label: 'Unverified backlog', value: `${100 - parseInt(v.h, 10)}%` }
+                      ],
+                      note: 'Audited by physical OSP survey teams and reconciled into GIS.'
+                    }, e)}
+                    onMouseMove={moveTip}
+                    onMouseLeave={hideTip}
+                  >
                     <span className="ii-mono" style={{ fontSize: 10, color: 'var(--ii-text-muted)' }}>{v.label}</span>
-                    <div style={{ width: '100%', height: v.h, borderRadius: '3px 3px 0 0', background: v.color }} />
+                    <div className="ii-trend-bar-fill" style={{ height: v.h, background: v.color }} />
                   </div>
                 ))}
               </div>
@@ -1037,7 +1482,7 @@ export default function InventoryInsights() {
         {/* ── Tier 4: Trust in the data ── */}
         <div className="ii-section-eyebrow">Trust in the data</div>
 
-        <section aria-label="Quality and integrity" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
+        <section aria-label="Quality" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
           {/* Quality table */}
           <div className="ii-card" style={{ gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1084,168 +1529,9 @@ export default function InventoryInsights() {
               Complete = mandatory attributes filled · Integrity = parent/child and A–Z relationships resolved · Fresh = updated by discovery, NFVO, mapping or survey within SLA (24 h active/virtual/logical, 90 d passive).
             </div>
           </div>
-
-          {/* Cross-inventory integrity */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Cross-inventory integrity</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              How well the four inventories are linked to each other.
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {CROSS_LINKS_DYNAMIC[dayRange].map(l => (
-                <div key={l.name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, gap: 8 }}>
-                    <span style={{ color: 'var(--ii-text-body)' }}>{l.name}</span>
-                    <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{l.value}</span>
-                  </div>
-                  <div style={{ height: 5, borderRadius: 2.5, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: l.value, background: l.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
 
-        {/* ── Tier 5: Operational trend ── */}
-        <div className="ii-section-eyebrow">Operational trend</div>
-
-        <section aria-label="Discovery, support and trend" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
-          {/* Discovery & reconciliation */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Discovery &amp; reconciliation</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Active via EMS/NMS and NETCONF/SNMP · Virtual via NFVO and K8s API · Logical via mapping to active ports · Passive via GIS and field survey
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Inventory only</div>
-                <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{RECON_DYNAMIC[dayRange].invOnly}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Matched</div>
-                <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{RECON_DYNAMIC[dayRange].matched}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Network only</div>
-                <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{RECON_DYNAMIC[dayRange].netOnly}</div>
-              </div>
-            </div>
-            {(() => {
-              const inv = parseInt(RECON_DYNAMIC[dayRange].invOnly.replace(/,/g, ''), 10) || 800;
-              const mat = parseInt(RECON_DYNAMIC[dayRange].matched.replace(/,/g, ''), 10) || 116000;
-              const net = parseInt(RECON_DYNAMIC[dayRange].netOnly.replace(/,/g, ''), 10) || 250;
-              const tot = inv + mat + net;
-              const w1 = ((inv / tot) * 100).toFixed(1) + '%';
-              const w2 = ((mat / tot) * 100).toFixed(1) + '%';
-              const w3 = ((net / tot) * 100).toFixed(1) + '%';
-              return (
-                <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
-                  <div style={{ width: w1, background: 'var(--ii-warning)' }} title={`Inventory only: ${RECON_DYNAMIC[dayRange].invOnly}`} />
-                  <div style={{ width: w2, background: 'var(--ii-success)' }} title={`Matched: ${RECON_DYNAMIC[dayRange].matched}`} />
-                  <div style={{ width: w3, background: 'var(--ii-danger)' }} title={`Network only: ${RECON_DYNAMIC[dayRange].netOnly}`} />
-                </div>
-              );
-            })()}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
-              {RECON_DYNAMIC[dayRange].gaps.map(g => (
-                <div key={g.name} style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ii-border-light)', paddingTop: 5 }}>
-                  <span style={{ color: 'var(--ii-text-body)' }}>{g.name}</span>
-                  <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{g.value}</span>
-                </div>
-              ))}
-            </div>
-            <button type="button" onClick={handleRunRecon} className="ii-link-btn" style={{ fontWeight: 500 }}>
-              Run reconciliation →
-            </button>
-          </div>
-
-          {/* Support & ageing */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Support &amp; ageing</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>End-of-support within 12 mo</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].eos}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Warranty expiring (90 d)</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].war}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Spares in stock</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].spares}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Fibre cable age &gt; 15 yrs</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].fibre}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Maintenance contracts ending (12 mo)</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].contracts}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Licences expiring (90 d)</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].lic}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Average active-equipment age</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SUPPORT_DYNAMIC[dayRange].age}</span>
-              </div>
-            </div>
-            <div className="ii-note-box" style={{ fontSize: 11.5 }}>
-              Warranty, licence and contract dates come from the asset's commercial record; 11% of active elements have no purchase or warranty date filled.
-            </div>
-          </div>
-
-          {/* Net record change */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div className="ii-card-title">Net record change</div>
-              <span style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>{NET_RECORD_DYNAMIC[dayRange].label}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Added</div>
-                <div className="ii-mono" style={{ fontSize: 16, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{NET_RECORD_DYNAMIC[dayRange].added}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Retired</div>
-                <div className="ii-mono" style={{ fontSize: 16, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{NET_RECORD_DYNAMIC[dayRange].retired}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Net</div>
-                <div className="ii-mono" style={{ fontSize: 16, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{NET_RECORD_DYNAMIC[dayRange].net}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 96, marginTop: 4 }}>
-              {trendPoints.map((m, idx) => (
-                <div key={idx} style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
-                  <div style={{ width: '100%', height: m.h, borderRadius: '3px 3px 0 0', background: m.color }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 5 }}>
-              {trendPoints.map((m, idx) => (
-                <div key={idx} style={{ flexGrow: 1, textAlign: 'center', fontSize: 10, color: 'var(--ii-text-muted)' }}>
-                  {m.label}
-                </div>
-              ))}
-            </div>
-            <div style={{ borderTop: '1px solid var(--ii-border-light)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Fastest growing</span>
-                <span style={{ fontWeight: 400, color: 'var(--ii-text-heading)' }}>Cells, cell-site routers</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Largest retirement</span>
-                <span style={{ fontWeight: 400, color: 'var(--ii-text-heading)' }}>SDH nodes, copper pairs</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Tier 6: Drill-down ── */}
+        {/* ── Tier 5: Drill-down ── */}
         <div className="ii-section-eyebrow">Drill-down</div>
 
         {/* 5 Navigation Tiles */}
@@ -1385,6 +1671,41 @@ export default function InventoryInsights() {
             ×
           </button>
         </div>
+      )}
+
+      {/* ── Interactive Chart Floating Tooltip Portal ── */}
+      {tooltip && createPortal(
+        <div
+          className="ii-chart-tooltip"
+          style={{
+            left: Math.min(window.innerWidth - 300, Math.max(16, tooltip.x + 14)),
+            top: Math.min(window.innerHeight - 160, Math.max(16, tooltip.y - 45))
+          }}
+        >
+          <div className="ii-chart-tooltip-head">
+            <div className="ii-chart-tooltip-title">
+              {tooltip.dotColor && (
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tooltip.dotColor, flexShrink: 0 }} />
+              )}
+              <span>{tooltip.title}</span>
+            </div>
+            {tooltip.badge && (
+              <span className="ii-chart-tooltip-badge" style={tooltip.badgeColor ? { color: tooltip.badgeColor } : undefined}>
+                {tooltip.badge}
+              </span>
+            )}
+          </div>
+          {tooltip.rows && tooltip.rows.map(r => (
+            <div key={r.label} className="ii-chart-tooltip-row">
+              <span className="ii-chart-tooltip-label">{r.label}</span>
+              <span className="ii-chart-tooltip-val">{r.value}</span>
+            </div>
+          ))}
+          {tooltip.note && (
+            <div className="ii-chart-tooltip-note">{tooltip.note}</div>
+          )}
+        </div>,
+        document.body
       )}
     </div>
   );

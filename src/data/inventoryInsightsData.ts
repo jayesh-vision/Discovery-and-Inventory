@@ -188,24 +188,24 @@ export const PANELS_DATA: PanelCategory[] = [
     title: 'Active (Physical)',
     color: ACT,
     route: '/inventory/physical',
-    desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+    desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
     items: bars([
-      ['Ports / interfaces', '1,246,300', 1246300],
-      ['Cards / modules', '118,200', 118200],
-      ['Shelves / chassis', '31,840', 31840],
-      ['Cell-site routers', '21,640', 21640],
-      ['Radio units (RRU / RU)', '18,640', 18640],
-      ['Racks and power units', '20,580', 20580],
-      ['Microwave radios (IDU / ODU)', '7,210', 7210],
+      ['Cell-site routers (CSR)', '21,640', 21640],
+      ['Radio units (RRU / AAU)', '18,640', 18640],
+      ['Carrier Ethernet & access switches', '9,120', 9120],
       ['Baseband units (BBU / DU)', '6,230', 6230],
-      ['Agg., PE and P routers', '5,680', 5680],
-      ['DWDM / OTN / ROADM nodes', '4,860', 4860]
+      ['Microwave radios (IDU / ODU)', '4,210', 4210],
+      ['Metro agg. & PE routers', '2,910', 2910],
+      ['DWDM / ROADM optical nodes', '1,510', 1510],
+      ['Data centre & spine-leaf switches', '860', 860],
+      ['GPON / XGS-PON OLTs', '390', 390],
+      ['Core / backbone routers (P)', '170', 170]
     ]),
     facts: [
       { name: 'Reachable in last discovery', value: '96.2%', color: GOOD },
       { name: 'Software version recorded', value: '94%', color: GOOD },
-      { name: 'Cards without slot position', value: '2,310', color: WARN },
-      { name: 'Port utilisation', value: '61%', color: '#111827' }
+      { name: 'Chassis serial verified', value: '97.6%', color: GOOD },
+      { name: 'Dual PSU / power monitored', value: '98.8%', color: '#111827' }
     ]
   },
   {
@@ -234,14 +234,16 @@ export const PANELS_DATA: PanelCategory[] = [
     title: 'Virtual (Logical)',
     color: VIR,
     route: '/inventory/virtual',
-    desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+    desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
     items: bars([
-      ['IMS (CSCF / TAS / SBC)', '820', 820],
-      ['UPF / SGW-U / PGW-U', '640', 640],
-      ['AMF / MME', '420', 420],
-      ['SMF / SGW-C / PGW-C', '380', 380],
-      ['UDM / HSS / UDR', '310', 310],
-      ['PCF / PCRF / CHF', '290', 290]
+      ['5G UPF & Packet Core (UPF/SGW-U)', '590', 590],
+      ['vIMS Core (CSCF / TAS / vSBC)', '500', 500],
+      ['5G/4G Control (AMF / MME / SMF)', '430', 430],
+      ['vRAN Cloud Units (vCU / vDU)', '370', 370],
+      ['vRouter & vBNG (Transport / IP)', '320', 320],
+      ['vFirewall & SecGW (Security Domain)', '260', 260],
+      ['UDM, UDR & Policy (PCF / PCRF)', '230', 230],
+      ['vCPE & SD-WAN Virtual Edge', '160', 160]
     ]),
     facts: [
       { name: 'Mapped to hosting cluster / server', value: '99.5%', color: GOOD },

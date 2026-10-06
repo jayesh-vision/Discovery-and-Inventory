@@ -609,6 +609,280 @@
   text-overflow: ellipsis;
 }
 
+/* ── Interactive Charts & Tooltip Enhancements ───────────────────────── */
+.ii-donut-segment {
+  cursor: pointer;
+  transition: stroke-width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.ii-donut-segment:hover,
+.ii-donut-segment.is-active {
+  stroke-width: 16px;
+  opacity: 1 !important;
+}
+
+.ii-donut-center-group {
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.ii-donut-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 6px;
+  margin: -2px -6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.ii-donut-legend-row:hover,
+.ii-donut-legend-row.is-active {
+  background-color: var(--ii-bg-subtle);
+  transform: translateX(2px);
+}
+
+.ii-lifecycle-seg {
+  cursor: pointer;
+  height: 100%;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), filter 0.18s ease;
+}
+
+.ii-lifecycle-seg:hover,
+.ii-lifecycle-seg.is-active {
+  transform: scaleY(1.4);
+  filter: brightness(1.2) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.ii-lifecycle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.ii-lifecycle-card:hover,
+.ii-lifecycle-card.is-active {
+  background-color: var(--ii-bg-subtle);
+  transform: translateY(-2px);
+}
+
+.ii-panel-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+  margin: -2px -6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ii-panel-bar-row:hover,
+.ii-panel-bar-row.is-active {
+  background-color: var(--ii-bg-subtle);
+}
+
+.ii-panel-bar-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ii-border-light);
+  overflow: hidden;
+  transition: height 0.18s ease;
+}
+
+.ii-panel-bar-row:hover .ii-panel-bar-track,
+.ii-panel-bar-row.is-active .ii-panel-bar-track {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.ii-panel-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ii-panel-bar-row:hover .ii-panel-bar-fill,
+.ii-panel-bar-row.is-active .ii-panel-bar-fill {
+  filter: brightness(1.15);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.ii-severity-seg {
+  cursor: pointer;
+  height: 100%;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.ii-severity-seg:hover {
+  transform: scaleY(1.7);
+  filter: brightness(1.25);
+}
+
+.ii-eol-seg {
+  cursor: pointer;
+  height: 100%;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.ii-eol-seg:hover {
+  transform: scaleY(1.35);
+  filter: brightness(1.2);
+}
+
+.ii-drift-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  padding: 3px 6px;
+  margin: -2px -6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ii-drift-row:hover {
+  background-color: var(--ii-bg-subtle);
+}
+
+.ii-drift-row:hover .ii-drift-bar-fill {
+  background: var(--ii-primary) !important;
+  box-shadow: 0 0 6px rgba(28, 129, 239, 0.45);
+}
+
+.ii-trend-bar-col {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 2px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.ii-trend-bar-col:hover {
+  background-color: var(--ii-bg-subtle);
+}
+
+.ii-trend-bar-fill {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ii-trend-bar-col:hover .ii-trend-bar-fill {
+  transform: scaleY(1.08);
+  filter: brightness(1.2);
+  box-shadow: 0 0 8px rgba(28, 129, 239, 0.4);
+}
+
+.ii-spares-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ii-spares-row:hover {
+  background-color: var(--ii-bg-subtle);
+}
+
+.ii-chart-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  min-width: 190px;
+  max-width: 320px;
+  padding: 9px 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.45), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  animation: iiTipFade 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.1s ease;
+}
+
+@keyframes iiTipFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ii-chart-tooltip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 5px;
+}
+
+.ii-chart-tooltip-title {
+  font-weight: 500;
+  font-size: 12px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ii-chart-tooltip-badge {
+  font-size: 10.5px;
+  font-family: var(--ii-font-mono);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+.ii-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 11.5px;
+}
+
+.ii-chart-tooltip-label {
+  color: #94a3b8;
+}
+
+.ii-chart-tooltip-val {
+  font-family: var(--ii-font-mono);
+  font-weight: 500;
+  color: #f8fafc;
+}
+
+.ii-chart-tooltip-note {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  line-height: 1.35;
+}
+
 /* ── Print Media Styles ───────────────────────────────────────────────── */
 @media print {
 

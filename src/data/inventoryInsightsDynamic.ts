@@ -570,24 +570,24 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Active (Physical)',
       color: ACT,
       route: '/inventory/physical',
-      desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+      desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
       items: bars([
-        ['Ports / interfaces', '1,246,300', 1246300],
-        ['Cards / modules', '118,200', 118200],
-        ['Shelves / chassis', '31,840', 31840],
-        ['Cell-site routers', '21,640', 21640],
-        ['Radio units (RRU / RU)', '18,640', 18640],
-        ['Racks and power units', '20,580', 20580],
-        ['Microwave radios (IDU / ODU)', '7,210', 7210],
+        ['Cell-site routers (CSR)', '21,640', 21640],
+        ['Radio units (RRU / AAU)', '18,640', 18640],
+        ['Carrier Ethernet & access switches', '9,120', 9120],
         ['Baseband units (BBU / DU)', '6,230', 6230],
-        ['Agg., PE and P routers', '5,680', 5680],
-        ['DWDM / OTN / ROADM nodes', '4,860', 4860]
+        ['Microwave radios (IDU / ODU)', '4,210', 4210],
+        ['Metro agg. & PE routers', '2,910', 2910],
+        ['DWDM / ROADM optical nodes', '1,510', 1510],
+        ['Data centre & spine-leaf switches', '860', 860],
+        ['GPON / XGS-PON OLTs', '390', 390],
+        ['Core / backbone routers (P)', '170', 170]
       ]),
       facts: [
         { name: 'Reachable in last discovery', value: '96.2%', color: GOOD },
         { name: 'Software version recorded', value: '94%', color: GOOD },
-        { name: 'Cards without slot position', value: '2,310', color: WARN },
-        { name: 'Port utilisation', value: '61%', color: '#111827' }
+        { name: 'Chassis serial verified', value: '97.6%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: '98.8%', color: '#111827' }
       ]
     },
     {
@@ -616,14 +616,16 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Virtual (Logical)',
       color: VIR,
       route: '/inventory/virtual',
-      desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+      desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
       items: bars([
-        ['IMS (CSCF / TAS / SBC)', '820', 820],
-        ['UPF / SGW-U / PGW-U', '640', 640],
-        ['AMF / MME', '420', 420],
-        ['SMF / SGW-C / PGW-C', '380', 380],
-        ['UDM / HSS / UDR', '310', 310],
-        ['PCF / PCRF / CHF', '290', 290]
+        ['5G UPF & Packet Core (UPF/SGW-U)', '590', 590],
+        ['vIMS Core (CSCF / TAS / vSBC)', '500', 500],
+        ['5G/4G Control (AMF / MME / SMF)', '430', 430],
+        ['vRAN Cloud Units (vCU / vDU)', '370', 370],
+        ['vRouter & vBNG (Transport / IP)', '320', 320],
+        ['vFirewall & SecGW (Security Domain)', '260', 260],
+        ['UDM, UDR & Policy (PCF / PCRF)', '230', 230],
+        ['vCPE & SD-WAN Virtual Edge', '160', 160]
       ]),
       facts: [
         { name: 'Mapped to hosting cluster / server', value: '99.5%', color: GOOD },
@@ -658,24 +660,24 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Active (Physical)',
       color: ACT,
       route: '/inventory/physical',
-      desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+      desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
       items: bars([
-        ['Ports / interfaces', '1,240,100', 1240100],
-        ['Cards / modules', '117,600', 117600],
-        ['Shelves / chassis', '31,620', 31620],
-        ['Cell-site routers', '21,480', 21480],
-        ['Radio units (RRU / RU)', '18,510', 18510],
-        ['Racks and power units', '20,440', 20440],
-        ['Microwave radios (IDU / ODU)', '7,180', 7180],
+        ['Cell-site routers (CSR)', '21,480', 21480],
+        ['Radio units (RRU / AAU)', '18,510', 18510],
+        ['Carrier Ethernet & access switches', '9,060', 9060],
         ['Baseband units (BBU / DU)', '6,190', 6190],
-        ['Agg., PE and P routers', '5,640', 5640],
-        ['DWDM / OTN / ROADM nodes', '4,830', 4830]
+        ['Microwave radios (IDU / ODU)', '4,180', 4180],
+        ['Metro agg. & PE routers', '2,890', 2890],
+        ['DWDM / ROADM optical nodes', '1,500', 1500],
+        ['Data centre & spine-leaf switches', '850', 850],
+        ['GPON / XGS-PON OLTs', '410', 410],
+        ['Core / backbone routers (P)', '170', 170]
       ]),
       facts: [
         { name: 'Reachable in last discovery', value: '96.0%', color: GOOD },
         { name: 'Software version recorded', value: '93.8%', color: GOOD },
-        { name: 'Cards without slot position', value: '2,340', color: WARN },
-        { name: 'Port utilisation', value: '60.8%', color: '#111827' }
+        { name: 'Chassis serial verified', value: '97.4%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: '98.6%', color: '#111827' }
       ]
     },
     {
@@ -704,14 +706,16 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Virtual (Logical)',
       color: VIR,
       route: '/inventory/virtual',
-      desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+      desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
       items: bars([
-        ['IMS (CSCF / TAS / SBC)', '810', 810],
-        ['UPF / SGW-U / PGW-U', '630', 630],
-        ['AMF / MME', '415', 415],
-        ['SMF / SGW-C / PGW-C', '375', 375],
-        ['UDM / HSS / UDR', '305', 305],
-        ['PCF / PCRF / CHF', '285', 285]
+        ['5G UPF & Packet Core (UPF/SGW-U)', '575', 575],
+        ['vIMS Core (CSCF / TAS / vSBC)', '485', 485],
+        ['5G/4G Control (AMF / MME / SMF)', '420', 420],
+        ['vRAN Cloud Units (vCU / vDU)', '360', 360],
+        ['vRouter & vBNG (Transport / IP)', '310', 310],
+        ['vFirewall & SecGW (Security Domain)', '250', 250],
+        ['UDM, UDR & Policy (PCF / PCRF)', '225', 225],
+        ['vCPE & SD-WAN Virtual Edge', '155', 155]
       ]),
       facts: [
         { name: 'Mapped to hosting cluster / server', value: '99.4%', color: GOOD },
@@ -746,24 +750,24 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Active (Physical)',
       color: ACT,
       route: '/inventory/physical',
-      desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+      desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
       items: bars([
-        ['Ports / interfaces', '1,228,000', 1228000],
-        ['Cards / modules', '116,400', 116400],
-        ['Shelves / chassis', '31,200', 31200],
-        ['Cell-site routers', '21,120', 21120],
-        ['Radio units (RRU / RU)', '18,240', 18240],
-        ['Racks and power units', '20,180', 20180],
-        ['Microwave radios (IDU / ODU)', '7,100', 7100],
+        ['Cell-site routers (CSR)', '21,120', 21120],
+        ['Radio units (RRU / AAU)', '18,240', 18240],
+        ['Carrier Ethernet & access switches', '8,920', 8920],
         ['Baseband units (BBU / DU)', '6,120', 6120],
-        ['Agg., PE and P routers', '5,580', 5580],
-        ['DWDM / OTN / ROADM nodes', '4,780', 4780]
+        ['Microwave radios (IDU / ODU)', '4,140', 4140],
+        ['Metro agg. & PE routers', '2,860', 2860],
+        ['DWDM / ROADM optical nodes', '1,480', 1480],
+        ['Data centre & spine-leaf switches', '840', 840],
+        ['GPON / XGS-PON OLTs', '530', 530],
+        ['Core / backbone routers (P)', '160', 160]
       ]),
       facts: [
         { name: 'Reachable in last discovery', value: '95.8%', color: GOOD },
         { name: 'Software version recorded', value: '93.4%', color: GOOD },
-        { name: 'Cards without slot position', value: '2,410', color: WARN },
-        { name: 'Port utilisation', value: '60.4%', color: '#111827' }
+        { name: 'Chassis serial verified', value: '97.2%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: '98.5%', color: '#111827' }
       ]
     },
     {
@@ -792,14 +796,16 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Virtual (Logical)',
       color: VIR,
       route: '/inventory/virtual',
-      desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+      desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
       items: bars([
-        ['IMS (CSCF / TAS / SBC)', '790', 790],
-        ['UPF / SGW-U / PGW-U', '615', 615],
-        ['AMF / MME', '405', 405],
-        ['SMF / SGW-C / PGW-C', '365', 365],
-        ['UDM / HSS / UDR', '295', 295],
-        ['PCF / PCRF / CHF', '275', 275]
+        ['5G UPF & Packet Core (UPF/SGW-U)', '540', 540],
+        ['vIMS Core (CSCF / TAS / vSBC)', '460', 460],
+        ['5G/4G Control (AMF / MME / SMF)', '390', 390],
+        ['vRAN Cloud Units (vCU / vDU)', '340', 340],
+        ['vRouter & vBNG (Transport / IP)', '290', 290],
+        ['vFirewall & SecGW (Security Domain)', '240', 240],
+        ['UDM, UDR & Policy (PCF / PCRF)', '210', 210],
+        ['vCPE & SD-WAN Virtual Edge', '150', 150]
       ]),
       facts: [
         { name: 'Mapped to hosting cluster / server', value: '99.2%', color: GOOD },
@@ -834,24 +840,24 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Active (Physical)',
       color: ACT,
       route: '/inventory/physical',
-      desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+      desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
       items: bars([
-        ['Ports / interfaces', '1,180,000', 1180000],
-        ['Cards / modules', '111,800', 111800],
-        ['Shelves / chassis', '29,940', 29940],
-        ['Cell-site routers', '20,240', 20240],
-        ['Radio units (RRU / RU)', '17,480', 17480],
-        ['Racks and power units', '19,340', 19340],
-        ['Microwave radios (IDU / ODU)', '6,820', 6820],
+        ['Cell-site routers (CSR)', '20,400', 20400],
+        ['Radio units (RRU / AAU)', '17,500', 17500],
+        ['Carrier Ethernet & access switches', '8,560', 8560],
         ['Baseband units (BBU / DU)', '5,880', 5880],
-        ['Agg., PE and P routers', '5,340', 5340],
-        ['DWDM / OTN / ROADM nodes', '4,590', 4590]
+        ['Microwave radios (IDU / ODU)', '3,980', 3980],
+        ['Metro agg. & PE routers', '2,750', 2750],
+        ['DWDM / ROADM optical nodes', '1,420', 1420],
+        ['Data centre & spine-leaf switches', '810', 810],
+        ['GPON / XGS-PON OLTs', '400', 400],
+        ['Core / backbone routers (P)', '150', 150]
       ]),
       facts: [
         { name: 'Reachable in last discovery', value: '95.1%', color: GOOD },
         { name: 'Software version recorded', value: '92.2%', color: GOOD },
-        { name: 'Cards without slot position', value: '2,620', color: WARN },
-        { name: 'Port utilisation', value: '59.2%', color: '#111827' }
+        { name: 'Chassis serial verified', value: '96.8%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: '98.0%', color: '#111827' }
       ]
     },
     {
@@ -880,14 +886,16 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Virtual (Logical)',
       color: VIR,
       route: '/inventory/virtual',
-      desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+      desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
       items: bars([
-        ['IMS (CSCF / TAS / SBC)', '720', 720],
-        ['UPF / SGW-U / PGW-U', '560', 560],
-        ['AMF / MME', '370', 370],
-        ['SMF / SGW-C / PGW-C', '330', 330],
-        ['UDM / HSS / UDR', '270', 270],
-        ['PCF / PCRF / CHF', '250', 250]
+        ['5G UPF & Packet Core (UPF/SGW-U)', '460', 460],
+        ['vIMS Core (CSCF / TAS / vSBC)', '390', 390],
+        ['5G/4G Control (AMF / MME / SMF)', '330', 330],
+        ['vRAN Cloud Units (vCU / vDU)', '290', 290],
+        ['vRouter & vBNG (Transport / IP)', '250', 250],
+        ['vFirewall & SecGW (Security Domain)', '210', 210],
+        ['UDM, UDR & Policy (PCF / PCRF)', '180', 180],
+        ['vCPE & SD-WAN Virtual Edge', '130', 130]
       ]),
       facts: [
         { name: 'Mapped to hosting cluster / server', value: '98.6%', color: GOOD },
@@ -922,24 +930,24 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Active (Physical)',
       color: ACT,
       route: '/inventory/physical',
-      desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
+      desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
       items: bars([
-        ['Ports / interfaces', '984,200', 984200],
-        ['Cards / modules', '93,600', 93600],
-        ['Shelves / chassis', '25,120', 25120],
-        ['Cell-site routers', '16,980', 16980],
-        ['Radio units (RRU / RU)', '14,640', 14640],
-        ['Racks and power units', '16,210', 16210],
-        ['Microwave radios (IDU / ODU)', '5,720', 5720],
-        ['Baseband units (BBU / DU)', '4,920', 4920],
-        ['Agg., PE and P routers', '4,480', 4480],
-        ['DWDM / OTN / ROADM nodes', '3,850', 3850]
+        ['Cell-site routers (CSR)', '17,900', 17900],
+        ['Radio units (RRU / AAU)', '15,350', 15350],
+        ['Carrier Ethernet & access switches', '7,500', 7500],
+        ['Baseband units (BBU / DU)', '5,150', 5150],
+        ['Microwave radios (IDU / ODU)', '3,500', 3500],
+        ['Metro agg. & PE routers', '2,410', 2410],
+        ['DWDM / ROADM optical nodes', '1,240', 1240],
+        ['Data centre & spine-leaf switches', '710', 710],
+        ['GPON / XGS-PON OLTs', '310', 310],
+        ['Core / backbone routers (P)', '130', 130]
       ]),
       facts: [
         { name: 'Reachable in last discovery', value: '92.4%', color: GOOD },
         { name: 'Software version recorded', value: '88.6%', color: GOOD },
-        { name: 'Cards without slot position', value: '3,180', color: WARN },
-        { name: 'Port utilisation', value: '56.4%', color: '#111827' }
+        { name: 'Chassis serial verified', value: '95.1%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: '97.2%', color: '#111827' }
       ]
     },
     {
@@ -968,14 +976,16 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       title: 'Virtual (Logical)',
       color: VIR,
       route: '/inventory/virtual',
-      desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
+      desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
       items: bars([
-        ['IMS (CSCF / TAS / SBC)', '540', 540],
-        ['UPF / SGW-U / PGW-U', '420', 420],
-        ['AMF / MME', '280', 280],
-        ['SMF / SGW-C / PGW-C', '240', 240],
-        ['UDM / HSS / UDR', '200', 200],
-        ['PCF / PCRF / CHF', '190', 190]
+        ['5G UPF & Packet Core (UPF/SGW-U)', '330', 330],
+        ['vIMS Core (CSCF / TAS / vSBC)', '280', 280],
+        ['5G/4G Control (AMF / MME / SMF)', '240', 240],
+        ['vRAN Cloud Units (vCU / vDU)', '200', 200],
+        ['vRouter & vBNG (Transport / IP)', '180', 180],
+        ['vFirewall & SecGW (Security Domain)', '150', 150],
+        ['UDM, UDR & Policy (PCF / PCRF)', '130', 130],
+        ['vCPE & SD-WAN Virtual Edge', '90', 90]
       ]),
       facts: [
         { name: 'Mapped to hosting cluster / server', value: '97.4%', color: GOOD },
