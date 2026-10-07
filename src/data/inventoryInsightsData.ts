@@ -171,14 +171,14 @@ export const PARENTS_DATA: ParentCategory[] = [
     ]
   },
   {
-    name: 'Logical inventory',
+    name: 'Connectivity inventory',
     desc: 'configured on top of physical',
     count: '59,870',
     delta: '+5.4%',
     health: '91%',
     children: [
-      leaf(['Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99%', 3, 8, VIR]),
-      leaf(['Logical', '57,010', 91, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '93%', 24, 80, LOG])
+      leaf(['Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99.5%', 3, 8, VIR]),
+      leaf(['Connectivity', '57,010', 92, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '96.8%', 18, 62, LOG])
     ]
   }
 ];
@@ -253,23 +253,26 @@ export const PANELS_DATA: PanelCategory[] = [
     ]
   },
   {
-    title: 'Logical',
+    title: 'Connectivity (Logical & Services)',
     color: LOG,
     route: '/inventory/links',
-    desc: 'Software-defined objects riding on active ports and virtual functions.',
+    desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
     items: bars([
-      ['Cells (4G / 5G)', '28,900', 28900],
-      ['LSPs / SR tunnels', '14,120', 14120],
-      ['VRFs / L3VPN', '6,380', 6380],
-      ['EVPN / VLAN services', '3,080', 3080],
-      ['Transport paths / trails', '2,390', 2390],
-      ['Wavelength services', '2,140', 2140]
+      ['4G / 5G radio cells & sector carriers', '23,400', 23400],
+      ['SRv6 & SR-MPLS policy tunnels (LSPs)', '11,650', 11650],
+      ['L3VPN VRFs & 5G network slices', '6,840', 6840],
+      ['EVPN-VPWS & E-Line / E-LAN services', '4,210', 4210],
+      ['Optical channels & OTN trails (DWDM/OCh)', '3,140', 3140],
+      ['BGP peering & routing adjacency sessions', '2,920', 2920],
+      ['IP subnets & interface address pools', '2,760', 2760],
+      ['Broadband subscriber sessions (PPPoE/PON)', '2,090', 2090]
     ]),
     facts: [
-      { name: 'Mapped to an active port', value: '93%', color: GOOD },
-      { name: 'IP addresses in use / stranded', value: '361,400 / 57,200', color: WARN },
-      { name: 'Orphan logical objects', value: '539', color: WARN },
-      { name: 'Links / circuits with A–Z resolved', value: '94%', color: GOOD }
+      { name: 'Mapped to active port / interface', value: '94.2%', color: GOOD },
+      { name: 'A–Z circuit path continuity resolved', value: '96.8%', color: GOOD },
+      { name: 'Protected / redundant paths (1+1 / FRR)', value: '89.4%', color: GOOD },
+      { name: 'IP addresses in use / stranded', value: '361,400 / 42,100', color: WARN },
+      { name: 'Orphan connectivity objects', value: '184', color: WARN }
     ]
   }
 ];
@@ -278,11 +281,11 @@ export const QUALITY_ROWS_DATA: QualityRow[] = [
   { name: 'Active', color: ACT, v1: '95%', c1: hc(95), v2: '92%', c2: hc(92), v3: '93%', c3: hc(93), v4: '0.5%', c4: ic(0.5), v5: '0.6%', c5: ic(0.6) },
   { name: 'Passive', color: PAS, v1: '86%', c1: hc(86), v2: '81%', c2: hc(81), v3: '72%', c3: hc(72), v4: '1.4%', c4: ic(1.4), v5: '2.1%', c5: ic(2.1) },
   { name: 'Virtual', color: VIR, v1: '97%', c1: hc(97), v2: '95%', c2: hc(95), v3: '96%', c3: hc(96), v4: '0.2%', c4: ic(0.2), v5: '0.3%', c5: ic(0.3) },
-  { name: 'Logical', color: LOG, v1: '94%', c1: hc(94), v2: '92%', c2: hc(92), v3: '90%', c3: hc(90), v4: '0.5%', c4: ic(0.5), v5: '0.9%', c5: ic(0.9) }
+  { name: 'Connectivity', color: LOG, v1: '94%', c1: hc(94), v2: '92%', c2: hc(92), v3: '90%', c3: hc(90), v4: '0.5%', c4: ic(0.5), v5: '0.9%', c5: ic(0.9) }
 ];
 
 export const CROSS_LINKS_DATA: CrossLink[] = [
-  { name: 'Logical object ↔ active port', value: '93%', color: hc(93) },
+  { name: 'Connectivity object ↔ active port', value: '93%', color: hc(93) },
   { name: 'Virtual function ↔ active host / cluster', value: '99%', color: hc(99) },
   { name: 'Passive span ↔ active termination (ODF / port)', value: '88%', color: hc(88) },
   { name: 'Active element ↔ site & rack position', value: '95%', color: hc(95) },

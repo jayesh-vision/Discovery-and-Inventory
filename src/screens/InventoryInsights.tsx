@@ -83,10 +83,10 @@ function buildInsightsCsv(range: DayRangeOption): string {
     `Active (${PARENTS_DATA_DYNAMIC[range][0].children[0].count}) + Passive (${PARENTS_DATA_DYNAMIC[range][0].children[1].count})`
   ]);
   rows.push([
-    'Logical Inventory',
+    'Connectivity Inventory',
     PARENTS_DATA_DYNAMIC[range][1].count,
     `${PARENTS_DATA_DYNAMIC[range][1].health} Health (${PARENTS_DATA_DYNAMIC[range][1].delta})`,
-    `Virtual (${PARENTS_DATA_DYNAMIC[range][1].children[0].count}) + Logical (${PARENTS_DATA_DYNAMIC[range][1].children[1].count})`
+    `Virtual (${PARENTS_DATA_DYNAMIC[range][1].children[0].count}) + Connectivity (${PARENTS_DATA_DYNAMIC[range][1].children[1].count})`
   ]);
   rows.push(['Overall Inventory Health', TOTAL_RECORDS_DATA[range].health, 'Target: >= 95%', 'Good']);
   rows.push(['Confirmed Against Source', TOTAL_RECORDS_DATA[range].confirmed, 'Target: >= 90%', 'Compliant']);
@@ -100,8 +100,8 @@ function buildInsightsCsv(range: DayRangeOption): string {
   const pData = PARENTS_DATA_DYNAMIC[range];
   rows.push(['Active', 'Physical', bShare[0][1], `${pData[0].children[0].coverage} Discovered`, pData[0].children[0].critical, pData[0].children[0].high]);
   rows.push(['Passive', 'Physical', bShare[1][1], `${pData[0].children[1].coverage} Survey verified`, pData[0].children[1].critical, pData[0].children[1].high]);
-  rows.push(['Logical', 'Logical', bShare[2][1], `${pData[1].children[1].coverage} Mapped to port`, pData[1].children[1].critical, pData[1].children[1].high]);
-  rows.push(['Virtual', 'Logical', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
+  rows.push(['Connectivity', 'Connectivity', bShare[2][1], `${pData[1].children[1].coverage} ${pData[1].children[1].covLabel}`, pData[1].children[1].critical, pData[1].children[1].high]);
+  rows.push(['Virtual', 'Connectivity', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
 
   // 4. Component Hierarchy Detail
   addSection('COMPONENT HIERARCHY DETAIL');
@@ -237,6 +237,57 @@ function buildInsightsJson(range: DayRangeOption): string {
     services: SERVICES_DYNAMIC[range]
   }, null, 2);
 }
+
+const LOGICAL_CONNECTIVITY_META: Record<string, { layer: string; protocol: string; underlying: string; note: string }> = {
+  '4G / 5G radio cells & sector carriers': {
+    layer: 'Radio Access Network (3GPP RAN)',
+    protocol: '5G NR / 4G LTE Carrier Aggregation & Sector Cells',
+    underlying: 'gNodeB DU/CU, eNodeB Basebands & Antennas',
+    note: 'Software-defined cells mapped to physical sector antennas, baseband channel cards, and tracking areas.'
+  },
+  'SRv6 & SR-MPLS policy tunnels (LSPs)': {
+    layer: 'IP/MPLS & Segment Routing Transport',
+    protocol: 'SRv6, SR-MPLS, RSVP-TE, LDP & TI-LFA Fast Reroute',
+    underlying: 'Cell-Site Routers (CSR), Metro Aggregation & Core PEs',
+    note: 'Traffic-engineered transport tunnels providing deterministic QoS and low-latency backhaul paths.'
+  },
+  'L3VPN VRFs & 5G network slices': {
+    layer: 'Layer 3 VPN & Multi-Tenant Slicing',
+    protocol: 'MP-BGP, 5G S-NSSAI Network Slices, VRF-Lite',
+    underlying: 'PE Routers, Core Gateways & Telco Cloud UPFs',
+    note: 'Isolated routing domains for enterprise customers, IMS voice, and 5G network slice tenants.'
+  },
+  'EVPN-VPWS & E-Line / E-LAN services': {
+    layer: 'Carrier Ethernet & Metro Layer 2',
+    protocol: 'BGP EVPN (RFC 7432), VPWS, VPLS, QinQ S-VLAN',
+    underlying: 'Carrier Ethernet Switches, Metro Aggregation Nodes',
+    note: 'Point-to-point (E-Line) and multipoint (E-LAN) layer 2 circuits over packet transport.'
+  },
+  'Optical channels & OTN trails (DWDM/OCh)': {
+    layer: 'Photonic & Coherent Optical Transport',
+    protocol: 'ITU-T G.709 OTN, ODU4 / ODU2e, 100G–400G Coherent OCh',
+    underlying: 'DWDM ROADMs, Transponders & Coherent Pluggables',
+    note: 'End-to-end optical wavelength paths carrying packet client signals over physical fibre spans.'
+  },
+  'BGP peering & routing adjacency sessions': {
+    layer: 'Routing Protocols & Peering Fabric',
+    protocol: 'eBGP, iBGP Route Reflectors, BFD Fast-Convergence',
+    underlying: 'Internet Gateways, Peering Routers & Core Spine',
+    note: 'Logical routing control plane sessions between autonomous systems and internal network fabrics.'
+  },
+  'IP subnets & interface address pools': {
+    layer: 'IP Address Management (IPAM)',
+    protocol: 'IPv4 / IPv6 Subnet Allocation, Loopbacks, /31 P2P',
+    underlying: 'Router Loopback0s, Point-to-Point Interfaces, SVIs',
+    note: 'Logical IP prefixes mapped to physical router interfaces, sub-interfaces, and subscriber pools.'
+  },
+  'Broadband subscriber sessions (PPPoE/PON)': {
+    layer: 'Fixed Access & Broadband Core',
+    protocol: 'PPPoE, IPoE, GPON GEM Ports, T-CONT Alloc-IDs',
+    underlying: 'Broadband Network Gateways (BNG) & GPON OLTs',
+    note: 'Logical subscriber access sessions terminating residential and enterprise FTTH connectivity.'
+  }
+};
 
 export default function InventoryInsights() {
   const navigate = useNavigate();
@@ -394,7 +445,7 @@ export default function InventoryInsights() {
   const decomByBucket = useMemo(() => {
     const raw = DECOM_BUCKET_DYNAMIC[dayRange];
     const maxVal = Math.max(...raw.map(d => d[1]), 1);
-    const bkc: Record<string, string> = { Active: ACT, Passive: PAS, Logical: LOG, Virtual: VIR };
+    const bkc: Record<string, string> = { Active: ACT, Passive: PAS, Logical: LOG, Connectivity: LOG, Virtual: VIR };
     return raw.map(d => ({
       name: d[0],
       count: d[1],
@@ -474,10 +525,8 @@ export default function InventoryInsights() {
   return (
     <div className="ii-container">
       <main id="top" className="ii-main">
-        {/* ── Top Bar ── */}
+        {/* ── Top Bar Controls ── */}
         <header className="ii-header">
-          <h1 className="ii-title">Inventory Insights</h1>
-
           <div className="ii-controls">
             <select
               aria-label="Time period"
@@ -597,24 +646,33 @@ export default function InventoryInsights() {
 
         {/* ── Tier 1: Key Metrics (4 cards) ── */}
         <section aria-label="Key metrics" className="ii-kpi-grid">
-          {/* Tile 1: Dark summary tile */}
-          <div className="ii-card-dark">
-            <span style={{ fontSize: 12, color: 'var(--ii-text-faint, #94a3b8)', fontWeight: 400 }}>Total inventory records</span>
-            <div className="ii-metric-huge" style={{ fontSize: 24, fontWeight: 500, color: '#f8fafc' }}>{TOTAL_RECORDS_DATA[dayRange].totalDisplay}</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
-              <span style={{ color: '#e2e8f0', fontWeight: 500 }}>{TOTAL_RECORDS_DATA[dayRange].delta}</span> {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
+          {/* Tile 1: Light blue summary KPI tile */}
+          <div className="ii-card-blue">
+            <span style={{ fontSize: 12, color: '#1E40AF', fontWeight: 600, letterSpacing: '0.01em' }}>
+              Total inventory records
+            </span>
+            <div className="ii-metric-huge" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>
+              {TOTAL_RECORDS_DATA[dayRange].totalDisplay}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8, marginTop: 2 }}>
-              <span style={{ color: '#94a3b8' }}>Overall inventory health</span>
-              <span className="ii-mono" style={{ fontWeight: 500, color: '#e2e8f0' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ background: '#DCFCE7', color: '#15803D', fontWeight: 600, padding: '1px 6px', borderRadius: 4, border: '1px solid #BBF7D0' }}>
+                {TOTAL_RECORDS_DATA[dayRange].delta}
+              </span>
+              <span>
+                {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid #DBEAFE', paddingTop: 8, marginTop: 2 }}>
+              <span style={{ color: 'var(--ii-text-muted)' }}>Overall inventory health</span>
+              <span className="ii-mono" style={{ fontWeight: 600, color: '#15803D' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ color: '#94a3b8' }}>Confirmed against source</span>
-              <span className="ii-mono" style={{ fontWeight: 500, color: '#e2e8f0' }}>{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
+              <span style={{ color: 'var(--ii-text-muted)' }}>Confirmed against source</span>
+              <span className="ii-mono" style={{ fontWeight: 600, color: 'var(--ii-text-heading)' }}>{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ color: '#94a3b8' }}>Stranded or unconfirmed</span>
-              <span className="ii-mono" style={{ fontWeight: 500, color: '#e2e8f0' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
+              <span style={{ color: 'var(--ii-text-muted)' }}>Stranded or unconfirmed</span>
+              <span className="ii-mono" style={{ fontWeight: 600, color: '#B45309' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
             </div>
           </div>
 
@@ -816,7 +874,7 @@ export default function InventoryInsights() {
                             dotColor: b.color,
                             badge: b.pctLabel,
                             rows: [
-                              { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Logical Layer' },
+                              { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Connectivity Layer' },
                               { label: 'Total count', value: b.count },
                               { label: 'Share of total', value: b.pctLabel }
                             ],
@@ -826,7 +884,7 @@ export default function InventoryInsights() {
                               ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
                               : b.name === 'Virtual'
                               ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
-                              : 'Software-defined cells, tunnels, VRFs, and wavelength services.'
+                              : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
                           }, e);
                         }}
                         onMouseMove={moveTip}
@@ -864,7 +922,7 @@ export default function InventoryInsights() {
                         dotColor: b.color,
                         badge: b.pctLabel,
                         rows: [
-                          { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Logical Layer' },
+                          { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Connectivity Layer' },
                           { label: 'Total count', value: b.count },
                           { label: 'Share of total', value: b.pctLabel }
                         ],
@@ -874,7 +932,7 @@ export default function InventoryInsights() {
                           ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
                           : b.name === 'Virtual'
                           ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
-                          : 'Software-defined cells, tunnels, VRFs, and wavelength services.'
+                          : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
                       }, e);
                     }}
                     onMouseMove={moveTip}
@@ -1096,6 +1154,7 @@ export default function InventoryInsights() {
                 {p.items.map(t => {
                   const itemKey = `${p.title}-${t.name}`;
                   const isHov = hoveredPanelItemKey === itemKey;
+                  const meta = LOGICAL_CONNECTIVITY_META[t.name];
                   return (
                     <div
                       key={t.name}
@@ -1106,12 +1165,18 @@ export default function InventoryInsights() {
                           title: t.name,
                           dotColor: p.color,
                           badge: t.count,
-                          rows: [
+                          rows: meta ? [
+                            { label: 'Network layer', value: meta.layer },
+                            { label: 'Protocols & standards', value: meta.protocol },
+                            { label: 'Underlying assets', value: meta.underlying },
+                            { label: 'Configured instances', value: `${t.count} active` },
+                            { label: 'Category proportion', value: t.w }
+                          ] : [
                             { label: 'Category', value: p.title },
                             { label: 'Installed units', value: `${t.count} items` },
                             { label: 'Category proportion', value: t.w }
                           ],
-                          note: p.desc
+                          note: meta ? meta.note : p.desc
                         }, e);
                       }}
                       onMouseMove={moveTip}
@@ -1249,7 +1314,7 @@ export default function InventoryInsights() {
           <div className="ii-card" style={{ gap: 10 }}>
             <div className="ii-card-title">EOL/EOS exposure — {EOL_DYNAMIC[dayRange].total} assets, by bucket and vendor</div>
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Each bar is a leaf bucket (Active and Passive under Physical; Virtual and Logical under Logical); the colour split shows whose hardware is behind it.
+              Each bar is a leaf bucket (Active and Passive under Physical; Virtual and Connectivity under Connectivity); the colour split shows whose hardware is behind it.
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
               {eolRows.map(r => (
@@ -1421,7 +1486,7 @@ export default function InventoryInsights() {
           <div className="ii-card" style={{ gap: 10 }}>
             <div className="ii-card-title">{NOT_RECONFIRMED_DYNAMIC[dayRange].title}</div>
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Logical, survey for Passive.
+              Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive.
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <span className="ii-mono" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>{NOT_RECONFIRMED_DYNAMIC[dayRange].count}</span>
@@ -1437,7 +1502,7 @@ export default function InventoryInsights() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Active / Virtual / Logical not reconfirmed 30+ days</span>
+                <span style={{ color: 'var(--ii-text-muted)' }}>Active / Virtual / Connectivity not reconfirmed 30+ days</span>
                 <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}</span>
               </div>
             </div>

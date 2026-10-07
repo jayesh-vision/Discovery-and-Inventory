@@ -154,14 +154,14 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
       ]
     },
     {
-      name: 'Logical inventory',
+      name: 'Connectivity inventory',
       desc: 'configured on top of physical',
       count: '59,870',
       delta: '+1.2%',
       health: '92%',
       children: [
-        leaf('Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99%', 3, 8, VIR),
-        leaf('Logical', '57,010', 91, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '93%', 24, 80, LOG)
+        leaf('Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99.5%', 3, 8, VIR),
+        leaf('Connectivity', '57,010', 92, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '96.8%', 18, 62, LOG)
       ]
     }
   ],
@@ -178,14 +178,14 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
       ]
     },
     {
-      name: 'Logical inventory',
+      name: 'Connectivity inventory',
       desc: 'configured on top of physical',
       count: '58,400',
       delta: '+2.5%',
       health: '92%',
       children: [
-        leaf('Virtual', '2,780', 96, 'VNF / CNF instances on 44 clusters', 'Mapped to host', '99%', 4, 9, VIR),
-        leaf('Logical', '55,620', 91, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '92.6%', 27, 85, LOG)
+        leaf('Virtual', '2,780', 96, 'VNF / CNF instances on 44 clusters', 'Mapped to host', '99.4%', 4, 9, VIR),
+        leaf('Connectivity', '55,620', 92, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '96.4%', 21, 68, LOG)
       ]
     }
   ],
@@ -202,14 +202,14 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
       ]
     },
     {
-      name: 'Logical inventory',
+      name: 'Connectivity inventory',
       desc: 'configured on top of physical',
       count: '55,200',
       delta: '+5.4%',
       health: '91%',
       children: [
         leaf('Virtual', '2,620', 95, 'VNF / CNF instances on 42 clusters', 'Mapped to host', '98.8%', 5, 11, VIR),
-        leaf('Logical', '52,580', 90, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '92.0%', 32, 95, LOG)
+        leaf('Connectivity', '52,580', 91, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '95.7%', 26, 74, LOG)
       ]
     }
   ],
@@ -226,14 +226,14 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
       ]
     },
     {
-      name: 'Logical inventory',
+      name: 'Connectivity inventory',
       desc: 'configured on top of physical',
       count: '48,900',
       delta: '+11.6%',
       health: '89%',
       children: [
         leaf('Virtual', '2,240', 94, 'VNF / CNF instances on 38 clusters', 'Mapped to host', '98.2%', 7, 15, VIR),
-        leaf('Logical', '46,660', 89, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '90.8%', 43, 112, LOG)
+        leaf('Connectivity', '46,660', 90, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '94.8%', 34, 88, LOG)
       ]
     }
   ],
@@ -250,14 +250,14 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
       ]
     },
     {
-      name: 'Logical inventory',
+      name: 'Connectivity inventory',
       desc: 'configured on top of physical',
       count: '36,500',
       delta: '+28.5%',
       health: '87%',
       children: [
         leaf('Virtual', '1,600', 92, 'VNF / CNF instances on 28 clusters', 'Mapped to host', '97.0%', 11, 22, VIR),
-        leaf('Logical', '34,900', 86, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '88.5%', 62, 142, LOG)
+        leaf('Connectivity', '34,900', 87, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '92.3%', 48, 114, LOG)
       ]
     }
   ]
@@ -340,51 +340,51 @@ export const BUCKET_SHARE_DATA: Record<DayRangeOption, {
 }> = {
   '7d': {
     centerLabel: '1.61M',
-    summaryText: 'Physical inventory is 96.3% of records (Active 92.0%, Passive 4.3%) because every port, card and shelf is its own record; Logical holds 3.5% and Virtual 0.2%.',
+    summaryText: 'Physical inventory is 96.3% of records (Active 92.0%, Passive 4.3%) because every port, card and shelf is its own record; Connectivity holds 3.5% and Virtual 0.2%.',
     rows: [
       ['Active', '1.48M', 1482600, ACT],
       ['Passive', '69,730', 69730, PAS],
-      ['Logical', '57,010', 57010, LOG],
+      ['Connectivity', '57,010', 57010, LOG],
       ['Virtual', '2,860', 2860, VIR]
     ]
   },
   '14d': {
     centerLabel: '1.60M',
-    summaryText: 'Physical inventory is 96.2% of records (Active 91.9%, Passive 4.3%) because every port, card and shelf is its own record; Logical holds 3.5% and Virtual 0.2%.',
+    summaryText: 'Physical inventory is 96.2% of records (Active 91.9%, Passive 4.3%) because every port, card and shelf is its own record; Connectivity holds 3.5% and Virtual 0.2%.',
     rows: [
       ['Active', '1.47M', 1474800, ACT],
       ['Passive', '69,200', 69200, PAS],
-      ['Logical', '55,620', 55620, LOG],
+      ['Connectivity', '55,620', 55620, LOG],
       ['Virtual', '2,780', 2780, VIR]
     ]
   },
   '30d': {
     centerLabel: '1.58M',
-    summaryText: 'Physical inventory is 96.1% of records (Active 91.8%, Passive 4.3%) because every port, card and shelf is its own record; Logical holds 3.3% and Virtual 0.2%.',
+    summaryText: 'Physical inventory is 96.1% of records (Active 91.8%, Passive 4.3%) because every port, card and shelf is its own record; Connectivity holds 3.3% and Virtual 0.2%.',
     rows: [
       ['Active', '1.45M', 1459800, ACT],
       ['Passive', '68,400', 68400, PAS],
-      ['Logical', '52,580', 52580, LOG],
+      ['Connectivity', '52,580', 52580, LOG],
       ['Virtual', '2,620', 2620, VIR]
     ]
   },
   '90d': {
     centerLabel: '1.51M',
-    summaryText: 'Physical inventory is 95.8% of records (Active 91.5%, Passive 4.3%) because every port, card and shelf is its own record; Logical holds 3.1% and Virtual 0.1%.',
+    summaryText: 'Physical inventory is 95.8% of records (Active 91.5%, Passive 4.3%) because every port, card and shelf is its own record; Connectivity holds 3.1% and Virtual 0.1%.',
     rows: [
       ['Active', '1.39M', 1399800, ACT],
       ['Passive', '65,100', 65100, PAS],
-      ['Logical', '46,660', 46660, LOG],
+      ['Connectivity', '46,660', 46660, LOG],
       ['Virtual', '2,240', 2240, VIR]
     ]
   },
   '12m': {
     centerLabel: '1.26M',
-    summaryText: 'Physical inventory was 95.9% of records (Active 91.3%, Passive 4.6%) because every port, card and shelf is its own record; Logical held 2.8% and Virtual 0.1%.',
+    summaryText: 'Physical inventory was 95.9% of records (Active 91.3%, Passive 4.6%) because every port, card and shelf is its own record; Connectivity held 2.8% and Virtual 0.1%.',
     rows: [
       ['Active', '1.16M', 1166600, ACT],
       ['Passive', '58,900', 58900, PAS],
-      ['Logical', '34,900', 34900, LOG],
+      ['Connectivity', '34,900', 34900, LOG],
       ['Virtual', '1,600', 1600, VIR]
     ]
   }
@@ -635,23 +635,26 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       ]
     },
     {
-      title: 'Logical',
+      title: 'Connectivity (Logical & Services)',
       color: LOG,
       route: '/inventory/links',
-      desc: 'Software-defined objects riding on active ports and virtual functions.',
+      desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
       items: bars([
-        ['Cells (4G / 5G)', '28,900', 28900],
-        ['LSPs / SR tunnels', '14,120', 14120],
-        ['VRFs / L3VPN', '6,380', 6380],
-        ['EVPN / VLAN services', '3,080', 3080],
-        ['Transport paths / trails', '2,390', 2390],
-        ['Wavelength services', '2,140', 2140]
+        ['4G / 5G radio cells & sector carriers', '23,400', 23400],
+        ['SRv6 & SR-MPLS policy tunnels (LSPs)', '11,650', 11650],
+        ['L3VPN VRFs & 5G network slices', '6,840', 6840],
+        ['EVPN-VPWS & E-Line / E-LAN services', '4,210', 4210],
+        ['Optical channels & OTN trails (DWDM/OCh)', '3,140', 3140],
+        ['BGP peering & routing adjacency sessions', '2,920', 2920],
+        ['IP subnets & interface address pools', '2,760', 2760],
+        ['Broadband subscriber sessions (PPPoE/PON)', '2,090', 2090]
       ]),
       facts: [
-        { name: 'Mapped to an active port', value: '93%', color: GOOD },
-        { name: 'IP addresses in use / stranded', value: '361,400 / 57,200', color: WARN },
-        { name: 'Orphan logical objects', value: '539', color: WARN },
-        { name: 'Links / circuits with A–Z resolved', value: '94%', color: GOOD }
+        { name: 'Mapped to active port / interface', value: '94.2%', color: GOOD },
+        { name: 'A–Z circuit path continuity resolved', value: '96.8%', color: GOOD },
+        { name: 'Protected / redundant paths (1+1 / FRR)', value: '89.4%', color: GOOD },
+        { name: 'IP addresses in use / stranded', value: '361,400 / 42,100', color: WARN },
+        { name: 'Orphan logical objects', value: '184', color: WARN }
       ]
     }
   ],
@@ -725,23 +728,26 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       ]
     },
     {
-      title: 'Logical',
+      title: 'Connectivity (Logical & Services)',
       color: LOG,
       route: '/inventory/links',
-      desc: 'Software-defined objects riding on active ports and virtual functions.',
+      desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
       items: bars([
-        ['Cells (4G / 5G)', '28,600', 28600],
-        ['LSPs / SR tunnels', '13,980', 13980],
-        ['VRFs / L3VPN', '6,310', 6310],
-        ['EVPN / VLAN services', '3,040', 3040],
-        ['Transport paths / trails', '2,360', 2360],
-        ['Wavelength services', '2,120', 2120]
+        ['4G / 5G radio cells & sector carriers', '22,850', 22850],
+        ['SRv6 & SR-MPLS policy tunnels (LSPs)', '11,360', 11360],
+        ['L3VPN VRFs & 5G network slices', '6,670', 6670],
+        ['EVPN-VPWS & E-Line / E-LAN services', '4,110', 4110],
+        ['Optical channels & OTN trails (DWDM/OCh)', '3,060', 3060],
+        ['BGP peering & routing adjacency sessions', '2,850', 2850],
+        ['IP subnets & interface address pools', '2,690', 2690],
+        ['Broadband subscriber sessions (PPPoE/PON)', '2,030', 2030]
       ]),
       facts: [
-        { name: 'Mapped to an active port', value: '92.6%', color: GOOD },
-        { name: 'IP addresses in use / stranded', value: '359,800 / 57,600', color: WARN },
-        { name: 'Orphan logical objects', value: '548', color: WARN },
-        { name: 'Links / circuits with A–Z resolved', value: '93.8%', color: GOOD }
+        { name: 'Mapped to active port / interface', value: '93.8%', color: GOOD },
+        { name: 'A–Z circuit path continuity resolved', value: '96.4%', color: GOOD },
+        { name: 'Protected / redundant paths (1+1 / FRR)', value: '88.9%', color: GOOD },
+        { name: 'IP addresses in use / stranded', value: '358,200 / 43,800', color: WARN },
+        { name: 'Orphan logical objects', value: '198', color: WARN }
       ]
     }
   ],
@@ -815,23 +821,26 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       ]
     },
     {
-      title: 'Logical',
+      title: 'Connectivity (Logical & Services)',
       color: LOG,
       route: '/inventory/links',
-      desc: 'Software-defined objects riding on active ports and virtual functions.',
+      desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
       items: bars([
-        ['Cells (4G / 5G)', '28,100', 28100],
-        ['LSPs / SR tunnels', '13,720', 13720],
-        ['VRFs / L3VPN', '6,190', 6190],
-        ['EVPN / VLAN services', '2,980', 2980],
-        ['Transport paths / trails', '2,310', 2310],
-        ['Wavelength services', '2,080', 2080]
+        ['4G / 5G radio cells & sector carriers', '21,600', 21600],
+        ['SRv6 & SR-MPLS policy tunnels (LSPs)', '10,740', 10740],
+        ['L3VPN VRFs & 5G network slices', '6,310', 6310],
+        ['EVPN-VPWS & E-Line / E-LAN services', '3,880', 3880],
+        ['Optical channels & OTN trails (DWDM/OCh)', '2,890', 2890],
+        ['BGP peering & routing adjacency sessions', '2,690', 2690],
+        ['IP subnets & interface address pools', '2,550', 2550],
+        ['Broadband subscriber sessions (PPPoE/PON)', '1,920', 1920]
       ]),
       facts: [
-        { name: 'Mapped to an active port', value: '92.0%', color: GOOD },
-        { name: 'IP addresses in use / stranded', value: '356,200 / 58,400', color: WARN },
-        { name: 'Orphan logical objects', value: '564', color: WARN },
-        { name: 'Links / circuits with A–Z resolved', value: '93.2%', color: GOOD }
+        { name: 'Mapped to active port / interface', value: '93.1%', color: GOOD },
+        { name: 'A–Z circuit path continuity resolved', value: '95.7%', color: GOOD },
+        { name: 'Protected / redundant paths (1+1 / FRR)', value: '88.1%', color: GOOD },
+        { name: 'IP addresses in use / stranded', value: '351,800 / 46,200', color: WARN },
+        { name: 'Orphan logical objects', value: '224', color: WARN }
       ]
     }
   ],
@@ -905,23 +914,26 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       ]
     },
     {
-      title: 'Logical',
+      title: 'Connectivity (Logical & Services)',
       color: LOG,
       route: '/inventory/links',
-      desc: 'Software-defined objects riding on active ports and virtual functions.',
+      desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
       items: bars([
-        ['Cells (4G / 5G)', '26,400', 26400],
-        ['LSPs / SR tunnels', '12,880', 12880],
-        ['VRFs / L3VPN', '5,820', 5820],
-        ['EVPN / VLAN services', '2,800', 2800],
-        ['Transport paths / trails', '2,170', 2170],
-        ['Wavelength services', '1,960', 1960]
+        ['4G / 5G radio cells & sector carriers', '19,160', 19160],
+        ['SRv6 & SR-MPLS policy tunnels (LSPs)', '9,530', 9530],
+        ['L3VPN VRFs & 5G network slices', '5,600', 5600],
+        ['EVPN-VPWS & E-Line / E-LAN services', '3,450', 3450],
+        ['Optical channels & OTN trails (DWDM/OCh)', '2,570', 2570],
+        ['BGP peering & routing adjacency sessions', '2,390', 2390],
+        ['IP subnets & interface address pools', '2,260', 2260],
+        ['Broadband subscriber sessions (PPPoE/PON)', '1,700', 1700]
       ]),
       facts: [
-        { name: 'Mapped to an active port', value: '90.8%', color: GOOD },
-        { name: 'IP addresses in use / stranded', value: '344,000 / 61,200', color: WARN },
-        { name: 'Orphan logical objects', value: '612', color: WARN },
-        { name: 'Links / circuits with A–Z resolved', value: '91.8%', color: GOOD }
+        { name: 'Mapped to active port / interface', value: '91.9%', color: GOOD },
+        { name: 'A–Z circuit path continuity resolved', value: '94.8%', color: GOOD },
+        { name: 'Protected / redundant paths (1+1 / FRR)', value: '86.7%', color: GOOD },
+        { name: 'IP addresses in use / stranded', value: '338,400 / 51,600', color: WARN },
+        { name: 'Orphan logical objects', value: '286', color: WARN }
       ]
     }
   ],
@@ -995,23 +1007,26 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
       ]
     },
     {
-      title: 'Logical',
+      title: 'Connectivity (Logical & Services)',
       color: LOG,
       route: '/inventory/links',
-      desc: 'Software-defined objects riding on active ports and virtual functions.',
+      desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
       items: bars([
-        ['Cells (4G / 5G)', '22,400', 22400],
-        ['LSPs / SR tunnels', '10,920', 10920],
-        ['VRFs / L3VPN', '4,940', 4940],
-        ['EVPN / VLAN services', '2,370', 2370],
-        ['Transport paths / trails', '1,840', 1840],
-        ['Wavelength services', '1,660', 1660]
+        ['4G / 5G radio cells & sector carriers', '14,330', 14330],
+        ['SRv6 & SR-MPLS policy tunnels (LSPs)', '7,130', 7130],
+        ['L3VPN VRFs & 5G network slices', '4,190', 4190],
+        ['EVPN-VPWS & E-Line / E-LAN services', '2,580', 2580],
+        ['Optical channels & OTN trails (DWDM/OCh)', '1,920', 1920],
+        ['BGP peering & routing adjacency sessions', '1,790', 1790],
+        ['IP subnets & interface address pools', '1,690', 1690],
+        ['Broadband subscriber sessions (PPPoE/PON)', '1,270', 1270]
       ]),
       facts: [
-        { name: 'Mapped to an active port', value: '88.5%', color: GOOD },
-        { name: 'IP addresses in use / stranded', value: '312,000 / 68,400', color: WARN },
-        { name: 'Orphan logical objects', value: '742', color: WARN },
-        { name: 'Links / circuits with A–Z resolved', value: '89.2%', color: GOOD }
+        { name: 'Mapped to active port / interface', value: '89.4%', color: WARN },
+        { name: 'A–Z circuit path continuity resolved', value: '92.3%', color: GOOD },
+        { name: 'Protected / redundant paths (1+1 / FRR)', value: '83.5%', color: WARN },
+        { name: 'IP addresses in use / stranded', value: '294,000 / 64,800', color: WARN },
+        { name: 'Orphan logical objects', value: '412', color: WARN }
       ]
     }
   ]
