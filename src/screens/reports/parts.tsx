@@ -47,7 +47,7 @@ export function renderCell(v: CellValue, col: Column): ReactNode {
 }
 
 /* ── export menu ────────────────────────────────────────── */
-export function ExportMenu({ def, content, withPrint, label = 'Export' }: { def: ReportDef; content: ReportContent; withPrint?: boolean; label?: string }) {
+export function ExportMenu({ def, content, withPrint, label = 'Export', size = 'sm' }: { def: ReportDef; content: ReportContent; withPrint?: boolean; label?: string; size?: 'sm' | 'xs' }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<ExportFormat | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export function ExportMenu({ def, content, withPrint, label = 'Export' }: { def:
 
   return (
     <div className="rpt-menu" ref={ref} onClick={e => e.stopPropagation()}>
-      <button className="nst-btn nst-btn--sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)} disabled={!!busy}>
+      <button className={`nst-btn nst-btn--${size}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)} disabled={!!busy}>
         {busy ? `Preparing ${EXPORT_FORMATS.find(x => x.k === busy)!.ext}…` : `${label} ▾`}
       </button>
       {note && <span className="rpt-menu-note" role="status">{note}</span>}

@@ -412,7 +412,7 @@ export function ProjectionChart({ historyLabels, historyValues, projectionLabels
   target: number; targetLabel: string; yBounds: { y0: number; y1: number }; height?: number; format: (v: number) => string;
 }) {
   const [hov, setHov] = useState<{ i: number; x: number; y: number; label: string; value: number; kind: 'measured' | 'projected' } | null>(null);
-  const W = 1000, H = height, padL = 50, padR = 60, padT = 20, padB = 32;
+  const W = 1000, H = height, padL = 50, padR = 80, padT = 24, padB = 32;
   const { y0, y1 } = yBounds;
   const labels = [...historyLabels, ...projectionLabels.slice(1)];
   const n = labels.length;
@@ -433,13 +433,13 @@ export function ProjectionChart({ historyLabels, historyValues, projectionLabels
           </g>
         ))}
         <line x1={padL} x2={W - padR} y1={y(target)} y2={y(target)} stroke="var(--vw-color-emerald-500)" strokeWidth="1.5" strokeDasharray="2 4" />
-        <text x={W - padR + 6} y={y(target) - 6} className="ch-axis" style={{ fill: 'var(--vw-color-emerald-600)' }}>{targetLabel}</text>
+        <text x={W - padR + 8} y={y(target) + 4} textAnchor="start" className="ch-axis" style={{ fill: 'var(--vw-color-emerald-600)', fontWeight: 500 }}>{targetLabel}</text>
         <path d={dHist} fill="none" stroke="var(--vw-color-blue-500)" strokeWidth="2" strokeLinejoin="round" />
         <path d={dProj} fill="none" stroke="var(--vw-color-blue-400)" strokeWidth="2" strokeDasharray="5 4" strokeLinejoin="round" />
         <circle cx={x(hi - 1)} cy={y(historyValues[hi - 1])} r="4" fill="var(--vw-color-blue-600)" />
         <text x={x(hi - 1)} y={y(historyValues[hi - 1]) - 12} textAnchor="middle" className="ch-lab">{format(historyValues[hi - 1])}</text>
         <circle cx={x(n - 1)} cy={y(projectionValues[projectionValues.length - 1])} r="4" fill="var(--vw-color-emerald-600)" />
-        <text x={x(n - 1)} y={y(projectionValues[projectionValues.length - 1]) - 12} textAnchor="middle" className="ch-lab">{format(projectionValues[projectionValues.length - 1])}</text>
+        <text x={x(n - 1) - 8} y={y(projectionValues[projectionValues.length - 1]) - 12} textAnchor="end" className="ch-lab">{format(projectionValues[projectionValues.length - 1])}</text>
         {labels.map((lab, i) => (i % step !== 0 && i !== n - 1 && i !== hi - 1) ? null : (
           <g key={i} onMouseEnter={e => {
             const kind: 'measured' | 'projected' = i < hi ? 'measured' : 'projected';

@@ -38,14 +38,20 @@ export function KpiCard({ title, definition, value, unit, of, visual, delta, act
 /* segments of one whole, with the split written underneath */
 export function Segments({ parts, total }: { parts: { n: string; c: number; hex: string }[]; total: number }) {
   return (
-    <>
+    <div className="kpi3-seg-wrap">
       <div className="kpi3-seg" role="img" aria-label={parts.map(p => `${p.n} ${p.c}`).join(', ')}>
         {parts.map(p => <span key={p.n} style={{ width: `${(p.c / total * 100).toFixed(2)}%`, background: p.hex }} />)}
       </div>
       <div className="kpi3-seg-l">
-        {parts.map((p, i) => <span key={p.n}>{i > 0 && <span className="kpi3-sep">·</span>}<i style={{ background: p.hex }} /><b className="num">{p.c.toLocaleString('en-IN')}</b> {p.n.toLowerCase()}</span>)}
+        {parts.map((p) => (
+          <span key={p.n} className="kpi3-seg-item">
+            <i style={{ background: p.hex }} />
+            <b className="num">{p.c.toLocaleString('en-IN')}</b>
+            <span className="kpi3-seg-name">{p.n.toLowerCase()}</span>
+          </span>
+        ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -56,15 +62,17 @@ export function Cycles({ values, labels, format }: { values: number[]; labels: s
   const [hov, setHov] = useState<number | null>(null);
   return (
     <div className="kpi3-cyc" onMouseLeave={() => setHov(null)}>
-      {values.map((v, i) => {
-        const h = 7 + Math.round(((v - min) / span) * 14);
-        const last = i === values.length - 1;
-        return (
-          <span key={i} className={`kpi3-cyc-b${last ? ' is-cur' : ''}${hov === i ? ' is-hov' : ''}`} style={{ height: h }}
-            onMouseEnter={() => setHov(i)} title={`${labels[i]} · ${format(v)}`} />
-        );
-      })}
-      <span className="kpi3-cyc-l">{hov === null ? `last ${values.length} cycles` : `${labels[hov]} · ${format(values[hov])}`}</span>
+      <div className="kpi3-cyc-bars">
+        {values.map((v, i) => {
+          const h = 7 + Math.round(((v - min) / span) * 14);
+          const last = i === values.length - 1;
+          return (
+            <span key={i} className={`kpi3-cyc-b${last ? ' is-cur' : ''}${hov === i ? ' is-hov' : ''}`} style={{ height: h }}
+              onMouseEnter={() => setHov(i)} title={`${labels[i]} · ${format(v)}`} />
+          );
+        })}
+      </div>
+      <div className="kpi3-cyc-l">{hov === null ? `last ${values.length} cycles` : `${labels[hov]} · ${format(values[hov])}`}</div>
     </div>
   );
 }
@@ -72,11 +80,16 @@ export function Cycles({ values, labels, format }: { values: number[]; labels: s
 export function Against({ value, limit, format, hex }: { value: number; limit: number; format: (v: number) => string; hex: string }) {
   const pctV = Math.min(100, value / limit * 100);
   return (
-    <>
+    <div className="kpi3-seg-wrap">
       <div className="kpi3-seg" role="img" aria-label={`${format(value)} of ${format(limit)}`}>
         <span style={{ width: `${pctV.toFixed(1)}%`, background: hex }} />
       </div>
-      <div className="kpi3-seg-l"><span><b className="num">{pctV.toFixed(0)}%</b> of {format(limit)}</span></div>
-    </>
+      <div className="kpi3-seg-l">
+        <span className="kpi3-seg-item">
+          <b className="num">{pctV.toFixed(0)}%</b>
+          <span className="kpi3-seg-name">of {format(limit)}</span>
+        </span>
+      </div>
+    </div>
   );
 }

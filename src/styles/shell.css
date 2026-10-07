@@ -2141,14 +2141,15 @@ a.side-item.active:not(.is-active) { background: transparent; }
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  min-height: 8.25rem;
-  padding: 12px 14px 10px;
+  gap: 6px;
+  min-height: 9.75rem;
+  padding: 14px 16px 12px;
   background: var(--vw-color-white);
   border: 1px solid var(--vw-color-slate-200);
   border-radius: var(--vw-radius-lg);
   border-top: 3px solid var(--kpi-accent);
   box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  transition: border-color .15s, box-shadow .15s;
 }
 .kpi3-head { display: flex; align-items: center; gap: 6px; position: relative; }
 .kpi3-title { font-size: 0.84375rem; font-weight: 500; color: var(--vw-color-slate-500, #64748b); letter-spacing: -0.01em; }
@@ -2185,20 +2186,23 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .kpi3-v { font-size: 1.75rem; font-weight: 450; line-height: 1.2; letter-spacing: -0.025em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; }
 .kpi3-u { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); }
 .kpi3-of { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 1px; flex-basis: 100%; }
-.kpi3-vis { margin-top: 2px; min-height: 28px; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; }
-.kpi3-seg { display: flex; height: 5px; border-radius: 2.5px; overflow: hidden; background: var(--vw-color-slate-100); gap: 2px; margin-top: 2px; }
+.kpi3-vis { margin-top: 6px; min-height: 38px; flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-end; }
+.kpi3-seg-wrap { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+.kpi3-seg { display: flex; height: 5px; border-radius: 2.5px; overflow: hidden; background: var(--vw-color-slate-100); gap: 2px; margin-top: 2px; width: 100%; }
 .kpi3-seg > span { display: block; height: 100%; }
-.kpi3-seg-l { display: flex; flex-wrap: wrap; gap: 6px; row-gap: 4px; margin-top: 4px; font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; }
-.kpi3-sep { margin: 0 4px 0 0; color: var(--vw-color-gray-400); }
-.kpi3-seg-l i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.kpi3-seg-l b { font-weight: 600; color: var(--vw-color-slate-800, #1e293b); }
-.kpi3-cyc { display: flex; align-items: flex-end; gap: 4px; height: 42px; position: relative; padding-bottom: 14px; }
+.kpi3-seg-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35; }
+.kpi3-seg-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0; }
+.kpi3-seg-item i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; flex-shrink: 0; }
+.kpi3-seg-item b { font-weight: 600; color: var(--vw-color-slate-800, #1e293b); margin-right: 2px; }
+.kpi3-seg-name { color: var(--vw-color-slate-500, #64748b); font-size: 0.75rem; }
+.kpi3-cyc { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; width: 100%; }
+.kpi3-cyc-bars { display: flex; align-items: flex-end; gap: 4px; height: 22px; width: 100%; }
 .kpi3-cyc-b { flex: 1 1 0; border-radius: 2px 2px 0 0; background: var(--vw-color-slate-200); cursor: default; transition: background .12s; }
 .kpi3-cyc-b.is-cur { background: var(--kpi-accent); }
 .kpi3-cyc-b.is-hov { background: var(--vw-color-slate-400); }
 .kpi3-cyc-b.is-cur.is-hov { background: var(--kpi-accent); filter: brightness(.85); }
-.kpi3-cyc-l { position: absolute; left: 0; bottom: 0; font-size: 0.75rem; font-weight: 400; color: var(--vw-color-gray-500); white-space: nowrap; }
-.kpi3-delta { font-size: 0.75rem; font-weight: 500; margin-top: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi3-cyc-l { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; margin-top: 2px; }
+.kpi3-delta { font-size: 0.75rem; font-weight: 500; margin-top: 8px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi3-act { align-self: flex-start; margin-top: auto; padding: 0; border: 0; background: none; font: inherit; font-size: 0.8125rem; font-weight: 500;
   color: var(--vw-color-blue-600); cursor: pointer; }
 .kpi3-act:hover { text-decoration: underline; }
@@ -2553,7 +2557,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-attn-ic[data-tone="warn"] { background: var(--vw-color-amber-50); color: var(--vw-color-amber-600); }
 .rpt-attn-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .rpt-attn-t { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900); }
-.rpt-attn-d { font-size: 0.8125rem; color: var(--vw-color-gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rpt-attn-d { font-size: 0.8125rem; color: var(--vw-color-gray-600); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rpt-attn-link { color: var(--vw-color-blue-600); font-weight: 500; }
 .rpt-attn-static-label { color: var(--vw-color-gray-700); font-weight: 500; }
 .rpt-attn-chev { flex-shrink: 0; font-size: 1.25rem; color: var(--vw-color-gray-400); }
@@ -2566,9 +2570,9 @@ details[open] > summary .vw-tx-chevron {
 
 /* Scoped KPI card typography for reports - harmonizes metric values and supporting text */
 .rpt-kpis .kpi3 {
-  min-height: 8.25rem;
-  padding: 12px 14px 10px;
-  gap: 5px;
+  min-height: 9.75rem;
+  padding: 14px 16px 12px;
+  gap: 6px;
 }
 .rpt-kpis .kpi3-head {
   gap: 6px;
@@ -2601,16 +2605,23 @@ details[open] > summary .vw-tx-chevron {
   margin-top: 1px;
 }
 .rpt-kpis .kpi3-vis {
-  margin-top: 2px;
-  min-height: 28px;
+  margin-top: 6px;
+  min-height: 38px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  flex: 1 0 auto;
 }
 .rpt-kpis .kpi3-cyc {
-  height: 32px;
+  gap: 4px;
+  padding-bottom: 0;
+  height: auto;
+}
+.rpt-kpis .kpi3-cyc-bars {
+  display: flex;
+  align-items: flex-end;
   gap: 3px;
-  padding-bottom: 12px;
+  height: 20px;
 }
 .rpt-kpis .kpi3-cyc-b {
   border-radius: 2px 2px 0 0;
@@ -2619,6 +2630,14 @@ details[open] > summary .vw-tx-chevron {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--vw-color-gray-500);
+  line-height: 1.25;
+  margin-top: 2px;
+}
+.rpt-kpis .kpi3-seg-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
 }
 .rpt-kpis .kpi3-seg {
   height: 5px;
@@ -2628,31 +2647,40 @@ details[open] > summary .vw-tx-chevron {
 .rpt-kpis .kpi3-seg-l {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 5px;
-  margin-top: 4px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 2px;
   font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--vw-color-gray-600);
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.rpt-kpis .kpi3-seg-l > span {
+.rpt-kpis .kpi3-seg-item {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.rpt-kpis .kpi3-seg-l b {
-  font-weight: 500;
+.rpt-kpis .kpi3-seg-item i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rpt-kpis .kpi3-seg-item b {
+  font-weight: 600;
   color: var(--vw-color-gray-900);
+  margin-right: 2px;
+}
+.rpt-kpis .kpi3-seg-name {
+  color: var(--vw-color-gray-600);
+  font-size: 0.75rem;
 }
 .rpt-kpis .kpi3-delta {
   font-size: 0.75rem;
   font-weight: 500;
-  margin-top: auto;
+  margin-top: 8px;
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2690,8 +2718,8 @@ details[open] > summary .vw-tx-chevron {
 .rpt-card-v { font-size: 1.75rem; font-weight: 450; color: var(--vw-color-slate-800, #1e293b); line-height: 1.2; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
 .rpt-card-l { font-size: 0.8125rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rpt-card-spark { width: 7.5rem; flex-shrink: 0; }
-.rpt-card-foot { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--vw-color-slate-100); padding-top: 10px; flex-wrap: nowrap; min-width: 0; }
-.rpt-card-meta { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rpt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--vw-color-slate-100); padding-top: 10px; min-width: 0; }
+.rpt-card-meta { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); white-space: nowrap; }
 
 /* export menu */
 .rpt-menu { position: relative; display: inline-flex; align-items: center; gap: 8px; }
@@ -2706,17 +2734,18 @@ details[open] > summary .vw-tx-chevron {
 /* report document */
 .rpt-toolbar { display: flex; align-items: center; gap: var(--vw-space-sm); }
 .rpt-printhead { display: none; }
-.rpt-doc { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: var(--vw-space-lg); border-top: 3px solid var(--vw-color-blue-700); padding: 16px 20px; }
+.rpt-doc { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--vw-space-lg); border-top: 3px solid var(--vw-color-blue-700); padding: 18px 22px; background: var(--vw-color-white); border-radius: var(--vw-radius-lg); border-left: 1px solid var(--vw-color-slate-200); border-right: 1px solid var(--vw-color-slate-200); border-bottom: 1px solid var(--vw-color-slate-200); box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
 @media (max-width: 1000px) { .rpt-doc { grid-template-columns: 1fr; } }
 .rpt-doc .eyebrow, .rpt-headline .eyebrow { font-size: 0.75rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
-.rpt-doc-title { margin: 8px 0 4px; font-size: 1.375rem; font-weight: 500; letter-spacing: -.015em; color: var(--vw-color-slate-800, #1e293b); line-height: 1.25; }
-.rpt-doc-q { margin: 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--vw-color-slate-600, #475569); max-width: 72ch; }
-.rpt-meta { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 10px 24px; margin: 14px 0 0; justify-content: start; }
-.rpt-meta > div.is-wide { grid-column: 1 / -1; }
-.rpt-meta dt { font-size: 0.6875rem; color: var(--vw-color-slate-500, #64748b); margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
-.rpt-meta dd { margin: 0; font-size: 0.8125rem; color: var(--vw-color-slate-800, #1e293b); font-weight: 400; }
-.rpt-headline { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-100); border-radius: var(--vw-radius-lg); padding: 12px 14px; align-self: start; }
-.rpt-headline-v { font-size: 1.75rem; font-weight: 450; color: var(--vw-color-slate-800, #1e293b); line-height: 1.2; margin-top: 4px; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.rpt-doc-title { margin: 6px 0 3px; font-size: 1.375rem; font-weight: 600; letter-spacing: -.02em; color: var(--vw-color-slate-900, #0f172a); line-height: 1.25; }
+.rpt-doc-q { margin: 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--vw-color-slate-600, #475569); max-width: 76ch; }
+.rpt-meta { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--vw-color-slate-100); }
+.rpt-meta > div { min-width: 0; }
+.rpt-meta > div.is-wide { flex-basis: 100%; margin-top: 2px; }
+.rpt-meta dt { font-size: 0.6875rem; color: var(--vw-color-slate-500, #64748b); margin-bottom: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.rpt-meta dd { margin: 0; font-size: 0.8125rem; color: var(--vw-color-slate-800, #1e293b); font-weight: 500; }
+.rpt-headline { background: var(--vw-color-slate-50); border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg); padding: 14px 16px; align-self: start; display: flex; flex-direction: column; }
+.rpt-headline-v { font-size: 1.75rem; font-weight: 500; color: var(--vw-color-slate-900, #0f172a); line-height: 1.2; margin-top: 4px; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
 .rpt-headline-l { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); margin-top: 3px; line-height: 1.35; }
 .rpt-headline svg { height: 20px; }
 .rpt-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--vw-radius-md); font-size: 0.8125rem;
@@ -2819,7 +2848,9 @@ details[open] > summary .vw-tx-chevron {
 .rpt-step-gain { position: absolute; top: 0; bottom: 0; }
 .rpt-step-target { position: absolute; top: -4px; bottom: -4px; border-left: 2px dashed var(--vw-color-emerald-600); }
 .rpt-step-v { font-size: 0.8125rem; color: var(--vw-color-gray-600); text-align: right; }
-.rpt-actions td { vertical-align: top; }
+.rpt-actions { width: 100%; border-collapse: collapse; }
+.rpt-actions th { padding: 8px 12px; font-size: 0.75rem; font-weight: 500; color: var(--vw-color-gray-600); text-align: left; }
+.rpt-actions td { vertical-align: top; padding: 12px 12px; font-size: 0.8125rem; }
 .rpt-td-wrap { white-space: normal !important; line-height: 1.45; }
 .rpt-method { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; margin: var(--vw-space-md) 0 0; }
 @media (max-width: 900px) { .rpt-method { grid-template-columns: 1fr; } }
