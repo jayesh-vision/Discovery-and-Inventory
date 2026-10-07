@@ -647,7 +647,12 @@ export default function InventoryInsights() {
         {/* ── Tier 1: Key Metrics (4 cards) ── */}
         <section aria-label="Key metrics" className="ii-kpi-grid">
           {/* Tile 1: Light blue summary KPI tile */}
-          <div className="ii-card-blue">
+          <div
+            className="ii-card-blue"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate('/inventory/physical?from=Inventory%20insights')}
+            title="Drill down to all inventory records"
+          >
             <span style={{ fontSize: 12, color: '#1E40AF', fontWeight: 600, letterSpacing: '0.01em' }}>
               Total inventory records
             </span>
@@ -678,10 +683,22 @@ export default function InventoryInsights() {
 
           {/* Tile 2 & 3: Physical & Logical Category KPI cards */}
           {PARENTS_DATA_DYNAMIC[dayRange].map(p => (
-            <div key={p.name} className="ii-card" style={{ gap: 8, padding: '14px 16px' }}>
+            <div
+              key={p.name}
+              className="ii-card"
+              style={{ gap: 8, padding: '14px 16px', cursor: 'pointer' }}
+              onClick={() => {
+                if (p.name.includes('Physical')) {
+                  navigate('/inventory/physical?from=Inventory%20insights');
+                } else {
+                  navigate('/inventory/links?from=Inventory%20insights');
+                }
+              }}
+              title={`Drill down to ${p.name}`}
+            >
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                 <span style={{ fontSize: 13.5, color: 'var(--ii-text-heading)', fontWeight: 500 }}>{p.name}</span>
-                <span style={{ fontSize: 11.5, color: 'var(--ii-text-muted)' }}>{p.desc}</span>
+                {p.desc ? <span style={{ fontSize: 11.5, color: 'var(--ii-text-muted)' }}>{p.desc}</span> : null}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                 <span className="ii-mono" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>
@@ -696,6 +713,18 @@ export default function InventoryInsights() {
                   <div
                     key={k.name}
                     style={{ borderLeft: `2.5px solid ${k.color}`, paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (k.name === 'Active') {
+                        navigate('/inventory/physical?from=Inventory%20insights');
+                      } else if (k.name === 'Passive') {
+                        navigate('/inventory/passive?from=Inventory%20insights');
+                      } else if (k.name === 'Virtual') {
+                        navigate('/inventory/virtual?from=Inventory%20insights');
+                      } else if (k.name === 'Connectivity') {
+                        navigate('/inventory/links?from=Inventory%20insights');
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       showTip({
                         title: `${k.name} Coverage & Health`,
@@ -739,7 +768,12 @@ export default function InventoryInsights() {
           ))}
 
           {/* Tile 4: Open inventory issues */}
-          <div className="ii-card" style={{ gap: 6, padding: '14px 16px' }}>
+          <div
+            className="ii-card"
+            style={{ gap: 6, padding: '14px 16px', cursor: 'pointer' }}
+            onClick={() => navigate('/inventory/inactive?from=Inventory%20insights')}
+            title="Drill down to inactive records and backlog"
+          >
             <span style={{ fontSize: 12, color: 'var(--ii-text-heading)', fontWeight: 500 }}>Open inventory issues</span>
             <div className="ii-mono" style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].count}</div>
             <div style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>
@@ -1140,25 +1174,48 @@ export default function InventoryInsights() {
 
         {/* Row 2 of What exists: The 4 Detailed Inventory Panels */}
         <section aria-label="Inventory by type" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
-          {PANELS_DATA_DYNAMIC[dayRange].map(p => (
-            <div key={p.title} className="ii-card" style={{ gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: p.color }} />
-                <div style={{ fontWeight: 500, fontSize: 13.5, flexGrow: 1, color: 'var(--ii-text-heading)' }}>{p.title}</div>
-                <button type="button" onClick={() => navigate(p.route)} className="ii-link-btn">
-                  Open
-                </button>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{p.desc}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {p.items.map(t => {
-                  const itemKey = `${p.title}-${t.name}`;
-                  const isHov = hoveredPanelItemKey === itemKey;
-                  const meta = LOGICAL_CONNECTIVITY_META[t.name];
-                  return (
-                    <div
-                      key={t.name}
-                      className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
+          {PANELS_DATA_DYNAMIC[dayRange].map(p => {
+            const panelRoute = p.route.includes('?') ? `${p.route}&from=Inventory%20insights` : `${p.route}?from=Inventory%20insights`;
+            return (
+              <div key={p.title} className="ii-card" style={{ gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 3, background: p.color }} />
+                  <div style={{ fontWeight: 500, fontSize: 13.5, flexGrow: 1, color: 'var(--ii-text-heading)' }}>{p.title}</div>
+                  <button type="button" onClick={() => navigate(panelRoute)} className="ii-link-btn">
+                    Open
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{p.desc}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {p.items.map(t => {
+                    const itemKey = `${p.title}-${t.name}`;
+                    const isHov = hoveredPanelItemKey === itemKey;
+                    const meta = LOGICAL_CONNECTIVITY_META[t.name];
+                    return (
+                      <div
+                        key={t.name}
+                        className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (p.route === '/inventory/physical') {
+                            const clsMap: Record<string, string> = {
+                              'Cell-site routers (CSR)': 'router',
+                              'Radio units (RRU / AAU)': 'rru',
+                              'Carrier Ethernet & access switches': 'switch',
+                              'Baseband units (BBU / DU)': 'bbu',
+                              'Microwave radios (IDU / ODU)': 'microwave',
+                              'Metro agg. & PE routers': 'router',
+                              'DWDM / ROADM optical nodes': 'dwdm',
+                              'Data centre & spine-leaf switches': 'switch',
+                              'GPON / XGS-PON OLTs': 'gpon',
+                              'Core / backbone routers (P)': 'router'
+                            };
+                            const cls = clsMap[t.name] || 'router';
+                            navigate(`/inventory/physical?cls=${cls}&from=Inventory%20insights`);
+                          } else {
+                            navigate(panelRoute);
+                          }
+                        }}
                       onMouseEnter={(e) => {
                         setHoveredPanelItemKey(itemKey);
                         showTip({
@@ -1207,7 +1264,8 @@ export default function InventoryInsights() {
                 ))}
               </div>
             </div>
-          ))}
+          );
+        })}
         </section>
 
         {/* ── Needs action now ── */}
@@ -1601,19 +1659,23 @@ export default function InventoryInsights() {
 
         {/* 5 Navigation Tiles */}
         <section aria-label="Navigate" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 14 }}>
-          {BOTTOM_NAVIGATE_DYNAMIC[dayRange].map(n => (
-            <button
-              key={n.name}
-              type="button"
-              onClick={() => navigate(n.route)}
-              className="ii-nav-tile"
-              style={{ borderLeft: `3px solid ${n.color}` }}
-            >
-              <span className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{n.count}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-title)' }}>{n.name}</span>
-              <span style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{n.where}</span>
-            </button>
-          ))}
+          {BOTTOM_NAVIGATE_DYNAMIC[dayRange].map(n => {
+            const tileRoute = n.route.includes('?') ? `${n.route}&from=Inventory%20insights` : `${n.route}?from=Inventory%20insights`;
+            return (
+              <button
+                key={n.name}
+                type="button"
+                onClick={() => navigate(tileRoute)}
+                className="ii-nav-tile"
+                style={{ borderLeft: `3px solid ${n.color}`, cursor: 'pointer' }}
+                title={`Drill down to ${n.name}`}
+              >
+                <span className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{n.count}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-title)' }}>{n.name}</span>
+                <span style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{n.where}</span>
+              </button>
+            );
+          })}
         </section>
 
         <section aria-label="Sites, services and activity" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 16 }}>
@@ -1621,7 +1683,7 @@ export default function InventoryInsights() {
           <div className="ii-card" style={{ gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="ii-card-title">Sites needing attention</div>
-              <button type="button" onClick={() => navigate('/inventory/location')} className="ii-link-btn">
+              <button type="button" onClick={() => navigate('/inventory/location?from=Inventory%20insights')} className="ii-link-btn">
                 All {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites
               </button>
             </div>
@@ -1641,7 +1703,12 @@ export default function InventoryInsights() {
                 </thead>
                 <tbody>
                   {sitesList.map(s => (
-                    <tr key={s.name}>
+                    <tr
+                      key={s.name}
+                      onClick={() => navigate(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`)}
+                      style={{ cursor: 'pointer' }}
+                      title={`View ${s.name} location details`}
+                    >
                       <td className="ii-mono" style={{ padding: '7px 4px', fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.name}</td>
                       <td style={{ padding: '7px 4px', color: 'var(--ii-text-body)' }}>{s.region}</td>
                       <td style={{ padding: '7px 4px', color: 'var(--ii-text-body)' }}>{s.kind}</td>
@@ -1679,7 +1746,7 @@ export default function InventoryInsights() {
           <div className="ii-card" style={{ gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="ii-card-title">Services on inventory</div>
-              <button type="button" onClick={() => navigate('/inventory/services')} className="ii-link-btn">
+              <button type="button" onClick={() => navigate('/inventory/services?from=Inventory%20insights')} className="ii-link-btn">
                 View all
               </button>
             </div>
@@ -1695,7 +1762,12 @@ export default function InventoryInsights() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
               {servicesList.map(s => (
-                <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ii-border-light)', paddingTop: 6, gap: 8 }}>
+                <div
+                  key={s.name}
+                  onClick={() => navigate('/inventory/services?from=Inventory%20insights')}
+                  style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ii-border-light)', paddingTop: 6, gap: 8, cursor: 'pointer' }}
+                  title={`View ${s.name} service path`}
+                >
                   <span style={{ color: 'var(--ii-text-body)' }}>{s.name}</span>
                   <span style={{ display: 'flex', gap: 10 }}>
                     <span className="ii-mono" style={{ color: 'var(--ii-text-heading)' }}>{s.count}</span>

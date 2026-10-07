@@ -1,0 +1,767 @@
+/* ── Scan Jobs & Create Job Modal Styling ─────────────────────────────── */
+
+/* ── Modal Overlay & Container ────────────────────────────────────────── */
+.job-modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vw-space-md);
+  animation: modal-scrim-in 180ms ease-out forwards;
+}
+
+@keyframes modal-scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.job-modal-panel {
+  position: relative;
+  width: min(900px, 95vw);
+  max-height: 90vh;
+  background: var(--vw-color-white);
+  border-radius: 14px;
+  border: 1px solid var(--vw-color-slate-200);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-panel-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modal-panel-in {
+  from { opacity: 0; transform: scale(0.97) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Modal Header ─────────────────────────────────────────────────────── */
+.job-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vw-space-md);
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--vw-color-slate-100);
+  background: linear-gradient(180deg, var(--vw-color-slate-50) 0%, var(--vw-color-white) 100%);
+  flex: none;
+}
+
+.job-modal-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--vw-color-blue-500) 0%, var(--vw-color-blue-600) 100%);
+  color: var(--vw-color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+.job-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-900);
+  letter-spacing: -0.015em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.job-modal-sub {
+  font-size: 0.8125rem;
+  color: var(--vw-color-slate-500);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.job-modal-close-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--vw-color-slate-400);
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: all 120ms ease;
+  flex-shrink: 0;
+}
+
+.job-modal-close-btn:hover {
+  background: var(--vw-color-slate-100);
+  color: var(--vw-color-slate-700);
+  border-color: var(--vw-color-slate-200);
+}
+
+/* ── Stepper Navigation ───────────────────────────────────────────────── */
+.job-modal-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--vw-color-slate-50);
+  border-bottom: 1px solid var(--vw-color-slate-200);
+  padding: 6px 16px;
+  gap: 6px;
+  flex: none;
+}
+
+.job-step-tab {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.job-step-tab:hover {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.job-step-tab.is-active {
+  background: var(--vw-color-white);
+  border-color: var(--vw-color-slate-200);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.job-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--vw-color-slate-200);
+  color: var(--vw-color-slate-600);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+
+.job-step-tab.is-active .job-step-num {
+  background: var(--vw-color-blue-600);
+  color: var(--vw-color-white);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.job-step-tab.is-complete .job-step-num {
+  background: var(--vw-color-emerald-500);
+  color: var(--vw-color-white);
+}
+
+.job-step-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-600);
+  white-space: nowrap;
+}
+
+.job-step-tab.is-active .job-step-title {
+  color: var(--vw-color-blue-700);
+}
+
+/* ── Modal Body & Sections ────────────────────────────────────────────── */
+.job-modal-body {
+  padding: 22px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.job-section-card {
+  background: var(--vw-color-white);
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.job-form-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.job-form-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.job-form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.job-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.job-field-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--vw-color-slate-700);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Domain Radio Cards */
+.domain-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.domain-select-card {
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 9px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--vw-color-white);
+  transition: all 140ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.domain-select-card:hover {
+  border-color: var(--vw-color-slate-300);
+  background: var(--vw-color-slate-50);
+}
+
+.domain-select-card.is-selected {
+  border-color: var(--vw-color-blue-500);
+  background: #f8faff;
+  box-shadow: 0 0 0 1.5px var(--vw-color-blue-500);
+}
+
+.domain-select-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: var(--vw-color-slate-900);
+}
+
+.domain-badge-active {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--vw-color-blue-600);
+  background: var(--vw-color-blue-50);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Mode Switcher Buttons */
+.mode-toggle-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mode-toggle-btn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--vw-color-slate-600);
+  background: var(--vw-color-slate-50);
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 130ms ease;
+  text-align: center;
+}
+
+.mode-toggle-btn:hover {
+  background: var(--vw-color-slate-100);
+  color: var(--vw-color-slate-900);
+}
+
+.mode-toggle-btn.is-active {
+  background: var(--vw-color-white);
+  color: var(--vw-color-blue-700);
+  font-weight: 600;
+  border-color: var(--vw-color-blue-500);
+  box-shadow: 0 0 0 1px var(--vw-color-blue-500), 0 2px 4px rgba(37, 99, 235, 0.08);
+}
+
+/* Scope target preview card */
+.scope-preview-box {
+  background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+  border: 1px solid var(--vw-color-blue-200);
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.scope-preview-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.scope-preview-num {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--vw-color-blue-700);
+  font-family: var(--vw-font-mono, monospace);
+}
+
+.scope-preview-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800);
+}
+
+/* Protocol Checkbox List */
+.proto-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.proto-check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 8px;
+  background: var(--vw-color-white);
+  cursor: pointer;
+  transition: all 130ms ease;
+}
+
+.proto-check-item:hover {
+  background: var(--vw-color-slate-50);
+  border-color: var(--vw-color-slate-300);
+}
+
+.proto-check-item.is-checked {
+  border-color: var(--vw-color-blue-400);
+  background: #f8faff;
+  box-shadow: 0 0 0 1px var(--vw-color-blue-400);
+}
+
+.proto-port-tag {
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--vw-color-slate-100);
+  color: var(--vw-color-slate-600);
+  font-family: var(--vw-font-mono, monospace);
+  font-weight: 500;
+}
+
+.proto-check-item.is-checked .proto-port-tag {
+  background: var(--vw-color-blue-100);
+  color: var(--vw-color-blue-700);
+}
+
+/* Schedule Cards Grid */
+.schedule-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.schedule-select-card {
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--vw-color-white);
+  transition: all 130ms ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-select-card:hover {
+  border-color: var(--vw-color-slate-300);
+  background: var(--vw-color-slate-50);
+}
+
+.schedule-select-card.is-selected {
+  border-color: var(--vw-color-blue-500);
+  background: #f8faff;
+  box-shadow: 0 0 0 1.5px var(--vw-color-blue-500);
+}
+
+.schedule-card-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-900);
+}
+
+/* Job Launch Summary Card */
+.job-summary-card {
+  background: #f8faff;
+  border: 1px solid var(--vw-color-blue-200);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.job-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.job-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-summary-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vw-color-slate-400);
+}
+
+.job-summary-val {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800);
+  word-break: break-word;
+}
+
+/* ── Modal Footer ─────────────────────────────────────────────────────── */
+.job-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-top: 1px solid var(--vw-color-slate-200);
+  background: var(--vw-color-slate-50);
+  flex: none;
+}
+
+.job-modal-footer-step-indicator {
+  font-size: 0.75rem;
+  color: var(--vw-color-slate-500);
+  font-weight: 500;
+}
+
+.job-modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Live Scan Progress Animation ─────────────────────────────────────── */
+.scan-running-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scan-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vw-color-blue-500);
+  animation: pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+/* ── Target Breakdown Mini Bar ────────────────────────────────────────── */
+.target-breakdown-bar {
+  display: flex;
+  height: 6px;
+  width: 100%;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--vw-color-slate-100);
+  margin-top: 4px;
+}
+
+.target-bar-clean {
+  background: var(--vw-color-emerald-500);
+  transition: width 200ms ease;
+}
+
+.target-bar-partial {
+  background: var(--vw-color-amber-500);
+  transition: width 200ms ease;
+}
+
+.target-bar-fail {
+  background: var(--vw-color-red-500);
+  transition: width 200ms ease;
+}
+
+/* ── Scan Jobs Toolbar Additions ──────────────────────────────────────── */
+.jobs-create-cta-btn {
+  background: linear-gradient(135deg, var(--vw-color-blue-600) 0%, var(--vw-color-blue-700) 100%);
+  color: var(--vw-color-white);
+  border: 1px solid var(--vw-color-blue-700);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  white-space: nowrap;
+}
+
+.jobs-create-cta-btn:hover {
+  background: linear-gradient(135deg, var(--vw-color-blue-500) 0%, var(--vw-color-blue-600) 100%);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.jobs-create-cta-btn:active {
+  transform: translateY(0);
+}
+
+/* Quick Run Icon Button */
+.btn-run-now {
+  background: transparent;
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vw-color-slate-700);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 120ms ease;
+}
+
+.btn-run-now:hover:not(:disabled) {
+  background: var(--vw-color-blue-50);
+  border-color: var(--vw-color-blue-300);
+  color: var(--vw-color-blue-700);
+}
+
+.btn-run-now:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Drawer Customization ─────────────────────────────────────────────── */
+.job-drawer-section {
+  margin-bottom: var(--vw-space-lg);
+}
+
+.job-drawer-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vw-color-slate-500);
+  margin-bottom: var(--vw-space-sm);
+}
+
+.job-run-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.job-run-history-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--vw-color-slate-500);
+  font-weight: 500;
+  border-bottom: 1px solid var(--vw-color-slate-200);
+  background: var(--vw-color-slate-50);
+}
+
+.job-run-history-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--vw-color-slate-100);
+  color: var(--vw-color-slate-700);
+}
+
+/* ── Interactive KPI Card Styling ─────────────────────────────────────── */
+.clickable-kpi {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.clickable-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+
+/* ── Table Column Compact Layout ──────────────────────────────────────── */
+.tbl-wrap table.nst-table td:nth-child(3) {
+  max-width: 18rem;
+}
+
+.tbl-wrap table.nst-table td:nth-child(3) .vw-card-metric-label-sub {
+  display: block;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.tbl-wrap table.nst-table td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.tbl-wrap table.nst-table th {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* ── Scan Jobs Toolbar Controls ───────────────────────────────────────── */
+.scj-toolbar-extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.scj-seg {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--vw-color-slate-100);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.scj-seg .nst-btn {
+  border: none;
+  background: transparent;
+  transition: all 120ms ease;
+  cursor: pointer;
+}
+
+.scj-seg .nst-btn.is-active {
+  background: var(--vw-color-white);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.scj-toolbar-chips {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ── Responsive Enhancements ──────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .scj-toolbar-extra {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .scj-toolbar-extra {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .scj-seg {
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  .domain-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .job-form-row-2,
+  .job-form-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .scj-toolbar-extra {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .scj-seg {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .scj-toolbar-chips {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .domain-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .proto-checklist {
+    grid-template-columns: 1fr;
+  }
+  .job-modal-panel {
+    width: 96vw;
+    max-height: 94vh;
+  }
+  .job-modal-header {
+    padding: 14px 16px;
+  }
+  .job-modal-body {
+    padding: 16px;
+    gap: 14px;
+  }
+  .job-modal-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .job-modal-footer-right {
+    justify-content: flex-end;
+  }
+}
+

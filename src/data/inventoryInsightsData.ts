@@ -161,7 +161,7 @@ const leaf = (k: [string, string, number, string, string, string, number, number
 export const PARENTS_DATA: ParentCategory[] = [
   {
     name: 'Physical inventory',
-    desc: 'things you can touch',
+    desc: '',
     count: '1.55M',
     delta: '+2.6%',
     health: '92%',
@@ -172,7 +172,7 @@ export const PARENTS_DATA: ParentCategory[] = [
   },
   {
     name: 'Connectivity inventory',
-    desc: 'configured on top of physical',
+    desc: '',
     count: '59,870',
     delta: '+5.4%',
     health: '91%',

@@ -144,7 +144,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '7d': [
     {
       name: 'Physical inventory',
-      desc: 'things you can touch',
+      desc: '',
       count: '1.55M',
       delta: '+0.6%',
       health: '93%',
@@ -155,7 +155,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
     },
     {
       name: 'Connectivity inventory',
-      desc: 'configured on top of physical',
+      desc: '',
       count: '59,870',
       delta: '+1.2%',
       health: '92%',
@@ -168,7 +168,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '14d': [
     {
       name: 'Physical inventory',
-      desc: 'things you can touch',
+      desc: '',
       count: '1.54M',
       delta: '+1.2%',
       health: '93%',
@@ -179,7 +179,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
     },
     {
       name: 'Connectivity inventory',
-      desc: 'configured on top of physical',
+      desc: '',
       count: '58,400',
       delta: '+2.5%',
       health: '92%',
@@ -192,7 +192,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '30d': [
     {
       name: 'Physical inventory',
-      desc: 'things you can touch',
+      desc: '',
       count: '1.52M',
       delta: '+2.6%',
       health: '92%',
@@ -203,7 +203,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
     },
     {
       name: 'Connectivity inventory',
-      desc: 'configured on top of physical',
+      desc: '',
       count: '55,200',
       delta: '+5.4%',
       health: '91%',
@@ -216,7 +216,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '90d': [
     {
       name: 'Physical inventory',
-      desc: 'things you can touch',
+      desc: '',
       count: '1.46M',
       delta: '+5.8%',
       health: '91%',
@@ -227,7 +227,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
     },
     {
       name: 'Connectivity inventory',
-      desc: 'configured on top of physical',
+      desc: '',
       count: '48,900',
       delta: '+11.6%',
       health: '89%',
@@ -240,7 +240,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '12m': [
     {
       name: 'Physical inventory',
-      desc: 'things you can touch',
+      desc: '',
       count: '1.22M',
       delta: '+14.2%',
       health: '89%',
@@ -251,7 +251,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
     },
     {
       name: 'Connectivity inventory',
-      desc: 'configured on top of physical',
+      desc: '',
       count: '36,500',
       delta: '+28.5%',
       health: '87%',

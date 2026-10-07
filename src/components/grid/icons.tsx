@@ -35,13 +35,13 @@ export function iconFor(label: string): string {
   const t = label.toLowerCase();
   if (/node view|hardware/.test(t)) return K.node;
   if (/life ?cycle|change|edit|rename|assign|stock state/.test(t)) return K.life;
-  if (/job|history|log|audit|workorder/.test(t)) return K.jobs;
+  if (/create|new |add|instantiate|generate/.test(t)) return K.add;
   if (/purge|delete|retire|remove/.test(t)) return K.del;
+  if (/job|history|log|audit|workorder/.test(t)) return K.jobs;
   if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return K.run;
   if (/copy/.test(t)) return K.copy;
   if (/download|export|report/.test(t)) return K.down;
   if (/restore|recover|revert/.test(t)) return K.undo;
-  if (/create|new |add|instantiate|generate/.test(t)) return K.add;
   if (/print|label/.test(t)) return K.print;
   if (/schedule/.test(t)) return K.cal;
   if (/table option|setting|preference/.test(t)) return K.opts;

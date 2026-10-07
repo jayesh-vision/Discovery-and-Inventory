@@ -20,6 +20,7 @@ import { DiscoveryReportView, InventoryReportView } from './screens/reports/Repo
 import Location from './screens/Location';
 import CityDetails from './screens/CityDetails';
 import InventoryInsights from './screens/InventoryInsights';
+import ScanJobs from './screens/ScanJobs';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -51,7 +52,7 @@ export const SCREENS: Screen[] = [
     crumb: 'Insights · Domain devices', rail: 'insights', component: DomainDevices },
   { key: 'discrepancydetails', path: '/discovery/insights/discrepancies', module: 'Discovery and reconciliation',
     crumb: 'Insights · Discrepancies', rail: 'insights', component: DiscrepancyDetails },
-  { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      legacy: true },
+  { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      component: ScanJobs },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },
   { key: 'reconcile', path: '/discovery/reconcile', module: 'Discovery and reconciliation', crumb: 'Reconciliation', component: Reconcile },

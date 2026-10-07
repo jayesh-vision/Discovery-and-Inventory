@@ -66,17 +66,27 @@ export default function Topbar() {
   }
 
   const screenForCrumb = (prefix: string) => {
-    const p = prefix.toLowerCase();
+    const p = prefix.toLowerCase().trim();
+    const norm = p.replace(/[\s\-_]+/g, '');
     const matches = (x: typeof SCREENS[number]) =>
       x.crumb.toLowerCase() === p ||
       x.key.toLowerCase() === p ||
-      x.crumb.split(' · ').pop()?.toLowerCase() === p;
+      x.key.toLowerCase() === norm ||
+      x.crumb.split(' · ').pop()?.toLowerCase() === p ||
+      (norm === 'inventoryinsights' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
+      (norm === 'inventory' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
+      x.path.toLowerCase() === prefix.toLowerCase();
     /* two modules can own a screen with the same crumb (both have "Reports");
        the one in the reader's own module wins */
     return SCREENS.find(x => matches(x) && x.module === s.module) ?? SCREENS.find(matches);
   };
 
   const targetFor = (prefix: string, hopQuery?: string): string | null => {
+    const p = prefix.toLowerCase().trim();
+    const norm = p.replace(/[\s\-_]+/g, '');
+    if (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights') {
+      return '/inventory/insights';
+    }
     const t = screenForCrumb(prefix);
     if (!t) return null;
     let path = t.path;
@@ -174,8 +184,9 @@ export default function Topbar() {
           }
         }
       }
-      const label = hop.drill || parts[parts.length - 1];
-      const base = targetFor(originScreen?.crumb || hop.crumb, hop.query);
+      const isInventoryInsights = originScreen?.key === 'inventoryinsights' || originScreen?.key === 'home' || hop.crumb.toLowerCase().includes('inventory');
+      const label = isInventoryInsights ? 'Inventory insights' : (hop.drill || parts[parts.length - 1]);
+      const base = isInventoryInsights ? '/inventory/insights' : targetFor(originScreen?.crumb || hop.crumb, hop.query);
       let toQuery = '';
       if (hop.query) {
         const qp = new URLSearchParams(hop.query);
@@ -190,6 +201,12 @@ export default function Topbar() {
         segs.push({ label, to });
       } else {
         segs[segs.length - 1] = { label, to };
+      }
+    }
+    if (drill && leaf && drill !== leaf) {
+      if (!segs.some(g => g.label === leaf)) {
+        const cleanTo = `${pathname}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
+        segs.push({ label: leaf, to: cleanTo });
       }
     }
   } else {
@@ -224,13 +241,15 @@ export default function Topbar() {
     const cityName = getCityById(params.cityId)?.city.name || 'City';
     const facilityType = sp.get('facility') || 'dc';
     const facilityId = sp.get('facilityId');
+    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
+    const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && x.label !== cityName) : [];
 
-    segs = [{ label: 'Location', to: '/inventory/location' }];
+    segs = [...originSegs, { label: 'Location', to: locTo }];
 
     if (facilityId) {
       segs.push({
         label: cityName,
-        to: `/inventory/location/city/${params.cityId}?facility=${facilityType}`
+        to: `/inventory/location/city/${params.cityId}?facility=${facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
       });
       finalLeafLabel = facilityId;
     } else {
@@ -241,39 +260,49 @@ export default function Topbar() {
   if (s.key === 'site' && params.id) {
     const siteId = params.id;
     const cityMatch = findCityByFacilityCode(siteId);
+    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
+    const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && (!cityMatch || x.label !== cityMatch.city.name) && x.label !== siteId) : [];
+
     if (drill && drill !== siteId) {
       if (cityMatch) {
         segs = [
-          { label: 'Location', to: '/inventory/location' },
+          ...originSegs,
+          { label: 'Location', to: locTo },
           {
             label: cityMatch.city.name,
-            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
           },
           {
             label: siteId,
-            to: `/inventory/location/site/${siteId}`
+            to: `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}`
           }
         ];
       } else {
         segs = [
-          { label: 'Location', to: '/inventory/location' },
-          { label: siteId, to: `/inventory/location/site/${siteId}` }
+          ...originSegs,
+          { label: 'Location', to: locTo },
+          { label: siteId, to: `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}` }
         ];
       }
       finalLeafLabel = drill;
     } else {
       if (cityMatch) {
         segs = [
-          { label: 'Location', to: '/inventory/location' },
+          ...originSegs,
+          { label: 'Location', to: locTo },
           {
             label: cityMatch.city.name,
-            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
           }
         ];
+        finalLeafLabel = siteId;
       } else {
-        segs = [{ label: 'Location', to: '/inventory/location' }];
+        segs = [
+          ...originSegs,
+          { label: 'Location', to: locTo }
+        ];
+        finalLeafLabel = siteId;
       }
-      finalLeafLabel = siteId;
     }
   }
 
