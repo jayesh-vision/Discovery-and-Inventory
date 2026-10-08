@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Chip, DomainDot, cv } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import {
@@ -9,10 +10,12 @@ import {
   isJobHeld,
   isJobRunning,
   isJobErrors,
+  isJobFailed,
   isJobOverdue,
   isJobNeedingAttention,
   persistScanJobs,
-  STATUS_CHIP_TONE
+  STATUS_CHIP_TONE,
+  getJobFailureDetails
 } from '../data/scanJobsData';
 import {
   DOMAIN_OPTIONS,
@@ -20,17 +23,21 @@ import {
 } from '../data/discoveryOverview';
 import { CreateScanJobModal } from '../components/discovery/CreateScanJobModal';
 import { ScanJobDetailDrawer } from '../components/discovery/ScanJobDetailDrawer';
+import { ScheduleJobModal } from '../components/discovery/ScheduleJobModal';
 import '../styles/scanJobs.css';
 
-type QuickFilterKey = 'All' | 'attention' | 'errors' | 'held' | 'overdue' | 'running';
+type QuickFilterKey = 'All' | 'attention' | 'errors' | 'failed' | 'held' | 'overdue' | 'running';
 
 export default function ScanJobs() {
+  const nav = useNavigate();
   const [jobs, setJobs] = useState<ScanJob[]>(() => [...SCAN_JOBS]);
   const [query, setQuery] = useState('');
   const [quickFilter, setQuickFilter] = useState<QuickFilterKey>('All');
   const [domainFilter, setDomainFilter] = useState<string>('');
   const [selectedJob, setSelectedJob] = useState<ScanJob | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [rescheduleJob, setRescheduleJob] = useState<ScanJob | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Toast feedback helper
@@ -72,7 +79,8 @@ export default function ScanJobs() {
 
       // Quick filter
       if (quickFilter === 'attention' && !isJobNeedingAttention(j)) return false;
-      if (quickFilter === 'errors' && !isJobErrors(j)) return false;
+      if (quickFilter === 'errors' && !isJobErrors(j) && !isJobFailed(j)) return false;
+      if (quickFilter === 'failed' && !isJobFailed(j)) return false;
       if (quickFilter === 'held' && !isJobHeld(j)) return false;
       if (quickFilter === 'overdue' && !isJobOverdue(j)) return false;
       if (quickFilter === 'running' && !isJobRunning(j)) return false;
@@ -116,6 +124,29 @@ export default function ScanJobs() {
 
       const runId = `RN-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      // Realistic failure scenario diagnostics if any targets failed
+      const failScenarios = [
+        {
+          code: 'ERR-NET-TIMEOUT',
+          stage: 'Probe Reachability',
+          reason: `${failCount} edge targets timed out on SNMP GET bulk requests. Upstream latency (>4s) or packet drop on ${job.collector} exceeded timeout threshold.`,
+          action: 'Verify collector link latency and retry scan sweep or increase probe timeout threshold.'
+        },
+        {
+          code: 'ERR-AUTH-CRED-REJECT',
+          stage: 'Credential Authentication',
+          reason: `${failCount} access nodes rejected SNMPv3 credentials with USM error usmStatsWrongDigests. Check localized authentication passphrase.`,
+          action: 'Verify SHA256/AES128 credentials in vault profile secret/net/snmp/v3-inband.'
+        },
+        {
+          code: 'ERR-ADAPTER-UNSUPPORTED',
+          stage: 'Collect & Parse',
+          reason: `${failCount} target devices returned unrecognized chassis entity MIB trees during discovery walk.`,
+          action: 'Update collector MIB schema or assign vendor-specific adapter profile.'
+        }
+      ];
+      const failureScenario = failCount > 0 ? failScenarios[Math.floor(Math.random() * failScenarios.length)] : null;
+
       updateJobsState(prev =>
         prev.map(j => {
           if (j.id !== job.id) return j;
@@ -128,7 +159,9 @@ export default function ScanJobs() {
               clean: cleanCount,
               partial: partialCount,
               fail: failCount,
-              status: (failCount > 0 ? 'Completed with errors' : 'Completed') as JobStatus
+              status: (failCount > 0 ? 'Completed with errors' : 'Completed') as JobStatus,
+              failureCode: failureScenario?.code,
+              failureReason: failureScenario?.reason
             },
             ...(j.recentRuns || [])
           ];
@@ -143,6 +176,10 @@ export default function ScanJobs() {
             clean: cleanCount,
             partial: partialCount,
             fail: failCount,
+            failureCode: failureScenario ? failureScenario.code : j.failureCode,
+            failureStage: failureScenario ? failureScenario.stage : j.failureStage,
+            failureReason: failureScenario ? failureScenario.reason : j.failureReason,
+            suggestedAction: failureScenario ? failureScenario.action : j.suggestedAction,
             recentRuns: updatedRuns
           };
         })
@@ -173,6 +210,28 @@ export default function ScanJobs() {
     );
 
     showToast(isCurrentlyHeld ? `Schedule resumed for ${job.id}` : `Schedule held for ${job.id}`);
+  }, [showToast, updateJobsState]);
+
+  // Action: Open Reschedule Modal
+  const handleOpenReschedule = useCallback((job: ScanJob) => {
+    setRescheduleJob(job);
+    setIsScheduleModalOpen(true);
+  }, []);
+
+  // Action: Save Rescheduled Cadence
+  const handleSaveSchedule = useCallback((jobId: string, newSchedule: string, nextRun: string) => {
+    updateJobsState(prev =>
+      prev.map(j =>
+        j.id === jobId
+          ? {
+              ...j,
+              sched: newSchedule,
+              next: nextRun
+            }
+          : j
+      )
+    );
+    showToast(`Schedule updated for ${jobId}: ${newSchedule}`);
   }, [showToast, updateJobsState]);
 
   // Action: Add New Job
@@ -314,15 +373,41 @@ export default function ScanJobs() {
               onClick: () => setIsCreateModalOpen(true)
             }
           ]}
+          rowActions={j => [
+            {
+              l: 'Run scan now',
+              primary: true,
+              disabled: j.state === 'Running',
+              hint: j.state === 'Running' ? 'Job is currently running' : 'Initiate immediate discovery sweep',
+              onClick: () => handleRunNow(j)
+            },
+            {
+              l: 'Schedule / Reschedule',
+              onClick: () => handleOpenReschedule(j)
+            },
+            {
+              l: isJobHeld(j) ? 'Resume schedule' : 'Hold schedule',
+              onClick: () => handleToggleHold(j)
+            },
+            {
+              l: 'Job details',
+              onClick: () => setSelectedJob(j)
+            },
+            {
+              l: 'View scan targets',
+              onClick: () => nav(`/discovery/targets?tgt=All&job=${encodeURIComponent(j.id)}`)
+            }
+          ]}
           filters={[
             { n: 'Domain', o: DOMAIN_OPTIONS },
-            { n: 'Status', o: ['Completed', 'Completed with errors', 'Running', 'No adapter', 'Held'] }
+            { n: 'Status', o: ['Completed', 'Completed with errors', 'Failed', 'Running', 'No adapter', 'Held'] }
           ]}
           onFilterChange={values => {
             if (values.Domain) setDomainFilter(values.Domain);
             else setDomainFilter('');
             if (values.Status) {
               if (values.Status === 'Completed with errors') setQuickFilter('errors');
+              else if (values.Status === 'Failed') setQuickFilter('failed');
               else if (values.Status === 'Running') setQuickFilter('running');
               else if (values.Status === 'Held') setQuickFilter('held');
               else setQuickFilter('All');
@@ -330,27 +415,59 @@ export default function ScanJobs() {
           }}
           onRowClick={j => setSelectedJob(j)}
           renderRow={j => [
-            // Column 1: Status
-            <div key="status" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Chip tone={j.chip || STATUS_CHIP_TONE[j.state] || 'neutral'}>
-                {j.state === 'Running' ? (
-                  <span className="scan-running-indicator">
-                    <span className="scan-pulse-dot" />
-                    <span>Running</span>
-                  </span>
-                ) : (
-                  j.state
-                )}
-              </Chip>
-            </div>,
+            // Column 1: Status & Failure Reason
+            (() => {
+              const hasFailureIssue = j.state === 'Failed' || j.state === 'Completed with errors' || j.state === 'No adapter';
+              const failure = hasFailureIssue ? getJobFailureDetails(j) : null;
+              return (
+                <div key="status" style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-start', minWidth: '150px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Chip tone={j.chip || STATUS_CHIP_TONE[j.state] || 'neutral'}>
+                      {j.state === 'Running' ? (
+                        <span className="scan-running-indicator">
+                          <span className="scan-pulse-dot" />
+                          <span>Running</span>
+                        </span>
+                      ) : (
+                        j.state
+                      )}
+                    </Chip>
+                  </div>
+                  {failure && (
+                    <div
+                      className={`job-failure-pill ${j.state === 'Failed' ? 'is-fatal' : 'is-warning'}`}
+                      title={`[${failure.code}] ${failure.stage}\nRoot Cause: ${failure.reason}\nSuggested Remediation: ${failure.suggestedAction}`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedJob(j);
+                      }}
+                    >
+                      <span className="job-failure-pill-icon">{j.state === 'Failed' ? '✕' : '⚠'}</span>
+                      <span className="job-failure-pill-text">
+                        {failure.code ? `${failure.code}: ` : ''}{failure.reason}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })(),
 
             // Column 2: Domain
             <DomainDot key="domain" domain={j.domain} />,
 
             // Column 3: Job · scope
             <div key="job-scope">
-              <span className="vw-value" style={{ fontWeight: 500 }}>{j.id}</span>
-              <br />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="vw-value" style={{ fontWeight: 500 }}>{j.id}</span>
+                {j.fail > 0 && (j.state === 'Completed with errors' || j.state === 'Failed' || j.state === 'No adapter') && (
+                  <span
+                    className="job-fail-count-badge"
+                    title={`${j.fail} failed target${j.fail > 1 ? 's' : ''}`}
+                  >
+                    {j.fail} failed
+                  </span>
+                )}
+              </div>
               <span className="vw-card-metric-label-sub">
                 {j.site} · <span className="mono">{j.scope}</span>
               </span>
@@ -387,6 +504,7 @@ export default function ScanJobs() {
         onClose={() => setSelectedJob(null)}
         onRunNow={handleRunNow}
         onToggleHold={handleToggleHold}
+        onReschedule={handleOpenReschedule}
       />
 
       {/* ── Create Scan Job Wizard Modal ── */}
@@ -395,6 +513,14 @@ export default function ScanJobs() {
         onClose={() => setIsCreateModalOpen(false)}
         existingJobs={jobs}
         onJobCreated={handleJobCreated}
+      />
+
+      {/* ── Schedule / Reschedule Job Modal ── */}
+      <ScheduleJobModal
+        open={isScheduleModalOpen}
+        job={rescheduleJob}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSaveSchedule={handleSaveSchedule}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
 import { DOMAIN_FULL_LABEL } from '../data/discoveryOverview';
 import { exceptionsForRule, EXCEPTION_TONE, SLA_TONE } from '../data/reconciliationOps';
 import type { ChipTone } from '../data/ledger';
+import { RuleDryRunModal } from '../components/reconciliation/RuleDryRunModal';
 
 type TabKey = 'overview' | 'logic' | 'responsibilities' | 'lifecycle' | 'execution' | 'exceptions' | 'activity';
 
@@ -54,6 +55,7 @@ export default function RuleDetails() {
   const { id } = useParams();
   const rule = id ? ruleById(id) : undefined;
   const [tab, setTab] = useState<TabKey>('overview');
+  const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [, bump] = useState(0);
   const rerender = () => bump(n => n + 1);
 
@@ -103,7 +105,20 @@ export default function RuleDetails() {
               <div className="vw-card-metric-label-sub mono" style={{ marginTop: '3px' }}>{rule.id} · {DOMAIN_FULL_LABEL[rule.domain]} · {rule.ruleType}</div>
             </div>
           </div>
-          <div className="row" style={{ gap: '8px' }}>
+          <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="nst-btn nst-btn--sm nst-btn--ghost"
+              style={{
+                borderColor: 'var(--vw-color-purple-300)',
+                color: 'var(--vw-color-purple-700)',
+                background: 'var(--vw-color-purple-50)',
+                fontWeight: 600
+              }}
+              onClick={() => setIsDryRunOpen(true)}
+            >
+              ⚡ Dry run simulation
+            </button>
             <Chip tone={PRIORITY_TONE[rule.priority]}>{rule.priority} priority</Chip>
             <Chip tone={STATUS_TONE[rule.status]}>{rule.status}</Chip>
           </div>
@@ -327,6 +342,12 @@ export default function RuleDetails() {
           )}
         </div>
       </Card>
+
+      <RuleDryRunModal
+        open={isDryRunOpen}
+        rule={rule}
+        onClose={() => setIsDryRunOpen(false)}
+      />
     </div>
   );
 }

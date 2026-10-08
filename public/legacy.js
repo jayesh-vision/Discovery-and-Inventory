@@ -242823,8 +242823,9 @@ const kiFor = l => {
   if (/node view|hardware/.test(t)) return KI.node;
   if (/life ?cycle|change|edit|rename|assign|stock state/.test(t)) return KI.life;
   if (/job|history|log|audit|workorder/.test(t)) return KI.jobs;
-  if (/purge|delete|retire|remove/.test(t)) return KI.del;
   if (/re-?run|run now|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
+  if (/retry|probe|re-probe/.test(t)) return KI.run;
+  if (/remediat|fix|repair/.test(t)) return KI.opts;
   if (/copy/.test(t)) return KI.copy;
   if (/download|export|report/.test(t)) return KI.down;
   if (/restore|recover|revert/.test(t)) return KI.undo;
@@ -242857,6 +242858,8 @@ function kebabCell(items, gid, i) {
       `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
         it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
         it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}${
+        it.remediateIp ? ` data-remediate-ip="${esc(it.remediateIp)}"` : ''}${
+        it.retryIp ? ` data-retry-ip="${esc(it.retryIp)}"` : ''}${
         it.svcview ? ` data-svcview="${esc(it.svcview)}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }
@@ -243900,24 +243903,32 @@ function viewJobs() {
         [{ t: 'Status', plain: true }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
-        rows.map(j => [
-          chip(j.state, jobChip(j)),
-          domainDot(j.domain),
-          `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
-           <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
-          `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
-          j.sched,
-          `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
-          n(j.targets),
-          `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
-            <span style="color:${cv('gray',300)}">·</span>
-            <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
-            <span style="color:${cv('gray',300)}">·</span>
-            <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
-          jobHeld(j) ? chip('Held', 'warning')
-            : `<span class="vw-card-metric-label-sub">${j.next}</span>${
-                jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
-        ]), 'job-table chip-auto',
+        rows.map(j => {
+          const hasIssue = j.state === 'Failed' || j.state === 'Completed with errors' || j.state === 'No adapter';
+          const failReasonText = hasIssue ? (j.failureReason || (j.notes && j.notes.toLowerCase().includes('transit') ? j.notes : (j.state === 'No adapter' ? 'TL1 adapter missing for optical model' : (j.fail > 0 ? `${n(j.fail)} targets failed probe` : '')))) : '';
+
+          return [
+            `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+              ${chip(j.state, jobChip(j))}
+              ${failReasonText ? `<div class="job-failure-pill ${j.state === 'Failed' ? 'is-fatal' : 'is-warning'}" style="margin-top:2px;" title="${esc(failReasonText)}"><span class="job-failure-pill-icon">${j.state === 'Failed' ? '✕' : '⚠'}</span><span class="job-failure-pill-text">${esc(failReasonText)}</span></div>` : ''}
+            </div>`,
+            domainDot(j.domain),
+            `<div style="display:flex;align-items:center;gap:6px;"><span class="vw-value" style="font-weight:500">${j.id}</span>${j.fail > 0 ? `<span class="job-fail-count-badge" title="${j.fail} failed targets">${j.fail} failed</span>` : ''}</div>
+             <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
+            `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
+            j.sched,
+            `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
+            n(j.targets),
+            `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
+              <span style="color:${cv('gray',300)}">·</span>
+              <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
+              <span style="color:${cv('gray',300)}">·</span>
+              <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
+            jobHeld(j) ? chip('Held', 'warning')
+              : `<span class="vw-card-metric-label-sub">${j.next}</span>${
+                  jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
+          ];
+        }), 'job-table chip-auto',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:`tgt=All&job=${encodeURIComponent(rows[i].id)}` }),
               ])}`)}
 
@@ -244035,6 +244046,213 @@ const TGT_REASON_CHIP = { unreach: 'purple', timeout: 'cyan', auth: 'pink', adap
 
 let TGT_REASON_FILTER = null;
 let TGT_JOB_FILTER = null;
+let TGT_SELECTED = new Set();
+let ACTIVE_REMEDIATION_TARGET = null;
+
+function remediateTargetSuccess(ip) {
+  const t = targetOf(ip);
+  if (!t) return;
+  t.reason = null;
+  t.out = 'Exact match';
+  t.fresh = 0;
+  t.sync = 'just now';
+  if (Array.isArray(t.ch)) {
+    t.ch = t.ch.map(() => 'ok');
+  }
+}
+
+function retryTargetsList(ips) {
+  for (const ip of ips) {
+    remediateTargetSuccess(ip);
+  }
+}
+
+function renderRemediationModal(t) {
+  if (!t) return '';
+  const reasonText = getFailureReason(t) || 'Discovery probe failed';
+  const reasonCode = t.reason || 'unreach';
+  let diagDesc = '';
+  let optionsHtml = '';
+
+  if (reasonCode === 'unreach') {
+    diagDesc = 'The management target at IP ' + t.ip + ' failed ICMP echo and ARP resolution. Possible network boundary ACL block, gateway route drop, or node is temporarily unpowered.';
+    optionsHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="alt-route" checked style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Route via secondary backup gateway (VIP 10.244.18.1)</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Reroutes collector probe packets via alternate OAM route topology.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="bypass-icmp" style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Bypass ICMP ping check and probe TCP/UDP directly</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Forces SNMP/NETCONF polling on devices where ICMP is blocked by firewall policy.</div>
+          </div>
+        </label>
+      </div>`;
+  } else if (reasonCode === 'timeout') {
+    diagDesc = 'Target did not reply to SNMP GetRequest within the 2,000ms UDP window. High device control-plane CPU or WAN packet delay caused probe expiration.';
+    optionsHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="increase-timeout" checked style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Increase socket timeout to 5,000 ms & retry</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Allows sufficient buffer time for congested links and heavy OAM queues.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="switch-v2" style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Fall back to SNMPv2c bulk polling</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Bypasses SNMPv3 USM crypto overhead to minimize CPU roundtrip.</div>
+          </div>
+        </label>
+      </div>`;
+  } else if (reasonCode === 'auth') {
+    diagDesc = 'Authentication credentials rejected by target device. SNMPv3 Auth/Priv key mismatch, expired password, or community string rejected.';
+    optionsHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="vault-core" checked style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Apply Credential Vault profile: Telco-Core-v3-Production</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Uses verified SHA256 / AES-128 centralized key profile from HashiCorp Vault.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="secondary-community" style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Apply secondary RO community fallback string</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Tests alternate legacy circle string configured on regional routers.</div>
+          </div>
+        </label>
+      </div>`;
+  } else if (reasonCode === 'adapter') {
+    diagDesc = 'No matching device adapter found for reported sysObjectID. The device model (' + t.oem + ' ' + t.model + ') lacks a specialized driver parser.';
+    optionsHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="generic-mib2" checked style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Map to Generic MIB-II / RFC 1213 fallback adapter</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Gathers standard system, interface, and IP tables without vendor-proprietary extensions.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="vendor-family" style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Assign Cisco IOS-XR / JunOS family telemetry driver</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Maps device to closest certified sibling hardware profile.</div>
+          </div>
+        </label>
+      </div>`;
+  } else {
+    diagDesc = 'Discovery target returned non-standard payload or encountered an operational protocol exception during collector processing.';
+    optionsHtml = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="relaxed-parser" checked style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Switch to relaxed streaming regex parser</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Tolerates non-standard CLI prompt sequences and trailing garbage bytes.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--vw-color-slate-200);border-radius:6px;background:var(--vw-color-white);cursor:pointer;">
+          <input type="radio" name="rem-action" value="increase-buf" style="margin-top:2px;">
+          <div>
+            <div style="font-weight:600;font-size:0.8125rem;color:var(--vw-color-slate-800);">Expand collector buffer size to 256 KB</div>
+            <div style="font-size:0.75rem;color:var(--vw-color-slate-500);margin-top:2px;">Prevents truncation on large BGP table and hardware inventory responses.</div>
+          </div>
+        </label>
+      </div>`;
+  }
+
+  return `
+  <div class="job-modal-scrim" data-close-remediation="1" style="z-index:9999;">
+    <div class="job-modal-panel" onclick="event.stopPropagation()" style="max-width:660px;max-height:85vh;">
+      <div class="job-modal-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="job-modal-header-icon" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+            <svg viewBox="0 0 16 16" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M14.7 10.3 11 14a2.8 2.8 0 0 1-4 0l-.8-.8a2.8 2.8 0 0 1 0-4l3.7-3.7M9 5 5.3 8.7a2.8 2.8 0 0 1-4 0l-.8-.8a2.8 2.8 0 0 1 0-4L4.2.2a2.8 2.8 0 0 1 4 0l.8.8"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="job-modal-title" style="font-size:1.125rem;font-weight:700;margin:0;">Remediate Target Failure</h2>
+            <p class="job-modal-subtitle" style="font-size:0.8125rem;margin:2px 0 0 0;color:var(--vw-color-slate-500);">
+              Target: <strong>${t.host !== '—' ? t.host : t.ip}</strong> &middot; Gateway IP: <code style="font-size:0.8125rem;">${t.ip}</code> &middot; ${t.circle} (${t.domain})
+            </p>
+          </div>
+        </div>
+        <button class="job-modal-close-btn" data-close-remediation="1" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;margin-bottom:18px;">
+          <span style="font-size:1.25rem;line-height:1;">⚠️</span>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.875rem;color:#991b1b;display:flex;align-items:center;gap:8px;">
+              <span>Root Cause: ${reasonText}</span>
+              <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:#fee2e2;color:#b91c1c;font-weight:500;">Job: ${t.job}</span>
+            </div>
+            <div style="font-size:0.8125rem;color:#7f1d1d;margin-top:4px;line-height:1.45;">
+              ${diagDesc}
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block;font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-700);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">
+            Select Remediation Action
+          </label>
+          ${optionsHtml}
+        </div>
+
+        <div style="padding:14px;border-radius:8px;background:var(--vw-color-slate-50);border:1px solid var(--vw-color-slate-200);margin-bottom:16px;">
+          <div style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-800);margin-bottom:8px;">
+            Collector Probe Override
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="display:block;font-size:0.75rem;color:var(--vw-color-slate-600);margin-bottom:4px;">Socket Timeout</label>
+              <select class="nst-input" style="width:100%;font-size:0.8125rem;">
+                <option value="5000">5,000 ms (Recommended)</option>
+                <option value="8000">8,000 ms (High latency)</option>
+                <option value="12000">12,000 ms (Extended WAN)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.75rem;color:var(--vw-color-slate-600);margin-bottom:4px;">Retry Attempts</label>
+              <select class="nst-input" style="width:100%;font-size:0.8125rem;">
+                <option value="3">3 attempts (Default)</option>
+                <option value="5">5 attempts</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem;color:var(--vw-color-slate-500);line-height:1.4;">
+          ℹ️ Applying this remediation will immediately dispatch an out-of-band discovery probe against <strong>${t.ip}</strong> and update the estate status register upon success.
+        </div>
+      </div>
+
+      <div class="job-modal-footer" style="padding:14px 24px;border-top:1px solid var(--vw-color-slate-100);background:var(--vw-color-slate-50);display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--ghost" data-close-remediation="1">
+          Cancel
+        </button>
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--filled" data-apply-remediation="${t.ip}" style="background:#16a34a;border-color:#16a34a;color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 4.5 6.5 11.5 2.5 7.5"/></svg>
+          Apply remediation & retry probe
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function viewTargets() {
   const normFilterKey = String(TGT_FILTER || 'All').trim();
   const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
@@ -244058,31 +244276,56 @@ function viewTargets() {
   const segs = [['All','All'],['success','Success'],['partial','Partial'],['failed','Failed']];
   const activeKey = normFilterKey.toLowerCase();
 
-  /* the failed/partial chips beside the grid describe what's actually in
-     `rows` below them — they used to read static DL.runFail/DL.runPartial
-     ledger figures that never moved with the Domain filter, the quick
-     tabs, or search, so a Domain-narrowed table still bragged about every
-     domain's failures. Same fix for the "of N" grand total: baseTargets.length,
-     not DL.targets (a stale figure from an earlier, differently-sized seed). */
   const failedShown = rows.filter(t => getScanTargetStatus(t) === 'Failed').length;
   const partialShown = rows.filter(t => getScanTargetStatus(t) === 'Partial').length;
+
+  const selectedCount = TGT_SELECTED.size;
+  const selectedFailedCount = rows.filter(t => TGT_SELECTED.has(t.ip) && (getScanTargetStatus(t) === 'Failed' || getScanTargetStatus(t) === 'Partial')).length;
+  const allVisibleSelected = rows.length > 0 && rows.every(t => TGT_SELECTED.has(t.ip));
+
+  const selectionBar = selectedCount > 0 ? `
+    <div class="row vw-items-center vw-justify-between" style="padding:10px 16px;margin-bottom:var(--vw-space-md);background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);color:#f8fafc;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+      <div class="row vw-items-center" style="gap:12px;">
+        <span style="font-weight:600;font-size:0.875rem;">${selectedCount} target${selectedCount > 1 ? 's' : ''} selected</span>
+        <span style="font-size:0.75rem;color:#94a3b8;">(${selectedFailedCount} failed / partial)</span>
+      </div>
+      <div class="row vw-items-center" style="gap:8px;">
+        <button type="button" class="nst-btn nst-btn--sm" data-tgt-batch="retry" style="background:var(--vw-color-blue-600);color:#fff;border:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 8a5.5 5.5 0 0 1 9.3-3.9L13.5 6M13.5 2.5v3.5h-3.5M13.5 8a5.5 5.5 0 0 1-9.3 3.9L2.5 10M2.5 13.5V10h3.5"/></svg>
+          Retry selected (${selectedCount})
+        </button>
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--ghost" data-tgt-batch="select-all-failed" style="color:#f1f5f9;border-color:#475569;font-size:0.8125rem;">
+          Select all failed (${failedShown + partialShown})
+        </button>
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--ghost" data-tgt-batch="clear" style="color:#94a3b8;border-color:#475569;font-size:0.8125rem;">
+          Clear
+        </button>
+      </div>
+    </div>` : '';
 
   return `<div class="page">
     ${drillBar()}
     ${card(`
       ${gridBar(rows.length, n(baseTargets.length), 'Gateway IP, hostname, serial', FS.targets, '', [], 'targets')}
+      ${selectionBar}
       ${table(
-        [{ t: 'Status', plain:true }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
+        [{ t: `<input type="checkbox" id="tgt-select-all" class="tgt-cb-all" style="cursor:pointer" aria-label="Select all targets" ${allVisibleSelected ? 'checked' : ''}>`, plain:true },
+         { t: 'Status', plain:true }, { t: 'Domain' }, { t: 'Gateway IP' }, { t: 'Hostname · circle · job' }, { t: 'Vendor · model' },
          { t: 'Last run' }, { t: 'Age' }, { t: 'Failure reason' }, { t: 'Collector chain' }],
         rows.map(t => {
           const stStatus = getScanTargetStatus(t);
           const stTone = stStatus === 'Success' ? 'success' : stStatus === 'Partial' ? 'warning' : 'error';
           const reasonText = getFailureReason(t);
-          const displayReason = (stStatus === 'Failed' || stStatus === 'Partial') && reasonText
-            ? chip(reasonText, TGT_REASON_CHIP[t.reason] || (stStatus === 'Failed' ? 'error' : 'warning'))
+          const isFailedOrPartial = stStatus === 'Failed' || stStatus === 'Partial';
+          const displayReason = isFailedOrPartial && reasonText
+            ? `<button type="button" class="tgt-remediate-chip-btn" data-remediate-ip="${t.ip}" title="Remediate failure on ${t.ip}" style="background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font:inherit;">
+                ${chip(reasonText, TGT_REASON_CHIP[t.reason] || (stStatus === 'Failed' ? 'error' : 'warning'))}
+                <span style="font-size:0.75rem;color:var(--vw-color-blue-600);font-weight:600;text-decoration:underline;">Remediate</span>
+               </button>`
             : `<span style="color:${cv('gray',300)}">—</span>`;
 
           return [
+            `<input type="checkbox" class="tgt-cb" data-tgt-cb="${t.ip}" style="cursor:pointer" aria-label="Select target ${t.ip}" ${TGT_SELECTED.has(t.ip) ? 'checked' : ''}>`,
             chip(stStatus, stTone),
             domainDot(t.domain),
             `<span class="mono">${t.ip}</span>`,
@@ -244095,11 +244338,20 @@ function viewTargets() {
             chainOf(t.ch, t.domain)
           ];
         }), 'chip-auto',
-        /* an unresolved target (host '—') is not a usable identifier — many
-           rows share it — so this passes the row's own ip instead, which
-           targetOf() now checks first; an identified target still passes
-           its real host, unchanged */
-        i => [A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(rows[i].host === '—' ? rows[i].ip : rows[i].host)}` })])}
+        i => {
+          const t = rows[i];
+          const stStatus = getScanTargetStatus(t);
+          const isFailedOrPartial = stStatus === 'Failed' || stStatus === 'Partial';
+          const hostParam = rows[i].host === '—' ? rows[i].ip : rows[i].host;
+          const acts = [
+            A('View transcript', { v:'target', l:'Transcript', q:`host=${encodeURIComponent(hostParam)}` }),
+            { l: 'Retry probe', retryIp: t.ip }
+          ];
+          if (isFailedOrPartial) {
+            acts.unshift({ l: 'Remediate failure', remediateIp: t.ip });
+          }
+          return acts;
+        })}
       <div class="vw-card-footer-divider row vw-justify-between vw-wrap">
         <div class="legend">
           <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',100)};border:1px solid ${cv('emerald',400)}"></span>passed</span>
@@ -244109,6 +244361,7 @@ function viewTargets() {
         </div>
       </div>`)}
 
+    ${renderRemediationModal(ACTIVE_REMEDIATION_TARGET)}
   </div>`;
 }
 
@@ -244342,11 +244595,18 @@ function viewTarget() {
      ADJACENCY entries only carry the short "LLDP"/"OSPF" label, not the
      fuller "neighbours"/"adjacencies" noun this sentence uses) */
   const objectsSub = OBJECTS_SUB_BY_DOMAIN[domain] || objects.map(o => `${n(o.c)} ${o.proto}`).join(' · ');
-  const freshLabel = h => h < 1 ? 'just now' : h < 24 ? `${h}h ago` : h < 720 ? `${Math.round(h / 24)}d ago` : `${Math.round(h / 720)}mo ago`;
+  const isFailedOrPartial = rec && (getScanTargetStatus(rec) === 'Failed' || getScanTargetStatus(rec) === 'Partial');
+  const remBtn = isFailedOrPartial
+    ? `<button class="nst-btn nst-btn--sm nst-btn--filled" data-remediate-ip="${T.ip}" style="background:var(--vw-color-red-600);color:#fff;border-color:var(--vw-color-red-600);font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-right:8px;">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 10.3 11 14a2.8 2.8 0 0 1-4 0l-.8-.8a2.8 2.8 0 0 1 0-4l3.7-3.7M9 5 5.3 8.7a2.8 2.8 0 0 1-4 0l-.8-.8a2.8 2.8 0 0 1 0-4L4.2.2a2.8 2.8 0 0 1 4 0l.8.8"/></svg>
+        Remediate failure
+       </button>`
+    : '';
+
   return `<div class="page">
     ${pageHead(`${T.host}`,
       `Gateway ${T.ip} · job ${T.job} · ${T.circle || 'Delhi'}`,
-      `<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
+      `${remBtn}<button class="nst-btn nst-btn--sm" data-txdownload="1">Download payload</button>`)}
 
     <div class="vw-grid vw-grid-cols-3 vw-gap-md">
       ${kpi('Last discovery', rec ? freshLabel(rec.fresh) : '3h ago', rec ? rec.sync : relativeTimestamp(3), 'sky')}
@@ -244390,6 +244650,8 @@ function viewTarget() {
         ${head('Collector transcript')}
       </div>
       <div id="txbody">${txBody()}</div>`)}
+
+    ${renderRemediationModal(ACTIVE_REMEDIATION_TARGET)}
   </div>`;
 }
 
@@ -245157,7 +245419,7 @@ function locList() {
 
       ${table([{t:'Status', plain:true},{t:'Name'},{t:'Category'},{t:'Site type'},{t:'Location ID'},{t:'Address'},{t:'City'},{t:'State'},
                {t:'NE',r:true},{t:'Discovered',r:true},{t:'Coverage'}],
-        locRows().map(l => {
+        shown.map(l => {
           const pct = l.ne ? Math.round(l.disc / l.ne * 100) : 0;
           const tone = pct === 100 ? 'emerald' : pct === 0 ? 'red' : 'amber';
           return [
@@ -245171,8 +245433,8 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), 'chip-auto',
-        i => [A('View details', { v:'site', l:locRows()[i].name, q:`id=${locRows()[i].id}` })],
-        i => ({ 'data-site': locRows()[i].id }))}`)}`;
+        i => [A('View details', { v:'site', l:shown[i].name, q:`id=${shown[i].id}` })],
+        i => ({ 'data-site': shown[i].id }))}`)}`;
 }
 
 /* ---- view 3 · Map ---- */
@@ -254739,6 +255001,130 @@ document.addEventListener('click', e => {
   if ((KEBAB || GRIDMENU) && !e.target.closest('.kmenu')) { KEBAB = null; GRIDMENU = false; go(CURRENT); return; }
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
+
+  /* Scan targets: multi-select checkbox toggle */
+  const tgtCb = e.target.closest('[data-tgt-cb]');
+  if (tgtCb) {
+    e.stopPropagation();
+    const ip = tgtCb.dataset.tgtCb;
+    if (TGT_SELECTED.has(ip)) {
+      TGT_SELECTED.delete(ip);
+    } else {
+      TGT_SELECTED.add(ip);
+    }
+    go('targets');
+    return;
+  }
+
+  /* Scan targets: select-all checkbox toggle */
+  const tgtAll = e.target.closest('#tgt-select-all, .tgt-cb-all');
+  if (tgtAll) {
+    e.stopPropagation();
+    const normFilterKey = String(TGT_FILTER || 'All').trim();
+    const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
+    let baseTargets = TARGETS;
+    if (TGT_JOB_FILTER) baseTargets = baseTargets.filter(t => t.job === TGT_JOB_FILTER);
+    const filtered = baseTargets.filter(test).filter(t => {
+      if (!TGT_REASON_FILTER) return true;
+      const r = getFailureReason(t);
+      return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
+    });
+    const currentRows = gridApply('targets', filtered);
+    const allSelected = currentRows.length > 0 && currentRows.every(t => TGT_SELECTED.has(t.ip));
+    if (allSelected) {
+      currentRows.forEach(t => TGT_SELECTED.delete(t.ip));
+    } else {
+      currentRows.forEach(t => TGT_SELECTED.add(t.ip));
+    }
+    go('targets');
+    return;
+  }
+
+  /* Scan targets: batch actions (retry selected, select all failed, clear) */
+  const tgtBatch = e.target.closest('[data-tgt-batch]');
+  if (tgtBatch) {
+    e.stopPropagation();
+    const action = tgtBatch.dataset.tgtBatch;
+    if (action === 'clear') {
+      TGT_SELECTED.clear();
+      go('targets');
+      return;
+    }
+    if (action === 'select-all-failed') {
+      const normFilterKey = String(TGT_FILTER || 'All').trim();
+      const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
+      let baseTargets = TARGETS;
+      if (TGT_JOB_FILTER) baseTargets = baseTargets.filter(t => t.job === TGT_JOB_FILTER);
+      const filtered = baseTargets.filter(test).filter(t => {
+        if (!TGT_REASON_FILTER) return true;
+        const r = getFailureReason(t);
+        return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
+      });
+      const currentRows = gridApply('targets', filtered);
+      currentRows.forEach(t => {
+        const st = getScanTargetStatus(t);
+        if (st === 'Failed' || st === 'Partial') {
+          TGT_SELECTED.add(t.ip);
+        }
+      });
+      go('targets');
+      return;
+    }
+    if (action === 'retry') {
+      const count = TGT_SELECTED.size;
+      if (count > 0) {
+        retryTargetsList([...TGT_SELECTED]);
+        TGT_SELECTED.clear();
+        showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${count} targets retried successfully`);
+        go('targets');
+      }
+      return;
+    }
+  }
+
+  /* Scan targets: single retry probe action */
+  const retryBtn = e.target.closest('[data-retry-ip]');
+  if (retryBtn) {
+    e.stopPropagation();
+    const ip = retryBtn.dataset.retryIp;
+    remediateTargetSuccess(ip);
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${ip} verified successfully`);
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: open remediation modal */
+  const remBtn = e.target.closest('[data-remediate-ip]');
+  if (remBtn) {
+    e.stopPropagation();
+    const ip = remBtn.dataset.remediateIp;
+    ACTIVE_REMEDIATION_TARGET = targetOf(ip);
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: close remediation modal */
+  const closeRem = e.target.closest('[data-close-remediation]');
+  if (closeRem) {
+    e.stopPropagation();
+    ACTIVE_REMEDIATION_TARGET = null;
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: apply remediation & retry probe */
+  const applyRem = e.target.closest('[data-apply-remediation]');
+  if (applyRem) {
+    e.stopPropagation();
+    const ip = applyRem.dataset.applyRemediation;
+    remediateTargetSuccess(ip);
+    ACTIVE_REMEDIATION_TARGET = null;
+    showCopyToast(window.innerWidth / 2 - 130, 80, `Remediation applied! Target ${ip} verified successfully.`);
+    go(CURRENT);
+    return;
+  }
 
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }

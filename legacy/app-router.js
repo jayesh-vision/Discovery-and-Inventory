@@ -657,6 +657,130 @@ document.addEventListener('click', e => {
   if (FILTER_OPEN && !e.target.closest('.fpanel') && !e.target.closest('[data-filteropen]')) {
     FILTER_OPEN = false; go(CURRENT); return; }
 
+  /* Scan targets: multi-select checkbox toggle */
+  const tgtCb = e.target.closest('[data-tgt-cb]');
+  if (tgtCb) {
+    e.stopPropagation();
+    const ip = tgtCb.dataset.tgtCb;
+    if (TGT_SELECTED.has(ip)) {
+      TGT_SELECTED.delete(ip);
+    } else {
+      TGT_SELECTED.add(ip);
+    }
+    go('targets');
+    return;
+  }
+
+  /* Scan targets: select-all checkbox toggle */
+  const tgtAll = e.target.closest('#tgt-select-all, .tgt-cb-all');
+  if (tgtAll) {
+    e.stopPropagation();
+    const normFilterKey = String(TGT_FILTER || 'All').trim();
+    const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
+    let baseTargets = TARGETS;
+    if (TGT_JOB_FILTER) baseTargets = baseTargets.filter(t => t.job === TGT_JOB_FILTER);
+    const filtered = baseTargets.filter(test).filter(t => {
+      if (!TGT_REASON_FILTER) return true;
+      const r = getFailureReason(t);
+      return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
+    });
+    const currentRows = gridApply('targets', filtered);
+    const allSelected = currentRows.length > 0 && currentRows.every(t => TGT_SELECTED.has(t.ip));
+    if (allSelected) {
+      currentRows.forEach(t => TGT_SELECTED.delete(t.ip));
+    } else {
+      currentRows.forEach(t => TGT_SELECTED.add(t.ip));
+    }
+    go('targets');
+    return;
+  }
+
+  /* Scan targets: batch actions (retry selected, select all failed, clear) */
+  const tgtBatch = e.target.closest('[data-tgt-batch]');
+  if (tgtBatch) {
+    e.stopPropagation();
+    const action = tgtBatch.dataset.tgtBatch;
+    if (action === 'clear') {
+      TGT_SELECTED.clear();
+      go('targets');
+      return;
+    }
+    if (action === 'select-all-failed') {
+      const normFilterKey = String(TGT_FILTER || 'All').trim();
+      const test = TGT_TESTS[normFilterKey] || TGT_TESTS[normFilterKey.toLowerCase()] || TGT_TESTS.All;
+      let baseTargets = TARGETS;
+      if (TGT_JOB_FILTER) baseTargets = baseTargets.filter(t => t.job === TGT_JOB_FILTER);
+      const filtered = baseTargets.filter(test).filter(t => {
+        if (!TGT_REASON_FILTER) return true;
+        const r = getFailureReason(t);
+        return t.reason === TGT_REASON_FILTER || r === TGT_REASON[TGT_REASON_FILTER] || r === TGT_REASON_FILTER;
+      });
+      const currentRows = gridApply('targets', filtered);
+      currentRows.forEach(t => {
+        const st = getScanTargetStatus(t);
+        if (st === 'Failed' || st === 'Partial') {
+          TGT_SELECTED.add(t.ip);
+        }
+      });
+      go('targets');
+      return;
+    }
+    if (action === 'retry') {
+      const count = TGT_SELECTED.size;
+      if (count > 0) {
+        retryTargetsList([...TGT_SELECTED]);
+        TGT_SELECTED.clear();
+        showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${count} targets retried successfully`);
+        go('targets');
+      }
+      return;
+    }
+  }
+
+  /* Scan targets: single retry probe action */
+  const retryBtn = e.target.closest('[data-retry-ip]');
+  if (retryBtn) {
+    e.stopPropagation();
+    const ip = retryBtn.dataset.retryIp;
+    remediateTargetSuccess(ip);
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${ip} verified successfully`);
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: open remediation modal */
+  const remBtn = e.target.closest('[data-remediate-ip]');
+  if (remBtn) {
+    e.stopPropagation();
+    const ip = remBtn.dataset.remediateIp;
+    ACTIVE_REMEDIATION_TARGET = targetOf(ip);
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: close remediation modal */
+  const closeRem = e.target.closest('[data-close-remediation]');
+  if (closeRem) {
+    e.stopPropagation();
+    ACTIVE_REMEDIATION_TARGET = null;
+    go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: apply remediation & retry probe */
+  const applyRem = e.target.closest('[data-apply-remediation]');
+  if (applyRem) {
+    e.stopPropagation();
+    const ip = applyRem.dataset.applyRemediation;
+    remediateTargetSuccess(ip);
+    ACTIVE_REMEDIATION_TARGET = null;
+    showCopyToast(window.innerWidth / 2 - 130, 80, `Remediation applied! Target ${ip} verified successfully.`);
+    go(CURRENT);
+    return;
+  }
+
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');

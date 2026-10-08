@@ -633,7 +633,7 @@ export default function InventoryInsights() {
         {/* ── Active Filters Notification Banner ── */}
         {filtersActive && (
           <div className="ii-filter-banner">
-            <span style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>Active Filter:</span>
+            <strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>Active Filter:</strong>
             <span style={{ color: 'var(--ii-text-body)' }}>{filterSummary}</span>
             <span style={{ color: 'var(--ii-text-muted)' }}>
               · all metrics, change trends, and activity logs reflect this window; inventory base counts are network-wide
@@ -645,39 +645,36 @@ export default function InventoryInsights() {
         )}
 
         {/* ── Tier 1: Key Metrics (4 cards) ── */}
-        <section aria-label="Key metrics" className="ii-kpi-grid">
+        <section aria-label="Key metrics" className="ii-grid ii-grid--kpi">
           {/* Tile 1: Light blue summary KPI tile */}
           <div
             className="ii-card-blue"
-            style={{ cursor: 'pointer' }}
             onClick={() => navigate('/inventory/physical?from=Inventory%20insights')}
             title="Drill down to all inventory records"
           >
-            <span style={{ fontSize: 12, color: '#1E40AF', fontWeight: 600, letterSpacing: '0.01em' }}>
-              Total inventory records
-            </span>
-            <div className="ii-metric-huge" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>
-              {TOTAL_RECORDS_DATA[dayRange].totalDisplay}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ background: '#DCFCE7', color: '#15803D', fontWeight: 600, padding: '1px 6px', borderRadius: 4, border: '1px solid #BBF7D0' }}>
-                {TOTAL_RECORDS_DATA[dayRange].delta}
-              </span>
-              <span>
-                {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
+            <div className="ii-kpi-label">Total inventory records</div>
+            <div className="ii-kpi-value-row">
+              <span className="ii-mono ii-big-value">{TOTAL_RECORDS_DATA[dayRange].totalDisplay}</span>
+              <span className="ii-kpi-trend">
+                <span className="ii-delta-chip">{TOTAL_RECORDS_DATA[dayRange].delta}</span>
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid #DBEAFE', paddingTop: 8, marginTop: 2 }}>
-              <span style={{ color: 'var(--ii-text-muted)' }}>Overall inventory health</span>
-              <span className="ii-mono" style={{ fontWeight: 600, color: '#15803D' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+            <div className="ii-kpi-trend">
+              {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ color: 'var(--ii-text-muted)' }}>Confirmed against source</span>
-              <span className="ii-mono" style={{ fontWeight: 600, color: 'var(--ii-text-heading)' }}>{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ color: 'var(--ii-text-muted)' }}>Stranded or unconfirmed</span>
-              <span className="ii-mono" style={{ fontWeight: 600, color: '#B45309' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
+            <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
+              <div className="ii-stat-row">
+                <span>Overall inventory health</span>
+                <span className="ii-mono" style={{ color: 'var(--ii-success)' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+              </div>
+              <div className="ii-stat-row">
+                <span>Confirmed against source</span>
+                <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
+              </div>
+              <div className="ii-stat-row">
+                <span>Stranded or unconfirmed</span>
+                <span className="ii-mono" style={{ color: 'var(--ii-warning)' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
+              </div>
             </div>
           </div>
 
@@ -685,8 +682,7 @@ export default function InventoryInsights() {
           {PARENTS_DATA_DYNAMIC[dayRange].map(p => (
             <div
               key={p.name}
-              className="ii-card"
-              style={{ gap: 8, padding: '14px 16px', cursor: 'pointer' }}
+              className="ii-card is-clickable"
               onClick={() => {
                 if (p.name.includes('Physical')) {
                   navigate('/inventory/physical?from=Inventory%20insights');
@@ -696,23 +692,22 @@ export default function InventoryInsights() {
               }}
               title={`Drill down to ${p.name}`}
             >
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 13.5, color: 'var(--ii-text-heading)', fontWeight: 500 }}>{p.name}</span>
-                {p.desc ? <span style={{ fontSize: 11.5, color: 'var(--ii-text-muted)' }}>{p.desc}</span> : null}
+              <div className="ii-card-head">
+                <span className="ii-kpi-label">{p.name}</span>
+                {p.desc ? <span className="ii-card-meta">{p.desc}</span> : null}
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                <span className="ii-mono" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>
-                  {p.count}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>
-                  <span style={{ fontWeight: 500, color: 'var(--ii-text-body)' }}>{p.delta}</span> · {p.health} health
+              <div className="ii-kpi-value-row">
+                <span className="ii-mono ii-big-value">{p.count}</span>
+                <span className="ii-kpi-trend">
+                  <strong>{p.delta}</strong> · {p.health} health
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
+              <div className="ii-kpi-split">
                 {p.children.map(k => (
                   <div
                     key={k.name}
-                    style={{ borderLeft: `2.5px solid ${k.color}`, paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, cursor: 'pointer' }}
+                    className="ii-kpi-child"
+                    style={{ ['--kc' as string]: k.color }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (k.name === 'Active') {
@@ -741,25 +736,21 @@ export default function InventoryInsights() {
                     onMouseMove={moveTip}
                     onMouseLeave={hideTip}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{k.name}</span>
-                      <span style={{ fontSize: 10.5, padding: '1.5px 6px', borderRadius: 999, background: 'var(--ii-bg-subtle)', color: 'var(--ii-text-body)', border: '1px solid var(--ii-border)', fontWeight: 500 }}>
-                        {k.health}
-                      </span>
+                    <div className="ii-kpi-child-head">
+                      <span className="ii-kpi-child-name">{k.name}</span>
+                      <span className="ii-health-chip">{k.health}</span>
                     </div>
-                    <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{k.count}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ii-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={k.scope}>
-                      {k.scope}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ii-text-muted)' }}>
+                    <div className="ii-mono ii-kpi-child-count">{k.count}</div>
+                    <div className="ii-kpi-child-scope" title={k.scope}>{k.scope}</div>
+                    <div className="ii-kpi-child-meta">
                       <span>{k.covLabel}</span>
                       <span className="ii-mono" style={{ color: 'var(--ii-text-body)' }}>{k.coverage}</span>
                     </div>
-                    <div style={{ height: 4, borderRadius: 2, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: k.coverage, background: k.color }} />
+                    <div className="ii-prog-track">
+                      <div className="ii-prog-bar" style={{ width: k.coverage, background: k.color }} />
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>
-                      {k.critical} crit · {k.high} high
+                    <div className="ii-kpi-child-meta">
+                      <span>{k.critical} crit · {k.high} high</span>
                     </div>
                   </div>
                 ))}
@@ -769,21 +760,24 @@ export default function InventoryInsights() {
 
           {/* Tile 4: Open inventory issues */}
           <div
-            className="ii-card"
-            style={{ gap: 6, padding: '14px 16px', cursor: 'pointer' }}
+            className="ii-card is-clickable"
             onClick={() => navigate('/inventory/inactive?from=Inventory%20insights')}
             title="Drill down to inactive records and backlog"
           >
-            <span style={{ fontSize: 12, color: 'var(--ii-text-heading)', fontWeight: 500 }}>Open inventory issues</span>
-            <div className="ii-mono" style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].count}</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>
-              <span style={{ fontWeight: 500, color: 'var(--ii-text-body)' }}>{ISSUES_DYNAMIC[dayRange].change}</span> · {ISSUES_DYNAMIC[dayRange].periodLabel}
+            <div className="ii-card-head">
+              <span className="ii-kpi-label">Open inventory issues</span>
+            </div>
+            <div className="ii-kpi-value-row">
+              <span className="ii-mono ii-big-value">{ISSUES_DYNAMIC[dayRange].count}</span>
+              <span className="ii-kpi-trend">
+                <strong>{ISSUES_DYNAMIC[dayRange].change}</strong> · {ISSUES_DYNAMIC[dayRange].periodLabel}
+              </span>
             </div>
             {(() => {
               const iss = ISSUES_DYNAMIC[dayRange];
               const tot = Math.max(iss.crit + iss.high + iss.med + iss.low, 1);
               return (
-                <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2, marginTop: 2 }}>
+                <div className="ii-stack" style={{ marginTop: 'auto' }}>
                   <div
                     className="ii-severity-seg"
                     style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)' }}
@@ -860,25 +854,25 @@ export default function InventoryInsights() {
                 </div>
               );
             })()}
-            <div style={{ fontSize: 11, color: 'var(--ii-text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <span><span style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].crit}</span> crit</span>
-              <span><span style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].high}</span> high</span>
-              <span><span style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].med}</span> med</span>
-              <span><span style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].low}</span> low</span>
+            <div className="ii-kpi-child-meta" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '4px 12px' }}>
+              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].crit}</strong> crit</span>
+              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].high}</strong> high</span>
+              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].med}</strong> med</span>
+              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].low}</strong> low</span>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Median age {ISSUES_DYNAMIC[dayRange].medianDays} days · {ISSUES_DYNAMIC[dayRange].assigned} assigned</div>
+            <div className="ii-foot">Median age {ISSUES_DYNAMIC[dayRange].medianDays} days · {ISSUES_DYNAMIC[dayRange].assigned} assigned</div>
           </div>
         </section>
 
         {/* ── What exists ── */}
-        <div className="ii-section-eyebrow">What exists</div>
+        <h2 className="ii-section-eyebrow">What exists</h2>
 
         {/* Row 1: Donut & Lifecycle Panels */}
-        <section aria-label="Composition" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
+        <section aria-label="Composition" className="ii-grid ii-grid--compose">
           {/* Donut 1: Inventory by bucket */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Inventory by bucket</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div className="ii-card">
+            <div className="ii-card-head"><div className="ii-card-title">Inventory by bucket</div></div>
+            <div className="ii-donut-wrap">
               <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Bucket share donut">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" pointerEvents="none" />
                 <g transform="rotate(-90 50 50)">
@@ -944,7 +938,7 @@ export default function InventoryInsights() {
                   );
                 })()}
               </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexGrow: 1 }}>
+              <div className="ii-donut-legend">
                 {bucketShare.map(b => (
                   <div
                     key={b.name}
@@ -975,23 +969,23 @@ export default function InventoryInsights() {
                       hideTip();
                     }}
                   >
-                    <span style={{ width: 10, height: 10, borderRadius: 3, background: b.color, flexShrink: 0 }} />
-                    <span style={{ flexGrow: 1, color: 'var(--ii-text-body)' }}>{b.name}</span>
-                    <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{b.count}</span>
-                    <span className="ii-mono" style={{ color: 'var(--ii-text-muted, #64748b)', width: 36, textAlign: 'right' }}>{b.pctLabel}</span>
+                    <span className="ii-legend-swatch" style={{ background: b.color }} />
+                    <span className="ii-legend-name">{b.name}</span>
+                    <span className="ii-mono ii-legend-val is-strong">{b.count}</span>
+                    <span className="ii-mono ii-legend-pct">{b.pctLabel}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted, #64748b)' }}>
+            <p className="ii-foot" style={{ marginTop: 'auto' }}>
               {BUCKET_SHARE_DATA[dayRange].summaryText}
-            </div>
+            </p>
           </div>
 
           {/* Panel 2: Lifecycle */}
-          <div className="ii-card" style={{ gap: 12 }}>
-            <div className="ii-card-title">Lifecycle</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+          <div className="ii-card">
+            <div className="ii-card-head"><div className="ii-card-title">Lifecycle</div></div>
+            <div className="ii-lifecycle-grid">
               {LIFECYCLE_DYNAMIC[dayRange].states.map(l => (
                 <div
                   key={l.name}
@@ -1019,13 +1013,13 @@ export default function InventoryInsights() {
                     hideTip();
                   }}
                 >
-                  <div style={{ height: 4, borderRadius: 2, background: l.color }} />
-                  <div className="ii-mono" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{l.count}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--ii-text-muted, #64748b)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
+                  <div className="ii-prog-track" style={{ background: l.color }} />
+                  <div className="ii-mono ii-lifecycle-count">{l.count}</div>
+                  <div className="ii-lifecycle-name" title={l.name}>{l.name}</div>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
+            <div className="ii-stack">
               {LIFECYCLE_DYNAMIC[dayRange].bars.map(l => (
                 <div
                   key={l.name}
@@ -1056,18 +1050,16 @@ export default function InventoryInsights() {
                 />
               ))}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted, #64748b)' }}>
-              {LIFECYCLE_DYNAMIC[dayRange].faultsNote}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted, #64748b)' }}>
-              {LIFECYCLE_DYNAMIC[dayRange].leadTimeNote}
+            <div className="ii-stat-list" style={{ marginTop: 'auto' }}>
+              <p className="ii-foot" style={{ fontSize: 12 }}>{LIFECYCLE_DYNAMIC[dayRange].faultsNote}</p>
+              <p className="ii-foot" style={{ fontSize: 12 }}>{LIFECYCLE_DYNAMIC[dayRange].leadTimeNote}</p>
             </div>
           </div>
 
           {/* Donut 3: Vendor mix (active equipment) */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Vendor mix (active equipment)</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div className="ii-card">
+            <div className="ii-card-head"><div className="ii-card-title">Vendor mix (active equipment)</div></div>
+            <div className="ii-donut-wrap">
               <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Vendor share donut">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="var(--ii-border-light, #f1f5f9)" strokeWidth="14" pointerEvents="none" />
                 <g transform="rotate(-90 50 50)">
@@ -1127,7 +1119,7 @@ export default function InventoryInsights() {
                   );
                 })()}
               </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexGrow: 1 }}>
+              <div className="ii-donut-legend">
                 {vendorMix.map(v => (
                   <div
                     key={v.name}
@@ -1152,41 +1144,43 @@ export default function InventoryInsights() {
                       hideTip();
                     }}
                   >
-                    <span style={{ width: 10, height: 10, borderRadius: 3, background: v.color, flexShrink: 0 }} />
-                    <span style={{ flexGrow: 1, color: 'var(--ii-text-body)' }}>{v.name}</span>
-                    <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{v.pctLabel}</span>
+                    <span className="ii-legend-swatch" style={{ background: v.color }} />
+                    <span className="ii-legend-name">{v.name}</span>
+                    <span className="ii-mono ii-legend-val">{v.pctLabel}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--ii-border-light)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Vendor models catalogued</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{VENDOR_MIX_DATA[dayRange].models}</span>
+            <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
+              <div className="ii-stat-row">
+                <span>Vendor models catalogued</span>
+                <span className="ii-mono">{VENDOR_MIX_DATA[dayRange].models}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Unknown / unmapped models</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{VENDOR_MIX_DATA[dayRange].unmapped}</span>
+              <div className="ii-stat-row">
+                <span>Unknown / unmapped models</span>
+                <span className="ii-mono">{VENDOR_MIX_DATA[dayRange].unmapped}</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Row 2 of What exists: The 4 Detailed Inventory Panels */}
-        <section aria-label="Inventory by type" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
+        <section aria-label="Inventory by type" className="ii-grid ii-grid--panels">
           {PANELS_DATA_DYNAMIC[dayRange].map(p => {
             const panelRoute = p.route.includes('?') ? `${p.route}&from=Inventory%20insights` : `${p.route}?from=Inventory%20insights`;
             return (
-              <div key={p.title} className="ii-card" style={{ gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 3, background: p.color }} />
-                  <div style={{ fontWeight: 500, fontSize: 13.5, flexGrow: 1, color: 'var(--ii-text-heading)' }}>{p.title}</div>
-                  <button type="button" onClick={() => navigate(panelRoute)} className="ii-link-btn">
-                    Open
-                  </button>
+              <div key={p.title} className="ii-card">
+                <div className="ii-card-header">
+                  <div className="ii-card-head">
+                    <span className="ii-card-swatch" style={{ background: p.color }} />
+                    <div className="ii-card-title">{p.title}</div>
+                    <button type="button" onClick={() => navigate(panelRoute)} className="ii-link-btn" aria-label={`Open ${p.title}`}>
+                      Open
+                    </button>
+                  </div>
+                  <p className="ii-card-sub">{p.desc}</p>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{p.desc}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                <div className="ii-bar-list">
                   {p.items.map(t => {
                     const itemKey = `${p.title}-${t.name}`;
                     const isHov = hoveredPanelItemKey === itemKey;
@@ -1195,7 +1189,6 @@ export default function InventoryInsights() {
                       <div
                         key={t.name}
                         className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
-                        style={{ cursor: 'pointer' }}
                         onClick={() => {
                           if (p.route === '/inventory/physical') {
                             const clsMap: Record<string, string> = {
@@ -1242,11 +1235,9 @@ export default function InventoryInsights() {
                         hideTip();
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, gap: 8 }}>
-                        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ii-text-body)' }}>
-                          {t.name}
-                        </span>
-                        <span className="ii-mono" style={{ flexShrink: 0, color: 'var(--ii-text-muted)' }}>{t.count}</span>
+                      <div className="ii-panel-bar-label">
+                        <span title={t.name}>{t.name}</span>
+                        <span className="ii-mono">{t.count}</span>
                       </div>
                       <div className="ii-panel-bar-track">
                         <div className="ii-panel-bar-fill" style={{ width: t.w, background: p.color }} />
@@ -1255,11 +1246,11 @@ export default function InventoryInsights() {
                   );
                 })}
               </div>
-              <div style={{ borderTop: '1px solid var(--ii-border-light)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+              <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
                 {p.facts.map(f => (
-                  <div key={f.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ color: 'var(--ii-text-muted)' }}>{f.name}</span>
-                    <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{f.value}</span>
+                  <div key={f.name} className="ii-stat-row">
+                    <span>{f.name}</span>
+                    <span className="ii-mono">{f.value}</span>
                   </div>
                 ))}
               </div>
@@ -1269,16 +1260,18 @@ export default function InventoryInsights() {
         </section>
 
         {/* ── Needs action now ── */}
-        <div className="ii-section-eyebrow">Needs action now</div>
+        <h2 className="ii-section-eyebrow">Needs action now</h2>
 
-        <section aria-label="Decommissioning, end-of-life and software drift" style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr 1fr', gap: 16 }}>
+        <section aria-label="Decommissioning, end-of-life and software drift" className="ii-grid ii-grid--action">
           {/* Decommission pipeline */}
-          <div className="ii-card" style={{ gap: 12 }}>
-            <div className="ii-card-title">Decommission &amp; disposal pipeline</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -6 }}>{DECOM_DYNAMIC[dayRange].periodLabel}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 14px 1fr 14px 1fr', gap: 6, alignItems: 'center' }}>
+          <div className="ii-card">
+            <div className="ii-card-header">
+              <div className="ii-card-head"><div className="ii-card-title">Decommission &amp; disposal pipeline</div></div>
+              <p className="ii-card-sub">{DECOM_DYNAMIC[dayRange].periodLabel}</p>
+            </div>
+            <div className="ii-pipeline">
               <div
-                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                className="ii-pipeline-step"
                 onMouseEnter={(e) => showTip({
                   title: 'Marked Decommissioned',
                   badge: DECOM_DYNAMIC[dayRange].marked,
@@ -1291,12 +1284,12 @@ export default function InventoryInsights() {
                 onMouseMove={moveTip}
                 onMouseLeave={hideTip}
               >
-                <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].marked}</div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Marked decommissioned</div>
+                <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].marked}</div>
+                <div className="ii-pipeline-label">Marked decommissioned</div>
               </div>
-              <div style={{ textAlign: 'center', color: 'var(--ii-text-faint)' }}>→</div>
+              <div className="ii-pipeline-arrow" aria-hidden="true">→</div>
               <div
-                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                className="ii-pipeline-step"
                 onMouseEnter={(e) => showTip({
                   title: 'Still Live in Discovery',
                   badge: DECOM_DYNAMIC[dayRange].live,
@@ -1310,12 +1303,12 @@ export default function InventoryInsights() {
                 onMouseMove={moveTip}
                 onMouseLeave={hideTip}
               >
-                <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].live}</div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Still live in discovery — removal pending</div>
+                <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].live}</div>
+                <div className="ii-pipeline-label">Still live in discovery — removal pending</div>
               </div>
-              <div style={{ textAlign: 'center', color: 'var(--ii-text-faint)' }}>→</div>
+              <div className="ii-pipeline-arrow" aria-hidden="true">→</div>
               <div
-                style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border)', borderRadius: 10, padding: '12px 8px', textAlign: 'center', cursor: 'pointer' }}
+                className="ii-pipeline-step"
                 onMouseEnter={(e) => showTip({
                   title: 'Confirmed Removed',
                   badge: DECOM_DYNAMIC[dayRange].confirmed,
@@ -1329,12 +1322,12 @@ export default function InventoryInsights() {
                 onMouseMove={moveTip}
                 onMouseLeave={hideTip}
               >
-                <div className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DECOM_DYNAMIC[dayRange].confirmed}</div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Confirmed removed</div>
+                <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].confirmed}</div>
+                <div className="ii-pipeline-label">Confirmed removed</div>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>Decommissions by bucket</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px 14px' }}>
+            <div className="ii-card-sub">Decommissions by bucket</div>
+            <div className="ii-bar-list ii-bar-list--2col">
               {decomByBucket.map(d => (
                 <div
                   key={d.name}
@@ -1353,9 +1346,9 @@ export default function InventoryInsights() {
                   onMouseMove={moveTip}
                   onMouseLeave={hideTip}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--ii-text-body)' }}>{d.name}</span>
-                    <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{d.count}</span>
+                  <div className="ii-panel-bar-label">
+                    <span>{d.name}</span>
+                    <span className="ii-mono">{d.count}</span>
                   </div>
                   <div className="ii-panel-bar-track">
                     <div className="ii-panel-bar-fill" style={{ width: d.w, background: d.color }} />
@@ -1369,16 +1362,18 @@ export default function InventoryInsights() {
           </div>
 
           {/* EOL/EOS exposure */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">EOL/EOS exposure — {EOL_DYNAMIC[dayRange].total} assets, by bucket and vendor</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Each bar is a leaf bucket (Active and Passive under Physical; Virtual and Connectivity under Connectivity); the colour split shows whose hardware is behind it.
+          <div className="ii-card">
+            <div className="ii-card-header">
+              <div className="ii-card-head"><div className="ii-card-title">EOL/EOS exposure — {EOL_DYNAMIC[dayRange].total} assets, by bucket and vendor</div></div>
+              <p className="ii-card-sub">
+                Each bar is a leaf bucket (Active and Passive under Physical; Virtual and Connectivity under Connectivity); the colour split shows whose hardware is behind it.
+              </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
+            <div className="ii-bar-list" style={{ gap: 8 }}>
               {eolRows.map(r => (
-                <div key={r.name} style={{ display: 'grid', gridTemplateColumns: '76px 1fr 48px', gap: 10, alignItems: 'center', fontSize: 12 }}>
-                  <span style={{ textAlign: 'right', color: 'var(--ii-text-body)' }}>{r.name}</span>
-                  <div style={{ width: r.w, height: 12, display: 'flex', gap: 1, borderRadius: 3, overflow: 'hidden' }}>
+                <div key={r.name} className="ii-drift-row" style={{ cursor: 'default' }}>
+                  <span className="ii-axis-label" title={r.name}>{r.name}</span>
+                  <div className="ii-axis-stack" style={{ width: r.w }}>
                     {r.segs.map((s, idx) => (
                       <div
                         key={idx}
@@ -1400,15 +1395,14 @@ export default function InventoryInsights() {
                       />
                     ))}
                   </div>
-                  <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{r.count}</span>
+                  <span className="ii-mono ii-axis-value">{r.count}</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--ii-text-body)', marginTop: 2 }}>
+            <div className="ii-legend-inline">
               {EOL_VENDORS.map(v => (
                 <span
                   key={v.name}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', padding: '2px 4px', borderRadius: 4 }}
                   onMouseEnter={(e) => showTip({
                     title: `${v.name} Lifecycle Exposure`,
                     dotColor: v.color,
@@ -1421,7 +1415,7 @@ export default function InventoryInsights() {
                   onMouseMove={moveTip}
                   onMouseLeave={hideTip}
                 >
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: v.color }} />
+                  <i style={{ background: v.color }} />
                   {v.name}
                 </span>
               ))}
@@ -1432,12 +1426,14 @@ export default function InventoryInsights() {
           </div>
 
           {/* OS / firmware drift */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">OS / firmware drift — {DRIFT_DYNAMIC[dayRange].total} off baseline</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              {DRIFT_DYNAMIC[dayRange].total} of the {DRIFT_DYNAMIC[dayRange].activeWithVersion} active elements with a recorded version are off the approved baseline; the drift below is by vendor. Version coverage is tracked separately beneath.
+          <div className="ii-card">
+            <div className="ii-card-header">
+              <div className="ii-card-head"><div className="ii-card-title">OS / firmware drift — {DRIFT_DYNAMIC[dayRange].total} off baseline</div></div>
+              <p className="ii-card-sub">
+                {DRIFT_DYNAMIC[dayRange].total} of the {DRIFT_DYNAMIC[dayRange].activeWithVersion} active elements with a recorded version are off the approved baseline; the drift below is by vendor. Version coverage is tracked separately beneath.
+              </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
+            <div className="ii-bar-list" style={{ gap: 8 }}>
               {driftRows.map(d => (
                 <div
                   key={d.name}
@@ -1455,22 +1451,22 @@ export default function InventoryInsights() {
                   onMouseMove={moveTip}
                   onMouseLeave={hideTip}
                 >
-                  <span style={{ textAlign: 'right', color: 'var(--ii-text-body)' }}>{d.name}</span>
-                  <div style={{ height: 12, borderRadius: 3, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                    <div className="ii-drift-bar-fill" style={{ height: '100%', width: d.w, background: 'var(--ii-border-hover)', transition: 'background-color 0.2s ease, width 0.3s ease' }} />
+                  <span className="ii-axis-label" title={d.name}>{d.name}</span>
+                  <div className="ii-axis-track">
+                    <div className="ii-drift-bar-fill ii-axis-fill" style={{ width: d.w, background: 'var(--ii-border-hover)', transition: 'background-color 0.2s ease, width 0.3s ease' }} />
                   </div>
-                  <span className="ii-mono" style={{ color: 'var(--ii-text-muted)' }}>{d.count}</span>
+                  <span className="ii-mono ii-axis-value">{d.count}</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Of the {DRIFT_DYNAMIC[dayRange].total}: on a version with published CVEs</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DRIFT_DYNAMIC[dayRange].cve}</span>
+            <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
+              <div className="ii-stat-row">
+                <span>Of the {DRIFT_DYNAMIC[dayRange].total}: on a version with published CVEs</span>
+                <span className="ii-mono">{DRIFT_DYNAMIC[dayRange].cve}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Outside the {DRIFT_DYNAMIC[dayRange].total}: no version recorded (of {TOTAL_RECORDS_DATA[dayRange].managedElements} active)</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{DRIFT_DYNAMIC[dayRange].noVersion}</span>
+              <div className="ii-stat-row">
+                <span>Outside the {DRIFT_DYNAMIC[dayRange].total}: no version recorded (of {TOTAL_RECORDS_DATA[dayRange].managedElements} active)</span>
+                <span className="ii-mono">{DRIFT_DYNAMIC[dayRange].noVersion}</span>
               </div>
             </div>
             <div className="ii-note-box">
@@ -1480,21 +1476,21 @@ export default function InventoryInsights() {
         </section>
 
         {/* Row 2 of Tier 2: Spares Risk & Not Reconfirmed */}
-        <section aria-label="Spares and staleness" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <section aria-label="Spares and staleness" className="ii-grid ii-grid--health">
           {/* Spares coverage risk */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">Spares coverage risk — {SPARES_DYNAMIC[dayRange].titleCount} models below safe threshold</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Heavily deployed models holding under 2% spares against deployed count.
+          <div className="ii-card">
+            <div className="ii-card-header">
+              <div className="ii-card-head"><div className="ii-card-title">Spares coverage risk — {SPARES_DYNAMIC[dayRange].titleCount} models below safe threshold</div></div>
+              <p className="ii-card-sub">Heavily deployed models holding under 2% spares against deployed count.</p>
             </div>
             <div className="ii-table-wrap">
-              <table className="ii-table">
+              <table className="ii-table ii-table--spares">
                 <thead>
-                  <tr style={{ textAlign: 'left' }}>
-                    <th>Model</th>
-                    <th style={{ textAlign: 'right' }}>Deployed</th>
-                    <th style={{ textAlign: 'right' }}>Spares</th>
-                    <th style={{ textAlign: 'right' }}>Ratio</th>
+                  <tr>
+                    <th scope="col">Model</th>
+                    <th scope="col" className="is-num">Deployed</th>
+                    <th scope="col" className="is-num">Spares</th>
+                    <th scope="col" className="is-num">Ratio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1520,14 +1516,14 @@ export default function InventoryInsights() {
                       onMouseLeave={hideTip}
                     >
                       <td style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.model}</td>
-                      <td className="ii-mono" style={{ textAlign: 'right', color: 'var(--ii-text-muted)' }}>{s.deployed}</td>
-                      <td className="ii-mono" style={{ textAlign: 'right', fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.spares}</td>
-                      <td className="ii-mono" style={{ textAlign: 'right', fontWeight: 500, color: s.color }}>{s.ratio}</td>
+                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-muted)' }}>{s.deployed}</td>
+                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.spares}</td>
+                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: s.color }}>{s.ratio}</td>
                     </tr>
                   ))}
                   {sparesList.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ padding: '14px 8px', color: 'var(--ii-text-muted)', textAlign: 'center' }}>
+                      <td colSpan={4} className="is-empty">
                         No at-risk models for this vendor.
                       </td>
                     </tr>
@@ -1541,35 +1537,37 @@ export default function InventoryInsights() {
           </div>
 
           {/* Not reconfirmed */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div className="ii-card-title">{NOT_RECONFIRMED_DYNAMIC[dayRange].title}</div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)', marginTop: -4 }}>
-              Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive.
+          <div className="ii-card">
+            <div className="ii-card-header">
+              <div className="ii-card-head"><div className="ii-card-title">{NOT_RECONFIRMED_DYNAMIC[dayRange].title}</div></div>
+              <p className="ii-card-sub">
+                Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive.
+              </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-              <span className="ii-mono" style={{ fontSize: 24, fontWeight: 500, color: 'var(--ii-text-heading)', letterSpacing: '-0.02em' }}>{NOT_RECONFIRMED_DYNAMIC[dayRange].count}</span>
-              <span style={{ fontSize: 12, color: 'var(--ii-text-muted)', fontWeight: 500 }}>{NOT_RECONFIRMED_DYNAMIC[dayRange].delta}</span>
+            <div className="ii-kpi-value-row">
+              <span className="ii-mono ii-big-value">{NOT_RECONFIRMED_DYNAMIC[dayRange].count}</span>
+              <span className="ii-kpi-trend"><strong>{NOT_RECONFIRMED_DYNAMIC[dayRange].delta}</strong></span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12 }}>
+            <div className="ii-stat-list is-ruled">
               {NOT_RECONFIRMED_DYNAMIC[dayRange].items.map(s => (
-                <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ii-border-light)', paddingTop: 6 }}>
-                  <span style={{ color: 'var(--ii-text-body)' }}>{s.name}</span>
-                  <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.count}</span>
+                <div key={s.name} className="ii-stat-row">
+                  <span>{s.name}</span>
+                  <span className="ii-mono">{s.count}</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ii-text-muted)' }}>Active / Virtual / Connectivity not reconfirmed 30+ days</span>
-                <span className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}</span>
+            <div className="ii-stat-list has-divider">
+              <div className="ii-stat-row">
+                <span>Active / Virtual / Connectivity not reconfirmed 30+ days</span>
+                <span className="ii-mono">{NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}</span>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid var(--ii-border-light)', paddingTop: 8 }}>
-              <div style={{ fontSize: 12, color: 'var(--ii-text-body)', width: 150, flexShrink: 0 }}>
+            <div className="ii-trend-row">
+              <div className="ii-trend-label">
                 <div style={{ fontWeight: 500 }}>Passive field-verified share</div>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>last 6 months</div>
+                <div>last 6 months</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 48, flexGrow: 1 }}>
+              <div className="ii-trend-chart">
                 {VERIFY_TREND.map(v => (
                   <div
                     key={v.label}
@@ -1587,15 +1585,15 @@ export default function InventoryInsights() {
                     onMouseMove={moveTip}
                     onMouseLeave={hideTip}
                   >
-                    <span className="ii-mono" style={{ fontSize: 10, color: 'var(--ii-text-muted)' }}>{v.label}</span>
+                    <span className="ii-mono" style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{v.label}</span>
                     <div className="ii-trend-bar-fill" style={{ height: v.h, background: v.color }} />
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>
+            <p className="ii-foot">
               Verification climbed from 58% to 72% in 6 months; at that rate the survey backlog clears in roughly 12 more months.
-            </div>
+            </p>
             <div className="ii-note-box">
               Most stale Active records sit under two EMS instances that missed the last three sync windows — a collector issue, not missing hardware.
             </div>
@@ -1603,62 +1601,61 @@ export default function InventoryInsights() {
         </section>
 
         {/* ── Tier 4: Trust in the data ── */}
-        <div className="ii-section-eyebrow">Trust in the data</div>
+        <h2 className="ii-section-eyebrow">Trust in the data</h2>
 
-        <section aria-label="Quality" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+        <section aria-label="Quality" className="ii-grid">
           {/* Quality table */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="ii-card">
+            <div className="ii-card-head">
               <div className="ii-card-title">Inventory quality by bucket</div>
-              <span style={{ fontSize: 12, color: 'var(--ii-text-muted)' }}>Target ≥ 90% · dup/orphan ≤ 1%</span>
+              <span className="ii-card-meta">Target ≥ 90% · dup/orphan ≤ 1%</span>
             </div>
             <div className="ii-table-wrap">
-              <table className="ii-table">
+              <table className="ii-table ii-table--quality">
                 <thead>
-                  <tr style={{ textAlign: 'right' }}>
-                    <th style={{ textAlign: 'left' }}>Inventory</th>
-                    <th>Complete</th>
-                    <th>Integrity</th>
-                    <th>Fresh</th>
-                    <th>Dup.</th>
-                    <th>Orphan</th>
+                  <tr>
+                    <th scope="col">Inventory</th>
+                    <th scope="col" className="is-num">Complete</th>
+                    <th scope="col" className="is-num">Integrity</th>
+                    <th scope="col" className="is-num">Fresh</th>
+                    <th scope="col" className="is-num">Dup.</th>
+                    <th scope="col" className="is-num">Orphan</th>
                   </tr>
                 </thead>
                 <tbody>
                   {QUALITY_ROWS_DYNAMIC[dayRange].map(q => {
                     const cellStyle = (c: string) => ({
-                      textAlign: 'right' as const,
                       fontWeight: c !== GOOD ? 500 : 400,
                       color: c !== GOOD ? c : 'var(--ii-text-body)'
                     });
                     return (
                       <tr key={q.name}>
                         <td style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>
-                          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: q.color, marginRight: 6 }} />
+                          <span className="ii-dot" style={{ background: q.color }} />
                           {q.name}
                         </td>
-                        <td className="ii-mono" style={cellStyle(q.c1)}>{q.v1}</td>
-                        <td className="ii-mono" style={cellStyle(q.c2)}>{q.v2}</td>
-                        <td className="ii-mono" style={cellStyle(q.c3)}>{q.v3}</td>
-                        <td className="ii-mono" style={cellStyle(q.c4)}>{q.v4}</td>
-                        <td className="ii-mono" style={cellStyle(q.c5)}>{q.v5}</td>
+                        <td className="ii-mono is-num" style={cellStyle(q.c1)}>{q.v1}</td>
+                        <td className="ii-mono is-num" style={cellStyle(q.c2)}>{q.v2}</td>
+                        <td className="ii-mono is-num" style={cellStyle(q.c3)}>{q.v3}</td>
+                        <td className="ii-mono is-num" style={cellStyle(q.c4)}>{q.v4}</td>
+                        <td className="ii-mono is-num" style={cellStyle(q.c5)}>{q.v5}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>
+            <p className="ii-foot">
               Complete = mandatory attributes filled · Integrity = parent/child and A–Z relationships resolved · Fresh = updated by discovery, NFVO, mapping or survey within SLA (24 h active/virtual/logical, 90 d passive).
-            </div>
+            </p>
           </div>
         </section>
 
         {/* ── Tier 5: Drill-down ── */}
-        <div className="ii-section-eyebrow">Drill-down</div>
+        <h2 className="ii-section-eyebrow">Drill-down</h2>
 
         {/* 5 Navigation Tiles */}
-        <section aria-label="Navigate" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 14 }}>
+        <section aria-label="Navigate" className="ii-grid ii-grid--nav">
           {BOTTOM_NAVIGATE_DYNAMIC[dayRange].map(n => {
             const tileRoute = n.route.includes('?') ? `${n.route}&from=Inventory%20insights` : `${n.route}?from=Inventory%20insights`;
             return (
@@ -1667,38 +1664,38 @@ export default function InventoryInsights() {
                 type="button"
                 onClick={() => navigate(tileRoute)}
                 className="ii-nav-tile"
-                style={{ borderLeft: `3px solid ${n.color}`, cursor: 'pointer' }}
+                style={{ ['--nc' as string]: n.color }}
                 title={`Drill down to ${n.name}`}
               >
-                <span className="ii-mono" style={{ fontSize: 20, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{n.count}</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-title)' }}>{n.name}</span>
-                <span style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{n.where}</span>
+                <span className="ii-mono ii-nav-value">{n.count}</span>
+                <span className="ii-nav-name">{n.name}</span>
+                <span className="ii-nav-where">{n.where}</span>
               </button>
             );
           })}
         </section>
 
-        <section aria-label="Sites, services and activity" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 16 }}>
+        <section aria-label="Sites, services and activity" className="ii-grid ii-grid--detail">
           {/* Sites needing attention */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="ii-card">
+            <div className="ii-card-head">
               <div className="ii-card-title">Sites needing attention</div>
               <button type="button" onClick={() => navigate('/inventory/location?from=Inventory%20insights')} className="ii-link-btn">
                 All {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites
               </button>
             </div>
             <div className="ii-table-wrap">
-              <table className="ii-table">
+              <table className="ii-table ii-table--sites">
                 <thead>
-                  <tr style={{ textAlign: 'left' }}>
-                    <th style={{ padding: '6px 4px' }}>Site</th>
-                    <th style={{ padding: '6px 4px' }}>Region</th>
-                    <th style={{ padding: '6px 4px' }}>Site type</th>
-                    <th style={{ padding: '6px 4px', textAlign: 'right' }}>Active</th>
-                    <th style={{ padding: '6px 4px', textAlign: 'right' }}>Passive</th>
-                    <th style={{ padding: '6px 4px' }}>Health</th>
-                    <th style={{ padding: '6px 4px', textAlign: 'right' }}>Issues</th>
-                    <th style={{ padding: '6px 4px', textAlign: 'center' }}>Status</th>
+                  <tr>
+                    <th scope="col">Site</th>
+                    <th scope="col">Region</th>
+                    <th scope="col">Site type</th>
+                    <th scope="col" className="is-num">Active</th>
+                    <th scope="col" className="is-num">Passive</th>
+                    <th scope="col">Health</th>
+                    <th scope="col" className="is-num">Issues</th>
+                    <th scope="col" className="is-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1706,25 +1703,25 @@ export default function InventoryInsights() {
                     <tr
                       key={s.name}
                       onClick={() => navigate(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`)}
-                      style={{ cursor: 'pointer' }}
+                      className="is-clickable"
                       title={`View ${s.name} location details`}
                     >
-                      <td className="ii-mono" style={{ padding: '7px 4px', fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.name}</td>
-                      <td style={{ padding: '7px 4px', color: 'var(--ii-text-body)' }}>{s.region}</td>
-                      <td style={{ padding: '7px 4px', color: 'var(--ii-text-body)' }}>{s.kind}</td>
-                      <td className="ii-mono" style={{ padding: '7px 4px', textAlign: 'right', color: 'var(--ii-text-heading)' }}>{s.active}</td>
-                      <td className="ii-mono" style={{ padding: '7px 4px', textAlign: 'right', color: 'var(--ii-text-heading)' }}>{s.passive}</td>
-                      <td style={{ padding: '7px 4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ width: 36, height: 5, borderRadius: 2.5, background: 'var(--ii-border-light)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: s.healthW, background: s.healthColor }} />
+                      <td className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.name}</td>
+                      <td>{s.region}</td>
+                      <td>{s.kind}</td>
+                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-heading)' }}>{s.active}</td>
+                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-heading)' }}>{s.passive}</td>
+                      <td>
+                        <div className="ii-health-cell">
+                          <div className="ii-prog-track">
+                            <div className="ii-prog-bar" style={{ width: s.healthW, background: s.healthColor }} />
                           </div>
-                          <span className="ii-mono" style={{ fontSize: 11.5, color: 'var(--ii-text-body)' }}>{s.health}</span>
+                          <span className="ii-mono">{s.health}</span>
                         </div>
                       </td>
-                      <td className="ii-mono" style={{ padding: '7px 4px', textAlign: 'right', fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.issues}</td>
-                      <td style={{ padding: '7px 4px', textAlign: 'center' }}>
-                        <span className="ii-pill" style={{ background: s.badgeBg, color: s.badgeFg, fontSize: 10.5, padding: '2px 7px' }}>
+                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.issues}</td>
+                      <td className="is-center">
+                        <span className="ii-pill" style={{ background: s.badgeBg, color: s.badgeFg }}>
                           {s.status}
                         </span>
                       </td>
@@ -1732,7 +1729,7 @@ export default function InventoryInsights() {
                   ))}
                   {sitesList.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ padding: '14px 8px', color: 'var(--ii-text-muted)', textAlign: 'center' }}>
+                      <td colSpan={8} className="is-empty">
                         No sites needing attention at this time.
                       </td>
                     </tr>
@@ -1743,58 +1740,61 @@ export default function InventoryInsights() {
           </div>
 
           {/* Services on inventory */}
-          <div className="ii-card" style={{ gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="ii-card">
+            <div className="ii-card-head">
               <div className="ii-card-title">Services on inventory</div>
               <button type="button" onClick={() => navigate('/inventory/services?from=Inventory%20insights')} className="ii-link-btn">
                 View all
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-              <div style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border-light)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>Active services</div>
-                <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SERVICES_DYNAMIC[dayRange].active}</div>
+            <div className="ii-tile-pair">
+              <div className="ii-tile">
+                <div className="ii-tile-label">Active services</div>
+                <div className="ii-mono ii-tile-value">{SERVICES_DYNAMIC[dayRange].active}</div>
               </div>
-              <div style={{ background: 'var(--ii-bg-subtle)', border: '1px solid var(--ii-border-light)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>With full E2E path</div>
-                <div className="ii-mono" style={{ fontSize: 17, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{SERVICES_DYNAMIC[dayRange].e2e}</div>
+              <div className="ii-tile">
+                <div className="ii-tile-label">With full E2E path</div>
+                <div className="ii-mono ii-tile-value">{SERVICES_DYNAMIC[dayRange].e2e}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+            <div className="ii-stat-list is-ruled">
               {servicesList.map(s => (
                 <div
                   key={s.name}
                   onClick={() => navigate('/inventory/services?from=Inventory%20insights')}
-                  style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ii-border-light)', paddingTop: 6, gap: 8, cursor: 'pointer' }}
+                  className="ii-stat-row"
+                  style={{ cursor: 'pointer' }}
                   title={`View ${s.name} service path`}
                 >
-                  <span style={{ color: 'var(--ii-text-body)' }}>{s.name}</span>
-                  <span style={{ display: 'flex', gap: 10 }}>
+                  <span>{s.name}</span>
+                  <span style={{ display: 'flex', gap: 12 }}>
                     <span className="ii-mono" style={{ color: 'var(--ii-text-heading)' }}>{s.count}</span>
-                    <span className="ii-mono" style={{ color: s.color, width: 34, textAlign: 'right', fontWeight: 500 }}>{s.path}</span>
+                    <span className="ii-mono" style={{ color: s.color, minWidth: 40, textAlign: 'right', fontWeight: 500 }}>{s.path}</span>
                   </span>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>
+            <p className="ii-foot" style={{ marginTop: 'auto' }}>
               Right column = share of services with a complete physical + logical path recorded.
-            </div>
+            </p>
           </div>
 
           {/* Recent inventory activity */}
-          <div className="ii-card" style={{ gap: 6 }}>
-            <div className="ii-card-title">Recent inventory activity</div>
-            {activityList.map((e, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid var(--ii-border-light)' }}>
-                <span className="ii-tag" style={{ background: e.tagBg, color: e.tagFg }}>
-                  {e.tag}
-                </span>
-                <div style={{ flexGrow: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ii-text-heading)' }}>{e.what}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{e.who} · {e.when}</div>
+          <div className="ii-card">
+            <div className="ii-card-head"><div className="ii-card-title">Recent inventory activity</div></div>
+            <div className="ii-activity">
+              {activityList.map((e, idx) => (
+                <div key={idx} className="ii-activity-item">
+                  <span className="ii-tag" style={{ background: e.tagBg, color: e.tagFg }}>
+                    {e.tag}
+                  </span>
+                  <div style={{ flexGrow: 1, minWidth: 0 }}>
+                    <div className="ii-activity-what">{e.what}</div>
+                    <div className="ii-activity-who">{e.who} · {e.when}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 

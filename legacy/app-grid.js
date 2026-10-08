@@ -150,8 +150,9 @@ const kiFor = l => {
   if (/node view|hardware/.test(t)) return KI.node;
   if (/life ?cycle|change|edit|rename|assign|stock state/.test(t)) return KI.life;
   if (/job|history|log|audit|workorder/.test(t)) return KI.jobs;
-  if (/purge|delete|retire|remove/.test(t)) return KI.del;
   if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
+  if (/retry|probe|re-probe/.test(t)) return KI.run;
+  if (/remediat|fix|repair/.test(t)) return KI.opts;
   if (/copy/.test(t)) return KI.copy;
   if (/download|export|report/.test(t)) return KI.down;
   if (/restore|recover|revert/.test(t)) return KI.undo;
@@ -184,6 +185,8 @@ function kebabCell(items, gid, i) {
       `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
         it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
         it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}${
+        it.remediateIp ? ` data-remediate-ip="${esc(it.remediateIp)}"` : ''}${
+        it.retryIp ? ` data-retry-ip="${esc(it.retryIp)}"` : ''}${
         it.svcview ? ` data-svcview="${esc(it.svcview)}"` : ''}>${kIcon(it.l)}<span>${it.l}</span></button>`).join('')}</div>` : ''}
   </td>`;
 }

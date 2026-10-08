@@ -765,3 +765,208 @@
   }
 }
 
+/* ── Job Failure Diagnostics & Root Cause UI ──────────────────────────── */
+.job-failure-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  font-weight: 500;
+  max-width: 170px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+
+.job-failure-pill.is-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.job-failure-pill.is-warning:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.job-failure-pill.is-fatal {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.job-failure-pill.is-fatal:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.job-failure-pill-icon {
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.job-failure-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-fail-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ── Detail Drawer Failure Diagnostics Alert Box ──────────────────────── */
+.job-failure-alert-box {
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: var(--vw-space-lg);
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.job-failure-alert-box.is-warning {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fcd34d;
+}
+
+.job-failure-alert-box.is-fatal {
+  background: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+}
+
+.job-failure-alert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.job-failure-icon {
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.job-failure-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.job-failure-subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.job-failure-code-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #0f172a;
+  color: #f8fafc;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.job-failure-reason-body {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.job-failure-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.job-failure-text-full {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.job-failure-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.job-failure-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-failure-meta-item .meta-k {
+  font-size: 0.6875rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+.job-failure-meta-item .meta-v {
+  font-size: 0.8125rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.job-failure-remediation {
+  background: #f8fafc;
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px 8px 8px 4px;
+  padding: 10px 12px;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.remediation-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 3px;
+}
+
+.remediation-desc {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #334155;
+}
+
+.job-failure-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+

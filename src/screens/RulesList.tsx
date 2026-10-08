@@ -6,6 +6,7 @@ import {
   RULES, RULE_LIFECYCLE, STATUS_TONE, PRIORITY_TONE, type Rule
 } from '../data/rules';
 import { DOMAIN_LABEL, DOMAIN_OPTIONS, DOMAIN_ORDER, TOP_DOMAINS, domainChildren, domainFilterMatches } from '../data/discoveryOverview';
+import { RuleDryRunModal } from '../components/reconciliation/RuleDryRunModal';
 
 /* "RAN · Core · Transport › IP/MPLS" — the tree, read left to right */
 const DOMAIN_TREE_TEXT = TOP_DOMAINS.map(d => [d, ...domainChildren(d)].map(k => DOMAIN_LABEL[k]).join(' › ')).join(' · ');
@@ -16,6 +17,8 @@ export default function RulesList() {
   const nav = useNavigate();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [dryRunRule, setDryRunRule] = useState<Rule | null>(null);
+  const [isDryRunOpen, setIsDryRunOpen] = useState(false);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +59,7 @@ export default function RulesList() {
           gridActions={[{ l: 'Create rule', primary: true, onClick: () => nav('/discovery/reconcile/rules/new') }]}
           onRowClick={r => nav(`/discovery/reconcile/rules/${r.id}`)}
           rowActions={r => [
+            { l: '⚡ Dry run simulation', onClick: () => { setDryRunRule(r); setIsDryRunOpen(true); } },
             { l: 'Edit rule', onClick: () => nav(`/discovery/reconcile/rules/${r.id}/edit`) },
             ...(r.status === 'Review' ? [{ l: 'Review rule', onClick: () => nav(`/discovery/reconcile/rules/${r.id}`) }] : [])
           ]}
@@ -72,6 +76,15 @@ export default function RulesList() {
           ]}
         />
       </Card>
+
+      <RuleDryRunModal
+        open={isDryRunOpen}
+        rule={dryRunRule}
+        onClose={() => {
+          setIsDryRunOpen(false);
+          setDryRunRule(null);
+        }}
+      />
     </div>
   );
 }

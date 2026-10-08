@@ -6,6 +6,7 @@ import {
   type Condition, type DomainKey, type Operator, type Rule, type RulePriority
 } from '../data/rules';
 import { DOMAIN_OPTIONS } from '../data/discoveryOverview';
+import { RuleDryRunModal } from '../components/reconciliation/RuleDryRunModal';
 
 const newId = (domain: DomainKey) => {
   const prefix = domain === 'IPMPLS' ? 'IPM' : domain.slice(0, 3).toUpperCase();
@@ -45,6 +46,7 @@ export default function RuleDefinition() {
   const [approver, setApprover] = useState(editing?.approver ?? MOCK_USERS[2]);
   const [executor, setExecutor] = useState(editing?.executor ?? MOCK_USERS[0]);
   const [exceptionReviewer, setExceptionReviewer] = useState(editing?.exceptionReviewer ?? MOCK_USERS[1]);
+  const [isDryRunOpen, setIsDryRunOpen] = useState(false);
   const [conditions, setConditions] = useState<Condition[]>(
     editing?.conditions.map(c => ({ ...c })) ?? [{ id: newCondId(), sourceField: '', operator: 'Equals' as Operator, targetField: '' }]
   );
@@ -166,12 +168,38 @@ export default function RuleDefinition() {
         </div>
       </Card>
 
-      <div className="row" style={{ gap: '8px', justifyContent: 'flex-end' }}>
+      <div className="row" style={{ gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <button
+          type="button"
+          className="nst-btn nst-btn--sm nst-btn--ghost"
+          style={{
+            borderColor: 'var(--vw-color-purple-300)',
+            color: 'var(--vw-color-purple-700)',
+            background: 'var(--vw-color-purple-50)',
+            fontWeight: 600
+          }}
+          onClick={() => setIsDryRunOpen(true)}
+        >
+          ⚡ Test dry run
+        </button>
         <button className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(-1)}>Cancel</button>
         <button className="nst-btn nst-btn--sm nst-btn--filled" disabled={!canSave} onClick={save}>
           {editing ? 'Save changes' : 'Create rule (Draft)'}
         </button>
       </div>
+
+      <RuleDryRunModal
+        open={isDryRunOpen}
+        rule={{
+          name: name || 'Draft reconciliation rule',
+          domain,
+          conditions,
+          source: source || 'Source system',
+          target: target || 'Target system',
+          ruleType
+        }}
+        onClose={() => setIsDryRunOpen(false)}
+      />
     </div>
   );
 }

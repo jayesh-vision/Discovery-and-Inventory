@@ -2,20 +2,22 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ScanJob } from '../../data/scanJobsData';
 import { DomainDot, Chip } from '../ui';
-import { STATUS_CHIP_TONE } from '../../data/scanJobsData';
+import { STATUS_CHIP_TONE, getJobFailureDetails } from '../../data/scanJobsData';
 
 interface ScanJobDetailDrawerProps {
   job: ScanJob | null;
   onClose: () => void;
   onRunNow: (job: ScanJob) => void;
   onToggleHold: (job: ScanJob) => void;
+  onReschedule?: (job: ScanJob) => void;
 }
 
 export function ScanJobDetailDrawer({
   job,
   onClose,
   onRunNow,
-  onToggleHold
+  onToggleHold,
+  onReschedule
 }: ScanJobDetailDrawerProps) {
   const nav = useNavigate();
   const closeBtn = useRef<HTMLButtonElement>(null);
@@ -31,6 +33,9 @@ export function ScanJobDetailDrawer({
 
   if (!job) return null;
 
+  const failureDetails = (job.state === 'Failed' || job.state === 'Completed with errors' || job.state === 'No adapter')
+    ? getJobFailureDetails(job)
+    : null;
   const cleanPct = job.targets > 0 ? ((job.clean / job.targets) * 100).toFixed(1) : '100';
   const partialPct = job.targets > 0 ? ((job.partial / job.targets) * 100).toFixed(1) : '0';
   const failPct = job.targets > 0 ? ((job.fail / job.targets) * 100).toFixed(1) : '0';
@@ -74,7 +79,7 @@ export function ScanJobDetailDrawer({
         {/* Drawer Body */}
         <div className="ov-drawer-body">
           {/* Quick Action Ribbon */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--vw-space-lg)' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--vw-space-lg)', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="nst-btn nst-btn--xs nst-btn--primary"
@@ -83,6 +88,15 @@ export function ScanJobDetailDrawer({
             >
               {job.state === 'Running' ? '⟳ Running...' : '▶ Run scan now'}
             </button>
+            {onReschedule && (
+              <button
+                type="button"
+                className="nst-btn nst-btn--xs"
+                onClick={() => onReschedule(job)}
+              >
+                ⏱ Reschedule
+              </button>
+            )}
             <button
               type="button"
               className="nst-btn nst-btn--xs"
@@ -101,6 +115,99 @@ export function ScanJobDetailDrawer({
               View targets ({job.targets})
             </button>
           </div>
+
+          {/* Diagnostic Failure Alert Box when Job has failures or errors */}
+          {failureDetails && (
+            <div className={`job-failure-alert-box ${job.state === 'Failed' ? 'is-fatal' : 'is-warning'}`}>
+              <div className="job-failure-alert-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span className="job-failure-icon">{job.state === 'Failed' ? '🚨' : '⚠️'}</span>
+                  <div>
+                    <div className="job-failure-title">
+                      {job.state === 'Failed' ? 'Scan Job Failure Analysis' : 'Scan Job Error Diagnostics'}
+                    </div>
+                    <div className="job-failure-subtitle">
+                      Detailed root cause & remediation instructions
+                    </div>
+                  </div>
+                </div>
+                {failureDetails.code && (
+                  <span className="job-failure-code-badge mono">
+                    {failureDetails.code}
+                  </span>
+                )}
+              </div>
+
+              {/* Full Reason (Pura Reason) */}
+              <div className="job-failure-reason-body">
+                <div className="job-failure-label">Failure Root Cause & Diagnostic Summary:</div>
+                <div className="job-failure-text-full">
+                  {failureDetails.reason}
+                </div>
+              </div>
+
+              {/* Failure Metadata Grid */}
+              <div className="job-failure-meta-grid">
+                <div className="job-failure-meta-item">
+                  <span className="meta-k">Execution Phase</span>
+                  <span className="meta-v">{failureDetails.stage}</span>
+                </div>
+                <div className="job-failure-meta-item">
+                  <span className="meta-k">Affected Targets</span>
+                  <span className="meta-v">
+                    <strong style={{ color: job.state === 'Failed' ? 'var(--vw-color-red-600)' : 'var(--vw-color-amber-700)' }}>
+                      {job.fail}
+                    </strong> of {job.targets} ({failureDetails.failPercentage}%)
+                  </span>
+                </div>
+                <div className="job-failure-meta-item">
+                  <span className="meta-k">Collector Node</span>
+                  <span className="meta-v mono">{job.collector}</span>
+                </div>
+                <div className="job-failure-meta-item">
+                  <span className="meta-k">Credential Profile</span>
+                  <span className="meta-v mono">{job.cred}</span>
+                </div>
+              </div>
+
+              {/* Actionable Remediation Guidance */}
+              {failureDetails.suggestedAction && (
+                <div className="job-failure-remediation">
+                  <div className="remediation-title">
+                    💡 Recommended Remediation:
+                  </div>
+                  <div className="remediation-desc">
+                    {failureDetails.suggestedAction}
+                  </div>
+                </div>
+              )}
+
+              {/* Direct Action Buttons */}
+              <div className="job-failure-actions">
+                {job.fail > 0 && (
+                  <button
+                    type="button"
+                    className="nst-btn nst-btn--xs nst-btn--error"
+                    style={{ fontWeight: 600 }}
+                    onClick={() => {
+                      onClose();
+                      nav(`/discovery/targets?tgt=Failed&job=${encodeURIComponent(job.id)}`);
+                    }}
+                  >
+                    🔍 View failed targets ({job.fail})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="nst-btn nst-btn--xs"
+                  onClick={() => onRunNow(job)}
+                  disabled={job.state === 'Running'}
+                >
+                  ⚡ Rescan sweep now
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Section 1: Overview */}
           <div className="job-drawer-section">
@@ -189,19 +296,53 @@ export function ScanJobDetailDrawer({
                     </tr>
                   </thead>
                   <tbody>
-                    {job.recentRuns.map(run => (
-                      <tr key={run.runId}>
-                        <td className="mono" style={{ fontWeight: 500 }}>{run.runId}</td>
-                        <td>{run.at}</td>
-                        <td className="mono">{run.duration}</td>
-                        <td>{run.targets}</td>
-                        <td>
-                          <Chip tone={STATUS_CHIP_TONE[run.status] || 'neutral'}>
-                            {run.status}
-                          </Chip>
-                        </td>
-                      </tr>
-                    ))}
+                    {job.recentRuns.map(run => {
+                      const runHasFailure = run.status === 'Failed' || run.status === 'Completed with errors' || run.fail > 0 || !!run.failureReason;
+                      const runReason = run.failureReason || (runHasFailure ? job.failureReason : undefined);
+                      const runCode = run.failureCode || (runHasFailure ? job.failureCode : undefined);
+
+                      return (
+                        <tr key={run.runId}>
+                          <td className="mono" style={{ fontWeight: 500 }}>{run.runId}</td>
+                          <td>{run.at}</td>
+                          <td className="mono">{run.duration}</td>
+                          <td>
+                            <span title={`Clean: ${run.clean}, Partial: ${run.partial}, Fail: ${run.fail}`}>
+                              {run.targets}
+                              {run.fail > 0 && (
+                                <span style={{ color: 'var(--vw-color-red-600)', fontSize: '0.6875rem', fontWeight: 600, marginLeft: '4px' }}>
+                                  ({run.fail} fail)
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                              <Chip tone={STATUS_CHIP_TONE[run.status] || 'neutral'}>
+                                {run.status}
+                              </Chip>
+                              {runReason && (
+                                <span
+                                  className="job-run-failure-msg"
+                                  style={{
+                                    fontSize: '0.6875rem',
+                                    color: run.status === 'Failed' ? 'var(--vw-color-red-700)' : 'var(--vw-color-amber-800)',
+                                    lineHeight: 1.25,
+                                    maxWidth: '180px',
+                                    wordBreak: 'break-word',
+                                    marginTop: '2px'
+                                  }}
+                                  title={`${runCode ? `[${runCode}] ` : ''}${runReason}`}
+                                >
+                                  {runCode && <strong className="mono" style={{ fontSize: '0.625rem' }}>[{runCode}] </strong>}
+                                  {runReason}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

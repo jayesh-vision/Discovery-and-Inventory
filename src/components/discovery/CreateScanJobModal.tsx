@@ -43,10 +43,10 @@ export function CreateScanJobModal({
   const [hopDepth, setHopDepth] = useState(3);
   const [exclusions, setExclusions] = useState('');
 
-  // Step 3: Collector & Protocols - unpopulated
+  // Step 3: Collector & Protocols - single protocol selection
   const [selectedCollector, setSelectedCollector] = useState('');
   const [selectedCred, setSelectedCred] = useState('');
-  const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
+  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
 
   // Step 4: Schedule & Options - unpopulated
   const [scheduleType, setScheduleType] = useState<'continuous' | 'daily' | 'weekly' | 'ondemand' | ''>('');
@@ -73,7 +73,7 @@ export function CreateScanJobModal({
       setExclusions('');
       setSelectedCollector('');
       setSelectedCred('');
-      setSelectedProtocols([]);
+      setSelectedProtocol('');
       setScheduleType('');
       setSweepHours('');
       setScheduleTime('');
@@ -118,14 +118,6 @@ export function CreateScanJobModal({
     return 'Not configured';
   }, [scheduleType, sweepHours, scheduleTime, scheduleDay]);
 
-  const toggleProtocol = (protoLabel: string) => {
-    setSelectedProtocols(prev =>
-      prev.includes(protoLabel)
-        ? prev.filter(p => p !== protoLabel)
-        : [...prev, protoLabel]
-    );
-  };
-
   const handleRunReachabilityTest = () => {
     setTestStatus('testing');
     setTimeout(() => {
@@ -152,7 +144,7 @@ export function CreateScanJobModal({
       targetType,
       collector: selectedCollector || 'clr-blr-01',
       cred: selectedCred || 'ro-inband-v3',
-      protocols: selectedProtocols.length ? selectedProtocols : ['SNMP v3 (authPriv)'],
+      protocols: selectedProtocol ? [selectedProtocol] : ['SNMP v3 (authPriv)'],
       sched: scheduleType ? scheduleString : 'On demand',
       next: runImmediately ? 'sweeping now' : (scheduleType === 'daily' ? `tomorrow ${scheduleTime || '02:00'}` : scheduleType === 'continuous' ? `in ${sweepHours || 6} hrs` : 'tomorrow 02:00'),
       last: runImmediately ? 'Running right now' : '—',
@@ -526,24 +518,25 @@ export function CreateScanJobModal({
 
               <div>
                 <div className="job-form-section-title">
-                  <span>Discovery Protocols & Adapters</span>
+                  <span>Discovery Protocol & Adapter</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--vw-color-slate-400)', fontWeight: 400 }}>
-                    {selectedProtocols.length} selected
+                    {selectedProtocol ? '1 selected' : 'Select one'}
                   </span>
                 </div>
                 <div className="proto-checklist">
                   {PROTOCOL_CHOICES.map(proto => {
-                    const isChecked = selectedProtocols.includes(proto.label);
+                    const isSelected = selectedProtocol === proto.label;
                     return (
                       <div
                         key={proto.id}
-                        className={`proto-check-item${isChecked ? ' is-checked' : ''}`}
-                        onClick={() => toggleProtocol(proto.label)}
+                        className={`proto-check-item${isSelected ? ' is-checked' : ''}`}
+                        onClick={() => setSelectedProtocol(proto.label)}
                       >
                         <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
+                          type="radio"
+                          name="discoveryProtocol"
+                          checked={isSelected}
+                          onChange={() => setSelectedProtocol(proto.label)}
                           style={{ accentColor: 'var(--vw-color-blue-600)' }}
                         />
                         <span style={{ flex: 1, fontSize: '0.8125rem', fontWeight: 500, color: 'var(--vw-color-slate-800)' }}>

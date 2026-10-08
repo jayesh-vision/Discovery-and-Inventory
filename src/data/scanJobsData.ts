@@ -12,6 +12,8 @@ export interface RecentRunItem {
   partial: number;
   fail: number;
   status: JobStatus;
+  failureReason?: string;
+  failureCode?: string;
 }
 
 export interface ScanJob {
@@ -39,6 +41,10 @@ export interface ScanJob {
   retries?: number;
   notes?: string;
   recentRuns?: RecentRunItem[];
+  failureReason?: string;
+  failureCode?: string;
+  failureStage?: string;
+  suggestedAction?: string;
 }
 
 export const STATUS_CHIP_TONE: Record<JobStatus, ChipTone> = {
@@ -145,9 +151,14 @@ export const SEED_SCAN_JOBS: ScanJob[] = [
     scope: '172.31.35.0/24 · 172.31.41.255/24', targetType: 'CIDR', collector: 'clr-indr-01', cred: 'ro-inband-v3',
     protocols: ['SNMP v3 (authPriv)'], sched: 'Daily 02:00', next: 'tomorrow 02:00',
     last: '07-Oct-2026 02:00', dur: '41 m 02 s', targets: 388, clean: 289, partial: 62, fail: 37, state: 'Completed with errors', chip: 'warning',
-    concurrency: 100, timeoutSec: 5, retries: 2, notes: '37 access nodes unresponsive due to transit flap',
+    concurrency: 100, timeoutSec: 5, retries: 2,
+    failureCode: 'ERR-NET-TRANSIT-FLAP',
+    failureStage: 'Reachability / Transit Routing',
+    failureReason: '37 access routers timed out: Upstream transit link flap between collector clr-indr-01 and Indore aggregation sub-ring B caused 68% packet drop during SNMP GET bulk MIB walk.',
+    suggestedAction: 'Verify BGP/OSPF route adjacency on clr-indr-01 interface and re-run immediate scan sweep once transit path stabilizes.',
+    notes: '37 access nodes unresponsive due to transit flap on Indore sub-ring B',
     recentRuns: [
-      { runId: 'RN-8829', at: '07-Oct-2026 02:00', duration: '41 m 02 s', targets: 388, clean: 289, partial: 62, fail: 37, status: 'Completed with errors' }
+      { runId: 'RN-8829', at: '07-Oct-2026 02:00', duration: '41 m 02 s', targets: 388, clean: 289, partial: 62, fail: 37, status: 'Completed with errors', failureCode: 'ERR-NET-TRANSIT-FLAP', failureReason: '37 edge PE routers timed out on SNMP GET bulk due to transit flap' }
     ]
   },
   {
@@ -165,9 +176,14 @@ export const SEED_SCAN_JOBS: ScanJob[] = [
     scope: '172.31.50.0/24 · 172.31.59.255/24', targetType: 'CIDR', collector: 'clr-vzg-01', cred: 'ro-inband-v3',
     protocols: ['SNMP v3 (authPriv)'], sched: 'Daily 02:30', next: 'held',
     last: '07-Oct-2026 02:30', dur: '58 m 11 s', targets: 356, clean: 241, partial: 44, fail: 71, state: 'Completed with errors', chip: 'warning',
-    concurrency: 80, timeoutSec: 6, retries: 1, notes: 'Schedule held for fiber link maintenance window',
+    concurrency: 80, timeoutSec: 6, retries: 1,
+    failureCode: 'ERR-AUTH-USM-DIGEST',
+    failureStage: 'Credential Authentication (SNMPv3)',
+    failureReason: '71 access switches rejected SNMPv3 authPriv credentials with USM error usmStatsWrongDigests. Key rotation on 06-Oct-2026 was not synchronized with Vault path secret/net/snmp/v3-inband.',
+    suggestedAction: 'Re-sync localized SHA256/AES128 auth key in credential profile ro-inband-v3 and test connectivity on target subnet.',
+    notes: 'Schedule held: 71 access switches rejected SNMPv3 credentials pending Vault key re-sync',
     recentRuns: [
-      { runId: 'RN-8828', at: '07-Oct-2026 02:30', duration: '58 m 11 s', targets: 356, clean: 241, partial: 44, fail: 71, status: 'Completed with errors' }
+      { runId: 'RN-8828', at: '07-Oct-2026 02:30', duration: '58 m 11 s', targets: 356, clean: 241, partial: 44, fail: 71, status: 'Completed with errors', failureCode: 'ERR-AUTH-USM-DIGEST', failureReason: '71 access switches rejected SNMPv3 authPriv credentials (usmStatsWrongDigests)' }
     ]
   },
   {
@@ -195,9 +211,14 @@ export const SEED_SCAN_JOBS: ScanJob[] = [
     scope: '172.31.175.0/24 · 172.31.179.255/24', targetType: 'CIDR', collector: 'clr-blr-02', cred: 'ro-optical-v3',
     protocols: ['TL1 Protocol'], sched: 'Weekly Sun 04:00', next: 'Sun 04:00',
     last: '19-Nov-2025 04:00', dur: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18, state: 'No adapter', chip: 'neutral',
-    concurrency: 40, timeoutSec: 6, retries: 1, notes: 'Awaiting TL1 adapter firmware update on edge gateway',
+    concurrency: 40, timeoutSec: 6, retries: 1,
+    failureCode: 'ERR-ADAPTER-TL1-ROADM',
+    failureStage: 'Protocol Adapter Execution',
+    failureReason: '18 optical ROADM nodes failed discovery: TL1 optical adapter missing on collector clr-blr-02 for Fujitsu 1FINITY firmware release v4.12. Parser frame unrecognized.',
+    suggestedAction: 'Deploy optical-tl1-agent plugin v2.4 or transition optical targets to NETCONF/YANG profile netconf-optical.',
+    notes: 'Awaiting TL1 adapter firmware update on edge gateway for 18 ROADM nodes',
     recentRuns: [
-      { runId: 'RN-7102', at: '19-Nov-2025 04:00', duration: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18, status: 'No adapter' }
+      { runId: 'RN-7102', at: '19-Nov-2025 04:00', duration: '08 m 51 s', targets: 176, clean: 132, partial: 26, fail: 18, status: 'No adapter', failureCode: 'ERR-ADAPTER-TL1-ROADM', failureReason: 'Missing TL1 optical adapter for Fujitsu 1FINITY ROADM firmware release v4.12' }
     ]
   },
   {
@@ -383,10 +404,103 @@ export function persistScanJobs(jobs: ScanJob[]) {
 export const SCAN_JOBS: ScanJob[] = (() => {
   const persisted = loadPersistedJobs();
   if (persisted && persisted.length) {
-    return persisted;
+    const seedMap = new Map(SEED_SCAN_JOBS.map(s => [s.id, s]));
+    return persisted.map(pj => {
+      const seed = seedMap.get(pj.id);
+      if (seed) {
+        return {
+          ...pj,
+          failureCode: pj.failureCode || seed.failureCode,
+          failureStage: pj.failureStage || seed.failureStage,
+          failureReason: pj.failureReason || seed.failureReason,
+          suggestedAction: pj.suggestedAction || seed.suggestedAction
+        };
+      }
+      return pj;
+    });
   }
   return [...SEED_SCAN_JOBS];
 })();
+
+/* ── Failure Reason Diagnostics & Root Cause Analysis ─────────────────── */
+export interface JobFailureDetails {
+  hasFailure: boolean;
+  code: string;
+  stage: string;
+  reason: string;
+  suggestedAction: string;
+  failedTargetsCount: number;
+  failPercentage: string;
+}
+
+export function getJobFailureDetails(job: ScanJob | null | undefined): JobFailureDetails | null {
+  if (!job) return null;
+  const hasFailure = job.state === 'Failed' || job.state === 'Completed with errors' || job.fail > 0 || job.state === 'No adapter';
+  if (!hasFailure) return null;
+
+  let code = job.failureCode || '';
+  let stage = job.failureStage || '';
+  let reason = job.failureReason || '';
+  let suggestedAction = job.suggestedAction || '';
+
+  // Intelligent fallback derivation if not explicitly provided
+  if (!reason) {
+    if (job.notes && (job.notes.toLowerCase().includes('fail') || job.notes.toLowerCase().includes('transit') || job.notes.toLowerCase().includes('unresponsive') || job.notes.toLowerCase().includes('adapter') || job.notes.toLowerCase().includes('held'))) {
+      reason = job.notes;
+    } else if (job.state === 'No adapter') {
+      reason = `Protocol adapter missing for configured profile (${job.protocols?.join(', ') || 'native'}).`;
+    } else if (job.fail > 0) {
+      reason = `${job.fail} target${job.fail > 1 ? 's' : ''} timed out during discovery sweep — no response within ${job.timeoutSec || 4}s probe threshold.`;
+    } else {
+      reason = 'Scan sweep terminated with non-zero exit state during target discovery.';
+    }
+  }
+
+  if (!code) {
+    const rLower = reason.toLowerCase();
+    if (rLower.includes('auth') || rLower.includes('digest') || rLower.includes('credential')) {
+      code = 'ERR-AUTH-CRED-REJECT';
+      stage = stage || 'Credential Authentication (SNMPv3)';
+    } else if (rLower.includes('adapter') || rLower.includes('firmware') || job.state === 'No adapter') {
+      code = 'ERR-ADAPTER-MISSING';
+      stage = stage || 'Protocol Adapter Execution';
+    } else if (rLower.includes('route') || rLower.includes('transit') || rLower.includes('unreach') || rLower.includes('gateway') || rLower.includes('break')) {
+      code = 'ERR-NET-ROUTE-UNREACH';
+      stage = stage || 'Reachability / Transit Routing';
+    } else {
+      code = 'ERR-PROBE-TIMEOUT';
+      stage = stage || 'Probe Reachability';
+    }
+  }
+
+  if (!stage) {
+    stage = 'Probe & Collection';
+  }
+
+  if (!suggestedAction) {
+    if (code === 'ERR-AUTH-CRED-REJECT') {
+      suggestedAction = 'Sync SHA256/AES128 credentials in HashiCorp Vault path or assign fallback community string.';
+    } else if (code === 'ERR-ADAPTER-MISSING') {
+      suggestedAction = 'Deploy required vendor adapter package or reassign target group to NETCONF / YANG profile.';
+    } else if (code === 'ERR-NET-ROUTE-UNREACH') {
+      suggestedAction = 'Check collector BGP routing adjacency and verify upstream transit reachability to target subnet.';
+    } else {
+      suggestedAction = 'Review firewall ACLs for UDP port 161/830 or increase probe timeout threshold and retry.';
+    }
+  }
+
+  const failPct = job.targets > 0 ? ((job.fail / job.targets) * 100).toFixed(1) : '0';
+
+  return {
+    hasFailure: true,
+    code,
+    stage,
+    reason,
+    suggestedAction,
+    failedTargetsCount: job.fail,
+    failPercentage: failPct
+  };
+}
 
 /* ── Helpers for KPI and Status computation ───────────────────────────── */
 const NOW = new Date(2026, 9, 7, 15, 0); // 07-Oct-2026 15:00 matching screenshot clock
