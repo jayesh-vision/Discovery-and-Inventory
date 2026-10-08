@@ -228,9 +228,12 @@ function applyDrillQuery(view, q, label) {
     /* the URL is the source of truth: a plain /inventory/location is the
        dashboard, so the breadcrumb's "Location" always lands there */
     LOC_VIEW = p.view || 'insights';
-    LOC_ST = p.st || null; LOC_CAT = p.cat || null; LOC_STATE = p.state || null; LOC_REGION = p.region || null;
-    LOC_TYPEGRP = p.type || null;
-    LOC_GROUP = p.group || null;
+    /* q arrives form-encoded (a space is '+'), so "Andhra Pradesh" would never
+       equal the roster's state — decode before comparing */
+    const dq = v => { if (!v) return null; try { return decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { return v; } };
+    LOC_ST = dq(p.st); LOC_CAT = dq(p.cat); LOC_STATE = dq(p.state); LOC_REGION = dq(p.region);
+    LOC_TYPEGRP = dq(p.type);
+    LOC_GROUP = dq(p.group);
   }
   if (view === 'site')     {
     if (p.id) {
