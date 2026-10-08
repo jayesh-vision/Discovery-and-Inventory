@@ -245807,6 +245807,7 @@ function viewSite() {
       <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
       <button class="stab" data-nav="sitedetails">Site details</button>
       <button class="stab" data-nav="siteequipment">Site equipment</button>
+      <button class="stab" data-nav="siteinfra">Infrastructure</button>
     </div>
 
     ${SITE_SECTION === 'attention' ? attentionSection()
@@ -254675,7 +254676,7 @@ function go(k) {
     /* the site's React tabs stay inside the same site: hand the active drill
        context (label + origin) over so the breadcrumb keeps naming the path
        the reader actually took */
-    if (!d && DRILL && DRILL.view === CURRENT && (k === 'sitedetails' || k === 'siteequipment'))
+    if (!d && DRILL && DRILL.view === CURRENT && (k === 'sitedetails' || k === 'siteequipment' || k === 'siteinfra'))
       d = { label: DRILL.label, q: '', from: DRILL.from };
     KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0;
     CURRENT = k;
@@ -254727,7 +254728,7 @@ function __legacyParams(k) {
     : k === 'node' ? { name: NODE_ID, ip: NODE_IP, ...(typeof NODE_SITE !== 'undefined' && NODE_SITE ? { site: NODE_SITE } : {}), ...(typeof NODE_TAB !== 'undefined' && NODE_TAB && NODE_TAB !== 'overview' ? { tab: NODE_TAB } : {}) }
     : k === 'vnfdetails' ? { name: VNF_DETAIL_ID }
     : k === 'cell4gdetails' ? { cell: CELL_4G_NAME } : k === 'cell5gdetails' ? { cell: CELL_5G_NAME }
-    : k === 'sitedetails' || k === 'siteequipment' ? { id: SITE_ID }
+    : k === 'sitedetails' || k === 'siteequipment' || k === 'siteinfra' ? { id: SITE_ID }
     : k === 'target' ? { host: TARGET_ID } : k === 'odf' ? { id: ODF_ID }
     : k === 'rack' ? { id: RACK_ID } : k === 'power' ? { id: POWER_ID } : k === 'splice' ? { id: SPLICE_ID }
     : k === 'services' ? { tab: TAB.svc || 'l2vpn' }

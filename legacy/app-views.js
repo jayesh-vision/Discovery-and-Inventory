@@ -2334,6 +2334,7 @@ function viewSite() {
       <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
       <button class="stab" data-nav="sitedetails">Site details</button>
       <button class="stab" data-nav="siteequipment">Site equipment</button>
+      <button class="stab" data-nav="siteinfra">Infrastructure</button>
     </div>
 
     ${SITE_SECTION === 'attention' ? attentionSection()

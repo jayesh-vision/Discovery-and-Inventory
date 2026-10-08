@@ -21,6 +21,10 @@ import Location from './screens/Location';
 import CityDetails from './screens/CityDetails';
 import InventoryInsights from './screens/InventoryInsights';
 import ScanJobs from './screens/ScanJobs';
+import DataCenterDetail from './screens/DataCenterDetail';
+import DataCenters from './screens/DataCenters';
+import DcimImport from './screens/DcimImport';
+import SiteInfrastructure from './screens/SiteInfrastructure';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -79,11 +83,16 @@ export const SCREENS: Screen[] = [
   { key: 'home',      path: '/inventory',           module: 'Inventory', root: true, crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
+  { key: 'datacenter', path: '/inventory/datacenter/:dcId', module: 'Inventory', crumb: 'Location · Data center', rail: 'location', component: DataCenterDetail },
+  /* DCIM: client infrastructure imported from Excel/CSV (src/dcim) */
+  { key: 'dcim',       path: '/inventory/dcim',        module: 'Inventory', crumb: 'Data centers', component: DataCenters },
+  { key: 'dcimimport', path: '/inventory/dcim/import', module: 'Inventory', crumb: 'Data centers · Import', rail: 'dcim', component: DcimImport },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },
   { key: 'sitedetails', path: '/inventory/location/site/:id/details', module: 'Inventory', crumb: 'Location · Site details · Facility', rail: 'location', component: SiteDetails },
   { key: 'siteequipment', path: '/inventory/location/site/:id/equipment', module: 'Inventory', crumb: 'Location · Site details · Site equipment', rail: 'location', component: SiteEquipment },
+  { key: 'siteinfra', path: '/inventory/location/site/:id/infrastructure', module: 'Inventory', crumb: 'Location · Site details · Infrastructure', rail: 'location', component: SiteInfrastructure },
   { key: 'node',      path: '/inventory/node/:name',              module: 'Inventory', crumb: 'Location · Site details · Node view', rail: 'location', legacy: true },
   { key: 'virtual',   path: '/inventory/virtual',   module: 'Inventory', crumb: 'Resources · Virtual Resources', legacy: true },
   { key: 'vnflifecycle', path: '/inventory/virtual/lifecycle', module: 'Inventory', crumb: 'Resources · Virtual Resources · Lifecycle operation', rail: 'virtual', legacy: true },

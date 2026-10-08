@@ -18,6 +18,7 @@ const RAIL: { section: string; items: Item[] }[] = [
   { section: 'Inventory', items: [
     { key: 'inventoryinsights', label: 'Insights' },
     { key: 'location', label: 'Location' },
+    { key: 'dcim', label: 'Data centers' },
     { group: 'res', label: 'Resources', children: [
       { key: 'virtual', label: 'Virtual Resources' }, { key: 'physical', label: 'Physical Resources' }, { key: 'passive', label: 'Passive Infrastructure' } ] },
     { group: 'con', label: 'Connectivity', children: [ { key: 'links', label: 'Links' } ] },

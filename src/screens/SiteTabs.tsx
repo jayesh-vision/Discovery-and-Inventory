@@ -78,14 +78,15 @@ export function SiteHeader({ head }: { l: Location; head: SiteHead | null }) {
               ))}
             </div>
           </Card>
-          <StatStrip cells={head.cells.map(c => ({ k: c.k, v: c.v, s: c.s, t: c.t }))} />
+          {/* the prototype's values may carry its own markup (e.g. a "/ mo" unit span); the strip shows text */}
+          <StatStrip cells={head.cells.map(c => ({ k: c.k, v: c.v.replace(/<[^>]*>/g, ''), s: c.s.replace(/<[^>]*>/g, ''), t: c.t }))} />
         </>
       )}
     </>
   );
 }
 
-export function SiteTabs({ l, head, active }: { l: Location; head: SiteHead | null; active?: 'details' | 'equipment' }) {
+export function SiteTabs({ l, head, active }: { l: Location; head: SiteHead | null; active?: 'details' | 'equipment' | 'infra' }) {
   const nav = useNavigate();
   const keep = useKeepContext();
   const base = `/inventory/location/site/${l.id}`;
@@ -105,6 +106,7 @@ export function SiteTabs({ l, head, active }: { l: Location; head: SiteHead | nu
         Opex{head && <> <span className="tab-n num">{head.tabs.opex}</span></>}</button>
       <button className={`stab${active === 'details' ? ' is-on' : ''}`} onClick={() => nav(keep(base + '/details'))}>Site details</button>
       <button className={`stab${active === 'equipment' ? ' is-on' : ''}`} onClick={() => nav(keep(base + '/equipment'))}>Site equipment</button>
+      <button className={`stab${active === 'infra' ? ' is-on' : ''}`} onClick={() => nav(keep(base + '/infrastructure'))}>Infrastructure</button>
     </div>
   );
 }

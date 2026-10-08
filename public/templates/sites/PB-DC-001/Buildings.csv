@@ -1,0 +1,2 @@
+BuildingId,DataCenterId,Name,Status,LengthM,WidthM,HeightM,X,Y,DesignKw
+PB-DC-001-B1,PB-DC-001,Main building,ACTIVE,32,20,10,,,60

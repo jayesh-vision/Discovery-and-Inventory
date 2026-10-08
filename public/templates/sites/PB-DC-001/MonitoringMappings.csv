@@ -1,0 +1,7 @@
+MappingId,EntityId,System,ExternalId,Metric,PollSeconds
+PB-DC-001-MON-001,PB-DC-001-UPS-A,SNMP,PB-DC-001/UPS-A/upsOutputPower,output_kw,60
+PB-DC-001-MON-002,PB-DC-001-UPS-B,SNMP,PB-DC-001/UPS-B/upsOutputPower,output_kw,60
+PB-DC-001-MON-003,PB-DC-001-RECT-01,SNMP,PB-DC-001/RECT-01/dcOutputCurrent,output_a,60
+PB-DC-001-MON-004,PB-DC-001-DG-01,BMS,BMS/PB-DC-001/DG-01/FuelLevel,fuel_pct,300
+PB-DC-001-MON-005,PB-DC-001-CRAC-1,BMS,BMS/PB-DC-001/CRAC-1/SupplyTemp,supply_c,60
+PB-DC-001-MON-006,PB-DC-001-CRAC-2,BMS,BMS/PB-DC-001/CRAC-2/SupplyTemp,supply_c,60

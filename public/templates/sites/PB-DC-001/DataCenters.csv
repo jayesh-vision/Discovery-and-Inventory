@@ -1,0 +1,2 @@
+DataCenterId,ClientId,Name,LocationId,Address,City,Country,Latitude,Longitude,Tier,Status,DesignKw,AvailableKw
+PB-DC-001,DEMO-TELCO,PB-DC-001 Ludhiana Data Park,PB-DC-001,Ludhiana Data Park,Ludhiana,India,30.851,75.8073,III,ACTIVE,60,31
