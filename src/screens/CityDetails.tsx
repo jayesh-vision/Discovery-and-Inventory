@@ -1831,15 +1831,6 @@ export default function CityDetails() {
               </span>
 
               <div className="net-toolbar-actions">
-                {selectedFacilityItem.facilityType === 'dc' && (
-                  <button
-                    type="button"
-                    className="nst-btn nst-btn--sm"
-                    onClick={() => navigate(`/inventory/datacenter/${encodeURIComponent(selectedFacilityItem.code)}?cityId=${encodeURIComponent(city.id)}`)}
-                  >
-                    Open data center view
-                  </button>
-                )}
                 <div className="net-search-input-box">
                   <span className="net-search-icon">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
