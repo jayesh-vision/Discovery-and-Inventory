@@ -173,12 +173,15 @@ function stdActions(wrap: HTMLDivElement | null, onTriggerRefresh?: (r?: DOMRect
    build (no backend) — with static sample data that reload is otherwise
    invisible, so a small confirmation is the honest way to prove the click
    did something, without pretending there's a server round-trip to wait on. */
-function showRefreshToast(x: number, y: number) {
+function showRefreshToast(_x?: number, _y?: number) {
   const el = document.createElement('div');
-  el.className = 'copy-toast';
+  el.className = 'copy-toast is-success is-right';
   el.textContent = 'Refreshed';
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
+  el.style.position = 'fixed';
+  el.style.top = '72px';
+  el.style.right = '24px';
+  el.style.left = 'auto';
+  el.style.transform = 'none';
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('is-in'));
   setTimeout(() => {

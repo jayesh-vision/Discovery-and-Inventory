@@ -613,14 +613,14 @@ button:focus-visible.ii-btn-primary,
   right: 24px;
   bottom: 24px;
   max-width: 440px;
-  background: var(--ii-bg-dark);
-  color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  color: var(--vw-color-blue-600, #2563eb);
+  border: 1px solid rgba(37, 99, 235, 0.25);
   border-radius: var(--ii-radius-md);
-  padding: 10px 14px;
+  padding: 10px 16px;
   font-size: 13px;
-  font-weight: 400;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -628,23 +628,39 @@ button:focus-visible.ii-btn-primary,
   animation: iiSlideUp 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
+.ii-toast.is-error,
+.ii-toast--error {
+  background: #ffffff !important;
+  color: var(--vw-color-red-600, #dc2626) !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+.ii-toast.is-success,
+.ii-toast--success {
+  background: #ffffff !important;
+  color: var(--vw-color-blue-600, #2563eb) !important;
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+
 .ii-toast-dismiss {
-  min-width: 26px;
-  min-height: 26px;
-  border-radius: 5px;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: 4px;
   border: 0;
-  background: var(--ii-bg-dark-subtle);
-  color: #FFFFFF;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
 .ii-toast-dismiss:hover {
-  background: var(--ii-bg-dark-hover);
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
 }
 
 @keyframes iiFadeIn {

@@ -70,7 +70,14 @@ export default function Topbar() {
   if (!s) return null;
   const params = paramsOf(s.path, pathname);
   const sp = new URLSearchParams(search);
-  const drill = sp.get('drill');
+  let drill = sp.get('drill');
+  /* Location's list view (?view=list, optionally narrowed to ?state=) is a drill
+     of the map landing that carries no ?drill= label of its own — name it so the
+     trail leads back to the map like every other drill does. */
+  if (!drill && s.key === 'location' && sp.get('view') === 'list') {
+    const st = sp.get('state');
+    drill = st ? `Locations in ${st}` : 'All locations';
+  }
   /* A landing reached by an in-app jump with no ?from= of its own borrows the
      screen it came from, so the trail (and the way back) shows. Only landings
      do this: detail screens already carry their own from/drill context. */

@@ -231,19 +231,36 @@ function copyToClipboard(value) {
   copyFallback(value);
   return Promise.resolve();
 }
-function showCopyToast(x, y, text) {
+function showCopyToast(x, y, text, type) {
   const el = document.createElement('div');
-  el.className = 'copy-toast';
+  const isFail = type === 'error' || type === 'failed' ||
+    (/\b(fail|failed|error|timeout|unreach|unreachable|denied|failure)\b/i.test(text) &&
+     !/\b(success|successfully|verified|completed|applied|retried)\b/i.test(text));
+  el.className = 'copy-toast ' + (isFail ? 'is-error' : 'is-success');
   el.textContent = text;
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
+
+  // If explicitly requested on right or if x was passed as centered/notification coordinates
+  const isCenter = typeof x === 'number' && Math.abs(x - (window.innerWidth / 2)) < 250;
+  if (x === 'right' || x == null || isCenter) {
+    el.classList.add('is-right');
+    el.style.position = 'fixed';
+    el.style.top = (y != null ? y : 72) + 'px';
+    el.style.right = '24px';
+    el.style.left = 'auto';
+    el.style.transform = 'none';
+  } else {
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('is-in'));
   setTimeout(() => {
     el.classList.remove('is-in');
     setTimeout(() => el.remove(), 200);
-  }, 1000);
+  }, 1400);
 }
+window.showCopyToast = showCopyToast;
 
 /* ── currency ─────────────────────────────────────────── */
 const inr = v => '₹' + Math.round(v).toLocaleString('en-IN');

@@ -495,6 +495,14 @@ function freshChip(h) {
   return chip(`${Math.round(h / 720)} mo`, 'error');
 }
 
+function freshLabel(h) {
+  if (h == null) return '—';
+  if (h === 0) return 'fresh';
+  if (h < 24) return `${h}h ago`;
+  if (h < 720) return `${Math.round(h / 24)}d ago`;
+  return `${Math.round(h / 720)}mo ago`;
+}
+
 function getScanTargetStatus(t) {
   if (!t) return 'Unknown';
   const rawStatus = String(t.status || t.outcome || '').trim();
@@ -585,6 +593,8 @@ let ACTIVE_REMEDIATION_TARGET = null;
 function remediateTargetSuccess(ip) {
   const t = targetOf(ip);
   if (!t) return;
+  t.status = 'Success';
+  t.outcome = 'Success';
   t.reason = null;
   t.out = 'Exact match';
   t.fresh = 0;
@@ -705,8 +715,8 @@ function renderRemediationModal(t) {
   }
 
   return `
-  <div class="job-modal-scrim" data-close-remediation="1" style="z-index:9999;">
-    <div class="job-modal-panel" onclick="event.stopPropagation()" style="max-width:660px;max-height:85vh;">
+  <div class="job-modal-scrim" id="rem-scrim" style="z-index:9999;">
+    <div class="job-modal-panel" style="max-width:660px;max-height:85vh;">
       <div class="job-modal-header">
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="job-modal-header-icon" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
@@ -721,7 +731,7 @@ function renderRemediationModal(t) {
             </p>
           </div>
         </div>
-        <button class="job-modal-close-btn" data-close-remediation="1" aria-label="Close modal">&times;</button>
+        <button type="button" class="job-modal-close-btn" data-close-remediation="1" aria-label="Close modal">&times;</button>
       </div>
 
       <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;">
@@ -917,7 +927,10 @@ let TXRUN = 4412, TXSTEP = 0;
    it's checked first; the host match stays for identified targets and for
    old links that still carry a real hostname. */
 function targetOf(id) {
-  return TARGETS.find(t => t.ip === id) || TARGETS.find(t => t.host === id) || null;
+  if (!id) return null;
+  const s = String(id).trim();
+  return TARGETS.find(t => t && String(t.ip || '').trim() === s) ||
+         TARGETS.find(t => t && String(t.host || '').trim() === s) || null;
 }
 
 /* TRANSCRIPT.steps[0] is Reachability, which has no entry of its own in a

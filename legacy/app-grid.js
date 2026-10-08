@@ -182,7 +182,7 @@ function kebabCell(items, gid, i) {
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
+      `<button type="button" class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
         it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
         it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}${
         it.remediateIp ? ` data-remediate-ip="${esc(it.remediateIp)}"` : ''}${

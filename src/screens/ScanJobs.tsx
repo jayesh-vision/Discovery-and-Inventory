@@ -253,30 +253,37 @@ export default function ScanJobs() {
   return (
     <div id="view" className="page">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          className="copy-toast is-in"
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            zIndex: 999,
-            background: 'var(--vw-color-slate-900)',
-            color: 'var(--vw-color-white)',
-            padding: '10px 18px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.25)',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span>✓</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {toastMessage && (() => {
+        const isFail = /\b(fail|failed|error|timeout|unreach|unreachable|denied|failure)\b/i.test(toastMessage) &&
+                       !/\b(success|successfully|verified|completed|applied|retried)\b/i.test(toastMessage);
+        return (
+          <div
+            className={`copy-toast is-in is-right ${isFail ? 'is-error' : 'is-success'}`}
+            style={{
+              position: 'fixed',
+              top: '72px',
+              right: '24px',
+              left: 'auto',
+              transform: 'none',
+              zIndex: 9999,
+              background: '#ffffff',
+              color: isFail ? 'var(--vw-color-red-600)' : 'var(--vw-color-blue-600)',
+              border: `1px solid ${isFail ? 'rgba(220, 38, 38, 0.25)' : 'rgba(37, 99, 235, 0.25)'}`,
+              padding: '10px 18px',
+              borderRadius: '8px',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>{isFail ? '⚠️' : '✓'}</span>
+            <span>{toastMessage}</span>
+          </div>
+        );
+      })()}
 
       {/* ── 4 Top KPI Cards (100% selector & style compatible with legacy & tests) ── */}
       <div className="vw-grid vw-grid-cols-4 vw-gap-md">

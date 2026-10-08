@@ -413,6 +413,12 @@ document.addEventListener('keydown', e => {
       DRILL_PENDING = DRILL; go(CURRENT); return;
     }
   }
+  if (ACTIVE_REMEDIATION_TARGET && e.key === 'Escape') {
+    e.preventDefault();
+    ACTIVE_REMEDIATION_TARGET = null;
+    go(CURRENT);
+    return;
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -730,7 +736,7 @@ document.addEventListener('click', e => {
       if (count > 0) {
         retryTargetsList([...TGT_SELECTED]);
         TGT_SELECTED.clear();
-        showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${count} targets retried successfully`);
+        showCopyToast('right', 72, `Probe completed: ${count} targets retried successfully`);
         go('targets');
       }
       return;
@@ -744,7 +750,7 @@ document.addEventListener('click', e => {
     const ip = retryBtn.dataset.retryIp;
     remediateTargetSuccess(ip);
     if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
-    showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${ip} verified successfully`);
+    showCopyToast('right', 72, `Probe completed: ${ip} verified successfully`);
     go(CURRENT);
     return;
   }
@@ -762,7 +768,8 @@ document.addEventListener('click', e => {
 
   /* Scan targets: close remediation modal */
   const closeRem = e.target.closest('[data-close-remediation]');
-  if (closeRem) {
+  const isRemScrim = e.target.id === 'rem-scrim' || (e.target.classList && e.target.classList.contains('job-modal-scrim') && !e.target.closest('.job-modal-panel'));
+  if (closeRem || isRemScrim) {
     e.stopPropagation();
     ACTIVE_REMEDIATION_TARGET = null;
     go(CURRENT);
@@ -776,15 +783,24 @@ document.addEventListener('click', e => {
     const ip = applyRem.dataset.applyRemediation;
     remediateTargetSuccess(ip);
     ACTIVE_REMEDIATION_TARGET = null;
-    showCopyToast(window.innerWidth / 2 - 130, 80, `Remediation applied! Target ${ip} verified successfully.`);
+    showCopyToast('right', 72, `Remediation applied! Target ${ip} verified successfully.`);
     go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: permit normal interactions inside modal panel (radio selection, select dropdowns) */
+  if (e.target.closest('.job-modal-panel')) {
     return;
   }
 
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');
-  if (dr) { drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || ''); return; }
+  if (dr) {
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || '');
+    return;
+  }
   const grp = e.target.closest('[data-group]');
   if (grp) {
     grp.classList.toggle('is-closed');

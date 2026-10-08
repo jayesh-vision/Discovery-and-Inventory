@@ -238,19 +238,36 @@ function copyToClipboard(value) {
   copyFallback(value);
   return Promise.resolve();
 }
-function showCopyToast(x, y, text) {
+function showCopyToast(x, y, text, type) {
   const el = document.createElement('div');
-  el.className = 'copy-toast';
+  const isFail = type === 'error' || type === 'failed' ||
+    (/\b(fail|failed|error|timeout|unreach|unreachable|denied|failure)\b/i.test(text) &&
+     !/\b(success|successfully|verified|completed|applied|retried)\b/i.test(text));
+  el.className = 'copy-toast ' + (isFail ? 'is-error' : 'is-success');
   el.textContent = text;
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
+
+  // If explicitly requested on right or if x was passed as centered/notification coordinates
+  const isCenter = typeof x === 'number' && Math.abs(x - (window.innerWidth / 2)) < 250;
+  if (x === 'right' || x == null || isCenter) {
+    el.classList.add('is-right');
+    el.style.position = 'fixed';
+    el.style.top = (y != null ? y : 72) + 'px';
+    el.style.right = '24px';
+    el.style.left = 'auto';
+    el.style.transform = 'none';
+  } else {
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('is-in'));
   setTimeout(() => {
     el.classList.remove('is-in');
     setTimeout(() => el.remove(), 200);
-  }, 1000);
+  }, 1400);
 }
+window.showCopyToast = showCopyToast;
 
 /* ── currency ─────────────────────────────────────────── */
 const inr = v => '₹' + Math.round(v).toLocaleString('en-IN');
@@ -242855,7 +242872,7 @@ function kebabCell(items, gid, i) {
     <button class="kb${open ? ' is-on' : ''}" data-kebab="${gid}:${i}" aria-label="Row actions"
       aria-expanded="${open}">${IC_KEBAB}</button>
     ${open ? `<div class="kmenu">${items.map(it =>
-      `<button class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
+      `<button type="button" class="kmenu-i${it.danger ? ' is-danger' : ''}"${it.d ? dA(it.d) : ''}${
         it.copy ? ` data-copy="${esc(String(it.copy))}"` : ''}${
         it.linkview ? ` data-linkview="${esc(it.linkview)}"` : ''}${
         it.remediateIp ? ` data-remediate-ip="${esc(it.remediateIp)}"` : ''}${
@@ -243954,6 +243971,14 @@ function freshChip(h) {
   return chip(`${Math.round(h / 720)} mo`, 'error');
 }
 
+function freshLabel(h) {
+  if (h == null) return '—';
+  if (h === 0) return 'fresh';
+  if (h < 24) return `${h}h ago`;
+  if (h < 720) return `${Math.round(h / 24)}d ago`;
+  return `${Math.round(h / 720)}mo ago`;
+}
+
 function getScanTargetStatus(t) {
   if (!t) return 'Unknown';
   const rawStatus = String(t.status || t.outcome || '').trim();
@@ -244044,6 +244069,8 @@ let ACTIVE_REMEDIATION_TARGET = null;
 function remediateTargetSuccess(ip) {
   const t = targetOf(ip);
   if (!t) return;
+  t.status = 'Success';
+  t.outcome = 'Success';
   t.reason = null;
   t.out = 'Exact match';
   t.fresh = 0;
@@ -244164,8 +244191,8 @@ function renderRemediationModal(t) {
   }
 
   return `
-  <div class="job-modal-scrim" data-close-remediation="1" style="z-index:9999;">
-    <div class="job-modal-panel" onclick="event.stopPropagation()" style="max-width:660px;max-height:85vh;">
+  <div class="job-modal-scrim" id="rem-scrim" style="z-index:9999;">
+    <div class="job-modal-panel" style="max-width:660px;max-height:85vh;">
       <div class="job-modal-header">
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="job-modal-header-icon" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
@@ -244180,7 +244207,7 @@ function renderRemediationModal(t) {
             </p>
           </div>
         </div>
-        <button class="job-modal-close-btn" data-close-remediation="1" aria-label="Close modal">&times;</button>
+        <button type="button" class="job-modal-close-btn" data-close-remediation="1" aria-label="Close modal">&times;</button>
       </div>
 
       <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;">
@@ -244373,7 +244400,10 @@ let TXRUN = 4412, TXSTEP = 0;
    it's checked first; the host match stays for identified targets and for
    old links that still carry a real hostname. */
 function targetOf(id) {
-  return TARGETS.find(t => t.ip === id) || TARGETS.find(t => t.host === id) || null;
+  if (!id) return null;
+  const s = String(id).trim();
+  return TARGETS.find(t => t && String(t.ip || '').trim() === s) ||
+         TARGETS.find(t => t && String(t.host || '').trim() === s) || null;
 }
 
 /* TRANSCRIPT.steps[0] is Reachability, which has no entry of its own in a
@@ -247846,12 +247876,8 @@ function resNbrs() {
      aria-controls + a roving tabindex (only the active tab is in the
      normal tab order, same pattern a native OS tab strip uses) rather than
      a plain row of divs a screen reader has no way to announce as tabs.
-     Visually this reuses .tabbar--detail — the compact, rounded, bordered
-     pill-tab style already established for the VNF detail screen and the
-     Services sub-tab row — instead of the plain underline .tabbar every
-     *other* first-level tab bar in this app uses; a protocol switcher
-     nested a level below Neighbours reads as a "detail" tab already, the
-     same relationship those two existing uses have to their own parent. */
+     Visually it uses the standard underline .tabbar, matching the other
+     tab bars on the resource screens. */
   const panelId = `nbrpanel-${NBR_TAB}`;
   return card(`
     <nav aria-label="Protocols">
@@ -254728,6 +254754,12 @@ document.addEventListener('keydown', e => {
       DRILL_PENDING = DRILL; go(CURRENT); return;
     }
   }
+  if (ACTIVE_REMEDIATION_TARGET && e.key === 'Escape') {
+    e.preventDefault();
+    ACTIVE_REMEDIATION_TARGET = null;
+    go(CURRENT);
+    return;
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -255045,7 +255077,7 @@ document.addEventListener('click', e => {
       if (count > 0) {
         retryTargetsList([...TGT_SELECTED]);
         TGT_SELECTED.clear();
-        showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${count} targets retried successfully`);
+        showCopyToast('right', 72, `Probe completed: ${count} targets retried successfully`);
         go('targets');
       }
       return;
@@ -255059,7 +255091,7 @@ document.addEventListener('click', e => {
     const ip = retryBtn.dataset.retryIp;
     remediateTargetSuccess(ip);
     if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
-    showCopyToast(window.innerWidth / 2 - 120, 80, `Probe completed: ${ip} verified successfully`);
+    showCopyToast('right', 72, `Probe completed: ${ip} verified successfully`);
     go(CURRENT);
     return;
   }
@@ -255077,7 +255109,8 @@ document.addEventListener('click', e => {
 
   /* Scan targets: close remediation modal */
   const closeRem = e.target.closest('[data-close-remediation]');
-  if (closeRem) {
+  const isRemScrim = e.target.id === 'rem-scrim' || (e.target.classList && e.target.classList.contains('job-modal-scrim') && !e.target.closest('.job-modal-panel'));
+  if (closeRem || isRemScrim) {
     e.stopPropagation();
     ACTIVE_REMEDIATION_TARGET = null;
     go(CURRENT);
@@ -255091,15 +255124,24 @@ document.addEventListener('click', e => {
     const ip = applyRem.dataset.applyRemediation;
     remediateTargetSuccess(ip);
     ACTIVE_REMEDIATION_TARGET = null;
-    showCopyToast(window.innerWidth / 2 - 130, 80, `Remediation applied! Target ${ip} verified successfully.`);
+    showCopyToast('right', 72, `Remediation applied! Target ${ip} verified successfully.`);
     go(CURRENT);
+    return;
+  }
+
+  /* Scan targets: permit normal interactions inside modal panel (radio selection, select dropdowns) */
+  if (e.target.closest('.job-modal-panel')) {
     return;
   }
 
   const dcl = e.target.closest('[data-drillclear]');
   if (dcl) { clearDrill(); return; }
   const dr = e.target.closest('[data-drill]');
-  if (dr) { drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || ''); return; }
+  if (dr) {
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || '');
+    return;
+  }
   const grp = e.target.closest('[data-group]');
   if (grp) {
     grp.classList.toggle('is-closed');

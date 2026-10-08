@@ -1403,6 +1403,10 @@ main:has(.node-page) {
 .is-drill::after { content: '›'; position: absolute; top: 6px; right: 8px;
   font-size: 0.9rem; line-height: 1; color: var(--vw-color-gray-400); opacity: 0; transition: opacity .12s; }
 .is-drill:hover::after, .is-drill:focus-visible::after { opacity: 1; }
+/* a filled button that drills keeps its own white label (is-drill's color:inherit
+   would turn it dark-on-dark) and drops the corner chevron, which is for cards */
+.nst-btn--filled.is-drill { color: var(--vw-color-white); }
+.nst-btn--filled.is-drill::after { display: none; }
 
 /* card-shaped drills KEEP their own card chrome - never strip background or border */
 button.is-drill.vw-card-section, button.is-drill.vw-card-child { display: flex; width: 100%; }

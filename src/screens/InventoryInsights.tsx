@@ -1801,14 +1801,18 @@ export default function InventoryInsights() {
       </main>
 
       {/* ── Toast notification ── */}
-      {toast && (
-        <div role="status" aria-live="polite" className="ii-toast">
-          <span style={{ flexGrow: 1 }}>{toast}</span>
-          <button type="button" onClick={() => setToast('')} aria-label="Dismiss" className="ii-toast-dismiss">
-            ×
-          </button>
-        </div>
-      )}
+      {toast && (() => {
+        const isFail = /\b(fail|failed|error|timeout|unreach|unreachable|denied|failure)\b/i.test(toast) &&
+                       !/\b(success|successfully|verified|completed|applied|retried)\b/i.test(toast);
+        return (
+          <div role="status" aria-live="polite" className={`ii-toast ${isFail ? 'is-error' : 'is-success'}`}>
+            <span style={{ flexGrow: 1 }}>{toast}</span>
+            <button type="button" onClick={() => setToast('')} aria-label="Dismiss" className="ii-toast-dismiss">
+              ×
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── Interactive Chart Floating Tooltip Portal ── */}
       {tooltip && createPortal(
