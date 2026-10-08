@@ -18,6 +18,37 @@ function paramsOf(pattern: string, pathname: string): Record<string, string> {
   return Object.fromEntries(names.map((nm, i) => [nm, m[i + 1]]));
 }
 
+/* Where did the reader come from? Landing pages hide their breadcrumb when
+   reached from the sidebar (or by URL), but a card or button elsewhere in the
+   app that jumps to one — Reconciliation's Quick actions, a KPI tile — gives
+   the reader no way back unless the trail names where they were. Each router
+   location (history entry) remembers the screen it was entered from, so
+   back/forward/refresh replay the same trail. Navigations that mean "start
+   fresh" (sidebar, a breadcrumb link) pass state { reset: true } and clear it;
+   changing only the query on the same screen keeps the origin it already had. */
+interface Origin { pathname: string; search: string }
+const ORIGIN_KEY = 'ns_nav_origins';
+const navTrail: { prev: { key: string; pathname: string; search: string } | null; map: Record<string, Origin | null> | null } = { prev: null, map: null };
+function originMap(): Record<string, Origin | null> {
+  if (!navTrail.map) {
+    try { navTrail.map = JSON.parse(sessionStorage.getItem(ORIGIN_KEY) || '{}'); } catch { navTrail.map = {}; }
+  }
+  return navTrail.map!;
+}
+function originFor(loc: { key: string; pathname: string; search: string; state: unknown }): Origin | null {
+  const map = originMap();
+  if (loc.key in map) { navTrail.prev = { key: loc.key, pathname: loc.pathname, search: loc.search }; return map[loc.key]; }
+  const p = navTrail.prev;
+  let o: Origin | null = null;
+  if ((loc.state as { reset?: boolean } | null)?.reset) o = null;
+  else if (p && p.pathname !== loc.pathname) o = { pathname: p.pathname, search: p.search };
+  else if (p) o = map[p.key] ?? null;
+  map[loc.key] = o;
+  navTrail.prev = { key: loc.key, pathname: loc.pathname, search: loc.search };
+  try { sessionStorage.setItem(ORIGIN_KEY, JSON.stringify(map)); } catch { /* storage unavailable: trail just resets */ }
+  return o;
+}
+
 /* The single navigation for every page: a plain-text breadcrumb built from
    the screen's crumb chain, "Location > Site details > Capex". Every prefix
    that names a real screen (with its params resolvable from the current URL)
@@ -31,14 +62,25 @@ function paramsOf(pattern: string, pathname: string): Record<string, string> {
    then the origin's chain — the reader came from there, not from this
    screen's nominal parent — and this screen contributes only its leaf. */
 export default function Topbar() {
-  const { pathname, search } = useLocation();
+  const loc = useLocation();
+  const { pathname, search } = loc;
   const nav = useNavigate();
+  const origin = originFor(loc);
   const s = screenFor(pathname);
   if (!s) return null;
   const params = paramsOf(s.path, pathname);
   const sp = new URLSearchParams(search);
   const drill = sp.get('drill');
-  const from = sp.get('from');
+  /* A landing reached by an in-app jump with no ?from= of its own borrows the
+     screen it came from, so the trail (and the way back) shows. Only landings
+     do this: detail screens already carry their own from/drill context. */
+  let from = sp.get('from');
+  if (!from && !drill && origin && !s.root && isLanding(s)) {
+    const originScreen = screenFor(origin.pathname);
+    if (originScreen && originScreen.key !== s.key) {
+      from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
+    }
+  }
 
   /* Breadcrumbs only describe a trail, so a landing page (any screen the
      sidebar lists in its own right — see isLanding in routes.ts) has none:
@@ -390,7 +432,7 @@ export default function Topbar() {
           <span key={i} className="topbar-seg">
             {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
             {g.to
-              ? <button className="topbar-crumb-link" onClick={() => nav(g.to as string)}>{g.label}</button>
+              ? <button className="topbar-crumb-link" onClick={() => nav(g.to as string, { state: { reset: true } })}>{g.label}</button>
               : <span className={i === segs.length - 1 ? 'topbar-crumb-current' : 'topbar-crumb-text'}>{g.label}</span>}
           </span>
         ))}

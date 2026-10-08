@@ -51,7 +51,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
       ? `${s.path}?cls=${encodeURIComponent(sessionStorage.getItem('ns_phy_tab')!)}`
       : s.path;
     return (
-      <NavLink key={key} to={targetPath} data-label={label}
+      <NavLink key={key} to={targetPath} state={{ reset: true }} data-label={label}
         className={`side-item${child ? ' is-child' : ''}${active === key ? ' is-active' : ''}`}>
         <Svg html={SIDE_ICONS[key]} /><span className="grow">{label}</span>
       </NavLink>
@@ -63,7 +63,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
       <div className="side-top">
         <button className="side-toggle" onClick={onToggle} aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
           aria-expanded={!collapsed} title={collapsed ? 'Expand menu' : 'Collapse menu'}><Svg html={SIDE_GRID} /></button>
-        <button className="side-home" onClick={() => nav('/inventory/insights')}>Home</button>
+        <button className="side-home" onClick={() => nav('/inventory/insights', { state: { reset: true } })}>Home</button>
         <span className="grow" />
         <span onClick={onToggle} style={{ display: 'contents', cursor: 'pointer' }}><Svg html={SIDE_CHEVRON} /></span>
       </div>
