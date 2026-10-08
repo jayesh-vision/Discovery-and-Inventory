@@ -1194,3 +1194,11 @@ button:focus-visible.ii-btn-primary,
   color: var(--ii-text-muted);
 }
 .ii-bar-qual { color: var(--ii-text-muted); }
+
+/* severity breakdown list (Open inventory issues) */
+.ii-sev-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ii-sev-row { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
+.ii-sev-dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; }
+.ii-sev-name { flex: 1 1 auto; min-width: 0; color: var(--ii-text-muted); }
+.ii-sev-count { flex-shrink: 0; font-weight: 500; color: var(--ii-text-heading); }
+.ii-sev-share { flex: 0 0 36px; text-align: right; color: var(--ii-text-muted); }

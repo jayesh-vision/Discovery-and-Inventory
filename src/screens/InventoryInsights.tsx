@@ -798,7 +798,7 @@ export default function InventoryInsights() {
               const iss = ISSUES_DYNAMIC[dayRange];
               const tot = Math.max(iss.crit + iss.high + iss.med + iss.low, 1);
               return (
-                <div className="ii-stack" style={{ marginTop: 'auto' }}>
+                <div className="ii-stack">
                   <div
                     className="ii-severity-seg"
                     style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)' }}
@@ -875,13 +875,29 @@ export default function InventoryInsights() {
                 </div>
               );
             })()}
-            <div className="ii-kpi-child-meta" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '4px 12px' }}>
-              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].crit}</strong> crit</span>
-              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].high}</strong> high</span>
-              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].med}</strong> med</span>
-              <span><strong style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{ISSUES_DYNAMIC[dayRange].low}</strong> low</span>
-            </div>
-            <div className="ii-foot">Median age {ISSUES_DYNAMIC[dayRange].medianDays} days · {ISSUES_DYNAMIC[dayRange].assigned} assigned</div>
+            {(() => {
+              const iss = ISSUES_DYNAMIC[dayRange];
+              const tot = Math.max(iss.crit + iss.high + iss.med + iss.low, 1);
+              const levels = [
+                { k: 'Critical', n: iss.crit, c: 'var(--ii-danger)' },
+                { k: 'High', n: iss.high, c: 'var(--ii-warning)' },
+                { k: 'Medium', n: iss.med, c: 'var(--ii-primary)' },
+                { k: 'Low', n: iss.low, c: 'var(--ii-text-faint)' }
+              ];
+              return (
+                <ul className="ii-sev-list" aria-label="Open issues by severity">
+                  {levels.map(l => (
+                    <li key={l.k} className="ii-sev-row">
+                      <span className="ii-sev-dot" style={{ background: l.c }} aria-hidden="true" />
+                      <span className="ii-sev-name">{l.k}</span>
+                      <span className="ii-mono ii-sev-count">{l.n.toLocaleString('en-US')}</span>
+                      <span className="ii-mono ii-sev-share">{((l.n / tot) * 100).toFixed(0)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+            <div className="ii-foot" style={{ marginTop: 'auto' }}>Median age {ISSUES_DYNAMIC[dayRange].medianDays} days · {ISSUES_DYNAMIC[dayRange].assigned} assigned</div>
           </div>
         </section>
 
