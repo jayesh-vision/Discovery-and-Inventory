@@ -444,32 +444,24 @@ function viewJobs() {
         [{ t: 'Status', plain: true }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
-        rows.map(j => {
-          const hasIssue = j.state === 'Failed' || j.state === 'Completed with errors' || j.state === 'No adapter';
-          const failReasonText = hasIssue ? (j.failureReason || (j.notes && j.notes.toLowerCase().includes('transit') ? j.notes : (j.state === 'No adapter' ? 'TL1 adapter missing for optical model' : (j.fail > 0 ? `${n(j.fail)} targets failed probe` : '')))) : '';
-
-          return [
-            `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
-              ${chip(j.state, jobChip(j))}
-              ${failReasonText ? `<div class="job-failure-pill ${j.state === 'Failed' ? 'is-fatal' : 'is-warning'}" style="margin-top:2px;" title="${esc(failReasonText)}"><span class="job-failure-pill-icon">${j.state === 'Failed' ? '✕' : '⚠'}</span><span class="job-failure-pill-text">${esc(failReasonText)}</span></div>` : ''}
-            </div>`,
-            domainDot(j.domain),
-            `<div style="display:flex;align-items:center;gap:6px;"><span class="vw-value" style="font-weight:500">${j.id}</span>${j.fail > 0 ? `<span class="job-fail-count-badge" title="${j.fail} failed targets">${j.fail} failed</span>` : ''}</div>
-             <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
-            `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
-            j.sched,
-            `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
-            n(j.targets),
-            `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
-              <span style="color:${cv('gray',300)}">·</span>
-              <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
-              <span style="color:${cv('gray',300)}">·</span>
-              <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
-            jobHeld(j) ? chip('Held', 'warning')
-              : `<span class="vw-card-metric-label-sub">${j.next}</span>${
-                  jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
-          ];
-        }), 'job-table chip-auto',
+        rows.map(j => [
+          chip(j.state, jobChip(j)),
+          domainDot(j.domain),
+          `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
+           <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
+          `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
+          j.sched,
+          `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
+          n(j.targets),
+          `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
+            <span style="color:${cv('gray',300)}">·</span>
+            <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
+            <span style="color:${cv('gray',300)}">·</span>
+            <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
+          jobHeld(j) ? chip('Held', 'warning')
+            : `<span class="vw-card-metric-label-sub">${j.next}</span>${
+                jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
+        ]), 'job-table chip-auto',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:`tgt=All&job=${encodeURIComponent(rows[i].id)}` }),
               ])}`)}
 
@@ -2319,7 +2311,7 @@ function viewSite() {
       { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
       { k:'Links terminating',v:l.disc ? n(Math.round((l.disc*4+7)*1.37)) : '0', s:'LLDP · OSPF · BGP · L2VPN · L3VPN', t:'purple' },
       { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan' },
-      { k:'Opex run rate',    v:inrShort(oxRun) + ' / mo', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
+      { k:'Opex run rate',    v:inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
     ])}
 
     <div class="section-tabs">
@@ -2430,7 +2422,7 @@ function siteHeadData(id) {
       { k: 'Links terminating', v: l.disc ? n(Math.round((l.disc * 4 + 7) * 1.37)) : '0', s: 'LLDP · OSPF · BGP · L2VPN · L3VPN', t: 'purple',
         drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
       { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
-      { k: 'Opex run rate', v: inrShort(oxRun) + ' / mo', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
+      { k: 'Opex run rate', v: inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
     ],
     tabs: { attn, ne: n(tot), capex: inrShort(cxTotal), opex: inrShort(oxRun) + '/mo' }
   };

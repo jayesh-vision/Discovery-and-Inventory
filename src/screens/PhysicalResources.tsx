@@ -122,7 +122,7 @@ export default function PhysicalResources() {
       <Card>
         <TabBar
           tabs={tabs.map(x => ({
-            k: x.k, n: `${x.n} (${fmt(phyCount(x.k, stock))})`, count: phyCount(x.k, stock),
+            k: x.k, n: x.n, count: phyCount(x.k, stock),
             title: `${fmt(phyCount(x.k, stock))} of ${fmt(x.c + stockCount(x.k, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
               x.disc ? ` · ${fmt(x.disc)} discovered` : ''}`
           }))}

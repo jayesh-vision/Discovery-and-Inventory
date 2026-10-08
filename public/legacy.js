@@ -243903,32 +243903,24 @@ function viewJobs() {
         [{ t: 'Status', plain: true }, { t: 'Domain' }, { t: 'Job · scope' }, { t: 'Collector · credential' }, { t: 'Schedule' },
          { t: 'Last run · duration' }, { t: 'Targets', r: true }, { t: 'Clean · partial · failed', r: true },
          { t: 'Next run' }],
-        rows.map(j => {
-          const hasIssue = j.state === 'Failed' || j.state === 'Completed with errors' || j.state === 'No adapter';
-          const failReasonText = hasIssue ? (j.failureReason || (j.notes && j.notes.toLowerCase().includes('transit') ? j.notes : (j.state === 'No adapter' ? 'TL1 adapter missing for optical model' : (j.fail > 0 ? `${n(j.fail)} targets failed probe` : '')))) : '';
-
-          return [
-            `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
-              ${chip(j.state, jobChip(j))}
-              ${failReasonText ? `<div class="job-failure-pill ${j.state === 'Failed' ? 'is-fatal' : 'is-warning'}" style="margin-top:2px;" title="${esc(failReasonText)}"><span class="job-failure-pill-icon">${j.state === 'Failed' ? '✕' : '⚠'}</span><span class="job-failure-pill-text">${esc(failReasonText)}</span></div>` : ''}
-            </div>`,
-            domainDot(j.domain),
-            `<div style="display:flex;align-items:center;gap:6px;"><span class="vw-value" style="font-weight:500">${j.id}</span>${j.fail > 0 ? `<span class="job-fail-count-badge" title="${j.fail} failed targets">${j.fail} failed</span>` : ''}</div>
-             <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
-            `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
-            j.sched,
-            `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
-            n(j.targets),
-            `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
-              <span style="color:${cv('gray',300)}">·</span>
-              <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
-              <span style="color:${cv('gray',300)}">·</span>
-              <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
-            jobHeld(j) ? chip('Held', 'warning')
-              : `<span class="vw-card-metric-label-sub">${j.next}</span>${
-                  jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
-          ];
-        }), 'job-table chip-auto',
+        rows.map(j => [
+          chip(j.state, jobChip(j)),
+          domainDot(j.domain),
+          `<span class="vw-value" style="font-weight:500">${j.id}</span><br>
+           <span class="vw-card-metric-label-sub">${j.site} · <span class="mono">${j.scope}</span></span>`,
+          `<span class="mono">${j.collector}</span><br><span class="vw-card-metric-label-sub mono">${j.cred}</span>`,
+          j.sched,
+          `<span class="num">${j.last}</span><br><span class="vw-card-metric-label-sub num">${j.dur}</span>`,
+          n(j.targets),
+          `<span class="vw-nowrap"><span style="color:${cv('emerald',700)}">${n(j.clean)}</span>
+            <span style="color:${cv('gray',300)}">·</span>
+            <span style="color:${cv(j.partial ? 'amber' : 'gray', j.partial ? 700 : 400)}">${n(j.partial)}</span>
+            <span style="color:${cv('gray',300)}">·</span>
+            <span style="color:${cv(j.fail ? 'red' : 'gray', j.fail ? 700 : 400)}">${n(j.fail)}</span></span>`,
+          jobHeld(j) ? chip('Held', 'warning')
+            : `<span class="vw-card-metric-label-sub">${j.next}</span>${
+                jobOverdue(j) ? ' ' + chip('Overdue', 'warning') : ''}`,
+        ]), 'job-table chip-auto',
         i => [A('View targets', { v:'targets', l:`Targets in ${rows[i].id}`, q:`tgt=All&job=${encodeURIComponent(rows[i].id)}` }),
               ])}`)}
 
@@ -245775,7 +245767,7 @@ function viewSite() {
       { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
       { k:'Links terminating',v:l.disc ? n(Math.round((l.disc*4+7)*1.37)) : '0', s:'LLDP · OSPF · BGP · L2VPN · L3VPN', t:'purple' },
       { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan' },
-      { k:'Opex run rate',    v:inrShort(oxRun) + ' / mo', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
+      { k:'Opex run rate',    v:inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
     ])}
 
     <div class="section-tabs">
@@ -245886,7 +245878,7 @@ function siteHeadData(id) {
       { k: 'Links terminating', v: l.disc ? n(Math.round((l.disc * 4 + 7) * 1.37)) : '0', s: 'LLDP · OSPF · BGP · L2VPN · L3VPN', t: 'purple',
         drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
       { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
-      { k: 'Opex run rate', v: inrShort(oxRun) + ' / mo', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
+      { k: 'Opex run rate', v: inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
     ],
     tabs: { attn, ne: n(tot), capex: inrShort(cxTotal), opex: inrShort(oxRun) + '/mo' }
   };
@@ -247734,10 +247726,6 @@ function resOverview() {
 
 function resHardware() {
   return card(`
-    <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Hardware')}
-      <div class="chip-row">${chip('1 failed','error')}${chip('1 degrading','warning')}${chip('1 slot free','info')}</div>
-    </div>
     ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
       HW_TREE.map(h => [
         `<span class="vw-value">${h.n}</span>`,
@@ -247865,21 +247853,15 @@ function resNbrs() {
      nested a level below Neighbours reads as a "detail" tab already, the
      same relationship those two existing uses have to their own parent. */
   const panelId = `nbrpanel-${NBR_TAB}`;
-  const newCount = rows.filter(r => r.st === 'new').length;
-  const goneCount = rows.filter(r => r.st === 'gone').length;
-  const statusChips = (newCount || goneCount)
-    ? `<div class="row">${newCount ? chip(`${newCount} new`,'info') : ''}${goneCount ? chip(`${goneCount} no longer seen`,'error') : ''}</div>`
-    : '';
   return card(`
     <nav aria-label="Protocols">
-      <div class="tabbar tabbar--detail" role="tablist">${NBR_TABS.map(t=>`<button role="tab" id="nbrtab-${t.k}"
+      <div class="tabbar" role="tablist">${NBR_TABS.map(t=>`<button role="tab" id="nbrtab-${t.k}"
         aria-selected="${t.k===NBR_TAB}" aria-controls="nbrpanel-${t.k}" tabindex="${t.k===NBR_TAB?'0':'-1'}"
         class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
     </nav>
     <div id="${panelId}" role="tabpanel" aria-labelledby="nbrtab-${NBR_TAB}" style="margin-top:var(--vw-space-md)">
       <div class="nst-table-toolbar row vw-justify-between" style="margin-bottom:var(--vw-space-md)">
         <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-        ${statusChips}
       </div>
       ${rows.length ? table([{t:'State', plain:true},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
                {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
@@ -247940,15 +247922,7 @@ function resSvcViewDialog() {
 function resSvcs() {
   const t = RES_SVC_TAB;
   const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
-  const l3Count = RES_SERVICES.filter(s => s.t === 'L3VPN').length;
-  const l2Count = RES_SERVICES.filter(s => s.t === 'L2VPN').length;
-  const ibwCount = RES_SERVICES.filter(s => s.t === 'IBW').length;
-  const downCount = RES_SERVICES.filter(s => s.st === 'Down').length;
   return card(`
-    <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Services')}
-      <div class="chip-row">${chip(`${l2Count} L2VPN`,'cyan')}${chip(`${l3Count} L3VPN`,'info')}${chip(`${ibwCount} IBW`,'teal')}${chip(`${downCount} down`,'error')}</div>
-    </div>
     <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
     ${rows.length ? table(t === 'l3vpn'
       ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
@@ -247985,10 +247959,6 @@ function resSvcs() {
 
 function resAlarms() {
   return card(`
-    <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
-      ${headSm('Alarms')}
-      <div class="chip-row">${chip('1 critical','error')}${chip('2 major','warning')}${chip('2 minor','info')}${chip('2 unacked','error')}</div>
-    </div>
     ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
       RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,

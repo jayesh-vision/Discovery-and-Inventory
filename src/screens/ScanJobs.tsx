@@ -14,8 +14,7 @@ import {
   isJobOverdue,
   isJobNeedingAttention,
   persistScanJobs,
-  STATUS_CHIP_TONE,
-  getJobFailureDetails
+  STATUS_CHIP_TONE
 } from '../data/scanJobsData';
 import {
   DOMAIN_OPTIONS,
@@ -415,59 +414,27 @@ export default function ScanJobs() {
           }}
           onRowClick={j => setSelectedJob(j)}
           renderRow={j => [
-            // Column 1: Status & Failure Reason
-            (() => {
-              const hasFailureIssue = j.state === 'Failed' || j.state === 'Completed with errors' || j.state === 'No adapter';
-              const failure = hasFailureIssue ? getJobFailureDetails(j) : null;
-              return (
-                <div key="status" style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-start', minWidth: '150px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Chip tone={j.chip || STATUS_CHIP_TONE[j.state] || 'neutral'}>
-                      {j.state === 'Running' ? (
-                        <span className="scan-running-indicator">
-                          <span className="scan-pulse-dot" />
-                          <span>Running</span>
-                        </span>
-                      ) : (
-                        j.state
-                      )}
-                    </Chip>
-                  </div>
-                  {failure && (
-                    <div
-                      className={`job-failure-pill ${j.state === 'Failed' ? 'is-fatal' : 'is-warning'}`}
-                      title={`[${failure.code}] ${failure.stage}\nRoot Cause: ${failure.reason}\nSuggested Remediation: ${failure.suggestedAction}`}
-                      onClick={e => {
-                        e.stopPropagation();
-                        setSelectedJob(j);
-                      }}
-                    >
-                      <span className="job-failure-pill-icon">{j.state === 'Failed' ? '✕' : '⚠'}</span>
-                      <span className="job-failure-pill-text">
-                        {failure.code ? `${failure.code}: ` : ''}{failure.reason}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })(),
+            // Column 1: Status
+            <div key="status" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Chip tone={j.chip || STATUS_CHIP_TONE[j.state] || 'neutral'}>
+                {j.state === 'Running' ? (
+                  <span className="scan-running-indicator">
+                    <span className="scan-pulse-dot" />
+                    <span>Running</span>
+                  </span>
+                ) : (
+                  j.state
+                )}
+              </Chip>
+            </div>,
 
             // Column 2: Domain
             <DomainDot key="domain" domain={j.domain} />,
 
             // Column 3: Job · scope
             <div key="job-scope">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span className="vw-value" style={{ fontWeight: 500 }}>{j.id}</span>
-                {j.fail > 0 && (j.state === 'Completed with errors' || j.state === 'Failed' || j.state === 'No adapter') && (
-                  <span
-                    className="job-fail-count-badge"
-                    title={`${j.fail} failed target${j.fail > 1 ? 's' : ''}`}
-                  >
-                    {j.fail} failed
-                  </span>
-                )}
-              </div>
+              <span className="vw-value" style={{ fontWeight: 500 }}>{j.id}</span>
+              <br />
               <span className="vw-card-metric-label-sub">
                 {j.site} · <span className="mono">{j.scope}</span>
               </span>

@@ -1169,6 +1169,9 @@ main:has(.node-page) {
 .stat-bar > span { display: block; height: 100%; border-radius: var(--vw-radius-full); }
 .stat-k { font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-600, #475569); line-height: 1.35; letter-spacing: -0.01em; }
 .stat-v { font-size: 1.5rem; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; color: var(--vw-color-slate-800, #1e293b); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1; }
+/* keep a figure on one line; a trailing unit (e.g. "/ mo") steps down so it fits */
+.stat-v { white-space: nowrap; font-size: clamp(1.125rem, 1.9vw, 1.5rem); }
+.stat-u { font-size: 0.6em; font-weight: 400; letter-spacing: 0; opacity: .8; }
 .stat-s { font-size: 0.75rem; font-weight: 400; color: var(--vw-color-slate-500, #64748b); line-height: 1.35;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
