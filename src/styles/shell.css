@@ -3046,3 +3046,75 @@ details[open] > summary .vw-tx-chevron {
   .rpt-print-note { display: block; font-size: 9px; color: #64748b; margin-top: 6px; }
   .vw-card-section { box-shadow: none !important; }
 }
+
+/* ── Rule details: consolidated header, people row, status banner ──────────
+   Uniquely-scoped (.rd-*) — only RuleDetails.tsx uses these, and the tab/overview
+   overrides hang off .rd-tabs, so no shared rule changes. */
+.rd-hero { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+  border-color: var(--vw-color-slate-200); box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+.rd-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+.rd-title-block { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.rd-domain-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 8px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot) 16%, transparent); }
+.rd-title-text { min-width: 0; }
+.rd-title { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3;
+  color: var(--vw-color-slate-900); overflow-wrap: anywhere; }
+.rd-meta { margin-top: 2px; font-size: 0.75rem; color: var(--vw-color-slate-500); overflow-wrap: anywhere; }
+.rd-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rd-actions .vw-chip { height: 28px; padding: 0 10px; font-size: 0.75rem; font-weight: 500; box-sizing: border-box; }
+.rd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--vw-color-slate-200); background: var(--vw-color-white); color: var(--vw-color-slate-700);
+  font: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease; }
+.rd-btn svg { color: var(--vw-color-purple-600, #9333ea); }
+.rd-btn:hover { background: var(--vw-color-slate-50); border-color: var(--vw-color-slate-300); }
+.rd-btn:focus-visible { outline: 2px solid var(--vw-color-blue-500); outline-offset: 2px; }
+.rd-desc { margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--vw-color-slate-600); max-width: 80ch; }
+
+.rd-label { font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--vw-color-slate-400); display: flex; align-items: center; gap: 6px; }
+.rd-label-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.rd-value { margin-top: 4px; font-size: 0.875rem; font-weight: 400; color: var(--vw-color-slate-900); overflow-wrap: anywhere; }
+
+.rd-people { margin: 0; padding-top: 16px; border-top: 1px solid var(--vw-color-slate-100);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.rd-person { min-width: 0; padding: 0 20px; border-left: 1px solid var(--vw-color-slate-100); }
+.rd-person:first-child { padding-left: 0; border-left: 0; }
+.rd-person-name { margin: 6px 0 0; font-size: 0.9375rem; font-weight: 500; color: var(--vw-color-slate-900); overflow-wrap: anywhere; }
+.rd-person-role { margin: 2px 0 0; font-size: 0.75rem; color: var(--vw-color-slate-500); }
+
+.rd-status { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; padding: 10px 14px;
+  border-radius: 8px; background: var(--hue-bg); }
+.rd-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hue-fg); flex-shrink: 0; }
+.rd-status-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; flex: 1 1 320px; min-width: 0;
+  font-size: 0.8125rem; color: var(--vw-color-slate-600); }
+.rd-status-text strong { font-weight: 600; color: var(--vw-color-slate-900); }
+.rd-status-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+/* tabs + overview */
+.rd-tabs { padding: 4px 24px 24px; }
+.rd-tabs .tabbar { gap: 24px; padding-top: 0; }
+.rd-tabs .tab { font-size: 0.875rem; font-weight: 500; color: var(--vw-color-slate-500); padding: 14px 0 12px;
+  border-bottom-width: 2px; transition: color .15s ease, border-color .15s ease; }
+.rd-tabs .tab:hover { color: var(--vw-color-slate-800); }
+.rd-tabs .tab.is-on { color: var(--vw-color-slate-900); font-weight: 500; border-bottom-color: var(--vw-color-blue-600); }
+.rd-flow { display: flex; align-items: flex-start; gap: 12px 24px; flex-wrap: wrap; }
+.rd-flow-end { min-width: 0; }
+.rd-flow-arrow { color: var(--vw-color-slate-300); font-size: 1.125rem; line-height: 1; margin-top: 22px; }
+.rd-kv { margin: 20px 0 0; padding-top: 20px; border-top: 1px solid var(--vw-color-slate-100);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 24px; }
+.rd-kv-item { min-width: 0; }
+.rd-kv .rd-value { margin: 4px 0 0; }
+
+@media (max-width: 1023px) {
+  .rd-people { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+  .rd-person:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .rd-kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 599px) {
+  .rd-hero { padding: 16px; }
+  .rd-tabs { padding: 4px 16px 16px; }
+  .rd-people, .rd-kv { grid-template-columns: 1fr; }
+  .rd-person { padding: 0; border-left: 0; }
+  .rd-status-actions { margin-left: 0; width: 100%; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, type ReactElement } from 'react';
 import type { DomainKey } from '../../data/discoveryOverview';
 import {
   type ScanJob,
@@ -20,6 +20,44 @@ interface CreateScanJobModalProps {
 }
 
 type StepKey = 1 | 2 | 3 | 4;
+
+/* Lucide-style 24px stroke icons, inlined so the modal needs no icon package. */
+type IconName = 'radar' | 'ran' | 'core' | 'transport' | 'ipmpls' | 'check' | 'x' | 'chevron' | 'arrow' | 'info' | 'sparkles';
+const ICONS: Record<IconName, ReactElement> = {
+  radar: <><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" /><path d="M4 6h.01" /><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35" /><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67" /><path d="M12 18h.01" /><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" /><circle cx="12" cy="12" r="2" /><path d="m13.41 10.59 5.66-5.66" /></>,
+  ran: <><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9" /><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5" /><circle cx="12" cy="9" r="2" /><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47" /><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1" /><path d="M9.5 18h5" /><path d="m8 22 4-11 4 11" /></>,
+  core: <><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></>,
+  transport: <><rect x="16" y="16" width="6" height="6" rx="1" /><rect x="2" y="16" width="6" height="6" rx="1" /><rect x="9" y="2" width="6" height="6" rx="1" /><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /><path d="M12 12V8" /></>,
+  ipmpls: <><circle cx="6" cy="19" r="3" /><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" /><circle cx="18" cy="5" r="3" /></>,
+  check: <path d="M20 6 9 17l-5-5" />,
+  x: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  chevron: <path d="m6 9 6 6 6-6" />,
+  arrow: <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>,
+  info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></>,
+  sparkles: <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />,
+};
+const Icon = ({ name, size = 16 }: { name: IconName; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {ICONS[name]}
+  </svg>
+);
+
+const JOB_ID_PREFIX = 'DSC-';
+const NOTES_MAX = 280;
+
+const STEPS: { key: StepKey; title: string; hint: string }[] = [
+  { key: 1, title: 'Domain & Region', hint: 'Where to scan' },
+  { key: 2, title: 'Target Scope', hint: 'What to scan' },
+  { key: 3, title: 'Collector & Probes', hint: 'How to reach it' },
+  { key: 4, title: 'Schedule & Policy', hint: 'When and limits' }
+];
+
+const DOMAIN_TILES: { key: DomainKey; label: string; hint: string; icon: IconName }[] = [
+  { key: 'RAN', label: 'RAN Access', hint: 'eNodeB / gNodeB', icon: 'ran' },
+  { key: 'Core', label: '5G Core', hint: 'AMF / UPF / SMF', icon: 'core' },
+  { key: 'Transport', label: 'Transport', hint: 'DWDM / OTN', icon: 'transport' },
+  { key: 'IPMPLS', label: 'IP / MPLS', hint: 'BGP / MPLS routers', icon: 'ipmpls' }
+];
 
 export function CreateScanJobModal({
   open,
@@ -89,6 +127,11 @@ export function CreateScanJobModal({
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      /* ⌘/Ctrl + Enter moves on to the next step; saving stays an explicit click */
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCurrentStep(prev => (prev < 4 ? ((prev + 1) as StepKey) : prev));
+      }
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
@@ -118,6 +161,14 @@ export function CreateScanJobModal({
     return 'Not configured';
   }, [scheduleType, sweepHours, scheduleTime, scheduleDay]);
 
+  /* the field holds everything after the fixed "DSC-" badge */
+  const idSuffix = jobId.trim().replace(/^DSC-/i, '').toUpperCase();
+  const idTaken = !!idSuffix && existingJobs.some(j => j.id.toUpperCase() === `${JOB_ID_PREFIX}${idSuffix}`);
+  const suggestId = () => {
+    if (!domain) return;
+    setJobId(generateNextJobId(domain, existingJobs).slice(JOB_ID_PREFIX.length));
+  };
+
   const handleRunReachabilityTest = () => {
     setTestStatus('testing');
     setTimeout(() => {
@@ -136,7 +187,7 @@ export function CreateScanJobModal({
       : (jobName.trim() || 'General sector');
 
     const newJob: ScanJob = {
-      id: jobId.trim() || generateNextJobId(effectiveDomain, existingJobs),
+      id: idSuffix ? `${JOB_ID_PREFIX}${idSuffix}` : generateNextJobId(effectiveDomain, existingJobs),
       name: jobName.trim() || `${DOMAIN_LABEL[effectiveDomain]} Discovery Job`,
       domain: effectiveDomain,
       site: siteStr,
@@ -184,14 +235,14 @@ export function CreateScanJobModal({
       <div className="job-modal-panel" onClick={e => e.stopPropagation()}>
         {/* Modal Header */}
         <div className="job-modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div className="job-modal-header-icon">⚡</div>
+          <div className="job-modal-header-main">
+            <div className="job-modal-header-icon"><Icon name="radar" size={20} /></div>
             <div>
               <h2 id="create-job-title" className="job-modal-title">
                 Create Discovery Scan Job
                 {domain ? (
-                  <span className="domain-badge-active" style={{ fontSize: '0.6875rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: DOMAIN_HEX[domain] }} />
+                  <span className="domain-badge-active">
+                    <span className="domain-badge-dot" style={{ background: DOMAIN_HEX[domain] }} />
                     {DOMAIN_LABEL[domain]} Domain
                   </span>
                 ) : null}
@@ -207,33 +258,37 @@ export function CreateScanJobModal({
             onClick={onClose}
             aria-label="Close dialog"
           >
-            ✕
+            <Icon name="x" size={18} />
           </button>
         </div>
 
-        {/* Stepper Tabs */}
-        <div className="job-modal-stepper">
-          {([
-            { key: 1 as StepKey, title: 'Domain & Region' },
-            { key: 2 as StepKey, title: 'Target Scope' },
-            { key: 3 as StepKey, title: 'Collector & Probes' },
-            { key: 4 as StepKey, title: 'Schedule & Policy' }
-          ] as const).map(step => {
-            const isActive = currentStep === step.key;
-            const isComplete = currentStep > step.key;
-            return (
-              <button
-                key={step.key}
-                type="button"
-                className={`job-step-tab${isActive ? ' is-active' : ''}${isComplete ? ' is-complete' : ''}`}
-                onClick={() => setCurrentStep(step.key)}
-              >
-                <span className="job-step-num">{isComplete ? '✓' : step.key}</span>
-                <span className="job-step-title">{step.title}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Stepper: a connected timeline — done / active / pending */}
+        <nav className="job-modal-stepper" aria-label="Job setup steps">
+          <ol className="job-timeline">
+            {STEPS.map((step, i) => {
+              const isActive = currentStep === step.key;
+              const isComplete = currentStep > step.key;
+              return (
+                <li key={step.key} className={`job-tl-item${isActive ? ' is-active' : ''}${isComplete ? ' is-complete' : ''}`}>
+                  {i > 0 && <span className="job-tl-line" aria-hidden="true" />}
+                  <button
+                    type="button"
+                    className="job-step-tab"
+                    onClick={() => setCurrentStep(step.key)}
+                    aria-current={isActive ? 'step' : undefined}
+                    aria-label={`Step ${step.key}: ${step.title}${isComplete ? ' (done)' : ''}`}
+                  >
+                    <span className="job-step-num">{isComplete ? <Icon name="check" size={13} /> : step.key}</span>
+                    <span className="job-step-text">
+                      <span className="job-step-title">{step.title}</span>
+                      <span className="job-step-hint">{step.hint}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
 
         {/* Modal Body */}
         <div className="job-modal-body">
@@ -241,50 +296,78 @@ export function CreateScanJobModal({
           {currentStep === 1 && (
             <>
               <div>
-                <div className="job-form-section-title">
+                <div className="job-form-section-title" id="domain-group-label">
                   <span>Telecom Domain</span>
+                  <span className="job-form-section-hint">Choose what this job discovers</span>
                 </div>
-                <div className="domain-cards-grid">
-                  {([
-                    { key: 'RAN', label: 'RAN Access', icon: '📶' },
-                    { key: 'Core', label: '5G Core', icon: '⚡' },
-                    { key: 'Transport', label: 'Transport', icon: '🌐' },
-                    { key: 'IPMPLS', label: 'IP / MPLS', icon: '🔀' }
-                  ] as const).map(d => (
-                    <div
-                      key={d.key}
-                      className={`domain-select-card${domain === d.key ? ' is-selected' : ''}`}
-                      onClick={() => setDomain(d.key as DomainKey)}
-                    >
-                      <div className="domain-select-title-group">
-                        <span style={{ fontSize: '1rem' }}>{d.icon}</span>
-                        <span>{d.label}</span>
-                      </div>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: DOMAIN_HEX[d.key] }} />
-                    </div>
-                  ))}
+                <div className="domain-cards-grid" role="radiogroup" aria-labelledby="domain-group-label">
+                  {DOMAIN_TILES.map(d => {
+                    const selected = domain === d.key;
+                    return (
+                      <button
+                        key={d.key}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        className={`domain-select-card${selected ? ' is-selected' : ''}`}
+                        style={{ ['--dc' as string]: DOMAIN_HEX[d.key] }}
+                        onClick={() => setDomain(d.key)}
+                      >
+                        <span className="domain-tile-top">
+                          <span className="domain-tile-icon"><Icon name={d.icon} size={20} /></span>
+                          <span className="domain-tile-radio" aria-hidden="true">
+                            {selected && <Icon name="check" size={12} />}
+                          </span>
+                        </span>
+                        <span className="domain-tile-title">{d.label}</span>
+                        <span className="domain-tile-hint">{d.hint}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="job-section-card">
                 <div className="job-form-row-2">
                   <div className="job-field">
-                    <label className="job-field-label">Job Code / ID</label>
-                    <span className="nst-input-shell">
+                    <label className="job-field-label" htmlFor="job-id-input">
+                      Job Code / ID
+                      <button
+                        type="button"
+                        className="job-suggest-btn"
+                        onClick={suggestId}
+                        disabled={!domain}
+                        title={domain ? 'Fill in the next free ID for this domain' : 'Pick a domain first'}
+                      >
+                        <Icon name="sparkles" size={12} /> Suggest
+                      </button>
+                    </label>
+                    <span className={`job-id-shell${idTaken ? ' is-error' : ''}`}>
+                      <span className="job-id-prefix">{JOB_ID_PREFIX}</span>
                       <input
-                        className="nst-input mono"
-                        value={jobId}
-                        onChange={e => setJobId(e.target.value)}
-                        placeholder="e.g. DSC-RAN-005"
+                        id="job-id-input"
+                        className="job-id-input"
+                        value={jobId.replace(/^DSC-/i, '')}
+                        onChange={e => setJobId(e.target.value.toUpperCase())}
+                        placeholder="RAN-005"
+                        aria-describedby="job-id-help"
+                        aria-invalid={idTaken}
+                        spellCheck={false}
                       />
+                    </span>
+                    <span id="job-id-help" className={`job-field-help${idTaken ? ' is-error' : ''}`}>
+                      {idTaken
+                        ? `${JOB_ID_PREFIX}${idSuffix} already exists — choose another`
+                        : 'Unique scan identifier across inventory. Leave blank to auto-assign.'}
                     </span>
                   </div>
 
                   <div className="job-field">
-                    <label className="job-field-label">Operational Circle / Region</label>
-                    <span className="nst-select-shell">
+                    <label className="job-field-label" htmlFor="job-region-select">Operational Circle / Region</label>
+                    <span className="job-select-shell">
                       <select
-                        className="nst-input"
+                        id="job-region-select"
+                        className="job-select"
                         value={region}
                         onChange={e => setRegion(e.target.value)}
                       >
@@ -293,14 +376,17 @@ export function CreateScanJobModal({
                           <option key={r} value={r}>{r}</option>
                         ))}
                       </select>
+                      <span className="job-select-chevron"><Icon name="chevron" size={16} /></span>
                     </span>
+                    <span className="job-field-help">The circle whose inventory this scan reconciles against.</span>
                   </div>
                 </div>
 
                 <div className="job-field">
-                  <label className="job-field-label">Job Name / Description</label>
+                  <label className="job-field-label" htmlFor="job-name-input">Job Name / Description</label>
                   <span className="nst-input-shell">
                     <input
+                      id="job-name-input"
                       className="nst-input"
                       value={jobName}
                       onChange={e => setJobName(e.target.value)}
@@ -310,11 +396,15 @@ export function CreateScanJobModal({
                 </div>
 
                 <div className="job-field">
-                  <label className="job-field-label">Operational Notes (Optional)</label>
+                  <label className="job-field-label" htmlFor="job-notes-input">
+                    Operational Notes <span className="job-optional">Optional</span>
+                    <span className={`job-char-count${notes.length >= NOTES_MAX ? ' is-max' : ''}`}>{notes.length} / {NOTES_MAX}</span>
+                  </label>
                   <textarea
-                    className="nst-input"
-                    style={{ height: '60px', padding: '8px 12px', resize: 'vertical' }}
+                    id="job-notes-input"
+                    className="job-textarea"
                     value={notes}
+                    maxLength={NOTES_MAX}
                     onChange={e => setNotes(e.target.value)}
                     placeholder="e.g. Scheduled discovery for newly commissioned sites..."
                   />
@@ -729,7 +819,7 @@ export function CreateScanJobModal({
 
         {/* Modal Footer */}
         <div className="job-modal-footer">
-          <div>
+          <div className="job-modal-footer-left">
             {currentStep > 1 && (
               <button
                 type="button"
@@ -739,10 +829,12 @@ export function CreateScanJobModal({
                 ← Back
               </button>
             )}
-          </div>
-
-          <div className="job-modal-footer-step-indicator">
-            Step {currentStep} of 4
+            <div className="job-modal-footer-step-indicator">
+              Step {currentStep} of 4
+              <span className="job-footer-dots" aria-hidden="true">
+                {STEPS.map(st => <i key={st.key} className={st.key <= currentStep ? 'is-on' : ''} />)}
+              </span>
+            </div>
           </div>
 
           <div className="job-modal-footer-right">
@@ -757,10 +849,11 @@ export function CreateScanJobModal({
             {currentStep < 4 ? (
               <button
                 type="button"
-                className="nst-btn nst-btn--sm nst-btn--primary"
+                className="nst-btn nst-btn--sm nst-btn--primary job-continue-btn"
                 onClick={() => setCurrentStep((prev) => (prev + 1) as StepKey)}
               >
-                Continue →
+                Continue <Icon name="arrow" size={14} />
+                <kbd className="job-kbd" aria-hidden="true">⌘ ↵</kbd>
               </button>
             ) : (
               <>
@@ -775,7 +868,7 @@ export function CreateScanJobModal({
                   }}
                   onClick={() => handleSubmit(true)}
                 >
-                  ⚡ Create & Run Now
+                  Create & Run Now
                 </button>
                 <button
                   type="button"

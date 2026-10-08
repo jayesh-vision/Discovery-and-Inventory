@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
+import DataCenterDetail from './screens/DataCenterDetail';
 import InactiveInventory from './screens/InactiveInventory';
 import Insights from './screens/Insights';
 import RegionDevices from './screens/RegionDevices';
@@ -79,6 +80,7 @@ export const SCREENS: Screen[] = [
   { key: 'home',      path: '/inventory',           module: 'Inventory', root: true, crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
+  { key: 'datacenter', path: '/inventory/datacenter/:dcId', module: 'Inventory', crumb: 'Location · Data center', rail: 'location', component: DataCenterDetail },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },

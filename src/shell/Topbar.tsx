@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS, isLanding } from '../routes';
-import { getCityById, findCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
+import { getCityById, findCityById, findCityByFacilityCode, getFacilitiesForCity } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 
@@ -290,6 +290,23 @@ export default function Topbar() {
     } else {
       finalLeafLabel = cityName;
     }
+  }
+
+  /* Data center drill-down: Location > <city> > Data Centers > <DC code>.
+     The DC code's 3-letter prefix is shared by several cities, so the link
+     that opened the page names its city in ?cityId=. */
+  if (s.key === 'datacenter' && params.dcId) {
+    const hintId = sp.get('cityId');
+    const cityInfo = (hintId && findCityById(hintId)) || findCityByFacilityCode(params.dcId);
+    const dc = cityInfo ? getFacilitiesForCity(cityInfo.city.id, 'dc').find(f => f.code.toUpperCase() === params.dcId.toUpperCase()) : null;
+    segs = [{ label: 'Location', to: '/inventory/location' }];
+    if (cityInfo) {
+      segs.push(
+        { label: cityInfo.city.name, to: `/inventory/location/city/${cityInfo.city.id}` },
+        { label: 'Data Centers', to: `/inventory/location/city/${cityInfo.city.id}?facility=dc` }
+      );
+    }
+    finalLeafLabel = dc?.code ?? params.dcId;
   }
 
   if (s.key === 'site' && params.id) {

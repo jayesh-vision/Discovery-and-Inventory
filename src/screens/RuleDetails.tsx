@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Chip, cv, Mono, StatStrip, TabBar } from '../components/ui';
+import { Card, Chip, cv, Mono, TabBar } from '../components/ui';
 import { Lifecycle, type LifecycleStage } from '../components/Lifecycle';
 import { Timeline } from '../components/Timeline';
 import {
@@ -93,70 +93,66 @@ export default function RuleDetails() {
 
   return (
     <div className="page">
-      <Card className="rul-hero" style={{ display: 'flex', flexDirection: 'column', borderTop: `3px solid ${DOMAIN_HEX[rule.domain]}` }}>
-        <div className="row vw-justify-between vw-items-start">
-          <div className="row vw-items-center" style={{ gap: '12px' }}>
-            <span style={{
-              width: 13, height: 13, borderRadius: '50%', background: DOMAIN_HEX[rule.domain], flexShrink: 0,
-              boxShadow: `0 0 0 4px color-mix(in srgb, ${DOMAIN_HEX[rule.domain]} 16%, transparent)`
-            }} />
-            <div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-.01em' }}>{rule.name}</div>
-              <div className="vw-card-metric-label-sub mono" style={{ marginTop: '3px' }}>{rule.id} · {DOMAIN_FULL_LABEL[rule.domain]} · {rule.ruleType}</div>
+      <Card className="rul-hero rd-hero">
+        <header className="rd-head">
+          <div className="rd-title-block">
+            <span className="rd-domain-dot" style={{ background: DOMAIN_HEX[rule.domain], ['--dot' as string]: DOMAIN_HEX[rule.domain] }} aria-hidden="true" />
+            <div className="rd-title-text">
+              <h1 className="rd-title">{rule.name}</h1>
+              <div className="rd-meta mono">{rule.id} · {DOMAIN_FULL_LABEL[rule.domain]} · {rule.ruleType}</div>
             </div>
           </div>
-          <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
-            <button
-              type="button"
-              className="nst-btn nst-btn--sm nst-btn--ghost"
-              style={{
-                borderColor: 'var(--vw-color-purple-300)',
-                color: 'var(--vw-color-purple-700)',
-                background: 'var(--vw-color-purple-50)',
-                fontWeight: 600
-              }}
-              onClick={() => setIsDryRunOpen(true)}
-            >
-              ⚡ Dry run simulation
+          <div className="rd-actions">
+            <button type="button" className="rd-btn" onClick={() => setIsDryRunOpen(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+              </svg>
+              Dry run simulation
             </button>
             <Chip tone={PRIORITY_TONE[rule.priority]}>{rule.priority} priority</Chip>
             <Chip tone={STATUS_TONE[rule.status]}>{rule.status}</Chip>
           </div>
-        </div>
-        <p className="vw-card-description" style={{ marginTop: 'var(--vw-space-sm)' }}>{rule.description}</p>
+        </header>
+        <p className="rd-desc">{rule.description}</p>
 
-        <div className="row vw-items-center" style={{
-          gap: '10px', marginTop: 'var(--vw-space-md)', padding: 'var(--vw-space-sm) var(--vw-space-md)',
-          background: cv(TONE_HUE[STATUS_TONE[rule.status]], 50), borderLeft: `3px solid ${cv(TONE_HUE[STATUS_TONE[rule.status]], 400)}`,
-          borderRadius: 'var(--vw-radius-sm)', boxShadow: `0 6px 18px -12px ${cv(TONE_HUE[STATUS_TONE[rule.status]], 300)}`
-        }}>
-          <span className="vw-value" style={{ fontWeight: 600 }}>Status: {rule.status}</span>
-          <span className="vw-card-metric-label-sub">Responsible: {responsibleName} ({next.role})</span>
-          <span className="vw-card-metric-label-sub">Next action: {next.action}</span>
-        </div>
+        <dl className="rd-people">
+          {([
+            { k: 'Owner', v: rule.owner, s: 'creates and maintains the rule', t: 'sky' },
+            { k: 'Reviewer', v: rule.reviewer, s: 'reviews the definition and logic', t: 'cyan' },
+            { k: 'Approver', v: rule.approver, s: 'approves before activation', t: 'emerald' },
+            { k: 'Executor', v: rule.executor, s: 'monitors execution', t: 'purple' }
+          ] as const).map(p => (
+            <div key={p.k} className="rd-person">
+              <dt className="rd-label"><span className="rd-label-dot" style={{ background: cv(p.t, 400) }} aria-hidden="true" />{p.k}</dt>
+              <dd className="rd-person-name">{p.v}</dd>
+              <dd className="rd-person-role">{p.s}</dd>
+            </div>
+          ))}
+        </dl>
 
-        {rule.status === 'Review' && (
-          <div className="row" style={{ gap: '8px', marginTop: 'var(--vw-space-md)' }}>
-            <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => transition('Approved', 'Approved')}>Approve</button>
-            <button className="nst-btn nst-btn--sm nst-btn--danger-subtle" onClick={() => transition('Draft', 'Rejected', 'Sent back to the owner')}>Reject</button>
-            <button className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => transition('Draft', 'Changes requested', 'Reviewer asked for changes')}>Request changes</button>
+        <div className="rd-status" style={{ ['--hue-bg' as string]: cv(TONE_HUE[STATUS_TONE[rule.status]], 50), ['--hue-fg' as string]: cv(TONE_HUE[STATUS_TONE[rule.status]], 500) }}>
+          <span className="rd-status-dot" aria-hidden="true" />
+          <div className="rd-status-text">
+            <span><strong>Status: {rule.status}</strong></span>
+            <span>Responsible: {responsibleName} ({next.role})</span>
+            <span>Next action: {next.action}</span>
           </div>
-        )}
-        {rule.status === 'Approved' && (
-          <div className="row" style={{ marginTop: 'var(--vw-space-md)' }}>
-            <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => transition('Active', 'Activated')}>Activate rule</button>
-          </div>
-        )}
+          {rule.status === 'Review' && (
+            <div className="rd-status-actions">
+              <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => transition('Approved', 'Approved')}>Approve</button>
+              <button className="nst-btn nst-btn--sm nst-btn--danger-subtle" onClick={() => transition('Draft', 'Rejected', 'Sent back to the owner')}>Reject</button>
+              <button className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => transition('Draft', 'Changes requested', 'Reviewer asked for changes')}>Request changes</button>
+            </div>
+          )}
+          {rule.status === 'Approved' && (
+            <div className="rd-status-actions">
+              <button className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => transition('Active', 'Activated')}>Activate rule</button>
+            </div>
+          )}
+        </div>
       </Card>
 
-      <StatStrip cells={[
-        { k: 'Owner', v: rule.owner, s: 'creates and maintains the rule', t: 'sky' },
-        { k: 'Reviewer', v: rule.reviewer, s: 'reviews the definition and logic', t: 'cyan' },
-        { k: 'Approver', v: rule.approver, s: 'approves before activation', t: 'emerald' },
-        { k: 'Executor', v: rule.executor, s: 'monitors execution', t: 'purple' }
-      ]} />
-
-      <Card>
+      <Card className="rd-tabs">
         <TabBar<TabKey>
           tabs={[
             { k: 'overview', n: 'Overview', count: 0 },
@@ -173,31 +169,28 @@ export default function RuleDetails() {
         <div style={{ marginTop: 'var(--vw-space-lg)' }}>
           {tab === 'overview' && (
             <div className="stack-s">
-              <div className="row vw-items-center" style={{ gap: 'var(--vw-space-xl)', flexWrap: 'wrap' }}>
-                <div>
-                  <div className="eyebrow" style={{ color: cv('sky', 600) }}>Source</div>
-                  <div className="vw-value" style={{ fontSize: '1rem', marginTop: '4px' }}>{rule.source}</div>
+              <div className="rd-flow">
+                <div className="rd-flow-end">
+                  <div className="rd-label">Source</div>
+                  <div className="rd-value">{rule.source}</div>
                 </div>
-                <span style={{ color: cv('gray', 300), fontSize: '1.25rem' }} aria-hidden="true">→</span>
-                <div>
-                  <div className="eyebrow" style={{ color: cv('violet', 600) }}>Target</div>
-                  <div className="vw-value" style={{ fontSize: '1rem', marginTop: '4px' }}>{rule.target}</div>
+                <span className="rd-flow-arrow" aria-hidden="true">→</span>
+                <div className="rd-flow-end">
+                  <div className="rd-label">Target</div>
+                  <div className="rd-value">{rule.target}</div>
                 </div>
               </div>
-              <div className="vw-grid vw-gap-lg" style={{
-                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginTop: 'var(--vw-space-lg)',
-                paddingTop: 'var(--vw-space-md)', borderTop: '1px solid var(--vw-color-slate-100)'
-              }}>
+              <dl className="rd-kv">
                 {[
                   ['Rule type', rule.ruleType], ['Origin', rule.origin],
                   ['Created', `${rule.createdBy} · ${rule.createdDate}`], ['Last updated', rule.lastUpdated]
                 ].map(([k, v]) => (
-                  <div key={k}>
-                    <div className="eyebrow">{k}</div>
-                    <div className="vw-value" style={{ fontSize: '0.875rem', marginTop: '4px' }}>{v}</div>
+                  <div key={k} className="rd-kv-item">
+                    <dt className="rd-label">{k}</dt>
+                    <dd className="rd-value">{v}</dd>
                   </div>
                 ))}
-              </div>
+              </dl>
               {rule.status === 'Review' && (
                 <div style={{ marginTop: 'var(--vw-space-md)', padding: 'var(--vw-space-md)', background: 'var(--vw-color-slate-50)', borderRadius: 'var(--vw-radius-md)' }}>
                   <div className="vw-card-title-sm">Review packet</div>
