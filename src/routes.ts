@@ -31,12 +31,13 @@ export interface Screen {
   module: 'Discovery and reconciliation' | 'Inventory';
   crumb: string;
   rail?: string;               /* which sidebar item lights up, when not `key` */
+  root?: boolean;              /* a module dashboard: never shows a breadcrumb, even when drilled into */
   component?: ComponentType;
   legacy?: boolean;
 }
 
 export const SCREENS: Screen[] = [
-  { key: 'insights',  path: '/discovery/insights',  module: 'Discovery and reconciliation', crumb: 'Insights',       component: Insights },
+  { key: 'insights',  path: '/discovery/insights',  module: 'Discovery and reconciliation', root: true, crumb: 'Insights',       component: Insights },
   { key: 'insightsdevices', path: '/discovery/insights/devices', module: 'Discovery and reconciliation',
     crumb: 'Insights · Devices', rail: 'insights', component: RegionDevices },
   { key: 'regiondevices', path: '/discovery/insights/region/:region', module: 'Discovery and reconciliation',
@@ -55,7 +56,7 @@ export const SCREENS: Screen[] = [
   { key: 'jobs',      path: '/discovery/jobs',      module: 'Discovery and reconciliation', crumb: 'Scan jobs',      component: ScanJobs },
   { key: 'targets',   path: '/discovery/targets',   module: 'Discovery and reconciliation', crumb: 'Scan targets',   legacy: true },
   { key: 'target',    path: '/discovery/targets/:host', module: 'Discovery and reconciliation', crumb: 'Scan targets · Target', rail: 'targets', legacy: true },
-  { key: 'reconcile', path: '/discovery/reconcile', module: 'Discovery and reconciliation', crumb: 'Reconciliation', component: Reconcile },
+  { key: 'reconcile', path: '/discovery/reconcile', module: 'Discovery and reconciliation', root: true, crumb: 'Reconciliation', component: Reconcile },
   { key: 'reconcilejobs', path: '/discovery/reconcile/jobs', module: 'Discovery and reconciliation',
     crumb: 'Reconciliation · Jobs', component: ReconciliationJobs },
   { key: 'reconcileresults', path: '/discovery/reconcile/results', module: 'Discovery and reconciliation',
@@ -74,8 +75,8 @@ export const SCREENS: Screen[] = [
   { key: 'discoveryreport', path: '/discovery/reports/:id', module: 'Discovery and reconciliation',
     crumb: 'Reports · Report', rail: 'discoveryreports', component: DiscoveryReportView },
 
-  { key: 'inventoryinsights', path: '/inventory/insights', module: 'Inventory', crumb: 'Insights', component: InventoryInsights },
-  { key: 'home',      path: '/inventory',           module: 'Inventory', crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
+  { key: 'inventoryinsights', path: '/inventory/insights', module: 'Inventory', root: true, crumb: 'Insights', component: InventoryInsights },
+  { key: 'home',      path: '/inventory',           module: 'Inventory', root: true, crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
@@ -145,4 +146,16 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
   if (drill?.from) sp.set('from', drill.from);
   const qs = sp.toString();
   return qs ? `${path}?${qs}` : path;
+}
+
+/* A "landing" is a screen the sidebar lists in its own right: no :params, and
+   either no `rail` (it is its own rail item) or a rail that points at a screen
+   with the same crumb (an alias such as `home`). Detail, edit and drill-down
+   screens carry a `rail` pointing at their parent, so they never qualify.
+   The breadcrumb is hidden on a landing until the reader drills in. */
+export function isLanding(s: Screen): boolean {
+  if (s.path.includes(':')) return false;
+  if (!s.rail) return true;
+  const parent = screenByKey(s.rail);
+  return !!parent && parent.crumb === s.crumb;
 }

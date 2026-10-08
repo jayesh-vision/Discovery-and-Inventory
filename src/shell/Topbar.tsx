@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SCREENS } from '../routes';
+import { SCREENS, isLanding } from '../routes';
 import { getCityById, findCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
@@ -40,30 +40,16 @@ export default function Topbar() {
   const drill = sp.get('drill');
   const from = sp.get('from');
 
-  /* Insights and Reconciliation are the sidebar's own landing pages — nowhere
-  shallower to drill back to from here, so there's no real trail to show. */
-  if (s.key === 'insights' || s.key === 'reconcile' || s.key === 'home' || s.key === 'inventoryinsights') {
-    return null;
-  }
-  /* Every other sidebar-rail landing page has the same "second page title"
-     problem as the four above, just in one of two shapes: a single-segment
-     crumb with no " · " parent at all (Location, Services, Inactive
-     inventory, Scan jobs, Scan targets, Reports), or a " · " parent ("Resources", "Connectivity") that isn't
-     itself a real, clickable screen (Virtual/Physical/Passive Resources,
-     Links) — routes.ts has no screen whose crumb is exactly "Resources" or
-     "Connectivity" for targetFor() to resolve. Either way, undrilled, the
-     breadcrumb below would only ever render dead or duplicate text, so
-     these stay suppressed the same way Location does — up to the point a
-     reader actually drills into something (a KPI card, a donut segment),
-     at which point the drill branch further down gives the trail a real
-     destination to name. Reports' own detail page (discoveryreport/
-     inventoryreport) is unaffected — its crumb is "Reports · Report", a
-     real two-segment chain, so it never hits this branch. */
-  if ((s.key === 'location' || s.key === 'virtual' || s.key === 'physical' || s.key === 'passive'
-    || s.key === 'links' || s.key === 'services' || s.key === 'inactive'
-    || s.key === 'jobs' || s.key === 'targets' || s.key === 'reports' || s.key === 'discoveryreports') && !drill && !from) {
-    return null;
-  }
+  /* Breadcrumbs only describe a trail, so a landing page (any screen the
+     sidebar lists in its own right — see isLanding in routes.ts) has none:
+     there is nowhere shallower to go back to, and a crumb would only repeat
+     the page title. Module dashboards (`root`) stay clean even when drilled
+     into; every other landing shows a trail once the reader actually drills
+     (?drill=) or arrives from another section (?from=). Detail, edit and
+     sub-route screens are not landings, so they always render the full chain.
+     Decided from the matched route and these two params only, so a filter or
+     tab change in the query string on a landing never reveals a crumb. */
+  if (s.root || (isLanding(s) && !drill && !from)) return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();
