@@ -25,6 +25,10 @@ export interface PanelItem {
   name: string;
   count: string;
   w: string;
+  /* the granular records a macro category is made of, for the tooltip */
+  members?: string;
+  /* rows sharing a group render under one small heading, and are scaled together */
+  group?: string;
 }
 
 export interface PanelFact {

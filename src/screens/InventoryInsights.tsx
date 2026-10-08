@@ -1,7 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/inventory-insights.css';
+import SparesRiskCard from '../components/insights/SparesRiskCard';
+import StaleRecordsCard from '../components/insights/StaleRecordsCard';
+import { buildInsightsPdf } from '../data/inventoryInsightsPdf';
 import {
   GOOD,
   WARN,
@@ -55,7 +58,7 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function buildInsightsCsv(range: DayRangeOption): string {
+function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
   const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const rangeName = DAY_RANGE_LABELS[range];
   const rows: (string | number)[][] = [];
@@ -88,8 +91,8 @@ function buildInsightsCsv(range: DayRangeOption): string {
     `${PARENTS_DATA_DYNAMIC[range][1].health} Health (${PARENTS_DATA_DYNAMIC[range][1].delta})`,
     `Virtual (${PARENTS_DATA_DYNAMIC[range][1].children[0].count}) + Connectivity (${PARENTS_DATA_DYNAMIC[range][1].children[1].count})`
   ]);
-  rows.push(['Overall Inventory Health', TOTAL_RECORDS_DATA[range].health, 'Target: >= 95%', 'Good']);
-  rows.push(['Confirmed Against Source', TOTAL_RECORDS_DATA[range].confirmed, 'Target: >= 90%', 'Compliant']);
+  rows.push(['Overall Inventory Health', TOTAL_RECORDS_DATA[range].health, 'Target: >= 95%', parseFloat(TOTAL_RECORDS_DATA[range].health) >= 95 ? 'On target' : 'Below target']);
+  rows.push(['Confirmed Against Source', TOTAL_RECORDS_DATA[range].confirmed, 'Target: >= 90%', parseFloat(TOTAL_RECORDS_DATA[range].confirmed) >= 90 ? 'Compliant' : 'Below target']);
   rows.push(['Stranded / Unconfirmed Records', `${TOTAL_RECORDS_DATA[range].strandedVal} (${TOTAL_RECORDS_DATA[range].stranded})`, 'Under remediation', 'Warning']);
   rows.push(['Open Inventory Issues', ISSUES_DYNAMIC[range].count, `${ISSUES_DYNAMIC[range].crit} Crit, ${ISSUES_DYNAMIC[range].high} High, ${ISSUES_DYNAMIC[range].med} Med, ${ISSUES_DYNAMIC[range].low} Low`, 'Needs Attention']);
 
@@ -161,14 +164,14 @@ function buildInsightsCsv(range: DayRangeOption): string {
 
   // 11. Data Quality by Bucket
   addSection('DATA QUALITY BY BUCKET');
-  rows.push(['Bucket', 'Completeness', 'Uniqueness', 'Validity', 'Stale Rate', 'Orphan Rate']);
+  rows.push(['Bucket', 'Complete', 'Integrity', 'Fresh', 'Duplicates', 'Orphans']);
   QUALITY_ROWS_DYNAMIC[range].forEach(q => {
     rows.push([q.name, q.v1, q.v2, q.v3, q.v4, q.v5]);
   });
 
   // 12. EOL / EOS Hardware
   addSection('EOL / EOS HARDWARE & SOFTWARE EXPOSURE');
-  rows.push(['Bucket', 'Active In-Service', 'Vendor Share %']);
+  rows.push(['Bucket', 'Assets exposed', `Vendor split % (${EOL_VENDORS.map(v => v.name).join(' / ')})`]);
   EOL_DYNAMIC[range].rows.forEach(e => {
     rows.push([e[0], e[1], e[2].join(' / ')]);
   });
@@ -189,6 +192,11 @@ function buildInsightsCsv(range: DayRangeOption): string {
     rows.push([sp[0], sp[1], sp[2], `${ratio}%`, status]);
   });
 
+  return rows;
+}
+
+function buildInsightsCsv(range: DayRangeOption): string {
+  const rows = buildInsightsRows(range);
   return '\uFEFF' + rows.map(r => r.map(cell => {
     const str = String(cell ?? '');
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -393,6 +401,20 @@ export default function InventoryInsights() {
     say(`Export complete: ${filename} downloaded successfully (${DAY_RANGE_LABELS[dayRange]})`);
   };
 
+  const handleExportPdf = async () => {
+    setExportOpen(false);
+    say('Preparing PDF…');
+    try {
+      const blob = await buildInsightsPdf(buildInsightsRows(dayRange), 'Inventory Insights & Executive Summary');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `inventory_insights_${dayRange}_${dateStr}.pdf`;
+      downloadBlob(blob, filename);
+      say(`Export complete: ${filename} downloaded successfully (${DAY_RANGE_LABELS[dayRange]})`);
+    } catch {
+      say('PDF export failed — please try again or use CSV.');
+    }
+  };
+
   const handlePrint = () => {
     setExportOpen(false);
     say('Opening print preview for Inventory Insights…');
@@ -483,20 +505,6 @@ export default function InventoryInsights() {
       count: d[1],
       w: `${Math.round((d[1] / maxVal) * 100)}%`
     }));
-  }, [dayRange]);
-
-  // ── Spares Risk Table ──
-  const sparesList = useMemo(() => {
-    return SPARES_DYNAMIC[dayRange].rows.map(s => {
-      const r = (s[2] / s[1]) * 100;
-      return {
-        model: s[0],
-        deployed: s[1].toLocaleString('en-IN'),
-        spares: `${s[2]}${s[2] === 1 ? ' spare' : ' spares'}`,
-        ratio: `${r.toFixed(1)}%`,
-        color: r < 1 ? CRIT : WARN
-      };
-    });
   }, [dayRange]);
 
   // ── Sites Needing Attention ──
@@ -609,6 +617,19 @@ export default function InventoryInsights() {
                     <div className="ii-export-col">
                       <span className="ii-export-name">JSON Data (.json)</span>
                       <span className="ii-export-desc">Structured machine-readable inventory payload</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ii-export-item"
+                    onClick={handleExportPdf}
+                    role="menuitem"
+                  >
+                    <span className="ii-export-ext">PDF</span>
+                    <div className="ii-export-col">
+                      <span className="ii-export-name">PDF Report (.pdf)</span>
+                      <span className="ii-export-desc">Paginated summary of every insights section</span>
                     </div>
                   </button>
 
@@ -1181,30 +1202,31 @@ export default function InventoryInsights() {
                   <p className="ii-card-sub">{p.desc}</p>
                 </div>
                 <div className="ii-bar-list">
-                  {p.items.map(t => {
+                  {p.items.map((t, idx) => {
                     const itemKey = `${p.title}-${t.name}`;
+                    const newGroup = t.group && t.group !== p.items[idx - 1]?.group;
                     const isHov = hoveredPanelItemKey === itemKey;
                     const meta = LOGICAL_CONNECTIVITY_META[t.name];
                     return (
+                      <Fragment key={t.name}>
+                      {newGroup && <div className="ii-bar-group-label">{t.group}</div>}
                       <div
-                        key={t.name}
                         className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
                         onClick={() => {
                           if (p.route === '/inventory/physical') {
+                            /* only classes the Physical page actually has can be drilled to;
+                               Microwave and PON have no tab of their own, so they open
+                               the page as the reader last left it rather than a wrong tab */
                             const clsMap: Record<string, string> = {
-                              'Cell-site routers (CSR)': 'router',
-                              'Radio units (RRU / AAU)': 'rru',
-                              'Carrier Ethernet & access switches': 'switch',
-                              'Baseband units (BBU / DU)': 'bbu',
-                              'Microwave radios (IDU / ODU)': 'microwave',
-                              'Metro agg. & PE routers': 'router',
-                              'DWDM / ROADM optical nodes': 'dwdm',
-                              'Data centre & spine-leaf switches': 'switch',
-                              'GPON / XGS-PON OLTs': 'gpon',
-                              'Core / backbone routers (P)': 'router'
+                              'Routers': 'router',
+                              'Switches': 'switch',
+                              'Optical': 'dwdm',
+                              'RAN': 'gnodeb'
                             };
-                            const cls = clsMap[t.name] || 'router';
-                            navigate(`/inventory/physical?cls=${cls}&from=Inventory%20insights`);
+                            const cls = Object.entries(clsMap).find(([k]) => t.name.startsWith(k))?.[1];
+                            navigate(cls
+                              ? `/inventory/physical?cls=${cls}&from=Inventory%20insights`
+                              : panelRoute);
                           } else {
                             navigate(panelRoute);
                           }
@@ -1226,7 +1248,7 @@ export default function InventoryInsights() {
                             { label: 'Installed units', value: `${t.count} items` },
                             { label: 'Category proportion', value: t.w }
                           ],
-                          note: meta ? meta.note : p.desc
+                          note: meta ? meta.note : t.members ? `Includes ${t.members}` : p.desc
                         }, e);
                       }}
                       onMouseMove={moveTip}
@@ -1236,13 +1258,18 @@ export default function InventoryInsights() {
                       }}
                     >
                       <div className="ii-panel-bar-label">
-                        <span title={t.name}>{t.name}</span>
+                        <span title={t.name}>
+                          {t.name.includes(' (')
+                            ? <>{t.name.slice(0, t.name.indexOf(' ('))}<span className="ii-bar-qual">{t.name.slice(t.name.indexOf(' ('))}</span></>
+                            : t.name}
+                        </span>
                         <span className="ii-mono">{t.count}</span>
                       </div>
                       <div className="ii-panel-bar-track">
                         <div className="ii-panel-bar-fill" style={{ width: t.w, background: p.color }} />
                       </div>
                     </div>
+                      </Fragment>
                   );
                 })}
               </div>
@@ -1262,7 +1289,7 @@ export default function InventoryInsights() {
         {/* ── Needs action now ── */}
         <h2 className="ii-section-eyebrow">Needs action now</h2>
 
-        <section aria-label="Decommissioning, end-of-life and software drift" className="ii-grid ii-grid--action">
+<section aria-label="Decommissioning, end-of-life and software drift" className="ii-grid ii-grid--action">
           {/* Decommission pipeline */}
           <div className="ii-card">
             <div className="ii-card-header">
@@ -1477,127 +1504,29 @@ export default function InventoryInsights() {
 
         {/* Row 2 of Tier 2: Spares Risk & Not Reconfirmed */}
         <section aria-label="Spares and staleness" className="ii-grid ii-grid--health">
-          {/* Spares coverage risk */}
-          <div className="ii-card">
-            <div className="ii-card-header">
-              <div className="ii-card-head"><div className="ii-card-title">Spares coverage risk — {SPARES_DYNAMIC[dayRange].titleCount} models below safe threshold</div></div>
-              <p className="ii-card-sub">Heavily deployed models holding under 2% spares against deployed count.</p>
-            </div>
-            <div className="ii-table-wrap">
-              <table className="ii-table ii-table--spares">
-                <thead>
-                  <tr>
-                    <th scope="col">Model</th>
-                    <th scope="col" className="is-num">Deployed</th>
-                    <th scope="col" className="is-num">Spares</th>
-                    <th scope="col" className="is-num">Ratio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sparesList.map(s => (
-                    <tr
-                      key={s.model}
-                      className="ii-spares-row"
-                      onMouseEnter={(e) => showTip({
-                        title: s.model,
-                        dotColor: s.color,
-                        badge: s.ratio,
-                        rows: [
-                          { label: 'Deployed in network', value: s.deployed },
-                          { label: 'Spares in stock', value: s.spares },
-                          { label: 'Coverage ratio', value: s.ratio },
-                          { label: 'Safe threshold', value: '≥ 2.0%' }
-                        ],
-                        note: s.color === CRIT
-                          ? 'Critical spare parts shortage (< 1.0% buffer). Immediate order required.'
-                          : 'Below recommended 2% buffer threshold. Review warehouse lead time.'
-                      }, e)}
-                      onMouseMove={moveTip}
-                      onMouseLeave={hideTip}
-                    >
-                      <td style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.model}</td>
-                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-muted)' }}>{s.deployed}</td>
-                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.spares}</td>
-                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: s.color }}>{s.ratio}</td>
-                    </tr>
-                  ))}
-                  {sparesList.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="is-empty">
-                        No at-risk models for this vendor.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="ii-note-box">
-              {SPARES_DYNAMIC[dayRange].note}
-            </div>
-          </div>
+          <SparesRiskCard
+            title={`Spares coverage risk — ${SPARES_DYNAMIC[dayRange].titleCount} models below safe threshold`}
+            subtitle="Heavily deployed models holding under 2% spares against deployed count."
+            rows={SPARES_DYNAMIC[dayRange].rows.map(r => ({ model: r[0], deployed: r[1], spares: r[2] }))}
+            note={SPARES_DYNAMIC[dayRange].note}
+            colors={{ critical: CRIT, low: WARN }}
+            tip={{ showTip, moveTip, hideTip }}
+          />
 
-          {/* Not reconfirmed */}
-          <div className="ii-card">
-            <div className="ii-card-header">
-              <div className="ii-card-head"><div className="ii-card-title">{NOT_RECONFIRMED_DYNAMIC[dayRange].title}</div></div>
-              <p className="ii-card-sub">
-                Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive.
-              </p>
-            </div>
-            <div className="ii-kpi-value-row">
-              <span className="ii-mono ii-big-value">{NOT_RECONFIRMED_DYNAMIC[dayRange].count}</span>
-              <span className="ii-kpi-trend"><strong>{NOT_RECONFIRMED_DYNAMIC[dayRange].delta}</strong></span>
-            </div>
-            <div className="ii-stat-list is-ruled">
-              {NOT_RECONFIRMED_DYNAMIC[dayRange].items.map(s => (
-                <div key={s.name} className="ii-stat-row">
-                  <span>{s.name}</span>
-                  <span className="ii-mono">{s.count}</span>
-                </div>
-              ))}
-            </div>
-            <div className="ii-stat-list has-divider">
-              <div className="ii-stat-row">
-                <span>Active / Virtual / Connectivity not reconfirmed 30+ days</span>
-                <span className="ii-mono">{NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}</span>
-              </div>
-            </div>
-            <div className="ii-trend-row">
-              <div className="ii-trend-label">
-                <div style={{ fontWeight: 500 }}>Passive field-verified share</div>
-                <div>last 6 months</div>
-              </div>
-              <div className="ii-trend-chart">
-                {VERIFY_TREND.map(v => (
-                  <div
-                    key={v.label}
-                    className="ii-trend-bar-col"
-                    onMouseEnter={(e) => showTip({
-                      title: `${v.label} Survey Audit`,
-                      dotColor: v.color,
-                      badge: `${parseInt(v.h, 10)}%`,
-                      rows: [
-                        { label: 'Field-verified share', value: `${parseInt(v.h, 10)}%` },
-                        { label: 'Unverified backlog', value: `${100 - parseInt(v.h, 10)}%` }
-                      ],
-                      note: 'Audited by physical OSP survey teams and reconciled into GIS.'
-                    }, e)}
-                    onMouseMove={moveTip}
-                    onMouseLeave={hideTip}
-                  >
-                    <span className="ii-mono" style={{ fontSize: 11, color: 'var(--ii-text-muted)' }}>{v.label}</span>
-                    <div className="ii-trend-bar-fill" style={{ height: v.h, background: v.color }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="ii-foot">
-              Verification climbed from 58% to 72% in 6 months; at that rate the survey backlog clears in roughly 12 more months.
-            </p>
-            <div className="ii-note-box">
-              Most stale Active records sit under two EMS instances that missed the last three sync windows — a collector issue, not missing hardware.
-            </div>
-          </div>
+          <StaleRecordsCard
+            title={NOT_RECONFIRMED_DYNAMIC[dayRange].title}
+            subtitle="Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive."
+            count={NOT_RECONFIRMED_DYNAMIC[dayRange].count}
+            delta={NOT_RECONFIRMED_DYNAMIC[dayRange].delta}
+            items={NOT_RECONFIRMED_DYNAMIC[dayRange].items}
+            stale30Label="Active / Virtual / Connectivity not reconfirmed 30+ days"
+            stale30={NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}
+            trend={VERIFY_TREND}
+            trendCaption="Verification climbed from 58% to 72% in 6 months; at that rate the survey backlog clears in roughly 12 more months."
+            note="Most stale Active records sit under two EMS instances that missed the last three sync windows — a collector issue, not missing hardware."
+            bucketColors={{ Active: ACT, Passive: PAS, Virtual: VIR, Logical: LOG }}
+            tip={{ showTip, moveTip, hideTip }}
+          />
         </section>
 
         {/* ── Tier 4: Trust in the data ── */}

@@ -25,6 +25,7 @@ import {
   ParentCategory,
   ParentLeaf,
   PanelCategory,
+  PanelItem,
   QualityRow,
   CrossLink,
   SiteRow,
@@ -1827,3 +1828,180 @@ export const ACTIVITY_BY_RANGE: Record<DayRangeOption, [string, string, string, 
     ['ADD', 'Cloud-native 5G Core inventory mapping integrated with Kubernetes', 'VNF/CNF pipeline', '11mo ago']
   ]
 };
+
+/* ── Reconciliation pass ────────────────────────────────────────────────────
+   Several figures above are hand-typed twice — once as a raw count and once as
+   a label, headline or sentence — and had drifted apart (a total that was 200
+   off its buckets, "1.45M" for 1,459,800, a summary sentence quoting 91.8% when
+   the donut shows 92.2%, lifecycle bars named differently from their tiles so
+   hovering one never lit the other, a headline that disagreed with the severity
+   bars under it). The raw counts are the source of truth: every derived label
+   is rebuilt from them here, once, so the two can no longer disagree.        */
+const countOf = (s: string | number): number => {
+  const m = String(s).replace(/,/g, '').trim().match(/^([\d.]+)\s*([kKmM]?)/);
+  if (!m) return 0;
+  const u = m[2].toLowerCase();
+  return parseFloat(m[1]) * (u === 'm' ? 1e6 : u === 'k' ? 1e3 : 1);
+};
+const fmtCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLocaleString('en-US'));
+
+(Object.keys(DAY_RANGE_LABELS) as DayRangeOption[]).forEach(r => {
+  /* total = sum of the four buckets; every label follows from the raw counts */
+  const buckets = BUCKET_SHARE_DATA[r];
+  const raw: Record<string, number> = {};
+  buckets.rows.forEach(row => { raw[row[0]] = row[2]; row[1] = fmtCount(row[2]); });
+  const total = buckets.rows.reduce((a, row) => a + row[2], 0);
+  const pct = (n: number) => (n / total) * 100;
+
+  const T = TOTAL_RECORDS_DATA[r];
+  T.totalRaw = total;
+  T.totalDisplay = fmtCount(total);
+  buckets.centerLabel = T.totalDisplay;
+  /* confirmed + stranded = 100%, so the stranded count is that share of the total */
+  T.strandedVal = `${Math.round((total * parseFloat(T.stranded)) / 100 / 1000)}k`;
+
+  buckets.summaryText = buckets.summaryText.replace(
+    /(Physical inventory is )[\d.]+(% of records \(Active )[\d.]+(%, Passive )[\d.]+(%\)[\s\S]*?Connectivity holds )[\d.]+(% and Virtual )[\d.]+/,
+    (_m, a, b, c, d, e) =>
+      `${a}${pct(raw.Active + raw.Passive).toFixed(1)}${b}${pct(raw.Active).toFixed(1)}${c}${pct(raw.Passive).toFixed(1)}${d}${pct(raw.Connectivity).toFixed(1)}${e}${pct(raw.Virtual).toFixed(1)}`
+  );
+
+  PARENTS_DATA_DYNAMIC[r].forEach(p => {
+    p.children.forEach(c => { if (raw[c.name] != null) c.count = fmtCount(raw[c.name]); });
+    p.count = fmtCount(p.children.reduce((a, c) => a + (raw[c.name] ?? 0), 0));
+  });
+
+  /* lifecycle: one name per state (tile and bar share it, so hover links them)
+     and each share is that state's part of the lifecycle total */
+  const life = LIFECYCLE_DYNAMIC[r];
+  const lifeTotal = life.states.reduce((a, s) => a + countOf(s.count), 0);
+  life.bars.forEach((b, i) => {
+    const s = life.states[i];
+    if (!s) return;
+    const share = (countOf(s.count) / lifeTotal) * 100;
+    b.name = s.name;
+    b.pct = `${Math.round(share)}%`;
+    b.w = `${share.toFixed(1)}%`;
+  });
+
+  /* headline counts equal the sum of what sits under them */
+  const iss = ISSUES_DYNAMIC[r];
+  iss.count = (iss.crit + iss.high + iss.med + iss.low).toLocaleString('en-US');
+  const svc = SERVICES_DYNAMIC[r];
+  svc.active = svc.rows.reduce((a, row) => a + countOf(row.count), 0).toLocaleString('en-US');
+});
+
+/* ── Macro grouping for the Active and Virtual cards ────────────────────────
+   Both cards used to list granular modules (RRU/AAU, BBU/DU, UPF, AMF …). They
+   now show device / NFV-layer categories. Each category is the sum of named
+   source rows, so the card still adds up to its bucket (Active = managed
+   elements, Virtual = VNF/CNF instances) in every time window, and the original
+   rows stay visible in each category's tooltip. Nothing here is a new number
+   except the two hosting-infrastructure rows noted below.                     */
+const ACTIVE_GROUPS: { name: string; from: string[] }[] = [
+  { name: 'Routers (CSR / PE / Metro agg. / Core)', from: ['Cell-site routers (CSR)', 'Metro agg. & PE routers', 'Core / backbone routers (P)'] },
+  { name: 'Switches (DC / Spine-leaf / Carrier Ethernet / Access)', from: ['Carrier Ethernet & access switches', 'Data centre & spine-leaf switches'] },
+  { name: 'Optical & DWDM (ROADM / Transponder nodes)', from: ['DWDM / ROADM optical nodes'] },
+  { name: 'RAN / Base stations (RRU / AAU / BBU / DU)', from: ['Radio units (RRU / AAU)', 'Baseband units (BBU / DU)'] },
+  { name: 'Microwave nodes (IDU / ODU)', from: ['Microwave radios (IDU / ODU)'] },
+  { name: 'Access / PON equipment (OLT shelves)', from: ['GPON / XGS-PON OLTs'] }
+];
+
+const VIRTUAL_GROUPS: { name: string; from: string[] }[] = [
+  { name: 'Virtual routers & gateways (vPE / vBNG / vSecGW / vFirewall)', from: ['vRouter & vBNG (Transport / IP)', 'vFirewall & SecGW (Security Domain)'] },
+  { name: 'Cloud core network functions (UPF / AMF / SMF / IMS / UDM)', from: ['5G UPF & Packet Core (UPF/SGW-U)', 'vIMS Core (CSCF / TAS / vSBC)', '5G/4G Control (AMF / MME / SMF)', 'UDM, UDR & Policy (PCF / PCRF)'] },
+  { name: 'Virtualised RAN (vCU / vDU)', from: ['vRAN Cloud Units (vCU / vDU)'] },
+  { name: 'SD-WAN & edge appliances (vCPE / Virtual Edge)', from: ['vCPE & SD-WAN Virtual Edge'] }
+];
+
+const INFRA_GROUP = 'Hosting infrastructure';
+
+(Object.keys(DAY_RANGE_LABELS) as DayRangeOption[]).forEach(r => {
+  const regroup = (panel: PanelCategory, groups: { name: string; from: string[] }[]) => {
+    const byName = new Map(panel.items.map(i => [i.name, i]));
+    const used = new Set<string>();
+    const rows = groups.map(g => {
+      const src = g.from.map(n => byName.get(n)).filter((x): x is PanelItem => !!x);
+      src.forEach(x => used.add(x.name));
+      return {
+        name: g.name,
+        total: src.reduce((a, x) => a + countOf(x.count), 0),
+        members: src.map(x => `${x.name} ${x.count}`).join(' · ')
+      };
+    });
+    /* a source row nobody claimed would silently drop out of the card's total */
+    const orphan = panel.items.filter(i => !used.has(i.name));
+    if (orphan.length) throw new Error(`Unmapped ${panel.title} rows (${r}): ${orphan.map(o => o.name).join(', ')}`);
+    rows.sort((a, b) => b.total - a.total);
+    const max = rows[0]?.total || 1;
+    panel.items = rows.map(x => ({
+      name: x.name,
+      count: x.total.toLocaleString('en-US'),
+      w: `${Math.round((x.total / max) * 100)}%`,
+      members: x.members
+    }));
+  };
+
+  const panels = PANELS_DATA_DYNAMIC[r];
+  const active = panels.find(p => p.title === 'Active (Physical)');
+  const virtual = panels.find(p => p.title === 'Virtual (Logical)');
+  if (active) regroup(active, ACTIVE_GROUPS);
+  if (virtual) {
+    regroup(virtual, VIRTUAL_GROUPS);
+    /* Hosting infrastructure is not part of the VNF/CNF count (the Virtual bucket),
+       so it sits under its own heading and its own scale. Pods and clusters come
+       from this card's existing "Clusters · pods tracked" fact. Hypervisor / NFVI
+       hosts have no source in the data yet: MOCK = 14 hosts per tracked cluster. */
+    const tracked = virtual.facts.find(f => f.name.startsWith('Clusters'))?.value.split('·').map(t => countOf(t));
+    if (tracked && tracked.length === 2) {
+      const [clusters, pods] = tracked;
+      const hosts = Math.round(clusters * 14);
+      const top = Math.max(hosts, pods);
+      virtual.items.push(
+        { name: 'Hypervisors & NFVI compute hosts (ESXi / KVM / OpenStack)', count: hosts.toLocaleString('en-US'), w: `${Math.round((hosts / top) * 100)}%`, group: INFRA_GROUP },
+        { name: 'Container pods on K8s worker nodes (hosting CNFs)', count: pods.toLocaleString('en-US'), w: `${Math.round((pods / top) * 100)}%`, group: INFRA_GROUP }
+      );
+    }
+  }
+});
+
+/* ── Per-bucket health lines for the Active and Virtual cards ───────────────
+   Open defects come from the KPI tiles' bucket figures and duplicate / orphan
+   rates from the Quality table, so a card can never disagree with the tile or
+   table that reports the same bucket. "Mapped to hosting cluster / server" is
+   the same measure as the Virtual tile's "Mapped to host"; it is taken from
+   the tile (the two had drifted apart in the 30d, 90d and 12m windows).      */
+(Object.keys(DAY_RANGE_LABELS) as DayRangeOption[]).forEach(r => {
+  const leafOf = (name: string) =>
+    PARENTS_DATA_DYNAMIC[r].flatMap(p => p.children).find(c => c.name === name);
+  const quality = (name: string) => QUALITY_ROWS_DYNAMIC[r].find(q => q.name === name);
+  const addHealth = (title: string, bucket: string) => {
+    const panel = PANELS_DATA_DYNAMIC[r].find(p => p.title === title);
+    const leaf = leafOf(bucket);
+    const q = quality(bucket);
+    if (!panel || !leaf || !q) return;
+    /* every figure below is read from the section that already reports it */
+    const eol = EOL_DYNAMIC[r].rows.find(x => x[0] === bucket);
+    const decom = DECOM_BUCKET_DYNAMIC[r].find(x => x[0] === bucket);
+    const stale = NOT_RECONFIRMED_DYNAMIC[r].items
+      .filter(i => i.name.startsWith(`${bucket} ·`))
+      .reduce((a, i) => a + countOf(i.count), 0);
+    const staleWindow = NOT_RECONFIRMED_DYNAMIC[r].title.replace(/^Not reconfirmed in\s*/i, '');
+    panel.facts.push(
+      { name: 'Complete · integrity · fresh', value: `${q.v1} · ${q.v2} · ${q.v3}`, color: [q.c1, q.c2, q.c3].every(c => c === GOOD) ? GOOD : WARN },
+      { name: 'Duplicate · orphan records', value: `${q.v4} · ${q.v5}`, color: q.c4 === GOOD && q.c5 === GOOD ? GOOD : WARN },
+      { name: 'Open defects (critical · high)', value: `${leaf.critical} · ${leaf.high}`, color: leaf.critical ? CRIT : GOOD }
+    );
+    /* OS baseline drift is measured on active network elements only */
+    if (bucket === 'Active') panel.facts.push({ name: 'Off approved OS baseline', value: DRIFT_DYNAMIC[r].total, color: WARN });
+    if (eol) panel.facts.push({ name: 'EOL / EOS exposed', value: eol[1].toLocaleString('en-US'), color: WARN });
+    panel.facts.push({ name: `Not reconfirmed ${staleWindow}`, value: stale.toLocaleString('en-US'), color: WARN });
+    if (decom) panel.facts.push({ name: `Decommissioned · ${DECOM_DYNAMIC[r].periodLabel.toLowerCase()}`, value: decom[1].toLocaleString('en-US'), color: GOOD });
+    return panel;
+  };
+  addHealth('Active (Physical)', 'Active');
+  const virtualPanel = addHealth('Virtual (Logical)', 'Virtual');
+  const mapped = leafOf('Virtual')?.coverage;
+  const fact = virtualPanel?.facts.find(f => f.name === 'Mapped to hosting cluster / server');
+  if (fact && mapped) fact.value = mapped;
+});
