@@ -97,8 +97,10 @@ export default function PhysicalResources() {
   /* data center records: which ones, from where. Source and data center live in
      the URL like the rest of the screen state. */
   const srcParam = sp.get('src');
-  const src: SrcFilter = discoveryScoped ? 'net' : srcParam === 'net' || srcParam === 'dc' ? srcParam : 'all';
-  const dcId = sp.get('dc') ?? '';
+  /* eNodeB and gNodeB have no data center records, so a Source or data center left in the URL
+     by another tab must not apply to them (it would hide every row) */
+  const src: SrcFilter = discoveryScoped ? 'net' : !isDcTab(cls) ? 'all' : srcParam === 'net' || srcParam === 'dc' ? srcParam : 'all';
+  const dcId = isDcTab(cls) ? sp.get('dc') ?? '' : '';
   const facilities = useLoaded(loadFacilities);
   const devices = useLoaded(loadDevices);
   const gpu = useLoaded<DcGpuData | null>(cls === 'gpu' ? loadGpu : loadNone);

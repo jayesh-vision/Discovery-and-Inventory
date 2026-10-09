@@ -51,6 +51,11 @@ ok('drawer closes on Escape', !(await has('InfiniBand rails')));
 
 await go('/inventory/physical?cls=router&oem=JUNIPER');
 ok('discovery drill still scoped to the network estate', !(await has('Data centers ·')) && await has('Router'));
+await go('/inventory/physical?cls=server&src=dc&dc=KA-DC-008');
+await p.getByText('eNodeB', { exact: true }).first().click(); await p.waitForTimeout(500);
+ok('eNodeB opened from a data center view still shows its 18 rows (filters do not leak)', await has('Showing 18 of 18'));
+await p.getByText('gNodeB', { exact: true }).first().click(); await p.waitForTimeout(500);
+ok('gNodeB the same: 14 rows', await has('Showing 14 of 14'));
 await go('/inventory/physical?cls=gnodeb');
 ok('gNodeB unchanged: 14, no source filter', await has('Showing 14 of 14') && !(await has('Network estate ·')));
 
