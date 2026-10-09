@@ -40,7 +40,7 @@ ok('Storage tab: 1,038', await has('Showing 25 of 1,038'));
 
 await go('/inventory/physical?cls=gpu');
 ok('GPU tab: 610 servers, 4,880 GPUs, 691 on record, 81 planned', await has('GPU servers 610', '691 on record · 81 planned', 'GPUs 4,880', 'In a job 493', 'Liquid-cooled 126'));
-ok('GPU tab: model mix and cluster hint, list of 691', await has('H100 SXM 80 GB · 233', '29 clusters across 21 data centers', 'Showing 25 of 691'));
+ok('GPU tab: cluster hint, no model-mix card, list of 691', await has('29 clusters across 21 data centers', 'Showing 25 of 691') && !(await has('GPU models')));
 
 await go('/inventory/physical?cls=gpu&dc=KA-DC-008');
 ok('GPU, KA-DC-008: 39 servers, 312 GPUs, 2 clusters, 2 burn-in', await has('GPU servers 39', 'GPUs 312', 'Burn-in 2', 'AI-POD-1', 'AI-POD-2', 'Showing 25 of 39'));

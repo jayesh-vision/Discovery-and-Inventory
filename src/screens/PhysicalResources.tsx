@@ -247,7 +247,7 @@ export default function PhysicalResources() {
           })}
           active={cls} onChange={selectTabClass} />
 
-        {cls === 'gpu' && gpuScope && <GpuOverview nodes={gpuScope.nodes} clusters={gpuScope.clusters} dcLabel={dcId || `${DC_COUNTS.datacenters} data centers`} scoped={!!dcId} />}
+        {cls === 'gpu' && gpuScope && <GpuOverview nodes={gpuScope.nodes} clusters={gpuScope.clusters} scoped={!!dcId} />}
 
         {/* Ports is right-aligned (numeric), so any width beyond its own content
             collects as empty space before it, not after — a wide column here

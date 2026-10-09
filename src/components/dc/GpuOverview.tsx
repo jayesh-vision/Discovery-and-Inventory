@@ -1,26 +1,12 @@
-/* Model mix and cluster cards above the GPU server list. Counts come from the
+/* Cluster cards above the GPU server list (once a data center is picked). Counts come from the
    records in scope (all data centers, or the one picked), never typed in. */
 import { Card, Sub } from '../ui';
-import { Head } from '../dcim/common';
 import type { DcGpuCluster, DcGpuNode } from '../../data/dc';
 
-const MODEL_COLOR: Record<string, string> = {
-  'H100 SXM 80 GB': '#5b9cf5', 'H200 SXM 141 GB': '#2fb986', 'A100 SXM 80 GB': '#9b7cf0', 'B200 SXM 192 GB': '#e5484d',
-  'L40S PCIe 48 GB': '#e39b3b', 'T4 PCIe 16 GB': '#94a3b8', 'Gaudi 3 OAM 128 GB': '#14b8a6', 'Max 1550 OAM 128 GB': '#d946ef'
-};
-
-export function GpuOverview({ nodes, clusters, dcLabel, scoped }: { nodes: DcGpuNode[]; clusters: DcGpuCluster[]; dcLabel: string; scoped: boolean }) {
-  const mix = Object.entries(nodes.reduce<Record<string, number>>((m, n) => ((m[n.model] = (m[n.model] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]);
+export function GpuOverview({ nodes, clusters, scoped }: { nodes: DcGpuNode[]; clusters: DcGpuCluster[]; scoped: boolean }) {
   if (!nodes.length) return null;
   return (
     <div className="dcim dc-gpu-over">
-      <div className="dc-box">
-        <Head title="GPU models" sub={`${nodes.length.toLocaleString('en-IN')} GPU servers · ${(nodes.length * 8).toLocaleString('en-IN')} GPUs · ${dcLabel}`} />
-        <div className="dc-mix" role="img" aria-label={mix.map(([m, c]) => `${m}: ${c}`).join(', ')}>
-          {mix.map(([m, c]) => <i key={m} style={{ width: `${c / nodes.length * 100}%`, background: MODEL_COLOR[m] ?? '#94a3b8' }} title={`${m}: ${c}`} />)}
-        </div>
-        <div className="dc-legend">{mix.map(([m, c]) => <span key={m}><i style={{ background: MODEL_COLOR[m] ?? '#94a3b8' }} />{m} · {c}</span>)}</div>
-      </div>
       {!scoped && clusters.length > 0 && (
         <p className="muted small" style={{ margin: 0 }}>{clusters.length} clusters across {new Set(clusters.map(c => c.dcId)).size} data centers. Pick a data center to see its clusters.</p>
       )}
