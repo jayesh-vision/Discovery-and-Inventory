@@ -728,7 +728,11 @@ function viewResource() {
 
 /* ═══ Passive infrastructure ═══ */
 let PASS_TAB = 'fiber';
+/* data center rows: which source and which data center the passive grid shows */
+let PASS_SRC = 'all', PASS_DC = '';
 function rackStrip(r) {
+  if (!r.occ) { const p = r.used / r.h * 100;   /* a data center rack: fill only, no per-U layout in the record */
+    return `<span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:6rem;height:8px"><span class="hbar-fill" style="display:block;width:${p.toFixed(0)}%;background:${cv(p>85?'red':p>70?'amber':'emerald',400)}"></span></span>${p.toFixed(0)}%</span>`; }
   const cells = [];
   for (let u = r.h; u >= 1; u--) {
     const occ = r.occ.find(o => u >= o[0] && u <= o[1]);
@@ -739,16 +743,38 @@ function rackStrip(r) {
   return `<div class="rack-el">${cells.join('')}</div>`;
 }
 function viewPassive() {
-  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t), rows = gridApply('passive', PASSIVE[t] || []);
+  const t = PASS_TAB, meta = PASSIVE_TABS.find(x => x.k === t) || PASSIVE_NEW_TABS.find(x => x.k === t) || PASSIVE_TABS[0];
+  const hasDc = PASSIVE_HAS_DC.includes(t);
+  /* network estate rows and/or data center rows, narrowed to one data center when picked */
+  const netRows = hasDc && (PASS_SRC === 'dc' || PASS_DC) ? [] : (PASSIVE[t] || []);
+  const dcRows = hasDc && PASS_SRC !== 'net' ? (PASSIVE_DC[t] || []).filter(r => !PASS_DC || r.dcId === PASS_DC) : [];
+  const rows = gridApply('passive', [...netRows, ...dcRows]);
   const P = PASSIVE_STATS;
+  const sourceBar = hasDc ? `<span class="seg" role="group" aria-label="Source">${[['all','All'],['net','Network estate'],['dc','Data centers']].map(([k,l]) =>
+      `<button type="button" class="${PASS_SRC===k?'is-on':''}" data-passsrc="${k}">${l}</button>`).join('')}</span>
+    <span class="nst-select-shell"><select class="nst-input" aria-label="Data center" data-passdc="1">
+      <option value="">All data centers (${DC_FAC.length})</option>
+      ${DC_FAC.map(f => `<option value="${f.id}"${f.id===PASS_DC?' selected':''}>${f.id} · ${f.city}</option>`).join('')}</select></span>` : '';
+  const srcCell = r => r.dc ? chip('Data center', 'info') : chip('Network estate', 'neutral');
   const cols = { fiber:[{t:'Status', plain:true},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status', plain:true},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
                  rack:[{t:'Status', plain:true},{t:'Rack'},{t:'Site'},{t:'Height',r:true},{t:'U used',r:true},{t:'U free',r:true},{t:'Elevation'},{t:'Power'},{t:'Cooling'}],
                  power:[{t:'Status', plain:true},{t:'Unit'},{t:'Site'},{t:'Type'},{t:'Rating'},{t:'Autonomy'},{t:'Last tested'},{t:'Vendor'}],
                  splice:[{t:'Status', plain:true},{t:'Closure'},{t:'Site'},{t:'On span'},{t:'Type'},{t:'Fibers spliced'},{t:'Mean splice loss'},{t:'Housing'},{t:'Last surveyed'}],
                  cord:[{t:'Status', plain:true},{t:'Patch cord'},{t:'Site'},{t:'A end'},{t:'B end'},{t:'Connector'},{t:'Length',r:true},{t:'Insertion loss'},{t:'Last surveyed'}],
-                 duct:[{t:'Status', plain:true},{t:'Duct'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Ways used'},{t:'Bore'},{t:'Ownership'},{t:'Last surveyed'}] }[t];
-  const cell = r => t === 'fiber'
+                 duct:[{t:'Status', plain:true},{t:'Duct'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Ways used'},{t:'Bore'},{t:'Ownership'},{t:'Last surveyed'}],
+                 cooling:[{t:'Status', plain:true},{t:'Unit'},{t:'Site'},{t:'Zone'},{t:'Type'},{t:'Capacity',r:true},{t:'Load'},{t:'Supply → return'}],
+                 sensors:[{t:'Status', plain:true},{t:'Sensor'},{t:'Site'},{t:'Zone'},{t:'Temperature',r:true},{t:'Humidity',r:true},{t:'Smoke'},{t:'Leak'}] }[t]
+    .concat(PASSIVE_HAS_DC.includes(t) ? [{ t:'Source' }] : []);
+  const baseCell = r => t === 'cooling'
+    ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`, r.zone, chip(r.type, r.type==='CDU'?'info':'neutral'),
+       `<span class="num">${r.cap} kW</span>`,
+       `<span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:3.5rem;height:8px"><span class="hbar-fill" style="display:block;width:${r.load}%;background:${cv(r.load>85?'red':r.load>70?'amber':'emerald',400)}"></span></span>${r.load}%</span>`,
+       `<span class="mono">${r.supply} → ${r.ret} °C</span>`]
+    : t === 'sensors'
+    ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.site}</span>`, r.zone, `<span class="num">${r.temp} °C</span>`, `<span class="num">${r.hum}%</span>`,
+       r.smoke ? chip('Alarm','error') : chip('Clear','success'), r.leak ? chip('Alarm','error') : chip('Clear','success')]
+    : t === 'fiber'
     ? [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.a}</span>`, `<span class="mono">${r.b}</span>`,
        `<span class="num">${r.len}</span>`, `<span class="mono">${r.cores}</span>`, r.splices, r.otdr,
        r.att === '—' ? '—' : `<span class="mono"${parseFloat(r.att) > 0.35 ? ` style="color:${cv('red',700)}"` : ''}>${r.att}</span>`,
@@ -778,6 +804,7 @@ function viewPassive() {
     : [chip(r.st,r.chip), `<span class="vw-value">${r.n}</span>`, `<span class="mono">${r.a}</span>`,
        `<span class="mono">${r.b}</span>`, `<span class="num">${r.len}</span>`, `<span class="mono">${r.ways}</span>`,
        r.bore, chip(r.own, r.own === 'Own' ? 'neutral' : 'info'), `<span class="num">${r.surveyed}</span>`];
+  const cell = r => PASSIVE_HAS_DC.includes(t) ? [...baseCell(r), srcCell(r)] : baseCell(r);
 
   return `<div class="page">
 
@@ -799,18 +826,20 @@ function viewPassive() {
     ])}
 
     ${card(`
-      <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_TABS.map(x=>`
+      <div class="tabbar" style="margin-top:var(--vw-space-lg)">${PASSIVE_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)).map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
-      ${gridBar(rows.length, n(meta.c), 'Name, site, A/B end', FS.passive, '',
+      ${gridBar(rows.length, n(netRows.length + dcRows.length), 'Name, site, A/B end', FS.passive, sourceBar,
         [], 'passive')}
       ${rows.length ? table(cols, rows.map(cell), 'chip-auto',
         /* every passive tab key (t) doubles as its own View details view
            key — viewOdfDetail/viewRackDetail/… below, one per PASSIVE_TABS
            entry — so no per-tab mapping table is needed here */
-        i => [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) })])
+        /* a data center row has no detail page of its own (those pages are derived from the
+           network estate's names); it opens the data center's site instead */
+        i => rows[i].dc ? [siteA(rows[i].dcId)] : [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
-             <strong>${meta.n}</strong> holds ${n(meta.c)} records.</div>`}
-      ${t === 'rack' ? `<div class="vw-card-footer-divider legend">
+             <strong>${meta.n}</strong> holds ${n(meta.c)} records${PASSIVE_HAS_DC.includes(t) && (PASS_SRC !== 'all' || PASS_DC) ? ' — none match this source and data center' : ''}.</div>`}
+      ${t === 'rack' && netRows.length ? `<div class="vw-card-footer-divider legend">
         <span class="legend-i"><span class="legend-sw" style="background:${cv('sky',300)}"></span>router</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('emerald',300)}"></span>switch</span>
         <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>

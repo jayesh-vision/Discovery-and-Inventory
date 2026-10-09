@@ -3,6 +3,8 @@
    consistent record from its NE count so no site lands on an empty tab.
    Sums are asserted at the bottom. */
 
+import type { DcFacility } from './dc';
+
 export interface Feed { id: string; kind: 'AC' | 'DC'; source: string; rating: string; ratingKw: number; loadKw: number; status: 'Normal' | 'High' | 'Alarm' }
 export interface Backup { kind: string; unit: string; rating: string; autonomy: string; lastTest: string; status: 'Normal' | 'Degraded' | 'Failed' }
 export interface Rack { id: string; floor: string; room: string; role: string; u: number; used: number; kw: number; ports: number; portsUsed: number }
@@ -124,6 +126,35 @@ function derive(siteId: string, ne: number): Facility {
 }
 
 export const facilityOf = (siteId: string, ne: number): Facility => siteId === 'BGLK-277' ? BGLK : derive(siteId, ne);
+
+/* A data center's facility from its record in src/data/dc (copied from Datacenter-Ideation):
+   power, backup, floors, racks and port classes are the record's own. Equipment and cabling
+   (the Site equipment tab's cable view) have no counterpart there, so they stay as `base` has
+   them. The record carries no load history, so load24 is empty and the chart is left out. */
+const dcDate = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/ /g, '-');
+export function facilityFromDc(d: DcFacility, base: Facility): Facility {
+  const p = d.power, g = p.dg, b = p.battery;
+  const feedStatus: Record<string, Feed['status']> = { Normal: 'Normal', Warning: 'High', Alarm: 'Alarm' };
+  const upsStatus: Record<string, Backup['status']> = { Online: 'Normal', 'On battery': 'Degraded', Bypass: 'Degraded', Fault: 'Failed' };
+  return {
+    ...base,
+    siteId: d.id,
+    power: {
+      supply: 'AC mains 415 V 3-phase · DC −48 V plant', capacityKw: p.capacityKw,
+      feeds: p.feeds.map(x => ({ id: x.id, kind: x.type, source: x.source, rating: x.rating, ratingKw: x.capacityKw, loadKw: x.loadKw, status: feedStatus[x.status] })),
+      peak24Kw: p.peakKw, load24: [], byUse: p.split.map(x => ({ n: x.label === 'IT equipment' ? 'Network and compute equipment' : x.label, kw: x.kw })),
+      backups: [
+        { kind: 'DG set', unit: `${d.id}-DG`, rating: `${g.kva} kVA`, autonomy: `${g.runtimeH} h · fuel ${g.fuelPct}%`, lastTest: dcDate(g.lastTest), status: g.result === 'Pass' ? 'Normal' : 'Failed' },
+        { kind: 'Battery bank', unit: `${d.id}-BATT`, rating: `${b.volts} V · ${b.ah.toLocaleString('en-IN')} Ah`, autonomy: `${b.runtimeH} h`, lastTest: dcDate(b.lastTest), status: 'Normal' },
+        ...p.ups.map(u => ({ kind: `UPS · ${u.redundancy}`, unit: u.id, rating: `${u.capacityKw} kW`, autonomy: `${u.batteryMin} min`, lastTest: '—', status: upsStatus[u.state] }))
+      ],
+      pue: p.pue
+    },
+    floors: d.floors.map(f => ({ n: f.name, rooms: f.rooms })),
+    racks: d.racks.map(r => ({ id: r.name, floor: r.floor, room: r.room, role: r.role, u: r.heightU, used: r.usedU, kw: r.drawKw, ports: r.ports, portsUsed: r.portsUsed })),
+    portClasses: d.ports.map(x => ({ n: x.cls, total: x.total, used: x.used }))
+  };
+}
 
 /* derived views */
 export const totalLoad = (f: Facility) => f.power.feeds.reduce((a, x) => a + x.loadKw, 0);

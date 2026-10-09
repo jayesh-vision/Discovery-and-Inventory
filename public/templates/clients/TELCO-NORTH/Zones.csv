@@ -1,0 +1,5 @@
+ZoneId,RoomId,Name,Kind
+PB-DC-002-EQR-COOL,PB-DC-002-EQR,Equipment room cooling zone,COOLING
+PB-DC-002-EQR-PWR,PB-DC-002-EQR,Equipment room power zone,POWER
+PB-DC-003-EQR-COOL,PB-DC-003-EQR,Equipment room cooling zone,COOLING
+PB-DC-003-EQR-PWR,PB-DC-003-EQR,Equipment room power zone,POWER

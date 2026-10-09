@@ -19,7 +19,10 @@
     "test:e2e:domains": "node tests/e2e-domains.mjs",
     "gen:dcim-templates": "node scripts/gen-dcim-templates.mjs",
     "test:e2e:dcim": "node tests/e2e-dcim.mjs",
-    "gen:site-csv": "node scripts/gen-site-csv.mjs"
+    "gen:site-csv": "node scripts/gen-site-csv.mjs",
+    "gen:client-files": "node scripts/gen-client-files.mjs",
+    "dc:sync": "node scripts/dc-sync.mjs",
+    "dc:check": "node scripts/dc-sync.mjs --check"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.22",

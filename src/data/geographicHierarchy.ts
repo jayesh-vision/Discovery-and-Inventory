@@ -76,8 +76,8 @@ export interface FacilityItem {
 export const TOP_HIERARCHY_METRICS = [
   { id: 'regions', label: 'Regions', count: '4', icon: 'regions', color: '#9333ea', bg: '#f3e8ff' },
   { id: 'states', label: 'States', count: '28', icon: 'states', color: '#2563eb', bg: '#eff6ff' },
-  { id: 'cities', label: 'Cities', count: '549', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
-  { id: 'datacenters', label: 'Data Centers', count: '829', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
+  { id: 'cities', label: 'Cities', count: '552', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
+  { id: 'datacenters', label: 'Data Centers', count: '848', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
   { id: 'pops', label: 'PoP Locations', count: '2,711', icon: 'pop', color: '#0284c7', bg: '#e0f2fe' },
   { id: 'sites', label: 'Sites', count: '8,935', icon: 'site', color: '#16a34a', bg: '#f0fdf4' },
   { id: 'alarms', label: 'Active Alarms', count: '1,712', icon: 'alarm', color: '#ef4444', bg: '#fef2f2' },
@@ -88,7 +88,7 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
     "id": "north",
     "name": "North Region",
     "stateCount": 5,
-    "cityCount": 137,
+    "cityCount": 140,
     "themeColor": "#9333ea",
     "bgColor": "#f3e8ff",
     "iconType": "north",
@@ -131,9 +131,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "pb-mohali",
             "name": "Mohali",
-            "count": 116,
+            "count": 117,
             "stateId": "punjab",
-            "dcCount": 4,
+            "dcCount": 5,
             "popCount": 12,
             "siteCount": 32
           },
@@ -520,7 +520,7 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
       {
         "id": "haryana",
         "name": "Haryana",
-        "cityCount": 15,
+        "cityCount": 16,
         "regionId": "north",
         "themeColor": "#f97316",
         "bgColor": "#ffedd5",
@@ -659,13 +659,22 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
             "dcCount": 1,
             "popCount": 3,
             "siteCount": 14
+          },
+          {
+            "id": "hr-gurugram",
+            "name": "Gurugram",
+            "count": 1,
+            "stateId": "haryana",
+            "dcCount": 1,
+            "popCount": 0,
+            "siteCount": 0
           }
         ]
       },
       {
         "id": "up-west",
         "name": "Uttar Pradesh",
-        "cityCount": 31,
+        "cityCount": 33,
         "regionId": "north",
         "themeColor": "#f43f5e",
         "bgColor": "#ffe4e6",
@@ -916,9 +925,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "delhi-new-delhi",
             "name": "New Delhi",
-            "count": 7,
+            "count": 8,
             "stateId": "up-west",
-            "dcCount": 1,
+            "dcCount": 2,
             "popCount": 2,
             "siteCount": 4
           },
@@ -948,6 +957,24 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
             "dcCount": 1,
             "popCount": 3,
             "siteCount": 5
+          },
+          {
+            "id": "upw-gorakhpur",
+            "name": "Gorakhpur",
+            "count": 1,
+            "stateId": "up-west",
+            "dcCount": 1,
+            "popCount": 0,
+            "siteCount": 0
+          },
+          {
+            "id": "upw-prayagraj",
+            "name": "Prayagraj",
+            "count": 2,
+            "stateId": "up-west",
+            "dcCount": 2,
+            "popCount": 0,
+            "siteCount": 0
           }
         ]
       },
@@ -1398,27 +1425,27 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "mh-mumbai",
             "name": "Mumbai",
-            "count": 57,
+            "count": 53,
             "stateId": "maharashtra",
-            "dcCount": 6,
+            "dcCount": 2,
             "popCount": 14,
             "siteCount": 37
           },
           {
             "id": "mh-pune",
             "name": "Pune",
-            "count": 43,
+            "count": 46,
             "stateId": "maharashtra",
-            "dcCount": 5,
+            "dcCount": 8,
             "popCount": 11,
             "siteCount": 27
           },
           {
             "id": "mh-nagpur",
             "name": "Nagpur",
-            "count": 38,
+            "count": 39,
             "stateId": "maharashtra",
-            "dcCount": 3,
+            "dcCount": 4,
             "popCount": 10,
             "siteCount": 25
           },
@@ -1552,9 +1579,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "gj-ahmedabad",
             "name": "Ahmedabad",
-            "count": 39,
+            "count": 40,
             "stateId": "gujarat",
-            "dcCount": 4,
+            "dcCount": 5,
             "popCount": 9,
             "siteCount": 26
           },
@@ -1841,9 +1868,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "rj-jaipur",
             "name": "Jaipur",
-            "count": 142,
+            "count": 143,
             "stateId": "rajasthan",
-            "dcCount": 6,
+            "dcCount": 7,
             "popCount": 18,
             "siteCount": 52
           },
@@ -2140,9 +2167,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "mp-indore",
             "name": "Indore",
-            "count": 142,
+            "count": 143,
             "stateId": "mp",
-            "dcCount": 6,
+            "dcCount": 7,
             "popCount": 18,
             "siteCount": 48
           },
@@ -2450,9 +2477,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "wb-kolkata",
             "name": "Kolkata",
-            "count": 142,
+            "count": 144,
             "stateId": "west-bengal",
-            "dcCount": 6,
+            "dcCount": 8,
             "popCount": 18,
             "siteCount": 48
           },
@@ -2604,9 +2631,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "br-patna",
             "name": "Patna",
-            "count": 135,
+            "count": 136,
             "stateId": "bihar",
-            "dcCount": 5,
+            "dcCount": 6,
             "popCount": 15,
             "siteCount": 42
           },
@@ -2758,9 +2785,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "od-bhubaneswar",
             "name": "Bhubaneswar",
-            "count": 130,
+            "count": 131,
             "stateId": "odisha",
-            "dcCount": 5,
+            "dcCount": 6,
             "popCount": 14,
             "siteCount": 40
           },
@@ -4219,9 +4246,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ka-bengaluru",
             "name": "Bengaluru",
-            "count": 76,
+            "count": 77,
             "stateId": "karnataka",
-            "dcCount": 8,
+            "dcCount": 9,
             "popCount": 18,
             "siteCount": 50
           },
@@ -4237,9 +4264,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ka-mangalore",
             "name": "Mangaluru",
-            "count": 24,
+            "count": 25,
             "stateId": "karnataka",
-            "dcCount": 2,
+            "dcCount": 3,
             "popCount": 6,
             "siteCount": 16
           },
@@ -4364,9 +4391,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "tn-chennai",
             "name": "Chennai",
-            "count": 52,
+            "count": 53,
             "stateId": "tamilnadu",
-            "dcCount": 6,
+            "dcCount": 7,
             "popCount": 12,
             "siteCount": 34
           },
@@ -4779,9 +4806,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "tg-hyderabad",
             "name": "Hyderabad",
-            "count": 2,
+            "count": 3,
             "stateId": "telangana",
-            "dcCount": 1,
+            "dcCount": 2,
             "popCount": 1,
             "siteCount": 0
           },
@@ -4924,9 +4951,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ap-visakhapatnam",
             "name": "Visakhapatnam",
-            "count": 30,
+            "count": 31,
             "stateId": "ap",
-            "dcCount": 3,
+            "dcCount": 4,
             "popCount": 7,
             "siteCount": 20
           },
@@ -5078,9 +5105,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "kl-kochi",
             "name": "Kochi",
-            "count": 142,
+            "count": 143,
             "stateId": "kerala",
-            "dcCount": 6,
+            "dcCount": 7,
             "popCount": 18,
             "siteCount": 48
           },

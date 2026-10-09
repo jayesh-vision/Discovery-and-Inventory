@@ -24,21 +24,21 @@ try {
   await page.waitForTimeout(1000);
 
   const bodyText = await page.innerText('body');
-  console.log('Checking page text for 12,475...');
-  assert.ok(bodyText.includes('12,475'), 'Page body must contain 12,475');
+  console.log('Checking page text for 12,494...');
+  assert.ok(bodyText.includes('12,494'), 'Page body must contain 12,494');
 
   // Check region cards
-  console.log('Checking North region (3,451)...');
-  assert.ok(bodyText.includes('3,451') || bodyText.includes('3451'), 'North region must show 3,451');
+  console.log('Checking North region (3,457)...');
+  assert.ok(bodyText.includes('3,457') || bodyText.includes('3457'), 'North region must show 3,457');
 
-  console.log('Checking East region (4,669)...');
-  assert.ok(bodyText.includes('4,669') || bodyText.includes('4669'), 'East region must show 4,669');
+  console.log('Checking East region (4,673)...');
+  assert.ok(bodyText.includes('4,673') || bodyText.includes('4673'), 'East region must show 4,673');
 
-  console.log('Checking West region (2,428)...');
-  assert.ok(bodyText.includes('2,428') || bodyText.includes('2428'), 'West region must show 2,428');
+  console.log('Checking West region (2,431)...');
+  assert.ok(bodyText.includes('2,431') || bodyText.includes('2431'), 'West region must show 2,431');
 
-  console.log('Checking South region (1,927)...');
-  assert.ok(bodyText.includes('1,927') || bodyText.includes('1927'), 'South region must show 1,927');
+  console.log('Checking South region (1,933)...');
+  assert.ok(bodyText.includes('1,933') || bodyText.includes('1933'), 'South region must show 1,933');
 
   // Take screenshot of reconciled view
   await page.screenshot({ path: 'screenshots/02_inventory_location_list_all.png' });
@@ -52,7 +52,7 @@ try {
   });
   await page.waitForTimeout(800);
   const dcText = await page.innerText('body');
-  assert.ok(dcText.includes('829'), 'Datacenters view must contain 829');
+  assert.ok(dcText.includes('848'), 'Datacenters view must contain 848');
   await page.screenshot({ path: 'screenshots/03_inventory_location_list_datacenters.png' });
 
   // Test 3: PoP locations filter

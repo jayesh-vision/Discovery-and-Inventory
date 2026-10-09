@@ -89,6 +89,11 @@ const allLocationsData = readFileSync(join(root, 'src/data/allLocations.json'), 
 patch(/const LOCATIONS = \(\(\) => \{[\s\S]*?return out;\s*\}\)\(\);/, `const LOCATIONS = ${allLocationsData};`, 'allLocations 12475 injection');
 
 
+/* 2g. data center racks, power, cooling, sensors and cabling for the passive tabs
+   (src/data/dc/datacenters.json, written by npm run dc:sync) */
+const dcFacilities = readFileSync(join(root, 'src/data/dc/datacenters.json'), 'utf8');
+patch('const DC_FAC = /* @@DC_FAC@@ */ [];', `const DC_FAC = ${dcFacilities};`, 'data center facilities injection');
+
 /* 3. after an in-place render, tell React so the URL follows the screen */
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
   });

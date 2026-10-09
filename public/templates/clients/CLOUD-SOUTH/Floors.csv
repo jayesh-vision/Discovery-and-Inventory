@@ -1,0 +1,5 @@
+FloorId,BuildingId,Name,Level,ElevationM,LengthM,WidthM,CeilingM,RaisedFloorMm,MaxLoadKgM2
+KA-DC-001-B1-GF,KA-DC-001-B1,Ground,0,0,30,18,4.2,0,1500
+KA-DC-001-B1-1F,KA-DC-001-B1,1st floor,1,4.5,30,18,3.8,600,1200
+KA-DC-077-B1-GF,KA-DC-077-B1,Ground,0,0,30,18,4.2,0,1500
+KA-DC-077-B1-1F,KA-DC-077-B1,1st floor,1,4.5,30,18,3.8,600,1200

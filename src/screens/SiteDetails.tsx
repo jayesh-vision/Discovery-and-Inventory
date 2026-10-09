@@ -1,9 +1,10 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Chip, cv } from '../components/ui';
 import { KpiCard, Segments } from '../components/KpiCard';
 import { Donut, LineChart } from '../components/charts';
 import { SiteHeader, SiteTabs, useSiteLocation } from './SiteTabs';
-import { facilityOf, portTotals, totalLoad, uTotals } from '../data/facility';
+import { facilityFromDc, facilityOf, portTotals, totalLoad, uTotals } from '../data/facility';
+import { DC_IDS, DC_ROLE_BY_TAB, loadDevices, loadFacilities, useLoaded, type DcDevice, type DcFacility, type DcRole } from '../data/dc';
 
 const fmt = (v: number, d = 0) => v.toLocaleString('en-IN', { maximumFractionDigits: d, minimumFractionDigits: d });
 const pct = (a: number, b: number) => b ? `${(a / b * 100).toFixed(0)}%` : '—';
@@ -20,10 +21,24 @@ function Fill({ used, total, label }: { used: number; total: number; label?: str
   );
 }
 
+const loadNoFacilities = () => Promise.resolve<DcFacility[] | null>(null);
+const loadNoDevices = () => Promise.resolve<DcDevice[] | null>(null);
+
 export default function SiteDetails() {
   const { id = 'BGLK-277' } = useParams();
+  const nav = useNavigate();
   const { l, head } = useSiteLocation(id);
-  const f = facilityOf(l.id, l.ne);
+  /* a data center has a facility record of its own; every other site keeps the derived one */
+  const isDc = DC_IDS.has(l.id);
+  const dcFacs = useLoaded(isDc ? loadFacilities : loadNoFacilities);
+  const dcDevices = useLoaded<DcDevice[] | null>(isDc ? loadDevices : loadNoDevices);
+  const dcFac = dcFacs?.find(x => x.id === l.id) ?? null;
+  const base = facilityOf(l.id, l.ne);
+  if (isDc && !dcFac) return (
+    <div className="page"><SiteHeader l={l} head={head} /><SiteTabs l={l} head={head} active="details" />
+      <Card><span className="vw-card-description">Loading the facility record for {l.id}…</span></Card></div>
+  );
+  const f = dcFac ? facilityFromDc(dcFac, base) : base;
   const load = totalLoad(f), u = uTotals(f), p = portTotals(f);
   const ac = f.power.feeds.filter(x => x.kind === 'AC').reduce((a, x) => a + x.loadKw, 0);
   const dc = load - ac;
@@ -68,8 +83,10 @@ export default function SiteDetails() {
               </tr>))}
               <tr className="mtbl-total"><td colSpan={4} className="vw-value">All feeds</td><td className="t-right num">{fmt(load, 1)} kW</td><td><Fill used={load} total={f.power.capacityKw} /></td><td /></tr>
             </tbody></table>
-          <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">Load, last 24 hours</span><span className="vw-card-description">hourly · peak {fmt(f.power.peak24Kw, 1)} kW · capacity {fmt(f.power.capacityKw)} kW</span></div>
-          <LineChart height={205} labels={f.power.load24.map((_, h) => h % 4 === 0 || h === 23 ? (h === 23 ? 'now' : `${String(h).padStart(2, '0')}:00`) : '')} values={f.power.load24} format={v => `${fmt(v, 1)} kW`} />
+          {f.power.load24.length > 0 && <>
+            <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">Load, last 24 hours</span><span className="vw-card-description">hourly · peak {fmt(f.power.peak24Kw, 1)} kW · capacity {fmt(f.power.capacityKw)} kW</span></div>
+            <LineChart height={205} labels={f.power.load24.map((_, h) => h % 4 === 0 || h === 23 ? (h === 23 ? 'now' : `${String(h).padStart(2, '0')}:00`) : '')} values={f.power.load24} format={v => `${fmt(v, 1)} kW`} />
+          </>}
         </Card>
         <Card className="ins2-fill">
           <div className="row vw-justify-between"><span className="vw-card-title">Where the power goes</span><span className="vw-card-description">now</span></div>
@@ -133,6 +150,47 @@ export default function SiteDetails() {
         </Card>
       </div>
 
+      {dcFac && <DataCenterCards d={dcFac} devices={dcDevices} go={nav} />}
+    </div>
+  );
+}
+
+/* What a data center has beyond the common facility record: cooling, compute and the
+   devices it holds, each linking to its inventory list filtered to this site. */
+function DataCenterCards({ d, devices, go }: { d: DcFacility; devices: DcDevice[] | null; go: (to: string) => void }) {
+  const c = d.cooling, m = d.compute;
+  const roles = Object.keys(DC_ROLE_BY_TAB) as (keyof typeof DC_ROLE_BY_TAB)[];
+  const count = (role: DcRole) => devices ? devices.filter(x => x.dcId === d.id && x.role === role).length : null;
+  const sensors = c.sensors.length, alarms = c.sensors.filter(s => s.smoke || s.leak).length;
+  const link = (to: string, label: string) => <button className="nst-btn nst-btn--xs nst-btn--ghost" onClick={() => go(to)}>{label}</button>;
+  return (
+    <div className="ins2-row ins2-6-6">
+      <Card className="ins2-fill">
+        <div className="row vw-justify-between"><span className="vw-card-title">Devices</span><span className="vw-card-description">{d.tier} · {d.status.replace('-', ' ')}</span></div>
+        <table className="mtbl"><thead><tr><th>Class</th><th className="t-right">Devices</th><th /></tr></thead>
+          <tbody>{roles.map(k => {
+            const n = count(DC_ROLE_BY_TAB[k]);
+            return <tr key={k}><td className="vw-value">{DC_ROLE_BY_TAB[k]}</td><td className="t-right num">{n === null ? '…' : fmt(n)}</td>
+              <td className="t-right">{link(`/inventory/physical?cls=${k}&dc=${encodeURIComponent(d.id)}`, 'Open in Physical resources')}</td></tr>;
+          })}</tbody></table>
+        <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">Compute</span></div>
+        <table className="mtbl"><tbody>
+          <tr><td className="vw-value">CPU cores</td><td className="t-right num">{fmt(m.cpuUsed)} / {fmt(m.cpuCores)}</td><td style={{ width: '30%' }}><Fill used={m.cpuUsed} total={m.cpuCores} /></td></tr>
+          <tr><td className="vw-value">Memory</td><td className="t-right num">{fmt(m.memUsed / 1024)} / {fmt(m.memGb / 1024)} TB</td><td><Fill used={m.memUsed} total={m.memGb} /></td></tr>
+          <tr><td className="vw-value">Storage</td><td className="t-right num">{fmt(m.storageUsed)} / {fmt(m.storageTb)} TB</td><td><Fill used={m.storageUsed} total={m.storageTb} /></td></tr>
+        </tbody></table>
+      </Card>
+      <Card className="ins2-fill">
+        <div className="row vw-justify-between"><span className="vw-card-title">Cooling</span><span className="vw-card-description">{c.redundancy} · {fmt(c.capacityKw)} kW installed</span></div>
+        <table className="mtbl"><thead><tr><th>Unit</th><th>Type</th><th>Zone</th><th className="t-right">Capacity</th><th style={{ width: '24%' }}>Load</th></tr></thead>
+          <tbody>{c.units.map(u => (
+            <tr key={u.id}><td className="vw-value mono">{u.name}</td><td><Chip tone={u.type === 'CDU' ? 'info' : 'neutral'}>{u.type}</Chip></td><td>{u.zone}</td>
+              <td className="t-right num">{fmt(u.capacityKw)} kW</td><td><Fill used={u.loadPct} total={100} /></td></tr>))}
+            <tr className="mtbl-total"><td colSpan={3} className="vw-value">All units</td><td className="t-right num">{fmt(c.capacityKw)} kW</td><td><Fill used={c.loadKw} total={c.capacityKw} /></td></tr>
+          </tbody></table>
+        <div className="ins2-foot vw-card-description"><span>{sensors} environment sensors · {alarms ? `${alarms} in alarm` : 'all clear'}</span><span className="grow" />
+          {link(`/inventory/passive?tab=cooling&dc=${encodeURIComponent(d.id)}`, 'Cooling')}{link(`/inventory/passive?tab=sensors&dc=${encodeURIComponent(d.id)}`, 'Sensors')}{link(`/inventory/passive?tab=rack&dc=${encodeURIComponent(d.id)}`, 'Racks')}</div>
+      </Card>
     </div>
   );
 }

@@ -260,6 +260,48 @@ PASSIVE.duct = Array.from({ length: 10 }, (_, i) => {
     surveyed: `${String(9 + i).padStart(2, '0')}-${['Jan','Apr','Jun','Aug'][i % 4]}-2026` };
 });
 
+/* ── Data center infrastructure (src/data/dc, copied from Datacenter-Ideation) ──
+   The bundler fills DC_FAC from src/data/dc/datacenters.json. Each data center's
+   racks, power plant, optical ports, cabling ledger, cooling units and
+   environment sensors become rows of the passive tabs, next to the network
+   estate's own rows and flagged `dc: true`. Cooling and Sensors exist only here.
+   Nothing derives the ledger's passive totals (PASSIVE_TABS) from these rows. */
+const DC_FAC = /* @@DC_FAC@@ */ [];
+const dcDate = t => { const d = new Date(t); return `${String(d.getUTCDate()).padStart(2, '0')}-${MONTHS_SHORT[d.getUTCMonth()]}-${d.getUTCFullYear()}`; };
+const dcShort = (id, dc) => id.startsWith(dc + '-') ? id.slice(dc.length + 1) : id;
+const PASSIVE_DC = (() => {
+  const out = { rack: [], power: [], odf: [], cord: [], cooling: [], sensors: [] };
+  const ok = { st: 'In service', chip: 'success' };
+  for (const f of DC_FAC) {
+    const dc = f.id;
+    for (const r of f.racks) out.rack.push({ ...(r.usedU >= r.heightU ? { st: 'Full', chip: 'error' } : ok), dc: true, dcId: dc,
+      n: `${dc}-${r.name}`, site: dc, h: r.heightU, used: r.usedU, kw: `${r.drawKw} / ${r.budgetKw}`,
+      cool: r.liquid ? 'Liquid (direct-to-chip)' : 'Front-to-back', room: `${r.floor} · ${r.room}`, role: r.role, ai: !!r.density });
+    for (const x of f.power.feeds) out.power.push({ ...(x.status === 'Normal' ? ok : { st: x.status === 'Alarm' ? 'Failed' : 'Degraded', chip: x.status === 'Alarm' ? 'error' : 'warning' }),
+      dc: true, dcId: dc, n: `${dc}-${x.id}`, site: dc, type: x.type === 'AC' ? 'Utility feed' : 'DC plant', rating: x.rating, runtime: '—', tested: '—', vendor: x.source });
+    for (const u of f.power.ups) out.power.push({ ...(u.state === 'Online' ? ok : { st: u.state === 'Fault' ? 'Failed' : 'Degraded', chip: u.state === 'Fault' ? 'error' : 'warning' }),
+      dc: true, dcId: dc, n: u.id, site: dc, type: 'UPS', rating: `${u.capacityKw} kW · ${u.redundancy}`, runtime: `${u.batteryMin} min`, tested: '—', vendor: '—' });
+    const g = f.power.dg, b = f.power.battery;
+    out.power.push({ ...(g.result === 'Pass' ? ok : { st: 'Failed', chip: 'error' }), dc: true, dcId: dc, n: `${dc}-DG`, site: dc, type: 'DG set',
+      rating: `${g.kva} kVA`, runtime: `${g.runtimeH} h · fuel ${g.fuelPct}%`, tested: dcDate(g.lastTest), vendor: '—' });
+    out.power.push({ ...ok, dc: true, dcId: dc, n: `${dc}-BATT`, site: dc, type: 'Battery', rating: `${b.volts} V ${b.ah.toLocaleString('en-IN')} Ah`, runtime: `${b.runtimeH} h`, tested: dcDate(b.lastTest), vendor: '—' });
+    const op = f.ports.find(p => p.cls === 'Optical (ODF)');
+    if (op) out.odf.push({ ...ok, dc: true, dcId: dc, n: `${dc}-ODF`, site: dc, type: f.cabling.cable.split(' · ')[0], cap: op.total, used: op.used, rack: '—', term: 'LC' });
+    for (const c of f.cabling.ledger) if (c.state !== 'free') out.cord.push({ ...ok, dc: true, dcId: dc, n: `${dc}-CORE-${String(c.port).padStart(2, '0')}`, site: dc,
+      a: c.neId ? `${dcShort(c.neId, dc)} ${c.inIf}` : 'Direct', b: c.outPort ? `Core ${c.outPort}${c.outIf ? ' · ' + c.outIf : ''}` : '—',
+      type: `${f.cabling.cable.split(' · ')[0]}${c.strand ? ' · ' + c.strand : ''}`, len: '—', loss: '—', surveyed: '—' });
+    for (const u of f.cooling.units) out.cooling.push({ ...(u.status === 'Operational' ? ok : u.status === 'Maintenance' ? { st: 'Degraded', chip: 'warning' } : { st: 'Failed', chip: 'error' }),
+      dc: true, dcId: dc, n: u.id, site: dc, zone: u.zone, type: u.type, cap: u.capacityKw, load: u.loadPct, supply: u.supplyC, ret: u.returnC });
+    for (const s of f.cooling.sensors) out.sensors.push({ ...((s.smoke || s.leak) ? { st: 'Alarm', chip: 'error' } : ok),
+      dc: true, dcId: dc, n: s.id, site: dc, zone: s.zone, temp: s.tempC, hum: s.humidity, smoke: s.smoke, leak: s.leak });
+  }
+  return out;
+})();
+/* the two tabs that exist only for data centers; their count is the rows */
+const PASSIVE_NEW_TABS = [{ k: 'cooling', n: 'Cooling', c: PASSIVE_DC.cooling.length }, { k: 'sensors', n: 'Sensors', c: PASSIVE_DC.sensors.length }];
+const PASSIVE_ORDER = ['fiber', 'odf', 'rack', 'power', 'cooling', 'sensors', 'splice', 'cord', 'duct'];
+const PASSIVE_HAS_DC = ['odf', 'rack', 'power', 'cooling', 'sensors', 'cord'];
+
 const PASSIVE_STATS = {
   coreFill: 62, spansCut: 3, spansDegraded: 11, odfFill: 58,
   rackFill: 64, racksFull: 41, powerOverdue: 87, surveyStale: 1440

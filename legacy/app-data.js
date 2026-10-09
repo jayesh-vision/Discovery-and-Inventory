@@ -1186,12 +1186,12 @@ const RSTATE = {
 const rst = k => chip(RSTATE[k][0], RSTATE[k][1]);
 
 const IL = {
-  locations: 12475, central: 829, regional: 2711, edge: 8935,
+  locations: 12494, central: 848, regional: 2711, edge: 8935,
   ne: 2703, discovered: 2379, links: 64, services: 2457, vnf: 28, inactive: 412, reports: 22
 };
 
 const LOC_TIERS = [
-  { n: 'Central', c: 829, planned: 35, building: 73, live: 718, failed: 3, tone: 'amber' },
+  { n: 'Central', c: 848, planned: 36, building: 74, live: 735, failed: 3, tone: 'amber' },
   { n: 'Regional', c: 2711, planned: 175, building: 385, live: 2120, failed: 31, tone: 'sky' },
   { n: 'Edge', c: 8935, planned: 1060, building: 1390, live: 6375, failed: 110, tone: 'emerald' }
 ];
@@ -1204,34 +1204,34 @@ const LOC_HEALTH = [
 
 /* ── geography: circle centroids, site counts, build state ── */
 const LOC_GEO = [
-  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 1297, live: 973, build: 192, fail: 16 },
-  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 884, live: 654, build: 131, fail: 12 },
+  { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.15, lon: 75.34, tot: 1298, live: 974, build: 192, fail: 16 },
+  { c: 'TN', n: 'Tamil Nadu', st: 'Tamil Nadu', lat: 11.13, lon: 78.66, tot: 885, live: 655, build: 131, fail: 12 },
   { c: 'HP', n: 'Himachal Pradesh', st: 'Himachal Pradesh', lat: 31.90, lon: 77.27, tot: 730, live: 555, build: 108, fail: 7 },
-  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 554, live: 416, build: 82, fail: 11 },
-  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 527, live: 401, build: 78, fail: 6 },
-  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 514, live: 386, build: 76, fail: 6 },
-  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 508, live: 376, build: 75, fail: 6 },
-  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 457, live: 338, build: 68, fail: 6 },
-  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 441, live: 326, build: 65, fail: 5 },
+  { c: 'UP', n: 'Uttar Pradesh', st: 'Uttar Pradesh', lat: 26.85, lon: 80.95, tot: 558, live: 420, build: 82, fail: 11 },
+  { c: 'KL', n: 'Kerala', st: 'Kerala', lat: 10.85, lon: 76.27, tot: 528, live: 401, build: 79, fail: 6 },
+  { c: 'RJ', n: 'Rajasthan', st: 'Rajasthan', lat: 27.02, lon: 74.22, tot: 515, live: 387, build: 76, fail: 6 },
+  { c: 'MP', n: 'Madhya Pradesh', st: 'Madhya Pradesh', lat: 23.47, lon: 77.95, tot: 509, live: 377, build: 75, fail: 6 },
+  { c: 'HR', n: 'Haryana', st: 'Haryana', lat: 29.06, lon: 76.09, tot: 458, live: 339, build: 68, fail: 6 },
+  { c: 'WB', n: 'West Bengal', st: 'West Bengal', lat: 22.99, lon: 87.86, tot: 443, live: 328, build: 65, fail: 5 },
   { c: 'CG', n: 'Chhattisgarh', st: 'Chhattisgarh', lat: 21.28, lon: 81.87, tot: 429, live: 313, build: 64, fail: 5 },
   { c: 'UK', n: 'Uttarakhand', st: 'Uttarakhand', lat: 30.07, lon: 79.09, tot: 413, live: 310, build: 61, fail: 4 },
   { c: 'NL', n: 'Nagaland', st: 'Nagaland', lat: 26.16, lon: 94.56, tot: 405, live: 300, build: 60, fail: 5 },
   { c: 'MN', n: 'Manipur', st: 'Manipur', lat: 24.66, lon: 93.91, tot: 399, live: 291, build: 59, fail: 5 },
-  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 396, live: 281, build: 59, fail: 6 },
+  { c: 'BR', n: 'Bihar', st: 'Bihar', lat: 25.10, lon: 85.31, tot: 397, live: 282, build: 59, fail: 6 },
   { c: 'TR', n: 'Tripura', st: 'Tripura', lat: 23.94, lon: 91.99, tot: 396, live: 297, build: 59, fail: 4 },
   { c: 'ML', n: 'Meghalaya', st: 'Meghalaya', lat: 25.47, lon: 91.37, tot: 393, live: 295, build: 58, fail: 4 },
   { c: 'MZ', n: 'Mizoram', st: 'Mizoram', lat: 23.16, lon: 92.94, tot: 393, live: 291, build: 58, fail: 4 },
   { c: 'JH', n: 'Jharkhand', st: 'Jharkhand', lat: 23.61, lon: 85.28, tot: 389, live: 292, build: 58, fail: 4 },
   { c: 'GA', n: 'Goa', st: 'Goa', lat: 15.30, lon: 74.12, tot: 386, live: 290, build: 57, fail: 4 },
   { c: 'AR', n: 'Arunachal Pradesh', st: 'Arunachal Pradesh', lat: 28.22, lon: 94.73, tot: 386, live: 290, build: 57, fail: 4 },
-  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 383, live: 276, build: 57, fail: 4 },
+  { c: 'OR', n: 'Odisha', st: 'Odisha', lat: 20.95, lon: 85.10, tot: 384, live: 277, build: 57, fail: 4 },
   { c: 'AS', n: 'Assam', st: 'Assam', lat: 26.20, lon: 92.94, tot: 379, live: 262, build: 56, fail: 5 },
   { c: 'MH', n: 'Maharashtra', st: 'Maharashtra', lat: 19.75, lon: 75.71, tot: 334, live: 234, build: 50, fail: 6 },
   { c: 'SK', n: 'Sikkim', st: 'Sikkim', lat: 27.53, lon: 88.51, tot: 309, live: 241, build: 46, fail: 2 },
-  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 299, live: 227, build: 44, fail: 4 },
-  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 257, live: 177, build: 38, fail: 1 },
-  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 29, fail: 1 },
-  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 19, live: 16, build: 3, fail: 1 }
+  { c: 'KA', n: 'Karnataka', st: 'Karnataka', lat: 15.32, lon: 75.71, tot: 301, live: 229, build: 44, fail: 4 },
+  { c: 'GJ', n: 'Gujarat', st: 'Gujarat', lat: 22.26, lon: 71.19, tot: 258, live: 177, build: 38, fail: 1 },
+  { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 199, live: 134, build: 29, fail: 1 },
+  { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.12, lon: 79.02, tot: 20, live: 17, build: 3, fail: 1 }
 ];
 const STATE_CIRCLE = Object.fromEntries(LOC_GEO.map(g => [g.st, g]));
 
@@ -1264,7 +1264,7 @@ const TYPE_GROUP = { 'Datacenter': 'dc', 'POP': 'pop', 'Macro-O': 'site', 'Micro
 const typeGroupOf = t => TYPE_GROUP[t] || 'site';
 
 const LOC_TYPES = [
-  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 829, live: 718, building: 73, planned: 35, failed: 3 },
+  { k: 'dc', n: 'Datacenters', tone: 'purple', total: 848, live: 735, building: 74, planned: 36, failed: 3 },
   { k: 'pop', n: 'PoP locations', tone: 'sky', total: 2711, live: 2120, building: 385, planned: 175, failed: 31 },
   { k: 'site', n: 'Sites', tone: 'teal', total: 8935, live: 6375, building: 1390, planned: 1060, failed: 110 }
 ];

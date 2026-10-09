@@ -1,0 +1,75 @@
+{
+  "source": {
+    "repo": "Datacenter-Ideation",
+    "commit": "33a1be9a9c5f380921f9700dafc8daab5ff491e1",
+    "model": "cloud",
+    "generator": "app/src/mock/generate.ts"
+  },
+  "counts": {
+    "datacenters": 24,
+    "racks": 641,
+    "devices": 6398,
+    "devicesByRole": {
+      "Router": 96,
+      "Firewall": 33,
+      "DWDM": 46,
+      "Switch": 457,
+      "Server": 4037,
+      "Storage": 1038,
+      "GPU": 691
+    },
+    "ups": 94,
+    "powerFeeds": 63,
+    "coolingUnits": 212,
+    "sensors": 98,
+    "gpuServers": 610,
+    "gpus": 4880,
+    "gpuClusters": 29,
+    "cdus": 16,
+    "aiCages": 0
+  },
+  "datacenterIds": [
+    "MH-DC-001",
+    "MH-DC-002",
+    "MH-DC-003",
+    "MH-DC-004",
+    "UP-DC-005",
+    "UP-DC-006",
+    "UP-DC-007",
+    "KA-DC-008",
+    "DL-DC-009",
+    "AP-DC-010",
+    "HR-DC-011",
+    "PB-DC-012",
+    "GJ-DC-013",
+    "MP-DC-014",
+    "RJ-DC-015",
+    "WB-DC-016",
+    "WB-DC-017",
+    "OD-DC-018",
+    "BR-DC-019",
+    "KA-DC-020",
+    "KA-DC-021",
+    "TN-DC-022",
+    "TS-DC-023",
+    "KL-DC-024"
+  ],
+  "files": {
+    "datacenters.json": {
+      "bytes": 311359,
+      "sha256": "230262f870b75196"
+    },
+    "devices.json": {
+      "bytes": 2365247,
+      "sha256": "85091ed3f22aaec9"
+    },
+    "modules.json": {
+      "bytes": 3456702,
+      "sha256": "d8833b53ce65f30e"
+    },
+    "gpu.json": {
+      "bytes": 1037170,
+      "sha256": "00b7e23f353aed82"
+    }
+  }
+}

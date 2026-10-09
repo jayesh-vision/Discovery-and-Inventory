@@ -20,34 +20,34 @@ interface CoverageCircle {
 }
 
 const COVERAGE_CIRCLES: CoverageCircle[] = [
-  { code: 'PB', name: 'Punjab', dc: 81, pop: 282, sites: 934, total: 1297, onAirPct: 75, failed: 16, severity: 'delayed' },
-  { code: 'TN', name: 'Tamil Nadu', dc: 62, pop: 176, sites: 646, total: 884, onAirPct: 74, failed: 12, severity: 'blocked' },
+  { code: 'PB', name: 'Punjab', dc: 82, pop: 282, sites: 934, total: 1298, onAirPct: 75, failed: 16, severity: 'delayed' },
+  { code: 'TN', name: 'Tamil Nadu', dc: 63, pop: 176, sites: 646, total: 885, onAirPct: 74, failed: 12, severity: 'blocked' },
   { code: 'HP', name: 'Himachal Pradesh', dc: 45, pop: 152, sites: 533, total: 730, onAirPct: 76, failed: 7, severity: 'delayed' },
-  { code: 'UP', name: 'Uttar Pradesh', dc: 47, pop: 137, sites: 370, total: 554, onAirPct: 75, failed: 11, severity: 'blocked' },
-  { code: 'KL', name: 'Kerala', dc: 33, pop: 119, sites: 375, total: 527, onAirPct: 76, failed: 6, severity: 'delayed' },
-  { code: 'RJ', name: 'Rajasthan', dc: 32, pop: 114, sites: 368, total: 514, onAirPct: 75, failed: 6, severity: 'delayed' },
-  { code: 'MP', name: 'Madhya Pradesh', dc: 33, pop: 114, sites: 361, total: 508, onAirPct: 74, failed: 6, severity: 'delayed' },
-  { code: 'HR', name: 'Haryana', dc: 30, pop: 102, sites: 325, total: 457, onAirPct: 74, failed: 6, severity: 'blocked' },
-  { code: 'WB', name: 'West Bengal', dc: 31, pop: 95, sites: 315, total: 441, onAirPct: 74, failed: 5, severity: 'blocked' },
+  { code: 'UP', name: 'Uttar Pradesh', dc: 51, pop: 137, sites: 370, total: 558, onAirPct: 75, failed: 11, severity: 'blocked' },
+  { code: 'KL', name: 'Kerala', dc: 34, pop: 119, sites: 375, total: 528, onAirPct: 76, failed: 6, severity: 'delayed' },
+  { code: 'RJ', name: 'Rajasthan', dc: 33, pop: 114, sites: 368, total: 515, onAirPct: 75, failed: 6, severity: 'delayed' },
+  { code: 'MP', name: 'Madhya Pradesh', dc: 34, pop: 114, sites: 361, total: 509, onAirPct: 74, failed: 6, severity: 'delayed' },
+  { code: 'HR', name: 'Haryana', dc: 31, pop: 102, sites: 325, total: 458, onAirPct: 74, failed: 6, severity: 'blocked' },
+  { code: 'WB', name: 'West Bengal', dc: 33, pop: 95, sites: 315, total: 443, onAirPct: 74, failed: 5, severity: 'blocked' },
   { code: 'CG', name: 'Chhattisgarh', dc: 27, pop: 92, sites: 310, total: 429, onAirPct: 73, failed: 5, severity: 'delayed' },
   { code: 'UK', name: 'Uttarakhand', dc: 26, pop: 89, sites: 298, total: 413, onAirPct: 75, failed: 4, severity: 'delayed' },
   { code: 'NL', name: 'Nagaland', dc: 25, pop: 86, sites: 294, total: 405, onAirPct: 74, failed: 5, severity: 'delayed' },
   { code: 'MN', name: 'Manipur', dc: 24, pop: 85, sites: 290, total: 399, onAirPct: 73, failed: 5, severity: 'delayed' },
-  { code: 'BR', name: 'Bihar', dc: 25, pop: 81, sites: 290, total: 396, onAirPct: 71, failed: 6, severity: 'blocked' },
+  { code: 'BR', name: 'Bihar', dc: 26, pop: 81, sites: 290, total: 397, onAirPct: 71, failed: 6, severity: 'blocked' },
   { code: 'TR', name: 'Tripura', dc: 24, pop: 84, sites: 288, total: 396, onAirPct: 75, failed: 4, severity: 'delayed' },
   { code: 'ML', name: 'Meghalaya', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 75, failed: 4, severity: 'delayed' },
   { code: 'MZ', name: 'Mizoram', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 74, failed: 4, severity: 'delayed' },
   { code: 'JH', name: 'Jharkhand', dc: 26, pop: 80, sites: 283, total: 389, onAirPct: 75, failed: 4, severity: 'delayed' },
   { code: 'GA', name: 'Goa', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
   { code: 'AR', name: 'Arunachal Pradesh', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'OR', name: 'Odisha', dc: 27, pop: 78, sites: 278, total: 383, onAirPct: 72, failed: 4, severity: 'delayed' },
+  { code: 'OR', name: 'Odisha', dc: 28, pop: 78, sites: 278, total: 384, onAirPct: 72, failed: 4, severity: 'delayed' },
   { code: 'AS', name: 'Assam', dc: 26, pop: 78, sites: 275, total: 379, onAirPct: 69, failed: 5, severity: 'blocked' },
   { code: 'MH', name: 'Maharashtra', dc: 28, pop: 86, sites: 220, total: 334, onAirPct: 70, failed: 6, severity: 'blocked' },
   { code: 'SK', name: 'Sikkim', dc: 20, pop: 59, sites: 230, total: 309, onAirPct: 78, failed: 2, severity: 'risk' },
-  { code: 'KA', name: 'Karnataka', dc: 26, pop: 75, sites: 198, total: 299, onAirPct: 76, failed: 4, severity: 'blocked' },
-  { code: 'GJ', name: 'Gujarat', dc: 20, pop: 63, sites: 174, total: 257, onAirPct: 69, failed: 1, severity: 'blocked' },
-  { code: 'AP', name: 'Andhra Pradesh', dc: 16, pop: 50, sites: 132, total: 198, onAirPct: 67, failed: 1, severity: 'blocked' },
-  { code: 'TS', name: 'Telangana', dc: 1, pop: 6, sites: 12, total: 19, onAirPct: 84, failed: 1, severity: 'risk' }
+  { code: 'KA', name: 'Karnataka', dc: 28, pop: 75, sites: 198, total: 301, onAirPct: 76, failed: 4, severity: 'blocked' },
+  { code: 'GJ', name: 'Gujarat', dc: 21, pop: 63, sites: 174, total: 258, onAirPct: 69, failed: 1, severity: 'blocked' },
+  { code: 'AP', name: 'Andhra Pradesh', dc: 17, pop: 50, sites: 132, total: 199, onAirPct: 67, failed: 1, severity: 'blocked' },
+  { code: 'TS', name: 'Telangana', dc: 2, pop: 6, sites: 12, total: 20, onAirPct: 85, failed: 1, severity: 'risk' }
 ];
 
 const STATE_ID_TO_CIRCLE: Record<string, string> = {
@@ -161,21 +161,21 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-slate-200)', '--kpi-hover': 'var(--vw-color-slate-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick(undefined, 'All locations')}
-          aria-label="Total locations: 12,475 locations, 9,213 on-air"
+          aria-label="Total locations: 12,494 locations, 9,230 on-air"
         >
           <div className="vw-card-metric-label kprog-label">Total locations</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">12,475</span>
+            <span className="vw-card-metric-xl num">12,494</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>9,213 on-air</div>
+          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>9,230 on-air</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '6.65%', background: '#a855f7' }} title="Datacenters: 829" />
-            <span style={{ width: '21.73%', background: '#0284c7' }} title="PoP locations: 2,711" />
-            <span style={{ width: '71.62%', background: '#0d9488' }} title="Sites: 8,935" />
+            <span style={{ width: '6.79%', background: '#a855f7' }} title="Datacenters: 848" />
+            <span style={{ width: '21.70%', background: '#0284c7' }} title="PoP locations: 2,711" />
+            <span style={{ width: '71.51%', background: '#0d9488' }} title="Sites: 8,935" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />829 datacenters</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />848 datacenters</span>
             <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />2,711 pop locations</span>
             <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />8,935 sites</span>
           </div>
@@ -187,24 +187,24 @@ export default function Location() {
           className="kpi-progress is-clickable"
           style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)', background: '#fff' } as React.CSSProperties}
           onClick={() => handleCardClick('dc', 'Datacenters — filtered list')}
-          aria-label="Datacenters: 829 locations, 87% on-air · 3 failed"
+          aria-label="Datacenters: 848 locations, 87% on-air · 3 failed"
         >
           <div className="vw-card-metric-label kprog-label">Datacenters</div>
           <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">829</span>
+            <span className="vw-card-metric-xl num">848</span>
             <span className="vw-card-metric-label-sub">locations</span>
           </div>
           <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>87% on-air · 3 failed</div>
           <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '86.61%', background: '#10b981' }} title="On-air: 718" />
-            <span style={{ width: '8.81%', background: '#f59e0b' }} title="In progress: 73" />
-            <span style={{ width: '4.22%', background: '#0ea5e9' }} title="Planned: 35" />
-            <span style={{ width: '0.36%', minWidth: '4px', background: '#ef4444' }} title="Failed: 3" />
+            <span style={{ width: '86.67%', background: '#10b981' }} title="On-air: 735" />
+            <span style={{ width: '8.73%', background: '#f59e0b' }} title="In progress: 74" />
+            <span style={{ width: '4.25%', background: '#0ea5e9' }} title="Planned: 36" />
+            <span style={{ width: '0.35%', minWidth: '4px', background: '#ef4444' }} title="Failed: 3" />
           </div>
           <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />718 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />73 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />35 planned</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />735 on-air</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />74 in progress</span>
+            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />36 planned</span>
             <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />3 failed</span>
           </div>
         </button>

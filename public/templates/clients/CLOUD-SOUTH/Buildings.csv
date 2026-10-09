@@ -1,0 +1,3 @@
+BuildingId,DataCenterId,Name,Status,LengthM,WidthM,HeightM,X,Y,DesignKw
+KA-DC-001-B1,KA-DC-001,Main building,ACTIVE,32,20,10,,,60
+KA-DC-077-B1,KA-DC-077,Main building,ACTIVE,32,20,10,,,50

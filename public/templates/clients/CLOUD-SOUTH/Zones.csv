@@ -1,0 +1,5 @@
+ZoneId,RoomId,Name,Kind
+KA-DC-001-EQR-COOL,KA-DC-001-EQR,Equipment room cooling zone,COOLING
+KA-DC-001-EQR-PWR,KA-DC-001-EQR,Equipment room power zone,POWER
+KA-DC-077-EQR-COOL,KA-DC-077-EQR,Equipment room cooling zone,COOLING
+KA-DC-077-EQR-PWR,KA-DC-077-EQR,Equipment room power zone,POWER

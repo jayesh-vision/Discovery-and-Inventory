@@ -1,0 +1,5 @@
+FloorId,BuildingId,Name,Level,ElevationM,LengthM,WidthM,CeilingM,RaisedFloorMm,MaxLoadKgM2
+PB-DC-002-B1-GF,PB-DC-002-B1,Ground,0,0,30,18,4.2,0,1500
+PB-DC-002-B1-1F,PB-DC-002-B1,1st floor,1,4.5,30,18,3.8,600,1200
+PB-DC-003-B1-GF,PB-DC-003-B1,Ground,0,0,30,18,4.2,0,1500
+PB-DC-003-B1-1F,PB-DC-003-B1,1st floor,1,4.5,30,18,3.8,600,1200

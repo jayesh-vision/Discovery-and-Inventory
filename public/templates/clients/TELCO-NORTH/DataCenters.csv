@@ -1,0 +1,3 @@
+DataCenterId,ClientId,Name,LocationId,Address,City,Country,Latitude,Longitude,Tier,Status,DesignKw,AvailableKw
+PB-DC-002,TELCO-NORTH,PB-DC-002 Ludhiana Data Park,PB-DC-002,Ludhiana Data Park,Ludhiana,India,30.891,75.8223,III,ACTIVE,70,40
+PB-DC-003,TELCO-NORTH,PB-DC-003 Ludhiana Data Park,PB-DC-003,Ludhiana Data Park,Ludhiana,India,30.876,75.8373,III,ACTIVE,70,38

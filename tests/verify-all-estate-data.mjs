@@ -31,25 +31,25 @@ const stReg = Object.fromEntries(Object.entries(REGION).flatMap(([r, s]) => s.ma
 const REQ = ['id','name','cat','type','st','city','state','lat','lon','ne','disc'];
 const badRec = LOC.filter(l => REQ.some(k => l[k] === undefined || l[k] === null || l[k] === '')).length;
 const ids = new Set(LOC.map(l => l.id));
-check('Location', 'total locations', 12475, LOC.length, F);
+check('Location', 'total locations', 12494, LOC.length, F);
 check('Location', 'records missing a required field', 0, badRec, F);
 check('Location', 'duplicate ids', 0, LOC.length - ids.size, F);
 check('Location', 'lat/lon inside India bbox (invalid count)', 0,
   LOC.filter(l => !(l.lat > 6 && l.lat < 38 && l.lon > 67 && l.lon < 98)).length, F);
 const cat = count(LOC, l => l.cat);
-check('Location', 'Datacenters (Central)', 829, cat.Central, F);
+check('Location', 'Datacenters (Central)', 848, cat.Central, F);
 check('Location', 'PoPs (Regional)', 2711, cat.Regional, F);
 check('Location', 'Sites (Edge)', 8935, cat.Edge, F);
 const st = count(LOC, l => l.st);
-check('Location', 'On-air', 9213, st['On-air'], F);
-check('Location', 'In progress', 1848, st['In progress'], F);
-check('Location', 'Planned', 1270, st.Planned, F);
+check('Location', 'On-air', 9230, st['On-air'], F);
+check('Location', 'In progress', 1849, st['In progress'], F);
+check('Location', 'Planned', 1271, st.Planned, F);
 check('Location', 'Failed', 144, st.Failed, F);
 const unmapped = LOC.filter(l => !stReg[l.state]).length;
 check('Location', 'locations in a state with no region', 0, unmapped, F);
 const reg = count(LOC, l => stReg[l.state]);
 const regTier = (r, c) => LOC.filter(l => stReg[l.state] === r && l.cat === c).length;
-const RG = { North: [3451,229,762,2460], West: [2428,163,550,1715], East: [4669,299,973,3397], South: [1927,138,426,1363] };
+const RG = { North: [3457,235,762,2460], West: [2431,166,550,1715], East: [4673,303,973,3397], South: [1933,144,426,1363] };
 for (const [r, [t, d, p, s]] of Object.entries(RG)) {
   check('Location', `${r} region total`, t, reg[r], F);
   check('Location', `${r} DC/PoP/Site`, [d, p, s], [regTier(r,'Central'), regTier(r,'Regional'), regTier(r,'Edge')], F);
@@ -62,8 +62,8 @@ for (const l of LOC) geoTotals[l.state] = (geoTotals[l.state] || 0) + 1;
 const L = await imp('src/data/ledger.ts');   // import runs the ledger self-check; a throw fails the run
 const FL = 'src/data/ledger.ts';
 check('Reconciliation', 'ledger self-checks (PHY_TABS/STOCK_ST/PHY_MATRIX) import without throwing', true, true, FL);
-check('Location', 'IL.locations/central/regional/edge', [12475,829,2711,8935], [L.IL.locations,L.IL.central,L.IL.regional,L.IL.edge], FL);
-check('Location', 'IL tiers sum to IL.locations', 12475, L.IL.central + L.IL.regional + L.IL.edge, FL);
+check('Location', 'IL.locations/central/regional/edge', [12494,848,2711,8935], [L.IL.locations,L.IL.central,L.IL.regional,L.IL.edge], FL);
+check('Location', 'IL tiers sum to IL.locations', 12494, L.IL.central + L.IL.regional + L.IL.edge, FL);
 check('Physical Devices', 'IL.ne / discovered / inactive', [2703,2379,412], [L.IL.ne,L.IL.discovered,L.IL.inactive], FL);
 check('Physical Devices', 'grand total elements', 3115, L.IL.ne + L.IL.inactive, FL);
 const tabs = Object.fromEntries(L.PHY_TABS.map(t => [t.k, [t.c, t.disc]]));
@@ -87,8 +87,8 @@ check('Physical Devices', 'spares', { instore:34, rma:41, intransit:12 }, L.EST.
 /* ── 3. networkHierarchy.ts ── */
 const H = (await imp('src/data/networkHierarchy.ts')).ESTATE_HIERARCHY;
 const FH = 'src/data/networkHierarchy.ts';
-check('Location', 'ESTATE_HIERARCHY totals', [829,2711,8935,12475], [H.dcCount,H.popCount,H.siteCount,H.totalLocations], FH);
-check('Location', 'ESTATE_HIERARCHY tiers sum', 12475, H.dcCount + H.popCount + H.siteCount, FH);
+check('Location', 'ESTATE_HIERARCHY totals', [848,2711,8935,12494], [H.dcCount,H.popCount,H.siteCount,H.totalLocations], FH);
+check('Location', 'ESTATE_HIERARCHY tiers sum', 12494, H.dcCount + H.popCount + H.siteCount, FH);
 
 /* ── 4. discovery.ts ── */
 const D = await imp('src/data/discovery.ts');
@@ -121,7 +121,7 @@ const loc = readFileSync(join(root, 'src/screens/Location.tsx'), 'utf8');
 const cc = loc.match(/const COVERAGE_CIRCLES: CoverageCircle\[\] = \[([\s\S]*?)\n\];/);
 if (cc) {
   const tot = [...cc[1].matchAll(/\btotal:\s*(\d+)/g)].map(m => +m[1]);
-  check('Location', 'COVERAGE_CIRCLES count / sum', [28, 12475], [tot.length, tot.reduce((a, b) => a + b, 0)], 'src/screens/Location.tsx');
+  check('Location', 'COVERAGE_CIRCLES count / sum', [28, 12494], [tot.length, tot.reduce((a, b) => a + b, 0)], 'src/screens/Location.tsx');
 } else check('Location', 'COVERAGE_CIRCLES parse', 'found', 'not found', 'src/screens/Location.tsx');
 const geo = await imp('src/data/geographicHierarchy.ts').catch(e => ({ err: e.message }));
 if (geo.GEOGRAPHIC_HIERARCHY) {
@@ -130,7 +130,7 @@ if (geo.GEOGRAPHIC_HIERARCHY) {
   const states = walk(geo.GEOGRAPHIC_HIERARCHY).filter(n => n && n.level === 'state' || n?.type === 'state');
   check('Location', 'GEOGRAPHIC_HIERARCHY parsed', true, g.length > 0, 'src/data/geographicHierarchy.ts');
   const sTot = states.map(s => s.total ?? s.totalLocations ?? s.count).filter(Number.isFinite);
-  if (sTot.length) check('Location', 'GEOGRAPHIC_HIERARCHY state totals', [28, 12475], [sTot.length, sum(sTot, x => x)], 'src/data/geographicHierarchy.ts');
+  if (sTot.length) check('Location', 'GEOGRAPHIC_HIERARCHY state totals', [28, 12494], [sTot.length, sum(sTot, x => x)], 'src/data/geographicHierarchy.ts');
 } else check('Location', 'GEOGRAPHIC_HIERARCHY import', 'ok', geo.err, 'src/data/geographicHierarchy.ts');
 
 /* ── 6. public/legacy.js (evaluated in a stub sandbox) ── */
@@ -143,17 +143,17 @@ try {
   runInContext(readFileSync(join(root, FG), 'utf8') + '\n;globalThis.__x={LOCATIONS,IL,STATE_REGION,LOC_GEO,TARGETS,MASTER_BY_IP,MASTER_BY_NAME,nodeRecord};', sb);
   const X = sb.__x;
   globalThis.__legacy = X;
-  check('Location', 'legacy LOCATIONS length', 12475, X.LOCATIONS.length, FG);
-  check('Location', 'legacy IL.locations', 12475, X.IL.locations, FG);
+  check('Location', 'legacy LOCATIONS length', 12494, X.LOCATIONS.length, FG);
+  check('Location', 'legacy IL.locations', 12494, X.IL.locations, FG);
   const lc = count(X.LOCATIONS, l => l.cat);
-  check('Location', 'legacy tiers', [829,2711,8935], [lc.Central, lc.Regional, lc.Edge], FG);
+  check('Location', 'legacy tiers', [848,2711,8935], [lc.Central, lc.Regional, lc.Edge], FG);
   const unm = [...new Set(LOC.map(l => l.state))].filter(s => !X.STATE_REGION[s]);
   check('Location', 'legacy STATE_REGION covers all 28 data states (unmapped)', [], unm, FG);
   const bad = Object.entries(X.STATE_REGION).filter(([s, r]) => stReg[s] !== r).length;
   check('Location', 'legacy STATE_REGION mapping mismatches', 0, bad, FG);
   const lr = count(X.LOCATIONS, l => X.STATE_REGION[l.state] || 'UNMAPPED');
-  check('Location', 'legacy regional sums', { North:3451, West:2428, East:4669, South:1927 }, lr, FG);
-  check('Location', 'legacy LOC_GEO sum', 12475, sum(X.LOC_GEO, g => g.tot), 'legacy/app-data.js');
+  check('Location', 'legacy regional sums', { North:3457, West:2431, East:4673, South:1933 }, lr, FG);
+  check('Location', 'legacy LOC_GEO sum', 12494, sum(X.LOC_GEO, g => g.tot), 'legacy/app-data.js');
   check('Location', 'legacy LOC_GEO states', 28, X.LOC_GEO.length, 'legacy/app-data.js');
   const lg = Object.fromEntries(X.LOC_GEO.map(g => [g.st, g.tot]));
   const mism = Object.keys(geoTotals).filter(s => lg[s] !== geoTotals[s]).length;
@@ -257,8 +257,8 @@ if (process.argv.includes('--browser')) {
   page.on('pageerror', e => errs.push(e.message));
   const B = 'http://localhost:5173';
   const screens = [
-    ['/inventory/location', ['12,475', 'Regions (4)', '5 States · 137 Cities', '6 States · 109 Cities', '12 States · 182 Cities', '5 States · 121 Cities']],
-    ['/inventory/location?view=list&drill=All+locations', ['Showing 25 of 12,475', '3,451', '4,669', '2,428', '1,927']],
+    ['/inventory/location', ['12,494', 'Regions (4)', '5 States · 140 Cities', '6 States · 109 Cities', '12 States · 182 Cities', '5 States · 121 Cities']],
+    ['/inventory/location?view=list&drill=All+locations', ['Showing 25 of 12,494', '3,457', '4,673', '2,431', '1,933']],
     ['/inventory/physical', ['Router (2,148)', 'Switch (349)', 'Server (96)', 'DWDM (78)', 'eNodeB (18)', 'gNodeB (14)', 'Showing 25 of 2,148']],
     ['/inventory/physical?cls=server', ['Server (96)', 'Showing 25 of 96']],
     ['/discovery/insights', ['98.23', '99.44', 'IP/MPLS polled targets: 3,162 (2,524 full · 399 partial · 239 failed)']],

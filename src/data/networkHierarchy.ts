@@ -139,10 +139,10 @@ export const ESTATE_HIERARCHY: EstateHierarchy = {
   id: 'datacenters-estate',
   name: 'Datacenters',
   tier: 'All Tiers',
-  dcCount: 829,
+  dcCount: 848,
   popCount: 2711,
   siteCount: 8935,
-  totalLocations: 12475,
+  totalLocations: 12494,
   totalElements: 5264,
   alertLocations: 51,
   circles: [

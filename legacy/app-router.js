@@ -244,7 +244,14 @@ function applyDrillQuery(view, q, label) {
       SITE_TAB = p.tab;
     }
   }
-  if (view === 'passive')  { if (p.tab) PASS_TAB = p.tab; }
+  if (view === 'passive')  {
+    if (p.tab) PASS_TAB = p.tab;
+    /* arriving from a link (Physical resources › View rack) sets the data center
+       filter; a plain arrival keeps whatever the reader last chose */
+    if (p.dc) { PASS_DC = decodeURIComponent(p.dc); PASS_SRC = 'all'; }
+    if (p.src) PASS_SRC = ['net', 'dc'].includes(p.src) ? p.src : 'all';
+    if (p.rack && p.dc) gridOf('passive').search = `${PASS_DC}-${decodeURIComponent(p.rack)}`;
+  }
   /* as in setParams: only a different frame closes the gallery, since this
      also runs on the re-render that follows opening it */
   if (view === 'odf')      { if (p.id) { const v = decodeURIComponent(p.id).trim();
@@ -919,6 +926,8 @@ document.addEventListener('click', e => {
   if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
+  const psrc = e.target.closest('[data-passsrc]');
+  if (psrc) { PASS_SRC = psrc.dataset.passsrc; go('passive'); return; }
   const fbt = e.target.closest('[data-fibertab]');
   if (fbt) { FIBER_TAB = fbt.dataset.fibertab; go('fiber'); return; }
   const ssec = e.target.closest('[data-sitesection]');
@@ -1144,6 +1153,9 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   if (e.target.hasAttribute && e.target.hasAttribute('data-mapstate')) {
     selectMapState(e.target.value); return;
+  }
+  if (e.target.hasAttribute && e.target.hasAttribute('data-passdc')) {
+    PASS_DC = e.target.value; go('passive'); return;
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
     const [key, field] = e.target.dataset.filterval.split('|');

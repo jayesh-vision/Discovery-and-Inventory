@@ -1,0 +1,5 @@
+ZoneId,RoomId,Name,Kind
+MH-DC-005-EQR-COOL,MH-DC-005-EQR,Equipment room cooling zone,COOLING
+MH-DC-005-EQR-PWR,MH-DC-005-EQR,Equipment room power zone,POWER
+MH-DC-006-EQR-COOL,MH-DC-006-EQR,Equipment room cooling zone,COOLING
+MH-DC-006-EQR-PWR,MH-DC-006-EQR,Equipment room power zone,POWER

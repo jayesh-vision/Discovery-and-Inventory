@@ -1,0 +1,3 @@
+DataCenterId,ClientId,Name,LocationId,Address,City,Country,Latitude,Longitude,Tier,Status,DesignKw,AvailableKw
+MH-DC-005,COLO-WEST,MH-DC-005 Mumbai Data Park,MH-DC-005,Mumbai Data Park,Mumbai,India,20.087,75.54,III,ACTIVE,30,18
+MH-DC-006,COLO-WEST,MH-DC-006 Mumbai Data Park,MH-DC-006,Mumbai Data Park,Mumbai,India,20.127,75.555,III,ACTIVE,80,41

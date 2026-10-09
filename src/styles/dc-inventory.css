@@ -1,0 +1,21 @@
+/* Data center inventory inside Physical resources: the source filter, GPU
+   overview and the device drawer. Pairs with dcim.css (.dcim .kv, .plain). */
+.dc-filters { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; }
+.dc-filters select { min-width: 11rem; }
+.dcd h4 { margin: 0 0 6px; font-size: 0.8125rem; font-weight: 600; color: var(--vw-color-gray-800); }
+.dcd-sec { margin-top: 16px; }
+.dcd-gpus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dcd-gpu { border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md); padding: 8px 10px; display: grid; gap: 2px; }
+.dcd-gpu.is-degraded { border-color: var(--vw-color-amber-400); }
+.dcd-gpu.is-failed { border-color: var(--vw-color-red-400); }
+.dc-gpu-over { display: grid; gap: var(--vw-space-md); margin-bottom: var(--vw-space-md); }
+.dc-box { border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-md); padding: var(--vw-space-md); display: grid; gap: 10px; }
+.dc-mix { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--vw-color-slate-100); }
+.dc-mix i { display: block; height: 100%; }
+.dc-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.75rem; color: var(--vw-color-gray-600); }
+.dc-legend span { display: inline-flex; gap: 6px; align-items: center; }
+.dc-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.dc-pods { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: var(--vw-space-md); }
+.dc-pod { display: grid; gap: 4px; align-content: start; }
+.dc-src { font-size: 0.75rem; color: var(--vw-color-gray-500); }
+@media (max-width: 560px) { .dcd-gpus { grid-template-columns: 1fr; } }
