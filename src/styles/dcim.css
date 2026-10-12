@@ -118,6 +118,9 @@
 .up .step-t b { font-size: .8125rem; font-weight: 600; color: inherit; }
 .up .stepper li.is-on .step-t b { color: var(--vw-color-gray-900); }
 .up .step-t small { font-size: .6875rem; color: var(--vw-color-gray-500); }
+.up .stepper li.is-clickable { cursor: pointer; user-select: none; }
+.up .stepper li.is-clickable:hover .step-dot { transform: scale(1.08); transition: transform 0.15s ease; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+.up .stepper li.is-clickable:hover .step-t b { color: var(--vw-color-emerald-600, #059669); text-decoration: underline; text-underline-offset: 2px; }
 @media (max-width: 900px) { .up .step-t small { display: none; } }
 .up .up-note { font-size: .8125rem; padding: 8px 12px; border-radius: var(--vw-radius-sm); background: var(--primaryColor50, var(--vw-color-sky-50)); color: var(--vw-color-gray-700); }
 .up .up-alert { display: flex; gap: 10px; align-items: center; font-size: .8125rem; padding: 10px 14px; border-radius: var(--vw-radius-sm); border: 1px solid; }

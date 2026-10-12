@@ -41,8 +41,8 @@ export default function DataCenters() {
     try { await (k === 'template' ? downloadTemplate() : downloadSample()); } catch (e) { setErr(`Could not build the workbook: ${(e as Error).message}`); }
     finally { setBusy(null); }
   };
-  const toImport = () => nav(`/inventory/dcim/import${clientId ? `?client=${encodeURIComponent(clientId)}` : ''}`);
-  const open = (dc: DataCenter) => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}`);
+  const toImport = () => nav(`/inventory/dcim/import?${clientId ? `client=${encodeURIComponent(clientId)}&` : ''}from=${encodeURIComponent('Location · Data centers')}`);
+  const open = (dc: DataCenter) => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}&from=${encodeURIComponent('Location · Data centers')}`);
 
   return (
     <div className="page dcim">

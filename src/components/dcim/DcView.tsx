@@ -36,7 +36,10 @@ export function DcView({ data, dcId, source }: { data: ClientData; dcId: string;
   const setTab = (k: TabK) => { const n = new URLSearchParams(sp); n.set('dtab', k); setSp(n, { replace: true }); };
   const w = worst(fs);
   const batches = importHistory(source.clientId);
-  const upload = () => nav(`/inventory/dcim/import?client=${encodeURIComponent(source.clientId)}${s.dc.locationId ? `&location=${encodeURIComponent(s.dc.locationId)}` : ''}`);
+  const upload = () => {
+    const from = sp.get('from') || (typeof window !== 'undefined' && window.location.pathname.includes('/infrastructure') ? 'Infrastructure' : typeof window !== 'undefined' && window.location.pathname.includes('/passive') ? 'Passive Infrastructure' : 'Location · Data centers');
+    nav(`/inventory/dcim/import?client=${encodeURIComponent(source.clientId)}${s.dc.locationId ? `&location=${encodeURIComponent(s.dc.locationId)}` : ''}&from=${encodeURIComponent(from)}`);
+  };
   const download = async () => { setBusy(true); try { await downloadInventory(source.clientId, dcId); } finally { setBusy(false); } };
   const TABS: { k: TabK; n: string; count?: number }[] = [
     { k: 'overview', n: 'Overview' }, { k: 'locations', n: 'Locations', count: c.rooms }, { k: 'racks', n: 'Racks', count: c.racks },
@@ -46,10 +49,46 @@ export function DcView({ data, dcId, source }: { data: ClientData; dcId: string;
     { k: 'links', n: 'Discovery links', count: data.links.length }
   ];
 
+  const isStandalone = typeof window !== 'undefined' && window.location.pathname.includes('/inventory/datacenter/');
+  const fromParam = sp.get('from');
+  const locParam = sp.get('location') || s.dc.locationId;
+  const backToOrigin = () => {
+    if (fromParam?.toLowerCase().includes('import')) {
+      const q = new URLSearchParams();
+      if (locParam) q.set('location', locParam);
+      if (source.clientId) q.set('client', source.clientId);
+      q.set('from', 'Infrastructure');
+      nav(`/inventory/dcim/import?${q.toString()}`);
+    } else if (fromParam?.toLowerCase().includes('infrastructure') || locParam) {
+      nav(`/inventory/location/site/${encodeURIComponent(locParam!)}/infrastructure`);
+    } else if (fromParam?.toLowerCase().includes('passive')) {
+      nav('/inventory/passive');
+    } else {
+      nav(source.clientId ? `/inventory/dcim?client=${encodeURIComponent(source.clientId)}` : '/inventory/dcim');
+    }
+  };
+  const backOriginLabel = useMemo(() => {
+    if (fromParam?.toLowerCase().includes('import')) return 'Back to import';
+    if (fromParam?.toLowerCase().includes('infrastructure') || locParam) return `Back to site infrastructure`;
+    if (fromParam?.toLowerCase().includes('passive')) return 'Back to passive';
+    return 'Back to data centers';
+  }, [fromParam, locParam]);
+
   return (
     <div className="stack dcim">
       <Card className="dc-head">
         <div className="dc-head-row">
+          {isStandalone && (
+            <button
+              type="button"
+              className="nst-btn nst-btn--sm nst-btn--ghost"
+              onClick={backToOrigin}
+              title={backOriginLabel}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              ← {backOriginLabel}
+            </button>
+          )}
           <span className="dc-icon" aria-hidden>▦</span>
           <div style={{ minWidth: 0 }}>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>

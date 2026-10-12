@@ -85,8 +85,8 @@ export const SCREENS: Screen[] = [
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
   { key: 'datacenter', path: '/inventory/datacenter/:dcId', module: 'Inventory', crumb: 'Location · Data center', rail: 'location', component: DataCenterDetail },
   /* DCIM: client infrastructure imported from Excel/CSV (src/dcim) */
-  { key: 'dcim',       path: '/inventory/dcim',        module: 'Inventory', crumb: 'Data centers', component: DataCenters },
-  { key: 'dcimimport', path: '/inventory/dcim/import', module: 'Inventory', crumb: 'Data centers · Import', rail: 'dcim', component: DcimImport },
+  { key: 'dcim',       path: '/inventory/dcim',        module: 'Inventory', crumb: 'Location · Data centers', rail: 'dcim', component: DataCenters },
+  { key: 'dcimimport', path: '/inventory/dcim/import', module: 'Inventory', crumb: 'Location · Data centers · Import', rail: 'dcim', component: DcimImport },
   { key: 'site',      path: '/inventory/location/site/:id',       module: 'Inventory', crumb: 'Location · Site details', rail: 'location', legacy: true },
   { key: 'capex',     path: '/inventory/location/site/:id/capex', module: 'Inventory', crumb: 'Location · Site details · Capex', rail: 'location', legacy: true },
   { key: 'opex',      path: '/inventory/location/site/:id/opex',  module: 'Inventory', crumb: 'Location · Site details · Opex', rail: 'location', legacy: true },
@@ -164,6 +164,7 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
    The breadcrumb is hidden on a landing until the reader drills in. */
 export function isLanding(s: Screen): boolean {
   if (s.path.includes(':')) return false;
+  if (s.key === 'dcim') return false;
   if (!s.rail) return true;
   const parent = screenByKey(s.rail);
   return !!parent && parent.crumb === s.crumb;

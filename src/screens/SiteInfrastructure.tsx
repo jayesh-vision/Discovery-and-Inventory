@@ -40,7 +40,7 @@ export default function SiteInfrastructure() {
         <Card>
           <Empty icon="⇪" title={`No infrastructure inventory uploaded for ${l.id}`}
             actions={<>
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => nav(`/inventory/dcim/import?location=${encodeURIComponent(l.id)}`)}>Upload inventory</button>
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => nav(`/inventory/dcim/import?location=${encodeURIComponent(l.id)}&from=Infrastructure`)}>Upload inventory</button>
               <button type="button" className="nst-btn nst-btn--sm" onClick={() => downloadSiteExample(l)}>Download example for {l.id}</button>
               <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => downloadTemplate()}>Blank template</button>
             </>}>

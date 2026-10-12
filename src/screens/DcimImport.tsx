@@ -4,7 +4,7 @@
    An upload adds new records and updates changed ones by ID; records that are
    not in the file are kept. ?client= preselects a client, ?location= says
    which Inventory › Location site the upload is for (checked on review). */
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono } from '../components/ui';
 import { Empty, Head, fmt } from '../components/dcim/common';
@@ -13,6 +13,7 @@ import { SHEETS, sheetByEntity } from '../dcim/schema';
 import { unmappedRequired, type Issue, type SheetPlan } from '../dcim/parse';
 import type { StagedImport } from '../dcim/reconcile';
 import { ENTITY_KEYS, type EntityKey, type ImportBatch } from '../dcim/model';
+import { findCityByFacilityCode } from '../data/geographicHierarchy';
 import '../styles/dcim.css';
 
 type Step = 'client' | 'file' | 'columns' | 'review' | 'done';
@@ -30,10 +31,14 @@ const size = (b: number) => b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${
 
 export default function DcimImport() {
   const nav = useNavigate();
-  const [sp] = useSearchParams();
+  const [sp, setSp] = useSearchParams();
   const location = sp.get('location');
+  const from = sp.get('from');
   const clients = useClients();
-  const [step, setStep] = useState<Step>('client');
+  const urlStep = (sp.get('step') as Step) || 'client';
+  const [step, setStep] = useState<Step>(
+    ['client', 'file', 'columns', 'review', 'done'].includes(urlStep) ? urlStep : 'client'
+  );
   const [clientId, setClientId] = useState<string>(sp.get('client') ?? (clients.length === 1 ? clients[0].id : ''));
   const [creating, setCreating] = useState(!clients.length);
   const [nc, setNc] = useState({ id: '', name: '', industry: '' });
@@ -50,13 +55,88 @@ export default function DcimImport() {
   const at = STEPS.findIndex(s => s.k === step);
   const fileName = files.map(f => f.name).join(', ');
 
+  // Navigate to step and push into browser history so browser back/forward (← / →) works step-by-step
+  const goTo = (next: Step, replace = false) => {
+    setStep(next);
+    const n = new URLSearchParams(sp);
+    if (next === 'client') {
+      n.delete('step');
+    } else {
+      n.set('step', next);
+    }
+    setSp(n, { replace });
+  };
+
+  // Keep internal step synchronized when the user presses browser Back (←) or Forward (→)
+  useEffect(() => {
+    if (urlStep && ['client', 'file', 'columns', 'review', 'done'].includes(urlStep)) {
+      setStep(urlStep);
+    }
+  }, [urlStep]);
+
+  // If user opens or refreshes on review/columns without staged/planned data in memory, gracefully step back
+  useEffect(() => {
+    if (step === 'review' && !staged) {
+      if (plans.length > 0) goTo('columns', true);
+      else if (files.length > 0) goTo('file', true);
+      else goTo('client', true);
+    } else if (step === 'columns' && !plans.length) {
+      if (files.length > 0) goTo('file', true);
+      else goTo('client', true);
+    }
+  }, [step, staged, plans.length, files.length]);
+
+  const goBackOne = () => {
+    if (step === 'done') {
+      goTo('review');
+    } else if (step === 'review') {
+      goTo('columns');
+    } else if (step === 'columns') {
+      goTo('file');
+    } else if (step === 'file') {
+      goTo('client');
+    } else if (step === 'client') {
+      if (from?.toLowerCase().includes('infrastructure') && location) {
+        nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`);
+      } else if (from?.toLowerCase().includes('passive')) {
+        nav('/inventory/passive');
+      } else if (from?.toLowerCase().includes('city') && location) {
+        const cityMatch = findCityByFacilityCode(location);
+        if (cityMatch) {
+          nav(`/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}&facilityId=${encodeURIComponent(location)}`);
+        } else {
+          nav('/inventory/location');
+        }
+      } else if (from?.toLowerCase().includes('site') && location) {
+        nav(`/inventory/location/site/${encodeURIComponent(location)}`);
+      } else if (location) {
+        nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`);
+      } else {
+        nav(clientId ? `/inventory/dcim?client=${encodeURIComponent(clientId)}` : '/inventory/dcim');
+      }
+    }
+  };
+
+  const backLabel = useMemo(() => {
+    if (step === 'done') return 'Back to review';
+    if (step === 'review') return 'Back to columns';
+    if (step === 'columns') return 'Back to file';
+    if (step === 'file') return 'Back to client';
+    if (from?.toLowerCase().includes('infrastructure')) return 'Back to infrastructure';
+    if (from?.toLowerCase().includes('passive')) return 'Back to passive';
+    if (from?.toLowerCase().includes('city') && location) return `Back to ${location}`;
+    if (from?.toLowerCase().includes('site') && location) return `Back to site ${location}`;
+    if (location) return `Back to site ${location}`;
+    return 'Back to data centers';
+  }, [step, location, from]);
+
   /* step 1 */
   const chooseClient = async () => {
     setErr(null);
     try {
       if (creating) { const c = await saveClient({ id: nc.id, name: nc.name || nc.id, industry: nc.industry || undefined }); setClientId(c.id); setCreating(false); setNc({ id: '', name: '', industry: '' }); }
       else if (!clientId) throw new Error('Choose a client, or create one.');
-      setStep('file');
+      goTo('file');
     } catch (e) { setErr((e as Error).message); }
   };
 
@@ -72,7 +152,7 @@ export default function DcimImport() {
       const ps = plan(raws);
       setFiles(ok); setPlans(ps);
       setOpen(ps.findIndex(p => p.def === null && p.raw.rows.length > 0 || unmappedRequired(p).length > 0));
-      setStep('columns');
+      goTo('columns');
     } catch (e) { setErr(`Could not read the file: ${(e as Error).message}`); }
     finally { setBusy(null); }
   };
@@ -90,7 +170,11 @@ export default function DcimImport() {
   const validate = () => {
     setErr(null); setBusy('Validating against the stored inventory…');
     setTimeout(() => {
-      try { setStaged(stage(clientId, client?.name, fileName, plans)); setStep('review'); }
+      try {
+        const stagedResult = stage(clientId, client?.name, fileName, plans);
+        setStaged(stagedResult);
+        goTo('review');
+      }
       catch (e) { setErr((e as Error).message); }
       finally { setBusy(null); }
     }, 30);
@@ -100,19 +184,33 @@ export default function DcimImport() {
   const confirm = async () => {
     if (!staged?.ok) return;
     setBusy('Uploading…'); setErr(null);
-    try { setBatch(await commitImport(staged)); setStep('done'); }
+    try {
+      const b = await commitImport(staged);
+      setBatch(b);
+      goTo('done');
+    }
     catch (e) { setErr(`Upload failed — nothing was changed. ${(e as Error).message}`); }
     finally { setBusy(null); }
   };
-  const restart = () => { setFiles([]); setPlans([]); setStaged(null); setBatch(null); setErr(null); setStep('file'); };
+  const restart = () => { setFiles([]); setPlans([]); setStaged(null); setBatch(null); setErr(null); goTo('file'); };
 
   return (
     <div className="page dcim up">
       <Card className="up-head">
         <div className="up-head-row">
-          <div>
-            <h2 className="up-title">Upload infrastructure inventory</h2>
-            <p className="vw-card-description small" style={{ margin: 0 }}>Buildings, floors, rooms, rows, racks, devices, cabling, power plant, cooling and sensors — from one Excel workbook or a set of CSV files.</p>
+          <div className="row" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="nst-btn nst-btn--sm nst-btn--ghost"
+              onClick={goBackOne}
+              title={backLabel}
+            >
+              ← {backLabel}
+            </button>
+            <div>
+              <h2 className="up-title">Upload infrastructure inventory</h2>
+              <p className="vw-card-description small" style={{ margin: 0 }}>Buildings, floors, rooms, rows, racks, devices, cabling, power plant, cooling and sensors — from one Excel workbook or a set of CSV files.</p>
+            </div>
           </div>
           <div className="row">
             <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => downloadTemplate()}>Download template</button>
@@ -121,7 +219,23 @@ export default function DcimImport() {
         </div>
         <ol className="stepper" aria-label="Upload steps">
           {STEPS.map((s, i) => (
-            <li key={s.k} className={i === at ? 'is-on' : i < at ? 'is-done' : ''} aria-current={i === at ? 'step' : undefined}>
+            <li
+              key={s.k}
+              className={`${i === at ? 'is-on' : i < at ? 'is-done' : ''}${i < at ? ' is-clickable' : ''}`}
+              aria-current={i === at ? 'step' : undefined}
+              role={i < at ? 'button' : undefined}
+              tabIndex={i < at ? 0 : undefined}
+              onClick={() => {
+                if (i < at) goTo(s.k);
+              }}
+              onKeyDown={e => {
+                if (i < at && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  goTo(s.k);
+                }
+              }}
+              title={i < at ? `Go back to ${s.n}` : undefined}
+            >
               <span className="step-dot">{i < at ? '✓' : i + 1}</span>
               <span className="step-t"><b>{s.n}</b><small>{s.s}</small></span>
             </li>
@@ -163,7 +277,7 @@ export default function DcimImport() {
             </div>
           )}
           <div className="up-foot">
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav('/inventory/dcim')}>Cancel</button>
+            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={goBackOne}>Cancel</button>
             <span className="grow" />
             <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={chooseClient} disabled={creating ? !nc.id.trim() || !nc.name.trim() : !clientId}>Continue</button>
           </div>
@@ -186,7 +300,7 @@ export default function DcimImport() {
               </div>
             </div>
             <div className="up-foot">
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => setStep('client')}>Back</button>
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => goTo('client')}>Back</button>
             </div>
           </Card>
           <Card>
@@ -250,7 +364,7 @@ export default function DcimImport() {
             </tbody>
           </table>
           <div className="up-foot">
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => setStep('file')}>Back</button>
+            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => goTo('file')}>Back</button>
             <span className="grow" />
             {blocked > 0 && <span className="issue-error small">{blocked} sheet{blocked > 1 ? 's' : ''} need a required column mapped</span>}
             <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={validate} disabled={!!busy || !plans.some(p => p.def)}>Validate</button>
@@ -259,7 +373,7 @@ export default function DcimImport() {
       )}
 
       {step === 'review' && staged && <Review staged={staged} client={client?.name ?? clientId} location={location} busy={!!busy}
-        onBack={() => setStep('columns')} onRestart={restart} onConfirm={confirm} />}
+        onBack={() => goTo('columns')} onRestart={restart} onConfirm={confirm} />}
 
       {step === 'done' && batch && staged && (
         <Card>
@@ -268,14 +382,19 @@ export default function DcimImport() {
             <h3>Inventory uploaded for {client?.name ?? clientId}</h3>
             <p className="muted small">Batch <Mono>{batch.id}</Mono> · {fmt(batch.created)} created · {fmt(batch.updated)} updated · {fmt(batch.unchanged)} unchanged · {fmt(batch.keptNotInFile)} kept (not in file){batch.warnings ? ` · ${fmt(batch.warnings)} warnings` : ''}</p>
             <div className="done-dcs">
-              {staged.staged.dataCenters.map(dc => (
-                <button key={dc.id} type="button" className="client-card" onClick={() => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}`)}>
-                  <span className="client-av" aria-hidden>▦</span>
-                  <span className="client-b"><strong>{dc.name}</strong><small><Mono>{dc.id}</Mono>{dc.locationId ? ` · location ${dc.locationId}` : ''}</small><small>Open inventory ›</small></span>
-                </button>
-              ))}
+              {staged.staged.dataCenters.map(dc => {
+                const fromQuery = `&from=${encodeURIComponent(from ? `${from} · Import` : 'Import')}`;
+                const locQuery = location || dc.locationId ? `&location=${encodeURIComponent(location || dc.locationId!)}` : '';
+                return (
+                  <button key={dc.id} type="button" className="client-card" onClick={() => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}${fromQuery}${locQuery}`)}>
+                    <span className="client-av" aria-hidden>▦</span>
+                    <span className="client-b"><strong>{dc.name}</strong><small><Mono>{dc.id}</Mono>{dc.locationId ? ` · location ${dc.locationId}` : ''}</small><small>Open inventory ›</small></span>
+                  </button>
+                );
+              })}
             </div>
             <div className="row" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => goTo('review')}>Back to review</button>
               {location && <button type="button" className="nst-btn nst-btn--sm" onClick={() => nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`)}>Back to site {location}</button>}
               <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(`/inventory/dcim?client=${encodeURIComponent(batch.clientId)}`)}>All data centers</button>
               <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={restart}>Upload another file</button>
@@ -306,11 +425,15 @@ function Review({ staged, client, location, busy, onBack, onRestart, onConfirm }
   };
   return (
     <>
-      <div className={`up-banner ${staged.ok ? 'up-banner--ok' : 'up-banner--bad'}`}>
+      <div className={`up-banner ${staged.ok ? 'up-banner--ok' : 'up-banner--bad'}`} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <span className="up-banner-ic" aria-hidden>{staged.ok ? '✓' : '!'}</span>
-        <div>
+        <div style={{ flex: 1, minWidth: 220 }}>
           <strong>{staged.ok ? `Ready to upload for ${client}` : `${fmt(tot.errors)} error${tot.errors === 1 ? '' : 's'} must be fixed before uploading`}</strong>
           <small>{staged.ok ? `${fmt(tot.created)} new and ${fmt(tot.updated)} updated records will be saved. ${fmt(tot.keptNotInFile)} stored records not in this file are kept.` : 'Fix them in your file and upload it again, or correct the column mapping.'}{tot.warnings ? ` ${fmt(tot.warnings)} warning${tot.warnings === 1 ? '' : 's'} can be accepted.` : ''}</small>
+        </div>
+        <div className="row" style={{ gap: 8, flexShrink: 0, alignItems: 'center' }}>
+          <button type="button" className="nst-btn nst-btn--xs nst-btn--ghost" onClick={onBack}>← Back to columns</button>
+          <button type="button" className="nst-btn nst-btn--xs nst-btn--ghost" onClick={onRestart}>Upload corrected file</button>
         </div>
       </div>
       {locMissing && <div className="up-alert up-alert--warn">No data center in this file has LocationId <Mono>{location}</Mono>, so it will not appear on that site's Infrastructure tab. Add it to the DataCenters sheet if this inventory belongs to that site.</div>}

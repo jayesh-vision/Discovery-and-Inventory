@@ -60,8 +60,21 @@ export default function DataCenterDetail() {
         ) : (
           <Empty title={`No physical inventory imported for ${dcId}`}
             actions={<>
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => nav(`/inventory/dcim/import?location=${encodeURIComponent(dcId)}${sp.get('client') ? `&client=${encodeURIComponent(sp.get('client')!)}` : ''}`)}>Upload inventory</button>
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav('/inventory/dcim')}>All data centers</button>
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => {
+                const fromVal = sp.get('from') || (estate ? 'Location · City details' : 'Location · Data centers');
+                nav(`/inventory/dcim/import?location=${encodeURIComponent(dcId)}${sp.get('client') ? `&client=${encodeURIComponent(sp.get('client')!)}` : ''}&from=${encodeURIComponent(fromVal)}`);
+              }}>Upload inventory</button>
+              {(sp.get('location') || estate) && (
+                <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(`/inventory/location/site/${encodeURIComponent(sp.get('location') || dcId)}/infrastructure`)}>
+                  Back to site infrastructure
+                </button>
+              )}
+              {estate && (
+                <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(`/inventory/location/city/${estate.city.id}?facility=${estate.facilityType}&facilityId=${encodeURIComponent(dcId)}`)}>
+                  Back to {estate.city.name}
+                </button>
+              )}
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(sp.get('client') ? `/inventory/dcim?client=${encodeURIComponent(sp.get('client')!)}` : '/inventory/dcim')}>All data centers</button>
             </>}>
             {estate ? `${dcId} is an estate facility in ${estate.city.name}, ${estate.state.name}. ` : ''}
             Its buildings, floors, rooms, racks and equipment appear here once a client imports them (put {dcId} in the DataCenters sheet's LocationId column).

@@ -3,6 +3,7 @@ import { SCREENS, isLanding } from '../routes';
 import { getCityById, findCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
+import { store } from '../dcim/api';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -82,7 +83,7 @@ export default function Topbar() {
      screen it came from, so the trail (and the way back) shows. Only landings
      do this: detail screens already carry their own from/drill context. */
   let from = sp.get('from');
-  if (!from && !drill && origin && !s.root && isLanding(s)) {
+  if (!from && !drill && origin && !s.root && (isLanding(s) || s.key === 'dcim')) {
     const originScreen = screenFor(origin.pathname);
     if (originScreen && originScreen.key !== s.key) {
       from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
@@ -126,7 +127,19 @@ export default function Topbar() {
     if (!t) return null;
     let path = t.path;
     const hopSp = hopQuery ? new URLSearchParams(hopQuery) : null;
+    if (t.key === 'dcim') {
+      const c = hopSp?.get('client') || sp.get('client');
+      return c ? `${path}?client=${encodeURIComponent(c)}` : path;
+    }
     const mergedParams: Record<string, string> = { ...params };
+    if (hopSp) {
+      for (const [k, v] of hopSp.entries()) {
+        if (!mergedParams[k]) mergedParams[k] = v;
+      }
+    }
+    for (const [k, v] of sp.entries()) {
+      if (!mergedParams[k]) mergedParams[k] = v;
+    }
     if (!mergedParams.id) {
       const siteRef = hopSp?.get('id') || hopSp?.get('site')
         || sp.get('site') || sp.get('id')
@@ -341,12 +354,13 @@ export default function Topbar() {
     }
   }
 
-  if ((s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment') && params.id) {
+  if ((s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra') && params.id) {
     const siteId = params.id;
     const cityMatch = findCityByFacilityCode(siteId);
     const subLabel = s.key === 'capex' ? 'Capex'
       : s.key === 'opex' ? 'Opex'
       : s.key === 'sitedetails' ? 'Facility'
+      : s.key === 'siteinfra' ? 'Infrastructure'
       : 'Site equipment';
 
     if (cityMatch) {
@@ -411,6 +425,231 @@ export default function Topbar() {
         { label: 'Location', to: '/inventory/location' }
       ];
       finalLeafLabel = deviceDisplayName;
+    }
+  }
+
+  if (s.key === 'dcim') {
+    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
+    const originSegs = hops.length > 0
+      ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers')
+      : [];
+    const clientParam = sp.get('client');
+    const dcimTo = `/inventory/dcim${clientParam ? `?client=${encodeURIComponent(clientParam)}` : ''}`;
+
+    if (drill && drill !== 'Data centers') {
+      segs = [
+        ...originSegs,
+        { label: 'Location', to: locTo },
+        { label: 'Data centers', to: dcimTo }
+      ];
+      finalLeafLabel = drill;
+    } else {
+      segs = [
+        ...originSegs,
+        { label: 'Location', to: locTo }
+      ];
+      finalLeafLabel = 'Data centers';
+    }
+  }
+
+  if (s.key === 'dcimimport') {
+    const locParam = sp.get('location');
+    const clientParam = sp.get('client');
+    const stepParam = sp.get('step');
+    const locTo = '/inventory/location';
+    const dcimTo = `/inventory/dcim${clientParam ? `?client=${encodeURIComponent(clientParam)}` : ''}`;
+
+    const isFromPassive = from?.toLowerCase().includes('passive');
+    const isFromInfra = !isFromPassive && from?.toLowerCase().includes('infrastructure');
+    const isFromCity = !isFromPassive && !isFromInfra && (from?.toLowerCase().includes('city') || sp.has('cityId'));
+    const isFromLocationSite = !isFromPassive && !isFromInfra && !isFromCity && !!locParam && from?.toLowerCase().includes('site');
+
+    if (isFromInfra) {
+      const siteId = locParam;
+      segs = [{
+        label: 'Infrastructure',
+        to: siteId ? `/inventory/location/site/${encodeURIComponent(siteId)}/infrastructure` : locTo
+      }];
+    } else if (isFromPassive) {
+      segs = [
+        { label: 'Passive Infrastructure', to: '/inventory/passive' }
+      ];
+    } else if (isFromCity) {
+      const siteId = locParam;
+      const cityMatch = siteId ? findCityByFacilityCode(siteId) : null;
+      segs = [{ label: 'Location', to: locTo }];
+      if (cityMatch && siteId) {
+        segs.push({
+          label: cityMatch.city.name,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+        });
+        segs.push({
+          label: siteId,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}&facilityId=${encodeURIComponent(siteId)}`
+        });
+      }
+    } else if (isFromLocationSite) {
+      const siteId = locParam!;
+      const cityMatch = findCityByFacilityCode(siteId);
+      segs = [{ label: 'Location', to: locTo }];
+      if (cityMatch) {
+        segs.push({
+          label: cityMatch.city.name,
+          to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
+        });
+      }
+      segs.push({
+        label: siteId,
+        to: `/inventory/location/site/${encodeURIComponent(siteId)}`
+      });
+    } else {
+      const originSegs = hops.length > 0
+        ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers' && x.label !== 'Import')
+        : [];
+      segs = [
+        ...originSegs,
+        { label: 'Location', to: locTo },
+        { label: 'Data centers', to: dcimTo }
+      ];
+    }
+
+    // Base target for returning to the initial import screen
+    const baseImportQuery = new URLSearchParams();
+    if (locParam) baseImportQuery.set('location', locParam);
+    if (from) baseImportQuery.set('from', from);
+    if (clientParam) baseImportQuery.set('client', clientParam);
+    const baseImportTo = `/inventory/dcim/import${baseImportQuery.toString() ? `?${baseImportQuery.toString()}` : ''}`;
+
+    const stepTarget = (st: string) => {
+      const q = new URLSearchParams(baseImportQuery);
+      q.set('step', st);
+      return `/inventory/dcim/import?${q.toString()}`;
+    };
+
+    if (stepParam === 'file') {
+      segs.push({ label: 'Import', to: baseImportTo });
+      finalLeafLabel = drill || 'File';
+    } else if (stepParam === 'columns') {
+      segs.push({ label: 'Import', to: baseImportTo });
+      segs.push({ label: 'File', to: stepTarget('file') });
+      finalLeafLabel = drill || 'Columns';
+    } else if (stepParam === 'review') {
+      segs.push({ label: 'Import', to: baseImportTo });
+      segs.push({ label: 'Columns', to: stepTarget('columns') });
+      finalLeafLabel = drill || 'Review';
+    } else if (stepParam === 'done') {
+      segs.push({ label: 'Import', to: baseImportTo });
+      segs.push({ label: 'Review', to: stepTarget('review') });
+      finalLeafLabel = drill || 'Done';
+    } else {
+      finalLeafLabel = drill || 'Import';
+    }
+  }
+
+  if (s.key === 'datacenter' && params.dcId) {
+    const dcId = params.dcId;
+    const clientParam = sp.get('client');
+    let dcName = dcId;
+    let matchedLocationId: string | null = null;
+    let foundClientId = clientParam;
+
+    const clients = store.clients();
+    for (const c of clients) {
+      if (clientParam && c.id !== clientParam) continue;
+      for (const dc of store.data(c.id)?.entities.dataCenters ?? []) {
+        if (dc.id === dcId || dc.locationId === dcId) {
+          dcName = dc.name || dc.id;
+          matchedLocationId = dc.locationId || null;
+          foundClientId = c.id;
+          break;
+        }
+      }
+      if (matchedLocationId) break;
+    }
+
+    const cityMatch = findCityByFacilityCode(matchedLocationId || dcId);
+    const locTo = '/inventory/location';
+    const dcimTo = `/inventory/dcim${foundClientId ? `?client=${encodeURIComponent(foundClientId)}` : ''}`;
+    const dcSelfTo = `/inventory/datacenter/${encodeURIComponent(dcId)}${search}`;
+
+    const isFromPassive = from?.toLowerCase().includes('passive');
+    const isFromInfra = !isFromPassive && from?.toLowerCase().includes('infrastructure');
+    const isFromCity = !isFromPassive && !isFromInfra && (from?.toLowerCase().includes('city') || sp.has('cityId') || (!from && !clientParam && !!cityMatch));
+
+    if (isFromInfra) {
+      const siteId = sp.get('location') || matchedLocationId || (cityMatch ? dcId : null);
+      segs = [{
+        label: 'Infrastructure',
+        to: siteId ? `/inventory/location/site/${encodeURIComponent(siteId)}/infrastructure` : locTo
+      }];
+      if (from?.toLowerCase().includes('import')) {
+        const impQ = new URLSearchParams();
+        if (siteId) impQ.set('location', siteId);
+        impQ.set('from', 'Infrastructure');
+        if (foundClientId) impQ.set('client', foundClientId);
+        segs.push({
+          label: 'Import',
+          to: `/inventory/dcim/import?${impQ.toString()}`
+        });
+      }
+      if (drill && drill !== dcName) {
+        segs.push({ label: dcName, to: dcSelfTo });
+        finalLeafLabel = drill;
+      } else {
+        finalLeafLabel = dcName;
+      }
+    } else if (isFromPassive) {
+      segs = [
+        { label: 'Passive Infrastructure', to: '/inventory/passive' }
+      ];
+      if (from?.toLowerCase().includes('import')) {
+        segs.push({ label: 'Import', to: '/inventory/dcim/import?from=Passive' });
+      }
+      if (drill && drill !== dcName) {
+        segs.push({ label: dcName, to: dcSelfTo });
+        finalLeafLabel = drill;
+      } else {
+        finalLeafLabel = dcName;
+      }
+    } else if (isFromCity && cityMatch) {
+      const cityId = sp.get('cityId') || cityMatch.city.id;
+      const cityTo = `/inventory/location/city/${cityId}?facility=${cityMatch.facilityType}&facilityId=${encodeURIComponent(matchedLocationId || dcId)}`;
+      segs = [
+        { label: 'Location', to: locTo },
+        { label: cityMatch.city.name, to: cityTo }
+      ];
+      if (matchedLocationId && matchedLocationId !== dcName) {
+        segs.push({
+          label: matchedLocationId,
+          to: `/inventory/location/site/${encodeURIComponent(matchedLocationId)}`
+        });
+      }
+      if (drill && drill !== dcName) {
+        segs.push({ label: dcName, to: dcSelfTo });
+        finalLeafLabel = drill;
+      } else {
+        finalLeafLabel = dcName;
+      }
+    } else {
+      const originSegs = hops.length > 0
+        ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers' && x.label !== dcName)
+        : [];
+      if (drill && drill !== dcName) {
+        segs = [
+          ...originSegs,
+          { label: 'Location', to: locTo },
+          { label: 'Data centers', to: dcimTo },
+          { label: dcName, to: dcSelfTo }
+        ];
+        finalLeafLabel = drill;
+      } else {
+        segs = [
+          ...originSegs,
+          { label: 'Location', to: locTo },
+          { label: 'Data centers', to: dcimTo }
+        ];
+        finalLeafLabel = dcName;
+      }
     }
   }
 

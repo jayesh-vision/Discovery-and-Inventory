@@ -1856,6 +1856,30 @@ export default function CityDetails() {
                   )}
                 </div>
 
+                {selectedFacilityItem.facilityType === 'dc' && (
+                  <button
+                    type="button"
+                    className="net-tool-btn"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '0 12px',
+                      width: 'auto',
+                      fontWeight: 500,
+                      fontSize: '12px',
+                      color: 'var(--vw-color-sky-700, #0369a1)',
+                      background: 'var(--vw-color-sky-50, #f0f9ff)',
+                      borderColor: 'var(--vw-color-sky-200, #bae6fd)'
+                    }}
+                    onClick={() => navigate(`/inventory/datacenter/${encodeURIComponent(selectedFacilityItem.code)}?from=${encodeURIComponent('Location · City details')}&cityId=${encodeURIComponent(city.id)}&facility=dc`)}
+                    title={`Open data center view for ${selectedFacilityItem.name} (${selectedFacilityItem.code})`}
+                  >
+                    <span>Data center view</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </button>
+                )}
+
                 <div style={{ position: 'relative' }}>
                   <button
                     type="button"
