@@ -836,7 +836,7 @@ export default function NetworkHierarchyTopology({
         <svg className="geo-connector-svg">
           <defs>
             <filter id="threadGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#2563eb" floodOpacity="0.5" />
+              <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#1e40af" floodOpacity="0.15" />
             </filter>
           </defs>
           {connectors.regionToState && (
@@ -844,17 +844,17 @@ export default function NetworkHierarchyTopology({
               {/* Background guide thread for depth */}
               <path
                 d={connectors.regionToState.path}
-                stroke="#bfdbfe"
-                strokeWidth="1.5"
+                stroke="#cbd5e1"
+                strokeWidth="1.2"
                 fill="none"
-                opacity="0.4"
+                opacity="0.5"
               />
               {/* Animated data-streaming thread */}
               <path
                 className="geo-animated-thread"
                 d={connectors.regionToState.path}
-                stroke="#2563eb"
-                strokeWidth="2.2"
+                stroke="#1e40af"
+                strokeWidth="2"
                 fill="none"
                 filter="url(#threadGlow)"
               />
@@ -864,15 +864,16 @@ export default function NetworkHierarchyTopology({
                 cx={connectors.regionToState.startX}
                 cy={connectors.regionToState.startY}
                 r="4"
-                fill="#3b82f6"
+                fill="#1e40af"
+                opacity="0.2"
               />
               {/* Main anchor dot */}
               <circle
                 className="geo-animated-anchor"
                 cx={connectors.regionToState.startX}
                 cy={connectors.regionToState.startY}
-                r="3.8"
-                fill="#2563eb"
+                r="3.5"
+                fill="#1e40af"
                 stroke="#ffffff"
                 strokeWidth="1.8"
               />
@@ -884,14 +885,15 @@ export default function NetworkHierarchyTopology({
                     cx={connectors.regionToState.endX}
                     cy={connectors.regionToState.endY}
                     r="4"
-                    fill="#3b82f6"
+                    fill="#1e40af"
+                    opacity="0.2"
                   />
                   <circle
                     className="geo-animated-anchor"
                     cx={connectors.regionToState.endX}
                     cy={connectors.regionToState.endY}
-                    r="3.8"
-                    fill="#2563eb"
+                    r="3.5"
+                    fill="#1e40af"
                     stroke="#ffffff"
                     strokeWidth="1.8"
                   />
@@ -904,17 +906,17 @@ export default function NetworkHierarchyTopology({
               {/* Background guide thread for depth */}
               <path
                 d={connectors.stateToCity.path}
-                stroke="#bfdbfe"
-                strokeWidth="1.5"
+                stroke="#cbd5e1"
+                strokeWidth="1.2"
                 fill="none"
-                opacity="0.4"
+                opacity="0.5"
               />
               {/* Animated data-streaming thread */}
               <path
                 className="geo-animated-thread"
                 d={connectors.stateToCity.path}
-                stroke="#2563eb"
-                strokeWidth="2.2"
+                stroke="#1e40af"
+                strokeWidth="2"
                 fill="none"
                 filter="url(#threadGlow)"
               />
@@ -924,15 +926,16 @@ export default function NetworkHierarchyTopology({
                 cx={connectors.stateToCity.startX}
                 cy={connectors.stateToCity.startY}
                 r="4"
-                fill="#3b82f6"
+                fill="#1e40af"
+                opacity="0.2"
               />
               {/* Main anchor dot */}
               <circle
                 className="geo-animated-anchor"
                 cx={connectors.stateToCity.startX}
                 cy={connectors.stateToCity.startY}
-                r="3.8"
-                fill="#2563eb"
+                r="3.5"
+                fill="#1e40af"
                 stroke="#ffffff"
                 strokeWidth="1.8"
               />
@@ -944,14 +947,15 @@ export default function NetworkHierarchyTopology({
                     cx={connectors.stateToCity.endX}
                     cy={connectors.stateToCity.endY}
                     r="4"
-                    fill="#3b82f6"
+                    fill="#1e40af"
+                    opacity="0.2"
                   />
                   <circle
                     className="geo-animated-anchor"
                     cx={connectors.stateToCity.endX}
                     cy={connectors.stateToCity.endY}
-                    r="3.8"
-                    fill="#2563eb"
+                    r="3.5"
+                    fill="#1e40af"
                     stroke="#ffffff"
                     strokeWidth="1.8"
                   />
@@ -964,17 +968,17 @@ export default function NetworkHierarchyTopology({
               {/* Background guide thread for depth */}
               <path
                 d={connectors.cityToOverview.path}
-                stroke="#bfdbfe"
-                strokeWidth="1.5"
+                stroke="#cbd5e1"
+                strokeWidth="1.2"
                 fill="none"
-                opacity="0.4"
+                opacity="0.5"
               />
               {/* Animated data-streaming thread */}
               <path
                 className="geo-animated-thread"
                 d={connectors.cityToOverview.path}
-                stroke="#2563eb"
-                strokeWidth="2.2"
+                stroke="#1e40af"
+                strokeWidth="2"
                 fill="none"
                 filter="url(#threadGlow)"
               />
@@ -984,15 +988,16 @@ export default function NetworkHierarchyTopology({
                 cx={connectors.cityToOverview.startX}
                 cy={connectors.cityToOverview.startY}
                 r="4"
-                fill="#3b82f6"
+                fill="#1e40af"
+                opacity="0.2"
               />
               {/* Main anchor dot */}
               <circle
                 className="geo-animated-anchor"
                 cx={connectors.cityToOverview.startX}
                 cy={connectors.cityToOverview.startY}
-                r="3.8"
-                fill="#2563eb"
+                r="3.5"
+                fill="#1e40af"
                 stroke="#ffffff"
                 strokeWidth="1.8"
               />
@@ -1004,14 +1009,15 @@ export default function NetworkHierarchyTopology({
                     cx={connectors.cityToOverview.endX}
                     cy={connectors.cityToOverview.endY}
                     r="4"
-                    fill="#3b82f6"
+                    fill="#1e40af"
+                    opacity="0.2"
                   />
                   <circle
                     className="geo-animated-anchor"
                     cx={connectors.cityToOverview.endX}
                     cy={connectors.cityToOverview.endY}
-                    r="3.8"
-                    fill="#2563eb"
+                    r="3.5"
+                    fill="#1e40af"
                     stroke="#ffffff"
                     strokeWidth="1.8"
                   />

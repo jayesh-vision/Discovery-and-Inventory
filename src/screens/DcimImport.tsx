@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono } from '../components/ui';
-import { Empty, Head, fmt } from '../components/dcim/common';
+import { Head, fmt } from '../components/dcim/common';
 import { commitImport, downloadSample, downloadSheetCsv, downloadTemplate, importHistory, plan, readFiles, sampleFile, saveClient, stage, store, useClients } from '../dcim/api';
 import { SHEETS, sheetByEntity } from '../dcim/schema';
 import { unmappedRequired, type Issue, type SheetPlan } from '../dcim/parse';
@@ -28,6 +28,108 @@ const GROUPS: { n: string; d: string; e: EntityKey[] }[] = [
 ];
 const MAX_ISSUES = 300;
 const size = (b: number) => b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+
+function getEntityIcon(key: EntityKey) {
+  switch (key) {
+    case 'dataCenters':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+          <line x1="6" y1="6" x2="6.01" y2="6"/>
+          <line x1="6" y1="18" x2="6.01" y2="18"/>
+        </svg>
+      );
+    case 'buildings':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+          <path d="M6 12H4a2 2 0 0 0-2 2v8h4"/>
+          <path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/>
+        </svg>
+      );
+    case 'floors':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+      );
+    case 'rooms':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="21" x2="9" y2="9"/>
+        </svg>
+      );
+    case 'racks':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="4" y1="7" x2="20" y2="7"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+          <line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      );
+    case 'devices':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2"/>
+          <rect x="2" y="14" width="20" height="8" rx="2"/>
+          <line x1="6" y1="6" x2="6.01" y2="6"/>
+          <line x1="6" y1="18" x2="6.01" y2="18"/>
+        </svg>
+      );
+    case 'rows':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="21" y1="6" x2="3" y2="6"/>
+          <line x1="21" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="18" x2="3" y2="18"/>
+        </svg>
+      );
+    case 'ports':
+    case 'connections':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <line x1="3" y1="12" x2="9" y2="12"/>
+          <line x1="15" y1="12" x2="21" y2="12"/>
+        </svg>
+      );
+    case 'powerEquipment':
+    case 'powerConnections':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      );
+    case 'coolingEquipment':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2v20"/>
+          <path d="m4.93 4.93 14.14 14.14"/>
+          <path d="M2 12h20"/>
+          <path d="m19.07 4.93-14.14 14.14"/>
+        </svg>
+      );
+    case 'sensors':
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      );
+    default:
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      );
+  }
+}
 
 export default function DcimImport() {
   const nav = useNavigate();
@@ -50,10 +152,35 @@ export default function DcimImport() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+  const [specTab, setSpecTab] = useState<'all' | 'needed' | 'recommended' | 'optional'>('all');
+  const [specSearch, setSpecSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const client = clients.find(c => c.id === clientId);
   const at = STEPS.findIndex(s => s.k === step);
   const fileName = files.map(f => f.name).join(', ');
+
+  const filteredGroups = useMemo(() => {
+    return GROUPS.map(g => {
+      let matchesTab = true;
+      if (specTab === 'needed' && g.n !== 'Needed to start') matchesTab = false;
+      if (specTab === 'recommended' && g.n !== 'Recommended') matchesTab = false;
+      if (specTab === 'optional' && g.n !== 'Optional') matchesTab = false;
+      if (!matchesTab) return null;
+
+      const q = specSearch.trim().toLowerCase();
+      const filteredEntities = g.e.filter(k => {
+        if (!q) return true;
+        const d = sheetByEntity(k);
+        return d.sheet.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q);
+      });
+
+      if (!filteredEntities.length) return null;
+      return {
+        ...g,
+        e: filteredEntities
+      };
+    }).filter(Boolean) as typeof GROUPS;
+  }, [specTab, specSearch]);
 
   // Navigate to step and push into browser history so browser back/forward (← / →) works step-by-step
   const goTo = (next: Step, replace = false) => {
@@ -116,19 +243,6 @@ export default function DcimImport() {
       }
     }
   };
-
-  const backLabel = useMemo(() => {
-    if (step === 'done') return 'Back to review';
-    if (step === 'review') return 'Back to columns';
-    if (step === 'columns') return 'Back to file';
-    if (step === 'file') return 'Back to client';
-    if (from?.toLowerCase().includes('infrastructure')) return 'Back to infrastructure';
-    if (from?.toLowerCase().includes('passive')) return 'Back to passive';
-    if (from?.toLowerCase().includes('city') && location) return `Back to ${location}`;
-    if (from?.toLowerCase().includes('site') && location) return `Back to site ${location}`;
-    if (location) return `Back to site ${location}`;
-    return 'Back to data centers';
-  }, [step, location, from]);
 
   /* step 1 */
   const chooseClient = async () => {
@@ -198,124 +312,570 @@ export default function DcimImport() {
     <div className="page dcim up">
       <Card className="up-head">
         <div className="up-head-row">
-          <div className="row" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="nst-btn nst-btn--sm nst-btn--ghost"
-              onClick={goBackOne}
-              title={backLabel}
-            >
-              ← {backLabel}
-            </button>
-            <div>
+          <div className="up-head-left">
+            <div className="up-title-block">
+              <div className="up-badge-row">
+                <span className="up-tag-badge">
+                  <span className="up-tag-dot" aria-hidden="true" />
+                  Bulk Ingestion
+                </span>
+              </div>
               <h2 className="up-title">Upload infrastructure inventory</h2>
-              <p className="vw-card-description small" style={{ margin: 0 }}>Buildings, floors, rooms, rows, racks, devices, cabling, power plant, cooling and sensors — from one Excel workbook or a set of CSV files.</p>
+              <p className="up-subtitle">Buildings, floors, rooms, rows, racks, devices, cabling, power plant, cooling and sensors — from one Excel workbook or a set of CSV files.</p>
             </div>
           </div>
-          <div className="row">
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => downloadTemplate()}>Download template</button>
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => downloadSample()}>Download sample</button>
+          <div className="up-head-actions">
+            <button type="button" className="up-action-btn" onClick={() => downloadTemplate()}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Download template</span>
+            </button>
+            <button type="button" className="up-action-btn" onClick={() => downloadSample()}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span>Download sample</span>
+            </button>
           </div>
         </div>
-        <ol className="stepper" aria-label="Upload steps">
-          {STEPS.map((s, i) => (
-            <li
-              key={s.k}
-              className={`${i === at ? 'is-on' : i < at ? 'is-done' : ''}${i < at ? ' is-clickable' : ''}`}
-              aria-current={i === at ? 'step' : undefined}
-              role={i < at ? 'button' : undefined}
-              tabIndex={i < at ? 0 : undefined}
-              onClick={() => {
-                if (i < at) goTo(s.k);
-              }}
-              onKeyDown={e => {
-                if (i < at && (e.key === 'Enter' || e.key === ' ')) {
-                  e.preventDefault();
-                  goTo(s.k);
-                }
-              }}
-              title={i < at ? `Go back to ${s.n}` : undefined}
-            >
-              <span className="step-dot">{i < at ? '✓' : i + 1}</span>
-              <span className="step-t"><b>{s.n}</b><small>{s.s}</small></span>
-            </li>
-          ))}
-        </ol>
-        {location && <div className="up-note">For Inventory site <strong>{location}</strong>: the DataCenters sheet should carry <Mono>{location}</Mono> in its LocationId column so the inventory shows on that site's Infrastructure tab.</div>}
+
+        <div className="up-stepper-wrap">
+          <ol className="stepper" aria-label="Upload steps">
+            {STEPS.map((s, i) => (
+              <li
+                key={s.k}
+                className={`${i === at ? 'is-on' : i < at ? 'is-done' : ''}${i < at ? ' is-clickable' : ''}`}
+                aria-current={i === at ? 'step' : undefined}
+                role={i < at ? 'button' : undefined}
+                tabIndex={i < at ? 0 : undefined}
+                onClick={() => {
+                  if (i < at) goTo(s.k);
+                }}
+                onKeyDown={e => {
+                  if (i < at && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    goTo(s.k);
+                  }
+                }}
+                title={i < at ? `Go back to ${s.n}` : undefined}
+              >
+                <span className="step-dot">
+                  {i < at ? (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  ) : (
+                    i + 1
+                  )}
+                </span>
+                <span className="step-t">
+                  <b>{s.n}</b>
+                  <small>{s.s}</small>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {location && (
+          <div className="up-note">
+            <div className="up-note-icon" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+            <div className="up-note-text">
+              For Inventory site <strong className="up-note-site-badge">{location}</strong>: the DataCenters sheet should carry <Mono>{location}</Mono> in its LocationId column so the inventory appears on that site's Infrastructure tab.
+            </div>
+          </div>
+        )}
       </Card>
 
-      {err && <div className="up-alert up-alert--error" role="alert">{err}</div>}
-      {busy && <div className="up-alert up-alert--busy" role="status"><span className="spin" aria-hidden />{busy}</div>}
+      {err && (
+        <div className="up-alert up-alert--error" role="alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{err}</span>
+        </div>
+      )}
+      {busy && (
+        <div className="up-alert up-alert--busy" role="status">
+          <span className="spin" aria-hidden />
+          <span>{busy}</span>
+        </div>
+      )}
 
       {step === 'client' && (
-        <Card>
-          <Head title="Whose inventory is this?" sub="One upload writes one client's inventory. Data centers in the file must belong to this client." />
+        <Card className="up-card">
+          <div className="up-card-header">
+            <div className="up-section-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span>Step 1 · Tenant Selection</span>
+            </div>
+            <h3 className="up-card-title">Whose inventory is this?</h3>
+            <p className="up-card-desc">One upload writes one client's inventory. Data centers in the file must belong to this client.</p>
+          </div>
+
           <div className="client-grid" role="radiogroup" aria-label="Client">
             {clients.map(c => {
               const dcs = store.data(c.id)?.entities.dataCenters.length ?? 0;
               const last = importHistory(c.id)[0];
+              const isSelected = !creating && clientId === c.id;
               return (
-                <button key={c.id} type="button" role="radio" aria-checked={!creating && clientId === c.id} className={`client-card${!creating && clientId === c.id ? ' is-on' : ''}`} onClick={() => { setClientId(c.id); setCreating(false); }}>
-                  <span className="client-av" aria-hidden>{c.name.slice(0, 2).toUpperCase()}</span>
-                  <span className="client-b"><strong>{c.name}</strong><small><Mono>{c.id}</Mono>{c.industry ? ` · ${c.industry}` : ''}</small>
-                    <small>{dcs} data center{dcs === 1 ? '' : 's'}{last ? ` · last upload ${new Date(last.at).toLocaleDateString()}` : ' · nothing uploaded yet'}</small></span>
+                <button
+                  key={c.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  className={`client-card${isSelected ? ' is-on' : ''}`}
+                  onClick={() => { setClientId(c.id); setCreating(false); }}
+                >
+                  <div className="client-card-top">
+                    <span className="client-av" aria-hidden>{c.name.slice(0, 2).toUpperCase()}</span>
+                    {isSelected && (
+                      <span className="client-selected-badge">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <span className="client-b">
+                    <strong className="client-name">{c.name}</strong>
+                    <span className="client-meta-line">
+                      <span className="client-id-mono"><Mono>{c.id}</Mono></span>
+                      {c.industry ? <span className="client-ind-badge">{c.industry}</span> : null}
+                    </span>
+                    <span className="client-stats">
+                      <span className={`client-stat-dot${dcs > 0 ? ' is-active' : ''}`} aria-hidden="true" />
+                      <span>{dcs} data center{dcs === 1 ? '' : 's'}{last ? ` · last upload ${new Date(last.at).toLocaleDateString()}` : ' · nothing uploaded yet'}</span>
+                    </span>
+                  </span>
                 </button>
               );
             })}
-            <button type="button" role="radio" aria-checked={creating} className={`client-card client-card--new${creating ? ' is-on' : ''}`} onClick={() => setCreating(true)}>
-              <span className="client-av" aria-hidden>+</span><span className="client-b"><strong>New client</strong><small>Create a client to upload for</small></span>
+
+            <button
+              type="button"
+              role="radio"
+              aria-checked={creating}
+              className={`client-card client-card--new${creating ? ' is-on' : ''}`}
+              onClick={() => setCreating(true)}
+            >
+              <div className="client-card-top">
+                <span className="client-av client-av--new" aria-hidden>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </span>
+                {creating && (
+                  <span className="client-selected-badge client-selected-badge--new">
+                    Active
+                  </span>
+                )}
+              </div>
+              <span className="client-b">
+                <strong className="client-name">New client</strong>
+                <span className="client-subtitle">Create a client to upload for</span>
+              </span>
             </button>
           </div>
+
           {creating && (
-            <div className="field-row" style={{ marginTop: 16 }}>
-              <div className="field"><label className="nst-input-label" htmlFor="nc-id">Client ID *</label>
-                <span className="nst-input-shell"><input id="nc-id" className="nst-input" value={nc.id} onChange={e => setNc({ ...nc, id: e.target.value })} placeholder="ACME" /></span></div>
-              <div className="field"><label className="nst-input-label" htmlFor="nc-name">Name *</label>
-                <span className="nst-input-shell"><input id="nc-name" className="nst-input" value={nc.name} onChange={e => setNc({ ...nc, name: e.target.value })} placeholder="Acme Cloud Services" /></span></div>
-              <div className="field"><label className="nst-input-label" htmlFor="nc-ind">Industry</label>
-                <span className="nst-input-shell"><input id="nc-ind" className="nst-input" value={nc.industry} onChange={e => setNc({ ...nc, industry: e.target.value })} placeholder="Cloud hosting" /></span></div>
+            <div className="new-client-box">
+              <div className="new-client-box-head">
+                <div className="new-client-box-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                  </svg>
+                  <span>New Client Information</span>
+                </div>
+                <span className="new-client-box-hint">Enter tenant details to initialize inventory records</span>
+              </div>
+
+              <div className="new-client-fields">
+                <div className="new-client-field">
+                  <label className="nst-input-label" htmlFor="nc-id">
+                    <span>Client ID <span className="req-star">*</span></span>
+                    <span className="label-tip">Uppercase code</span>
+                  </label>
+                  <div className="nst-input-shell input-shell--enhanced">
+                    <input
+                      id="nc-id"
+                      className="nst-input nst-input--mono"
+                      value={nc.id}
+                      onChange={e => setNc({ ...nc, id: e.target.value })}
+                      placeholder="e.g. ACME"
+                      autoFocus
+                    />
+                  </div>
+                  <span className="field-hint-text">Must match ClientId in the DataCenters sheet.</span>
+                </div>
+
+                <div className="new-client-field">
+                  <label className="nst-input-label" htmlFor="nc-name">
+                    <span>Client / Company Name <span className="req-star">*</span></span>
+                    <span className="label-tip">Display label</span>
+                  </label>
+                  <div className="nst-input-shell input-shell--enhanced">
+                    <input
+                      id="nc-name"
+                      className="nst-input"
+                      value={nc.name}
+                      onChange={e => setNc({ ...nc, name: e.target.value })}
+                      placeholder="e.g. Acme Cloud Services"
+                    />
+                  </div>
+                  <span className="field-hint-text">Official organization or project title.</span>
+                </div>
+
+                <div className="new-client-field">
+                  <label className="nst-input-label" htmlFor="nc-ind">
+                    <span>Industry / Sector</span>
+                    <span className="label-tip label-tip--optional">Optional</span>
+                  </label>
+                  <div className="nst-input-shell input-shell--enhanced">
+                    <input
+                      id="nc-ind"
+                      className="nst-input"
+                      value={nc.industry}
+                      onChange={e => setNc({ ...nc, industry: e.target.value })}
+                      placeholder="e.g. Cloud hosting, Telecom"
+                    />
+                  </div>
+                  <span className="field-hint-text">Business domain or sector classification.</span>
+                </div>
+              </div>
             </div>
           )}
+
           <div className="up-foot">
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={goBackOne}>Cancel</button>
+            <button type="button" className="up-btn-cancel" onClick={goBackOne}>
+              Cancel
+            </button>
             <span className="grow" />
-            <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={chooseClient} disabled={creating ? !nc.id.trim() || !nc.name.trim() : !clientId}>Continue</button>
+            <button
+              type="button"
+              className="up-btn-continue"
+              onClick={chooseClient}
+              disabled={creating ? !nc.id.trim() || !nc.name.trim() : !clientId}
+            >
+              <span>Continue to File Upload</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
           </div>
         </Card>
       )}
 
       {step === 'file' && (
         <div className="up-file">
-          <Card>
-            <Head title={`Upload for ${client?.name ?? clientId}`} sub="Sheets and CSV files are recognised by their name (Racks, Devices …) or by their columns." />
-            <div className={`drop${over ? ' is-over' : ''}`} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
-              onDrop={e => { e.preventDefault(); setOver(false); read([...e.dataTransfer.files]); }}>
-              <span className="drop-ic" aria-hidden>⇪</span>
-              <strong>Drag and drop your file here</strong>
-              <span className="muted small">One .xlsx workbook, or several .csv files (one per sheet) · nothing is saved until you confirm</span>
-              <input ref={fileRef} type="file" accept=".xlsx,.csv" multiple hidden aria-label="Choose files" onChange={e => { read([...(e.target.files ?? [])]); e.target.value = ''; }} />
-              <div className="row" style={{ marginTop: 6 }}>
-                <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={() => fileRef.current?.click()} disabled={!!busy}>Browse files</button>
-                <button type="button" className="nst-btn nst-btn--sm" onClick={async () => read([await sampleFile()])} disabled={!!busy}>Try the sample workbook</button>
+          <Card className="up-card up-file-card">
+            <div className="up-card-header">
+              <div className="up-section-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>Step 2 · Source Selection</span>
+              </div>
+              <h3 className="up-card-title">Upload for {client?.name ?? clientId}</h3>
+              <p className="up-card-desc">Sheets and CSV files are recognized automatically by layer names or column headers.</p>
+            </div>
+
+            <div
+              className={`drop${over ? ' is-over' : ''}`}
+              onDragOver={e => { e.preventDefault(); setOver(true); }}
+              onDragLeave={() => setOver(false)}
+              onDrop={e => { e.preventDefault(); setOver(false); read([...e.dataTransfer.files]); }}
+              onClick={() => fileRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              aria-label="Upload inventory file drop zone"
+            >
+              <div className="drop-ic-wrap" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+
+              <strong className="drop-title">Drag and drop your file here</strong>
+
+              <div className="drop-formats">
+                <span className="format-badge format-badge--xlsx">
+                  <span className="format-dot format-dot--xlsx" aria-hidden="true" />
+                  .XLSX Workbook
+                </span>
+                <span className="format-badge format-badge--csv">
+                  <span className="format-dot format-dot--csv" aria-hidden="true" />
+                  .CSV Files
+                </span>
+              </div>
+
+              <span className="drop-sub">One Excel workbook or multiple CSV files (one per layer) · Nothing is committed until you confirm</span>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx,.csv"
+                multiple
+                hidden
+                aria-label="Choose files"
+                onChange={e => { read([...(e.target.files ?? [])]); e.target.value = ''; }}
+              />
+
+              <div className="drop-actions-row" onClick={e => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="up-btn-browse"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={!!busy}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>Browse files</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="up-btn-sample"
+                  onClick={async () => read([await sampleFile()])}
+                  disabled={!!busy}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  <span>Try sample workbook</span>
+                </button>
               </div>
             </div>
+
+            {/* Ingestion capabilities highlights to balance height & instill confidence */}
+            <div className="upload-features-grid">
+              <div className="upload-feature-item">
+                <div className="feature-icon-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </div>
+                <div className="feature-text">
+                  <strong>Smart Auto-Mapping</strong>
+                  <span>Detects 40+ column aliases & layer names automatically</span>
+                </div>
+              </div>
+
+              <div className="upload-feature-item">
+                <div className="feature-icon-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                </div>
+                <div className="feature-text">
+                  <strong>Staging Safety Gate</strong>
+                  <span>Validates in-memory; review every row before commit</span>
+                </div>
+              </div>
+
+              <div className="upload-feature-item">
+                <div className="feature-icon-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                    <line x1="6" y1="6" x2="6.01" y2="6"/>
+                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                  </svg>
+                </div>
+                <div className="feature-text">
+                  <strong>Full DCIM Topology</strong>
+                  <span>Ingests sites, racks, cabling, and power equipment</span>
+                </div>
+              </div>
+            </div>
+
             <div className="up-foot">
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => goTo('client')}>Back</button>
+              <div className="up-step-indicator-pill">
+                <span>Step 2 of 5</span>
+                <span className="dot-sep">·</span>
+                <span className="client-tag">{client?.name ?? clientId}</span>
+              </div>
             </div>
           </Card>
-          <Card>
-            <Head title="What to include" sub="Download a sheet as CSV, or the full template with field definitions" />
-            {GROUPS.map(g => (
-              <div key={g.n} className="sheet-group">
-                <div className="sheet-group-h"><strong>{g.n}</strong><small>{g.d}</small></div>
-                <ul className="sheet-list">
-                  {g.e.map(k => { const d = sheetByEntity(k); return (
-                    <li key={k}><span>{d.sheet}<small>{d.desc}</small></span>
-                      <button type="button" className="link-btn" onClick={() => downloadSheetCsv(d.sheet)} aria-label={`Download ${d.sheet} CSV`}>CSV</button></li>
-                  ); })}
-                </ul>
+
+          <Card className="up-card up-spec-card">
+            <div className="up-card-header">
+              <div className="up-section-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <span>Data Specifications</span>
               </div>
-            ))}
+              <h3 className="up-card-title">What to include</h3>
+              <p className="up-card-desc">Download individual sheet templates as CSV, or use the full workbook from header.</p>
+            </div>
+
+            {/* Search and category filter pills */}
+            <div className="spec-filter-bar">
+              <div className="spec-search-wrap">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spec-search-icon" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="text"
+                  className="spec-search-input"
+                  placeholder="Filter sheets (e.g. racks, ports, power)..."
+                  value={specSearch}
+                  onChange={e => setSpecSearch(e.target.value)}
+                  aria-label="Filter sheets"
+                />
+                {specSearch && (
+                  <button
+                    type="button"
+                    className="spec-search-clear"
+                    onClick={() => setSpecSearch('')}
+                    aria-label="Clear filter"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              <div className="spec-filter-pills" role="tablist" aria-label="Sheet categories">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={specTab === 'all'}
+                  className={`spec-pill${specTab === 'all' ? ' is-active' : ''}`}
+                  onClick={() => setSpecTab('all')}
+                >
+                  All (16)
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={specTab === 'needed'}
+                  className={`spec-pill${specTab === 'needed' ? ' is-active' : ''}`}
+                  onClick={() => setSpecTab('needed')}
+                >
+                  Needed to start (6)
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={specTab === 'recommended'}
+                  className={`spec-pill${specTab === 'recommended' ? ' is-active' : ''}`}
+                  onClick={() => setSpecTab('recommended')}
+                >
+                  Recommended (7)
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={specTab === 'optional'}
+                  className={`spec-pill${specTab === 'optional' ? ' is-active' : ''}`}
+                  onClick={() => setSpecTab('optional')}
+                >
+                  Optional (3)
+                </button>
+              </div>
+            </div>
+
+            <div className="sheet-groups-wrap">
+              {filteredGroups.length === 0 ? (
+                <div className="spec-empty-state">
+                  <div className="spec-empty-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </div>
+                  <p className="spec-empty-text">No sheets matching &ldquo;{specSearch}&rdquo;</p>
+                  <button
+                    type="button"
+                    className="spec-empty-reset-btn"
+                    onClick={() => { setSpecSearch(''); setSpecTab('all'); }}
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                filteredGroups.map(g => (
+                  <div key={g.n} className="sheet-group">
+                    <div className="sheet-group-h">
+                      <div className="sheet-group-title-row">
+                        <span className="sheet-group-badge">{g.n}</span>
+                        <span className="sheet-group-count">{g.e.length} sheet{g.e.length === 1 ? '' : 's'}</span>
+                      </div>
+                      <small className="sheet-group-sub">{g.d}</small>
+                    </div>
+                    <ul className="sheet-list">
+                      {g.e.map(k => {
+                        const d = sheetByEntity(k);
+                        return (
+                          <li key={k} className="sheet-list-item">
+                            <div className="sheet-icon-wrap" aria-hidden="true">
+                              {getEntityIcon(k)}
+                            </div>
+                            <div className="sheet-info">
+                              <div className="sheet-name-row">
+                                <span className="sheet-name">{d.sheet}</span>
+                                <span className="sheet-fields-badge">
+                                  {d.fields.length} columns
+                                </span>
+                              </div>
+                              <small className="sheet-desc">{d.desc}</small>
+                            </div>
+                            <button
+                              type="button"
+                              className="sheet-csv-btn"
+                              onClick={() => downloadSheetCsv(d.sheet)}
+                              aria-label={`Download ${d.sheet} CSV`}
+                              title={`Download ${d.sheet} sample CSV`}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                              </svg>
+                              <span>CSV</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
           </Card>
         </div>
       )}
@@ -423,79 +983,530 @@ function Review({ staged, client, location, busy, onBack, onRestart, onConfirm }
     const url = URL.createObjectURL(new Blob([body], { type: 'text/csv' }));
     const a = Object.assign(document.createElement('a'), { href: url, download: 'upload-issues.csv' }); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
   return (
-    <>
-      <div className={`up-banner ${staged.ok ? 'up-banner--ok' : 'up-banner--bad'}`} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <span className="up-banner-ic" aria-hidden>{staged.ok ? '✓' : '!'}</span>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <strong>{staged.ok ? `Ready to upload for ${client}` : `${fmt(tot.errors)} error${tot.errors === 1 ? '' : 's'} must be fixed before uploading`}</strong>
-          <small>{staged.ok ? `${fmt(tot.created)} new and ${fmt(tot.updated)} updated records will be saved. ${fmt(tot.keptNotInFile)} stored records not in this file are kept.` : 'Fix them in your file and upload it again, or correct the column mapping.'}{tot.warnings ? ` ${fmt(tot.warnings)} warning${tot.warnings === 1 ? '' : 's'} can be accepted.` : ''}</small>
+    <div className="review-view-container">
+      {/* 1. Validation Status Banner */}
+      <div className={`review-status-banner ${staged.ok ? 'review-status-banner--ok' : 'review-status-banner--error'}`}>
+        <div className="review-banner-icon-wrap" aria-hidden="true">
+          {staged.ok ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          )}
         </div>
-        <div className="row" style={{ gap: 8, flexShrink: 0, alignItems: 'center' }}>
-          <button type="button" className="nst-btn nst-btn--xs nst-btn--ghost" onClick={onBack}>← Back to columns</button>
-          <button type="button" className="nst-btn nst-btn--xs nst-btn--ghost" onClick={onRestart}>Upload corrected file</button>
+
+        <div className="review-banner-content">
+          <div className="review-banner-title-row">
+            <span className={`review-banner-badge ${staged.ok ? 'badge--ok' : 'badge--error'}`}>
+              <span className="badge-dot" aria-hidden="true" />
+              {staged.ok ? 'Validation Passed' : 'Ingestion Blocked'}
+            </span>
+            <strong className="review-banner-title">
+              {staged.ok
+                ? `Ready to ingest inventory for ${client}`
+                : `${fmt(tot.errors)} validation error${tot.errors === 1 ? '' : 's'} must be resolved before uploading`}
+            </strong>
+          </div>
+          <p className="review-banner-desc">
+            {staged.ok
+              ? `${fmt(tot.created)} new and ${fmt(tot.updated)} updated records will be saved. ${fmt(tot.keptNotInFile)} stored records not in this file are preserved.`
+              : 'Fix them in your file and upload it again, or correct the column mapping.'}
+            {tot.warnings > 0 && ` (${fmt(tot.warnings)} warning${tot.warnings === 1 ? '' : 's'} can be accepted).`}
+          </p>
         </div>
-      </div>
-      {locMissing && <div className="up-alert up-alert--warn">No data center in this file has LocationId <Mono>{location}</Mono>, so it will not appear on that site's Infrastructure tab. Add it to the DataCenters sheet if this inventory belongs to that site.</div>}
-      <div className="tiles">
-        {([['New', tot.created, 'ok'], ['Updated', tot.updated, 'info'], ['Unchanged', tot.unchanged, ''], ['Kept, not in file', tot.keptNotInFile, ''], ['Errors', tot.errors, tot.errors ? 'bad' : ''], ['Warnings', tot.warnings, tot.warnings ? 'warn' : '']] as const).map(([k, v, tone]) => (
-          <div key={k} className={`tile${tone ? ` tile--${tone}` : ''}`}><span className="tile-v">{fmt(v)}</span><span className="tile-k">{k}</span></div>
-        ))}
-      </div>
-      <div className="grid-2">
-        <Card>
-          <Head title="Changes by sheet" />
-          <table className="plain">
-            <thead><tr><th>Sheet</th><th className="num">New</th><th className="num">Updated</th><th className="num">Unchanged</th><th className="num">Kept</th></tr></thead>
-            <tbody>{changed.map(k => {
-              const d = staged.diff[k];
-              return [
-                <tr key={k}><td>{d.updated.length ? <button type="button" className="link-btn" onClick={() => setOpenK(openK === k ? null : k)} aria-expanded={openK === k}>{sheetByEntity(k).sheet} {openK === k ? '▾' : '▸'}</button> : sheetByEntity(k).sheet}</td>
-                  <td className="num">{fmt(d.created.length)}</td><td className="num">{fmt(d.updated.length)}</td><td className="num">{fmt(d.unchanged.length)}</td><td className="num">{fmt(d.keptNotInFile.length)}</td></tr>,
-                openK === k ? <tr key={`${k}-x`} className="map-row"><td colSpan={5}>
-                  <table className="plain"><thead><tr><th>Record</th><th>Field</th><th>Stored</th><th>In file</th></tr></thead><tbody>
-                    {d.updated.flatMap(u => u.changes.map(c => <tr key={`${u.id}${c.key}`}><td><Mono>{u.id}</Mono></td><td>{c.key}</td><td className="muted">{String(c.before ?? '—')}</td><td>{String(c.after ?? '—')}</td></tr>)).slice(0, 200)}
-                  </tbody></table></td></tr> : null
-              ];
-            })}</tbody>
-          </table>
-        </Card>
-        <Card>
-          <Head title="Issues" count={staged.issues.length} right={staged.issues.length ? <button type="button" className="nst-btn nst-btn--xs nst-btn--ghost" onClick={csv}>Download CSV</button> : undefined} />
-          {staged.issues.length ? <>
-            <div className="toolbar" style={{ marginBottom: 8 }}>
-              <div className="seg" role="group" aria-label="Filter issues">
-                {(['all', 'error', 'warning'] as const).map(f => <button key={f} type="button" className={filter === f ? 'is-on' : ''} onClick={() => setFilter(f)}>{f === 'all' ? `All ${staged.issues.length}` : f === 'error' ? `Errors ${tot.errors}` : `Warnings ${tot.warnings}`}</button>)}
-              </div>
-              <span className="nst-input-shell" style={{ flex: 1, minWidth: 160 }}><input className="nst-input" placeholder="Search sheet, column, ID, message" value={q} onChange={e => setQ(e.target.value)} aria-label="Search issues" /></span>
-            </div>
-            <div className="scroll">
-              {bySheet.length ? bySheet.map(([sheet, list]) => (
-                <div key={sheet} className="issue-group">
-                  <div className="issue-group-h"><strong>{sheet}</strong><small>{list.length}</small></div>
-                  {list.map((x, i) => (
-                    <div key={i} className={`issue issue--${x.severity}`}>
-                      <span className="issue-where">{x.row ? `Row ${x.row}` : 'Sheet'}{x.col ? ` · ${x.col}` : ''}</span>
-                      <span>{x.id && <Mono>{x.id} </Mono>}{x.message}</span>
-                    </div>
-                  ))}
-                </div>
-              )) : <p className="muted small">Nothing matches.</p>}
-              {issues.length > MAX_ISSUES && <p className="muted small">Showing {MAX_ISSUES} of {fmt(issues.length)} — download the CSV for all.</p>}
-            </div>
-          </> : <Empty icon="✓" title="No issues">Every row passed validation.</Empty>}
-        </Card>
-      </div>
-      <Card>
-        <div className="up-foot" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}>
-          <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={onBack}>Back to columns</button>
-          <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={onRestart}>Upload a corrected file</button>
-          <span className="grow" />
-          <button type="button" className="nst-btn nst-btn--sm nst-btn--filled" onClick={onConfirm} disabled={!staged.ok || busy}>
-            {busy ? 'Uploading…' : staged.ok ? `Upload ${fmt(tot.created + tot.updated)} change${tot.created + tot.updated === 1 ? '' : 's'}` : 'Fix errors to upload'}
+
+        <div className="review-banner-actions">
+          <button type="button" className="review-btn-secondary" onClick={onBack}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span>Back to columns</span>
+          </button>
+          <button type="button" className="review-btn-secondary" onClick={onRestart}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload corrected file</span>
           </button>
         </div>
-      </Card>
-    </>
+      </div>
+
+      {/* 2. Target Location Advisory Banner */}
+      {locMissing && (
+        <div className="review-location-notice">
+          <div className="notice-icon-wrap" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div className="notice-text">
+            <strong>Location Alignment Advisory:</strong>
+            <span>
+              No data center site in this file has LocationId <Mono>{location}</Mono>. As a result, this uploaded inventory will not appear on site <strong>{location}</strong>'s Infrastructure tab. If this inventory belongs to that site, specify <Mono>{location}</Mono> in the LocationId column of the DataCenters sheet.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Executive KPI Metric Cards */}
+      <div className="review-kpi-grid">
+        <div className="review-kpi-card review-kpi-card--new">
+          <div className="kpi-card-header">
+            <span className="kpi-label">New Records</span>
+            <div className="kpi-icon-badge kpi-badge--emerald">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+          </div>
+          <div className="kpi-value">{fmt(tot.created)}</div>
+          <span className="kpi-tag kpi-tag--emerald">To be created</span>
+        </div>
+
+        <div className="review-kpi-card review-kpi-card--updated">
+          <div className="kpi-card-header">
+            <span className="kpi-label">Updated Records</span>
+            <div className="kpi-icon-badge kpi-badge--blue">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+          </div>
+          <div className="kpi-value">{fmt(tot.updated)}</div>
+          <span className="kpi-tag kpi-tag--blue">Fields will modify</span>
+        </div>
+
+        <div className="review-kpi-card review-kpi-card--unchanged">
+          <div className="kpi-card-header">
+            <span className="kpi-label">Unchanged</span>
+            <div className="kpi-icon-badge kpi-badge--slate">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14"/>
+              </svg>
+            </div>
+          </div>
+          <div className="kpi-value">{fmt(tot.unchanged)}</div>
+          <span className="kpi-tag kpi-tag--slate">Identical records</span>
+        </div>
+
+        <div className="review-kpi-card review-kpi-card--kept">
+          <div className="kpi-card-header">
+            <span className="kpi-label">Kept (Not in File)</span>
+            <div className="kpi-icon-badge kpi-badge--slate">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+            </div>
+          </div>
+          <div className="kpi-value">{fmt(tot.keptNotInFile)}</div>
+          <span className="kpi-tag kpi-tag--slate">Existing retained</span>
+        </div>
+
+        <div className={`review-kpi-card review-kpi-card--errors ${tot.errors > 0 ? 'is-alerting' : ''}`}>
+          <div className="kpi-card-header">
+            <span className="kpi-label">Validation Errors</span>
+            <div className={`kpi-icon-badge ${tot.errors > 0 ? 'kpi-badge--rose' : 'kpi-badge--emerald'}`}>
+              {tot.errors > 0 ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              )}
+            </div>
+          </div>
+          <div className={`kpi-value ${tot.errors > 0 ? 'value--rose' : ''}`}>{fmt(tot.errors)}</div>
+          <span className={`kpi-tag ${tot.errors > 0 ? 'kpi-tag--rose' : 'kpi-tag--emerald'}`}>
+            {tot.errors > 0 ? 'Blocking upload' : 'Zero errors'}
+          </span>
+        </div>
+
+        <div className={`review-kpi-card review-kpi-card--warnings ${tot.warnings > 0 ? 'is-warning' : ''}`}>
+          <div className="kpi-card-header">
+            <span className="kpi-label">Warnings</span>
+            <div className={`kpi-icon-badge ${tot.warnings > 0 ? 'kpi-badge--amber' : 'kpi-badge--slate'}`}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+          </div>
+          <div className={`kpi-value ${tot.warnings > 0 ? 'value--amber' : ''}`}>{fmt(tot.warnings)}</div>
+          <span className={`kpi-tag ${tot.warnings > 0 ? 'kpi-tag--amber' : 'kpi-tag--slate'}`}>
+            {tot.warnings > 0 ? 'Advisory only' : 'Zero warnings'}
+          </span>
+        </div>
+      </div>
+
+      {/* 4. Main Two-Column Breakdown Grid */}
+      <div className="review-main-grid">
+        {/* Left Column: Changes by sheet */}
+        <Card className="review-section-card review-diff-card">
+          <div className="review-card-head">
+            <div className="review-head-info">
+              <div className="up-section-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>Entity Breakdown</span>
+              </div>
+              <h3 className="review-card-title">Changes by sheet</h3>
+              <p className="review-card-sub">Overview of records staged across each topology layer.</p>
+            </div>
+            <span className="sheet-affected-chip">{changed.length} sheets affected</span>
+          </div>
+
+          <div className="review-table-container">
+            <table className="review-diff-table">
+              <thead>
+                <tr>
+                  <th>Sheet</th>
+                  <th className="num">New</th>
+                  <th className="num">Updated</th>
+                  <th className="num">Unchanged</th>
+                  <th className="num">Kept</th>
+                </tr>
+              </thead>
+              <tbody>
+                {changed.map(k => {
+                  const d = staged.diff[k];
+                  const sheetDef = sheetByEntity(k);
+                  const isExpanded = openK === k;
+                  return [
+                    <tr key={k} className="review-sheet-row">
+                      <td className="sheet-name-cell">
+                        <div className="sheet-cell-inner">
+                          <span className="sheet-cell-icon" aria-hidden="true">
+                            {getEntityIcon(k)}
+                          </span>
+                          {d.updated.length > 0 ? (
+                            <button
+                              type="button"
+                              className="sheet-diff-toggle-btn"
+                              onClick={() => setOpenK(isExpanded ? null : k)}
+                              aria-expanded={isExpanded}
+                            >
+                              <span>{sheetDef.sheet}</span>
+                              <span className="toggle-indicator">{isExpanded ? '▴' : '▾'}</span>
+                            </button>
+                          ) : (
+                            <span className="sheet-title-text">{sheetDef.sheet}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="num">
+                        {d.created.length > 0 ? (
+                          <span className="diff-count-pill diff-count-pill--new">+{fmt(d.created.length)}</span>
+                        ) : (
+                          <span className="diff-count-zero">0</span>
+                        )}
+                      </td>
+                      <td className="num">
+                        {d.updated.length > 0 ? (
+                          <span className="diff-count-pill diff-count-pill--updated">{fmt(d.updated.length)}</span>
+                        ) : (
+                          <span className="diff-count-zero">0</span>
+                        )}
+                      </td>
+                      <td className="num">
+                        {d.unchanged.length > 0 ? (
+                          <span className="diff-count-pill diff-count-pill--unchanged">{fmt(d.unchanged.length)}</span>
+                        ) : (
+                          <span className="diff-count-zero">0</span>
+                        )}
+                      </td>
+                      <td className="num">
+                        {d.keptNotInFile.length > 0 ? (
+                          <span className="diff-count-pill diff-count-pill--kept">{fmt(d.keptNotInFile.length)}</span>
+                        ) : (
+                          <span className="diff-count-zero">0</span>
+                        )}
+                      </td>
+                    </tr>,
+                    isExpanded ? (
+                      <tr key={`${k}-x`} className="review-diff-expand-row">
+                        <td colSpan={5}>
+                          <div className="diff-expand-inner">
+                            <div className="diff-expand-header">
+                              <strong>Modified fields in {sheetDef.sheet} ({d.updated.length} records)</strong>
+                              <small>Comparing staged spreadsheet against stored database records</small>
+                            </div>
+                            <table className="diff-sub-table">
+                              <thead>
+                                <tr>
+                                  <th>Record ID</th>
+                                  <th>Field</th>
+                                  <th>Stored Value</th>
+                                  <th>Staged Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {d.updated.flatMap(u =>
+                                  u.changes.map(c => (
+                                    <tr key={`${u.id}-${c.key}`}>
+                                      <td><Mono>{u.id}</Mono></td>
+                                      <td><span className="diff-field-name">{c.key}</span></td>
+                                      <td><span className="diff-val-before">{String(c.before ?? '—')}</span></td>
+                                      <td><span className="diff-val-after">{String(c.after ?? '—')}</span></td>
+                                    </tr>
+                                  ))
+                                ).slice(0, 200)}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null
+                  ];
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="review-table-totals-row">
+                  <td><strong>Total Staged</strong></td>
+                  <td className="num"><strong>+{fmt(tot.created)}</strong></td>
+                  <td className="num"><strong>{fmt(tot.updated)}</strong></td>
+                  <td className="num"><strong>{fmt(tot.unchanged)}</strong></td>
+                  <td className="num"><strong>{fmt(tot.keptNotInFile)}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </Card>
+
+        {/* Right Column: Validation Issues */}
+        <Card className="review-section-card review-issues-card">
+          <div className="review-card-head">
+            <div className="review-head-info">
+              <div className="up-section-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>Validation Inspection</span>
+              </div>
+              <h3 className="review-card-title">Issues & Warnings</h3>
+              <p className="review-card-sub">
+                {staged.issues.length === 0
+                  ? 'All rows and relationships passed verification.'
+                  : `${fmt(tot.errors)} error${tot.errors === 1 ? '' : 's'} · ${fmt(tot.warnings)} warning${tot.warnings === 1 ? '' : 's'}`}
+              </p>
+            </div>
+            {staged.issues.length > 0 && (
+              <button
+                type="button"
+                className="review-csv-btn"
+                onClick={csv}
+                title="Download issues as CSV"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Download CSV</span>
+              </button>
+            )}
+          </div>
+
+          {staged.issues.length > 0 ? (
+            <>
+              <div className="review-issues-toolbar">
+                <div className="review-filter-tabs" role="group" aria-label="Filter issues">
+                  <button
+                    type="button"
+                    className={`filter-tab${filter === 'all' ? ' is-active' : ''}`}
+                    onClick={() => setFilter('all')}
+                  >
+                    All <span className="tab-count-pill">{staged.issues.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-tab filter-tab--error${filter === 'error' ? ' is-active' : ''}`}
+                    onClick={() => setFilter('error')}
+                  >
+                    Errors <span className="tab-count-pill tab-count-pill--error">{tot.errors}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-tab filter-tab--warning${filter === 'warning' ? ' is-active' : ''}`}
+                    onClick={() => setFilter('warning')}
+                  >
+                    Warnings <span className="tab-count-pill tab-count-pill--warning">{tot.warnings}</span>
+                  </button>
+                </div>
+
+                <div className="review-issue-search-wrap">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="search-icon" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    className="review-issue-search-input"
+                    placeholder="Search by sheet, column, ID or error message..."
+                    value={q}
+                    onChange={e => setQ(e.target.value)}
+                    aria-label="Search issues"
+                  />
+                  {q && (
+                    <button
+                      type="button"
+                      className="search-clear-btn"
+                      onClick={() => setQ('')}
+                      aria-label="Clear issue search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="review-issues-scroll">
+                {bySheet.length ? (
+                  bySheet.map(([sheet, list]) => (
+                    <div key={sheet} className="review-issue-group">
+                      <div className="review-issue-group-header">
+                        <div className="group-title-row">
+                          <span className="group-sheet-badge">{sheet}</span>
+                          <span className="group-sheet-count">{list.length} issue{list.length === 1 ? '' : 's'}</span>
+                        </div>
+                      </div>
+                      <div className="issue-cards-list">
+                        {list.map((x, i) => (
+                          <div key={i} className={`review-issue-item review-issue-item--${x.severity}`}>
+                            <div className="issue-item-severity-badge">
+                              {x.severity === 'error' ? 'ERROR' : 'WARNING'}
+                            </div>
+                            <div className="issue-item-body">
+                              <div className="issue-location-row">
+                                <span className="issue-loc-chip">
+                                  {x.row ? `Row ${x.row}` : 'Sheet level'}
+                                </span>
+                                {x.col && <span className="issue-col-chip">Column: {x.col}</span>}
+                                {x.id && <span className="issue-id-chip"><Mono>{x.id}</Mono></span>}
+                              </div>
+                              <p className="issue-message-text">{x.message}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="issues-empty-filter">
+                    <p className="empty-filter-title">No issues matching &ldquo;{q}&rdquo;</p>
+                    <button type="button" className="empty-filter-btn" onClick={() => { setQ(''); setFilter('all'); }}>
+                      Reset filters
+                    </button>
+                  </div>
+                )}
+                {issues.length > MAX_ISSUES && (
+                  <div className="issues-overflow-note">
+                    Showing top {MAX_ISSUES} of {fmt(issues.length)} issues. Download the CSV above to view all.
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="review-zero-issues">
+              <div className="zero-issues-icon-wrap" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h4>All Checks Passed</h4>
+              <p>Every row in your workbook complies with schema rules and relational foreign keys.</p>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* 5. Sticky / Docked Executive Footer */}
+      <div className="review-action-dock">
+        <div className="dock-left-actions">
+          <button type="button" className="review-dock-btn" onClick={onBack}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span>Back to columns</span>
+          </button>
+          <button type="button" className="review-dock-btn" onClick={onRestart}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload a corrected file</span>
+          </button>
+        </div>
+
+        <div className="dock-status-summary">
+          {!staged.ok ? (
+            <span className="dock-status-tag dock-status-tag--error">
+              <span className="status-dot status-dot--error" />
+              {fmt(tot.errors)} error{tot.errors === 1 ? '' : 's'} must be resolved before ingestion
+            </span>
+          ) : (
+            <span className="dock-status-tag dock-status-tag--ok">
+              <span className="status-dot status-dot--ok" />
+              {fmt(tot.created + tot.updated)} records verified and ready to commit
+            </span>
+          )}
+        </div>
+
+        <div className="dock-right-actions">
+          <button
+            type="button"
+            className="review-commit-btn"
+            onClick={onConfirm}
+            disabled={!staged.ok || busy}
+          >
+            {busy ? (
+              <span>Ingesting into DCIM…</span>
+            ) : staged.ok ? (
+              <>
+                <span>Commit {fmt(tot.created + tot.updated)} Changes</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span>Fix Errors to Upload</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
