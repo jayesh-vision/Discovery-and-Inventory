@@ -1949,14 +1949,14 @@ function locList() {
     LOC_GROUP ? `group=${LOC_GROUP}` : ''
   ].filter(Boolean).join('&');
   const REGION_TONE = { North:'sky', East:'purple', West:'orange', South:'teal' };
-  const regionCards = ['North','East','West','South'].map(r => {
+  const regionCards = (DC_ON ? dcRegionList() : ['North','East','West','South']).map(r => {
     const rows = base.filter(l => STATE_REGION[l.state] === r);
     const c = k => rows.filter(l => l.st === k).length;
     const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
     const tot = rows.length, live = c('On-air'), failed = c('Failed');
     return kpiProgress(`${r} region`, n(tot),
       tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here',
-      segs, REGION_TONE[r],
+      segs, REGION_TONE[r] || 'slate',
       { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
       LOC_REGION === r);
   }).join('');
@@ -2323,7 +2323,7 @@ function viewSite() {
       { k:'Discovered',       v:n(l.disc), s:`${((l.disc/Math.max(l.ne,1))*100).toFixed(0)}% of record`, t:'emerald' },
       { k:'Drifted',          v:n(drift), s:'incl. duplicate serials', t:'amber' },
       { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
-      { k:'Links terminating',v:l.disc && !DC_ON ? n(Math.round((l.disc*4+7)*1.37)) : '0', s:'LLDP · OSPF · BGP · L2VPN · L3VPN', t:'purple' },
+      { k:'Links terminating',v:DC_ON ? n((dcSumOf(l.id) || {}).links || 0) : l.disc ? n(Math.round((l.disc*4+7)*1.37)) : '0', s:DC_ON ? 'LLDP · BGP · OSPF · ISIS · LSP' : 'LLDP · OSPF · BGP · L2VPN · L3VPN', t:'purple' },
       { k:'Capex committed',  v:inrShort(cxTotal), s:`one-off · ${(cxTotal/cxA*100).toFixed(0)}% of ${inrShort(cxA)}`, t:'cyan' },
       { k:'Opex run rate',    v:inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s:`recurring · ${inrShort(oxRun*12)} a year`, t:'teal' }
     ])}
@@ -2434,7 +2434,7 @@ function siteHeadData(id) {
         drill: { v: 'reconcile', l: `Drift at ${l.name}`, q: 'ne=Differ' } },
       { k: 'Not discovered', v: n(notDisc), s: 'planned or no collector', t: 'red',
         drill: { v: 'reconcile', l: `Not discovered at ${l.name}`, q: 'ne=Only in inventory' } },
-      { k: 'Links terminating', v: l.disc && !DC_ON ? n(Math.round((l.disc * 4 + 7) * 1.37)) : '0', s: 'LLDP · OSPF · BGP · L2VPN · L3VPN', t: 'purple',
+      { k: 'Links terminating', v: DC_ON ? n((dcSumOf(l.id) || {}).links || 0) : l.disc ? n(Math.round((l.disc * 4 + 7) * 1.37)) : '0', s: DC_ON ? 'LLDP · BGP · OSPF · ISIS · LSP' : 'LLDP · OSPF · BGP · L2VPN · L3VPN', t: 'purple',
         drill: { v: 'links', l: `Links terminating at ${l.name}`, q: '' } },
       { k: 'Capex committed', v: inrShort(cxTotal), s: `one-off · ${(cxTotal / cxA * 100).toFixed(0)}% of ${inrShort(cxA)}`, t: 'cyan', section: 'capex' },
       { k: 'Opex run rate', v: inrShort(oxRun) + '<span class="stat-u"> / mo</span>', s: `recurring · ${inrShort(oxRun * 12)} a year`, t: 'teal', section: 'opex' }
@@ -2608,7 +2608,7 @@ function viewCapex() {
           <input class="nst-input cx-hd" id="cxcc" data-f="cc" value="${d.cc}"></div>
         <div class="stack-x"><label class="nst-input-label" for="cxown">Budget owner</label>
           <input class="nst-input cx-hd" id="cxown" data-f="owner" value="${d.owner}"></div>
-        <div class="stack-x"><label class="nst-input-label" for="cxapp">Approved budget (₹)</label>
+        <div class="stack-x"><label class="nst-input-label" for="cxapp">Approved budget (${dcCur() === 'USD' ? '$' : '₹'})</label>
           <input class="nst-input cx-hd num" id="cxapp" data-f="approved" type="number" step="100000" value="${d.approved}"></div>
       </div>`)}
 
@@ -3662,13 +3662,15 @@ function linkViewDialog() {
           ['Status', stLabel], ['Protocol', protoLabel], ['Link name', r.name === '—' ? 'Unnamed' : r.name],
           ...(r.reason ? [['Reason', r.reason]] : []),
           ['Source NE', r.sne], ['Source IP', r.sip],
-          ['Destination NE', r.dne], ['Destination IP', r.dip]
+          ['Destination NE', r.dne], ['Destination IP', r.dip],
+          ...(r.extra || [])
         ])}
       </div>
     </div>`;
 }
 
 function viewLinks() {
+  if (DC_ON) return dcViewLinks();
   const t = TAB.link, meta = LINK_TABS.find(x => x.k === t);
   const rows = gridApply('links', (LINKS[t] || []).filter(r => !LINK_NE_FILTER || r.sne === LINK_NE_FILTER || r.dne === LINK_NE_FILTER));
   /* the Filters panel's Status field only ever offers the values this
@@ -3962,6 +3964,7 @@ function svcViewDialog() {
 }
 
 function viewServices() {
+  if (DC_ON) return dcViewServices();
   const cardStats = k => {
     const list = SERVICES[k] || [];
     const total = list.length;

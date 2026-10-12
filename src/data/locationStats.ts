@@ -5,6 +5,7 @@
    (src/data/dc), with a zero wherever a thing has no data center records (PoPs, sites, links,
    services, fibre). Same shapes, same screen. */
 import { DC_SUM, DC_TOTAL, SCOPED, type DcSum } from './dc/scope';
+import { DC_COUNTS } from './dc';
 
 export interface Split { total: number; live: number; build: number; plan: number; fail: number }
 export interface InvCardData {
@@ -101,8 +102,22 @@ function scopedStats(): LocStats {
   const active = counts.reduce((a, x) => a + x.n, 0);
   const odf = DC_SUM.filter(d => d.odf.total > 0).length;   // one optical frame per data center
   const passive = odf + T.racks;
+  /* a state code alone is not unique across the two countries (Oregon / Odisha, Georgia / Goa), so the USA's carry a prefix */
   const circles = new Map<string, DcSum[]>();
-  for (const d of DC_SUM) (circles.get(d.circleId) ?? circles.set(d.circleId, []).get(d.circleId)!).push(d);
+  const circleKey = (d: DcSum) => (d.geo === 'us' ? `US-${d.circleId}` : d.circleId);
+  for (const d of DC_SUM) (circles.get(circleKey(d)) ?? circles.set(circleKey(d), []).get(circleKey(d))!).push(d);
+  /* links and services, from the Links and Services sheets of the backups */
+  const links = DC_SUM.reduce((a, d) => a + d.links, 0), services = DC_SUM.reduce((a, d) => a + d.services, 0);
+  const LINK_TABS: [string, string][] = [['LLDP', 'lldp'], ['BGP', 'bgp'], ['OSPF', 'ospf'], ['ISIS', 'isis'], ['LSP', 'lsp']];
+  const SVC_TABS: [string, string][] = [['On-demand GPUs', 'gpu'], ['CPU instances', 'cpu'], ['Storage volume', 'storage'], ['Reserved cluster', 'reserved']];
+  const parts = [...LINK_TABS.map(([p, k]) => ({ label: p, n: DC_COUNTS.linksByProtocol[p] ?? 0, to: `/inventory/links?tab=${k}`, title: `View ${p} links` })),
+    ...SVC_TABS.map(([t, k]) => ({ label: t, n: DC_COUNTS.servicesByType[t] ?? 0, to: `/inventory/services?tab=${k}`, title: `View ${t} services` }))].filter(x => x.n > 0);
+  const lTotal = links + services;
+  const logical: InvCardData = {
+    total: lTotal, sub: `${en(links)} links and ${en(services)} customer services`,
+    segs: parts.map((x, i) => ({ w: share(x.n, lTotal), color: palette[i % palette.length], title: `${x.label}: ${en(x.n)}` })),
+    chips: parts
+  };
   return {
     all: { ...dc },
     dc,
@@ -113,11 +128,7 @@ function scopedStats(): LocStats {
       segs: counts.map((x, i) => ({ w: share(x.n, active), color: palette[i % palette.length], title: `${x.label}: ${en(x.n)}` })),
       chips: counts.map(x => ({ label: x.label, n: x.n, to: `/inventory/physical?tab=${x.k}`, title: `View ${x.plural} in inventory` }))
     },
-    logical: {
-      total: 0, sub: '0 links and 0 provisioned services · plus 0 VNFs',
-      segs: [{ w: 0, color: '#a855f7', title: 'LLDP: 0' }, { w: 0, color: '#0284c7', title: 'OSPF: 0' }, { w: 0, color: '#06b6d4', title: 'BGP: 0' }, { w: 0, color: '#0d9488', title: 'L3VPN: 0' }, { w: 0, color: '#7c3aed', title: 'L2VPN: 0' }],
-      chips: DEFAULT.logical.chips.map(c => ({ ...c, n: 0 }))
-    },
+    logical,
     passive: {
       total: passive, sub: 'Physical plant across 7 categories',
       segs: [{ w: share(odf, passive), color: '#f59e0b', title: `ODF: ${en(odf)}` }, { w: share(T.racks, passive), color: '#64748b', title: `Racks: ${en(T.racks)}` },

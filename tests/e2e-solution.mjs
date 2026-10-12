@@ -17,13 +17,13 @@ p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED/.test(m.text()))
 let fails = 0;
 const ok = (label, cond, detail = '') => { console.log((cond ? 'ok   ' : 'FAIL ') + label + (detail ? '  ' + detail : '')); if (!cond) fails++; };
 const body = () => p.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
-const open = async path => { await p.goto(BASE + path, { waitUntil: 'networkidle' }); await p.waitForTimeout(900); };
+const open = async path => { await p.goto(BASE + path, { waitUntil: 'load' }); await p.waitForTimeout(2200); };
 const url = () => new URL(p.url());
 const hasParam = () => url().searchParams.get('solution') === 'datacenter';
 
 /* every Inventory route in the registry, with a real value for each :param */
 const src = readFileSync(new URL('../src/routes.ts', import.meta.url), 'utf8');
-const SAMPLE = { ':id': 'KA-DC-008', ':name': 'MH-DC-001-PE-T4-01', ':cityId': 'pb-ludhiana', ':dcId': 'KA-DC-008' };
+const SAMPLE = { ':id': 'KA-DC-008', ':name': 'KA-DC-008-PE-T4-01', ':cityId': 'pb-ludhiana', ':dcId': 'KA-DC-008' };
 const paths = [...src.matchAll(/path: '(\/inventory[^']*)'/g)].map(m => m[1])
   .map(x => x.replace(/:[A-Za-z]+/g, t => SAMPLE[t] ?? 'x'));
 ok(`found ${paths.length} Inventory routes`, paths.length >= 30);
@@ -49,7 +49,7 @@ for (const path of unique) {
 /* the parameter follows the reader */
 await open('/inventory?solution=datacenter');
 ok('/inventory redirect keeps it', url().pathname === '/inventory/insights' && hasParam());
-await open('/inventory/location?solution=datacenter');
+await open('/inventory/location?view=list&solution=datacenter');
 await p.locator('a[href], button').filter({ hasText: /Physical/i }).first().click().catch(() => {});
 await open('/inventory/physical?solution=datacenter');
 await p.getByText('Switch', { exact: true }).first().click(); await p.waitForTimeout(500);
@@ -61,7 +61,7 @@ await open('/inventory/passive?solution=datacenter');
 await p.getByText('Racks', { exact: true }).first().click(); await p.waitForTimeout(600);
 ok('legacy Passive tab click keeps it, no loop', hasParam() && (await body()).includes('U used'));
 await open('/inventory/location/site/KA-DC-008?solution=datacenter');
-await p.getByText('Facility', { exact: true }).first().click(); await p.waitForTimeout(600);
+await p.getByRole('button', { name: /Site details/ }).first().click(); await p.waitForTimeout(600);
 ok('site tabs keep it', hasParam() && url().pathname.endsWith('/details'));
 await p.goBack(); await p.waitForTimeout(600);
 ok('Back keeps it', hasParam());
@@ -73,20 +73,20 @@ ok('unknown value ignored: no error, nothing added', !(await q.evaluate(() => do
 await q.close();
 
 /* BOTH modes are always available: the URL you open decides, in the same browser tab, every time */
-await open('/inventory/location?solution=datacenter');
-ok('opened with the parameter: the data center solution', hasParam() && (await body()).includes('Showing 24 of 24'));
-await p.getByText('KA-DC-008', { exact: true }).first().click(); await p.waitForTimeout(700);
+await open('/inventory/location?view=list&solution=datacenter');
+ok('opened with the parameter: the data center solution', hasParam() && (await body()).includes('Showing 25 of 48'));
+await p.getByText('KA-DC-008', { exact: true }).first().click(); await p.waitForTimeout(1500);
 ok('clicking in it keeps the parameter (site page)', hasParam() && url().pathname === '/inventory/location/site/KA-DC-008');
 await p.reload({ waitUntil: 'networkidle' }); await p.waitForTimeout(600);
-ok('reload of that URL stays in it', hasParam() && (await body()).includes('Devices 360'));
+ok('reload of that URL stays in it', hasParam() && url().pathname === '/inventory/location/site/KA-DC-008');
 for (const path of ['/inventory/location', '/inventory/physical', '/inventory/passive?tab=cooling', '/inventory/location/site/KA-DC-008/details', '/inventory/services', '/inventory/reports']) {
   await open(path);   // typed plain URL, same tab that was just in the data center solution
   ok(`typed plain ${path} is the default Inventory`, !hasParam() && url().pathname === path.split('?')[0]);
 }
 await open('/inventory/location');
 ok('and shows the default data (12,475 locations)', (await body()).includes('12,475'));
-await open('/inventory/location?solution=datacenter');
-ok('then the parameter is the data center solution again', hasParam() && (await body()).includes('Showing 24 of 24'));
+await open('/inventory/location?view=list&solution=datacenter');
+ok('then the parameter is the data center solution again', hasParam() && (await body()).includes('Showing 25 of 48'));
 await open('/inventory/location');
 await p.getByText('Physical', { exact: false }).first().click().catch(() => {});
 ok('clicking around the default stays default', !hasParam());

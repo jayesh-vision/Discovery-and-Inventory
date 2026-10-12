@@ -7,7 +7,7 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
   '90d': 'Last 90 days',
   '12m': 'Last 12 months'
 };
-import { DC_SUM, DC_TOTAL, SCOPED, type DcSum } from './dc/scope';
+import { DC_SUM, DC_TOTAL, SCOPED, dcRegionLabel, type DcSum } from './dc/scope';
 import {
   ACT,
   PAS,
@@ -2027,7 +2027,6 @@ const noLeaf = (name: string, scope: string, covLabel: string, color: string): P
 const PERIOD: Record<DayRangeOption, string> = { '7d': 'vs last 7 days', '14d': 'vs last 14 days', '30d': 'vs last 30 days', '90d': 'vs last 90 days', '12m': 'vs last 12 months' };
 const ISSUE_PERIOD: Record<DayRangeOption, string> = { '7d': 'this week', '14d': 'last 14 days', '30d': 'this month', '90d': 'this quarter', '12m': 'this year' };
 const KIND = (d: DcSum) => (d.tier === 'Tier IV' ? 'Core data centre' : d.category === 'Edge' ? 'Edge data centre' : 'Regional data centre');
-const REGION_NAME: Record<string, string> = { north: 'North', east: 'East', west: 'West', south: 'South' };
 
 function buildDc() {
   const T = DC_TOTAL;
@@ -2131,7 +2130,7 @@ function buildDc() {
     const h = d.devices ? Math.round((d.verified / d.devices) * 100) : 0;
     const st = h >= 90 ? 'Healthy' : h >= 80 ? 'Watch' : 'At risk';
     const pas = d.racks + d.feeds + d.ups + 2 + d.coolingUnits + d.sensors + (d.odf.total > 0 ? 1 : 0) + d.cores.lit;
-    return { name: d.id, region: REGION_NAME[d.regionId] ?? d.regionId, kind: KIND(d), active: fn(d.devices), passive: fn(pas), health: `${h}%`, healthW: `${h}%`, healthColor: hc(h), issues: issueCount(d), status: st, badgeBg: statusBg(st), badgeFg: statusFg(st) } as SiteRow;
+    return { name: d.id, region: dcRegionLabel(d), kind: KIND(d), active: fn(d.devices), passive: fn(pas), health: `${h}%`, healthW: `${h}%`, healthColor: hc(h), issues: issueCount(d), status: st, badgeBg: statusBg(st), badgeFg: statusFg(st) } as SiteRow;
   });
   const SITES = eachRange(() => sites);
   const SERVICES = eachRange(r => ({ active: '0', e2e: NONE, rows: DEFAULT_SERVICES_DYNAMIC[r].rows.map(x => ({ ...x, count: '0', path: NONE, color: GREY })) }));

@@ -1,32 +1,54 @@
 {
   "source": {
     "repo": "Datacenter-Ideation",
-    "commit": "99f72f7a788328ac69db4e753c54e5c76bbb14db",
-    "model": "cloud",
-    "generator": "app/src/mock/generate.ts"
+    "commit": "5071e755d9c33c74298cf41405c214834f7c6863",
+    "model": "neocloud",
+    "generator": "app/src/mock/generate.ts",
+    "geographies": [
+      "in",
+      "us"
+    ],
+    "workbooks": {
+      "in": "dco-backup-neocloud-in-2026-10-12.xlsx",
+      "us": "dco-backup-neocloud-us-2026-10-12.xlsx"
+    }
   },
   "counts": {
-    "datacenters": 24,
-    "racks": 641,
-    "devices": 6398,
+    "datacenters": 48,
+    "racks": 1445,
+    "devices": 7678,
     "devicesByRole": {
       "Router": 96,
-      "Firewall": 33,
-      "DWDM": 46,
-      "Switch": 457,
-      "Server": 4037,
-      "Storage": 1038,
-      "GPU": 691
+      "Firewall": 96,
+      "Switch": 1358,
+      "GPU": 4412,
+      "Storage": 612,
+      "Server": 1104
     },
-    "ups": 94,
-    "powerFeeds": 63,
-    "coolingUnits": 212,
-    "sensors": 98,
-    "gpuServers": 610,
-    "gpus": 4880,
-    "gpuClusters": 29,
-    "cdus": 16,
-    "aiCages": 0
+    "ups": 188,
+    "powerFeeds": 126,
+    "coolingUnits": 475,
+    "sensors": 196,
+    "gpuServers": 4182,
+    "gpus": 33456,
+    "gpuClusters": 152,
+    "cdus": 83,
+    "links": 25057,
+    "linksByProtocol": {
+      "LLDP": 23878,
+      "OSPF": 46,
+      "ISIS": 46,
+      "BGP": 900,
+      "LSP": 187
+    },
+    "services": 1456,
+    "servicesByType": {
+      "Storage volume": 272,
+      "CPU instances": 317,
+      "Reserved cluster": 102,
+      "On-demand GPUs": 765
+    },
+    "customers": 24
   },
   "datacenterIds": [
     "MH-DC-001",
@@ -52,28 +74,64 @@
     "KA-DC-021",
     "TN-DC-022",
     "TS-DC-023",
-    "KL-DC-024"
+    "KL-DC-024",
+    "VA-DC-001",
+    "VA-DC-002",
+    "VA-DC-003",
+    "VA-DC-004",
+    "TX-DC-005",
+    "TX-DC-006",
+    "TX-DC-007",
+    "CA-DC-008",
+    "IL-DC-009",
+    "AZ-DC-010",
+    "GA-DC-011",
+    "NJ-DC-012",
+    "WA-DC-013",
+    "OR-DC-014",
+    "CO-DC-015",
+    "OH-DC-016",
+    "OH-DC-017",
+    "FL-DC-018",
+    "UT-DC-019",
+    "CA-DC-020",
+    "CA-DC-021",
+    "TX-DC-022",
+    "NC-DC-023",
+    "WA-DC-024"
   ],
   "files": {
     "datacenters.json": {
-      "bytes": 337190,
-      "sha256": "de379bc8342e5e04"
+      "bytes": 773563,
+      "sha256": "d12ddc1e5a340581"
     },
     "devices.json": {
-      "bytes": 2365247,
-      "sha256": "85091ed3f22aaec9"
+      "bytes": 2867331,
+      "sha256": "0de8f14a8db94f03"
     },
     "modules.json": {
-      "bytes": 3456702,
-      "sha256": "d8833b53ce65f30e"
+      "bytes": 5560907,
+      "sha256": "76222add7827caff"
     },
     "gpu.json": {
-      "bytes": 1037170,
-      "sha256": "00b7e23f353aed82"
+      "bytes": 7088790,
+      "sha256": "34e5cd6dd02bacd3"
+    },
+    "links.json": {
+      "bytes": 6299033,
+      "sha256": "ee2b8c130fa2a447"
+    },
+    "services.json": {
+      "bytes": 516526,
+      "sha256": "ae56d588ef78d352"
+    },
+    "customers.json": {
+      "bytes": 4889,
+      "sha256": "bb43baedf4013374"
     },
     "summary.json": {
-      "bytes": 44061,
-      "sha256": "c57fd86ae371bcfe"
+      "bytes": 97216,
+      "sha256": "81d98436e8142d82"
     }
   }
 }

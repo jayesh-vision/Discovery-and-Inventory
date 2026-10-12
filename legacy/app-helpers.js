@@ -263,6 +263,10 @@ function showCopyToast(x, y, text, type) {
 window.showCopyToast = showCopyToast;
 
 /* ── currency ─────────────────────────────────────────── */
-const inr = v => '₹' + Math.round(v).toLocaleString('en-IN');
-const inrShort = v => v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr'
+/* In the data center solution a US site's capex and opex are in dollars (dcCur(), dc-scope.js); everywhere else, and
+   always in the default Inventory, it is rupees. */
+const inr = v => dcCur() === 'USD' ? '$' + Math.round(v).toLocaleString('en-US') : '₹' + Math.round(v).toLocaleString('en-IN');
+const inrShort = v => dcCur() === 'USD'
+  ? (v >= 1e6 ? '$' + (v/1e6).toFixed(2) + ' M' : v >= 1e3 ? '$' + (v/1e3).toFixed(1) + ' K' : '$' + Math.round(v).toLocaleString('en-US'))
+  : v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr'
   : v >= 1e5 ? '₹' + (v/1e5).toFixed(2) + ' L' : '₹' + Math.round(v).toLocaleString('en-IN');

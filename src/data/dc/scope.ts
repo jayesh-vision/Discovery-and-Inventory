@@ -12,10 +12,10 @@
    returns the default value untouched. */
 import summaryJson from './summary.json';
 import { isDatacenter } from '../../solution';
-import { loadDevices, loadFacilities, loadGpu, type DcDevice, type DcFacility, type DcGpuData, type DcRole } from './index';
+import { loadCustomers, loadDevices, loadFacilities, loadGpu, loadLinks, loadServices, type DcCustomer, type DcDevice, type DcFacility, type DcGeo, type DcGpuData, type DcLink, type DcRole, type DcService } from './index';
 
 export interface DcSum {
-  id: string; city: string; state: string; regionId: string; circleId: string; tier: 'Tier II' | 'Tier III' | 'Tier IV'; category: 'Central' | 'Regional' | 'Edge';
+  id: string; geo: DcGeo; currency: 'INR' | 'USD'; timezone?: string; city: string; state: string; regionId: string; circleId: string; tier: 'Tier II' | 'Tier III' | 'Tier IV'; category: 'Central' | 'Regional' | 'Edge';
   status: 'on-air' | 'in-progress' | 'planned' | 'failed'; address: string; lat: number; lng: number;
   devices: number; byRole: Partial<Record<DcRole, number>>; gpuServers: number; gpus: number;
   discovered: number; verified: number; drifted: number; notDiscovered: number; planned: number;
@@ -25,18 +25,33 @@ export interface DcSum {
   ports: { total: number; used: number }; odf: { total: number; used: number }; cores: { total: number; lit: number };
   capex: { approved: number; committed: number; spent: number }; opexMonthly: number;
   risks: { critical: number; major: number; minor: number; byDomain: Record<string, number> };
+  links: number; services: number;
   vendors: Record<string, number>; driftByVendor: Record<string, number>; models: string[];
   /** a location roster record (the same shape as src/data/allLocations.json) */
   location: { st: string; chip: string; name: string; cat: string; ct: string; type: string; id: string; addr: string; city: string; state: string; ne: number; disc: number; stage: null; issue: null; risk: null; lat: number; lon: number };
 }
 
 export const SCOPED: boolean = isDatacenter();
-export const DC_SUM = (summaryJson as unknown as { datacenters: DcSum[] }).datacenters;
+export interface DcRegion { geo: DcGeo; id: string; name: string }
+export interface DcCircle { geo: DcGeo; id: string; name: string; state: string; regionId: string; lat: number; lng: number }
+const SUMMARY = summaryJson as unknown as { datacenters: DcSum[]; regions: DcRegion[]; circles: DcCircle[] };
+export const DC_SUM = SUMMARY.datacenters;
+/** regions and states (circles) of both geographies; an id is only unique together with its `geo` */
+export const DC_REGIONS = SUMMARY.regions;
+export const DC_CIRCLES = SUMMARY.circles;
+export const DC_GEO_LABEL: Record<DcGeo, string> = { in: 'India', us: 'United States' };
 export const dcSum = (id: string): DcSum | undefined => DC_SUM.find(d => d.id === id);
+/** a site's region as it is written on a screen: India's North / East / West / South, the USA's "US Northeast" … ("West" exists in both) */
+export const dcRegionLabel = (d: { geo: DcGeo; regionId: string }): string => {
+  const name = DC_REGIONS.find(r => r.geo === d.geo && r.id === d.regionId)?.name ?? d.regionId;
+  return d.geo === 'us' ? `US ${name}` : name;
+};
+/** every region label that has a data center, in order */
+export const dcRegionLabels = (): string[] => [...new Set(DC_SUM.map(dcRegionLabel))];
 
 const add = (f: (d: DcSum) => number) => DC_SUM.reduce((a, d) => a + f(d), 0);
 const roleSum = (r: DcRole) => add(d => d.byRole[r] ?? 0);
-/** totals across the 24 data centers, computed from the summary */
+/** totals across all the data centers (both geographies), computed from the summary */
 export const DC_TOTAL = {
   dcs: DC_SUM.length, racks: add(d => d.racks), aiRacks: add(d => d.aiRacks), devices: add(d => d.devices), gpuServers: add(d => d.gpuServers), gpus: add(d => d.gpus),
   discovered: add(d => d.discovered), verified: add(d => d.verified), drifted: add(d => d.drifted), notDiscovered: add(d => d.notDiscovered), planned: add(d => d.planned),
@@ -51,17 +66,17 @@ export const DC_TOTAL = {
 export function scoped<T>(def: T, dc: () => T): T { return SCOPED ? dc() : def; }
 
 /* ── full records ── */
-export interface ScopeData { facs: DcFacility[]; devices: DcDevice[]; gpu: DcGpuData; devicesOf: (dcId: string) => DcDevice[]; facOf: (dcId: string) => DcFacility | undefined }
+export interface ScopeData { facs: DcFacility[]; devices: DcDevice[]; gpu: DcGpuData; links: DcLink[]; services: DcService[]; customers: DcCustomer[]; devicesOf: (dcId: string) => DcDevice[]; facOf: (dcId: string) => DcFacility | undefined }
 let loaded: ScopeData | null = null;
 
 /** load the full records; the app calls this before it renders in the data center solution */
 export async function preloadScope(): Promise<void> {
   if (!SCOPED || loaded) return;
-  const [facs, devices, gpu] = await Promise.all([loadFacilities(), loadDevices(), loadGpu()]);
+  const [facs, devices, gpu, links, services, customers] = await Promise.all([loadFacilities(), loadDevices(), loadGpu(), loadLinks(), loadServices(), loadCustomers()]);
   const by = new Map<string, DcDevice[]>();
   for (const d of devices) (by.get(d.dcId) ?? by.set(d.dcId, []).get(d.dcId)!).push(d);
   const fac = new Map(facs.map(f => [f.id, f]));
-  loaded = { facs, devices, gpu, devicesOf: id => by.get(id) ?? [], facOf: id => fac.get(id) };
+  loaded = { facs, devices, gpu, links, services, customers, devicesOf: id => by.get(id) ?? [], facOf: id => fac.get(id) };
 }
 
 /** the full records, once preloaded (always, by the time any screen renders in the data center solution) */

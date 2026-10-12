@@ -476,8 +476,10 @@ function lazyGrids() {
     let bar = tbl.parentNode.previousElementSibling;
     while (bar && !bar.classList.contains('grid-bar')) bar = bar.previousElementSibling;
     const label = bar && bar.querySelector('.grid-count');
+    /* a list too long to put on the page whole says how long it really is (data-dctotal, set by dc-scope.js) */
+    const whole = Number(tbl.dataset.dctotal) || rows.length;
     const setLabel = shown => {
-      if (label) label.textContent = `Showing ${n(shown)} of ${n(rows.length)}`;
+      if (label) label.textContent = `Showing ${n(shown)} of ${n(whole)}`;
     };
     if (rows.length <= LAZY_STEP) { setLabel(rows.length); restore(); return; }
 

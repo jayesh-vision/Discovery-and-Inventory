@@ -1,5 +1,5 @@
 import { ACTIVE_STATES, NE_CLASSES, PHY_TABS, dcClassOf, dcDiscovered, dcStockOf, stockCount, type ActiveStock, type NeClass, type RecState, type Source, type StockState } from './ledger';
-import { DC_SUM, SCOPED, dcSum, scope } from './dc/scope';
+import { DC_SUM, SCOPED, dcRegionLabel, dcSum, scope } from './dc/scope';
 import { MASTER_NE, type MasterRegion } from './master';
 import type { Region } from './discovery';
 
@@ -17,7 +17,6 @@ export interface NeRow {
    counts against; the self-check below fails loudly if the register ever stops
    footing to it. */
 const REC_OF = { verified: 'ok', drifted: 'drift', 'not-discovered': 'none' } as const;
-const REGION_OF_ID: Record<string, MasterRegion> = { north: 'North', east: 'East', west: 'West', south: 'South' };
 /* the data center solution's register: every data center device, in its ledger class */
 function scopedRegister(): Record<NeClass, NeRow[]> {
   const out = Object.fromEntries(NE_CLASSES.map(k => [k, [] as NeRow[]])) as Record<NeClass, NeRow[]>;
@@ -26,7 +25,7 @@ function scopedRegister(): Record<NeClass, NeRow[]> {
     out[dcClassOf(d)].push({
       st: REC_OF[d.discovery], name: d.name, ip: d.ip, model: d.model, os: d.os, sn: d.serial, oem: d.vendor, loc: d.dcId,
       s: dcDiscovered(d) ? 'd' : d.lifecycle === 'Planned' ? 'p' : 'm', stock: dcStockOf(d), v: d.discovery === 'not-discovered' ? null : 3,
-      city: sum.city, state: sum.state, region: REGION_OF_ID[sum.regionId]
+      city: sum.city, state: sum.state, region: dcRegionLabel(sum) as MasterRegion
     });
   }
   return out;
@@ -91,7 +90,7 @@ export const eosOf = (model: string): [string, EosBand] => EOS[model] ?? ['—',
 /* Region — the same four-way North/East/West/South split RegionDevices and
    DiscoveredDevices use, read off the real state the element's location id sits
    in (the location, not a second taxonomy invented for this grid). */
-const LOC_REGION = new Map<string, Region>(SCOPED ? DC_SUM.map(d => [d.id, REGION_OF_ID[d.regionId]] as [string, Region]) : MASTER_NE.map(n => [n.loc, n.region]));
+const LOC_REGION = new Map<string, Region>(SCOPED ? DC_SUM.map(d => [d.id, dcRegionLabel(d) as Region] as [string, Region]) : MASTER_NE.map(n => [n.loc, n.region]));
 export const regionOf = (loc: string): Region => LOC_REGION.get(loc) ?? 'West';
 
 /* System description — the SNMP sysDescr / "show version" banner every real

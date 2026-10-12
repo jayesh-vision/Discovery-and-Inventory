@@ -267,10 +267,10 @@ function applyDrillQuery(view, q, label) {
   if (view === 'fiber')    { if (p.id) FIBER_ID = decodeURIComponent(p.id).trim(); }
   if (view === 'links')    { if (p.tab) TAB.link = p.tab; LINK_NE_FILTER = p.ne || null; LINK_VIEW = null; }
   if (view === 'services') {
-    if (p.tab && ['l2vpn', 'l3vpn', 'ibw'].includes(p.tab.toLowerCase())) {
+    if (p.tab && SVC_TABS.some(t => t.k === p.tab.toLowerCase())) {
       TAB.svc = p.tab.toLowerCase();
-    } else if (!TAB.svc || !['l2vpn', 'l3vpn', 'ibw'].includes(TAB.svc)) {
-      TAB.svc = 'l2vpn';
+    } else if (!TAB.svc || !SVC_TABS.some(t => t.k === TAB.svc)) {
+      TAB.svc = SVC_TABS[0].k;
     }
     SVC_VIEW = null;
     gridOf('services').search = '';
@@ -507,6 +507,8 @@ document.addEventListener('click', e => {
   }
   const vlcx = e.target.closest('[data-vnflcclose]');
   if (vlcx) { VNF_LC_DRAWER = null; DRILL_PENDING = DRILL; go(CURRENT); return; }
+  const dcm = e.target.closest('[data-dcmore]');
+  if (dcm) { const k = dcm.dataset.dcmore; DC_SHOWN[k] = (DC_SHOWN[k] || DC_PAGE) + DC_PAGE; DRILL_PENDING = DRILL; go(CURRENT); return; }
   const lnkv = e.target.closest('[data-linkview]');
   if (lnkv) {
     const [proto, i] = lnkv.dataset.linkview.split(':');

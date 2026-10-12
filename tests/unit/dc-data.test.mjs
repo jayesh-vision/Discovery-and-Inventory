@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 const dir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'data');
 const read = f => JSON.parse(readFileSync(join(dir, f), 'utf8'));
 const F = read('dc/datacenters.json'), D = read('dc/devices.json'), M = read('dc/modules.json'), G = read('dc/gpu.json'), man = read('dc/manifest.json');
+const L = read('dc/links.json'), S = read('dc/services.json'), C = read('dc/customers.json');
 const roster = read('allLocations.json');
 const racks = new Map(F.flatMap(f => f.racks.map(r => [r.id, r])));
 const count = (a, f) => a.reduce((m, x) => ((m[f(x)] = (m[f(x)] ?? 0) + 1), m), {});
@@ -84,8 +85,26 @@ test('the default location roster is untouched by the data center copy', () => {
   assert.equal(ka.ne, 103);
 });
 
-test('the data center solution\'s data centers are the reference\'s own 24', () => {
-  assert.equal(F.length, 24);
+test('links, services and customers: unique ids, real ends, revenue adds up', () => {
+  assert.equal(man.counts.links, L.length); assert.equal(man.counts.services, S.length); assert.equal(man.counts.customers, C.length);
+  for (const [name, a] of [['links', L], ['services', S], ['customers', C]]) assert.equal(new Set(a.map(x => x.id)).size, a.length, `${name} ids are not unique`);
+  const dev = new Set(D.map(d => d.id)), cust = new Map(C.map(c => [c.id, c])), lnk = new Set(L.map(l => l.id));
+  for (const l of L) { assert.ok(dev.has(l.a) && dev.has(l.z), `${l.id} ends on an unknown device`) }
+  for (const x of S) {
+    assert.ok(dev.has(x.ne), `${x.id}: device ${x.ne}`); assert.ok(cust.has(x.cust), `${x.id}: customer ${x.cust}`);
+    assert.equal(cust.get(x.cust).cur, x.cur, `${x.id}: currency differs from its customer's`);
+    for (const id of x.links) assert.ok(lnk.has(id), `${x.id}: link ${id}`);
+  }
+  for (const c of C) assert.equal(c.revenue, S.filter(x => x.cust === c.id).reduce((a, x) => a + x.rev, 0));
+});
+
+test('both geographies are present, each in its own currency', () => {
+  assert.deepEqual(count(F, f => f.geo), { in: 24, us: 24 });
+  for (const f of F) assert.equal(f.currency, f.geo === 'in' ? 'INR' : 'USD');
+});
+
+test('the data center solution\'s data centers are the two backups\' 24 + 24', () => {
+  assert.equal(F.length, 48);
   assert.deepEqual(man.datacenterIds, F.map(f => f.id));
   for (const f of F) assert.ok(D.some(d => d.dcId === f.id), `${f.id} has no devices`);
 });

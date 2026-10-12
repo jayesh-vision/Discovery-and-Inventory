@@ -285,7 +285,7 @@ function viewOpex() {
           <input class="nst-input ox-hd" id="oxcc" data-f="cc" value="${d.cc}"></div>
         <div class="stack-x"><label class="nst-input-label" for="oxown">Budget owner</label>
           <input class="nst-input ox-hd" id="oxown" data-f="owner" value="${d.owner}"></div>
-        <div class="stack-x"><label class="nst-input-label" for="oxbud">Monthly budget (₹)</label>
+        <div class="stack-x"><label class="nst-input-label" for="oxbud">Monthly budget (${dcCur() === 'USD' ? '$' : '₹'})</label>
           <input class="nst-input ox-hd num" id="oxbud" data-f="budget" type="number" step="10000" value="${d.budget}"></div>
       </div>`)}
 

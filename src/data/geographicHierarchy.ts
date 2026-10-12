@@ -4,7 +4,7 @@
    Also includes City-level Network Elements data for Data Centers, PoP Locations, and Sites.
    ─────────────────────────────────────────────────────────────────── */
 
-import { DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
+import { DC_CIRCLES, DC_REGIONS, DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
 
 export interface CityItem {
   id: string;
@@ -5354,26 +5354,41 @@ const DEFAULT_GEOGRAPHIC_HIERARCHY: RegionItem[] = [
 ];
 
 /* ── the data center solution ─────────────────────────────────────────────────
-   The same regions and states, kept only where a data center is, with each city's counts taken
-   from the data centers in it (no PoPs or sites). Cities the default hierarchy does not have are
-   added. */
+   Both geographies of the data center estate: India's regions and states (the default hierarchy's own
+   regions, states and city ids wherever it has them) and the USA's (its four regions and its states),
+   kept only where a data center is, with each city's counts taken from the data centers in it (no PoPs
+   or sites). Cities the default hierarchy does not have are added. A US region or state id carries a
+   `us-` prefix: "West" exists in both countries. */
 const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+/* a US region borrows the look of the Indian region it sits nearest to */
+const US_LOOK: Record<string, RegionItem['iconType']> = { northeast: 'north', southeast: 'south', central: 'east', west: 'west' };
 function scopedHierarchy(): RegionItem[] {
   const regions: RegionItem[] = [];
-  for (const reg of DEFAULT_GEOGRAPHIC_HIERARCHY) {
+  const look = (t: RegionItem['iconType']) => DEFAULT_GEOGRAPHIC_HIERARCHY.find(r => r.iconType === t)!;
+  const palette = DEFAULT_GEOGRAPHIC_HIERARCHY.flatMap(r => r.states.map(st => [st.themeColor, st.bgColor] as const));
+  let next = 0;
+  const cityItems = (ds: DcSum[], stateId: string, known?: StateItem): CityItem[] =>
+    [...new Set(ds.map(d => d.city))].map(name => {
+      const here = ds.filter(d => d.city === name), k = known?.cities.find(c => c.name === name);
+      return { id: k?.id ?? `${stateId}-${slug(name)}`, name, count: here.reduce((a, d) => a + d.devices, 0), stateId, dcCount: here.length, popCount: 0, siteCount: 0 };
+    });
+  for (const reg of DC_REGIONS) {
+    const inRegion = DC_CIRCLES.filter(c => c.geo === reg.geo && c.regionId === reg.id);
+    const us = reg.geo === 'us';
+    const base = us ? look(US_LOOK[reg.id] ?? 'west') : DEFAULT_GEOGRAPHIC_HIERARCHY.find(r => r.id === reg.id);
+    if (!base) continue;
+    const regionId = us ? `us-${reg.id}` : reg.id;
     const states: StateItem[] = [];
-    for (const st of reg.states) {
-      const here = DC_SUM.filter(d => d.state === st.name);
-      if (!here.length) continue;
-      const cityNames = [...new Set(here.map(d => d.city))];
-      const cities: CityItem[] = cityNames.map(name => {
-        const ds = here.filter(d => d.city === name);
-        const known = st.cities.find(c => c.name === name);
-        return { id: known?.id ?? `${st.id}-${slug(name)}`, name, count: ds.reduce((a, d) => a + d.devices, 0), stateId: st.id, dcCount: ds.length, popCount: 0, siteCount: 0 };
-      });
-      states.push({ ...st, cityCount: cities.length, cities });
+    for (const c of inRegion) {
+      const ds = DC_SUM.filter(d => d.geo === reg.geo && d.circleId === c.id);
+      if (!ds.length) continue;
+      const known = us ? undefined : base.states.find(st => st.name === c.state);
+      const id = known?.id ?? (us ? `us-${slug(c.state)}` : slug(c.state));
+      const [themeColor, bgColor] = known ? [known.themeColor, known.bgColor] : palette[next++ % palette.length];
+      const cities = cityItems(ds, id, known);
+      states.push({ id, name: c.state, cityCount: cities.length, regionId, themeColor, bgColor, cities });
     }
-    if (states.length) regions.push({ ...reg, stateCount: states.length, cityCount: states.reduce((a, s) => a + s.cities.length, 0), states });
+    if (states.length) regions.push({ ...base, id: regionId, name: us ? `US ${reg.name} Region` : base.name, stateCount: states.length, cityCount: states.reduce((a, s) => a + s.cities.length, 0), states });
   }
   return regions;
 }
@@ -5726,12 +5741,14 @@ const cityDcs = (cityId: string): DcSum[] => {
   return info ? DC_SUM.filter(d => d.state === info.state.name && d.city === info.city.name) : [];
 };
 const DISCOVERY_STATUS: Record<string, NetworkElementRow['status']> = { verified: 'Verified', drifted: 'Drifted', 'not-discovered': 'Not discovered' };
+/* a site's rollout state, in the status vocabulary this list uses: on-air = verified, being built = drifted from plan, planned = not yet there */
+const SITE_STATUS: Record<DcSum['status'], FacilityItem['status']> = { 'on-air': 'Verified', 'in-progress': 'Drifted', planned: 'Stale', failed: 'Stale' };
 function scopedFacilities(cityId: string, facilityType: 'dc' | 'pop' | 'site'): FacilityItem[] {
   if (facilityType !== 'dc') return [];
   return cityDcs(cityId).map(d => ({
     id: `${cityId}-dc-${d.id}`, code: d.id, name: d.address, facilityType: 'dc' as const, subType: 'Data center', tierOrClassification: d.tier,
-    address: d.address, rackOrCapacity: `${d.racks} racks`, racksTotal: d.racks, racksUsed: d.racks, powerOrUplink: `${d.powerKw.toLocaleString('en-IN')} kW`,
-    deviceCount: d.devices, status: d.drifted > 0 ? 'Drifted' as const : 'Verified' as const,
+    address: d.address, rackOrCapacity: `${d.racks} racks`, racksTotal: d.racks, racksUsed: d.racks, powerOrUplink: `${d.powerKw.toLocaleString(d.geo === 'us' ? 'en-US' : 'en-IN')} kW`,
+    deviceCount: d.devices, status: SITE_STATUS[d.status],
     onAirPct: d.devices ? Math.round((d.verified / d.devices) * 100) : 0
   }));
 }

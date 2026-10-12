@@ -117,12 +117,12 @@ check('Reconciliation', 'sum REASONS = runFail', 239, sum(D.REASONS, r => r.c), 
 check('Reconciliation', 'sum VENDORS.fail = runFail', 239, sum(D.VENDORS, v => v.fail), FD);
 
 /* ── 5. COVERAGE_CIRCLES / GEOGRAPHIC_HIERARCHY ── */
-const loc = readFileSync(join(root, 'src/screens/Location.tsx'), 'utf8');
-const cc = loc.match(/const COVERAGE_CIRCLES: CoverageCircle\[\] = \[([\s\S]*?)\n\];/);
+const loc = readFileSync(join(root, 'src/data/locationStats.ts'), 'utf8');   /* the coverage table's default rows live here */
+const cc = loc.match(/const DEFAULT_CIRCLES: CoverageCircle\[\] = \[([\s\S]*?)\n\];/);
 if (cc) {
   const tot = [...cc[1].matchAll(/\btotal:\s*(\d+)/g)].map(m => +m[1]);
-  check('Location', 'COVERAGE_CIRCLES count / sum', [28, 12475], [tot.length, tot.reduce((a, b) => a + b, 0)], 'src/screens/Location.tsx');
-} else check('Location', 'COVERAGE_CIRCLES parse', 'found', 'not found', 'src/screens/Location.tsx');
+  check('Location', 'COVERAGE_CIRCLES count / sum', [28, 12475], [tot.length, tot.reduce((a, b) => a + b, 0)], 'src/data/locationStats.ts');
+} else check('Location', 'COVERAGE_CIRCLES parse', 'found', 'not found', 'src/data/locationStats.ts');
 const geo = await imp('src/data/geographicHierarchy.ts').catch(e => ({ err: e.message }));
 if (geo.GEOGRAPHIC_HIERARCHY) {
   const g = JSON.stringify(geo.GEOGRAPHIC_HIERARCHY);

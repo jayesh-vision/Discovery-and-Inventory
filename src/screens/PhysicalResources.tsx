@@ -9,6 +9,7 @@ import {
 } from '../data/dc';
 import '../styles/dc-inventory.css';
 import { isDatacenter } from '../solution';
+import { SCOPED, dcRegionLabel, dcRegionLabels } from '../data/dc/scope';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
   ACTIVE_STATES, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
@@ -48,7 +49,7 @@ const loadNoDevices = () => Promise.resolve<DcDevice[] | null>(null);
 function dcRow(dev: DcDevice, fac: DcFacility, node?: DcGpuNode): Row {
   return {
     st: REC_OF_DISCOVERY[dev.discovery], name: dev.name, ip: dev.ip, model: dev.model, os: dev.os, sn: dev.serial, oem: dev.vendor, loc: dev.dcId,
-    s: 'd', stock: STOCK_OF[dev.lifecycle], v: null, city: fac.city, state: fac.state, region: cap(fac.regionId) as Region,
+    s: 'd', stock: STOCK_OF[dev.lifecycle], v: null, city: fac.city, state: fac.state, region: dcRegionLabel(fac) as Region,
     sysDescr: `${dcShort(dev.rackId, dev.dcId)} · ${uRange(dev)} · ${dev.os}`, dc: { dev, fac, node }
   };
 }
@@ -56,7 +57,7 @@ function dcRow(dev: DcDevice, fac: DcFacility, node?: DcGpuNode): Row {
 const FILTERS = [
   { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
   { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ERICSSON', 'HUAWEI', 'ADVA', 'CIENA', 'HPE', 'DELL', 'SUPERMICRO', 'PURE', 'NETAPP', 'FORTINET', 'NVIDIA', 'INTEL', 'ARISTA'] },
-  { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: ['North', 'East', 'West', 'South'] }
+  { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: SCOPED ? dcRegionLabels() : ['North', 'East', 'West', 'South'] }
 ];
 
 const isClassIn = (tabs: PhyTab[], v: string | null): v is PhyTab => !!v && (tabs as string[]).includes(v);

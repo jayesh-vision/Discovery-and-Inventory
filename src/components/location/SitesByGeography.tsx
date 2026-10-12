@@ -2,7 +2,8 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import geo from '../../data/geo.json';
 import { ROSTER as allLocations } from '../../data/locationRoster';
-import { DC_SUM, SCOPED } from '../../data/dc/scope';
+import { DC_CIRCLES, DC_GEO_LABEL, DC_SUM, SCOPED } from '../../data/dc/scope';
+import type { DcGeo } from '../../data/dc';
 
 const GEO = geo as {
   W: number;
@@ -28,6 +29,8 @@ export interface CircleGeo {
   live: number;
   build: number;
   fail: number;
+  /** the data center solution lists the circles of both countries; a US state code can equal an Indian circle's (Oregon / Odisha), so the USA's carry a `US-` prefix in `c` */
+  geo?: DcGeo;
 }
 
 const DEFAULT_LOC_GEO: CircleGeo[] = [
@@ -68,12 +71,14 @@ const DEFAULT_LOC_GEO: CircleGeo[] = [
   { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.80, lon: 79.10, tot: 19, live: 16, build: 2, fail: 1 }
 ];
 
-/* The data center solution lists the circles that have data centers, counted from them. */
+/* The data center solution lists the circles (states) that have data centers, in both countries, counted from them.
+   India keeps the label positions of the map above; a US state is placed by the reference's own centre for it. */
 function scopedLocGeo(): CircleGeo[] {
-  return DEFAULT_LOC_GEO.filter(g => DC_SUM.some(d => d.circleId === g.c)).map(g => {
-    const ds = DC_SUM.filter(d => d.circleId === g.c);
-    return { ...g, tot: ds.length, live: ds.filter(d => d.status === 'on-air').length, build: ds.filter(d => d.status === 'in-progress').length,
-      fail: ds.filter(d => d.status === 'failed').length };
+  return DC_CIRCLES.filter(c => DC_SUM.some(d => d.geo === c.geo && d.circleId === c.id)).map(c => {
+    const ds = DC_SUM.filter(d => d.geo === c.geo && d.circleId === c.id);
+    const def = c.geo === 'in' ? DEFAULT_LOC_GEO.find(g => g.c === c.id) : undefined;
+    return { c: c.geo === 'us' ? `US-${c.id}` : c.id, n: c.name, st: c.state, lat: def?.lat ?? c.lat, lon: def?.lon ?? c.lng, geo: c.geo, tot: ds.length,
+      live: ds.filter(d => d.status === 'on-air').length, build: ds.filter(d => d.status === 'in-progress').length, fail: ds.filter(d => d.status === 'failed').length };
   });
 }
 export const LOC_GEO: CircleGeo[] = SCOPED ? scopedLocGeo() : DEFAULT_LOC_GEO;
@@ -165,6 +170,61 @@ function stateFill(g?: CircleGeo, mapColor: MapMode = 'onair') {
     : 'var(--vw-color-slate-100)';
 }
 
+
+/* ── the USA, for the data center solution ─────────────────────────────────────────────────────────────
+   The map above is India's. The USA is drawn the way Datacenter-Ideation draws it: Esri's light basemap tiles over
+   the geography's bounds, with the sites as pins. (The tiles load from Esri; without a connection the pins sit on a
+   plain canvas.) */
+const ESRI_LIGHT = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile';
+const US_BOUNDS = { s: 24.0, w: -125.5, n: 49.5, e: -66.5 };   /* the reference's USA map bounds */
+const TZ = 5, WORLD = 256 * 2 ** TZ;
+const wx = (lon: number) => ((lon + 180) / 360) * WORLD;
+const wy = (lat: number) => ((1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) / 2) * WORLD;
+const UX0 = wx(US_BOUNDS.w), UX1 = wx(US_BOUNDS.e), UY0 = wy(US_BOUNDS.n), UY1 = wy(US_BOUNDS.s);
+
+function UsMap({ pins, selected, onPin, onOpen }: {
+  pins: typeof allLocations; selected: string | null;
+  onPin: (ids: string[]) => void; onOpen: (id: string) => void;
+}) {
+  const tiles: { x: number; y: number }[] = [];
+  for (let y = Math.floor(UY0 / 256); y <= Math.floor(UY1 / 256); y++) for (let x = Math.floor(UX0 / 256); x <= Math.floor(UX1 / 256); x++) tiles.push({ x, y });
+  const W = UX1 - UX0, H = UY1 - UY0;
+  const buckets = new Map<string, { left: number; top: number; items: typeof allLocations }>();
+  for (const l of pins) {
+    const left = ((wx(l.lon) - UX0) / W) * 100, top = ((wy(l.lat) - UY0) / H) * 100;
+    const key = `${Math.round(left / 2.2)}:${Math.round(top / 3.4)}`;
+    (buckets.get(key) ?? buckets.set(key, { left, top, items: [] }).get(key)!).items.push(l);
+  }
+  return (
+    <div className="us-map" role="img" aria-label="Sites across the United States" style={{ position: 'relative', width: '100%', aspectRatio: `${W} / ${H}`, overflow: 'hidden',
+      background: 'var(--vw-color-slate-25, #f8fafc)', border: '1px solid var(--vw-color-slate-200)', borderRadius: 'var(--vw-radius-md)' }}>
+      {tiles.map(t => (
+        <img key={`${t.x}:${t.y}`} alt="" draggable={false} src={`${ESRI_LIGHT}/${TZ}/${t.y}/${t.x}`}
+          style={{ position: 'absolute', left: `${((t.x * 256 - UX0) / W) * 100}%`, top: `${((t.y * 256 - UY0) / H) * 100}%`, width: `${(256 / W) * 100}%`, height: `${(256 / H) * 100}%`, userSelect: 'none' }} />
+      ))}
+      {[...buckets.values()].map((b, idx) => {
+        const style = { position: 'absolute' as const, left: `${b.left}%`, top: `${b.top}%`, transform: 'translate(-50%, -50%)', padding: 0, border: 0, background: 'none', cursor: 'pointer' };
+        if (b.items.length === 1) {
+          const l = b.items[0], t = STATUS_PIN[l.st] || 'slate', dim = selected && l.state !== selected;
+          return (
+            <button key={l.id} type="button" className="pin" style={{ ...style, opacity: dim ? 0.35 : 1 }} onClick={() => onOpen(l.id)} title={`${l.name} — ${l.city}, ${l.state} · ${l.st}, ${l.disc}/${l.ne} NE discovered`}>
+              <svg width="22" height="22" viewBox="-11 -11 22 22"><circle r="10" fill="var(--vw-color-white)" fillOpacity="0.92" /><circle r="6" fill={`var(--vw-color-${t}-500)`} stroke="var(--vw-color-white)" strokeWidth="1.8" /></svg>
+            </button>
+          );
+        }
+        const ids = b.items.map(i => i.id);
+        return (
+          <button key={ids.join(',') || idx} type="button" className="pin is-cluster" style={style} onClick={() => onPin(ids)} title={`${b.items.length} sites here — ${b.items.map(i => i.name).join(', ')}`}>
+            <svg width="28" height="28" viewBox="-14 -14 28 28"><circle r="13" fill="var(--vw-color-slate-800)" fillOpacity="0.18" /><circle r="9.5" fill="var(--vw-color-slate-800)" stroke="var(--vw-color-white)" strokeWidth="1.8" />
+              <text y="3.4" textAnchor="middle" fontSize="10" fontWeight="600" fill="#fff" fontFamily="Inter, sans-serif">{b.items.length}</text></svg>
+          </button>
+        );
+      })}
+      <span style={{ position: 'absolute', right: 6, bottom: 4, fontSize: 10, color: 'var(--vw-color-slate-500)' }}>© Esri, HERE, Garmin</span>
+    </div>
+  );
+}
+
 export interface SitesByGeographyProps {
   selectedCircle?: string | null;
   onSelectCircle?: (circleCode: string | null) => void;
@@ -185,6 +245,13 @@ export default function SitesByGeography({
     onSelectCircle?.(next);
   };
   const [pinGroup, setPinGroup] = useState<string[] | null>(null);
+  /* the data center solution covers two countries: one map and one list at a time */
+  const countries = useMemo(() => (SCOPED ? ([...new Set(LOC_GEO.map(g => g.geo))].filter(Boolean) as DcGeo[]) : []), []);
+  const [country, setCountry] = useState<DcGeo>('in');
+  const geoList = SCOPED ? LOC_GEO.filter(g => g.geo === country) : LOC_GEO;
+  const isUs = SCOPED && country === 'us';
+  const countryName = SCOPED ? DC_GEO_LABEL[country] : 'India';
+  const geoOf = useMemo(() => new Map(DC_SUM.map(d => [d.id, d.geo])), []);
   const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
 
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number; moved: boolean } | null>(null);
@@ -270,6 +337,7 @@ export default function SitesByGeography({
     const buckets = new Map<string, { x: number; y: number; items: typeof allLocations }>();
     allLocations.forEach(l => {
       if (!l.lat || !l.lon) return;
+      if (SCOPED && geoOf.get(l.id) !== country) return;
       const x = mpx(l.lon);
       const y = mpy(l.lat);
       const key = `${Math.round(x / grid)}:${Math.round(y / grid)}`;
@@ -277,16 +345,16 @@ export default function SitesByGeography({
       buckets.get(key)!.items.push(l);
     });
     return Array.from(buckets.values());
-  }, [mapLayer, zoom.k]);
+  }, [mapLayer, zoom.k, country, geoOf]);
 
   // Overall totals
-  const totalSites = LOC_GEO.reduce((a, x) => a + x.tot, 0); // 2,400
-  const liveSites = LOC_GEO.reduce((a, x) => a + x.live, 0); // 1,755
-  const buildSites = LOC_GEO.reduce((a, x) => a + x.build, 0); // 311
-  const failSites = LOC_GEO.reduce((a, x) => a + x.fail, 0); // 36
+  const totalSites = geoList.reduce((a, x) => a + x.tot, 0); // 2,400
+  const liveSites = geoList.reduce((a, x) => a + x.live, 0); // 1,755
+  const buildSites = geoList.reduce((a, x) => a + x.build, 0); // 311
+  const failSites = geoList.reduce((a, x) => a + x.fail, 0); // 36
   const planSites = totalSites - liveSites - buildSites - failSites; // 298
 
-  const activeGeo = selectedCircle ? LOC_GEO.find(x => x.c === selectedCircle) : null;
+  const activeGeo = selectedCircle ? geoList.find(x => x.c === selectedCircle) : null;
   const activeSites = useMemo(() => {
     if (!activeGeo) return [];
     return allLocations.filter(
@@ -302,6 +370,7 @@ export default function SitesByGeography({
     );
   }, [activeGeo]);
 
+  const usPins = useMemo(() => (isUs ? allLocations.filter(l => l.lat && l.lon && geoOf.get(l.id) === 'us') : []), [isUs, geoOf]);
   const pinGroupItems = useMemo(() => {
     if (!pinGroup) return [];
     return pinGroup.map(id => allLocations.find(l => l.id === id)).filter(Boolean);
@@ -313,8 +382,18 @@ export default function SitesByGeography({
       <div className="row vw-justify-between vw-items-start vw-wrap" style={{ marginBottom: 'var(--vw-space-md)', gap: 'var(--vw-space-md)' }}>
         <span className="vw-card-title-sm">Sites by geography</span>
         <div className="row vw-wrap" style={{ gap: 'var(--vw-space-md)', alignItems: 'center' }}>
-          <span className="vw-card-metric-label-sub">Colour by</span>
-          <div className="seg">
+          {countries.length > 1 && (
+            <div className="seg" role="group" aria-label="Country">
+              {countries.map(c => (
+                <button key={c} type="button" className={country === c ? 'is-on' : ''}
+                  onClick={() => { setCountry(c); setSelectedCircle(null); setPinGroup(null); }}>
+                  {DC_GEO_LABEL[c]}
+                </button>
+              ))}
+            </div>
+          )}
+          {!isUs && <span className="vw-card-metric-label-sub">Colour by</span>}
+          {!isUs && <div className="seg">
             {MAP_MODES.map(m => (
               <button
                 key={m.k}
@@ -325,7 +404,7 @@ export default function SitesByGeography({
                 {m.n}
               </button>
             ))}
-          </div>
+          </div>}
           <div className="seg">
             <button
               type="button"
@@ -349,6 +428,10 @@ export default function SitesByGeography({
       <div className="map-row">
         {/* Left: Map */}
         <div className="map-wrap">
+          {isUs ? (
+            <UsMap pins={mapLayer === 'sites' ? usPins : []} selected={activeGeo?.st ?? null} onPin={ids => setPinGroup(ids)} onOpen={id => nav(`/inventory/location/site/${id}`)} />
+          ) : (
+          <>
           <svg
             viewBox={`0 0 ${GEO.W} ${GEO.H}`}
             className="map-svg"
@@ -392,7 +475,7 @@ export default function SitesByGeography({
               })}
 
               {/* State Labels */}
-              {LOC_GEO.filter(g => g.c !== 'AN').map(g => {
+              {geoList.filter(g => g.c !== 'AN').map(g => {
                 const x = mpx(g.lon);
                 const y = mpy(g.lat);
                 const isSel = g.c === selectedCircle;
@@ -493,9 +576,12 @@ export default function SitesByGeography({
             </button>
           </div>
 
+          </>
+          )}
+
           {/* Map Legend */}
           <div className="map-legend">
-            {legend.map(([l, hex]) => (
+            {!isUs && legend.map(([l, hex]) => (
               <span key={l} className="legend-i">
                 <span className="legend-sw" style={{ background: hex, border: '1px solid var(--vw-color-slate-300)' }} />
                 {l}
@@ -525,8 +611,8 @@ export default function SitesByGeography({
                 }}
                 aria-label="Filter panel by state"
               >
-                <option value="">All India — every circle</option>
-                {[...LOC_GEO]
+                <option value="">All {countryName} — every circle</option>
+                {[...geoList]
                   .sort((a, b) => a.n.localeCompare(b.n))
                   .map(x => (
                     <option key={x.c} value={x.c}>
@@ -572,12 +658,12 @@ export default function SitesByGeography({
                 </div>
               </div>
             ) : !selectedCircle ? (
-              /* All India Summary */
+              /* All-country summary */
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--vw-space-sm)', flex: 1 }}>
                 <div className="stack-x" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div className="row vw-justify-between vw-items-baseline">
-                    <span className="vw-card-title-sm" style={{ fontWeight: 600 }}>All India</span>
-                    <span className="vw-card-metric-label-sub">{LOC_GEO.length} circles</span>
+                    <span className="vw-card-title-sm" style={{ fontWeight: 600 }}>All {countryName}</span>
+                    <span className="vw-card-metric-label-sub">{geoList.length} circles</span>
                   </div>
                   <div className="row vw-items-baseline" style={{ gap: 'var(--vw-space-sm)' }}>
                     <span className="vw-card-metric-lg num" style={{ fontSize: '1.75rem', fontWeight: 600 }}>{fmt(totalSites)}</span>
@@ -616,7 +702,7 @@ export default function SitesByGeography({
                 </div>
 
                 <div className="vw-card-child-shaded vw-card-description" style={{ padding: '12px', background: '#f1f5f9', borderRadius: '6px', color: '#64748b', fontSize: '13px' }}>
-                  Click a state on the map — or pick one above — to see its detail.
+                  {isUs ? 'Click a pin on the map — or pick a state above — to see its detail.' : 'Click a state on the map — or pick one above — to see its detail.'}
                 </div>
               </div>
             ) : activeGeo ? (
@@ -636,7 +722,7 @@ export default function SitesByGeography({
                       <div className="row vw-justify-between vw-items-baseline">
                         <span className="vw-card-title-sm" style={{ fontWeight: 600 }}>{activeGeo.n}</span>
                         <span className="vw-card-metric-label-sub num">
-                          {activeGeo.lat.toFixed(2)}°N {activeGeo.lon.toFixed(2)}°E
+                          {activeGeo.lat.toFixed(2)}°N {Math.abs(activeGeo.lon).toFixed(2)}°{activeGeo.lon < 0 ? 'W' : 'E'}
                         </span>
                       </div>
                       <div className="row vw-items-baseline" style={{ gap: 'var(--vw-space-sm)' }}>
@@ -727,7 +813,7 @@ export default function SitesByGeography({
         <span className="row vw-gap-lg" style={{ display: 'flex', gap: '24px' }}>
           <span className="stack-x t-right" style={{ textAlign: 'right' }}>
             <span className="vw-label" style={{ fontSize: '11px', color: '#64748b' }}>Circles</span>
-            <span className="vw-value num" style={{ fontWeight: 600, display: 'block' }}>{LOC_GEO.length}</span>
+            <span className="vw-value num" style={{ fontWeight: 600, display: 'block' }}>{geoList.length}</span>
           </span>
           <span className="stack-x t-right" style={{ textAlign: 'right' }}>
             <span className="vw-label" style={{ fontSize: '11px', color: '#64748b' }}>Sites</span>
