@@ -933,7 +933,7 @@ export default function DcimImport() {
       )}
 
       {step === 'review' && staged && <Review staged={staged} client={client?.name ?? clientId} location={location} busy={!!busy}
-        onBack={() => goTo('columns')} onRestart={restart} onConfirm={confirm} />}
+        onRestart={restart} onConfirm={confirm} />}
 
       {step === 'done' && batch && staged && (
         <Card>
@@ -966,8 +966,8 @@ export default function DcimImport() {
   );
 }
 
-function Review({ staged, client, location, busy, onBack, onRestart, onConfirm }: {
-  staged: StagedImport; client: string; location: string | null; busy: boolean; onBack: () => void; onRestart: () => void; onConfirm: () => void;
+function Review({ staged, client, location, busy, onRestart, onConfirm }: {
+  staged: StagedImport; client: string; location: string | null; busy: boolean; onRestart: () => void; onConfirm: () => void;
 }) {
   const [filter, setFilter] = useState<'all' | 'error' | 'warning'>(staged.ok ? 'all' : 'error');
   const [q, setQ] = useState('');
@@ -1023,13 +1023,6 @@ function Review({ staged, client, location, busy, onBack, onRestart, onConfirm }
         </div>
 
         <div className="review-banner-actions">
-          <button type="button" className="review-btn-secondary" onClick={onBack}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
-            </svg>
-            <span>Back to columns</span>
-          </button>
           <button type="button" className="review-btn-secondary" onClick={onRestart}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1447,13 +1440,6 @@ function Review({ staged, client, location, busy, onBack, onRestart, onConfirm }
       {/* 5. Sticky / Docked Executive Footer */}
       <div className="review-action-dock">
         <div className="dock-left-actions">
-          <button type="button" className="review-dock-btn" onClick={onBack}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
-            </svg>
-            <span>Back to columns</span>
-          </button>
           <button type="button" className="review-dock-btn" onClick={onRestart}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
