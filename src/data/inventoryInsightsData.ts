@@ -1,3 +1,5 @@
+import { DC_TOTAL, SCOPED } from './dc/scope';
+
 export interface ParentLeaf {
   name: string;
   count: string;
@@ -400,7 +402,9 @@ export const STALE_ITEMS = [
   { name: 'Virtual · host mapping not reconfirmed', count: '60' }
 ];
 
-export const VERIFY_TREND = [58, 61, 63, 66, 69, 72].map((v, i, arr) => ({
+/* the data center solution has no verification history: every point is the current verified share */
+const VERIFY_POINTS = SCOPED ? Array.from({ length: 6 }, () => Math.round((DC_TOTAL.verified / Math.max(1, DC_TOTAL.devices)) * 100)) : [58, 61, 63, 66, 69, 72];
+export const VERIFY_TREND = VERIFY_POINTS.map((v, i, arr) => ({
   label: `${v}%`,
   h: `${Math.round(((v - 40) / 40) * 34)}px`,
   color: i === arr.length - 1 ? PAS : '#F5D0A5'

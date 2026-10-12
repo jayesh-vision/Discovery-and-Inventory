@@ -1,5 +1,5 @@
 import type { Location } from './locations';
-import { CORES, type Cable, type Equipment, type Facility } from './facility';
+import { CORES as STD_CORES, type Cable, type Equipment, type Facility } from './facility';
 
 /* The Fiberneo cable view reads one `siteInfo` facility payload: equipment
    rows carrying their ports and `equipmentConnectivities`. This builds that
@@ -20,9 +20,10 @@ export interface SiteInfo {
   equipments: EqRow[];
 }
 
-const KIND_TYPE: Record<Equipment['kind'], string> = { DWDM: 'DWDM', OADM: 'OADM', Router: 'Router', Switch: 'Switch' };
+const KIND_TYPE: Record<Equipment['kind'], string> = { DWDM: 'DWDM', OADM: 'OADM', Router: 'Router', Switch: 'Switch', Firewall: 'Firewall', Server: 'Server', Storage: 'Storage', GPU: 'GPU Server' };
 
 export function siteInfoFor(l: Location, f: Facility): SiteInfo {
+  const CORES = f.cores ?? STD_CORES;
   const port = (eq: string, code: string, portType: 'IN' | 'OUT', n: number): Port => ({ id: `${eq}:${code}`, code, portType, portNumber: n });
   const tray = (id: string, name: string, dir: 'IN' | 'OUT'): EqRow => ({
     id, name, code: name, type: name, status: 'Active', noInPorts: dir === 'IN' ? CORES : 0, noOutPorts: dir === 'OUT' ? CORES : 0,

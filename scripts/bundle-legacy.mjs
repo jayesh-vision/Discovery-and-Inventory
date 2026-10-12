@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const ORDER = ['geo-data.js', 'app-helpers.js', 'app-data.js', 'app-period.js', 'app-grid.js', 'res-data.js',
+const ORDER = ['geo-data.js', 'app-helpers.js', 'dc-scope.js', 'app-data.js', 'app-period.js', 'app-grid.js', 'res-data.js',
   'app-views.js', 'app-res.js', 'app-opex.js', 'app-node.js', 'app-node2.js', 'app-router.js'];
 
 let src = ORDER.map(f => readFileSync(join(root, 'legacy', f), 'utf8')).join('\n');
@@ -86,13 +86,8 @@ patch(`  if (/re-?run|re-?reconcile|refresh|survey|test/.test(t)) return KI.run;
 
 /* 2f. Ingest the full 12,475 locations from src/data/allLocations.json into LOCATIONS */
 const allLocationsData = readFileSync(join(root, 'src/data/allLocations.json'), 'utf8');
-patch(/const LOCATIONS = \(\(\) => \{[\s\S]*?return out;\s*\}\)\(\);/, `const LOCATIONS = ${allLocationsData};`, 'allLocations 12475 injection');
+patch(/const LOCATIONS = \(\(\) => \{[\s\S]*?return out;\s*\}\)\(\);/, `const LOCATIONS = dcRoster(${allLocationsData});`, 'allLocations 12475 injection');
 
-
-/* 2g. data center racks, power, cooling, sensors and cabling for the passive tabs
-   (src/data/dc/datacenters.json, written by npm run dc:sync) */
-const dcFacilities = readFileSync(join(root, 'src/data/dc/datacenters.json'), 'utf8');
-patch('const DC_FAC = /* @@DC_FAC@@ */ [];', `const DC_FAC = ${dcFacilities};`, 'data center facilities injection');
 
 /* 3. after an in-place render, tell React so the URL follows the screen */
 patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
@@ -124,8 +119,9 @@ function __legacyParams(k) {
 }
 `, 'sync after render');
 
-/* 4. no self-boot; React mounts a view and asks for it */
-patch(/\ngo\('insights'\);\s*$/, '\n', 'boot call');
+/* 4. no self-boot; React mounts a view and asks for it. In the data center solution the data the
+   data center records do not hold is emptied first (legacy/dc-scope.js). */
+patch(/\ngo\('insights'\);\s*$/, '\ndcScopeLegacy();\n', 'boot call');
 
 /* 5. what the bridge needs */
 src += `

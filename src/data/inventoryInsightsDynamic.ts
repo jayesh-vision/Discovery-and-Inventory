@@ -7,6 +7,7 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
   '90d': 'Last 90 days',
   '12m': 'Last 12 months'
 };
+import { DC_SUM, DC_TOTAL, SCOPED, type DcSum } from './dc/scope';
 import {
   ACT,
   PAS,
@@ -66,7 +67,7 @@ const bars = (rows: [string, string, number][]) => {
 };
 
 // ── 1. Total Records (Dark Card) ──
-export const TOTAL_RECORDS_DATA: Record<DayRangeOption, {
+const DEFAULT_TOTAL_RECORDS_DATA: Record<DayRangeOption, {
   totalDisplay: string;
   totalRaw: number;
   sitesCount: string;
@@ -141,7 +142,7 @@ export const TOTAL_RECORDS_DATA: Record<DayRangeOption, {
 };
 
 // ── 2. Parents Data (Physical & Logical cards) ──
-export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
+const DEFAULT_PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
   '7d': [
     {
       name: 'Physical inventory',
@@ -265,7 +266,7 @@ export const PARENTS_DATA_DYNAMIC: Record<DayRangeOption, ParentCategory[]> = {
 };
 
 // ── 3. Open Issues (Tile 4) ──
-export const ISSUES_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_ISSUES_DYNAMIC: Record<DayRangeOption, {
   count: string;
   change: string;
   periodLabel: string;
@@ -334,7 +335,7 @@ export const ISSUES_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 4. Bucket Share (Donut 1) ──
-export const BUCKET_SHARE_DATA: Record<DayRangeOption, {
+const DEFAULT_BUCKET_SHARE_DATA: Record<DayRangeOption, {
   centerLabel: string;
   summaryText: string;
   rows: [string, string, number, string][];
@@ -392,7 +393,7 @@ export const BUCKET_SHARE_DATA: Record<DayRangeOption, {
 };
 
 // ── 5. Lifecycle (Donut 2 / Lifecycle Panel) ──
-export const LIFECYCLE_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_LIFECYCLE_DYNAMIC: Record<DayRangeOption, {
   states: Array<{ name: string; count: string; color: string }>;
   bars: Array<{ name: string; count: string; pct: string; w: string; color: string }>;
   faultsNote: string;
@@ -491,7 +492,7 @@ export const LIFECYCLE_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 6. Vendor Mix (Donut 3) ──
-export const VENDOR_MIX_DATA: Record<DayRangeOption, {
+const DEFAULT_VENDOR_MIX_DATA: Record<DayRangeOption, {
   activeNEs: string;
   models: string;
   unmapped: string;
@@ -565,7 +566,7 @@ export const VENDOR_MIX_DATA: Record<DayRangeOption, {
 };
 
 // ── 7. Detailed Panels (What exists row 2) ──
-export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
+const DEFAULT_PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
   '7d': [
     {
       title: 'Active (Physical)',
@@ -1034,7 +1035,7 @@ export const PANELS_DATA_DYNAMIC: Record<DayRangeOption, PanelCategory[]> = {
 };
 
 // ── 8. Decommission Pipeline & Decom by Bucket ──
-export const DECOM_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_DECOM_DYNAMIC: Record<DayRangeOption, {
   periodLabel: string;
   marked: number;
   live: number;
@@ -1078,7 +1079,7 @@ export const DECOM_DYNAMIC: Record<DayRangeOption, {
   }
 };
 
-export const DECOM_BUCKET_DYNAMIC: Record<DayRangeOption, [string, number][]> = {
+const DEFAULT_DECOM_BUCKET_DYNAMIC: Record<DayRangeOption, [string, number][]> = {
   '7d': [
     ['Active', 62],
     ['Passive', 24],
@@ -1112,7 +1113,7 @@ export const DECOM_BUCKET_DYNAMIC: Record<DayRangeOption, [string, number][]> = 
 };
 
 // ── 9. EOL / EOS Exposure ──
-export const EOL_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_EOL_DYNAMIC: Record<DayRangeOption, {
   total: string;
   note: string;
   rows: [string, number, number[]][];
@@ -1170,7 +1171,7 @@ export const EOL_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 10. OS Drift ──
-export const DRIFT_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_DRIFT_DYNAMIC: Record<DayRangeOption, {
   total: string;
   activeWithVersion: string;
   cve: string;
@@ -1251,7 +1252,7 @@ export const DRIFT_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 11. Spares Coverage Risk ──
-export const SPARES_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_SPARES_DYNAMIC: Record<DayRangeOption, {
   titleCount: string;
   note: string;
   rows: [string, number, number][];
@@ -1322,7 +1323,7 @@ export const SPARES_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 12. Not Reconfirmed ──
-export const NOT_RECONFIRMED_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_NOT_RECONFIRMED_DYNAMIC: Record<DayRangeOption, {
   title: string;
   count: string;
   delta: string;
@@ -1397,7 +1398,7 @@ export const NOT_RECONFIRMED_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 13. Quality Rows & Cross Links ──
-export const QUALITY_ROWS_DYNAMIC: Record<DayRangeOption, QualityRow[]> = {
+const DEFAULT_QUALITY_ROWS_DYNAMIC: Record<DayRangeOption, QualityRow[]> = {
   '7d': [
     { name: 'Active', color: ACT, v1: '95%', c1: hc(95), v2: '92%', c2: hc(92), v3: '93%', c3: hc(93), v4: '0.5%', c4: GOOD, v5: '0.6%', c5: GOOD },
     { name: 'Passive', color: PAS, v1: '86%', c1: hc(86), v2: '81%', c2: hc(81), v3: '72%', c3: hc(72), v4: '1.4%', c4: WARN, v5: '2.1%', c5: WARN },
@@ -1430,7 +1431,7 @@ export const QUALITY_ROWS_DYNAMIC: Record<DayRangeOption, QualityRow[]> = {
   ]
 };
 
-export const CROSS_LINKS_DYNAMIC: Record<DayRangeOption, CrossLink[]> = {
+const DEFAULT_CROSS_LINKS_DYNAMIC: Record<DayRangeOption, CrossLink[]> = {
   '7d': [
     { name: 'Logical object ↔ active port', value: '93%', color: hc(93) },
     { name: 'Virtual function ↔ active host / cluster', value: '99%', color: hc(99) },
@@ -1479,7 +1480,7 @@ export const CROSS_LINKS_DYNAMIC: Record<DayRangeOption, CrossLink[]> = {
 };
 
 // ── 14. Discovery & Recon (Tier 5) ──
-export const RECON_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_RECON_DYNAMIC: Record<DayRangeOption, {
   invOnly: string;
   matched: string;
   netOnly: string;
@@ -1548,7 +1549,7 @@ export const RECON_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 15. Support & Ageing ──
-export const SUPPORT_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_SUPPORT_DYNAMIC: Record<DayRangeOption, {
   eos: string;
   war: string;
   spares: string;
@@ -1565,7 +1566,7 @@ export const SUPPORT_DYNAMIC: Record<DayRangeOption, {
 };
 
 // ── 16. Drill-down Bottom 5 Tiles ──
-export const BOTTOM_NAVIGATE_DYNAMIC: Record<DayRangeOption, Array<{ count: string; name: string; where: string; color: string; route: string }>> = {
+const DEFAULT_BOTTOM_NAVIGATE_DYNAMIC: Record<DayRangeOption, Array<{ count: string; name: string; where: string; color: string; route: string }>> = {
   '7d': [
     { count: '65,680', name: 'Active elements', where: 'Resources › Physical', color: ACT, route: '/inventory/physical' },
     { count: '69,730', name: 'Passive assets', where: 'Resources › Passive', color: PAS, route: '/inventory/passive' },
@@ -1604,7 +1605,7 @@ export const BOTTOM_NAVIGATE_DYNAMIC: Record<DayRangeOption, Array<{ count: stri
 };
 
 // ── 17. Sites Needing Attention ──
-export const SITES_DYNAMIC: Record<DayRangeOption, SiteRow[]> = {
+const DEFAULT_SITES_DYNAMIC: Record<DayRangeOption, SiteRow[]> = {
   '7d': [
     { name: 'GUW-SITE-0094', region: 'North-East', kind: 'Macro cell site', active: '26', passive: '41', health: '72%', healthW: '72%', healthColor: hc(72), issues: 11, status: 'At risk', badgeBg: statusBg('At risk'), badgeFg: statusFg('At risk') },
     { name: 'KOL-OTN-04', region: 'East', kind: 'Transport hub', active: '910', passive: '1,260', health: '82%', healthW: '82%', healthColor: hc(82), issues: 9, status: 'Watch', badgeBg: statusBg('Watch'), badgeFg: statusFg('Watch') },
@@ -1653,7 +1654,7 @@ export const SITES_DYNAMIC: Record<DayRangeOption, SiteRow[]> = {
 };
 
 // ── 18. Services on Inventory ──
-export const SERVICES_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_SERVICES_DYNAMIC: Record<DayRangeOption, {
   active: string;
   e2e: string;
   rows: ServiceRow[];
@@ -1720,7 +1721,7 @@ export const SERVICES_DYNAMIC: Record<DayRangeOption, {
   }
 };
 
-export const NET_RECORD_DYNAMIC: Record<DayRangeOption, {
+const DEFAULT_NET_RECORD_DYNAMIC: Record<DayRangeOption, {
   label: string;
   added: string;
   retired: string;
@@ -1733,7 +1734,7 @@ export const NET_RECORD_DYNAMIC: Record<DayRangeOption, {
   '12m': { label: 'Last 12 months, monthly', added: '+492,000', retired: '−154,000', net: '+338,000' }
 };
 
-export const TREND_SERIES: Record<DayRangeOption, [string, number][]> = {
+const DEFAULT_TREND_SERIES: Record<DayRangeOption, [string, number][]> = {
   '7d': [
     ['Mon', 142],
     ['Tue', 128],
@@ -1786,7 +1787,7 @@ export const TREND_SERIES: Record<DayRangeOption, [string, number][]> = {
   ]
 };
 
-export const ACTIVITY_BY_RANGE: Record<DayRangeOption, [string, string, string, string][]> = {
+const DEFAULT_ACTIVITY_BY_RANGE: Record<DayRangeOption, [string, string, string, string][]> = {
   '7d': [
     ['ADD', '24 cell-site routers auto-discovered in East', 'Discovery run #4,812', '12m ago'],
     ['FIX', 'Port mismatch resolved on KOL-AGG-04', 'Field recon (Kolkata)', '2h ago'],
@@ -1847,13 +1848,13 @@ const fmtCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLoc
 
 (Object.keys(DAY_RANGE_LABELS) as DayRangeOption[]).forEach(r => {
   /* total = sum of the four buckets; every label follows from the raw counts */
-  const buckets = BUCKET_SHARE_DATA[r];
+  const buckets = DEFAULT_BUCKET_SHARE_DATA[r];
   const raw: Record<string, number> = {};
   buckets.rows.forEach(row => { raw[row[0]] = row[2]; row[1] = fmtCount(row[2]); });
   const total = buckets.rows.reduce((a, row) => a + row[2], 0);
   const pct = (n: number) => (n / total) * 100;
 
-  const T = TOTAL_RECORDS_DATA[r];
+  const T = DEFAULT_TOTAL_RECORDS_DATA[r];
   T.totalRaw = total;
   T.totalDisplay = fmtCount(total);
   buckets.centerLabel = T.totalDisplay;
@@ -1866,14 +1867,14 @@ const fmtCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLoc
       `${a}${pct(raw.Active + raw.Passive).toFixed(1)}${b}${pct(raw.Active).toFixed(1)}${c}${pct(raw.Passive).toFixed(1)}${d}${pct(raw.Connectivity).toFixed(1)}${e}${pct(raw.Virtual).toFixed(1)}`
   );
 
-  PARENTS_DATA_DYNAMIC[r].forEach(p => {
+  DEFAULT_PARENTS_DATA_DYNAMIC[r].forEach(p => {
     p.children.forEach(c => { if (raw[c.name] != null) c.count = fmtCount(raw[c.name]); });
     p.count = fmtCount(p.children.reduce((a, c) => a + (raw[c.name] ?? 0), 0));
   });
 
   /* lifecycle: one name per state (tile and bar share it, so hover links them)
      and each share is that state's part of the lifecycle total */
-  const life = LIFECYCLE_DYNAMIC[r];
+  const life = DEFAULT_LIFECYCLE_DYNAMIC[r];
   const lifeTotal = life.states.reduce((a, s) => a + countOf(s.count), 0);
   life.bars.forEach((b, i) => {
     const s = life.states[i];
@@ -1885,9 +1886,9 @@ const fmtCount = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n.toLoc
   });
 
   /* headline counts equal the sum of what sits under them */
-  const iss = ISSUES_DYNAMIC[r];
+  const iss = DEFAULT_ISSUES_DYNAMIC[r];
   iss.count = (iss.crit + iss.high + iss.med + iss.low).toLocaleString('en-US');
-  const svc = SERVICES_DYNAMIC[r];
+  const svc = DEFAULT_SERVICES_DYNAMIC[r];
   svc.active = svc.rows.reduce((a, row) => a + countOf(row.count), 0).toLocaleString('en-US');
 });
 
@@ -1942,7 +1943,7 @@ const INFRA_GROUP = 'Hosting infrastructure';
     }));
   };
 
-  const panels = PANELS_DATA_DYNAMIC[r];
+  const panels = DEFAULT_PANELS_DATA_DYNAMIC[r];
   const active = panels.find(p => p.title === 'Active (Physical)');
   const virtual = panels.find(p => p.title === 'Virtual (Logical)');
   if (active) regroup(active, ACTIVE_GROUPS);
@@ -1973,30 +1974,30 @@ const INFRA_GROUP = 'Hosting infrastructure';
    the tile (the two had drifted apart in the 30d, 90d and 12m windows).      */
 (Object.keys(DAY_RANGE_LABELS) as DayRangeOption[]).forEach(r => {
   const leafOf = (name: string) =>
-    PARENTS_DATA_DYNAMIC[r].flatMap(p => p.children).find(c => c.name === name);
-  const quality = (name: string) => QUALITY_ROWS_DYNAMIC[r].find(q => q.name === name);
+    DEFAULT_PARENTS_DATA_DYNAMIC[r].flatMap(p => p.children).find(c => c.name === name);
+  const quality = (name: string) => DEFAULT_QUALITY_ROWS_DYNAMIC[r].find(q => q.name === name);
   const addHealth = (title: string, bucket: string) => {
-    const panel = PANELS_DATA_DYNAMIC[r].find(p => p.title === title);
+    const panel = DEFAULT_PANELS_DATA_DYNAMIC[r].find(p => p.title === title);
     const leaf = leafOf(bucket);
     const q = quality(bucket);
     if (!panel || !leaf || !q) return;
     /* every figure below is read from the section that already reports it */
-    const eol = EOL_DYNAMIC[r].rows.find(x => x[0] === bucket);
-    const decom = DECOM_BUCKET_DYNAMIC[r].find(x => x[0] === bucket);
-    const stale = NOT_RECONFIRMED_DYNAMIC[r].items
+    const eol = DEFAULT_EOL_DYNAMIC[r].rows.find(x => x[0] === bucket);
+    const decom = DEFAULT_DECOM_BUCKET_DYNAMIC[r].find(x => x[0] === bucket);
+    const stale = DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].items
       .filter(i => i.name.startsWith(`${bucket} ·`))
       .reduce((a, i) => a + countOf(i.count), 0);
-    const staleWindow = NOT_RECONFIRMED_DYNAMIC[r].title.replace(/^Not reconfirmed in\s*/i, '');
+    const staleWindow = DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title.replace(/^Not reconfirmed in\s*/i, '');
     panel.facts.push(
       { name: 'Complete · integrity · fresh', value: `${q.v1} · ${q.v2} · ${q.v3}`, color: [q.c1, q.c2, q.c3].every(c => c === GOOD) ? GOOD : WARN },
       { name: 'Duplicate · orphan records', value: `${q.v4} · ${q.v5}`, color: q.c4 === GOOD && q.c5 === GOOD ? GOOD : WARN },
       { name: 'Open defects (critical · high)', value: `${leaf.critical} · ${leaf.high}`, color: leaf.critical ? CRIT : GOOD }
     );
     /* OS baseline drift is measured on active network elements only */
-    if (bucket === 'Active') panel.facts.push({ name: 'Off approved OS baseline', value: DRIFT_DYNAMIC[r].total, color: WARN });
+    if (bucket === 'Active') panel.facts.push({ name: 'Off approved OS baseline', value: DEFAULT_DRIFT_DYNAMIC[r].total, color: WARN });
     if (eol) panel.facts.push({ name: 'EOL / EOS exposed', value: eol[1].toLocaleString('en-US'), color: WARN });
     panel.facts.push({ name: `Not reconfirmed ${staleWindow}`, value: stale.toLocaleString('en-US'), color: WARN });
-    if (decom) panel.facts.push({ name: `Decommissioned · ${DECOM_DYNAMIC[r].periodLabel.toLowerCase()}`, value: decom[1].toLocaleString('en-US'), color: GOOD });
+    if (decom) panel.facts.push({ name: `Decommissioned · ${DEFAULT_DECOM_DYNAMIC[r].periodLabel.toLowerCase()}`, value: decom[1].toLocaleString('en-US'), color: GOOD });
     return panel;
   };
   addHealth('Active (Physical)', 'Active');
@@ -2005,3 +2006,162 @@ const INFRA_GROUP = 'Hosting infrastructure';
   const fact = virtualPanel?.facts.find(f => f.name === 'Mapped to hosting cluster / server');
   if (fact && mapped) fact.value = mapped;
 });
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   The data center solution (src/solution.ts): the same datasets, counted from the data centers'
+   records. The dashboard has no history for them, so every range shows the same current figures,
+   and anything the data center records do not hold (links, services, VNFs, end-of-life, spares,
+   field surveys) is zero or "—" rather than borrowed from the rest of the estate. */
+const RANGES: DayRangeOption[] = ['7d', '14d', '30d', '90d', '12m'];
+const eachRange = <T,>(f: (r: DayRangeOption) => T): Record<DayRangeOption, T> => Object.fromEntries(RANGES.map(r => [r, f(r)])) as Record<DayRangeOption, T>;
+const fn = (x: number) => x.toLocaleString('en-US');
+const pcs = (a: number, b: number, d = 0) => (b > 0 ? `${((a / b) * 100).toFixed(d)}%` : '—');
+const NONE = '—';
+const bars0 = (rows: [string, string, number][]) => {
+  const max = Math.max(1, ...rows.map(r => r[2]));
+  return rows.map(r => ({ name: r[0], count: r[1], w: `${Math.max(Math.round((r[2] / max) * 100), 2)}%` }));
+};
+const noLeaf = (name: string, scope: string, covLabel: string, color: string): ParentLeaf =>
+  ({ name, count: '0', health: NONE, badgeBg: '#F1F5F9', badgeFg: GREY, scope, covLabel, coverage: NONE, critical: 0, high: 0, color });
+const PERIOD: Record<DayRangeOption, string> = { '7d': 'vs last 7 days', '14d': 'vs last 14 days', '30d': 'vs last 30 days', '90d': 'vs last 90 days', '12m': 'vs last 12 months' };
+const ISSUE_PERIOD: Record<DayRangeOption, string> = { '7d': 'this week', '14d': 'last 14 days', '30d': 'this month', '90d': 'this quarter', '12m': 'this year' };
+const KIND = (d: DcSum) => (d.tier === 'Tier IV' ? 'Core data centre' : d.category === 'Edge' ? 'Edge data centre' : 'Regional data centre');
+const REGION_NAME: Record<string, string> = { north: 'North', east: 'East', west: 'West', south: 'South' };
+
+function buildDc() {
+  const T = DC_TOTAL;
+  const dev = T.devices;
+  const powerUnits = T.feeds + T.ups + DC_SUM.length * 2;   // utility feeds, UPS, one DG set and one battery bank per data center
+  const odfFrames = DC_SUM.filter(d => d.odf.total > 0).length;
+  const passive = T.racks + powerUnits + T.coolingUnits + T.sensors + odfFrames + T.coresLit;
+  const records = dev + passive;
+  const risks = { critical: DC_SUM.reduce((a, d) => a + d.risks.critical, 0), major: DC_SUM.reduce((a, d) => a + d.risks.major, 0), minor: DC_SUM.reduce((a, d) => a + d.risks.minor, 0) };
+  const riskTotal = risks.critical + risks.major + risks.minor;
+  const verifiedPct = dev ? Math.round((T.verified / dev) * 100) : 0;
+  const roleRows: [string, string][] = [['Router', 'Routers'], ['Switch', 'Switches'], ['Server', 'Servers'], ['Storage', 'Storage arrays'], ['Firewall', 'Firewalls'], ['GPU', 'GPU servers'], ['DWDM', 'Optical & DWDM']];
+
+  const TOTAL = eachRange(r => ({ totalDisplay: fn(records), totalRaw: records, sitesCount: fn(DC_SUM.length), managedElements: fn(dev), delta: '+0.0%', period: PERIOD[r],
+    health: `${verifiedPct}%`, confirmed: pcs(T.discovered, dev, 1), stranded: pcs(T.notDiscovered, dev, 1), strandedVal: fn(T.notDiscovered) }));
+
+  const PARENTS = eachRange(() => [
+    { name: 'Physical inventory', desc: '', count: fn(records), delta: '+0.0%', health: `${verifiedPct}%`, children: [
+      leaf('Active', fn(dev), verifiedPct, `${fn(dev)} managed elements in ${DC_SUM.length} data centers`, 'Discovered', pcs(T.discovered, dev, 1), risks.critical, risks.major, ACT),
+      leaf('Passive', fn(passive), 100, 'racks, power plant, cooling, sensors, optical frames and cabling', 'Recorded', '100%', 0, 0, PAS)
+    ] },
+    { name: 'Connectivity inventory', desc: '', count: '0', delta: '+0.0%', health: NONE, children: [
+      noLeaf('Virtual', 'VNF / CNF instances', 'Mapped to host', VIR),
+      noLeaf('Connectivity', 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', LOG)
+    ] }
+  ] as ParentCategory[]);
+
+  const ISSUES = eachRange(r => ({ count: fn(riskTotal), change: '0%', periodLabel: ISSUE_PERIOD[r], crit: risks.critical, high: risks.major, med: 0, low: risks.minor,
+    medianDays: 0, assigned: riskTotal }));
+
+  const BUCKET = eachRange(() => ({ centerLabel: fn(records),
+    summaryText: `Physical inventory is all of the records in the data centers (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); there are no connectivity or virtual records.`,
+    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', '0', 0, LOG], ['Virtual', '0', 0, VIR]] as [string, string, number, string][] }));
+
+  const planned = T.planned;
+  const LIFECYCLE = eachRange(() => ({
+    states: [{ name: 'In service', count: fn(dev - planned), color: GOOD }, { name: 'Planned', count: fn(planned), color: INFO }, { name: 'Faulty', count: '0', color: CRIT },
+      { name: 'Maintenance', count: '0', color: WARN }, { name: 'Decommissioned', count: '0', color: GREY }],
+    bars: [{ name: 'In service', count: fn(dev - planned), pct: pcs(dev - planned, dev), w: pcs(dev - planned, dev), color: GOOD }, { name: 'Planned', count: fn(planned), pct: pcs(planned, dev), w: pcs(planned, dev), color: INFO },
+      { name: 'Faulty', count: '0', pct: '0%', w: '0%', color: CRIT }, { name: 'Under maintenance', count: '0', pct: '0%', w: '0%', color: WARN }, { name: 'Decommissioning', count: '0', pct: '0%', w: '0%', color: GREY }],
+    faultsNote: 'The data center records carry no fault or maintenance state.',
+    leadTimeNote: `${fn(planned)} planned devices are recorded but not yet in service.`
+  }));
+
+  const vendorTotals = new Map<string, number>();
+  for (const d of DC_SUM) for (const [v, c] of Object.entries(d.vendors)) vendorTotals.set(v, (vendorTotals.get(v) ?? 0) + c);
+  const topVendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const vcolor = [INFO, PURP, TEAL, WARN, '#0891B2'];
+  const title = (v: string) => v.charAt(0) + v.slice(1).toLowerCase();
+  const modelsDistinct = new Set(DC_SUM.flatMap(d => d.models)).size;
+  const VENDOR = eachRange(() => {
+    const top = topVendors.slice(0, 5), rest = topVendors.slice(5).reduce((a, x) => a + x[1], 0);
+    const rows: [string, number, string][] = top.map((x, i) => [title(x[0]), Math.round((x[1] / dev) * 100), vcolor[i]]);
+    if (rest) rows.push(['Others', Math.round((rest / dev) * 100), GREY]);
+    return { activeNEs: fn(dev), models: fn(modelsDistinct), unmapped: '0', rows };
+  });
+
+  const defPanels = DEFAULT_PANELS_DATA_DYNAMIC['7d'];
+  const blank = (p: PanelCategory): PanelCategory => ({ ...p, items: p.items.map(i => ({ ...i, count: '0', w: '2%' })), facts: p.facts.map(f => ({ ...f, value: NONE, color: '#111827' })) });
+  const PANELS = eachRange(() => [
+    { title: 'Active (Physical)', color: ACT, route: '/inventory/physical', desc: 'Physical routers, switches, servers, storage, firewalls and GPU servers in the data centers.',
+      items: bars0(roleRows.map(([k, label]) => [label, fn(T.byRole(k as never)), T.byRole(k as never)] as [string, string, number])),
+      facts: [
+        { name: 'Reachable in last discovery', value: pcs(T.discovered, dev, 1), color: GOOD }, { name: 'Software version recorded', value: '100%', color: GOOD }, { name: 'Chassis serial verified', value: '100%', color: GOOD },
+        { name: 'Dual PSU / power monitored', value: NONE, color: '#111827' }, { name: 'Complete · integrity · fresh', value: `100% · ${verifiedPct}% · ${pcs(T.discovered, dev)}`, color: '#111827' },
+        { name: 'Duplicate · orphan records', value: NONE, color: '#111827' }, { name: 'Open defects (critical · high)', value: `${risks.critical} · ${risks.major}`, color: '#111827' },
+        { name: 'Off approved OS baseline', value: fn(T.drifted), color: WARN }, { name: 'EOL / EOS exposed', value: '0', color: '#111827' },
+        { name: 'Not reconfirmed 7+ days', value: fn(T.notDiscovered), color: '#111827' }, { name: 'Decommissioned · last 7 days', value: '0', color: '#111827' }
+      ] },
+    { title: 'Passive (Physical)', color: PAS, route: '/inventory/passive', desc: 'Racks, power plant, cooling, sensors, optical frames and cabling recorded for the data centers.',
+      items: bars0([['Racks', fn(T.racks), T.racks], ['Power plant units', fn(powerUnits), powerUnits], ['Cooling units', fn(T.coolingUnits), T.coolingUnits], ['Environment sensors', fn(T.sensors), T.sensors],
+        ['ODF frames', fn(odfFrames), odfFrames], ['Fibre cores in use', fn(T.coresLit), T.coresLit]]),
+      facts: [{ name: 'Rack space used', value: pcs(T.uUsed, T.uTotal), color: '#111827' }, { name: 'Power capacity', value: `${(T.powerKw / 1000).toFixed(1)} MW`, color: '#111827' },
+        { name: 'Cooling capacity', value: `${(T.coolingKw / 1000).toFixed(1)} MW`, color: '#111827' }, { name: 'Fibre cores lit', value: `${pcs(T.coresLit, T.cores)} of ${fn(T.cores)}`, color: '#111827' }] },
+    blank(defPanels[2]), blank(defPanels[3])
+  ] as PanelCategory[]);
+
+  const ZERO6 = [0, 0, 0, 0, 0, 0];
+  const DECOM = eachRange(r => ({ periodLabel: DEFAULT_DECOM_DYNAMIC[r].periodLabel, marked: 0, live: 0, confirmed: 0, note: 'No decommissioned records in the data center inventory.' }));
+  const DECOM_BUCKET = eachRange(r => DEFAULT_DECOM_BUCKET_DYNAMIC[r].map(([k]) => [k, 0] as [string, number]));
+  const EOL = eachRange(r => ({ total: '0', note: 'End-of-support dates are not part of the data center records.', rows: DEFAULT_EOL_DYNAMIC[r].rows.map(([k]) => [k, 0, ZERO6] as [string, number, number[]]) }));
+  const driftTotals = new Map<string, number>();
+  for (const d of DC_SUM) for (const [v, c] of Object.entries(d.driftByVendor)) driftTotals.set(v, (driftTotals.get(v) ?? 0) + c);
+  const driftSorted = [...driftTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const DRIFT = eachRange(() => ({ total: fn(T.drifted), activeWithVersion: fn(dev), cve: '0', noVersion: '0',
+    note: T.drifted ? `${fn(T.drifted)} devices differ from their record; ${title(driftSorted[0][0])} has the most (${driftSorted[0][1]}).` : 'No device differs from its record.',
+    rows: [...driftSorted.slice(0, 4).map(([v, c]) => [title(v), c] as [string, number]), ...(driftSorted.length > 4 ? [['Others', driftSorted.slice(4).reduce((a, x) => a + x[1], 0)] as [string, number]] : [])] }));
+  const SPARES = eachRange(() => ({ titleCount: '0', note: 'Spare stock is not tracked for the data centers.', rows: [] as [string, number, number][] }));
+  const NOT_RECONF = eachRange(r => ({ title: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title, count: fn(T.notDiscovered), delta: 'no change recorded', stale30: '0',
+    items: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].items.map((it, i) => ({ name: it.name, count: i === 0 ? fn(T.notDiscovered) : '0' })) }));
+  const q = (name: string, color: string, v: string[]) => ({ name, color, v1: v[0], c1: v[0] === NONE ? GREY : hc(parseFloat(v[0])), v2: v[1], c2: v[1] === NONE ? GREY : hc(parseFloat(v[1])), v3: v[2], c3: v[2] === NONE ? GREY : hc(parseFloat(v[2])), v4: v[3], c4: GREY, v5: v[4], c5: GREY });
+  const QUALITY = eachRange(() => [q('Active', ACT, ['100%', `${verifiedPct}%`, pcs(T.discovered, dev), NONE, NONE]), q('Passive', PAS, [NONE, NONE, NONE, NONE, NONE]),
+    q('Virtual', VIR, [NONE, NONE, NONE, NONE, NONE]), q('Logical', LOG, [NONE, NONE, NONE, NONE, NONE])] as QualityRow[]);
+  const CROSS = eachRange(r => DEFAULT_CROSS_LINKS_DYNAMIC[r].map(c => c.name.startsWith('Active element ↔ site') ? { ...c, value: '100%', color: GOOD } : { ...c, value: NONE, color: GREY }));
+  const RECON = eachRange(r => ({ invOnly: fn(T.notDiscovered), matched: fn(T.verified), netOnly: '0',
+    gaps: DEFAULT_RECON_DYNAMIC[r].gaps.map(g => ({ name: g.name, value: g.name.startsWith('Software version') ? fn(T.drifted) : '0' })) }));
+  const SUPPORT = eachRange(() => ({ eos: '0', war: NONE, spares: NONE, fibre: NONE, contracts: NONE, lic: NONE, age: NONE }));
+  const NAV = eachRange(r => DEFAULT_BOTTOM_NAVIGATE_DYNAMIC[r].map((b, i) => ({ ...b, count: [fn(dev), fn(passive), '0', '0', fn(DC_SUM.length)][i] })));
+  const issueCount = (d: DcSum) => d.risks.critical + d.risks.major + d.risks.minor;
+  const sites = [...DC_SUM].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).slice(0, 7).map(d => {
+    const h = d.devices ? Math.round((d.verified / d.devices) * 100) : 0;
+    const st = h >= 90 ? 'Healthy' : h >= 80 ? 'Watch' : 'At risk';
+    const pas = d.racks + d.feeds + d.ups + 2 + d.coolingUnits + d.sensors + (d.odf.total > 0 ? 1 : 0) + d.cores.lit;
+    return { name: d.id, region: REGION_NAME[d.regionId] ?? d.regionId, kind: KIND(d), active: fn(d.devices), passive: fn(pas), health: `${h}%`, healthW: `${h}%`, healthColor: hc(h), issues: issueCount(d), status: st, badgeBg: statusBg(st), badgeFg: statusFg(st) } as SiteRow;
+  });
+  const SITES = eachRange(() => sites);
+  const SERVICES = eachRange(r => ({ active: '0', e2e: NONE, rows: DEFAULT_SERVICES_DYNAMIC[r].rows.map(x => ({ ...x, count: '0', path: NONE, color: GREY })) }));
+  const NET = eachRange(r => ({ label: DEFAULT_NET_RECORD_DYNAMIC[r].label, added: '+0', retired: '−0', net: '+0' }));
+  const TREND = eachRange(r => DEFAULT_TREND_SERIES[r].map(([l]) => [l, 0] as [string, number]));
+  const ACTIVITY = eachRange(() => [] as [string, string, string, string][]);
+  return { TOTAL, PARENTS, ISSUES, BUCKET, LIFECYCLE, VENDOR, PANELS, DECOM, DECOM_BUCKET, EOL, DRIFT, SPARES, NOT_RECONF, QUALITY, CROSS, RECON, SUPPORT, NAV, SITES, SERVICES, NET, TREND, ACTIVITY };
+}
+const DC = SCOPED ? buildDc() : null;
+
+export const TOTAL_RECORDS_DATA: typeof DEFAULT_TOTAL_RECORDS_DATA = DC ? DC.TOTAL : DEFAULT_TOTAL_RECORDS_DATA;
+export const PARENTS_DATA_DYNAMIC: typeof DEFAULT_PARENTS_DATA_DYNAMIC = DC ? DC.PARENTS : DEFAULT_PARENTS_DATA_DYNAMIC;
+export const ISSUES_DYNAMIC: typeof DEFAULT_ISSUES_DYNAMIC = DC ? DC.ISSUES : DEFAULT_ISSUES_DYNAMIC;
+export const BUCKET_SHARE_DATA: typeof DEFAULT_BUCKET_SHARE_DATA = DC ? DC.BUCKET : DEFAULT_BUCKET_SHARE_DATA;
+export const LIFECYCLE_DYNAMIC: typeof DEFAULT_LIFECYCLE_DYNAMIC = DC ? DC.LIFECYCLE : DEFAULT_LIFECYCLE_DYNAMIC;
+export const VENDOR_MIX_DATA: typeof DEFAULT_VENDOR_MIX_DATA = DC ? DC.VENDOR : DEFAULT_VENDOR_MIX_DATA;
+export const PANELS_DATA_DYNAMIC: typeof DEFAULT_PANELS_DATA_DYNAMIC = DC ? DC.PANELS : DEFAULT_PANELS_DATA_DYNAMIC;
+export const DECOM_DYNAMIC: typeof DEFAULT_DECOM_DYNAMIC = DC ? DC.DECOM : DEFAULT_DECOM_DYNAMIC;
+export const DECOM_BUCKET_DYNAMIC: typeof DEFAULT_DECOM_BUCKET_DYNAMIC = DC ? DC.DECOM_BUCKET : DEFAULT_DECOM_BUCKET_DYNAMIC;
+export const EOL_DYNAMIC: typeof DEFAULT_EOL_DYNAMIC = DC ? DC.EOL : DEFAULT_EOL_DYNAMIC;
+export const DRIFT_DYNAMIC: typeof DEFAULT_DRIFT_DYNAMIC = DC ? DC.DRIFT : DEFAULT_DRIFT_DYNAMIC;
+export const SPARES_DYNAMIC: typeof DEFAULT_SPARES_DYNAMIC = DC ? DC.SPARES : DEFAULT_SPARES_DYNAMIC;
+export const NOT_RECONFIRMED_DYNAMIC: typeof DEFAULT_NOT_RECONFIRMED_DYNAMIC = DC ? DC.NOT_RECONF : DEFAULT_NOT_RECONFIRMED_DYNAMIC;
+export const QUALITY_ROWS_DYNAMIC: typeof DEFAULT_QUALITY_ROWS_DYNAMIC = DC ? DC.QUALITY : DEFAULT_QUALITY_ROWS_DYNAMIC;
+export const CROSS_LINKS_DYNAMIC: typeof DEFAULT_CROSS_LINKS_DYNAMIC = DC ? DC.CROSS : DEFAULT_CROSS_LINKS_DYNAMIC;
+export const RECON_DYNAMIC: typeof DEFAULT_RECON_DYNAMIC = DC ? DC.RECON : DEFAULT_RECON_DYNAMIC;
+export const SUPPORT_DYNAMIC: typeof DEFAULT_SUPPORT_DYNAMIC = DC ? DC.SUPPORT : DEFAULT_SUPPORT_DYNAMIC;
+export const BOTTOM_NAVIGATE_DYNAMIC: typeof DEFAULT_BOTTOM_NAVIGATE_DYNAMIC = DC ? DC.NAV : DEFAULT_BOTTOM_NAVIGATE_DYNAMIC;
+export const SITES_DYNAMIC: typeof DEFAULT_SITES_DYNAMIC = DC ? DC.SITES : DEFAULT_SITES_DYNAMIC;
+export const SERVICES_DYNAMIC: typeof DEFAULT_SERVICES_DYNAMIC = DC ? DC.SERVICES : DEFAULT_SERVICES_DYNAMIC;
+export const NET_RECORD_DYNAMIC: typeof DEFAULT_NET_RECORD_DYNAMIC = DC ? DC.NET : DEFAULT_NET_RECORD_DYNAMIC;
+export const TREND_SERIES: typeof DEFAULT_TREND_SERIES = DC ? DC.TREND : DEFAULT_TREND_SERIES;
+export const ACTIVITY_BY_RANGE: typeof DEFAULT_ACTIVITY_BY_RANGE = DC ? DC.ACTIVITY : DEFAULT_ACTIVITY_BY_RANGE;

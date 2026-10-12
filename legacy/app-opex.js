@@ -65,6 +65,7 @@ const OPEX = {
 };
 
 function opexOf(id, ne) {
+  if (DC_ON && dcFacOf(id)) return dcOpex(id);
   if (OPEX[id]) return OPEX[id];
   const base = OPEX['BGLK-277'], scale = Math.max(0.22, ne / 25);
   const seed = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);

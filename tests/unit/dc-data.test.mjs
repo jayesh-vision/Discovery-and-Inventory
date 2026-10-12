@@ -1,6 +1,7 @@
 /* Data center inventory (src/data/dc, copied from Datacenter-Ideation): the copy is
    internally consistent, and the location roster and the manifest agree with it.
-   `npm run dc:check` is what proves it matches Datacenter-Ideation itself.
+   `npm run dc:check` is what proves it matches Datacenter-Ideation itself. The default roster is
+   checked here too: the data center copy must never change it.
    Run: node --test tests/unit/dc-data.test.mjs */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -72,17 +73,19 @@ test('modules belong to real devices; no readings leaked into the copy', () => {
   assert.ok(!('series' in G.nodes[0]) && !('load24h' in F[0].power) && !('icmp' in D[0]));
 });
 
-test('location roster: every data center is there with the same city, status and device counts', () => {
-  const ST = { 'on-air': 'On-air', 'in-progress': 'In progress', planned: 'Planned', failed: 'Failed' };
-  for (const f of F) {
-    const l = roster.find(x => x.id === f.id);
-    assert.ok(l, `${f.id} missing from allLocations.json`);
-    const mine = D.filter(d => d.dcId === f.id);
-    assert.equal(l.type, 'Datacenter');
-    assert.equal(l.city, f.city);
-    assert.equal(l.st, ST[f.status]);
-    assert.equal(l.ne, mine.length);
-    assert.equal(l.disc, mine.filter(d => d.discovery !== 'not-discovered').length);
-    assert.equal(l.lat, f.lat); assert.equal(l.lon, f.lng);
-  }
+test('the default location roster is untouched by the data center copy', () => {
+  assert.equal(roster.length, 12475);
+  assert.equal(roster.filter(l => l.type === 'Datacenter').length, 829);
+  assert.equal(roster.filter(l => l.type === 'POP').length, 2711);
+  assert.equal(roster.filter(l => l.type !== 'Datacenter' && l.type !== 'POP').length, 8935);
+  /* the sync never writes the roster: its five shared ids keep this app's own city and device counts */
+  const ka = roster.find(l => l.id === 'KA-DC-008');
+  assert.equal(ka.city, 'Bengaluru');
+  assert.equal(ka.ne, 103);
+});
+
+test('the data center solution\'s data centers are the reference\'s own 24', () => {
+  assert.equal(F.length, 24);
+  assert.deepEqual(man.datacenterIds, F.map(f => f.id));
+  for (const f of F) assert.ok(D.some(d => d.dcId === f.id), `${f.id} has no devices`);
 });

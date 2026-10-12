@@ -4,12 +4,13 @@
    Sums are asserted at the bottom. */
 
 import type { DcFacility } from './dc';
+import { SCOPED, scope } from './dc/scope';
 
 export interface Feed { id: string; kind: 'AC' | 'DC'; source: string; rating: string; ratingKw: number; loadKw: number; status: 'Normal' | 'High' | 'Alarm' }
 export interface Backup { kind: string; unit: string; rating: string; autonomy: string; lastTest: string; status: 'Normal' | 'Degraded' | 'Failed' }
 export interface Rack { id: string; floor: string; room: string; role: string; u: number; used: number; kw: number; ports: number; portsUsed: number }
 export interface PortClass { n: string; total: number; used: number }
-export interface Equipment { id: string; name: string; kind: 'DWDM' | 'OADM' | 'Router' | 'Switch'; rack: string; ports: { in: string[]; out: string[] } }
+export interface Equipment { id: string; name: string; kind: 'DWDM' | 'OADM' | 'Router' | 'Switch' | 'Firewall' | 'Server' | 'Storage' | 'GPU'; rack: string; ports: { in: string[]; out: string[] } }
 /* A cable lands on one core of the site's incoming tray (IN-FDMS Port-<core>).
    It is patched either into an equipment IN port (`to`), optionally handed on
    from an equipment OUT port to a core of the outgoing tray (`onward`), or
@@ -22,6 +23,8 @@ export interface Cable {
 export const CORES = 24;
 export interface Facility {
   siteId: string;
+  /** cores in the incoming cable tray when it is not the standard 24 (a data center's own ledger) */
+  cores?: number;
   power: { supply: string; capacityKw: number; feeds: Feed[]; peak24Kw: number; load24: number[]; byUse: { n: string; kw: number }[]; backups: Backup[]; pue: number };
   floors: { n: string; rooms: string[] }[];
   racks: Rack[];
@@ -125,13 +128,41 @@ function derive(siteId: string, ne: number): Facility {
   };
 }
 
-export const facilityOf = (siteId: string, ne: number): Facility => siteId === 'BGLK-277' ? BGLK : derive(siteId, ne);
+const baseFacilityOf = (siteId: string, ne: number): Facility => siteId === 'BGLK-277' ? BGLK : derive(siteId, ne);
+/* In the data center solution a data center's facility is its own record (power, backup, floors, racks, ports,
+   cabling ledger); every other id keeps the derived one. */
+export const facilityOf = (siteId: string, ne: number): Facility => {
+  if (SCOPED) { const d = scope().facOf(siteId); if (d) return facilityFromDc(d, baseFacilityOf(siteId, ne)); }
+  return baseFacilityOf(siteId, ne);
+};
 
 /* A data center's facility from its record in src/data/dc (copied from Datacenter-Ideation):
    power, backup, floors, racks and port classes are the record's own. Equipment and cabling
    (the Site equipment tab's cable view) have no counterpart there, so they stay as `base` has
    them. The record carries no load history, so load24 is empty and the chart is left out. */
 const dcDate = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(/ /g, '-');
+/* the data center's own cabling ledger as the cable view's equipment and cables: each patched core is a
+   cable from the incoming tray to a device port, optionally handed on from another port to a core of the
+   outgoing tray; a `direct` core is spliced straight through */
+function cablingFromDc(d: DcFacility): Pick<Facility, 'cores' | 'equipment' | 'cables'> {
+  const devices = new Map(scope().devicesOf(d.id).map(x => [x.id, x]));
+  const kindOf = (role?: string): Equipment['kind'] => role === 'Switch' ? 'Switch' : role === 'DWDM' ? 'DWDM' : role === 'Firewall' ? 'Firewall' : role === 'Server' ? 'Server' : role === 'Storage' ? 'Storage' : role === 'GPU' ? 'GPU' : 'Router';
+  const eq = new Map<string, Equipment>();
+  const cables: Cable[] = [];
+  for (const c of d.cabling.ledger) {
+    if (c.state === 'free') continue;
+    if (c.state === 'direct' || !c.neId) { cables.push({ id: `C-${String(c.port).padStart(2, '0')}`, core: c.port, from: { site: `${d.id} ODF-01`, port: `Port-${c.port}` }, through: c.outPort ?? c.port, strand: c.strand ?? 'Blue', kind: 'Fibre', state: 'Active' }); continue; }
+    const dev = devices.get(c.neId);
+    const e = eq.get(c.neId) ?? { id: c.neId, name: c.neId.replace(`${d.id}-`, ''), kind: kindOf(dev?.role), rack: dev ? dev.rackId.replace(`${d.id}-`, '') : '—', ports: { in: [], out: [] } };
+    eq.set(c.neId, e);
+    if (c.inIf && !e.ports.in.includes(c.inIf)) e.ports.in.push(c.inIf);
+    if (c.outIf && !e.ports.out.includes(c.outIf)) e.ports.out.push(c.outIf);
+    cables.push({ id: `C-${String(c.port).padStart(2, '0')}`, core: c.port, from: { site: `${d.id} ODF-01`, port: `Port-${c.port}` }, to: { eq: c.neId, port: c.inIf! },
+      ...(c.outPort && c.outIf ? { onward: { port: c.outIf, core: c.outPort } } : {}), strand: c.strand ?? 'Blue', kind: 'Fibre', state: 'Active' });
+  }
+  return { cores: d.cabling.cores, equipment: [...eq.values()], cables };
+}
+
 export function facilityFromDc(d: DcFacility, base: Facility): Facility {
   const p = d.power, g = p.dg, b = p.battery;
   const feedStatus: Record<string, Feed['status']> = { Normal: 'Normal', Warning: 'High', Alarm: 'Alarm' };
@@ -152,7 +183,8 @@ export function facilityFromDc(d: DcFacility, base: Facility): Facility {
     },
     floors: d.floors.map(f => ({ n: f.name, rooms: f.rooms })),
     racks: d.racks.map(r => ({ id: r.name, floor: r.floor, room: r.room, role: r.role, u: r.heightU, used: r.usedU, kw: r.drawKw, ports: r.ports, portsUsed: r.portsUsed })),
-    portClasses: d.ports.map(x => ({ n: x.cls, total: x.total, used: x.used }))
+    portClasses: d.ports.map(x => ({ n: x.cls, total: x.total, used: x.used })),
+    ...cablingFromDc(d)
   };
 }
 

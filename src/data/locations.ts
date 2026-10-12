@@ -1,6 +1,8 @@
 /* The location sample the prototype ships; totals come from the ledger. */
 export interface Location { id: string; name: string; type: string; cat: string; st: string; city: string; state: string; addr: string; ne: number; disc: number; lat: number; lon: number }
-export const LOCATIONS: Location[] = [
+import { DC_SUM, SCOPED } from './dc/scope';
+
+const DEFAULT_LOCATIONS: Location[] = [
   { id: "BGLK-277", name: "KA-BGLK-277", type: "POP", cat: "Central", st: "On-air", city: "Bagalkot", state: "Karnataka", addr: "277, Bagalkot", ne: 25, disc: 17, lat: 16.181, lon: 75.696 },
   { id: "DEL-279", name: "DEL-279", type: "Cell Site", cat: "Edge", st: "On-air", city: "Delhi", state: "Delhi", addr: "279, Delhi", ne: 14, disc: 14, lat: 28.644, lon: 77.216 },
   { id: "INDR-275", name: "MP-INDR-275", type: "Macro-O", cat: "Edge", st: "On-air", city: "Indore", state: "Madhya Pradesh", addr: "275, Indore", ne: 11, disc: 10, lat: 22.719, lon: 75.857 },
@@ -12,4 +14,9 @@ export const LOCATIONS: Location[] = [
   { id: "TL-JSAT-3S", name: "TL-JSAT-3S", type: "Macro-O", cat: "Edge", st: "Failed", city: "Indore", state: "Madhya Pradesh", addr: "Indore AICTSL", ne: 3, disc: 0, lat: 22.702, lon: 75.951 },
   { id: "DND-ART-98", name: "DND-ART-98", type: "Micro-CO", cat: "Edge", st: "On-air", city: "Dindigul", state: "Tamil Nadu", addr: "Govt girls school", ne: 7, disc: 7, lat: 10.365, lon: 77.975 }
 ];
+/* the data center solution's sites: the 24 data centers */
+const ST_LABEL = { 'on-air': 'On-air', 'in-progress': 'In progress', planned: 'Planned', failed: 'Failed' } as const;
+export const LOCATIONS: Location[] = SCOPED
+  ? DC_SUM.map(d => ({ id: d.id, name: d.id, type: 'Datacenter', cat: 'Central', st: ST_LABEL[d.status], city: d.city, state: d.state, addr: d.address, ne: d.devices, disc: d.discovered, lat: d.lat, lon: d.lng }))
+  : DEFAULT_LOCATIONS;
 export const locationOf = (id: string): Location => LOCATIONS.find(l => l.id === id) ?? LOCATIONS[0];

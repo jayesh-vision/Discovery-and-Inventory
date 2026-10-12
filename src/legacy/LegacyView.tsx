@@ -1,3 +1,5 @@
+import { isDatacenter, solution, withoutSolution } from '../solution';
+import { DC_SUM, scope } from '../data/dc/scope';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -33,6 +35,10 @@ declare global {
 let loading: Promise<void> | null = null;
 export function loadLegacy(): Promise<void> {
   if (window.__nsLegacy) return Promise.resolve();
+  /* the bundle builds its data once, so it learns the mode (src/solution.ts) before it runs */
+  const w = window as unknown as { __nsSolution?: string | null; __dcSum?: unknown; __dcScope?: unknown };
+  w.__nsSolution = solution();
+  if (isDatacenter()) { w.__dcSum = DC_SUM; w.__dcScope = scope(); }   // what legacy/dc-scope.js reads
   if (!loading) loading = new Promise((res, rej) => {
     const s = document.createElement('script');
     /* a plain '/legacy.js' can serve a browser tab a stale cached copy after
@@ -92,7 +98,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
            (no new drill) carries no new information — skip it rather than
            push/replace the URL down to its plain path, which would blow away
            whatever tab/filter query the React screen has since set on its own */
-        if (!drill && target === window.location.pathname) return;
+        if (!drill && withoutSolution(target) === window.location.pathname) return;
         /* a drill tagged from=Virtual returns via Physical Resources' own
            explicit back-link (not history back), so this hop can replace
            instead of push — otherwise a stray back gesture right after

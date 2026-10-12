@@ -12,7 +12,9 @@ import { ActionIcon, IcKebab } from '../components/grid/icons';
 import '../styles/topology.css';
 
 type FacilityType = 'dc' | 'pop' | 'site';
-type DeviceCategory = 'All' | 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB';
+type DeviceCategory = 'All' | 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB' | 'Firewall' | 'Server' | 'Storage' | 'GPU';
+
+import { SCOPED } from '../data/dc/scope';
 
 export interface SiteFilterState {
   status: string;
@@ -99,6 +101,8 @@ const dwdmShelfSlot = (code: string) => {
   const m = code.match(/(OT-\d+ · slot \d+)$/);
   return m ? { shelfSlot: m[1], facility: code.slice(0, m.index).replace(/-$/, '') } : { shelfSlot: code, facility: code };
 };
+
+const DC_CATEGORIES: DeviceCategory[] = ['Router', 'Switch', 'DWDM', 'Firewall', 'Server', 'Storage', 'GPU'];
 
 function getElementCls(category: string): string {
   const c = (category || '').toLowerCase();
@@ -735,6 +739,7 @@ export default function CityDetails() {
 
   // Port usage visual bar
   const renderPortBar = (used: number, total: number) => {
+    if (!total) return <span className="net-text-muted">—</span>;   // no port record (data center devices)
     const pct = Math.min(100, Math.round((used / total) * 100));
     return (
       <div className="net-port-cell">
@@ -766,6 +771,7 @@ export default function CityDetails() {
     if (selectedFacilityItem.facilityType === 'site') {
       return ['All', 'gNodeB', 'eNodeB', 'Router', 'Switch'];
     }
+    if (SCOPED) return ['All', ...DC_CATEGORIES];
     return ['All', 'Router', 'Switch', 'DWDM'];
   }, [selectedFacilityItem]);
 
@@ -780,6 +786,7 @@ export default function CityDetails() {
         { key: 'Switch', label: 'Switch' }
       ];
     }
+    if (SCOPED && selectedFacilityItem.facilityType === 'dc') return DC_CATEGORIES.map(k => ({ key: k, label: k }));
     return [
       { key: 'Router', label: 'Router' },
       { key: 'Switch', label: 'Switch' },
@@ -803,7 +810,13 @@ export default function CityDetails() {
           ? [
             { cat: 'Router', title: 'Core Routers', subtitle: 'Core & Edge Transit', colorClass: 'top-bar-blue' },
             { cat: 'Switch', title: 'Fabric Switches', subtitle: 'Spine & Leaf Mesh', colorClass: 'top-bar-purple' },
-            { cat: 'DWDM', title: 'Optical / DWDM', subtitle: 'Photonic Transport', colorClass: 'top-bar-yellow' }
+            { cat: 'DWDM', title: 'Optical / DWDM', subtitle: 'Photonic Transport', colorClass: 'top-bar-yellow' },
+            ...(SCOPED ? [
+              { cat: 'Firewall' as DeviceCategory, title: 'Firewalls', subtitle: 'Perimeter & Segmentation', colorClass: 'top-bar-blue' },
+              { cat: 'Server' as DeviceCategory, title: 'Compute Servers', subtitle: 'General Compute', colorClass: 'top-bar-emerald' },
+              { cat: 'Storage' as DeviceCategory, title: 'Storage Arrays', subtitle: 'Block & File Storage', colorClass: 'top-bar-cyan' },
+              { cat: 'GPU' as DeviceCategory, title: 'GPU Servers', subtitle: 'AI & Accelerated Compute', colorClass: 'top-bar-purple' }
+            ] : [])
           ]
           : [
             { cat: 'Router', title: 'Metro Routers', subtitle: 'Aggregation & Transit', colorClass: 'top-bar-blue' },

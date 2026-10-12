@@ -2,53 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
 import SitesByGeography from '../components/location/SitesByGeography';
+import { LOC_STATS, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
+import { SCOPED, dcSum, scope } from '../data/dc/scope';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
 
-/* ── Coverage by circle dataset ───────────────────────────────────────── */
-interface CoverageCircle {
-  code: string;
-  name: string;
-  dc: number;
-  pop: number;
-  sites: number;
-  total: number;
-  onAirPct: number;
-  failed: number;
-  severity: 'blocked' | 'delayed' | 'risk' | 'clean';
-}
-
-const COVERAGE_CIRCLES: CoverageCircle[] = [
-  { code: 'PB', name: 'Punjab', dc: 82, pop: 282, sites: 934, total: 1298, onAirPct: 75, failed: 16, severity: 'delayed' },
-  { code: 'TN', name: 'Tamil Nadu', dc: 63, pop: 176, sites: 646, total: 885, onAirPct: 74, failed: 12, severity: 'blocked' },
-  { code: 'HP', name: 'Himachal Pradesh', dc: 45, pop: 152, sites: 533, total: 730, onAirPct: 76, failed: 7, severity: 'delayed' },
-  { code: 'UP', name: 'Uttar Pradesh', dc: 51, pop: 137, sites: 370, total: 558, onAirPct: 75, failed: 11, severity: 'blocked' },
-  { code: 'KL', name: 'Kerala', dc: 34, pop: 119, sites: 375, total: 528, onAirPct: 76, failed: 6, severity: 'delayed' },
-  { code: 'RJ', name: 'Rajasthan', dc: 33, pop: 114, sites: 368, total: 515, onAirPct: 75, failed: 6, severity: 'delayed' },
-  { code: 'MP', name: 'Madhya Pradesh', dc: 34, pop: 114, sites: 361, total: 509, onAirPct: 74, failed: 6, severity: 'delayed' },
-  { code: 'HR', name: 'Haryana', dc: 31, pop: 102, sites: 325, total: 458, onAirPct: 74, failed: 6, severity: 'blocked' },
-  { code: 'WB', name: 'West Bengal', dc: 33, pop: 95, sites: 315, total: 443, onAirPct: 74, failed: 5, severity: 'blocked' },
-  { code: 'CG', name: 'Chhattisgarh', dc: 27, pop: 92, sites: 310, total: 429, onAirPct: 73, failed: 5, severity: 'delayed' },
-  { code: 'UK', name: 'Uttarakhand', dc: 26, pop: 89, sites: 298, total: 413, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'NL', name: 'Nagaland', dc: 25, pop: 86, sites: 294, total: 405, onAirPct: 74, failed: 5, severity: 'delayed' },
-  { code: 'MN', name: 'Manipur', dc: 24, pop: 85, sites: 290, total: 399, onAirPct: 73, failed: 5, severity: 'delayed' },
-  { code: 'BR', name: 'Bihar', dc: 26, pop: 81, sites: 290, total: 397, onAirPct: 71, failed: 6, severity: 'blocked' },
-  { code: 'TR', name: 'Tripura', dc: 24, pop: 84, sites: 288, total: 396, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'ML', name: 'Meghalaya', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'MZ', name: 'Mizoram', dc: 24, pop: 83, sites: 286, total: 393, onAirPct: 74, failed: 4, severity: 'delayed' },
-  { code: 'JH', name: 'Jharkhand', dc: 26, pop: 80, sites: 283, total: 389, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'GA', name: 'Goa', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'AR', name: 'Arunachal Pradesh', dc: 23, pop: 81, sites: 282, total: 386, onAirPct: 75, failed: 4, severity: 'delayed' },
-  { code: 'OR', name: 'Odisha', dc: 28, pop: 78, sites: 278, total: 384, onAirPct: 72, failed: 4, severity: 'delayed' },
-  { code: 'AS', name: 'Assam', dc: 26, pop: 78, sites: 275, total: 379, onAirPct: 69, failed: 5, severity: 'blocked' },
-  { code: 'MH', name: 'Maharashtra', dc: 28, pop: 86, sites: 220, total: 334, onAirPct: 70, failed: 6, severity: 'blocked' },
-  { code: 'SK', name: 'Sikkim', dc: 20, pop: 59, sites: 230, total: 309, onAirPct: 78, failed: 2, severity: 'risk' },
-  { code: 'KA', name: 'Karnataka', dc: 28, pop: 75, sites: 198, total: 301, onAirPct: 76, failed: 4, severity: 'blocked' },
-  { code: 'GJ', name: 'Gujarat', dc: 21, pop: 63, sites: 174, total: 258, onAirPct: 69, failed: 1, severity: 'blocked' },
-  { code: 'AP', name: 'Andhra Pradesh', dc: 17, pop: 50, sites: 132, total: 199, onAirPct: 67, failed: 1, severity: 'blocked' },
-  { code: 'TS', name: 'Telangana', dc: 2, pop: 6, sites: 12, total: 20, onAirPct: 85, failed: 1, severity: 'risk' }
-];
+/* the Coverage-by-circle rows come from src/data/locationStats.ts: the estate's own in the default
+   Inventory, the data centers' in the data center solution */
+const COVERAGE_CIRCLES: CoverageCircle[] = LOC_STATS.circles;
 
 const STATE_ID_TO_CIRCLE: Record<string, string> = {
   punjab: 'PB',
@@ -125,6 +87,7 @@ const CIRCLE_TO_STATE_ID: Record<string, string> = {
 
 export default function Location() {
   const nav = useNavigate();
+  const S = LOC_STATS;
   const [searchParams] = useSearchParams();
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
   const [selectedCircle, setSelectedCircle] = useState<string | null>(null);
@@ -155,115 +118,19 @@ export default function Location() {
     <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
       {/* ── Top 4 KPI Progress Cards ─────────────────────────────── */}
       <section className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: '0' }}>
-        {/* Total locations */}
-        <button
-          type="button"
-          className="kpi-progress is-clickable"
-          style={{ borderColor: 'var(--vw-color-slate-200)', '--kpi-hover': 'var(--vw-color-slate-400)', background: '#fff' } as React.CSSProperties}
+        <KpiCard label="Total locations" border="var(--vw-color-slate-200)" hover="var(--vw-color-slate-400)"
           onClick={() => handleCardClick(undefined, 'All locations')}
-          aria-label="Total locations: 12,494 locations, 9,230 on-air"
-        >
-          <div className="vw-card-metric-label kprog-label">Total locations</div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">12,494</span>
-            <span className="vw-card-metric-label-sub">locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>9,230 on-air</div>
-          <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '6.79%', background: '#a855f7' }} title="Datacenters: 848" />
-            <span style={{ width: '21.70%', background: '#0284c7' }} title="PoP locations: 2,711" />
-            <span style={{ width: '71.51%', background: '#0d9488' }} title="Sites: 8,935" />
-          </div>
-          <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#a855f7' }} />848 datacenters</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7' }} />2,711 pop locations</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0d9488' }} />8,935 sites</span>
-          </div>
-        </button>
-
-        {/* Datacenters */}
-        <button
-          type="button"
-          className="kpi-progress is-clickable"
-          style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)', background: '#fff' } as React.CSSProperties}
-          onClick={() => handleCardClick('dc', 'Datacenters — filtered list')}
-          aria-label="Datacenters: 848 locations, 87% on-air · 3 failed"
-        >
-          <div className="vw-card-metric-label kprog-label">Datacenters</div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">848</span>
-            <span className="vw-card-metric-label-sub">locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>87% on-air · 3 failed</div>
-          <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '86.67%', background: '#10b981' }} title="On-air: 735" />
-            <span style={{ width: '8.73%', background: '#f59e0b' }} title="In progress: 74" />
-            <span style={{ width: '4.25%', background: '#0ea5e9' }} title="Planned: 36" />
-            <span style={{ width: '0.35%', minWidth: '4px', background: '#ef4444' }} title="Failed: 3" />
-          </div>
-          <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />735 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />74 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />36 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />3 failed</span>
-          </div>
-        </button>
-
-        {/* PoP locations */}
-        <button
-          type="button"
-          className="kpi-progress is-clickable"
-          style={{ borderColor: 'var(--vw-color-sky-200)', '--kpi-hover': 'var(--vw-color-sky-400)', background: '#fff' } as React.CSSProperties}
-          onClick={() => handleCardClick('pop', 'PoP locations — filtered list')}
-          aria-label="PoP locations: 2,711 locations, 78% on-air · 31 failed"
-        >
-          <div className="vw-card-metric-label kprog-label">PoP locations</div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">2,711</span>
-            <span className="vw-card-metric-label-sub">locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>78% on-air · 31 failed</div>
-          <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '78.20%', background: '#10b981' }} title="On-air: 2,120" />
-            <span style={{ width: '14.20%', background: '#f59e0b' }} title="In progress: 385" />
-            <span style={{ width: '6.46%', background: '#0ea5e9' }} title="Planned: 175" />
-            <span style={{ width: '1.14%', background: '#ef4444' }} title="Failed: 31" />
-          </div>
-          <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />2,120 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />385 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />175 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />31 failed</span>
-          </div>
-        </button>
-
-        {/* Sites */}
-        <button
-          type="button"
-          className="kpi-progress is-clickable"
-          style={{ borderColor: 'var(--vw-color-teal-200)', '--kpi-hover': 'var(--vw-color-teal-400)', background: '#fff' } as React.CSSProperties}
-          onClick={() => handleCardClick('site', 'Sites — filtered list')}
-          aria-label="Sites: 8,935 locations, 71% on-air · 110 failed"
-        >
-          <div className="vw-card-metric-label kprog-label">Sites</div>
-          <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-            <span className="vw-card-metric-xl num">8,935</span>
-            <span className="vw-card-metric-label-sub">locations</span>
-          </div>
-          <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>71% on-air · 110 failed</div>
-          <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-            <span style={{ width: '71.35%', background: '#10b981' }} title="On-air: 6,375" />
-            <span style={{ width: '15.56%', background: '#f59e0b' }} title="In progress: 1,390" />
-            <span style={{ width: '11.86%', background: '#0ea5e9' }} title="Planned: 1,060" />
-            <span style={{ width: '1.23%', background: '#ef4444' }} title="Failed: 110" />
-          </div>
-          <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981' }} />6,375 on-air</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b' }} />1,390 in progress</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9' }} />1,060 planned</span>
-            <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444' }} />110 failed</span>
-          </div>
-        </button>
+          aria={`Total locations: ${en(S.all.total)} locations, ${en(S.all.live)} on-air`}
+          sub={`${en(S.all.live)} on-air`}
+          total={S.all.total}
+          meter={[{ n: S.dc.total, color: '#a855f7', title: `Datacenters: ${en(S.dc.total)}` }, { n: S.pop.total, color: '#0284c7', title: `PoP locations: ${en(S.pop.total)}` }, { n: S.site.total, color: '#0d9488', title: `Sites: ${en(S.site.total)}` }]}
+          legend={[{ color: '#a855f7', text: `${en(S.dc.total)} datacenters` }, { color: '#0284c7', text: `${en(S.pop.total)} pop locations` }, { color: '#0d9488', text: `${en(S.site.total)} sites` }]} />
+        <SplitCard label="Datacenters" border="var(--vw-color-purple-200)" hover="var(--vw-color-purple-400)" split={S.dc} minFail
+          onClick={() => handleCardClick('dc', 'Datacenters — filtered list')} />
+        <SplitCard label="PoP locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" split={S.pop}
+          onClick={() => handleCardClick('pop', 'PoP locations — filtered list')} />
+        <SplitCard label="Sites" border="var(--vw-color-teal-200)" hover="var(--vw-color-teal-400)" split={S.site}
+          onClick={() => handleCardClick('site', 'Sites — filtered list')} />
       </section>
 
       {/* ── Network Hierarchy & Coverage By Circle ──────────────── */}
@@ -315,190 +182,9 @@ export default function Location() {
         </div>
 
         <div className="vw-grid vw-grid-cols-3 vw-gap-md">
-          {/* Active inventory */}
-          <div
-            className="kpi-progress is-clickable"
-            role="button"
-            tabIndex={0}
-            style={{ borderColor: 'var(--vw-color-sky-200)', '--kpi-hover': 'var(--vw-color-sky-400)' } as React.CSSProperties}
-            onClick={() => nav('/inventory/physical')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/physical'); } }}
-            aria-label="Active inventory: 3,421. Physical elements across the estate"
-          >
-            <div className="row vw-gap-sm vw-items-center">
-              <span className="cov-alert-icon" style={{ background: 'var(--vw-color-sky-50)', color: 'var(--vw-color-sky-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="2" width="20" height="8" rx="2" />
-                  <rect x="2" y="14" width="20" height="8" rx="2" />
-                </svg>
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="vw-card-metric-label">Active inventory</span>
-                <span className="vw-card-metric-xl num">3,421</span>
-              </div>
-            </div>
-            <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
-              Physical elements across the estate · 3,567 verified on the network
-            </div>
-            <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '86%', background: '#0284c7' }} title="Router: 2,943" />
-              <span style={{ width: '14%', background: '#0ea5e9' }} title="Switch: 478" />
-            </div>
-            <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/physical?tab=router'); }}
-                title="View Routers in inventory"
-              >
-                Router <b>2,943</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/physical?tab=switch'); }}
-                title="View Switches in inventory"
-              >
-                Switch <b>478</b>
-              </button>
-            </div>
-          </div>
-
-          {/* Logical inventory */}
-          <div
-            className="kpi-progress is-clickable"
-            role="button"
-            tabIndex={0}
-            style={{ borderColor: 'var(--vw-color-purple-200)', '--kpi-hover': 'var(--vw-color-purple-400)' } as React.CSSProperties}
-            onClick={() => nav('/inventory/virtual')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/virtual'); } }}
-            aria-label="Logical inventory: 9,222. Virtual resources and services"
-          >
-            <div className="row vw-gap-sm vw-items-center">
-              <span className="cov-alert-icon" style={{ background: 'var(--vw-color-purple-50)', color: 'var(--vw-color-purple-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="vw-card-metric-label">Logical inventory</span>
-                <span className="vw-card-metric-xl num">9,222</span>
-              </div>
-            </div>
-            <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
-              6,705 links and 2,517 provisioned services · plus 428 VNFs
-            </div>
-            <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '40%', background: '#a855f7' }} title="LLDP: 3,015" />
-              <span style={{ width: '22%', background: '#0284c7' }} title="OSPF: 1,675" />
-              <span style={{ width: '13%', background: '#06b6d4' }} title="BGP: 1,006" />
-              <span style={{ width: '18%', background: '#0d9488' }} title="L3VPN: 1,865" />
-              <span style={{ width: '7%', background: '#7c3aed' }} title="L2VPN: 661" />
-            </div>
-            <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/links?tab=lldp'); }}
-                title="View LLDP links"
-              >
-                LLDP <b>3,015</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/links?tab=ospf'); }}
-                title="View OSPF links"
-              >
-                OSPF <b>1,675</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/services?tab=l3vpn'); }}
-                title="View L3VPN services"
-              >
-                L3VPN <b>1,865</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/services?tab=l2vpn'); }}
-                title="View L2VPN services"
-              >
-                L2VPN <b>661</b>
-              </button>
-            </div>
-          </div>
-
-          {/* Passive inventory */}
-          <div
-            className="kpi-progress is-clickable"
-            role="button"
-            tabIndex={0}
-            style={{ borderColor: 'var(--vw-color-amber-200)', '--kpi-hover': 'var(--vw-color-amber-400)' } as React.CSSProperties}
-            onClick={() => nav('/inventory/passive')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav('/inventory/passive'); } }}
-            aria-label="Passive inventory: 1,945. Physical plant across 7 categories"
-          >
-            <div className="row vw-gap-sm vw-items-center">
-              <span className="cov-alert-icon" style={{ background: 'var(--vw-color-amber-50)', color: 'var(--vw-color-amber-600)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                  <line x1="4" y1="22" x2="4" y2="15" />
-                </svg>
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="vw-card-metric-label">Passive inventory</span>
-                <span className="vw-card-metric-xl num">1,945</span>
-              </div>
-            </div>
-            <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>
-              Physical plant across 7 categories
-            </div>
-            <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
-              <span style={{ width: '35%', background: '#f59e0b' }} title="ODF: 680" />
-              <span style={{ width: '30%', background: '#64748b' }} title="Racks: 584" />
-              <span style={{ width: '20%', background: '#06b6d4' }} title="Fiber spans: 389" />
-              <span style={{ width: '15%', background: '#a855f7' }} title="Splice closures: 292" />
-            </div>
-            <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=odf'); }}
-                title="View ODF in passive infrastructure"
-              >
-                ODF <b>680</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=rack'); }}
-                title="View Racks in passive infrastructure"
-              >
-                Racks <b>584</b>
-              </button>
-              <button
-                type="button"
-                className="cov-chip inv-chip is-clickable"
-                style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                onClick={e => { e.stopPropagation(); nav('/inventory/passive?tab=fiber'); }}
-                title="View Fiber spans in passive infrastructure"
-              >
-                Fiber <b>389</b>
-              </button>
-            </div>
-          </div>
+          <InvCard tone="sky" title="Active inventory" data={S.active} to="/inventory/physical" ariaSub="Physical elements across the estate" icon={INV_ICON_PATHS.active} />
+          <InvCard tone="purple" title="Logical inventory" data={S.logical} to="/inventory/virtual" ariaSub="Virtual resources and services" icon={INV_ICON_PATHS.logical} />
+          <InvCard tone="amber" title="Passive inventory" data={S.passive} to="/inventory/passive" ariaSub="Physical plant across 7 categories" icon={INV_ICON_PATHS.passive} />
         </div>
       </section>
 
@@ -507,6 +193,89 @@ export default function Location() {
         selectedCircle={selectedCircle}
         onSelectCircle={setSelectedCircle}
       />
+    </div>
+  );
+}
+
+/* ── KPI cards ──────────────────────────────────────────────────────────── */
+const en = (n: number) => n.toLocaleString('en-US');
+const pct2 = (n: number, of: number) => `${of > 0 ? ((n / of) * 100).toFixed(2) : '0.00'}%`;
+
+function KpiCard({ label, border, hover, onClick, aria, sub, total, meter, legend }: {
+  label: string; border: string; hover: string; onClick: () => void; aria: string; sub: string; total: number;
+  meter: { n: number; color: string; title: string; minWidth?: string }[]; legend: { color: string; text: string }[];
+}) {
+  const of = meter.reduce((a, m) => a + m.n, 0);
+  return (
+    <button type="button" className="kpi-progress is-clickable"
+      style={{ borderColor: border, '--kpi-hover': hover, background: '#fff' } as React.CSSProperties}
+      onClick={onClick} aria-label={aria}>
+      <div className="vw-card-metric-label kprog-label">{label}</div>
+      <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
+        <span className="vw-card-metric-xl num">{en(total)}</span>
+        <span className="vw-card-metric-label-sub">locations</span>
+      </div>
+      <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{sub}</div>
+      <div className="meter" style={{ height: '8px', marginTop: 'var(--vw-space-md)', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
+        {meter.map(m => <span key={m.title} style={{ width: pct2(m.n, of), ...(m.minWidth ? { minWidth: m.minWidth } : {}), background: m.color }} title={m.title} />)}
+      </div>
+      <div className="legend" style={{ marginTop: 'var(--vw-space-sm)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {legend.map(l => <span key={l.text} className="legend-i"><span className="legend-sw" style={{ background: l.color }} />{l.text}</span>)}
+      </div>
+    </button>
+  );
+}
+
+/* a location type split by rollout status: on-air, in progress, planned, failed */
+function SplitCard({ label, border, hover, split, onClick, minFail }: { label: string; border: string; hover: string; split: Split; onClick: () => void; minFail?: boolean }) {
+  const on = split.total > 0 ? Math.round((split.live / split.total) * 100) : 0;
+  return (
+    <KpiCard label={label} border={border} hover={hover} onClick={onClick} total={split.total}
+      aria={`${label}: ${en(split.total)} locations, ${on}% on-air · ${en(split.fail)} failed`}
+      sub={`${on}% on-air · ${en(split.fail)} failed`}
+      meter={[{ n: split.live, color: '#10b981', title: `On-air: ${en(split.live)}` }, { n: split.build, color: '#f59e0b', title: `In progress: ${en(split.build)}` },
+        { n: split.plan, color: '#0ea5e9', title: `Planned: ${en(split.plan)}` }, { n: split.fail, color: '#ef4444', title: `Failed: ${en(split.fail)}`, ...(minFail ? { minWidth: '4px' } : {}) }]}
+      legend={[{ color: '#10b981', text: `${en(split.live)} on-air` }, { color: '#f59e0b', text: `${en(split.build)} in progress` },
+        { color: '#0ea5e9', text: `${en(split.plan)} planned` }, { color: '#ef4444', text: `${en(split.fail)} failed` }]} />
+  );
+}
+
+/* the Active / Logical / Passive inventory cards */
+const INV_ICON_PATHS = {
+  active: <><rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" /></>,
+  logical: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>,
+  passive: <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></>
+};
+function InvCard({ tone, title, data, to, ariaSub, icon }: { tone: 'sky' | 'purple' | 'amber'; title: string; data: InvCardData; to: string; ariaSub: string; icon: React.ReactNode }) {
+  const nav = useNavigate();
+  return (
+    <div className="kpi-progress is-clickable" role="button" tabIndex={0}
+      style={{ borderColor: `var(--vw-color-${tone}-200)`, '--kpi-hover': `var(--vw-color-${tone}-400)` } as React.CSSProperties}
+      onClick={() => nav(to)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav(to); } }}
+      aria-label={`${title}: ${en(data.total)}. ${ariaSub}`}>
+      <div className="row vw-gap-sm vw-items-center">
+        <span className="cov-alert-icon" style={{ background: `var(--vw-color-${tone}-50)`, color: `var(--vw-color-${tone}-600)`, width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{icon}</svg>
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="vw-card-metric-label">{title}</span>
+          <span className="vw-card-metric-xl num">{en(data.total)}</span>
+        </div>
+      </div>
+      <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>{data.sub}</div>
+      <div className="meter" style={{ height: '8px', marginTop: '12px', display: 'flex', borderRadius: '4px', overflow: 'hidden' }}>
+        {data.segs.map(g => <span key={g.title} style={{ width: `${g.w}%`, background: g.color }} title={g.title} />)}
+      </div>
+      <div className="cov-chip-row" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {data.chips.map(c => (
+          <button key={c.label} type="button" className="cov-chip inv-chip is-clickable"
+            style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+            onClick={e => { e.stopPropagation(); nav(c.to); }} title={c.title}>
+            {c.label} <b>{en(c.n)}</b>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -563,7 +332,18 @@ const ALERT_ICONS: Record<string, React.ReactNode> = {
   )
 };
 
+ALERT_ICONS.Facility = ALERT_ICONS['Power'];
+ALERT_ICONS.Network = ALERT_ICONS['Fiber Connectivity'];
+ALERT_ICONS.Security = ALERT_ICONS['Regulatory'];
+ALERT_ICONS.Supplier = ALERT_ICONS['Supply Chain'];
+ALERT_ICONS.Inventory = ALERT_ICONS['Commissioning'];
+
 const ALERT_LABEL: Record<string, string> = {
+  'Facility': 'Facility issue',
+  'Network': 'Network issue',
+  'Inventory': 'Inventory gap',
+  'Security': 'Security issue',
+  'Supplier': 'Supplier delay',
   'Lease / Property': 'Lease issue',
   'Power': 'Power issue',
   'Fiber Connectivity': 'Fiber issue',
@@ -656,7 +436,51 @@ function DonutChart({
   );
 }
 
+/* The data center solution's rollout detail, counted from its own records: statuses from the data centers
+   of the circle, alerts and critical sites from their open risks (Datacenter-Ideation's `risks`),
+   inventory from their device, rack and port counts. */
+const RISK_SEV: Record<string, 'blocked' | 'delayed' | 'risk'> = { critical: 'blocked', major: 'delayed', minor: 'risk', warning: 'risk' };
+const RISK_RANK: Record<string, number> = { critical: 0, major: 1, minor: 2, warning: 3 };
+function getScopedRolloutDetails(c: CoverageCircle) {
+  const ds = (c.dcIds ?? []).map(id => dcSum(id)!).filter(Boolean);
+  const risks = (c.dcIds ?? []).flatMap(id => (scope().facOf(id)?.risks ?? []).map(r => ({ ...r, dc: id })));
+  const live = ds.filter(d => d.status === 'on-air').length, build = ds.filter(d => d.status === 'in-progress').length;
+  const plan = ds.filter(d => d.status === 'planned').length, failed = ds.filter(d => d.status === 'failed').length;
+  const atRisk = ds.filter(d => d.status === 'on-air' && risks.some(r => r.dc === d.id && r.severity === 'critical')).length;
+  const total = ds.length;
+  const overview = { total, onAir: live - atRisk, pending: build + plan, blocked: failed, atRisk };
+  const stages = [
+    { k: 'Commissioned', c: live - atRisk, color: '#10b981' }, { k: 'Under Deployment', c: build, color: '#0284c7' }, { k: 'ATP Pending', c: 0, color: '#06b6d4' },
+    { k: 'Integration Pending', c: plan, color: '#f59e0b' }, { k: 'Blocked', c: failed, color: '#ef4444' }
+  ];
+  const byDomain = new Map<string, typeof risks>();
+  for (const r of risks) (byDomain.get(r.domain) ?? byDomain.set(r.domain, []).get(r.domain)!).push(r);
+  const alerts = [...byDomain.entries()].map(([cat, rs]) => {
+    const worst = [...rs].sort((a, b) => (RISK_RANK[a.severity] ?? 9) - (RISK_RANK[b.severity] ?? 9))[0];
+    return { cat, count: rs.length, sev: RISK_SEV[worst.severity] ?? 'risk', topReason: worst.title };
+  }).sort((a, b) => b.count - a.count);
+  const critical = [...risks].sort((a, b) => (RISK_RANK[a.severity] ?? 9) - (RISK_RANK[b.severity] ?? 9)).slice(0, 8).map(r => ({
+    id: r.dc, status: (r.severity === 'critical' ? 'Blocked' : r.severity === 'major' ? 'Delayed' : 'At Risk') as 'Blocked' | 'Delayed' | 'At Risk',
+    tone: (r.severity === 'critical' ? 'red' : r.severity === 'major' ? 'amber' : 'sky') as 'red' | 'amber' | 'sky', cat: r.domain, reason: r.title, impact: r.detail
+  }));
+  const sum = (f: (d: typeof ds[number]) => number) => ds.reduce((a, d) => a + f(d), 0);
+  const role = (r: string) => sum(d => (d.byRole as Record<string, number>)[r] ?? 0);
+  const activeNe = sum(d => d.devices);
+  const odf = ds.filter(d => d.odf.total > 0).length;
+  const racks = sum(d => d.racks);
+  return {
+    overview, stages, stTotal: total || 1, alerts, critical,
+    inventory: {
+      active: activeNe, logicalTotal: 0, passiveTotal: odf + racks,
+      ne: [['Routers', role('Router')], ['Switches', role('Switch')], ['Servers', role('Server')], ['Storage', role('Storage')], ['GPU servers', role('GPU')], ['DWDM', role('DWDM')]] as [string, number][],
+      logical: [['LLDP', 0], ['OSPF', 0], ['BGP', 0], ['L3VPN', 0]] as [string, number][],
+      passive: [['Fiber routes', 0], ['ODF ports', sum(d => d.odf.total)], ['Racks', racks], ['Splice closures', 0]] as [string, number][]
+    }
+  };
+}
+
 function getCircleRolloutDetails(c: CoverageCircle) {
+  if (SCOPED && c.dcIds) return getScopedRolloutDetails(c);
   const onAirSites = Math.round(c.sites * (c.onAirPct / 100));
   const atRiskSites = c.failed > 0 ? Math.max(1, Math.round(c.sites * 0.04)) : 0;
   const cleanOnAir = Math.max(0, onAirSites - atRiskSites);

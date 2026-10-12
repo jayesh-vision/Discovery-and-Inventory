@@ -4,6 +4,7 @@ import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar } from '../components/ui'
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import { INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
+import { SCOPED } from '../data/dc/scope';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
@@ -38,12 +39,12 @@ export default function InactiveInventory() {
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Decommissioned NE', v: fmt(SCOPED ? 0 : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
         { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red' },
-        { k: 'Retired links', v: fmt(1188), s: 'adjacency no longer seen', t: 'amber' },
-        { k: 'Retired services', v: fmt(264), s: 'no longer provisioned', t: 'purple' },
+        { k: 'Retired links', v: fmt(SCOPED ? 0 : 1188), s: 'adjacency no longer seen', t: 'amber' },
+        { k: 'Retired services', v: fmt(SCOPED ? 0 : 264), s: 'no longer provisioned', t: 'purple' },
         { k: 'Oldest record', v: DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
-        { k: 'Recovered to store', v: fmt(38), s: 'restored in last 12 months', t: 'emerald' }
+        { k: 'Recovered to store', v: fmt(SCOPED ? 0 : 38), s: 'restored in last 12 months', t: 'emerald' }
       ]} />
 
       <Card>

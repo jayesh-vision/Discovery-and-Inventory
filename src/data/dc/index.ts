@@ -38,6 +38,10 @@ export interface DcFacility {
     battery: { volts: number; ah: number; runtimeH: number; lastTest: number }; ups: DcUps[];
   };
   cooling: { capacityKw: number; loadKw: number; redundancy: 'N' | 'N+1' | '2N'; units: DcCoolingUnit[]; sensors: DcSensor[] };
+  capex: { approved: number; committed: number; spent: number; lines: { item: string; approved: number; committed: number }[] };
+  opex: { monthly: number; drivers: { item: string; monthly: number }[] };
+  risks: { id: string; domain: string; title: string; detail: string; severity: string; owner: string; opened: number }[];
+  readiness: { step: string; done: boolean; note?: string }[];
 }
 export interface DcDevice {
   id: string; dcId: string; name: string; role: DcRole; layer: 'core' | 'spine' | 'leaf' | 'access'; vendor: string; model: string; os: string;

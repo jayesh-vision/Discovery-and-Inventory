@@ -2,27 +2,57 @@
    Every count on every screen comes from here. Sample rows are samples;
    nothing derives a total from an array length. */
 
-export const IL = {
-  locations: 12494, central: 848, regional: 2711, edge: 8935,
-  ne: 2703, discovered: 2379, links: 7846, services: 2457, vnf: 28, inactive: 412, reports: 22
-} as const;
+import { DC_TOTAL, SCOPED, scope } from './dc/scope';
+import type { DcDevice, DcRole } from './dc';
 
-export const EST = {
+/* In the data center solution (src/solution.ts) the same ledger is counted from the data centers'
+   records (src/data/dc); nothing else changes shape. Where the data center records hold nothing
+   (links, services, VNFs, end-of-life, spares, decommissioned equipment) the figure is zero. */
+const DEFAULT_IL = {
+  locations: 12475, central: 829, regional: 2711, edge: 8935,
+  ne: 2703, discovered: 2379, links: 7846, services: 2457, vnf: 28, inactive: 412, reports: 22
+};
+const DEFAULT_EST = {
   ports:      { total: 48216, used: 31894, free: 16322 },
   compliance: { compliant: 1612, behind: 807, unknown: 240 },
   eol:        { past: 118, within12: 341 },
   spares:     { instore: 34, rma: 41, intransit: 12 }
-} as const;
+};
 
-export type NeClass = 'router' | 'switch' | 'server' | 'dwdm' | 'enodeb' | 'gnodeb';
+/* the data center devices as ledger rows: class, stock state and whether discovery has seen them */
+const DC_CLASS: Record<DcRole, NeClass> = { Router: 'router', Switch: 'switch', Server: 'server', DWDM: 'dwdm', Firewall: 'firewall', Storage: 'storage', GPU: 'gpu' };
+const DC_STOCK: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed' };
+const DC_ROWS = SCOPED ? scope().devices : [];
+/** a device counts as "discovered" when its source is Discovery: seen by discovery and already in service */
+export const dcDiscovered = (d: DcDevice) => d.discovery !== 'not-discovered' && d.lifecycle !== 'Planned';
+export const dcStockOf = (d: DcDevice): StockState => DC_STOCK[d.lifecycle];
+export const dcClassOf = (d: DcDevice): NeClass => DC_CLASS[d.role];
+
+export const IL: typeof DEFAULT_IL = SCOPED ? {
+  locations: DC_TOTAL.dcs, central: DC_TOTAL.dcs, regional: 0, edge: 0, ne: DC_TOTAL.devices, discovered: DC_ROWS.filter(dcDiscovered).length,
+  links: 0, services: 0, vnf: 0, inactive: 0, reports: 0
+} : DEFAULT_IL;
+
+export const EST: typeof DEFAULT_EST = SCOPED ? {
+  ports: { total: DC_TOTAL.portsTotal, used: DC_TOTAL.portsUsed, free: DC_TOTAL.portsTotal - DC_TOTAL.portsUsed },
+  compliance: { compliant: DC_TOTAL.verified, behind: DC_TOTAL.drifted, unknown: DC_TOTAL.notDiscovered },
+  eol: { past: 0, within12: 0 }, spares: { instore: 0, rma: 0, intransit: 0 }
+} : DEFAULT_EST;
+
+export type NeClass = 'router' | 'switch' | 'server' | 'dwdm' | 'enodeb' | 'gnodeb' | 'firewall' | 'storage' | 'gpu';
 export type StockState = 'planned' | 'instore' | 'deployed' | 'faulty' | 'decomm';
 export type ActiveStock = Exclude<StockState, 'decomm'>;
 
-export const NE_CLASSES: NeClass[] = ['router', 'switch', 'server', 'dwdm', 'enodeb', 'gnodeb'];
+export const NE_CLASSES: NeClass[] = SCOPED
+  ? ['router', 'switch', 'server', 'dwdm', 'firewall', 'storage', 'gpu', 'enodeb', 'gnodeb']
+  : ['router', 'switch', 'server', 'dwdm', 'enodeb', 'gnodeb'];
 export const ACTIVE_STATES: ActiveStock[] = ['planned', 'instore', 'deployed', 'faulty'];
 
 export interface ClassMeta { k: NeClass; n: string; c: number; disc: number }
-export const PHY_TABS: ClassMeta[] = [
+const CLASS_NAME: Record<NeClass, string> = { router: 'Router', switch: 'Switch', server: 'Server', dwdm: 'DWDM', enodeb: 'eNodeB', gnodeb: 'gNodeB', firewall: 'Firewall', storage: 'Storage', gpu: 'GPU' };
+export const PHY_TABS: ClassMeta[] = SCOPED
+  ? NE_CLASSES.map(k => { const rows = DC_ROWS.filter(d => dcClassOf(d) === k); return { k, n: CLASS_NAME[k], c: rows.length, disc: rows.filter(dcDiscovered).length }; })
+  : [
   { k: 'router', n: 'Router', c: 2148, disc: 2096 }, { k: 'switch', n: 'Switch', c: 349, disc: 283 },
   { k: 'server', n: 'Server', c: 96,  disc: 0 },     { k: 'dwdm',   n: 'DWDM',   c: 78,  disc: 0 },
   { k: 'enodeb', n: 'eNodeB', c: 18,  disc: 0 },     { k: 'gnodeb', n: 'gNodeB', c: 14,  disc: 0 }
@@ -58,17 +88,18 @@ export type ChipTone = 'success' | 'info' | 'warning' | 'error' | 'neutral' | 'p
 export type ColorTone = 'sky' | 'cyan' | 'emerald' | 'amber' | 'slate' | 'red' | 'purple' | 'orange' | 'fuchsia' | 'gray';
 
 export interface StockMeta { k: StockState; n: string; c: number; chip: ChipTone; tone: ColorTone }
+const dcStock = (k: StockState) => DC_ROWS.filter(d => DC_STOCK[d.lifecycle] === k).length;
 export const STOCK_ST: StockMeta[] = [
-  { k: 'planned',  n: 'Planned',        c: 92,   chip: 'info',    tone: 'sky' },
-  { k: 'instore',  n: 'In store',       c: 34,   chip: 'cyan',    tone: 'cyan' },
-  { k: 'deployed', n: 'Deployed',       c: 2503, chip: 'success', tone: 'emerald' },
-  { k: 'faulty',   n: 'Faulty / RMA',   c: 74,   chip: 'warning', tone: 'amber' },
-  { k: 'decomm',   n: 'Decommissioned', c: 412,  chip: 'neutral', tone: 'slate' }
+  { k: 'planned',  n: 'Planned',        c: SCOPED ? dcStock('planned') : 92,    chip: 'info',    tone: 'sky' },
+  { k: 'instore',  n: 'In store',       c: SCOPED ? 0 : 34,                     chip: 'cyan',    tone: 'cyan' },
+  { k: 'deployed', n: 'Deployed',       c: SCOPED ? dcStock('deployed') : 2503, chip: 'success', tone: 'emerald' },
+  { k: 'faulty',   n: 'Faulty / RMA',   c: SCOPED ? dcStock('faulty') : 74,     chip: 'warning', tone: 'amber' },
+  { k: 'decomm',   n: 'Decommissioned', c: SCOPED ? 0 : 412,                    chip: 'neutral', tone: 'slate' }
 ];
 export const stockMeta = (k: StockState): StockMeta => STOCK_ST.find(s => s.k === k)!;
 
 /* class × stock cross-tab: a class total and a stock total are two views of one population */
-export const PHY_MATRIX: Record<NeClass, Record<StockState, number>> = {
+const DEFAULT_MATRIX = {
   router: { planned: 58, instore: 21, deployed: 2017, faulty: 52, decomm: 289 },
   switch: { planned: 14, instore:  8, deployed:  315, faulty: 12, decomm:  61 },
   server: { planned:  6, instore:  3, deployed:   82, faulty:  5, decomm:  34 },
@@ -76,6 +107,9 @@ export const PHY_MATRIX: Record<NeClass, Record<StockState, number>> = {
   enodeb: { planned:  3, instore:  0, deployed:   14, faulty:  1, decomm:   5 },
   gnodeb: { planned:  3, instore:  0, deployed:   10, faulty:  1, decomm:   4 }
 };
+const dcMatrix = (): Record<NeClass, Record<StockState, number>> => Object.fromEntries(NE_CLASSES.map(k => [k, Object.fromEntries((['planned', 'instore', 'deployed', 'faulty', 'decomm'] as StockState[])
+  .map(st => [st, DC_ROWS.filter(d => dcClassOf(d) === k && DC_STOCK[d.lifecycle] === st).length]))])) as Record<NeClass, Record<StockState, number>>;
+export const PHY_MATRIX: Record<NeClass, Record<StockState, number>> = SCOPED ? dcMatrix() : DEFAULT_MATRIX as Record<NeClass, Record<StockState, number>>;
 export const stockCount = (cls: NeClass, s: StockState): number => PHY_MATRIX[cls][s];
 export const phyCount = (cls: NeClass, states: Iterable<StockState>): number =>
   [...states].reduce((a, s) => a + stockCount(cls, s), 0);

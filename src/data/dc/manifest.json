@@ -1,7 +1,7 @@
 {
   "source": {
     "repo": "Datacenter-Ideation",
-    "commit": "33a1be9a9c5f380921f9700dafc8daab5ff491e1",
+    "commit": "99f72f7a788328ac69db4e753c54e5c76bbb14db",
     "model": "cloud",
     "generator": "app/src/mock/generate.ts"
   },
@@ -56,8 +56,8 @@
   ],
   "files": {
     "datacenters.json": {
-      "bytes": 311359,
-      "sha256": "230262f870b75196"
+      "bytes": 337190,
+      "sha256": "de379bc8342e5e04"
     },
     "devices.json": {
       "bytes": 2365247,
@@ -70,6 +70,10 @@
     "gpu.json": {
       "bytes": 1037170,
       "sha256": "00b7e23f353aed82"
+    },
+    "summary.json": {
+      "bytes": 44061,
+      "sha256": "c57fd86ae371bcfe"
     }
   }
 }

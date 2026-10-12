@@ -248,8 +248,7 @@ function applyDrillQuery(view, q, label) {
     if (p.tab) PASS_TAB = p.tab;
     /* arriving from a link (Physical resources › View rack) sets the data center
        filter; a plain arrival keeps whatever the reader last chose */
-    if (p.dc) { PASS_DC = decodeURIComponent(p.dc); PASS_SRC = 'all'; }
-    if (p.src) PASS_SRC = ['net', 'dc'].includes(p.src) ? p.src : 'all';
+    if (p.dc) PASS_DC = decodeURIComponent(p.dc);
     if (p.rack && p.dc) gridOf('passive').search = `${PASS_DC}-${decodeURIComponent(p.rack)}`;
   }
   /* as in setParams: only a different frame closes the gallery, since this
@@ -926,8 +925,6 @@ document.addEventListener('click', e => {
   if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
   if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
-  const psrc = e.target.closest('[data-passsrc]');
-  if (psrc) { PASS_SRC = psrc.dataset.passsrc; go('passive'); return; }
   const fbt = e.target.closest('[data-fibertab]');
   if (fbt) { FIBER_TAB = fbt.dataset.fibertab; go('fiber'); return; }
   const ssec = e.target.closest('[data-sitesection]');

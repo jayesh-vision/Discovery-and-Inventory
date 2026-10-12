@@ -10,10 +10,9 @@
                        device list stays small; only a device's detail needs them
      gpu.json          GPU servers with their GPUs, clusters, liquid-cooling CDUs, AI cages
      manifest.json     source commit, counts and a hash per file
-   and puts the same 24 data centers in the location roster (src/data/allLocations.json):
-   a site that already has the ID is corrected in place, a missing one is added
-   after the last data center of its state. Discovery-and-Inventory's roster
-   folds Delhi into the Uttar Pradesh circle, so "Delhi NCR" is filed there.
+   This data is shown only when Inventory is opened with ?solution=datacenter (see
+   src/solution.ts). The default Inventory data, including the location roster, is never
+   touched by this script.
 
    Telemetry (hourly series, CPU/ICMP/NTP/RADIUS, GPU utilisation), alarms,
    incidents, customers, services and revenue are not inventory and are left out.
@@ -45,7 +44,7 @@ const commit = git('rev-parse', 'HEAD');
 
 /* ---------- inventory shapes ---------- */
 const pick = (o, keys) => Object.fromEntries(keys.filter(k => o[k] !== undefined).map(k => [k, o[k]]));
-const DC_KEYS = ['id', 'locationId', 'name', 'status', 'category', 'regionId', 'circleId', 'zone', 'city', 'state', 'address', 'lat', 'lng', 'tier', 'commissionedOn', 'floors', 'racks', 'ports', 'cabling', 'compute'];
+const DC_KEYS = ['id', 'locationId', 'name', 'status', 'category', 'regionId', 'circleId', 'zone', 'city', 'state', 'address', 'lat', 'lng', 'tier', 'commissionedOn', 'floors', 'racks', 'ports', 'cabling', 'compute', 'capex', 'opex', 'risks', 'readiness'];
 const POWER_KEYS = ['capacityKw', 'acKw', 'dcKw', 'peakKw', 'pue', 'feeds', 'split', 'dg', 'battery', 'ups'];
 const COOLING_KEYS = ['capacityKw', 'loadKw', 'redundancy', 'units', 'sensors'];
 const NE_KEYS = ['id', 'dcId', 'name', 'role', 'layer', 'vendor', 'model', 'os', 'serial', 'ip', 'mac', 'rackId', 'u', 'uSize', 'lifecycle', 'discovery', 'ndReason', 'drift', 'duplicateSerialOf', 'collector', 'isPe', 'tenantId', 'modules'];
@@ -65,28 +64,46 @@ function inventory(db) {
   return { datacenters, devices, modules, gpu };
 }
 
-/* ---------- location roster ---------- */
-const ROSTER = join(root, 'src', 'data', 'allLocations.json');
+/* ---------- summary: small, always loaded ----------
+   Everything a screen needs at import time, per data center and in total, so the data center
+   solution's dashboards and counts never wait for the large files. Roster-shaped `location`
+   records let it stand in for the location roster. Delhi NCR is filed under Uttar Pradesh, as
+   this app's default roster does. */
 const STATE = { 'Delhi NCR': 'Uttar Pradesh' };
 const ST = { 'on-air': ['On-air', 'success'], 'in-progress': ['In progress', 'warning'], planned: ['Planned', 'info'], failed: ['Failed', 'error'] };
-function rosterRecords({ datacenters, devices }) {
-  return datacenters.map(d => {
+const CIRCLE = { 'Maharashtra': 'MH', 'Uttar Pradesh': 'UP', 'Karnataka': 'KA', 'Andhra Pradesh': 'AP', 'Haryana': 'HR', 'Punjab': 'PB', 'Gujarat': 'GJ', 'Madhya Pradesh': 'MP', 'Rajasthan': 'RJ', 'West Bengal': 'WB', 'Odisha': 'OR', 'Bihar': 'BR', 'Tamil Nadu': 'TN', 'Telangana': 'TS', 'Kerala': 'KL' };
+function makeSummary({ datacenters, devices, gpu }) {
+  const gpuBy = count(gpu.nodes, n => n.dcId);
+  const per = datacenters.map(d => {
     const mine = devices.filter(n => n.dcId === d.id);
-    const [st, chip] = ST[d.status];
-    return { st, chip, name: d.id, cat: 'Central', ct: 'amber', type: 'Datacenter', id: d.id, addr: d.address, city: d.city, state: STATE[d.state] ?? d.state,
-      ne: mine.length, disc: mine.filter(n => n.discovery !== 'not-discovered').length, stage: null, issue: null, risk: null, lat: d.lat, lon: d.lng };
+    const state = STATE[d.state] ?? d.state;
+    const [stLabel, chip] = ST[d.status];
+    const odf = d.ports.find(p => p.cls === 'Optical (ODF)') ?? { total: 0, used: 0 };
+    const cores = d.cabling.ledger;
+    const nodes = gpu.nodes.filter(n => n.dcId === d.id);
+    return {
+      id: d.id, city: d.city, state, regionId: d.regionId, circleId: CIRCLE[state] ?? d.circleId, tier: d.tier, category: d.category, status: d.status,
+      address: d.address, lat: d.lat, lng: d.lng,
+      devices: mine.length, byRole: count(mine, n => n.role), gpuServers: gpuBy[d.id] ?? 0, gpus: nodes.reduce((a, n) => a + n.gpus.length, 0),
+      discovered: mine.filter(n => n.discovery !== 'not-discovered').length, verified: mine.filter(n => n.discovery === 'verified').length,
+      drifted: mine.filter(n => n.discovery === 'drifted').length, notDiscovered: mine.filter(n => n.discovery === 'not-discovered').length,
+      racks: d.racks.length, aiRacks: d.racks.filter(r => r.density === 'ai').length, uTotal: d.racks.reduce((a, r) => a + r.heightU, 0), uUsed: d.racks.reduce((a, r) => a + r.usedU, 0),
+      racksFull: d.racks.filter(r => r.usedU >= r.heightU).length, rackKw: +d.racks.reduce((a, r) => a + r.drawKw, 0).toFixed(1),
+      powerKw: d.power.capacityKw, itKw: d.power.split.find(x => x.label === 'IT equipment')?.kw ?? 0, pue: d.power.pue, ups: d.power.ups.length, feeds: d.power.feeds.length,
+      dgLastTest: d.power.dg.lastTest, batteryLastTest: d.power.battery.lastTest,
+      coolingKw: d.cooling.capacityKw, coolingUnits: d.cooling.units.length, cdu: d.cooling.units.filter(u => u.type === 'CDU').length, sensors: d.cooling.sensors.length,
+      sensorAlarms: d.cooling.sensors.filter(x => x.smoke || x.leak).length,
+      ports: { total: d.ports.reduce((a, p) => a + p.total, 0), used: d.ports.reduce((a, p) => a + p.used, 0) }, odf, cores: { total: cores.length, lit: cores.filter(c => c.state !== 'free').length },
+      risks: { critical: d.risks.filter(r => r.severity === 'critical').length, major: d.risks.filter(r => r.severity === 'major').length, minor: d.risks.filter(r => r.severity === 'minor').length,
+        byDomain: count(d.risks, r => r.domain) },
+      vendors: count(mine, n => n.vendor), driftByVendor: count(mine.filter(n => n.discovery === 'drifted'), n => n.vendor),
+      models: [...new Set(mine.map(n => `${n.vendor} ${n.model}`))].sort(), planned: mine.filter(n => n.lifecycle === 'Planned').length,
+      capex: { approved: d.capex.approved, committed: d.capex.committed, spent: d.capex.spent }, opexMonthly: d.opex.monthly,
+      location: { st: stLabel, chip, name: d.id, cat: 'Central', ct: 'amber', type: 'Datacenter', id: d.id, addr: d.address, city: d.city, state,
+        ne: mine.length, disc: mine.filter(n => n.discovery !== 'not-discovered').length, stage: null, issue: null, risk: null, lat: d.lat, lon: d.lng }
+    };
   });
-}
-function applyRoster(list, recs) {
-  const out = [...list];
-  for (const r of recs) {
-    const i = out.findIndex(l => l.id === r.id);
-    if (i >= 0) { out[i] = r; continue; }
-    let at = -1;
-    out.forEach((l, j) => { if (l.type === 'Datacenter' && l.state === r.state) at = j; });
-    out.splice(at >= 0 ? at + 1 : out.length, 0, r);
-  }
-  return out;
+  return { datacenters: per };
 }
 
 const count = (a, f) => a.reduce((m, x) => ((m[f(x)] = (m[f(x)] ?? 0) + 1), m), {});
@@ -126,12 +143,11 @@ const files = {
   'datacenters.json': JSON.stringify(inv.datacenters),
   'devices.json': JSON.stringify(inv.devices),
   'modules.json': JSON.stringify(inv.modules),
-  'gpu.json': JSON.stringify(inv.gpu)
+  'gpu.json': JSON.stringify(inv.gpu),
+  'summary.json': JSON.stringify(makeSummary(inv))
 };
 const hash = s => createHash('sha256').update(s).digest('hex').slice(0, 16);
 const counts = summary(inv);
-const roster = JSON.parse(readFileSync(ROSTER, 'utf8'));
-const recs = rosterRecords(inv);
 
 if (CHECK) {
   const problems = [];
@@ -152,11 +168,6 @@ if (CHECK) {
     problems.push(`${f}: ${changed.length} changed, ${added.length} only in Datacenter-Ideation, ${removed.length} only here` +
       [...changed.slice(0, 5).map(k => `\n    changed  ${k}`), ...added.slice(0, 5).map(k => `\n    missing  ${k}`), ...removed.slice(0, 5).map(k => `\n    extra    ${k}`)].join(''));
   }
-  for (const r of recs) {
-    const l = roster.find(x => x.id === r.id);
-    if (!l) problems.push(`allLocations.json: ${r.id} is missing`);
-    else if (JSON.stringify(l) !== JSON.stringify(r)) problems.push(`allLocations.json: ${r.id} differs (${Object.keys(r).filter(k => JSON.stringify(l[k]) !== JSON.stringify(r[k])).join(', ')})`);
-  }
   if (man && man.source.commit !== commit) console.log(`note: files were synced from ${man.source.commit.slice(0, 7)}, reference is now at ${commit.slice(0, 7)}`);
   if (problems.length) { console.error('Data center inventory differs from Datacenter-Ideation:\n  ' + problems.join('\n  ')); process.exit(1); }
   console.log(`Data center inventory matches Datacenter-Ideation (${commit.slice(0, 7)}, ${MODEL}): ${counts.datacenters} data centers, ${counts.devices} devices, ${counts.gpuServers} GPU servers.`);
@@ -165,10 +176,6 @@ if (CHECK) {
 
 mkdirSync(out, { recursive: true });
 for (const [f, body] of Object.entries(files)) writeFileSync(join(out, f), body);
-const before24 = recs.filter(r => roster.some(l => l.id === r.id)).length;
-const next = applyRoster(roster, recs);
-if (JSON.stringify(next) !== JSON.stringify(roster)) writeFileSync(ROSTER, JSON.stringify(next, null, 2));
-console.log(`Location roster: ${before24} data centers corrected in place, ${recs.length - before24} added (${roster.length} → ${next.length} locations)`);
 writeFileSync(join(out, 'manifest.json'), JSON.stringify({
   source: { repo: 'Datacenter-Ideation', commit, model: MODEL, generator: 'app/src/mock/generate.ts' },
   counts, datacenterIds: inv.datacenters.map(d => d.id), files: Object.fromEntries(Object.entries(files).map(([f, b]) => [f, { bytes: b.length, sha256: hash(b) }]))

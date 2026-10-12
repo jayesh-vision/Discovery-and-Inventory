@@ -1,3 +1,4 @@
+import { withSolution } from './solution';
 import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
 import InactiveInventory from './screens/InactiveInventory';
@@ -154,7 +155,7 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
   if (drill?.label) sp.set('drill', drill.label);
   if (drill?.from) sp.set('from', drill.from);
   const qs = sp.toString();
-  return qs ? `${path}?${qs}` : path;
+  return withSolution(qs ? `${path}?${qs}` : path);
 }
 
 /* A "landing" is a screen the sidebar lists in its own right: no :params, and

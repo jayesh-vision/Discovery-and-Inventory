@@ -20,7 +20,8 @@ const cv = (tone: string, shade: number) => `var(--vw-color-${tone}-${shade})`;
 
 const CLASS_HEX: Record<NeClass, string> = {
   router: 'var(--vw-color-blue-400)', switch: 'var(--vw-color-teal-400)', server: 'var(--vw-color-violet-400)',
-  dwdm: 'var(--vw-color-pink-400)', enodeb: 'var(--vw-color-amber-400)', gnodeb: 'var(--vw-color-orange-400)'
+  dwdm: 'var(--vw-color-pink-400)', enodeb: 'var(--vw-color-amber-400)', gnodeb: 'var(--vw-color-orange-400)',
+  firewall: 'var(--vw-color-red-400)', storage: 'var(--vw-color-cyan-400)', gpu: 'var(--vw-color-purple-400)'
 };
 const name = (k: NeClass) => classMeta(k).n;
 const activeOf = (k: NeClass) => classMeta(k).c;
@@ -320,7 +321,7 @@ const quality: ReportBuilder = () => {
         cells: {
           cls: name(k), active: activeOf(k), disc: classMeta(k).disc, discPct: r1(pct(classMeta(k).disc, activeOf(k))),
           ...Object.fromEntries(recStates.map(s => [s, PHY[k].filter(r => r.st === s).length])),
-          source: SRC[countBy(PHY[k], r => r.s)[0][0] as Source][0]
+          source: PHY[k].length ? SRC[countBy(PHY[k], r => r.s)[0][0] as Source][0] : '—'
         }
       })),
       empty: 'No classes.'
@@ -342,7 +343,8 @@ const archive: ReportBuilder = () => {
   const reasonOf = (why: string) => /^Replaced under/.test(why) ? 'Replaced under change request' : /written off/i.test(why) ? 'Written off' : /Capacity migration/.test(why) ? 'Capacity migration' : why;
   const reasons = countBy(rows, r => reasonOf(r.why));
   const years = countBy(rows, r => r.on.slice(-4)).sort((a, b) => a[0].localeCompare(b[0]));
-  const oldestMonths = Math.round((TODAY.getTime() - Math.min(...rows.map(r => parseDmy(r.on).getTime()))) / 2629800000);
+  /* an empty archive (the data center solution holds no decommissioned records) has no oldest record */
+  const oldestMonths = rows.length ? Math.round((TODAY.getTime() - Math.min(...rows.map(r => parseDmy(r.on).getTime()))) / 2629800000) : 0;
 
   return {
     headline: { value: zombies.length, fmt: 'num', label: 'decommissioned elements still answering on the network', tone: 'red', better: 'down' },
@@ -350,7 +352,7 @@ const archive: ReportBuilder = () => {
     findings: [
       { tone: 'crit', title: `${zombies.length} zombie ${zombies.length === 1 ? 'asset' : 'assets'} still answering`, detail: zombies.map(z => `${z.name} (${z.model}, decommissioned ${z.on} by ${z.by}, ${z.wo})`).join('; ') },
       { tone: 'info', title: `${lastYear} decommissioned in the last 12 months`, detail: years.map(([y, c]) => `${y}: ${c}`).join(' · ') },
-      { tone: 'info', title: `Top reason: ${reasons[0][0]}`, detail: reasons.slice(0, 5).map(([r, c]) => `${r} ${c}`).join(' · ') }
+      { tone: 'info', title: `Top reason: ${reasons[0]?.[0] ?? 'none recorded'}`, detail: reasons.slice(0, 5).map(([r, c]) => `${r} ${c}`).join(' · ') }
     ],
     kpis: [
       { title: 'Decommissioned', definition: 'Elements retired from service and moved to the archive.', value: IL.inactive, fmt: 'num', of: 'archived records', tone: 'slate',
@@ -360,7 +362,7 @@ const archive: ReportBuilder = () => {
         delta: { text: zombies.map(z => z.loc).join(', '), better: false },
         visual: { kind: 'against', value: DECOMM_ZOMBIES, limit: 10 } },
       { title: 'Retired, last 12 months', definition: 'Elements decommissioned in the 12 months to the report date.', value: lastYear, fmt: 'num', of: `${r1(pct(lastYear, rows.length))}% of archive`, tone: 'sky',
-        delta: { text: `${years[years.length - 1][1]} so far in ${years[years.length - 1][0]}`, better: null },
+        delta: { text: years.length ? `${years[years.length - 1][1]} so far in ${years[years.length - 1][0]}` : 'none in the archive', better: null },
         visual: { kind: 'against', value: lastYear, limit: rows.length } },
       { title: 'Oldest record', definition: 'Age of the longest-held record in the archive, in months.', value: oldestMonths, fmt: 'num', of: `months · ${DECOMM_OLDEST}`, tone: 'amber',
         delta: { text: `${rows.filter(r => TODAY.getTime() - parseDmy(r.on).getTime() > 5 * 365 * 86400000).length} records older than 5 years`, better: null },

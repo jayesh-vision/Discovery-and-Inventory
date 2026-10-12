@@ -1,5 +1,6 @@
 import { NE_CLASSES, INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
 import { MASTER_NE } from './master';
+import { SCOPED } from './dc/scope';
 
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
@@ -53,7 +54,7 @@ export const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oc
 const DK_ROLE: Record<InactiveTab, string[]> = {
   router: ['P','PE','BNG','EDGE','AGG'], switch: ['ACC','DIST','CORE','TOR'],
   server: ['SRV','CDC','APP','DB'], dwdm: ['OADM','ROADM','MUX','ILA'],
-  enodeb: ['ENB'], gnodeb: ['GNB'],
+  enodeb: ['ENB'], gnodeb: ['GNB'], firewall: ['FW'], storage: ['STO'], gpu: ['GPU'],
   l2vpn: ['LINE', 'VPLS', 'PW'], l3vpn: ['VRF', 'VPN', 'MPLS']
 };
 
@@ -98,9 +99,10 @@ const fromMaster = (cls: NeClass): ArchiveRow[] => MASTER_NE
     why: n.why ?? '', on: n.on ?? '', by: n.by ?? '', wo: n.wo ?? '', zombie: !!n.zombie }))
   .sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
 
+/* the data center records hold no decommissioned equipment: in the data center solution the archive is empty */
 export const DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
-  INACTIVE_TABS.map(t => {
-    const k = t.k;
+  [...new Set<InactiveTab>([...INACTIVE_TABS.map(t => t.k), ...NE_CLASSES])].map(k => {
+    if (SCOPED) return [k, [] as ArchiveRow[]];
     return [k, (NE_CLASSES as string[]).includes(k) ? fromMaster(k as NeClass) : expand(k, DECOMM_SEEDS[k as 'l2vpn' | 'l3vpn'], 18)];
   })
 ) as Record<InactiveTab, ArchiveRow[]>;
@@ -109,6 +111,7 @@ export const decommRows = (cls: InactiveTab): ArchiveRow[] => DECOMM[cls] || DEC
 export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DECOMM[k]).filter(r => r.zombie).length;
 
 export const DECOMM_OLDEST = (() => {
+  if (SCOPED) return '—';
   const dates = NE_CLASSES.flatMap(k => DECOMM[k]).map(r => parseDmy(r.on)).sort((a, b) => a.getTime() - b.getTime());
   const mo = Math.round((TODAY.getTime() - dates[0].getTime()) / 2629800000);
   return `${Math.floor(mo / 12)}y ${mo % 12}mo`;

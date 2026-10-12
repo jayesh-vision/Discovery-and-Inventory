@@ -266,7 +266,7 @@ PASSIVE.duct = Array.from({ length: 10 }, (_, i) => {
    environment sensors become rows of the passive tabs, next to the network
    estate's own rows and flagged `dc: true`. Cooling and Sensors exist only here.
    Nothing derives the ledger's passive totals (PASSIVE_TABS) from these rows. */
-const DC_FAC = /* @@DC_FAC@@ */ [];
+const DC_FAC = DC_ON ? window.__dcScope.facs : [];
 const dcDate = t => { const d = new Date(t); return `${String(d.getUTCDate()).padStart(2, '0')}-${MONTHS_SHORT[d.getUTCMonth()]}-${d.getUTCFullYear()}`; };
 const dcShort = (id, dc) => id.startsWith(dc + '-') ? id.slice(dc.length + 1) : id;
 const PASSIVE_DC = (() => {
@@ -299,8 +299,25 @@ const PASSIVE_DC = (() => {
 })();
 /* the two tabs that exist only for data centers; their count is the rows */
 const PASSIVE_NEW_TABS = [{ k: 'cooling', n: 'Cooling', c: PASSIVE_DC.cooling.length }, { k: 'sensors', n: 'Sensors', c: PASSIVE_DC.sensors.length }];
-const PASSIVE_ORDER = ['fiber', 'odf', 'rack', 'power', 'cooling', 'sensors', 'splice', 'cord', 'duct'];
-const PASSIVE_HAS_DC = ['odf', 'rack', 'power', 'cooling', 'sensors', 'cord'];
+/* tab order in the data center solution */
+const PASSIVE_DC_ORDER = ['fiber', 'odf', 'rack', 'power', 'cooling', 'sensors', 'splice', 'cord', 'duct'];
+/* what the data center solution's tiles above the grid count, from the records themselves */
+const passiveDcStats = () => {
+  const racks = DC_FAC.reduce((a, f) => a.concat(f.racks), []);
+  const u = racks.reduce((a, r) => a + r.usedU, 0), uTot = racks.reduce((a, r) => a + r.heightU, 0);
+  const cores = DC_FAC.reduce((a, f) => a.concat(f.cabling.ledger), []);
+  const lit = cores.filter(c => c.state !== 'free').length;
+  const cool = DC_FAC.reduce((a, f) => a + f.cooling.capacityKw, 0);
+  const alarms = PASSIVE_DC.sensors.filter(s => s.smoke || s.leak).length;
+  /* power units whose last test is more than 90 days before the reference data's own "now" (1 Oct 2026) */
+  const NOW = Date.UTC(2026, 9, 1, 13, 20), DAY = 864e5;
+  const overdue = window.__dcSum.reduce((a, d) => a + (NOW - d.dgLastTest > 90 * DAY ? 1 : 0) + (NOW - d.batteryLastTest > 90 * DAY ? 1 : 0), 0);
+  const odfUsed = window.__dcSum.reduce((a, d) => a + d.odf.used, 0), odfTotal = window.__dcSum.reduce((a, d) => a + d.odf.total, 0);
+  const full = racks.filter(r => r.usedU >= r.heightU).length;
+  return { dcs: DC_FAC.length, racks: racks.length, u, uTot, cores: cores.length, lit, cool, alarms, overdue, odfUsed, odfTotal, full,
+    ups: DC_FAC.reduce((a, f) => a + f.power.ups.length, 0), feeds: DC_FAC.reduce((a, f) => a + f.power.feeds.length, 0),
+    cdu: PASSIVE_DC.cooling.filter(c => c.type === 'CDU').length };
+};
 
 const PASSIVE_STATS = {
   coreFill: 62, spansCut: 3, spansDegraded: 11, odfFill: 58,

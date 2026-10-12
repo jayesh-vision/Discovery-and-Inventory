@@ -4,6 +4,8 @@
    Also includes City-level Network Elements data for Data Centers, PoP Locations, and Sites.
    ─────────────────────────────────────────────────────────────────── */
 
+import { DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
+
 export interface CityItem {
   id: string;
   name: string;
@@ -41,7 +43,7 @@ export interface NetworkElementRow {
   name: string;
   ip: string;
   model: string;
-  vendor: 'CISCO' | 'JUNIPER' | 'NOKIA' | 'HUAWEI';
+  vendor: 'CISCO' | 'JUNIPER' | 'NOKIA' | 'HUAWEI' | (string & {});
   osVersion: string;
   serialNumber: string;
   region: string;
@@ -49,7 +51,7 @@ export interface NetworkElementRow {
   portsTotal: number;
   locationCode: string;
   systemDescription: string;
-  category: 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB';
+  category: 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB' | 'Firewall' | 'Server' | 'Storage' | 'GPU';
   facilityType: 'dc' | 'pop' | 'site';
   cityId: string;
 }
@@ -73,22 +75,22 @@ export interface FacilityItem {
   onAirPct: number;
 }
 
-export const TOP_HIERARCHY_METRICS = [
+const DEFAULT_TOP_HIERARCHY_METRICS = [
   { id: 'regions', label: 'Regions', count: '4', icon: 'regions', color: '#9333ea', bg: '#f3e8ff' },
   { id: 'states', label: 'States', count: '28', icon: 'states', color: '#2563eb', bg: '#eff6ff' },
-  { id: 'cities', label: 'Cities', count: '552', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
-  { id: 'datacenters', label: 'Data Centers', count: '848', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
+  { id: 'cities', label: 'Cities', count: '549', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
+  { id: 'datacenters', label: 'Data Centers', count: '829', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
   { id: 'pops', label: 'PoP Locations', count: '2,711', icon: 'pop', color: '#0284c7', bg: '#e0f2fe' },
   { id: 'sites', label: 'Sites', count: '8,935', icon: 'site', color: '#16a34a', bg: '#f0fdf4' },
   { id: 'alarms', label: 'Active Alarms', count: '1,712', icon: 'alarm', color: '#ef4444', bg: '#fef2f2' },
 ];
 
-export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
+const DEFAULT_GEOGRAPHIC_HIERARCHY: RegionItem[] = [
   {
     "id": "north",
     "name": "North Region",
     "stateCount": 5,
-    "cityCount": 140,
+    "cityCount": 137,
     "themeColor": "#9333ea",
     "bgColor": "#f3e8ff",
     "iconType": "north",
@@ -131,9 +133,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "pb-mohali",
             "name": "Mohali",
-            "count": 117,
+            "count": 116,
             "stateId": "punjab",
-            "dcCount": 5,
+            "dcCount": 4,
             "popCount": 12,
             "siteCount": 32
           },
@@ -520,7 +522,7 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
       {
         "id": "haryana",
         "name": "Haryana",
-        "cityCount": 16,
+        "cityCount": 15,
         "regionId": "north",
         "themeColor": "#f97316",
         "bgColor": "#ffedd5",
@@ -659,22 +661,13 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
             "dcCount": 1,
             "popCount": 3,
             "siteCount": 14
-          },
-          {
-            "id": "hr-gurugram",
-            "name": "Gurugram",
-            "count": 1,
-            "stateId": "haryana",
-            "dcCount": 1,
-            "popCount": 0,
-            "siteCount": 0
           }
         ]
       },
       {
         "id": "up-west",
         "name": "Uttar Pradesh",
-        "cityCount": 33,
+        "cityCount": 31,
         "regionId": "north",
         "themeColor": "#f43f5e",
         "bgColor": "#ffe4e6",
@@ -925,9 +918,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "delhi-new-delhi",
             "name": "New Delhi",
-            "count": 8,
+            "count": 7,
             "stateId": "up-west",
-            "dcCount": 2,
+            "dcCount": 1,
             "popCount": 2,
             "siteCount": 4
           },
@@ -957,24 +950,6 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
             "dcCount": 1,
             "popCount": 3,
             "siteCount": 5
-          },
-          {
-            "id": "upw-gorakhpur",
-            "name": "Gorakhpur",
-            "count": 1,
-            "stateId": "up-west",
-            "dcCount": 1,
-            "popCount": 0,
-            "siteCount": 0
-          },
-          {
-            "id": "upw-prayagraj",
-            "name": "Prayagraj",
-            "count": 2,
-            "stateId": "up-west",
-            "dcCount": 2,
-            "popCount": 0,
-            "siteCount": 0
           }
         ]
       },
@@ -1425,27 +1400,27 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "mh-mumbai",
             "name": "Mumbai",
-            "count": 53,
+            "count": 57,
             "stateId": "maharashtra",
-            "dcCount": 2,
+            "dcCount": 6,
             "popCount": 14,
             "siteCount": 37
           },
           {
             "id": "mh-pune",
             "name": "Pune",
-            "count": 46,
+            "count": 43,
             "stateId": "maharashtra",
-            "dcCount": 8,
+            "dcCount": 5,
             "popCount": 11,
             "siteCount": 27
           },
           {
             "id": "mh-nagpur",
             "name": "Nagpur",
-            "count": 39,
+            "count": 38,
             "stateId": "maharashtra",
-            "dcCount": 4,
+            "dcCount": 3,
             "popCount": 10,
             "siteCount": 25
           },
@@ -1579,9 +1554,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "gj-ahmedabad",
             "name": "Ahmedabad",
-            "count": 40,
+            "count": 39,
             "stateId": "gujarat",
-            "dcCount": 5,
+            "dcCount": 4,
             "popCount": 9,
             "siteCount": 26
           },
@@ -1868,9 +1843,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "rj-jaipur",
             "name": "Jaipur",
-            "count": 143,
+            "count": 142,
             "stateId": "rajasthan",
-            "dcCount": 7,
+            "dcCount": 6,
             "popCount": 18,
             "siteCount": 52
           },
@@ -2167,9 +2142,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "mp-indore",
             "name": "Indore",
-            "count": 143,
+            "count": 142,
             "stateId": "mp",
-            "dcCount": 7,
+            "dcCount": 6,
             "popCount": 18,
             "siteCount": 48
           },
@@ -2477,9 +2452,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "wb-kolkata",
             "name": "Kolkata",
-            "count": 144,
+            "count": 142,
             "stateId": "west-bengal",
-            "dcCount": 8,
+            "dcCount": 6,
             "popCount": 18,
             "siteCount": 48
           },
@@ -2631,9 +2606,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "br-patna",
             "name": "Patna",
-            "count": 136,
+            "count": 135,
             "stateId": "bihar",
-            "dcCount": 6,
+            "dcCount": 5,
             "popCount": 15,
             "siteCount": 42
           },
@@ -2785,9 +2760,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "od-bhubaneswar",
             "name": "Bhubaneswar",
-            "count": 131,
+            "count": 130,
             "stateId": "odisha",
-            "dcCount": 6,
+            "dcCount": 5,
             "popCount": 14,
             "siteCount": 40
           },
@@ -4246,9 +4221,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ka-bengaluru",
             "name": "Bengaluru",
-            "count": 77,
+            "count": 76,
             "stateId": "karnataka",
-            "dcCount": 9,
+            "dcCount": 8,
             "popCount": 18,
             "siteCount": 50
           },
@@ -4264,9 +4239,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ka-mangalore",
             "name": "Mangaluru",
-            "count": 25,
+            "count": 24,
             "stateId": "karnataka",
-            "dcCount": 3,
+            "dcCount": 2,
             "popCount": 6,
             "siteCount": 16
           },
@@ -4391,9 +4366,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "tn-chennai",
             "name": "Chennai",
-            "count": 53,
+            "count": 52,
             "stateId": "tamilnadu",
-            "dcCount": 7,
+            "dcCount": 6,
             "popCount": 12,
             "siteCount": 34
           },
@@ -4806,9 +4781,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "tg-hyderabad",
             "name": "Hyderabad",
-            "count": 3,
+            "count": 2,
             "stateId": "telangana",
-            "dcCount": 2,
+            "dcCount": 1,
             "popCount": 1,
             "siteCount": 0
           },
@@ -4951,9 +4926,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "ap-visakhapatnam",
             "name": "Visakhapatnam",
-            "count": 31,
+            "count": 30,
             "stateId": "ap",
-            "dcCount": 4,
+            "dcCount": 3,
             "popCount": 7,
             "siteCount": 20
           },
@@ -5105,9 +5080,9 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
           {
             "id": "kl-kochi",
             "name": "Kochi",
-            "count": 143,
+            "count": 142,
             "stateId": "kerala",
-            "dcCount": 7,
+            "dcCount": 6,
             "popCount": 18,
             "siteCount": 48
           },
@@ -5377,6 +5352,38 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = [
     ]
   }
 ];
+
+/* ── the data center solution ─────────────────────────────────────────────────
+   The same regions and states, kept only where a data center is, with each city's counts taken
+   from the data centers in it (no PoPs or sites). Cities the default hierarchy does not have are
+   added. */
+const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function scopedHierarchy(): RegionItem[] {
+  const regions: RegionItem[] = [];
+  for (const reg of DEFAULT_GEOGRAPHIC_HIERARCHY) {
+    const states: StateItem[] = [];
+    for (const st of reg.states) {
+      const here = DC_SUM.filter(d => d.state === st.name);
+      if (!here.length) continue;
+      const cityNames = [...new Set(here.map(d => d.city))];
+      const cities: CityItem[] = cityNames.map(name => {
+        const ds = here.filter(d => d.city === name);
+        const known = st.cities.find(c => c.name === name);
+        return { id: known?.id ?? `${st.id}-${slug(name)}`, name, count: ds.reduce((a, d) => a + d.devices, 0), stateId: st.id, dcCount: ds.length, popCount: 0, siteCount: 0 };
+      });
+      states.push({ ...st, cityCount: cities.length, cities });
+    }
+    if (states.length) regions.push({ ...reg, stateCount: states.length, cityCount: states.reduce((a, s) => a + s.cities.length, 0), states });
+  }
+  return regions;
+}
+export const GEOGRAPHIC_HIERARCHY: RegionItem[] = SCOPED ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
+export const TOP_HIERARCHY_METRICS = SCOPED
+  ? DEFAULT_TOP_HIERARCHY_METRICS.map(m => ({ ...m, count: ({
+      regions: String(GEOGRAPHIC_HIERARCHY.length), states: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.states.length, 0)),
+      cities: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.cityCount, 0)), datacenters: String(DC_SUM.length), pops: '0', sites: '0', alarms: '0'
+    } as Record<string, string>)[m.id] ?? m.count }))
+  : DEFAULT_TOP_HIERARCHY_METRICS;
 
 // Helper to look up a city item without default fallback
 export function findCityById(cityId?: string | null): { city: CityItem; state: StateItem; region: RegionItem; facilityType?: 'dc' | 'pop' | 'site' } | null {
@@ -5714,7 +5721,32 @@ export function getNetworkElementsForCity(cityId: string, facilityType: 'dc' | '
 }
 
 // Generates dedicated list of facilities (Data Centers, PoPs, Sites) for a city
+const cityDcs = (cityId: string): DcSum[] => {
+  const info = findCityById(cityId);
+  return info ? DC_SUM.filter(d => d.state === info.state.name && d.city === info.city.name) : [];
+};
+const DISCOVERY_STATUS: Record<string, NetworkElementRow['status']> = { verified: 'Verified', drifted: 'Drifted', 'not-discovered': 'Not discovered' };
+function scopedFacilities(cityId: string, facilityType: 'dc' | 'pop' | 'site'): FacilityItem[] {
+  if (facilityType !== 'dc') return [];
+  return cityDcs(cityId).map(d => ({
+    id: `${cityId}-dc-${d.id}`, code: d.id, name: d.address, facilityType: 'dc' as const, subType: 'Data center', tierOrClassification: d.tier,
+    address: d.address, rackOrCapacity: `${d.racks} racks`, racksTotal: d.racks, racksUsed: d.racks, powerOrUplink: `${d.powerKw.toLocaleString('en-IN')} kW`,
+    deviceCount: d.devices, status: d.drifted > 0 ? 'Drifted' as const : 'Verified' as const,
+    onAirPct: d.devices ? Math.round((d.verified / d.devices) * 100) : 0
+  }));
+}
+function scopedElements(cityId: string, facility: FacilityItem): NetworkElementRow[] {
+  const info = findCityById(cityId);
+  const region = info?.region.name.replace(' Region', '') || 'North';
+  return scope().devicesOf(facility.code).map(d => ({
+    id: d.id, status: DISCOVERY_STATUS[d.discovery] ?? 'Not discovered', name: d.name, ip: d.ip, model: d.model, vendor: d.vendor, osVersion: d.os,
+    serialNumber: d.serial, region, portsUsed: 0, portsTotal: 0, locationCode: `${facility.code}-${d.rackId.replace(`${d.dcId}-`, '')}`,
+    systemDescription: `${d.vendor} ${d.model}, ${d.os}`, category: d.role, facilityType: 'dc' as const, cityId
+  }));
+}
+
 export function getFacilitiesForCity(cityId: string, facilityType: 'dc' | 'pop' | 'site'): FacilityItem[] {
+  if (SCOPED) return scopedFacilities(cityId, facilityType);
   const info = getCityById(cityId);
   const city = info?.city;
   const cityName = city?.name || 'Central Delhi';
@@ -6081,6 +6113,7 @@ function facilityMix(facilityId: string, facilityType: 'dc' | 'pop' | 'site'): F
 }
 
 export const facilityDeviceCount = (facilityId: string, facilityType: 'dc' | 'pop' | 'site') => {
+  if (SCOPED) return DC_SUM.find(d => facilityId.endsWith(`-dc-${d.id}`) || facilityId === d.id)?.devices ?? 0;
   const m = facilityMix(facilityId, facilityType);
   return m.routers + m.switches + m.dwdm + m.gnodeb + m.enodeb;
 };
@@ -6102,6 +6135,7 @@ function expandTemplates(templates: DeviceTemplate[], n: number): DeviceTemplate
 }
 
 export function getNetworkElementsForFacility(cityId: string, facility: FacilityItem): NetworkElementRow[] {
+  if (SCOPED) return scopedElements(cityId, facility);
   const info = getCityById(cityId);
   const regionName = info?.region.name.replace(' Region', '') || 'North';
   const code = facility.code;

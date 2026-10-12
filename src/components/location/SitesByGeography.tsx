@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import geo from '../../data/geo.json';
-import allLocations from '../../data/allLocations.json';
+import { ROSTER as allLocations } from '../../data/locationRoster';
+import { DC_SUM, SCOPED } from '../../data/dc/scope';
 
 const GEO = geo as {
   W: number;
@@ -29,7 +30,7 @@ export interface CircleGeo {
   fail: number;
 }
 
-export const LOC_GEO: CircleGeo[] = [
+const DEFAULT_LOC_GEO: CircleGeo[] = [
   // North Region (5)
   { c: 'PB', n: 'Punjab', st: 'Punjab', lat: 31.10, lon: 75.40, tot: 1297, live: 976, build: 305, fail: 16 },
   { c: 'HP', n: 'Himachal Pradesh', st: 'Himachal Pradesh', lat: 31.80, lon: 77.20, tot: 730, live: 552, build: 171, fail: 7 },
@@ -66,6 +67,16 @@ export const LOC_GEO: CircleGeo[] = [
   { c: 'AP', n: 'Andhra Pradesh', st: 'Andhra Pradesh', lat: 15.91, lon: 79.74, tot: 198, live: 133, build: 25, fail: 1 },
   { c: 'TS', n: 'Telangana', st: 'Telangana', lat: 17.80, lon: 79.10, tot: 19, live: 16, build: 2, fail: 1 }
 ];
+
+/* The data center solution lists the circles that have data centers, counted from them. */
+function scopedLocGeo(): CircleGeo[] {
+  return DEFAULT_LOC_GEO.filter(g => DC_SUM.some(d => d.circleId === g.c)).map(g => {
+    const ds = DC_SUM.filter(d => d.circleId === g.c);
+    return { ...g, tot: ds.length, live: ds.filter(d => d.status === 'on-air').length, build: ds.filter(d => d.status === 'in-progress').length,
+      fail: ds.filter(d => d.status === 'failed').length };
+  });
+}
+export const LOC_GEO: CircleGeo[] = SCOPED ? scopedLocGeo() : DEFAULT_LOC_GEO;
 
 export const PATH_TO_CIRCLE_CODE: Record<string, string> = {
   'Jammu and Kashmir': 'PB',

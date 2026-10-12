@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, StatStrip, Sub, TabBar, cv } from '../components/ui';
-import { Seg } from '../components/dcim/common';
 import { DcDeviceDrawer, REC_OF_DISCOVERY, uRange } from '../components/dc/DcDeviceDrawer';
 import { GpuOverview } from '../components/dc/GpuOverview';
 import {
@@ -9,6 +8,7 @@ import {
   type DcDevice, type DcFacility, type DcGpuData, type DcGpuNode, type DcTab
 } from '../data/dc';
 import '../styles/dc-inventory.css';
+import { isDatacenter } from '../solution';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
   ACTIVE_STATES, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
@@ -27,18 +27,23 @@ import { loadLegacy } from '../legacy/LegacyView';
    its own record attached as `dc`; the network estate rows have no `dc`. */
 type Row = NeRow & { region: Region; sysDescr: string; dc?: { dev: DcDevice; fac: DcFacility; node?: DcGpuNode } };
 
-/* the ledger's classes, plus the three that exist only in data centers */
+/* Two modes (src/solution.ts). Default: the network estate's six classes, exactly as before.
+   ?solution=datacenter: only the data centers' records from src/data/dc, in their seven classes
+   (Firewall, Storage and GPU exist only there). eNodeB and gNodeB stay as tabs; the data centers
+   hold none, so they are empty. */
 type PhyTab = NeClass | DcTab;
-const TAB_ORDER: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'firewall', 'storage', 'gpu', 'enodeb', 'gnodeb'];
+const DEFAULT_TABS: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'enodeb', 'gnodeb'];
+const DC_TABS: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'firewall', 'storage', 'gpu', 'enodeb', 'gnodeb'];
 const NEW_NAME: Partial<Record<PhyTab, string>> = { firewall: 'Firewall', storage: 'Storage', gpu: 'GPU' };
 const isNe = (c: PhyTab): c is NeClass => (NE_CLASSES as string[]).includes(c);
 const isDcTab = (c: PhyTab): c is DcTab => c in DC_ROLE_BY_TAB;
-type SrcFilter = 'all' | 'net' | 'dc';
 
 const STOCK_OF: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const gpuModelOf = (d: DcDevice) => d.model.match(/\(8×([^)]+)\)/)?.[1] ?? '—';
 const loadNone = () => Promise.resolve<DcGpuData | null>(null);
+const loadNoFacilities = () => Promise.resolve<DcFacility[] | null>(null);
+const loadNoDevices = () => Promise.resolve<DcDevice[] | null>(null);
 
 function dcRow(dev: DcDevice, fac: DcFacility, node?: DcGpuNode): Row {
   return {
@@ -54,18 +59,21 @@ const FILTERS = [
   { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: ['North', 'East', 'West', 'South'] }
 ];
 
-const isClass = (v: string | null): v is PhyTab => !!v && (TAB_ORDER as string[]).includes(v);
+const isClassIn = (tabs: PhyTab[], v: string | null): v is PhyTab => !!v && (tabs as string[]).includes(v);
 
 export default function PhysicalResources() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
+  const scoped = isDatacenter();
+  const TAB_ORDER = scoped ? DC_TABS : DEFAULT_TABS;
+  const isClass = (v: string | null): v is PhyTab => isClassIn(TAB_ORDER, v);
 
   /* screen state lives in the URL, so drill-downs and reloads land on the same view */
   const oem = sp.get('oem');
   const model = sp.get('model');
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
-  const discoveryScoped = !!(oem || model);
+  const discoveryScoped = !scoped && !!(oem || model);
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
   const urlClass = sp.get('cls') || sp.get('tab');
   const savedClass = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as PhyTab | null;
@@ -96,14 +104,10 @@ export default function PhysicalResources() {
 
   /* data center records: which ones, from where. Source and data center live in
      the URL like the rest of the screen state. */
-  const srcParam = sp.get('src');
-  /* eNodeB and gNodeB have no data center records, so a Source or data center left in the URL
-     by another tab must not apply to them (it would hide every row) */
-  const src: SrcFilter = discoveryScoped ? 'net' : !isDcTab(cls) ? 'all' : srcParam === 'net' || srcParam === 'dc' ? srcParam : 'all';
-  const dcId = isDcTab(cls) ? sp.get('dc') ?? '' : '';
-  const facilities = useLoaded(loadFacilities);
-  const devices = useLoaded(loadDevices);
-  const gpu = useLoaded<DcGpuData | null>(cls === 'gpu' ? loadGpu : loadNone);
+  const dcId = scoped ? sp.get('dc') ?? '' : '';
+  const facilities = useLoaded(scoped ? loadFacilities : loadNoFacilities);
+  const devices = useLoaded(scoped ? loadDevices : loadNoDevices);
+  const gpu = useLoaded<DcGpuData | null>(scoped && cls === 'gpu' ? loadGpu : loadNone);
   const setParam = (k: string, v: string) => { const next = new URLSearchParams(sp); if (v) next.set(k, v); else next.delete(k); setSp(next, { replace: true }); };
   const [openName, setOpenName] = useState<string | null>(null);
   const stockParam = sp.get('stock');
@@ -114,33 +118,31 @@ export default function PhysicalResources() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const netRows: Row[] = useMemo(() => {
-    if (!isNe(cls) || src === 'dc') return [];
+    if (scoped || !isNe(cls)) return [];
     let r = phyRows(cls, stock);
     if (oem) r = r.filter(x => x.oem.toUpperCase() === oem.toUpperCase());
     if (model) r = r.filter(x => x.model === model);
-    if (dcId) r = r.filter(x => x.loc === dcId);
     return r.map(x => ({ ...x, region: regionOf(x.loc), sysDescr: sysDescrOf(x) }));
-  }, [cls, stock, oem, model, src, dcId, refreshKey]);
+  }, [scoped, cls, stock, oem, model, refreshKey]);
 
   /* every data center row of this class in scope, whatever the Source filter says, so the filter can show its counts */
   const dcAll: Row[] = useMemo(() => {
-    if (!devices || !facilities || !isDcTab(cls) || discoveryScoped) return [];
+    if (!scoped || !devices || !facilities || !isDcTab(cls)) return [];
     const role = DC_ROLE_BY_TAB[cls];
     const fac = new Map(facilities.map(f => [f.id, f]));
     const node = new Map((gpu?.nodes ?? []).map(n => [n.neId, n]));
     return devices.filter(d => d.role === role && (!dcId || d.dcId === dcId) && stock.has(STOCK_OF[d.lifecycle]))
       .map(d => dcRow(d, fac.get(d.dcId)!, node.get(d.id)));
-  }, [devices, facilities, gpu, cls, dcId, stock, discoveryScoped]);
-  const dcRows = src === 'net' ? [] : dcAll;
+  }, [scoped, devices, facilities, gpu, cls, dcId, stock]);
+  const dcRows = dcAll;
 
   const rows = useMemo(() => [...netRows, ...dcRows], [netRows, dcRows]);
-  /* the ledger's own count for the network estate, plus the data center records in scope
-     (the manifest's count until they have loaded) */
-  const netCount = !isNe(cls) ? 0 : dcId || oem || model ? phyRows(cls, stock).filter(x => (!dcId || x.loc === dcId) && (!oem || x.oem.toUpperCase() === oem.toUpperCase()) && (!model || x.model === model)).length : phyCount(cls, stock);
-  const netTotal = src === 'dc' ? 0 : netCount;
-  const dcWait = isDcTab(cls) && src !== 'net' && !discoveryScoped && !(devices && facilities);
+  /* default: the ledger's own count. data center solution: the records in scope (the manifest's
+     count until they have loaded) */
+  const netCount = scoped || !isNe(cls) ? 0 : oem || model ? netRows.length : phyCount(cls, stock);
+  const dcWait = scoped && isDcTab(cls) && !(devices && facilities);
   const dcCount = dcWait ? (dcId ? 0 : dcTabCount(cls)) : dcAll.length;
-  const total = netTotal + (src === 'net' ? 0 : dcCount);
+  const total = netCount + dcCount;
   const open = openName ? rows.find(r => r.name === openName) ?? null : null;
 
   /* every row on screen belongs to the active class tab, so cls alone decides
@@ -209,11 +211,9 @@ export default function PhysicalResources() {
     ];
   }, [gpuScope, devices, dcId]);
 
-  const showSource = !discoveryScoped && (isDcTab(cls));
-  const sourceControls = showSource ? (
+  /* the data center solution narrows to one data center from a picker; the default view has no such control */
+  const sourceControls = scoped ? (
     <span className="dc-filters">
-      <Seg<SrcFilter> label="Source" value={src} onChange={v => setParam('src', v === 'all' ? '' : v)}
-        options={[{ k: 'all', n: `All · ${fmt(netCount + dcCount)}` }, { k: 'net', n: `Network estate · ${fmt(netCount)}` }, { k: 'dc', n: `Data centers · ${fmt(dcCount)}` }]} />
       <span className="nst-select-shell">
         <select className="nst-input" aria-label="Data center" value={dcId} onChange={e => setParam('dc', e.target.value)}>
           <option value="">All data centers ({DC_COUNTS.datacenters})</option>
@@ -237,12 +237,15 @@ export default function PhysicalResources() {
         <TabBar
           tabs={tabs.map(k => {
             const meta = tabMeta(k);
-            const net = meta ? phyCount(k as NeClass, stock) : 0, dcN = isDcTab(k) ? dcTabCount(k) : 0;
-            const name = meta?.n ?? NEW_NAME[k] ?? k;
+            if (scoped) {
+              const n = dcTabCount(k as DcTab), name = meta?.n ?? NEW_NAME[k] ?? k;
+              return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${DC_COUNTS.datacenters} data centers` };
+            }
+            const x = meta!;
             return {
-              k, n: name, count: net + dcN,
-              title: `${fmt(net + dcN)} ${name.toLowerCase()} records in the selected stock states${meta ? ` of ${fmt(meta.c + stockCount(k as NeClass, 'decomm'))}` : ''}${
-                meta?.disc ? ` · ${fmt(meta.disc)} discovered` : ''}${dcN ? ` · ${fmt(dcN)} in data centers` : ''}`
+              k, n: x.n, count: phyCount(k as NeClass, stock),
+              title: `${fmt(phyCount(k as NeClass, stock))} of ${fmt(x.c + stockCount(k as NeClass, 'decomm'))} ${x.n.toLowerCase()} records in the selected stock states${
+                x.disc ? ` · ${fmt(x.disc)} discovered` : ''}`
             };
           })}
           active={cls} onChange={selectTabClass} />
@@ -261,9 +264,9 @@ export default function PhysicalResources() {
           key={cls}
           columns={cls === 'gpu' ? gpuCols : stdCols}
           rows={rows} total={total} rowKey={r => r.name}
-          resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}|${src}|${dcId}`}
+          resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}|${scoped}|${dcId}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS} extra={sourceControls}
-          emptyText={dcWait ? 'Loading data center records…' : src === 'net' && !isNe(cls) ? `No ${cls} records in the network estate. Switch Source to Data centers.` : undefined}
+          emptyText={dcWait ? 'Loading data center records…' : undefined}
           onRowClick={cls === 'gnodeb' ? undefined : rowClick}
           onRefresh={() => setRefreshKey(k => k + 1)}
           /* gNodeB rows carry no actions at all — "View details" and "Site
