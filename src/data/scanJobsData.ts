@@ -20,6 +20,7 @@ export interface ScanJob {
   id: string;
   name?: string;
   domain: DomainKey;
+  vendor?: string;
   site: string;
   scope: string;
   targetType?: 'CIDR' | 'Seed' | 'Roster' | 'Cell';
@@ -120,6 +121,18 @@ export const REGIONS_LIST = [
   'Madhya Pradesh',
   'Odisha',
   'All circles / National'
+];
+
+export const VENDOR_OPTIONS = [
+  'Multi-Vendor / Generic Standard',
+  'Cisco Systems',
+  'Juniper Networks',
+  'Nokia',
+  'Ericsson',
+  'Huawei',
+  'Ciena',
+  'Edgecore',
+  'Adva Optical'
 ];
 
 export const PROTOCOL_CHOICES = [

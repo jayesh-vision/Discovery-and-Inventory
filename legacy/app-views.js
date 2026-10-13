@@ -1522,15 +1522,15 @@ const kpiProgress = (label, value, sub, segs, tone, d, on) => {
   const inner = `
     <div class="vw-card-metric-label kprog-label">${label}</div>
     <div class="row vw-items-baseline" style="gap:6px;margin-top:2px">
-      <span class="vw-card-metric-xl num">${value}</span><span class="vw-card-metric-label-sub">locations</span>
+      <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)}">${value}</span><span class="vw-card-metric-label-sub">locations</span>
     </div>
     <div class="vw-card-metric-label-sub" style="margin-top:2px">${sub}</div>
     <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">${bar}</div>
     <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>`;
   const style = `border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}`;
   return d
-    ? `<button class="kpi-progress${on ? ' is-on' : ''}" style="${style}"${on === undefined ? '' : ` aria-pressed="${on}"`} aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
-    : `<div class="kpi-progress" style="${style}">${inner}</div>`;
+    ? `<button class="kpi-progress${on ? ' is-on' : ''}" data-tone="${tone}" style="${style}"${on === undefined ? '' : ` aria-pressed="${on}"`} aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
+    : `<div class="kpi-progress" data-tone="${tone}" style="${style}">${inner}</div>`;
 };
 
 /* the location-pin used in the Coverage row's icon column — same
@@ -1858,13 +1858,13 @@ function locInsights() {
      specific one — same look, no nested buttons. */
   const invCard = (title, icon, tone, total, sub, segs, d) => {
     const tSum = segs.reduce((a,s) => a + s.c, 0) || 1;
-    return `<div class="kpi-progress" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}">
+    return `<div class="kpi-progress" data-tone="${tone}" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}">
       <button class="kpi-progress-hd is-drill" aria-label="${esc(title)}: ${esc(total)}, ${esc(sub)}"${dA(d)}>
         <div class="row vw-gap-sm vw-items-center">
           <span class="cov-alert-icon" style="background:${cv(tone,50)};color:${cv(tone,600)}">${icon}</span>
           <div class="stack-x" style="gap:0">
             <span class="vw-card-metric-label">${title}</span>
-            <span class="vw-card-metric-xl num">${total}</span>
+            <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)}">${total}</span>
           </div>
         </div>
         <div class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-xs)">${sub}</div>

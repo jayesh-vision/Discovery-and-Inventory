@@ -68,7 +68,8 @@ export default function ScanJobs() {
         const inSite = j.site.toLowerCase().includes(q);
         const inCred = j.cred.toLowerCase().includes(q);
         const inName = j.name ? j.name.toLowerCase().includes(q) : false;
-        if (!inId && !inScope && !inCollector && !inSite && !inCred && !inName) return false;
+        const inVendor = j.vendor ? j.vendor.toLowerCase().includes(q) : false;
+        if (!inId && !inScope && !inCollector && !inSite && !inCred && !inName && !inVendor) return false;
       }
 
       // Domain filter

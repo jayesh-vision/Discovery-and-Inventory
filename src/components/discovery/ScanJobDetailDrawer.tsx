@@ -217,6 +217,12 @@ export function ScanJobDetailDrawer({
                 <span className="k">Domain</span>
                 <span className="v"><DomainDot domain={job.domain} /></span>
               </div>
+              {job.vendor && (
+                <div>
+                  <span className="k">Equipment Vendor</span>
+                  <span className="v" style={{ fontWeight: 500 }}>{job.vendor}</span>
+                </div>
+              )}
               <div>
                 <span className="k">Target Scope</span>
                 <span className="v mono" style={{ maxWidth: '240px', wordBreak: 'break-all' }}>{job.scope}</span>

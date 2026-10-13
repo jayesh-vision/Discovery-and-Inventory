@@ -118,19 +118,19 @@ export default function Location() {
     <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
       {/* ── Top 4 KPI Progress Cards ─────────────────────────────── */}
       <section className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: '0' }}>
-        <KpiCard label="Total locations" border="var(--vw-color-slate-200)" hover="var(--vw-color-slate-400)"
-          onClick={() => handleCardClick(undefined, 'All locations')}
+        <KpiCard label="Total locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" tone="sky"
+          onClick={() => handleCardClick(undefined, "All locations")}
           aria={`Total locations: ${en(S.all.total)} locations, ${en(S.all.live)} on-air`}
           sub={`${en(S.all.live)} on-air`}
           total={S.all.total}
-          meter={[{ n: S.dc.total, color: '#a855f7', title: `Datacenters: ${en(S.dc.total)}` }, { n: S.pop.total, color: '#0284c7', title: `PoP locations: ${en(S.pop.total)}` }, { n: S.site.total, color: '#0d9488', title: `Sites: ${en(S.site.total)}` }]}
-          legend={[{ color: '#a855f7', text: `${en(S.dc.total)} datacenters` }, { color: '#0284c7', text: `${en(S.pop.total)} pop locations` }, { color: '#0d9488', text: `${en(S.site.total)} sites` }]} />
-        <SplitCard label="Datacenters" border="var(--vw-color-purple-200)" hover="var(--vw-color-purple-400)" split={S.dc} minFail
-          onClick={() => handleCardClick('dc', 'Datacenters — filtered list')} />
-        <SplitCard label="PoP locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" split={S.pop}
-          onClick={() => handleCardClick('pop', 'PoP locations — filtered list')} />
-        <SplitCard label="Sites" border="var(--vw-color-teal-200)" hover="var(--vw-color-teal-400)" split={S.site}
-          onClick={() => handleCardClick('site', 'Sites — filtered list')} />
+          meter={[{ n: S.dc.total, color: "#a855f7", title: `Datacenters: ${en(S.dc.total)}` }, { n: S.pop.total, color: "#0284c7", title: `PoP locations: ${en(S.pop.total)}` }, { n: S.site.total, color: "#0d9488", title: `Sites: ${en(S.site.total)}` }]}
+          legend={[{ color: "#a855f7", text: `${en(S.dc.total)} datacenters` }, { color: "#0284c7", text: `${en(S.pop.total)} pop locations` }, { color: "#0d9488", text: `${en(S.site.total)} sites` }]} />
+        <SplitCard label="Datacenters" border="var(--vw-color-purple-200)" hover="var(--vw-color-purple-400)" tone="purple" split={S.dc} minFail
+          onClick={() => handleCardClick("dc", "Datacenters — filtered list")} />
+        <SplitCard label="PoP locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" tone="sky" split={S.pop}
+          onClick={() => handleCardClick("pop", "PoP locations — filtered list")} />
+        <SplitCard label="Sites" border="var(--vw-color-teal-200)" hover="var(--vw-color-teal-400)" tone="teal" split={S.site}
+          onClick={() => handleCardClick("site", "Sites — filtered list")} />
       </section>
 
       {/* ── Network Hierarchy & Coverage By Circle ──────────────── */}
@@ -201,18 +201,19 @@ export default function Location() {
 const en = (n: number) => n.toLocaleString('en-US');
 const pct2 = (n: number, of: number) => `${of > 0 ? ((n / of) * 100).toFixed(2) : '0.00'}%`;
 
-function KpiCard({ label, border, hover, onClick, aria, sub, total, meter, legend }: {
-  label: string; border: string; hover: string; onClick: () => void; aria: string; sub: string; total: number;
+function KpiCard({ label, border, hover, tone, onClick, aria, sub, total, meter, legend }: {
+  label: string; border: string; hover: string; tone?: string; onClick: () => void; aria: string; sub: string; total: number;
   meter: { n: number; color: string; title: string; minWidth?: string }[]; legend: { color: string; text: string }[];
 }) {
   const of = meter.reduce((a, m) => a + m.n, 0);
   return (
     <button type="button" className="kpi-progress is-clickable"
+      data-tone={tone}
       style={{ borderColor: border, '--kpi-hover': hover, background: '#fff' } as React.CSSProperties}
       onClick={onClick} aria-label={aria}>
       <div className="vw-card-metric-label kprog-label">{label}</div>
       <div className="row vw-items-baseline" style={{ gap: '6px', marginTop: '2px' }}>
-        <span className="vw-card-metric-xl num">{en(total)}</span>
+        <span className={`vw-card-metric-xl num${tone ? ` stat-v--${tone}` : ''}`} style={tone ? { color: `var(--vw-color-${tone}-700)` } : undefined}>{en(total)}</span>
         <span className="vw-card-metric-label-sub">locations</span>
       </div>
       <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{sub}</div>
@@ -227,10 +228,10 @@ function KpiCard({ label, border, hover, onClick, aria, sub, total, meter, legen
 }
 
 /* a location type split by rollout status: on-air, in progress, planned, failed */
-function SplitCard({ label, border, hover, split, onClick, minFail }: { label: string; border: string; hover: string; split: Split; onClick: () => void; minFail?: boolean }) {
+function SplitCard({ label, border, hover, tone, split, onClick, minFail }: { label: string; border: string; hover: string; tone?: string; split: Split; onClick: () => void; minFail?: boolean }) {
   const on = split.total > 0 ? Math.round((split.live / split.total) * 100) : 0;
   return (
-    <KpiCard label={label} border={border} hover={hover} onClick={onClick} total={split.total}
+    <KpiCard label={label} border={border} hover={hover} tone={tone} onClick={onClick} total={split.total}
       aria={`${label}: ${en(split.total)} locations, ${on}% on-air · ${en(split.fail)} failed`}
       sub={`${on}% on-air · ${en(split.fail)} failed`}
       meter={[{ n: split.live, color: '#10b981', title: `On-air: ${en(split.live)}` }, { n: split.build, color: '#f59e0b', title: `In progress: ${en(split.build)}` },
@@ -249,7 +250,7 @@ const INV_ICON_PATHS = {
 function InvCard({ tone, title, data, to, ariaSub, icon }: { tone: 'sky' | 'purple' | 'amber'; title: string; data: InvCardData; to: string; ariaSub: string; icon: React.ReactNode }) {
   const nav = useNavigate();
   return (
-    <div className="kpi-progress is-clickable" role="button" tabIndex={0}
+    <div className="kpi-progress is-clickable" role="button" tabIndex={0} data-tone={tone}
       style={{ borderColor: `var(--vw-color-${tone}-200)`, '--kpi-hover': `var(--vw-color-${tone}-400)` } as React.CSSProperties}
       onClick={() => nav(to)}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav(to); } }}
@@ -260,7 +261,7 @@ function InvCard({ tone, title, data, to, ariaSub, icon }: { tone: 'sky' | 'purp
         </span>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span className="vw-card-metric-label">{title}</span>
-          <span className="vw-card-metric-xl num">{en(data.total)}</span>
+          <span className={`vw-card-metric-xl num stat-v--${tone}`} style={{ color: `var(--vw-color-${tone}-700)` }}>{en(data.total)}</span>
         </div>
       </div>
       <div className="vw-card-metric-label-sub" style={{ marginTop: '8px' }}>{data.sub}</div>

@@ -346,7 +346,7 @@ function activeFilterChips(key) {
 const FS = {
   location: [{ n:'Status', o:['On-air','Planned','Building','Failed'] }, { n:'Name' },
              { n:'Category', o:['Central','Regional','Edge'] }, { n:'Location ID' },
-             { n:'Site type', o:['POP','Cell Site','Macro-O','Micro-CO','Data centre'] },
+             { n:'Site type', o:['POP','Cell Site','Macro-O','Micro-CO','Datacenter'] },
              { n:'Zone', o:['North','South','East','West'] },
              { n:'State', o:['Karnataka','Delhi','Madhya Pradesh','Tamil Nadu','Andhra Pradesh','Odisha'] },
              { n:'District' }, { n:'Landlord' }, { n:'On-air date' }],

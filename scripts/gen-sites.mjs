@@ -29,7 +29,7 @@ const CITIES = {
   'Jammu and Kashmir': ['Srinagar', 'Jammu', 'Udhampur'],
   'Uttarakhand': ['Dehradun', 'Haridwar', 'Haldwani']
 };
-const TYPES = ['POP', 'Cell Site', 'Macro-O', 'Micro-CO', 'Data centre'];
+const TYPES = ['POP', 'Cell Site', 'Macro-O', 'Micro-CO', 'Datacenter'];
 
 /* geometry: parse a compound path into rings, point-in-polygon, bbox */
 const rings = d => d.split('M').filter(Boolean).map(seg => seg.split(/[LZ]/).filter(Boolean).map(p => p.trim().split(' ').map(Number)).filter(p => p.length === 2 && !p.some(isNaN)));

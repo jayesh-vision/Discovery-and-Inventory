@@ -390,8 +390,6 @@
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .job-id-shell:focus-within { border-color: var(--vw-color-blue-500); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-.job-id-shell.is-error { border-color: var(--vw-color-red-500, #ef4444); }
-.job-id-shell.is-error:focus-within { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
 .job-id-prefix {
   display: flex;
   align-items: center;
@@ -1176,4 +1174,29 @@
   gap: 8px;
   padding-top: 4px;
 }
+
+/* ── Form Validation & Feedback Styles ─────────────────────── */
+
+.job-field-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vw-color-red-600, #dc2626);
+  margin-top: 5px;
+  line-height: 1.35;
+}
+
+.job-step-tab.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.job-field-required {
+  color: var(--vw-color-red-600, #dc2626);
+  margin-left: 2px;
+  font-weight: 700;
+}
+
 

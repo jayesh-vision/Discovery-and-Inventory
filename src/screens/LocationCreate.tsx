@@ -30,7 +30,7 @@ export const STATE_REGION: Record<string, string> = {
   'Arunachal Pradesh': 'North-East', 'Nagaland': 'North-East', 'Manipur': 'North-East', 'Mizoram': 'North-East'
 };
 
-const LOC_TYPES = ['POP', 'Cell Site', 'Macro-O', 'Micro-CO', 'Data centre'];
+const LOC_TYPES = ['POP', 'Cell Site', 'Macro-O', 'Micro-CO', 'Datacenter'];
 const COVERAGE_TYPES = ['Outdoor', 'Indoor', 'Macro-cell', 'Micro-cell', 'Rural', 'Urban', 'Highway'];
 
 /* Major city map annotations matching satellite map reference */

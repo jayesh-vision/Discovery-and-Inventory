@@ -243292,7 +243292,7 @@ function activeFilterChips(key) {
 const FS = {
   location: [{ n:'Status', o:['On-air','Planned','Building','Failed'] }, { n:'Name' },
              { n:'Category', o:['Central','Regional','Edge'] }, { n:'Location ID' },
-             { n:'Site type', o:['POP','Cell Site','Macro-O','Micro-CO','Data centre'] },
+             { n:'Site type', o:['POP','Cell Site','Macro-O','Micro-CO','Datacenter'] },
              { n:'Zone', o:['North','South','East','West'] },
              { n:'State', o:['Karnataka','Delhi','Madhya Pradesh','Tamil Nadu','Andhra Pradesh','Odisha'] },
              { n:'District' }, { n:'Landlord' }, { n:'On-air date' }],
@@ -245312,15 +245312,15 @@ const kpiProgress = (label, value, sub, segs, tone, d, on) => {
   const inner = `
     <div class="vw-card-metric-label kprog-label">${label}</div>
     <div class="row vw-items-baseline" style="gap:6px;margin-top:2px">
-      <span class="vw-card-metric-xl num">${value}</span><span class="vw-card-metric-label-sub">locations</span>
+      <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)}">${value}</span><span class="vw-card-metric-label-sub">locations</span>
     </div>
     <div class="vw-card-metric-label-sub" style="margin-top:2px">${sub}</div>
     <div class="meter" style="height:8px;margin-top:var(--vw-space-md)">${bar}</div>
     <div class="legend" style="margin-top:var(--vw-space-sm)">${legend}</div>`;
   const style = `border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}`;
   return d
-    ? `<button class="kpi-progress${on ? ' is-on' : ''}" style="${style}"${on === undefined ? '' : ` aria-pressed="${on}"`} aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
-    : `<div class="kpi-progress" style="${style}">${inner}</div>`;
+    ? `<button class="kpi-progress${on ? ' is-on' : ''}" data-tone="${tone}" style="${style}"${on === undefined ? '' : ` aria-pressed="${on}"`} aria-label="${esc(label)}: ${esc(value)} locations, ${esc(sub)}"${dA(d)}>${inner}</button>`
+    : `<div class="kpi-progress" data-tone="${tone}" style="${style}">${inner}</div>`;
 };
 
 /* the location-pin used in the Coverage row's icon column — same
@@ -245648,13 +245648,13 @@ function locInsights() {
      specific one — same look, no nested buttons. */
   const invCard = (title, icon, tone, total, sub, segs, d) => {
     const tSum = segs.reduce((a,s) => a + s.c, 0) || 1;
-    return `<div class="kpi-progress" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}">
+    return `<div class="kpi-progress" data-tone="${tone}" style="border-color:${cv(tone,200)};--kpi-hover:${cv(tone,400)}">
       <button class="kpi-progress-hd is-drill" aria-label="${esc(title)}: ${esc(total)}, ${esc(sub)}"${dA(d)}>
         <div class="row vw-gap-sm vw-items-center">
           <span class="cov-alert-icon" style="background:${cv(tone,50)};color:${cv(tone,600)}">${icon}</span>
           <div class="stack-x" style="gap:0">
             <span class="vw-card-metric-label">${title}</span>
-            <span class="vw-card-metric-xl num">${total}</span>
+            <span class="vw-card-metric-xl num stat-v--${tone}" style="color:${cv(tone,700)}">${total}</span>
           </div>
         </div>
         <div class="vw-card-metric-label-sub" style="margin-top:var(--vw-space-xs)">${sub}</div>
@@ -249193,14 +249193,14 @@ const STILE_ICONS = {
 function statTileRow(tiles) {
   return `<div class="stile-row">${tiles.map(t => {
     const pct = typeof t.pct === 'number' ? Math.max(0, Math.min(100, Math.round(t.pct))) : null;
-    return `<div class="stile">
+    return `<div class="stile stile--${t.t}" data-tone="${t.t}">
       <span class="stile-ic" style="background:${cv(t.t, 50)};color:${cv(t.t, 600)}">
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
           stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${STILE_ICONS[t.i] || ''}</svg>
       </span>
       <span class="stile-body">
         <span class="stile-k">${esc(t.k)}</span>
-        <span class="stile-v">${esc(t.v)}</span>
+        <span class="stile-v num stile-v--${t.t}" style="color:${cv(t.t,700)}">${esc(t.v)}</span>
         ${pct === null ? '' : `<span class="stile-barrow">
           <span class="hbar-track stile-bar"><span class="hbar-fill" style="display:block;width:${pct}%;background:${cv(t.t, 500)}"></span></span>
           <span class="stile-pct num">${pct}%</span>
@@ -249290,14 +249290,14 @@ function statCardGrid(cells) {
   return `<div class="statc-grid">${cells.map(c => {
     const hasChart = Array.isArray(c.series) && c.series.length;
     const trend = typeof c.trend === 'number' && isFinite(c.trend) ? Math.round(c.trend) : null;
-    return `<div class="statc">
+    return `<div class="statc statc--${c.t}" data-tone="${c.t}">
       <span class="statc-accent" style="background:${cv(c.t, 400)}"></span>
       <div class="statc-head">
         <span class="statc-k">${esc(c.k)}</span>
         ${hasChart ? `<span class="statc-period">Last 6 months</span>` : ''}
       </div>
       <div class="statc-valrow">
-        <span class="statc-v num" title="${esc(c.v)}">${esc(c.v)}</span>
+        <span class="statc-v num statc-v--${c.t}" style="color:${cv(c.t,700)}" title="${esc(c.v)}">${esc(c.v)}</span>
         ${trend === null ? '' : `<span class="statc-trend" style="color:${cv(trend >= 0 ? 'emerald' : 'red', 600)}">${trend >= 0 ? '↑' : '↓'} ${Math.abs(trend)}%</span>`}
       </div>
       ${hasChart ? statcChart(c.series, months)
@@ -250112,7 +250112,7 @@ function spliceLossTrend(r, mean) {
   return { series, delta: Math.round((mean - series[0]) / series[0] * 100) };
 }
 const shdrLink = tone => `<span class="shdr-link" aria-hidden="true"><i style="background:${cv(tone,400)}"></i></span>`;
-const shdrCard = (tone, inner, cls = '') => `<div class="${`shdr-c ${cls}`.trim()}"
+const shdrCard = (tone, inner, cls = '') => `<div class="${`shdr-c shdr-c--${tone} ${cls}`.trim()}" data-tone="${tone}"
   style="background:linear-gradient(135deg, ${cv(tone,25)} 0%, var(--vw-color-white) 65%)">${inner}</div>`;
 
 function viewSpliceDetail() {
@@ -250301,7 +250301,7 @@ function viewSpliceDetail() {
       ${shdrIcon('purple', 'dome')}
       <span class="stack-x" style="min-width:0">
         <span class="shdr-k">Type</span>
-        <span class="shdr-v">${esc(r.type)}</span>
+        <span class="shdr-v num shdr-v--purple" style="color:${cv('purple',700)}">${esc(r.type)}</span>
         <span class="shdr-chip" style="background:${cv('purple',50)};color:${cv('purple',700)}">Splice closure</span>
       </span>`)}
     ${shdrLink('purple')}
@@ -250328,7 +250328,7 @@ function viewSpliceDetail() {
         <span class="row vw-justify-between vw-items-start" style="gap:var(--vw-space-sm)">
           <span class="stack-x" style="min-width:0">
             <span class="shdr-k">Mean splice loss</span>
-            <span class="shdr-v">${esc(r.loss)}</span>
+            <span class="shdr-v num shdr-v--${lossTone}" style="color:${cv(lossTone,700)}">${esc(r.loss)}</span>
           </span>
           ${lossTrend ? `<span class="stack-x shdr-trend" style="text-align:right">
             <span style="color:${cv(lossTrend.delta <= 0 ? 'emerald' : 'red',600)};font-weight:600">

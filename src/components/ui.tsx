@@ -49,17 +49,18 @@ export function StatStrip({ cells }: { cells: StatCell[] }) {
   return (
     <div className="stat-strip">
       {cells.map(c => {
+        const tone = c.t || 'slate';
         const inner = (
           <>
-            <span className="stat-dot" style={{ background: cv(c.t, 400) }} />
+            <span className="stat-dot" style={{ background: cv(tone, 400) }} />
             <span className="stat-k">{c.k}</span>
-            <span className="stat-v num">{c.v}</span>
+            <span className={`stat-v num stat-v--${tone}`} style={{ color: cv(tone, 700) }}>{c.v}</span>
             <span className="stat-s">{c.s}</span>
           </>
         );
         return c.onClick
-          ? <button key={c.k} className="stat-cell is-click" onClick={c.onClick}>{inner}</button>
-          : <div key={c.k} className="stat-cell">{inner}</div>;
+          ? <button key={c.k} className={`stat-cell is-click stat-cell--${tone}`} data-tone={tone} onClick={c.onClick}>{inner}</button>
+          : <div key={c.k} className={`stat-cell stat-cell--${tone}`} data-tone={tone}>{inner}</div>;
       })}
     </div>
   );
