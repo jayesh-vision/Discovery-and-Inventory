@@ -1885,7 +1885,7 @@ export default function CityDetails() {
                       background: 'var(--vw-color-sky-50, #f0f9ff)',
                       borderColor: 'var(--vw-color-sky-200, #bae6fd)'
                     }}
-                    onClick={() => navigate(`/inventory/datacenter/${encodeURIComponent(selectedFacilityItem.code)}?from=${encodeURIComponent('Location · City details')}&cityId=${encodeURIComponent(city.id)}&facility=dc`)}
+                    onClick={() => navigate(`/inventory/Datacenter/${encodeURIComponent(selectedFacilityItem.code)}?from=${encodeURIComponent('Location · City details')}&cityId=${encodeURIComponent(city.id)}&facility=dc`)}
                     title={`Open data center view for ${selectedFacilityItem.name} (${selectedFacilityItem.code})`}
                   >
                     <span>Data center view</span>

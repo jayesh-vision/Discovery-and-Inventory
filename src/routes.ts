@@ -84,7 +84,7 @@ export const SCREENS: Screen[] = [
   { key: 'home',      path: '/inventory',           module: 'Inventory', root: true, crumb: 'Insights', rail: 'inventoryinsights', component: InventoryInsights },
   { key: 'location',  path: '/inventory/location',  module: 'Inventory', crumb: 'Location', component: Location },
   { key: 'citydetails', path: '/inventory/location/city/:cityId', module: 'Inventory', crumb: 'Location · City details', rail: 'location', component: CityDetails },
-  { key: 'datacenter', path: '/inventory/datacenter/:dcId', module: 'Inventory', crumb: 'Location · Data center', rail: 'location', component: DataCenterDetail },
+  { key: 'Datacenter', path: '/inventory/Datacenter/:dcId', module: 'Inventory', crumb: 'Location · Data center', rail: 'location', component: DataCenterDetail },
   /* DCIM: client infrastructure imported from Excel/CSV (src/dcim) */
   { key: 'dcim',       path: '/inventory/dcim',        module: 'Inventory', crumb: 'Location · Data centers', rail: 'dcim', component: DataCenters },
   { key: 'dcimimport', path: '/inventory/dcim/import', module: 'Inventory', crumb: 'Location · Data centers · Import', rail: 'dcim', component: DcimImport },

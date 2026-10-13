@@ -29,7 +29,7 @@ import { loadLegacy } from '../legacy/LegacyView';
 type Row = NeRow & { region: Region; sysDescr: string; dc?: { dev: DcDevice; fac: DcFacility; node?: DcGpuNode } };
 
 /* Two modes (src/solution.ts). Default: the network estate's six classes, exactly as before.
-   ?solution=datacenter: only the data centers' records from src/data/dc, in their seven classes
+   ?solution=Datacenter: only the data centers' records from src/data/dc, in their seven classes
    (Firewall, Storage and GPU exist only there). eNodeB and gNodeB stay as tabs; the data centers
    hold none, so they are empty. */
 type PhyTab = NeClass | DcTab;
@@ -217,7 +217,7 @@ export default function PhysicalResources() {
     <span className="dc-filters">
       <span className="nst-select-shell">
         <select className="nst-input" aria-label="Data center" value={dcId} onChange={e => setParam('dc', e.target.value)}>
-          <option value="">All data centers ({DC_COUNTS.datacenters})</option>
+          <option value="">All data centers ({DC_COUNTS.Datacenters})</option>
           {(facilities ?? []).map(f => <option key={f.id} value={f.id}>{f.id} · {f.city}</option>)}
         </select>
       </span>
@@ -240,7 +240,7 @@ export default function PhysicalResources() {
             const meta = tabMeta(k);
             if (scoped) {
               const n = dcTabCount(k as DcTab), name = meta?.n ?? NEW_NAME[k] ?? k;
-              return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${DC_COUNTS.datacenters} data centers` };
+              return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${DC_COUNTS.Datacenters} data centers` };
             }
             const x = meta!;
             return {

@@ -76,17 +76,17 @@ export interface DcGpuData { nodes: DcGpuNode[]; clusters: DcGpuCluster[]; cdus:
 
 /* ---------- counts (no loading needed) ---------- */
 export const DC_COUNTS = manifest.counts as {
-  datacenters: number; racks: number; devices: number; devicesByRole: Partial<Record<DcRole, number>>; ups: number; powerFeeds: number;
+  Datacenters: number; racks: number; devices: number; devicesByRole: Partial<Record<DcRole, number>>; ups: number; powerFeeds: number;
   coolingUnits: number; sensors: number; gpuServers: number; gpus: number; gpuClusters: number; cdus: number;
   links: number; linksByProtocol: Record<string, number>; services: number; servicesByType: Record<string, number>; customers: number;
 };
 /** ids of the data centers that have a facility record; a site page checks this before loading anything */
-export const DC_IDS: ReadonlySet<string> = new Set((manifest as unknown as { datacenterIds: string[] }).datacenterIds);
+export const DC_IDS: ReadonlySet<string> = new Set((manifest as unknown as { DatacenterIds: string[] }).DatacenterIds);
 export const DC_SOURCE = manifest.source as { repo: string; commit: string; model: string };
 
 /* ---------- lazy loading ---------- */
 const once = <T,>(load: () => Promise<T>) => { let p: Promise<T> | null = null; return () => (p ??= load()); };
-export const loadFacilities = once(() => import('./datacenters.json').then(m => m.default as unknown as DcFacility[]));
+export const loadFacilities = once(() => import('./Datacenters.json').then(m => m.default as unknown as DcFacility[]));
 export const loadDevices = once(() => import('./devices.json').then(m => m.default as unknown as DcDevice[]));
 export const loadGpu = once(() => import('./gpu.json').then(m => m.default as unknown as DcGpuData));
 export const loadLinks = once(() => import('./links.json').then(m => m.default as unknown as DcLink[]));

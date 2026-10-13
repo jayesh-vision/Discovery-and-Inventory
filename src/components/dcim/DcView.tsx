@@ -49,7 +49,7 @@ export function DcView({ data, dcId, source }: { data: ClientData; dcId: string;
     { k: 'links', n: 'Discovery links', count: data.links.length }
   ];
 
-  const isStandalone = typeof window !== 'undefined' && window.location.pathname.includes('/inventory/datacenter/');
+  const isStandalone = typeof window !== 'undefined' && window.location.pathname.includes('/inventory/Datacenter/');
   const fromParam = sp.get('from');
   const locParam = sp.get('location') || s.dc.locationId;
   const backToOrigin = () => {

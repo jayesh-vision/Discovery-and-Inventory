@@ -16,7 +16,7 @@ function ScrollToTop() {
   return null;
 }
 
-/* ?solution=datacenter on an Inventory URL: remember it and keep it on every Inventory URL the
+/* ?solution=Datacenter on an Inventory URL: remember it and keep it on every Inventory URL the
    reader moves through (links, redirects and back/forward drop the query string), so the whole
    module stays in that solution until ?solution=all. See src/solution.ts. */
 function SolutionScope() {

@@ -1,7 +1,7 @@
-/* ── Solution scope: /inventory/...?solution=datacenter ───────────────────────
+/* ── Solution scope: /inventory/...?solution=Datacenter ───────────────────────
    Two modes, both always available:
      • /inventory/...                        → the default Inventory (previous data)
-     • /inventory/...?solution=datacenter    → only the data center solution's data
+     • /inventory/...?solution=Datacenter    → only the data center solution's data
 
    The URL you OPEN decides the mode, every time: a typed URL, a bookmark, a reload or the host
    (re)opening the iframe starts in whatever that URL says. Once a page is open, moving around
@@ -13,7 +13,7 @@
    • `?solution=all` leaves the data center solution in place and removes the parameter.
    • Only Inventory (/inventory…) uses it. Discovery URLs never get it and never clear it.
    • Any other value is ignored. */
-export const SOLUTIONS = ['datacenter'] as const;
+export const SOLUTIONS = ['Datacenter'] as const;
 export type Solution = (typeof SOLUTIONS)[number];
 const KEY = 'solution';
 export const LEAVE = 'all';
@@ -34,7 +34,7 @@ export const bootSolution: Solution | null = current;
 
 export const solution = (): Solution | null => current;
 /** true when Inventory shows only the data center solution's data */
-export const isDatacenter = (): boolean => current === 'datacenter';
+export const isDatacenter = (): boolean => current === 'Datacenter';
 
 /** call on every location change: the parameter sets it (`all` clears it); Discovery leaves it alone */
 export function syncSolution(pathname: string, search: string): Solution | null {

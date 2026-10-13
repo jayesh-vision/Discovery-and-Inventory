@@ -56,8 +56,8 @@ let code = readFileSync(hierarchyPath, 'utf8');
 
 // Update TOP_HIERARCHY_METRICS
 code = code.replace(
-  /{ id: 'datacenters', label: 'Data Centers', count: '[^']+'/,
-  "{ id: 'datacenters', label: 'Data Centers', count: '826'"
+  /{ id: 'Datacenters', label: 'Data Centers', count: '[^']+'/,
+  "{ id: 'Datacenters', label: 'Data Centers', count: '826'"
 );
 code = code.replace(
   /{ id: 'pops', label: 'PoP Locations', count: '[^']+'/,

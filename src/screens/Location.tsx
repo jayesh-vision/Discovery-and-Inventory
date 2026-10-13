@@ -124,7 +124,7 @@ export default function Location() {
           sub={`${en(S.all.live)} on-air`}
           total={S.all.total}
           meter={[{ n: S.dc.total, color: "#a855f7", title: `Datacenters: ${en(S.dc.total)}` }, { n: S.pop.total, color: "#0284c7", title: `PoP locations: ${en(S.pop.total)}` }, { n: S.site.total, color: "#0d9488", title: `Sites: ${en(S.site.total)}` }]}
-          legend={[{ color: "#a855f7", text: `${en(S.dc.total)} datacenters` }, { color: "#0284c7", text: `${en(S.pop.total)} pop locations` }, { color: "#0d9488", text: `${en(S.site.total)} sites` }]} />
+          legend={[{ color: "#a855f7", text: `${en(S.dc.total)} Datacenters` }, { color: "#0284c7", text: `${en(S.pop.total)} pop locations` }, { color: "#0d9488", text: `${en(S.site.total)} sites` }]} />
         <SplitCard label="Datacenters" border="var(--vw-color-purple-200)" hover="var(--vw-color-purple-400)" tone="purple" split={S.dc} minFail
           onClick={() => handleCardClick("dc", "Datacenters — filtered list")} />
         <SplitCard label="PoP locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" tone="sky" split={S.pop}
@@ -704,7 +704,7 @@ function CoverageCircleDetail({
             Aggregated Inventory
           </div>
           <div style={{ fontSize: '12px', color: 'var(--vw-color-gray-500)', marginTop: '2px' }}>
-            total across every site, PoP and datacenter in this circle · summary only
+            total across every site, PoP and Datacenter in this circle · summary only
           </div>
         </div>
         <div className="cov-inv-row">

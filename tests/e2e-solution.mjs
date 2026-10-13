@@ -1,4 +1,4 @@
-/* ?solution=datacenter on Inventory URLs, in a browser,
+/* ?solution=Datacenter on Inventory URLs, in a browser,
    against `vite preview` on :4173. Every Inventory route opens with the parameter and shows the data
    center solution's own content (or its empty state); the parameter follows the reader through
    Inventory and stays; Discovery ignores it.
@@ -19,7 +19,7 @@ const ok = (label, cond, detail = '') => { console.log((cond ? 'ok   ' : 'FAIL '
 const body = () => p.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
 const open = async path => { await p.goto(BASE + path, { waitUntil: 'load' }); await p.waitForTimeout(2200); };
 const url = () => new URL(p.url());
-const hasParam = () => url().searchParams.get('solution') === 'datacenter';
+const hasParam = () => url().searchParams.get('solution') === 'Datacenter';
 
 /* every Inventory route in the registry, with a real value for each :param */
 const src = readFileSync(new URL('../src/routes.ts', import.meta.url), 'utf8');
@@ -32,7 +32,7 @@ const unique = [...new Set(paths)];
 for (const path of unique) {
   await open(path + (path.includes('?') ? '&' : '?') + 'solution=all');   // the way out: the default view
   const plain = await body();
-  await open(path + '?solution=datacenter');
+  await open(path + '?solution=Datacenter');
   const scoped = await body();
   ok(`${path}: opens in the data center solution, parameter kept, no error page`,
     hasParam() && scoped.length > 40 && !scoped.includes('Something went wrong') && plain.length > 40, hasParam() ? '' : 'parameter was dropped');
@@ -47,20 +47,20 @@ for (const path of unique) {
   await f.close(); }
 
 /* the parameter follows the reader */
-await open('/inventory?solution=datacenter');
+await open('/inventory?solution=Datacenter');
 ok('/inventory redirect keeps it', url().pathname === '/inventory/insights' && hasParam());
-await open('/inventory/location?view=list&solution=datacenter');
+await open('/inventory/location?view=list&solution=Datacenter');
 await p.locator('a[href], button').filter({ hasText: /Physical/i }).first().click().catch(() => {});
-await open('/inventory/physical?solution=datacenter');
+await open('/inventory/physical?solution=Datacenter');
 await p.getByText('Switch', { exact: true }).first().click(); await p.waitForTimeout(500);
 ok('switching a Physical tab keeps it', hasParam() && url().searchParams.get('cls') === 'switch');
 await p.getByText('GPU', { exact: true }).first().click(); await p.waitForTimeout(500);
 ok('and the GPU tab', hasParam() && url().searchParams.get('cls') === 'gpu');
 await p.getByText('KA-DC-008-GPU-001').first().isVisible().catch(() => {});
-await open('/inventory/passive?solution=datacenter');
+await open('/inventory/passive?solution=Datacenter');
 await p.getByText('Racks', { exact: true }).first().click(); await p.waitForTimeout(600);
 ok('legacy Passive tab click keeps it, no loop', hasParam() && (await body()).includes('U used'));
-await open('/inventory/location/site/KA-DC-008?solution=datacenter');
+await open('/inventory/location/site/KA-DC-008?solution=Datacenter');
 await p.getByRole('button', { name: /Site details/ }).first().click(); await p.waitForTimeout(600);
 ok('site tabs keep it', hasParam() && url().pathname.endsWith('/details'));
 await p.goBack(); await p.waitForTimeout(600);
@@ -73,7 +73,7 @@ ok('unknown value ignored: no error, nothing added', !(await q.evaluate(() => do
 await q.close();
 
 /* BOTH modes are always available: the URL you open decides, in the same browser tab, every time */
-await open('/inventory/location?view=list&solution=datacenter');
+await open('/inventory/location?view=list&solution=Datacenter');
 ok('opened with the parameter: the data center solution', hasParam() && (await body()).includes('Showing 25 of 48'));
 await p.getByText('KA-DC-008', { exact: true }).first().click(); await p.waitForTimeout(1500);
 ok('clicking in it keeps the parameter (site page)', hasParam() && url().pathname === '/inventory/location/site/KA-DC-008');
@@ -85,7 +85,7 @@ for (const path of ['/inventory/location', '/inventory/physical', '/inventory/pa
 }
 await open('/inventory/location');
 ok('and shows the default data (12,475 locations)', (await body()).includes('12,475'));
-await open('/inventory/location?view=list&solution=datacenter');
+await open('/inventory/location?view=list&solution=Datacenter');
 ok('then the parameter is the data center solution again', hasParam() && (await body()).includes('Showing 25 of 48'));
 await open('/inventory/location');
 await p.getByText('Physical', { exact: false }).first().click().catch(() => {});
@@ -95,11 +95,11 @@ ok('clicking around the default stays default', !hasParam());
 await open('/discovery/insights');
 ok('Discovery URLs are never given the parameter', !hasParam());
 const discPlain = await body();
-await open('/discovery/insights?solution=datacenter');
+await open('/discovery/insights?solution=Datacenter');
 ok('Discovery: same content with the parameter', discPlain === (await body()));
 
 /* the way out, from inside the data center solution */
-await open('/inventory/physical?solution=datacenter');
+await open('/inventory/physical?solution=Datacenter');
 await open('/inventory/physical?solution=all');
 ok('?solution=all gives the default view and removes the parameter', !url().searchParams.has('solution') && (await body()).includes('Showing 25 of 2,148'));
 

@@ -14,7 +14,7 @@
     }
   },
   "counts": {
-    "datacenters": 48,
+    "Datacenters": 48,
     "racks": 1445,
     "devices": 7678,
     "devicesByRole": {
@@ -50,7 +50,7 @@
     },
     "customers": 24
   },
-  "datacenterIds": [
+  "DatacenterIds": [
     "MH-DC-001",
     "MH-DC-002",
     "MH-DC-003",
@@ -101,7 +101,7 @@
     "WA-DC-024"
   ],
   "files": {
-    "datacenters.json": {
+    "Datacenters.json": {
       "bytes": 773563,
       "sha256": "d12ddc1e5a340581"
     },

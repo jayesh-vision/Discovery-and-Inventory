@@ -75,7 +75,7 @@ export interface EstateHierarchy {
   circles: CircleHierarchy[];
 }
 
-export type HierarchyTier = 'datacenters' | 'pops' | 'sites';
+export type HierarchyTier = 'Datacenters' | 'pops' | 'sites';
 
 export interface HierarchyTierInfo {
   id: HierarchyTier;
@@ -84,7 +84,7 @@ export interface HierarchyTierInfo {
   countLabel: string;
   badge: string;
   subtitles: string[];
-  icon: 'datacenter' | 'pop' | 'site';
+  icon: 'Datacenter' | 'pop' | 'site';
   color: string;
 }
 
@@ -136,7 +136,7 @@ function createEquipmentInterfaces(prefix: string, count: number, hasAlert = fal
 
 /* ── Complete Estate Hierarchy Dataset ───────────────────────────────── */
 export const ESTATE_HIERARCHY: EstateHierarchy = {
-  id: 'datacenters-estate',
+  id: 'Datacenters-estate',
   name: 'Datacenters',
   tier: 'All Tiers',
   dcCount: 829,
@@ -1102,13 +1102,13 @@ export const ESTATE_HIERARCHY: EstateHierarchy = {
 /* ── Tier Definitions matching Multi-Tier Topology View ──────────────── */
 export const HIERARCHY_TIERS: HierarchyTierInfo[] = [
   {
-    id: 'datacenters',
+    id: 'Datacenters',
     title: 'Data Centers',
     count: 24,
     countLabel: '24 Data Centers',
     badge: '24',
     subtitles: ['24 Data Centers', '230 PoPs · 1,520 Sites'],
-    icon: 'datacenter',
+    icon: 'Datacenter',
     color: '#8b5cf6'
   },
   {
@@ -1139,7 +1139,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-mum-01',
     code: 'MUM-DC-01',
     name: 'Mumbai Central DC-01',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-mh',
     circleCode: 'MH',
     circleName: 'Maharashtra',
@@ -1227,7 +1227,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-dl-01',
     code: 'DL-DC-01',
     name: 'Delhi National Core DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-dl',
     circleCode: 'DL',
     circleName: 'Delhi',
@@ -1303,7 +1303,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-blr-01',
     code: 'KA-DC-01',
     name: 'Bengaluru Cloud Tech DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-ka',
     circleCode: 'KA',
     circleName: 'Karnataka',
@@ -1367,7 +1367,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-noi-01',
     code: 'UP-DC-01',
     name: 'Noida Enterprise Tier-4 DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-up',
     circleCode: 'UP',
     circleName: 'Uttar Pradesh',
@@ -1419,7 +1419,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-chn-01',
     code: 'TN-DC-01',
     name: 'Chennai Subsea Landing DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-tn',
     circleCode: 'TN',
     circleName: 'Tamil Nadu',
@@ -1459,7 +1459,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-pun-02',
     code: 'MH-DC-02',
     name: 'Pune Tech Edge DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-mh',
     circleCode: 'MH',
     circleName: 'Maharashtra',
@@ -1487,7 +1487,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-hyd-01',
     code: 'AP-DC-01',
     name: 'Hyderabad Hitec City DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-ap',
     circleCode: 'AP',
     circleName: 'Andhra Pradesh',
@@ -1515,7 +1515,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-ahm-01',
     code: 'GJ-DC-01',
     name: 'Ahmedabad Infocity DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-gj',
     circleCode: 'GJ',
     circleName: 'Gujarat',
@@ -1543,7 +1543,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-bpl-01',
     code: 'MP-DC-01',
     name: 'Bhopal Central DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-mp',
     circleCode: 'MP',
     circleName: 'Madhya Pradesh',
@@ -1571,7 +1571,7 @@ export const DATACENTER_LOCATIONS: TopologyLocation[] = [
     id: 'dc-ccu-01',
     code: 'OTH-DC-01',
     name: 'Kolkata East Core DC',
-    tier: 'datacenters',
+    tier: 'Datacenters',
     circleId: 'circle-oth',
     circleCode: 'OTH',
     circleName: 'Other circles',
@@ -1905,7 +1905,7 @@ export const SITE_LOCATIONS: TopologyLocation[] = [
 export function getTopologyLocations(tier: HierarchyTier, circleFilter = 'all'): TopologyLocation[] {
   let list: TopologyLocation[] = [];
 
-  if (tier === 'datacenters') {
+  if (tier === 'Datacenters') {
     list = DATACENTER_LOCATIONS;
   } else if (tier === 'pops') {
     // Map from ESTATE_HIERARCHY circles pops

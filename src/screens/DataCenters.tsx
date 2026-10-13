@@ -42,7 +42,7 @@ export default function DataCenters() {
     finally { setBusy(null); }
   };
   const toImport = () => nav(`/inventory/dcim/import?${clientId ? `client=${encodeURIComponent(clientId)}&` : ''}from=${encodeURIComponent('Location · Data centers')}`);
-  const open = (dc: DataCenter) => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}&from=${encodeURIComponent('Location · Data centers')}`);
+  const open = (dc: DataCenter) => nav(`/inventory/Datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}&from=${encodeURIComponent('Location · Data centers')}`);
 
   return (
     <div className="page dcim">

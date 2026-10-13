@@ -424,29 +424,29 @@
 }
 
 /* Data Centers tier theme */
-.topo-tier-card.is-datacenters {
+.topo-tier-card.is-Datacenters {
   background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
   border: 1.5px solid #e9d5ff;
   box-shadow: 0 2px 8px rgba(168, 85, 247, 0.06);
 }
 
-.topo-tier-card.is-datacenters .topo-tier-icon {
+.topo-tier-card.is-Datacenters .topo-tier-icon {
   background: #ede9fe;
   color: #7c3aed;
   border: 1px solid #ddd6fe;
 }
 
-.topo-tier-card.is-datacenters .topo-tier-badge {
+.topo-tier-card.is-Datacenters .topo-tier-badge {
   background: #ede9fe;
   color: #6d28d9;
 }
 
-.topo-tier-card.is-datacenters:hover {
+.topo-tier-card.is-Datacenters:hover {
   border-color: #c4b5fd;
   box-shadow: 0 4px 14px rgba(168, 85, 247, 0.14);
 }
 
-.topo-tier-card.is-datacenters.is-selected {
+.topo-tier-card.is-Datacenters.is-selected {
   border-color: #8b5cf6;
   background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
   box-shadow: 0 0 0 2px #8b5cf6, 0 6px 18px rgba(139, 92, 246, 0.22);

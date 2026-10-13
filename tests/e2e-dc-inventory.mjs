@@ -1,4 +1,4 @@
-/* The data center solution (?solution=datacenter) in a browser, against `vite preview` on :4173:
+/* The data center solution (?solution=Datacenter) in a browser, against `vite preview` on :4173:
    the two DCO backups together — 48 sites, 7,678 devices, 25,057 links, 1,456 services — shown on the same screens
    as the default Inventory, whose numbers must not change.
    Run: npm run build && npx vite preview --port 4173 & node tests/e2e-dc-inventory.mjs */
@@ -21,26 +21,26 @@ const has = async (...t) => { const s = await body(); return t.every(x => s.incl
 
 await open('/inventory/location');
 ok('default Location unchanged', await has('12,475'));
-await open('/inventory/location?solution=datacenter');
+await open('/inventory/location?solution=Datacenter');
 ok('Location: 48 data centers, both countries', await has('Total locations 48', 'US West Region', 'West Region', 'India', 'United States'));
 ok('Location: logical inventory from the Links and Services sheets', await has('25,057 links and 1,456 customer services', 'LLDP 23,878', 'On-demand GPUs 765'));
 await p.getByText('United States', { exact: true }).first().click(); await p.waitForTimeout(600);
 ok('Location: the US map lists 24 sites', await has('All United States', '24 sites'));
 
-await open('/inventory/physical?solution=datacenter');
+await open('/inventory/physical?solution=Datacenter');
 ok('Physical: 48 data centers in the picker', await has('All data centers (48)'));
-await open('/inventory/links?solution=datacenter');
+await open('/inventory/links?solution=Datacenter');
 ok('Links: one tab per protocol, real counts', await has('LLDP 23,878', 'BGP 900', 'OSPF 46', 'ISIS 46', 'LSP 187', 'Showing 25 of 23,878'));
 await open('/inventory/links');
 ok('Links default unchanged (LLDP/OSPF/BGP/ISIS 16 each)', await has('LLDP 16') && !(await has('LSP')));
-await open('/inventory/services?solution=datacenter');
+await open('/inventory/services?solution=Datacenter');
 ok('Services: GPU, CPU, storage, reserved', await has('On-demand GPUs 765', 'CPU instances 317', 'Storage volume 272', 'Reserved cluster 102'));
 await p.locator('[data-svcview]').first().click(); await p.waitForTimeout(500);
 ok('Services: a row opens its detail', await has('Service', 'Monthly revenue', 'Uptime (30 days)'));
-await open('/inventory/services?solution=datacenter&tab=cpu');
-await open('/inventory/location/site/VA-DC-002/capex?solution=datacenter');
+await open('/inventory/services?solution=Datacenter&tab=cpu');
+await open('/inventory/location/site/VA-DC-002/capex?solution=Datacenter');
 ok('a US site shows dollars, not rupees', (await body()).includes('$') && !(await body()).includes('₹'));
-await open('/inventory/location/site/KA-DC-008/capex?solution=datacenter');
+await open('/inventory/location/site/KA-DC-008/capex?solution=Datacenter');
 ok('an Indian site shows rupees', (await body()).includes('₹'));
 
 ok('no console or page errors', errs.length === 0, errs.slice(0, 3).join(' | '));

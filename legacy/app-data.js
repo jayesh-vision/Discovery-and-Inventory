@@ -1438,7 +1438,7 @@ const LOCATIONS = (() => {
     const ne = type === 'Datacenter' ? 40 + Math.floor(rnd() * 180) : type === 'POP' ? 10 + Math.floor(rnd() * 25) : 2 + Math.floor(rnd() * 14);
     const disc = status.k === 'live' ? ne : status.k === 'building' ? Math.round(ne * (0.3 + rnd() * 0.5)) : 0;
 
-    /* rollout stage, blocker and risk only apply to sites — a datacenter
+    /* rollout stage, blocker and risk only apply to sites — a Datacenter
        or PoP going down is an inventory event, not a site rollout one,
        and this dashboard's site-ops sections stay scoped to sites only */
     const isSite = type !== 'Datacenter' && type !== 'POP';
@@ -3442,7 +3442,7 @@ function siteNE(id, ne, disc) {
     };
   };
   /* DWDM optical transport isn't at every site — realistically it's the
-     larger aggregation/core/datacenter sites that carry it, not a small
+     larger aggregation/core/Datacenter sites that carry it, not a small
      edge site with a couple of access routers. Same 'none'/manual-source
      convention the hand-authored BGLK-277 dwdm rows above already use
      (this class isn't reconciled through the router/switch discovery
