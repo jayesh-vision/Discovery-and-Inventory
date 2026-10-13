@@ -278,7 +278,7 @@ const inrShort = v => dcCur() === 'USD'
   : v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr'
   : v >= 1e5 ? '₹' + (v/1e5).toFixed(2) + ' L' : '₹' + Math.round(v).toLocaleString('en-IN');
 
-/* ═══ Data center solution (?solution=Datacenter) ═══════════════════════════════
+/* ═══ Data center solution (?solution=datacenter) ═══════════════════════════════
    The React shell sets window.__nsSolution, window.__dcSum (the per-data-center summary) and
    window.__dcScope (facilities, devices, GPU servers; see src/data/dc/scope.ts) before this script
    runs. In the default Inventory none of that exists and every helper here hands its argument back
@@ -286,7 +286,7 @@ const inrShort = v => dcCur() === 'USD'
    In the data center solution the same screens draw from the data centers' records: the roster,
    the location counts, each site's real devices, capex/opex and open risks. What the data center
    records do not hold (VNFs, the passive plant of the estate) is empty rather than borrowed from the estate. */
-const DC_ON = typeof window !== 'undefined' && window.__nsSolution === 'Datacenter' && !!window.__dcSum && !!window.__dcScope;
+const DC_ON = typeof window !== 'undefined' && window.__nsSolution === 'datacenter' && !!window.__dcSum && !!window.__dcScope;
 const dcSumOf = id => DC_ON ? window.__dcSum.find(d => d.id === id) : null;
 const dcFacOf = id => DC_ON ? window.__dcScope.facOf(id) : null;
 
@@ -242449,7 +242449,7 @@ function siteNE(id, ne, disc) {
     };
   };
   /* DWDM optical transport isn't at every site — realistically it's the
-     larger aggregation/core/Datacenter sites that carry it, not a small
+     larger aggregation/core/datacenter sites that carry it, not a small
      edge site with a couple of access routers. Same 'none'/manual-source
      convention the hand-authored BGLK-277 dwdm rows above already use
      (this class isn't reconciled through the router/switch discovery
@@ -243728,7 +243728,7 @@ PASSIVE.duct = Array.from({ length: 10 }, (_, i) => {
 });
 
 /* ── Data center infrastructure (src/data/dc, copied from Datacenter-Ideation) ──
-   The bundler fills DC_FAC from src/data/dc/Datacenters.json. Each data center's
+   The bundler fills DC_FAC from src/data/dc/datacenters.json. Each data center's
    racks, power plant, optical ports, cabling ledger, cooling units and
    environment sensors become rows of the passive tabs, next to the network
    estate's own rows and flagged `dc: true`. Cooling and Sensors exist only here.
@@ -245287,7 +245287,7 @@ function hierarchySvg() {
   </g>`;
 
   return `<div class="hier-wrap${HIER_EXPANDED ? ' is-expanded' : ''}">
-    <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: Datacenters, PoP locations and sites, by top circles">
+    <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: datacenters, PoP locations and sites, by top circles">
       ${links.join('')}${hub}${pops.join('')}${sites.join('')}
     </svg>
     <div class="hier-legend">
@@ -245479,7 +245479,7 @@ function covCircleDetail(c, ops) {
     </div>
 
     <div class="cov-sec cov-sec--wide">
-      ${headSm('Aggregated Inventory', 'total across every site, PoP and Datacenter in this circle · summary only')}
+      ${headSm('Aggregated Inventory', 'total across every site, PoP and datacenter in this circle · summary only')}
       <div class="cov-inv-row">
         <div class="cov-inv-tile cov-inv-tile--sky"><span class="cov-inv-icon">${INV_ICON.active}</span><span class="cov-inv-v num">${n(ops.inventory.active)}</span><span class="cov-inv-l">Active devices</span></div>
         <div class="cov-inv-tile cov-inv-tile--purple"><span class="cov-inv-icon">${INV_ICON.logical}</span><span class="cov-inv-v num">${n(ops.inventory.logicalTotal)}</span><span class="cov-inv-l">Logical — links &amp; services</span></div>
@@ -248710,10 +248710,10 @@ function viewResource() {
 
 /* ═══ Passive infrastructure ═══ */
 let PASS_TAB = 'fiber';
-/* the data center solution (?solution=Datacenter, src/solution.ts) shows only the data centers' own
+/* the data center solution (?solution=datacenter, src/solution.ts) shows only the data centers' own
    passive items; the data center the grid is narrowed to */
 let PASS_DC = '';
-const passScoped = () => window.__nsSolution === 'Datacenter';
+const passScoped = () => window.__nsSolution === 'datacenter';
 function rackStrip(r) {
   if (!r.occ) { const p = r.used / r.h * 100;   /* a data center rack: fill only, no per-U layout in the record */
     return `<span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:6rem;height:8px"><span class="hbar-fill" style="display:block;width:${p.toFixed(0)}%;background:${cv(p>85?'red':p>70?'amber':'emerald',400)}"></span></span>${p.toFixed(0)}%</span>`; }

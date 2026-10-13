@@ -261,7 +261,7 @@ PASSIVE.duct = Array.from({ length: 10 }, (_, i) => {
 });
 
 /* ── Data center infrastructure (src/data/dc, copied from Datacenter-Ideation) ──
-   The bundler fills DC_FAC from src/data/dc/Datacenters.json. Each data center's
+   The bundler fills DC_FAC from src/data/dc/datacenters.json. Each data center's
    racks, power plant, optical ports, cabling ledger, cooling units and
    environment sensors become rows of the passive tabs, next to the network
    estate's own rows and flagged `dc: true`. Cooling and Sensors exist only here.

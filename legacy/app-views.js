@@ -1497,7 +1497,7 @@ function hierarchySvg() {
   </g>`;
 
   return `<div class="hier-wrap${HIER_EXPANDED ? ' is-expanded' : ''}">
-    <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: Datacenters, PoP locations and sites, by top circles">
+    <svg viewBox="0 0 ${W} ${H}" class="hier-svg hier-radial" role="img" aria-label="Network hierarchy: datacenters, PoP locations and sites, by top circles">
       ${links.join('')}${hub}${pops.join('')}${sites.join('')}
     </svg>
     <div class="hier-legend">
@@ -1689,7 +1689,7 @@ function covCircleDetail(c, ops) {
     </div>
 
     <div class="cov-sec cov-sec--wide">
-      ${headSm('Aggregated Inventory', 'total across every site, PoP and Datacenter in this circle · summary only')}
+      ${headSm('Aggregated Inventory', 'total across every site, PoP and datacenter in this circle · summary only')}
       <div class="cov-inv-row">
         <div class="cov-inv-tile cov-inv-tile--sky"><span class="cov-inv-icon">${INV_ICON.active}</span><span class="cov-inv-v num">${n(ops.inventory.active)}</span><span class="cov-inv-l">Active devices</span></div>
         <div class="cov-inv-tile cov-inv-tile--purple"><span class="cov-inv-icon">${INV_ICON.logical}</span><span class="cov-inv-v num">${n(ops.inventory.logicalTotal)}</span><span class="cov-inv-l">Logical — links &amp; services</span></div>

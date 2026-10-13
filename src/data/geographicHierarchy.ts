@@ -79,7 +79,7 @@ const DEFAULT_TOP_HIERARCHY_METRICS = [
   { id: 'regions', label: 'Regions', count: '4', icon: 'regions', color: '#9333ea', bg: '#f3e8ff' },
   { id: 'states', label: 'States', count: '28', icon: 'states', color: '#2563eb', bg: '#eff6ff' },
   { id: 'cities', label: 'Cities', count: '549', icon: 'cities', color: '#7c3aed', bg: '#f5f3ff' },
-  { id: 'Datacenters', label: 'Data Centers', count: '829', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
+  { id: 'datacenters', label: 'Data Centers', count: '829', icon: 'dc', color: '#8b5cf6', bg: '#f5f3ff' },
   { id: 'pops', label: 'PoP Locations', count: '2,711', icon: 'pop', color: '#0284c7', bg: '#e0f2fe' },
   { id: 'sites', label: 'Sites', count: '8,935', icon: 'site', color: '#16a34a', bg: '#f0fdf4' },
   { id: 'alarms', label: 'Active Alarms', count: '1,712', icon: 'alarm', color: '#ef4444', bg: '#fef2f2' },
@@ -5396,7 +5396,7 @@ export const GEOGRAPHIC_HIERARCHY: RegionItem[] = SCOPED ? scopedHierarchy() : D
 export const TOP_HIERARCHY_METRICS = SCOPED
   ? DEFAULT_TOP_HIERARCHY_METRICS.map(m => ({ ...m, count: ({
       regions: String(GEOGRAPHIC_HIERARCHY.length), states: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.states.length, 0)),
-      cities: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.cityCount, 0)), Datacenters: String(DC_SUM.length), pops: '0', sites: '0', alarms: '0'
+      cities: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.cityCount, 0)), datacenters: String(DC_SUM.length), pops: '0', sites: '0', alarms: '0'
     } as Record<string, string>)[m.id] ?? m.count }))
   : DEFAULT_TOP_HIERARCHY_METRICS;
 

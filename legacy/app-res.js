@@ -728,10 +728,10 @@ function viewResource() {
 
 /* ═══ Passive infrastructure ═══ */
 let PASS_TAB = 'fiber';
-/* the data center solution (?solution=Datacenter, src/solution.ts) shows only the data centers' own
+/* the data center solution (?solution=datacenter, src/solution.ts) shows only the data centers' own
    passive items; the data center the grid is narrowed to */
 let PASS_DC = '';
-const passScoped = () => window.__nsSolution === 'Datacenter';
+const passScoped = () => window.__nsSolution === 'datacenter';
 function rackStrip(r) {
   if (!r.occ) { const p = r.used / r.h * 100;   /* a data center rack: fill only, no per-U layout in the record */
     return `<span class="row vw-gap-sm vw-nowrap"><span class="hbar-track" style="width:6rem;height:8px"><span class="hbar-fill" style="display:block;width:${p.toFixed(0)}%;background:${cv(p>85?'red':p>70?'amber':'emerald',400)}"></span></span>${p.toFixed(0)}%</span>`; }

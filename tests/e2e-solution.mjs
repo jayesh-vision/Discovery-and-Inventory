@@ -91,6 +91,13 @@ await open('/inventory/location');
 await p.getByText('Physical', { exact: false }).first().click().catch(() => {});
 ok('clicking around the default stays default', !hasParam());
 
+/* the value is not case-sensitive */
+await open('/inventory/location?view=list&solution=datacenter');
+ok('?solution=datacenter (lower case) is accepted too', (await body()).includes('Showing 25 of 48'));
+await open('/inventory/physical?solution=DATACENTER');
+await open('/inventory/physical?solution=ALL');
+ok('?solution=ALL leaves it', !url().searchParams.has('solution') && (await body()).includes('Showing 25 of 2,148'));
+
 /* Discovery is untouched */
 await open('/discovery/insights');
 ok('Discovery URLs are never given the parameter', !hasParam());

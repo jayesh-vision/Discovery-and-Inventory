@@ -12,13 +12,18 @@
      is the default Inventory, never the data center solution.
    • `?solution=all` leaves the data center solution in place and removes the parameter.
    • Only Inventory (/inventory…) uses it. Discovery URLs never get it and never clear it.
+   • The value is not case-sensitive (`Datacenter`, `datacenter`); URLs the app writes use `Datacenter`.
    • Any other value is ignored. */
-export const SOLUTIONS = ['Datacenter'] as const;
+export const SOLUTIONS = ['datacenter'] as const;
 export type Solution = (typeof SOLUTIONS)[number];
 const KEY = 'solution';
 export const LEAVE = 'all';
 
-const isSolution = (v: string | null): v is Solution => !!v && (SOLUTIONS as readonly string[]).includes(v);
+/** the value as written in a URL */
+export const solutionParam = (s: Solution): string => ({ datacenter: 'Datacenter' } as const)[s];
+const parse = (v: string | null): Solution | null => { const l = v?.toLowerCase() ?? ''; return (SOLUTIONS as readonly string[]).includes(l) ? (l as Solution) : null; };
+/** true when a URL's value is the way out (`all`, any case) */
+export const isLeave = (v: string | null): boolean => v?.toLowerCase() === LEAVE;
 export const isInventoryPath = (p: string) => p === '/inventory' || p.startsWith('/inventory/');
 
 let current: Solution | null = null;
@@ -27,21 +32,23 @@ let current: Solution | null = null;
    not in an effect that runs after it */
 if (typeof window !== 'undefined' && isInventoryPath(window.location.pathname)) {
   const v = new URLSearchParams(window.location.search).get(KEY);
-  if (isSolution(v)) current = v;
+  const sol = parse(v);
+  if (sol) current = sol;
 }
 /** what this page load started in; data that is built once (the legacy bundle) follows this */
 export const bootSolution: Solution | null = current;
 
 export const solution = (): Solution | null => current;
 /** true when Inventory shows only the data center solution's data */
-export const isDatacenter = (): boolean => current === 'Datacenter';
+export const isDatacenter = (): boolean => current === 'datacenter';
 
 /** call on every location change: the parameter sets it (`all` clears it); Discovery leaves it alone */
 export function syncSolution(pathname: string, search: string): Solution | null {
   if (!isInventoryPath(pathname)) return current;
   const v = new URLSearchParams(search).get(KEY);
-  if (isSolution(v)) current = v;
-  else if (v === LEAVE) current = null;
+  const sol = parse(v);
+  if (sol) current = sol;
+  else if (isLeave(v)) current = null;
   return current;
 }
 
@@ -53,7 +60,7 @@ export function withSolution(url: string): string {
   if (!isInventoryPath(path)) return url;
   const sp = new URLSearchParams(q);
   if (sp.has(KEY)) return url;   // an explicit value (including `all`) is never overwritten
-  sp.set(KEY, current);
+  sp.set(KEY, solutionParam(current));
   return `${path}?${sp.toString()}${hash ? '#' + hash : ''}`;
 }
 

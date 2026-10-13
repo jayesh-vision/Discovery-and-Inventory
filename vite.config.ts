@@ -45,7 +45,7 @@ export default defineConfig({
           /* the data center solution's loader must live in its own chunk: main.tsx waits for it before the rest of
              the app is evaluated, and it must not be merged into a chunk that reads the loaded data at import time.
              The large record files are left out so they stay lazy (they load from preloadScope() itself). */
-          if (id.endsWith('/src/solution.ts') || (id.includes('src/data/dc/') && !/(devices|Datacenters|gpu|modules)\.json$/.test(id))) {
+          if (id.endsWith('/src/solution.ts') || (id.includes('src/data/dc/') && !/(devices|datacenters|gpu|modules)\.json$/.test(id))) {
             return 'dc-scope';
           }
           if (id.includes('src/data/reports')) {

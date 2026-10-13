@@ -4,7 +4,7 @@ import RouteTitle from './shell/RouteTitle';
 import Topbar from './shell/Topbar';
 import LegacyView from './legacy/LegacyView';
 import { SCREENS } from './routes';
-import { bootSolution, isInventoryPath, solution, syncSolution, withSolution, withoutSolution } from './solution';
+import { bootSolution, isInventoryPath, isLeave, solution, syncSolution, withSolution, withoutSolution } from './solution';
 import NodePage from '../node-view-source/src/pages/NodePage.jsx';
 import { NodeViewProvider } from '../node-view-source/src/nodeView.jsx';
 
@@ -26,7 +26,7 @@ function SolutionScope() {
     syncSolution(loc.pathname, loc.search);
     const url = loc.pathname + loc.search + loc.hash;
     /* ?solution=all was the way out: it has done its job, so take it off the URL */
-    const left = new URLSearchParams(loc.search).get('solution') === 'all' && isInventoryPath(loc.pathname);
+    const left = isLeave(new URLSearchParams(loc.search).get('solution')) && isInventoryPath(loc.pathname);
     const want = left ? withoutSolution(url) : withSolution(url);
     /* the legacy bundle and other once-built data follow the mode the page started in, so a
        change of mode in place is a clean reload on the corrected URL */

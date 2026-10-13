@@ -34,8 +34,8 @@ export interface DcSum {
 export const SCOPED: boolean = isDatacenter();
 export interface DcRegion { geo: DcGeo; id: string; name: string }
 export interface DcCircle { geo: DcGeo; id: string; name: string; state: string; regionId: string; lat: number; lng: number }
-const SUMMARY = summaryJson as unknown as { Datacenters: DcSum[]; regions: DcRegion[]; circles: DcCircle[] };
-export const DC_SUM = SUMMARY.Datacenters;
+const SUMMARY = summaryJson as unknown as { datacenters: DcSum[]; regions: DcRegion[]; circles: DcCircle[] };
+export const DC_SUM = SUMMARY.datacenters;
 /** regions and states (circles) of both geographies; an id is only unique together with its `geo` */
 export const DC_REGIONS = SUMMARY.regions;
 export const DC_CIRCLES = SUMMARY.circles;

@@ -53,7 +53,7 @@ try {
   await page.waitForTimeout(800);
   const dcText = await page.innerText('body');
   assert.ok(dcText.includes('829'), 'Datacenters view must contain 829');
-  await page.screenshot({ path: 'screenshots/03_inventory_location_list_Datacenters.png' });
+  await page.screenshot({ path: 'screenshots/03_inventory_location_list_datacenters.png' });
 
   // Test 3: PoP locations filter
   console.log('Navigating to /inventory/location?view=list&type=pop&drill=PoP+locations...');

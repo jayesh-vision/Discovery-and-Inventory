@@ -1,6 +1,6 @@
 /* Data center inventory import: two DCO backup workbooks + Datacenter-Ideation → src/data/dc/.
 
-   Source of the data center solution (?solution=Datacenter, see src/solution.ts):
+   Source of the data center solution (?solution=datacenter, see src/solution.ts):
      data/dco-backup/dco-backup-neocloud-in-*.xlsx   India estate, 24 sites  (master data, as exported by the DCO tool)
      data/dco-backup/dco-backup-neocloud-us-*.xlsx   USA estate, 24 sites
    Both are read and shown together: one estate of 48 sites.
@@ -17,7 +17,7 @@
    import and is listed; nothing is made up to fill a gap.
 
    Files written (JSON, never edited by hand):
-     Datacenters.json  facility per site: power, cooling, rooms, racks, ports, cabling, compute, capex/opex, risks
+     datacenters.json  facility per site: power, cooling, rooms, racks, ports, cabling, compute, capex/opex, risks
      devices.json      every device, inventory fields only
      modules.json      each device's hardware modules, apart so the device list stays small
      gpu.json          GPU servers with their GPUs, clusters, liquid-cooling CDUs
@@ -100,7 +100,7 @@ const F = (n, wf, rfn, cmp) => [n, wf, rfn, cmp];
 const sameDay = (x, y) => x === y;
 for (const g of GEOS) {
   const w = wbs[g], db = dbs[g], L = `${g.toUpperCase()}`;
-  const dcs = db.Datacenters, racks = dcs.flatMap(d => d.racks), nes = db.nes;
+  const dcs = db.datacenters, racks = dcs.flatMap(d => d.racks), nes = db.nes;
   same(`${L} Sites`, w.Sites, dcs, r => r.site_id, d => d.id, [
     F('name', r => r.site_name, d => d.name), F('status', r => r.status, d => d.status), F('tier', r => r.tier, d => d.tier), F('category', r => r.category, d => d.category),
     F('state', r => r.state, d => d.state), F('city', r => r.city, d => d.city), F('address', r => r.address, d => d.address),
@@ -182,7 +182,7 @@ const NODE_KEYS = ['neId', 'dcId', 'rackId', 'clusterId', 'model', 'vendor', 'se
 const GPU_KEYS = ['idx', 'serial', 'memGb', 'tdpW', 'health', 'sbe', 'dbe', 'retiredPages', 'remapPending', 'xid'];
 const CDU_KEYS = ['id', 'dcId', 'name', 'room', 'racks', 'capacityKw', 'flowNominal', 'state'];
 
-const Datacenters = [], devices = [], modules = [], links = [], services = [], customers = [];
+const datacenters = [], devices = [], modules = [], links = [], services = [], customers = [];
 const gpu = { nodes: [], clusters: [], cdus: [] };
 const regions = [], circles = [];
 for (const g of GEOS) {
@@ -193,9 +193,9 @@ for (const g of GEOS) {
   const colBy = new Map(w.Collectors.map(c => [c.collector_id, c]));
   const sensorBy = new Map(w.Sensors.map(s => [s.sensor_id, s]));
   const dcRacks = new Map(w.Racks.map(r => [r.rack_id, r]));
-  for (const d of db.Datacenters) {
+  for (const d of db.datacenters) {
     const s = site.get(d.id);
-    Datacenters.push({
+    datacenters.push({
       ...pick(d, DC_KEYS), geo: g, currency: CUR[g], timezone: s.timezone, businessModel: s.business_model, itCapacityKw: s.it_capacity_kw,
       /* rooms as the workbook lists them: type, rack rows, cooling method */
       roomList: (rooms.get(d.id) ?? []).map(r => ({ id: r.room_id, name: r.room_name, floor: (floorsBy.get(d.id) ?? []).find(f => f.floor_id === r.floor_id)?.floor_name, type: r.room_type, areaSqm: r.area_sqm, rackRows: r.rack_rows, containment: r.containment, cooling: r.cooling_method })),
@@ -225,7 +225,7 @@ for (const g of GEOS) {
 /* the services' per-site revenue by customer is a sum the workbooks' Summary sheet checks; keep the per-customer figure with the account */
 for (const c of customers) c.revenue = services.filter(x => x.cust === c.id).reduce((a, x) => a + x.rev, 0);
 if (new Set(links.map(l => l.id)).size !== links.length || new Set(services.map(l => l.id)).size !== services.length || new Set(customers.map(l => l.id)).size !== customers.length ||
-    new Set(devices.map(l => l.id)).size !== devices.length || new Set(Datacenters.map(l => l.id)).size !== Datacenters.length)
+    new Set(devices.map(l => l.id)).size !== devices.length || new Set(datacenters.map(l => l.id)).size !== datacenters.length)
   { console.error('ids are not unique across the two geographies'); process.exit(1); }
 
 /* ---------- summary: small, always loaded ----------
@@ -233,7 +233,7 @@ if (new Set(links.map(l => l.id)).size !== links.length || new Set(services.map(
    large files. Roster-shaped `location` records let it stand in for the location roster. */
 const ST = { 'on-air': ['On-air', 'success'], 'in-progress': ['In progress', 'warning'], planned: ['Planned', 'info'], failed: ['Failed', 'error'] };
 const linkBy = count(links, l => l.dc), svcBy = count(services, s => s.dc), gpuBy = count(gpu.nodes, n => n.dcId);
-const sum = Datacenters.map(d => {
+const sum = datacenters.map(d => {
   const mine = devices.filter(n => n.dcId === d.id);
   const [stLabel, chip] = ST[d.status];
   const odf = d.ports.find(p => p.cls === 'Optical (ODF)') ?? { total: 0, used: 0 };
@@ -261,17 +261,17 @@ const sum = Datacenters.map(d => {
       ne: mine.length, disc: mine.filter(n => n.discovery !== 'not-discovered').length, stage: null, issue: null, risk: null, lat: d.lat, lon: d.lng }
   };
 });
-const summaryObj = { Datacenters: sum, regions, circles };
+const summaryObj = { datacenters: sum, regions, circles };
 
 const counts = {
-  Datacenters: Datacenters.length, racks: Datacenters.reduce((a, d) => a + d.racks.length, 0), devices: devices.length, devicesByRole: count(devices, n => n.role),
-  ups: Datacenters.reduce((a, d) => a + d.power.ups.length, 0), powerFeeds: Datacenters.reduce((a, d) => a + d.power.feeds.length, 0),
-  coolingUnits: Datacenters.reduce((a, d) => a + d.cooling.units.length, 0), sensors: Datacenters.reduce((a, d) => a + d.cooling.sensors.length, 0),
+  datacenters: datacenters.length, racks: datacenters.reduce((a, d) => a + d.racks.length, 0), devices: devices.length, devicesByRole: count(devices, n => n.role),
+  ups: datacenters.reduce((a, d) => a + d.power.ups.length, 0), powerFeeds: datacenters.reduce((a, d) => a + d.power.feeds.length, 0),
+  coolingUnits: datacenters.reduce((a, d) => a + d.cooling.units.length, 0), sensors: datacenters.reduce((a, d) => a + d.cooling.sensors.length, 0),
   gpuServers: gpu.nodes.length, gpus: gpu.nodes.reduce((a, n) => a + n.gpus.length, 0), gpuClusters: gpu.clusters.length, cdus: gpu.cdus.length,
   links: links.length, linksByProtocol: count(links, l => l.p), services: services.length, servicesByType: count(services, s => s.type), customers: customers.length
 };
 const files = {
-  'Datacenters.json': JSON.stringify(Datacenters), 'devices.json': JSON.stringify(devices), 'modules.json': JSON.stringify(modules), 'gpu.json': JSON.stringify(gpu),
+  'datacenters.json': JSON.stringify(datacenters), 'devices.json': JSON.stringify(devices), 'modules.json': JSON.stringify(modules), 'gpu.json': JSON.stringify(gpu),
   'links.json': JSON.stringify(links), 'services.json': JSON.stringify(services), 'customers.json': JSON.stringify(customers), 'summary.json': JSON.stringify(summaryObj)
 };
 const hash = s => createHash('sha256').update(s).digest('hex').slice(0, 16);
@@ -287,7 +287,7 @@ if (CHECK) {
   }
   if (man && man.source.commit !== commit) console.log(`note: files were synced from ${man.source.commit.slice(0, 7)}, reference is now at ${commit.slice(0, 7)}`);
   if (diff.length) { console.error('Data center inventory is out of date:\n  ' + diff.join('\n  ')); process.exit(1); }
-  console.log(`Data center inventory matches the workbooks and Datacenter-Ideation (${commit.slice(0, 7)}, ${MODEL}): ${counts.Datacenters} sites, ${counts.devices} devices, ${counts.links} links, ${counts.services} services.`);
+  console.log(`Data center inventory matches the workbooks and Datacenter-Ideation (${commit.slice(0, 7)}, ${MODEL}): ${counts.datacenters} sites, ${counts.devices} devices, ${counts.links} links, ${counts.services} services.`);
   process.exit(0);
 }
 
@@ -296,7 +296,7 @@ for (const [f, body] of Object.entries(files)) writeFileSync(join(out, f), body)
 writeFileSync(join(out, 'manifest.json'), JSON.stringify({
   source: { repo: 'Datacenter-Ideation', commit, model: MODEL, generator: 'app/src/mock/generate.ts', geographies: GEOS,
     workbooks: Object.fromEntries(GEOS.map(g => [g, wbFiles[g].replace(/^.*\//, '')])) },
-  counts, DatacenterIds: Datacenters.map(d => d.id), files: Object.fromEntries(Object.entries(files).map(([f, b]) => [f, { bytes: b.length, sha256: hash(b) }]))
+  counts, datacenterIds: datacenters.map(d => d.id), files: Object.fromEntries(Object.entries(files).map(([f, b]) => [f, { bytes: b.length, sha256: hash(b) }]))
 }, null, 2) + '\n');
 console.log(`Imported ${MODEL} (India + USA) — workbooks and Datacenter-Ideation ${commit.slice(0, 7)} agree:`, JSON.stringify(counts));
 for (const [f, b] of Object.entries(files)) console.log(`  src/data/dc/${f}  ${(b.length / 1024).toFixed(0)} KB`);

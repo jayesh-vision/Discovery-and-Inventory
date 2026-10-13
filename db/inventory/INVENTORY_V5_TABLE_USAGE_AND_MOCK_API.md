@@ -336,7 +336,7 @@ ALTER TABLE TEAM COMMENT = 'Reference copy of a User Management group used as ow
 
 | UI element | Table · column(s) | Mode |
 |---|---|---|
-| Total locations, Datacenters, PoPs, sites with status splits | `SITE.SITE_TYPE_ID_FK` → `SITE_TYPE`, `SITE.STATUS` (PLANNED, IN_PROGRESS, ON_AIR, FAILED, DECOMMISSIONED) | D |
+| Total locations, datacenters, PoPs, sites with status splits | `SITE.SITE_TYPE_ID_FK` → `SITE_TYPE`, `SITE.STATUS` (PLANNED, IN_PROGRESS, ON_AIR, FAILED, DECOMMISSIONED) | D |
 | Network hierarchy (Datacenters → Circles → PoPs → Sites) | `OPERATIONAL_AREA` (CIRCLE level) → `SITE.OPERATIONAL_AREA_ID_FK`; `SITE.PARENT_SITE_ID_FK` for PoP → site | D |
 | Circle picker, search PoP / site, search node / IP | `OPERATIONAL_AREA.NAME`; `SITE.CODE`, `NAME`; `NETWORK_ELEMENT.NETWORK_ELEMENT_NAME`, `MANAGEMENT_IP` | R |
 | Coverage by circle (DC, PoP, sites, on-air %, failed) | `SITE` grouped by `OPERATIONAL_AREA_ID_FK` and `SITE_TYPE` | D |

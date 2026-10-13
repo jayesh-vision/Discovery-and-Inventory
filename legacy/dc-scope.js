@@ -1,4 +1,4 @@
-/* ═══ Data center solution (?solution=Datacenter) ═══════════════════════════════
+/* ═══ Data center solution (?solution=datacenter) ═══════════════════════════════
    The React shell sets window.__nsSolution, window.__dcSum (the per-data-center summary) and
    window.__dcScope (facilities, devices, GPU servers; see src/data/dc/scope.ts) before this script
    runs. In the default Inventory none of that exists and every helper here hands its argument back
@@ -6,7 +6,7 @@
    In the data center solution the same screens draw from the data centers' records: the roster,
    the location counts, each site's real devices, capex/opex and open risks. What the data center
    records do not hold (VNFs, the passive plant of the estate) is empty rather than borrowed from the estate. */
-const DC_ON = typeof window !== 'undefined' && window.__nsSolution === 'Datacenter' && !!window.__dcSum && !!window.__dcScope;
+const DC_ON = typeof window !== 'undefined' && window.__nsSolution === 'datacenter' && !!window.__dcSum && !!window.__dcScope;
 const dcSumOf = id => DC_ON ? window.__dcSum.find(d => d.id === id) : null;
 const dcFacOf = id => DC_ON ? window.__dcScope.facOf(id) : null;
 

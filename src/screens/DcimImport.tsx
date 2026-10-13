@@ -946,7 +946,7 @@ export default function DcimImport() {
                 const fromQuery = `&from=${encodeURIComponent(from ? `${from} · Import` : 'Import')}`;
                 const locQuery = location || dc.locationId ? `&location=${encodeURIComponent(location || dc.locationId!)}` : '';
                 return (
-                  <button key={dc.id} type="button" className="client-card" onClick={() => nav(`/inventory/Datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}${fromQuery}${locQuery}`)}>
+                  <button key={dc.id} type="button" className="client-card" onClick={() => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}${fromQuery}${locQuery}`)}>
                     <span className="client-av" aria-hidden>▦</span>
                     <span className="client-b"><strong>{dc.name}</strong><small><Mono>{dc.id}</Mono>{dc.locationId ? ` · location ${dc.locationId}` : ''}</small><small>Open inventory ›</small></span>
                   </button>

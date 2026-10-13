@@ -546,7 +546,7 @@ export default function Topbar() {
     }
   }
 
-  if (s.key === 'Datacenter' && params.dcId) {
+  if (s.key === 'datacenter' && params.dcId) {
     const dcId = params.dcId;
     const clientParam = sp.get('client');
     let dcName = dcId;
@@ -570,7 +570,7 @@ export default function Topbar() {
     const cityMatch = findCityByFacilityCode(matchedLocationId || dcId);
     const locTo = '/inventory/location';
     const dcimTo = `/inventory/dcim${foundClientId ? `?client=${encodeURIComponent(foundClientId)}` : ''}`;
-    const dcSelfTo = `/inventory/Datacenter/${encodeURIComponent(dcId)}${search}`;
+    const dcSelfTo = `/inventory/datacenter/${encodeURIComponent(dcId)}${search}`;
 
     const isFromPassive = from?.toLowerCase().includes('passive');
     const isFromInfra = !isFromPassive && from?.toLowerCase().includes('infrastructure');

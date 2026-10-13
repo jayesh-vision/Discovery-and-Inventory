@@ -1,4 +1,4 @@
-/* Inventory › Location › Data center — /inventory/Datacenter/:dcId
+/* Inventory › Location › Data center — /inventory/datacenter/:dcId
    Resolves which records the data center view draws:
    1. a client import whose DataCenterId — or LocationId — is :dcId
       (City details' "Open data center view" passes an estate facility code);
@@ -38,7 +38,7 @@ export default function DataCenterDetail() {
   if (one && data) {
     if (one.viaLocation) {
       const n = new URLSearchParams(sp); n.set('client', one.clientId);
-      setTimeout(() => nav(`/inventory/Datacenter/${encodeURIComponent(one.dcId)}?${n}`, { replace: true }), 0);
+      setTimeout(() => nav(`/inventory/datacenter/${encodeURIComponent(one.dcId)}?${n}`, { replace: true }), 0);
     }
     return (
       <div className="page dcim">

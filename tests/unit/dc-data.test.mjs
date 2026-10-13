@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'data');
 const read = f => JSON.parse(readFileSync(join(dir, f), 'utf8'));
-const F = read('dc/Datacenters.json'), D = read('dc/devices.json'), M = read('dc/modules.json'), G = read('dc/gpu.json'), man = read('dc/manifest.json');
+const F = read('dc/datacenters.json'), D = read('dc/devices.json'), M = read('dc/modules.json'), G = read('dc/gpu.json'), man = read('dc/manifest.json');
 const L = read('dc/links.json'), S = read('dc/services.json'), C = read('dc/customers.json');
 const roster = read('allLocations.json');
 const racks = new Map(F.flatMap(f => f.racks.map(r => [r.id, r])));
@@ -19,7 +19,7 @@ const count = (a, f) => a.reduce((m, x) => ((m[f(x)] = (m[f(x)] ?? 0) + 1), m), 
 
 test('manifest counts equal the records', () => {
   const c = man.counts;
-  assert.equal(c.Datacenters, F.length);
+  assert.equal(c.datacenters, F.length);
   assert.equal(c.racks, racks.size);
   assert.equal(c.devices, D.length);
   assert.deepEqual(c.devicesByRole, count(D, d => d.role));
@@ -28,7 +28,7 @@ test('manifest counts equal the records', () => {
   assert.equal(c.sensors, F.reduce((a, f) => a + f.cooling.sensors.length, 0));
   assert.equal(c.gpuServers, G.nodes.length);
   assert.equal(c.gpus, G.nodes.reduce((a, n) => a + n.gpus.length, 0));
-  assert.deepEqual(man.DatacenterIds, F.map(f => f.id));
+  assert.deepEqual(man.datacenterIds, F.map(f => f.id));
 });
 
 test('ids are unique and every device sits in a real rack of its own data center', () => {
@@ -105,6 +105,6 @@ test('both geographies are present, each in its own currency', () => {
 
 test('the data center solution\'s data centers are the two backups\' 24 + 24', () => {
   assert.equal(F.length, 48);
-  assert.deepEqual(man.DatacenterIds, F.map(f => f.id));
+  assert.deepEqual(man.datacenterIds, F.map(f => f.id));
   for (const f of F) assert.ok(D.some(d => d.dcId === f.id), `${f.id} has no devices`);
 });
