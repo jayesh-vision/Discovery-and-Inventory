@@ -706,6 +706,7 @@ function CoverageCircleDetail({
           <div style={{ fontSize: '12px', color: 'var(--vw-color-gray-500)', marginTop: '2px' }}>
             total across every site, PoP and Datacenter in this circle · summary only
           </div>
+          
         </div>
         <div className="cov-inv-row">
           <div className="cov-inv-tile cov-inv-tile--sky">
