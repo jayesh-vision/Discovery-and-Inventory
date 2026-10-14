@@ -8,6 +8,7 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
   '12m': 'Last 12 months'
 };
 import { DC_SUM, DC_TOTAL, SCOPED, dcRegionLabel, type DcSum } from './dc/scope';
+import { currentGeo } from '../solution';
 import {
   ACT,
   PAS,
@@ -2028,6 +2029,92 @@ const PERIOD: Record<DayRangeOption, string> = { '7d': 'vs last 7 days', '14d': 
 const ISSUE_PERIOD: Record<DayRangeOption, string> = { '7d': 'this week', '14d': 'last 14 days', '30d': 'this month', '90d': 'this quarter', '12m': 'this year' };
 const KIND = (d: DcSum) => (d.tier === 'Tier IV' ? 'Core data centre' : d.category === 'Edge' ? 'Edge data centre' : 'Regional data centre');
 
+const DC_ACTIVITY_US_BY_RANGE: Record<DayRangeOption, [string, string, string, string][]> = {
+  '7d': [
+    ['ADD', '32 NVIDIA HGX H100 GPU nodes racked in AI-POD-2 at VA-DC-001 (Ashburn)', 'DCIM Auto-Provisioning', '14m ago'],
+    ['FIX', 'OS version drift resolved: EOS 4.30.2M applied to 8 Arista spine switches', 'NetOps Automation (East)', '2h ago'],
+    ['SURVEY', 'Physical U-space and structured cabling audit in Row-C at NJ-DC-012 (Secaucus)', 'DC Operations Team', '5h ago'],
+    ['UPD', 'Thermal sensor & CRAC airflow thresholds rebalanced in Data Hall 2 at IL-DC-009 (Chicago)', 'Facilities Telemetry', '1d ago'],
+    ['ADD', '24 Dell PowerEdge compute nodes & dual 100G RoCE NICs enrolled at TX-DC-005 (Dallas)', 'Discovery run #1,402', '3d ago'],
+    ['DECOM', '16 legacy 1U compute servers retired and sanitized at CA-DC-020 (Los Angeles)', 'Asset Lifecycle Team', '5d ago']
+  ],
+  '14d': [
+    ['ADD', '64 NVIDIA H100 nodes & 8 Quantum-2 InfiniBand switches deployed in Ashburn & Dallas', 'DC Rollout Batch #8', '2h ago'],
+    ['FIX', '400G-QSFP-DD optical transceiver errors cleared on Pod-01 at CA-DC-008 (Santa Clara)', 'Hardware Engineering', '1d ago'],
+    ['SURVEY', 'Full electrical feed & UPS redundancy audit completed across 51 racks at VA-DC-001', 'Critical Facilities Ops', '3d ago'],
+    ['UPD', 'Firmware upgraded to Junos 23.4R2 on border routers across East region data centers', 'SecOps Release Job', '6d ago'],
+    ['ADD', '12 Weka NVMe storage nodes commissioned in AI cluster at TX-DC-005 (Dallas)', 'Storage Engineering', '9d ago'],
+    ['DECOM', '28 EOL top-of-rack switches decommissioned across NJ-DC-012 & OH-DC-016', 'CR-5102 · Decom team', '12d ago']
+  ],
+  '30d': [
+    ['ADD', '1,240 devices and 348 racks verified across US data centers in Q3 discovery sweep', 'Discovery run #1,390', '2h ago'],
+    ['FIX', '48 FortiGate 3700F security cluster interface drifts reconciled to baseline', 'Nightly Audit Engine', '1d ago'],
+    ['SURVEY', '100% optical fibre cross-connect & ODF tray validation completed at VA-DC-001 & VA-DC-002', 'Field Survey Team', '4d ago'],
+    ['UPD', 'Standard DCIM baseline applied to 1,840 cooling, PDU and CDU telemetry sensors', 'Facilities Engineering', '12d ago'],
+    ['ADD', 'Liquid-cooled AI compute hall commissioned with 4 CDU loops at CA-DC-008 (Santa Clara)', 'Capital Project Launch', '18d ago'],
+    ['DECOM', '84 legacy storage shelves and SAS enclosures retired across Central & West regions', 'Asset Disposal Board', '26d ago']
+  ],
+  '90d': [
+    ['ADD', '3,480 physical assets enrolled across 24 US data centers for high-density compute', 'US Infrastructure Expansion', '3d ago'],
+    ['FIX', 'Automated reconciliation resolved 312 device serial number and rack slot discrepancies', 'Recon Scheduler', '14d ago'],
+    ['UPD', 'Data center network spine upgrade: 400G InfiniBand fabric migration completed in Ashburn', 'Network Architecture', '1mo ago'],
+    ['SURVEY', 'ASHRAE thermal compliance and power efficiency PUE certification across all 24 sites', 'Energy & Facilities Audit', '1.5mo ago'],
+    ['ADD', 'High-performance AI storage cluster expanded to 18 PB across Dallas and Santa Clara', 'Data Platform Team', '2mo ago'],
+    ['DECOM', '240 legacy compute blades and Gen9 servers decommissioned and recycled', 'E-Waste Lifecycle Program', '2.5mo ago']
+  ],
+  '12m': [
+    ['ADD', 'Full-stack US Data Center inventory onboarding: 24 facilities, 3,800+ devices, 96 AI pods', 'Enterprise Deployment', '1mo ago'],
+    ['SURVEY', '100% physical-to-digital DCIM twin reconciliation completed for all racks and rows', 'DCIM Modernization', '3mo ago'],
+    ['UPD', 'Unified Inventory data model rolled out across all US North, South, West & East regions', 'Platform Architecture', '5mo ago'],
+    ['FIX', 'Automated discovery & reconciliation engine connected to all out-of-band management fabrics', 'Systems Engineering', '7mo ago'],
+    ['ADD', 'InfiniBand NDR 400G and 800G optical telemetry monitoring integrated into inventory pipeline', 'Fabric Engineering', '9mo ago'],
+    ['DECOM', 'Tier II legacy data hall sunset completed in Secaucus and Chicago: 620 older units cleared', 'DC Consolidation Phase 1', '11mo ago']
+  ]
+};
+
+const DC_ACTIVITY_IN_BY_RANGE: Record<DayRangeOption, [string, string, string, string][]> = {
+  '7d': [
+    ['ADD', '16 NVIDIA HGX H100 GPU servers onboarded at MH-DC-001 (Pune)', 'DCIM Auto-Provisioning', '15m ago'],
+    ['FIX', 'OS baseline drift cleared on 6 Arista spine switches at MH-DC-002', 'NetOps Automation (West)', '2h ago'],
+    ['SURVEY', 'Physical rack elevation and PDU cabling audit in Row-A at MH-DC-003 (Nagpur)', 'DC Operations Team', '5h ago'],
+    ['UPD', 'Thermal sensor & CRAC airflow thresholds adjusted in Server Room 1 at UP-DC-005', 'Facilities Telemetry', '1d ago'],
+    ['ADD', '18 Dell PowerEdge compute nodes & 100G RoCE NICs racked at MH-DC-004 (Pune)', 'Discovery run #1,402', '3d ago'],
+    ['DECOM', '12 legacy 1U compute servers retired and sanitized at MH-DC-001', 'Asset Lifecycle Team', '5d ago']
+  ],
+  '14d': [
+    ['ADD', '32 NVIDIA H100 nodes & 4 Quantum-2 InfiniBand switches deployed in Pune & Nagpur', 'DC Rollout Batch #6', '3h ago'],
+    ['FIX', '400G optical transceiver alarms cleared on Leaf switches at MH-DC-002 (Pune)', 'Hardware Engineering', '1d ago'],
+    ['SURVEY', 'Full electrical feed & UPS redundancy audit completed across 48 racks at MH-DC-001', 'Facilities Ops', '4d ago'],
+    ['UPD', 'Firmware upgraded to Junos 23.4R2 on core border routers at MH-DC-001 & MH-DC-004', 'SecOps Release', '7d ago'],
+    ['ADD', '8 Weka NVMe flash storage nodes added to AI cluster at MH-DC-001', 'Storage Team', '10d ago'],
+    ['DECOM', '14 legacy top-of-rack switches decommissioned at UP-DC-005', 'CR-4890 · Decom team', '13d ago']
+  ],
+  '30d': [
+    ['ADD', '890 devices and 210 racks verified across India data centers in Q3 discovery sweep', 'Discovery run #1,385', '2h ago'],
+    ['FIX', '32 FortiGate security firewall interface drifts reconciled to approved baseline', 'Audit Engine', '2d ago'],
+    ['SURVEY', '100% optical fibre cross-connect & ODF tray validation completed at MH-DC-001 & MH-DC-002', 'Field Survey Team', '5d ago'],
+    ['UPD', 'Standard DCIM baseline applied to 1,120 cooling, PDU and CDU telemetry sensors', 'Facilities Engineering', '14d ago'],
+    ['ADD', 'High-density AI compute hall commissioned with liquid cooling loops at MH-DC-001', 'Project Expansion', '20d ago'],
+    ['DECOM', '46 legacy storage shelves retired across West region data centers', 'Asset Disposal', '27d ago']
+  ],
+  '90d': [
+    ['ADD', '2,140 physical assets enrolled across 24 India data centers for compute expansion', 'DC Expansion Phase 2', '4d ago'],
+    ['FIX', 'Automated reconciliation resolved 198 device serial number and rack position drifts', 'Recon Scheduler', '16d ago'],
+    ['UPD', 'Network spine upgrade: 400G InfiniBand fabric migration completed at MH-DC-001', 'Network Architecture', '1.2mo ago'],
+    ['SURVEY', 'ASHRAE thermal compliance and power efficiency PUE certification completed', 'Energy Audit Board', '1.8mo ago'],
+    ['ADD', 'High-performance AI storage cluster expanded to 12 PB across Pune facilities', 'Data Platform Team', '2.2mo ago'],
+    ['DECOM', '180 legacy compute blades and Gen9 servers decommissioned and recycled', 'E-Waste Program', '2.6mo ago']
+  ],
+  '12m': [
+    ['ADD', 'Full-stack India Data Center inventory onboarding: 24 facilities, 2,900+ devices', 'Enterprise Deployment', '1.2mo ago'],
+    ['SURVEY', '100% physical-to-digital DCIM twin reconciliation completed for all racks and rows', 'DCIM Modernization', '3.5mo ago'],
+    ['UPD', 'Unified Inventory data model rolled out across all India data centers', 'Platform Architecture', '5.5mo ago'],
+    ['FIX', 'Automated discovery & reconciliation engine connected to all out-of-band fabrics', 'Systems Engineering', '7.5mo ago'],
+    ['ADD', 'InfiniBand NDR 400G and 800G optical telemetry monitoring integrated into pipeline', 'Fabric Engineering', '9.5mo ago'],
+    ['DECOM', 'Legacy server halls decommissioned and consolidated across Western region', 'DC Consolidation', '11.5mo ago']
+  ]
+};
+
 function buildDc() {
   const T = DC_TOTAL;
   const dev = T.devices;
@@ -2136,7 +2223,29 @@ function buildDc() {
   const SERVICES = eachRange(r => ({ active: '0', e2e: NONE, rows: DEFAULT_SERVICES_DYNAMIC[r].rows.map(x => ({ ...x, count: '0', path: NONE, color: GREY })) }));
   const NET = eachRange(r => ({ label: DEFAULT_NET_RECORD_DYNAMIC[r].label, added: '+0', retired: '−0', net: '+0' }));
   const TREND = eachRange(r => DEFAULT_TREND_SERIES[r].map(([l]) => [l, 0] as [string, number]));
-  const ACTIVITY = eachRange(() => [] as [string, string, string, string][]);
+
+  const getDcActivity = () => {
+    const isIndia = typeof window !== 'undefined' && currentGeo() === 'in';
+    return isIndia ? DC_ACTIVITY_IN_BY_RANGE : DC_ACTIVITY_US_BY_RANGE;
+  };
+  const ACTIVITY = new Proxy({} as Record<DayRangeOption, [string, string, string, string][]>, {
+    get(_target, prop: string) {
+      const active = getDcActivity();
+      return (active as Record<string, [string, string, string, string][]>)[prop] || active['30d'];
+    },
+    ownKeys() {
+      return RANGES;
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      const active = getDcActivity();
+      return {
+        enumerable: true,
+        configurable: true,
+        value: (active as Record<string, [string, string, string, string][]>)[prop as string] || active['30d']
+      };
+    }
+  });
+
   return { TOTAL, PARENTS, ISSUES, BUCKET, LIFECYCLE, VENDOR, PANELS, DECOM, DECOM_BUCKET, EOL, DRIFT, SPARES, NOT_RECONF, QUALITY, CROSS, RECON, SUPPORT, NAV, SITES, SERVICES, NET, TREND, ACTIVITY };
 }
 const DC = SCOPED ? buildDc() : null;

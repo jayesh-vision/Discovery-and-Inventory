@@ -1734,17 +1734,23 @@ export default function InventoryInsights() {
           <div className="ii-card">
             <div className="ii-card-head"><div className="ii-card-title">Recent inventory activity</div></div>
             <div className="ii-activity">
-              {activityList.map((e, idx) => (
-                <div key={idx} className="ii-activity-item">
-                  <span className="ii-tag" style={{ background: e.tagBg, color: e.tagFg }}>
-                    {e.tag}
-                  </span>
-                  <div style={{ flexGrow: 1, minWidth: 0 }}>
-                    <div className="ii-activity-what">{e.what}</div>
-                    <div className="ii-activity-who">{e.who} · {e.when}</div>
-                  </div>
+              {activityList.length === 0 ? (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                  No recent inventory activity recorded for this period.
                 </div>
-              ))}
+              ) : (
+                activityList.map((e, idx) => (
+                  <div key={idx} className="ii-activity-item">
+                    <span className="ii-tag" style={{ background: e.tagBg, color: e.tagFg }}>
+                      {e.tag}
+                    </span>
+                    <div style={{ flexGrow: 1, minWidth: 0 }}>
+                      <div className="ii-activity-what">{e.what}</div>
+                      <div className="ii-activity-who">{e.who} · {e.when}</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>

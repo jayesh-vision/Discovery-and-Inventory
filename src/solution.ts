@@ -30,6 +30,8 @@ const GEO_KEY = 'geo';
 const COUNTRY_KEY = 'country';
 const GEO_STORAGE_KEY = 'dc_active_geo';
 
+const SOLUTION_STORAGE_KEY = 'dc_solution_mode';
+
 export const isInventoryPath = (p: string) => p === '/inventory' || p.startsWith('/inventory/');
 
 export const DEFAULT_GEO: DcGeo = 'us';
@@ -43,10 +45,25 @@ if (typeof window !== 'undefined' && isInventoryPath(window.location.pathname)) 
   const v = sp.get(KEY);
   if (isLeave(v)) {
     current = null;
+    try {
+      sessionStorage.removeItem(SOLUTION_STORAGE_KEY);
+      sessionStorage.removeItem(GEO_STORAGE_KEY);
+    } catch {}
   } else if (parse(v)) {
-    current = parse(v);
+    const p = parse(v)!;
+    current = p;
+    try { sessionStorage.setItem(SOLUTION_STORAGE_KEY, p); } catch {}
   } else {
-    current = null;
+    try {
+      const savedSol = sessionStorage.getItem(SOLUTION_STORAGE_KEY);
+      if (savedSol === 'datacenter') {
+        current = 'datacenter';
+      } else {
+        current = null;
+      }
+    } catch {
+      current = null;
+    }
   }
 
   if (current === 'datacenter') {
@@ -98,10 +115,25 @@ export function syncSolution(pathname: string, search: string): Solution | null 
   const v = sp.get(KEY);
   if (isLeave(v)) {
     current = null;
+    try {
+      sessionStorage.removeItem(SOLUTION_STORAGE_KEY);
+      sessionStorage.removeItem(GEO_STORAGE_KEY);
+    } catch {}
   } else if (parse(v)) {
-    current = parse(v);
+    const p = parse(v)!;
+    current = p;
+    try { sessionStorage.setItem(SOLUTION_STORAGE_KEY, p); } catch {}
   } else {
-    current = null;
+    try {
+      const savedSol = sessionStorage.getItem(SOLUTION_STORAGE_KEY);
+      if (savedSol === 'datacenter') {
+        current = 'datacenter';
+      } else {
+        current = null;
+      }
+    } catch {
+      // keep current
+    }
   }
 
   if (current === 'datacenter') {

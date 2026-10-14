@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import geo from '../../data/geo.json';
 import { ROSTER as allLocations } from '../../data/locationRoster';
@@ -187,41 +187,354 @@ function UsMap({ pins, selected, onPin, onOpen }: {
   pins: typeof allLocations; selected: string | null;
   onPin: (ids: string[]) => void; onOpen: (id: string) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
+  const [isAnim, setIsAnim] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number; moved: boolean } | null>(null);
+
   const tiles: { x: number; y: number }[] = [];
   for (let y = Math.floor(UY0 / 256); y <= Math.floor(UY1 / 256); y++) for (let x = Math.floor(UX0 / 256); x <= Math.floor(UX1 / 256); x++) tiles.push({ x, y });
   const W = UX1 - UX0, H = UY1 - UY0;
-  const buckets = new Map<string, { left: number; top: number; items: typeof allLocations }>();
-  for (const l of pins) {
-    const left = ((wx(l.lon) - UX0) / W) * 100, top = ((wy(l.lat) - UY0) / H) * 100;
-    const key = `${Math.round(left / 2.2)}:${Math.round(top / 3.4)}`;
-    (buckets.get(key) ?? buckets.set(key, { left, top, items: [] }).get(key)!).items.push(l);
-  }
+
+  const clamp = (x: number, y: number, k: number, cw: number, ch: number) => {
+    const padX = cw * 0.35;
+    const padY = ch * 0.35;
+    const minX = padX - cw * k;
+    const maxX = cw - padX;
+    const minY = padY - ch * k;
+    const maxY = ch - padY;
+    return {
+      x: Math.min(maxX, Math.max(minX, x)),
+      y: Math.min(maxY, Math.max(minY, y))
+    };
+  };
+
+  const zoomBy = (factor: number, cx?: number, cy?: number) => {
+    setIsAnim(true);
+    setZoom(v => {
+      const newK = Math.min(6, Math.max(1, +(v.k * factor).toFixed(2)));
+      if (newK === v.k && newK === 1) return { k: 1, x: 0, y: 0 };
+      const rect = containerRef.current?.getBoundingClientRect();
+      const cw = rect?.width || 800;
+      const ch = rect?.height || 540;
+      const centerX = cx ?? cw / 2;
+      const centerY = cy ?? ch / 2;
+      const newX = newK === 1 ? 0 : centerX - (centerX - v.x) * (newK / v.k);
+      const newY = newK === 1 ? 0 : centerY - (centerY - v.y) * (newK / v.k);
+      const clamped = newK === 1 ? { x: 0, y: 0 } : clamp(newX, newY, newK, cw, ch);
+      return { k: newK, ...clamped };
+    });
+  };
+
+  const handleReset = () => {
+    setIsAnim(true);
+    setZoom({ k: 1, x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.25 : 1 / 1.25;
+      zoomBy(factor, cx, cy);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    setIsAnim(false);
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: zoom.x,
+      origY: zoom.y,
+      moved: false
+    };
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      dragRef.current.moved = true;
+    }
+    const rect = containerRef.current?.getBoundingClientRect();
+    const cw = rect?.width || 800;
+    const ch = rect?.height || 540;
+    const clamped = clamp(dragRef.current.origX + dx, dragRef.current.origY + dy, zoom.k, cw, ch);
+    setZoom(v => ({ ...v, ...clamped }));
+  };
+
+  const onMouseUp = () => {
+    setIsDragging(false);
+    dragRef.current = null;
+  };
+
+  // Pin clustering that breaks apart dynamically as you zoom in
+  const buckets = useMemo(() => {
+    const clusterGrid = 2.4 / Math.max(1, zoom.k * 0.9);
+    const map = new Map<string, { left: number; top: number; items: typeof allLocations }>();
+    for (const l of pins) {
+      const left = ((wx(l.lon) - UX0) / W) * 100;
+      const top = ((wy(l.lat) - UY0) / H) * 100;
+      const key = `${Math.round(left / clusterGrid)}:${Math.round(top / (clusterGrid * 1.5))}`;
+      (map.get(key) ?? map.set(key, { left, top, items: [] }).get(key)!).items.push(l);
+    }
+    return [...map.values()];
+  }, [pins, zoom.k, W, H]);
+
   return (
-    <div className="us-map" role="img" aria-label="Sites across the United States" style={{ position: 'relative', width: '100%', aspectRatio: `${W} / ${H}`, overflow: 'hidden',
-      background: 'var(--vw-color-slate-25, #f8fafc)', border: '1px solid var(--vw-color-slate-200)', borderRadius: 'var(--vw-radius-md)' }}>
-      {tiles.map(t => (
-        <img key={`${t.x}:${t.y}`} alt="" draggable={false} src={`${ESRI_LIGHT}/${TZ}/${t.y}/${t.x}`}
-          style={{ position: 'absolute', left: `${((t.x * 256 - UX0) / W) * 100}%`, top: `${((t.y * 256 - UY0) / H) * 100}%`, width: `${(256 / W) * 100}%`, height: `${(256 / H) * 100}%`, userSelect: 'none' }} />
-      ))}
-      {[...buckets.values()].map((b, idx) => {
-        const style = { position: 'absolute' as const, left: `${b.left}%`, top: `${b.top}%`, transform: 'translate(-50%, -50%)', padding: 0, border: 0, background: 'none', cursor: 'pointer' };
-        if (b.items.length === 1) {
-          const l = b.items[0], t = STATUS_PIN[l.st] || 'slate', dim = selected && l.state !== selected;
+    <div
+      className="us-map"
+      ref={containerRef}
+      role="img"
+      aria-label="Sites across the United States"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      style={{
+        position: 'relative',
+        width: '100%',
+        aspectRatio: `${W} / ${H}`,
+        overflow: 'hidden',
+        background: 'var(--vw-color-slate-25, #f8fafc)',
+        border: '1px solid var(--vw-color-slate-200)',
+        borderRadius: 'var(--vw-radius-md)',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        userSelect: 'none'
+      }}
+    >
+      {/* Zoomed & Panned Canvas */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.k})`,
+          transformOrigin: '0 0',
+          transition: isAnim ? 'transform 0.22s cubic-bezier(0.2, 0, 0, 1)' : 'none'
+        }}
+      >
+        {tiles.map(t => (
+          <img
+            key={`${t.x}:${t.y}`}
+            alt=""
+            draggable={false}
+            src={`${ESRI_LIGHT}/${TZ}/${t.y}/${t.x}`}
+            style={{
+              position: 'absolute',
+              left: `${((t.x * 256 - UX0) / W) * 100}%`,
+              top: `${((t.y * 256 - UY0) / H) * 100}%`,
+              width: `${(256 / W) * 100}%`,
+              height: `${(256 / H) * 100}%`,
+              userSelect: 'none',
+              pointerEvents: 'none'
+            }}
+          />
+        ))}
+
+        {buckets.map((b, idx) => {
+          const pinScale = 1 / Math.sqrt(zoom.k);
+          const style = {
+            position: 'absolute' as const,
+            left: `${b.left}%`,
+            top: `${b.top}%`,
+            transform: `translate(-50%, -50%) scale(${pinScale})`,
+            padding: 0,
+            border: 0,
+            background: 'none',
+            cursor: 'pointer',
+            transition: 'opacity 0.2s ease',
+            zIndex: b.items.length > 1 ? 3 : 2
+          };
+
+          if (b.items.length === 1) {
+            const l = b.items[0];
+            const t = STATUS_PIN[l.st] || 'slate';
+            const dim = selected && l.state !== selected;
+            return (
+              <button
+                key={l.id}
+                type="button"
+                className="pin"
+                style={{ ...style, opacity: dim ? 0.35 : 1 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (dragRef.current?.moved) return;
+                  onOpen(l.id);
+                }}
+                title={`${l.name} — ${l.city}, ${l.state} · ${l.st}, ${l.disc}/${l.ne} NE discovered`}
+              >
+                <svg width="22" height="22" viewBox="-11 -11 22 22">
+                  <circle r="10" fill="var(--vw-color-white)" fillOpacity="0.92" />
+                  <circle r="6" fill={`var(--vw-color-${t}-500)`} stroke="var(--vw-color-white)" strokeWidth="1.8" />
+                </svg>
+              </button>
+            );
+          }
+
+          const ids = b.items.map(i => i.id);
           return (
-            <button key={l.id} type="button" className="pin" style={{ ...style, opacity: dim ? 0.35 : 1 }} onClick={() => onOpen(l.id)} title={`${l.name} — ${l.city}, ${l.state} · ${l.st}, ${l.disc}/${l.ne} NE discovered`}>
-              <svg width="22" height="22" viewBox="-11 -11 22 22"><circle r="10" fill="var(--vw-color-white)" fillOpacity="0.92" /><circle r="6" fill={`var(--vw-color-${t}-500)`} stroke="var(--vw-color-white)" strokeWidth="1.8" /></svg>
+            <button
+              key={ids.join(',') || idx}
+              type="button"
+              className="pin is-cluster"
+              style={style}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (dragRef.current?.moved) return;
+                onPin(ids);
+              }}
+              title={`${b.items.length} sites here — ${b.items.map(i => i.name).join(', ')}`}
+            >
+              <svg width="28" height="28" viewBox="-14 -14 28 28">
+                <circle r="13" fill="var(--vw-color-slate-800)" fillOpacity="0.18" />
+                <circle r="9.5" fill="var(--vw-color-slate-800)" stroke="var(--vw-color-white)" strokeWidth="1.8" />
+                <text y="3.4" textAnchor="middle" fontSize="10" fontWeight="600" fill="#fff" fontFamily="Inter, sans-serif">
+                  {b.items.length}
+                </text>
+              </svg>
             </button>
           );
-        }
-        const ids = b.items.map(i => i.id);
-        return (
-          <button key={ids.join(',') || idx} type="button" className="pin is-cluster" style={style} onClick={() => onPin(ids)} title={`${b.items.length} sites here — ${b.items.map(i => i.name).join(', ')}`}>
-            <svg width="28" height="28" viewBox="-14 -14 28 28"><circle r="13" fill="var(--vw-color-slate-800)" fillOpacity="0.18" /><circle r="9.5" fill="var(--vw-color-slate-800)" stroke="var(--vw-color-white)" strokeWidth="1.8" />
-              <text y="3.4" textAnchor="middle" fontSize="10" fontWeight="600" fill="#fff" fontFamily="Inter, sans-serif">{b.items.length}</text></svg>
+        })}
+      </div>
+
+      {/* Floating Zoom Controls (+ / − / ⌂) */}
+      <div
+        className="map-ctl"
+        style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          zIndex: 10
+        }}
+      >
+        <button
+          type="button"
+          className="nst-icon-btn"
+          onClick={(e) => { e.stopPropagation(); zoomBy(1.35); }}
+          aria-label="Zoom in"
+          title="Zoom in"
+          style={{
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 500,
+            color: '#1e293b',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.1)',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          +
+        </button>
+
+        {zoom.k > 1 && (
+          <span
+            style={{
+              fontSize: '10.5px',
+              fontWeight: 700,
+              color: '#475569',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              padding: '1px 4px',
+              textAlign: 'center',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)'
+            }}
+          >
+            {zoom.k.toFixed(1)}×
+          </span>
+        )}
+
+        <button
+          type="button"
+          className="nst-icon-btn"
+          onClick={(e) => { e.stopPropagation(); zoomBy(1 / 1.35); }}
+          aria-label="Zoom out"
+          title="Zoom out"
+          disabled={zoom.k <= 1}
+          style={{
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 500,
+            color: zoom.k <= 1 ? '#94a3b8' : '#1e293b',
+            cursor: zoom.k <= 1 ? 'default' : 'pointer',
+            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.1)',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          −
+        </button>
+
+        {zoom.k > 1 && (
+          <button
+            type="button"
+            className="nst-icon-btn"
+            onClick={(e) => { e.stopPropagation(); handleReset(); }}
+            aria-label="Reset view"
+            title="Reset view (100%)"
+            style={{
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '14px',
+              color: '#2563eb',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.1)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            ⌂
           </button>
-        );
-      })}
-      <span style={{ position: 'absolute', right: 6, bottom: 4, fontSize: 10, color: 'var(--vw-color-slate-500)' }}>© Esri, HERE, Garmin</span>
+        )}
+      </div>
+
+      <span
+        style={{
+          position: 'absolute',
+          right: 6,
+          bottom: 4,
+          fontSize: 10,
+          color: 'var(--vw-color-slate-500)',
+          pointerEvents: 'none'
+        }}
+      >
+        © Esri, HERE, Garmin
+      </span>
     </div>
   );
 }
