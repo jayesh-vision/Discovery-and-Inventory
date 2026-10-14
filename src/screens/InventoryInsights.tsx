@@ -303,6 +303,7 @@ export default function InventoryInsights() {
   // ── State & Filters ──
   const [dayRange, setDayRange] = useState<DayRangeOption>('30d');
   const [exportOpen, setExportOpen] = useState<boolean>(false);
+  const [exportingPdf, setExportingPdf] = useState<boolean>(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<string>('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -402,7 +403,9 @@ export default function InventoryInsights() {
   };
 
   const handleExportPdf = async () => {
+    if (exportingPdf) return;
     setExportOpen(false);
+    setExportingPdf(true);
     say('Preparing PDF…');
     try {
       const blob = await buildInsightsPdf(buildInsightsRows(dayRange), 'Inventory Insights & Executive Summary');
@@ -412,6 +415,8 @@ export default function InventoryInsights() {
       say(`Export complete: ${filename} downloaded successfully (${DAY_RANGE_LABELS[dayRange]})`);
     } catch {
       say('PDF export failed — please try again or use CSV.');
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -552,17 +557,18 @@ export default function InventoryInsights() {
             <div className="ii-export-wrap" ref={exportRef}>
               <button
                 type="button"
-                onClick={handleExportCsv}
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
                 className="ii-btn-primary"
-                title="Export Inventory Insights as CSV"
-                style={{ borderRadius: '8px 0 0 8px', borderRight: '1px solid rgba(255,255,255,0.25)' }}
+                title="Export Inventory Insights as PDF (Default)"
+                style={{ borderRadius: '8px 0 0 8px', borderRight: '1px solid rgba(255,255,255,0.25)', opacity: exportingPdf ? 0.75 : 1 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Export</span>
+                <span>{exportingPdf ? 'Exporting…' : 'Export'}</span>
               </button>
               <button
                 type="button"
@@ -597,6 +603,19 @@ export default function InventoryInsights() {
                   <button
                     type="button"
                     className="ii-export-item"
+                    onClick={handleExportPdf}
+                    role="menuitem"
+                  >
+                    <span className="ii-export-ext">PDF</span>
+                    <div className="ii-export-col">
+                      <span className="ii-export-name">PDF Report (.pdf)</span>
+                      <span className="ii-export-desc">Paginated summary of every insights section (Default)</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ii-export-item"
                     onClick={handleExportCsv}
                     role="menuitem"
                   >
@@ -617,19 +636,6 @@ export default function InventoryInsights() {
                     <div className="ii-export-col">
                       <span className="ii-export-name">JSON Data (.json)</span>
                       <span className="ii-export-desc">Structured machine-readable inventory payload</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="ii-export-item"
-                    onClick={handleExportPdf}
-                    role="menuitem"
-                  >
-                    <span className="ii-export-ext">PDF</span>
-                    <div className="ii-export-col">
-                      <span className="ii-export-name">PDF Report (.pdf)</span>
-                      <span className="ii-export-desc">Paginated summary of every insights section</span>
                     </div>
                   </button>
 
