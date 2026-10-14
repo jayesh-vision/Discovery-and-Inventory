@@ -103,8 +103,8 @@ export default function Topbar() {
      tab change in the query string on a landing never reveals a crumb. */
   const isLandingClean = Boolean(s.root || (isLanding(s) && !drill && !from));
   // On clean landing pages, Topbar hides breadcrumbs.
-  // Location renders Topbar initially so the top-right GeoDropdown is available.
-  if (isLandingClean && s.key !== 'location') return null;
+  // Location and Links render Topbar initially so the top-right GeoDropdown is available.
+  if (isLandingClean && s.key !== 'location' && s.key !== 'links') return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();

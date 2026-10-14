@@ -385,7 +385,7 @@ function dcRisks(id) {
    The Links screen gets one tab per protocol the sheet holds (LLDP, BGP, OSPF, ISIS, LSP), the Services screen one
    tab per service type (on-demand GPUs, CPU instances, storage volumes, reserved clusters). Both are drawn by
    dcViewLinks / dcViewServices below, which use the same page frame as the default screens. */
-const DC_LINK_PROTO = [['lldp', 'LLDP', 'LLDP', 'sky'], ['bgp', 'BGP', 'BGP', 'purple'], ['ospf', 'OSPF', 'OSPF', 'emerald'], ['isis', 'ISIS', 'ISIS', 'amber'], ['lsp', 'LSP', 'LSP', 'cyan']];
+const DC_LINK_PROTO = [['lldp', 'LLDP', 'LLDP', 'sky'], ['ospf', 'OSPF', 'OSPF', 'emerald'], ['bgp', 'BGP', 'BGP', 'purple'], ['isis', 'ISIS', 'ISIS', 'amber'], ['lsp', 'LSP', 'LSP', 'cyan']];
 const DC_SVC_TYPE = [['gpu', 'On-demand GPUs', 'On-demand GPUs', 'sky'], ['cpu', 'CPU instances', 'CPU instances', 'indigo'], ['storage', 'Storage volume', 'Storage volume', 'emerald'], ['reserved', 'Reserved cluster', 'Reserved cluster', 'purple']];
 const DC_PAGE = 1000;   /* rows put on the page at once; the grid then reveals them 25 at a time as the reader scrolls (app-grid.js) */
 const DC_SHOWN = {};
@@ -399,6 +399,7 @@ function dcLoadLogical() {
   LINK_ST_OPTS.bgp = ['established', 'idle']; LINK_ST_OPTS.lsp = ['up', 'down', 'standby'];
   for (const k of Object.keys(LINKS)) delete LINKS[k];
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
+  LINK_TABS.length = 0;
   for (const [k, n_, p, tone] of DC_LINK_PROTO) {
     const rows = sc.links.filter(l => l.p === p && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
       _i: i, st: p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
@@ -423,7 +424,8 @@ function dcLoadLogical() {
   }
   for (const k of Object.keys(SVC_TABS_BY_DOMAIN)) delete SVC_TABS_BY_DOMAIN[k];
   SVC_TABS_BY_DOMAIN.services = SVC_TABS;
-  TAB.link = LINK_TABS[0].k; TAB.svc = SVC_TABS[0].k;
+  TAB.link = LINK_TABS.some(x => x.k === TAB.link) ? TAB.link : (LINK_TABS[0]?.k || 'lldp');
+  TAB.svc = SVC_TABS.some(x => x.k === TAB.svc) ? TAB.svc : (SVC_TABS[0]?.k || 'gpu');
 }
 /* the grid counts the rows it was given; tell it how many the result set really holds */
 const dcTotal = (html, total) => html.replace('<table class="nst-table', `<table data-dctotal="${total}" class="nst-table`);
