@@ -9,6 +9,7 @@ import {
 } from '../data/geographicHierarchy';
 import { legacyPath } from '../routes';
 import { ActionIcon, IcKebab } from '../components/grid/icons';
+import { StatStrip, type StatCell } from '../components/ui';
 import '../styles/topology.css';
 
 type FacilityType = 'dc' | 'pop' | 'site';
@@ -794,77 +795,136 @@ export default function CityDetails() {
     ];
   }, [selectedFacilityItem]);
 
-  // Category-specific statistics for the currently selected facility
-  const deviceCategoryCards = useMemo(() => {
+  // Executive KPI statistics for the currently selected facility
+  const facilityStatCells = useMemo<StatCell[]>(() => {
     if (!selectedFacilityItem) return [];
 
-    const categories: { cat: DeviceCategory; title: string; subtitle: string; colorClass: string }[] =
-      selectedFacilityItem.facilityType === 'site'
-        ? [
-          { cat: 'gNodeB', title: '5G gNodeB', subtitle: '5G NR Radio Baseband', colorClass: 'top-bar-emerald' },
-          { cat: 'eNodeB', title: '4G eNodeB', subtitle: 'LTE Radio Baseband', colorClass: 'top-bar-cyan' },
-          { cat: 'Router', title: 'Cell Site Routers', subtitle: 'Backhaul / CSR', colorClass: 'top-bar-blue' },
-          { cat: 'Switch', title: 'Site Access Switches', subtitle: 'Access / Aggregation', colorClass: 'top-bar-purple' }
-        ]
-        : selectedFacilityItem.facilityType === 'dc'
-          ? [
-            { cat: 'Router', title: 'Core Routers', subtitle: 'Core & Edge Transit', colorClass: 'top-bar-blue' },
-            { cat: 'Switch', title: 'Fabric Switches', subtitle: 'Spine & Leaf Mesh', colorClass: 'top-bar-purple' },
-            { cat: 'DWDM', title: 'Optical / DWDM', subtitle: 'Photonic Transport', colorClass: 'top-bar-yellow' },
-            ...(SCOPED ? [
-              { cat: 'Firewall' as DeviceCategory, title: 'Firewalls', subtitle: 'Perimeter & Segmentation', colorClass: 'top-bar-blue' },
-              { cat: 'Server' as DeviceCategory, title: 'Compute Servers', subtitle: 'General Compute', colorClass: 'top-bar-emerald' },
-              { cat: 'Storage' as DeviceCategory, title: 'Storage Arrays', subtitle: 'Block & File Storage', colorClass: 'top-bar-cyan' },
-              { cat: 'GPU' as DeviceCategory, title: 'GPU Servers', subtitle: 'AI & Accelerated Compute', colorClass: 'top-bar-purple' }
-            ] : [])
-          ]
-          : [
-            { cat: 'Router', title: 'Metro Routers', subtitle: 'Aggregation & Transit', colorClass: 'top-bar-blue' },
-            { cat: 'Switch', title: 'Distribution Switches', subtitle: 'Metro Distribution', colorClass: 'top-bar-purple' },
-            { cat: 'DWDM', title: 'Optical Transport', subtitle: 'WDM Transponders', colorClass: 'top-bar-yellow' }
-          ];
+    const totalElements = facilityElements.length;
+    const verifiedCount = facilityElements.filter(e => e.status === 'Verified').length;
+    const driftedCount = facilityElements.filter(e => e.status === 'Drifted').length;
+    const verifiedPct = totalElements > 0 ? Math.round((verifiedCount / totalElements) * 100) : 100;
+    const activeCats = Array.from(new Set(facilityElements.map(e => e.category)));
 
-    return categories.map(item => {
-      const catElements = facilityElements.filter(el => el.category === item.cat);
-      const total = catElements.length;
-      const verified = catElements.filter(el => el.status === 'Verified').length;
-      const drifted = catElements.filter(el => el.status === 'Drifted').length;
-      const stale = catElements.filter(el => el.status === 'Stale').length;
-      const missing = catElements.filter(el => el.status === 'Missing').length;
-      const portsUsed = catElements.reduce((acc, el) => acc + (el.portsUsed || 0), 0);
-      const portsTotal = catElements.reduce((acc, el) => acc + (el.portsTotal || 0), 0);
-      const portPct = portsTotal > 0 ? Math.round((portsUsed / portsTotal) * 100) : 0;
-      const models = Array.from(new Set(catElements.map(el => el.model))).slice(0, 2).join(' · ');
+    if (selectedFacilityItem.facilityType === 'dc') {
+      const racksTotal = selectedFacilityItem.racksTotal || dcStats.racksTotal || 48;
+      const racksUsed = selectedFacilityItem.racksUsed || dcStats.racksUsed || 42;
+      const rackPct = Math.round((racksUsed / (racksTotal || 1)) * 100);
+      const powerText = selectedFacilityItem.powerOrUplink || `${dcStats.powerMW} MW / N+1 Dual Feed`;
+      const powerMW = powerText.includes('MW') ? powerText.split('MW')[0].trim() + ' MW' : `${dcStats.powerMW} MW`;
 
-      return {
-        ...item,
-        total,
-        verified,
-        drifted,
-        stale,
-        missing,
-        portsUsed,
-        portsTotal,
-        portPct,
-        models: models || '—'
-      };
-    });
-  }, [selectedFacilityItem, facilityElements]);
+      return [
+        {
+          k: 'Total Equipment',
+          v: `${totalElements}`,
+          s: `${activeCats.length} categories · 100% discovered`,
+          t: 'sky'
+        },
+        {
+          k: 'Reconciliation',
+          v: `${verifiedPct}%`,
+          s: `${verifiedCount} verified${driftedCount > 0 ? ` · ${driftedCount} drifted` : ' · 0 drifted'}`,
+          t: driftedCount > 0 ? 'amber' : 'emerald'
+        },
+        {
+          k: 'Rack Utilization',
+          v: `${racksUsed}/${racksTotal}`,
+          s: `${rackPct}% allocated · Standard 42U`,
+          t: 'cyan'
+        },
+        {
+          k: 'Power Capacity',
+          v: powerMW,
+          s: powerText.includes('/') ? powerText.split('/').slice(1).join('/').trim() : 'N+1 redundant feed',
+          t: 'amber'
+        },
+        {
+          k: 'Facility Profile',
+          v: selectedFacilityItem.tierOrClassification || 'Tier III DC',
+          s: `${selectedFacilityItem.code} · ${selectedFacilityItem.status}`,
+          t: 'purple'
+        }
+      ];
+    }
+
+    if (selectedFacilityItem.facilityType === 'pop') {
+      return [
+        {
+          k: 'Total Equipment',
+          v: `${totalElements}`,
+          s: `${activeCats.length} active device types`,
+          t: 'sky'
+        },
+        {
+          k: 'Reconciliation',
+          v: `${verifiedPct}%`,
+          s: `${verifiedCount} verified${driftedCount > 0 ? ` · ${driftedCount} drifted` : ' · 0 drifted'}`,
+          t: driftedCount > 0 ? 'amber' : 'emerald'
+        },
+        {
+          k: 'PoP Tier',
+          v: selectedFacilityItem.tierOrClassification || 'Metro PoP',
+          s: `${popStats.metroHubs} Hub · ${popStats.transitNodes} Transit`,
+          t: 'cyan'
+        },
+        {
+          k: 'Uplink Capacity',
+          v: selectedFacilityItem.powerOrUplink || '100G DWDM',
+          s: 'Redundant optical paths',
+          t: 'amber'
+        },
+        {
+          k: 'PoP Profile',
+          v: selectedFacilityItem.code,
+          s: `${selectedFacilityItem.address || city.name} · ${selectedFacilityItem.status}`,
+          t: 'purple'
+        }
+      ];
+    }
+
+    // Site
+    const siteAttrs = getSiteAttributes(selectedFacilityItem);
+    return [
+      {
+        k: 'Total Equipment',
+        v: `${totalElements}`,
+        s: `${activeCats.length} active radio & backhaul tiers`,
+        t: 'sky'
+      },
+      {
+        k: 'Reconciliation',
+        v: `${verifiedPct}%`,
+        s: `${verifiedCount} verified${driftedCount > 0 ? ` · ${driftedCount} drifted` : ' · 0 drifted'}`,
+        t: driftedCount > 0 ? 'amber' : 'emerald'
+      },
+      {
+        k: 'Structure Type',
+        v: siteAttrs.structure || 'Macro Tower',
+        s: `Type: ${siteAttrs.type || 'GBT'}`,
+        t: 'cyan'
+      },
+      {
+        k: 'Backhaul / Power',
+        v: selectedFacilityItem.powerOrUplink || '10G Fiber',
+        s: 'Grid + battery backup',
+        t: 'amber'
+      },
+      {
+        k: 'Site Profile',
+        v: selectedFacilityItem.code,
+        s: `${selectedFacilityItem.address || city.name} · ${selectedFacilityItem.status}`,
+        t: 'purple'
+      }
+    ];
+  }, [selectedFacilityItem, facilityElements, dcStats, popStats, city.name]);
 
   return (
     <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
-      {/* ── Top Summary Cards (City-Level Facilities OR Facility-Level Devices) ── */}
-      <section
-        className="city-three-cards-grid"
-        style={{
-          marginBottom: '24px',
-          ...(selectedFacilityItem && deviceCategoryCards.length > 3
-            ? { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }
-            : {})
-        }}
-      >
-        {!selectedFacilityItem ? (
-          <>
+      {/* ── Top Summary Cards (City-Level Facilities OR Facility-Level Executive Stat Strip) ── */}
+      {!selectedFacilityItem ? (
+        <section
+          className="city-three-cards-grid"
+          style={{ marginBottom: '24px' }}
+        >
             {/* Card 1: Data Centers */}
             <div
               className={`city-summary-card top-bar-yellow${selectedFacility === 'dc' ? ' is-active' : ''}`}
@@ -1005,67 +1065,12 @@ export default function CityDetails() {
                 <span>Small cell: <strong style={{ color: '#1e293b' }}>{siteStats.smallCellCount}</strong></span>
               </div>
             </div>
-          </>
-        ) : (
-          deviceCategoryCards.map(card => (
-            <div
-              key={card.cat}
-              className={`city-summary-card ${card.colorClass}${selectedCategory === card.cat ? ' is-active' : ''}`}
-              onClick={() => setSelectedCategory(card.cat)}
-              role="button"
-              tabIndex={0}
-              title={`Click to filter elements by ${card.title}`}
-            >
-              <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-                <span className="city-card-title">{card.title}</span>
-                {selectedCategory === card.cat ? (
-                  <span className="nst-badge nst-badge--xs" style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                    Active view
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                    {card.subtitle}
-                  </span>
-                )}
-              </div>
-              <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-                <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{card.total}</span>
-                <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>devices</span>
-              </div>
-              <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                {card.verified} verified{card.drifted > 0 ? ` · ${card.drifted} drifted` : ''}
-              </div>
-
-              {/* Meter progress bar */}
-              <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                <span style={{ width: `${(card.verified / (card.total || 1)) * 100}%`, background: '#10b981' }} title={`Verified: ${card.verified}`} />
-                {card.drifted > 0 && <span style={{ width: `${(card.drifted / (card.total || 1)) * 100}%`, background: '#f59e0b' }} title={`Drifted: ${card.drifted}`} />}
-                {card.stale > 0 && <span style={{ width: `${(card.stale / (card.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Stale: ${card.stale}`} />}
-                {card.missing > 0 && <span style={{ width: `${(card.missing / (card.total || 1)) * 100}%`, background: '#ef4444' }} title={`Missing: ${card.missing}`} />}
-              </div>
-
-              {/* Dot Legend */}
-              <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-                <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{card.verified} verified</span>
-                {card.drifted > 0 && (
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{card.drifted} drifted</span>
-                )}
-                {card.stale > 0 && (
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{card.stale} planned</span>
-                )}
-              </div>
-
-              {/* Clean secondary telemetry insight */}
-              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Ports: <strong style={{ color: '#1e293b' }}>{card.portsUsed}/{card.portsTotal}</strong> ({card.portPct}%)</span>
-                <span style={{ maxWidth: '52%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#475569', fontWeight: 500 }} title={card.models}>
-                  {card.models}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </section>
+        </section>
+      ) : (
+        <section style={{ marginBottom: '20px' }}>
+          <StatStrip cells={facilityStatCells} />
+        </section>
+      )}
 
       {/* ── Main Content Section: Facility Listing OR Facility Elements ── */}
       <section className="vw-card-section city-table-card" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
@@ -1814,26 +1819,50 @@ export default function CityDetails() {
         {/* ── VIEW 2: Network Element Listing for Selected Facility ─────── */}
         {selectedFacilityItem && (
           <div>
-            {/* Device Category Tabs Bar (Router, Switch, DWDM, etc.) */}
+            {/* Device Category Tabs Bar (Router, Switch, DWDM, etc.) with live device counts */}
             <div
               style={{
                 display: 'flex',
-                alignItems: 'flex-end',
+                alignItems: 'center',
                 borderBottom: '1px solid var(--vw-color-slate-200)',
                 marginBottom: '16px'
               }}
             >
               <div className="tabbar" style={{ borderBottom: 'none', padding: 0 }}>
-                {deviceTabs.map(tab => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    className={`tab${selectedCategory === tab.key ? ' is-on' : ''}`}
-                    onClick={() => setSelectedCategory(tab.key)}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                {deviceTabs.map(tab => {
+                  const count = facilityElements.filter(el => el.category === tab.key).length;
+                  const isActive = selectedCategory === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      className={`tab${isActive ? ' is-on' : ''}`}
+                      onClick={() => setSelectedCategory(tab.key)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        paddingBottom: '10px'
+                      }}
+                    >
+                      <span>{tab.label}</span>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          lineHeight: '1',
+                          padding: '2px 7px',
+                          borderRadius: '10px',
+                          background: isActive ? '#0f172a' : '#f1f5f9',
+                          color: isActive ? '#ffffff' : count === 0 ? '#94a3b8' : '#475569',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
