@@ -246218,13 +246218,7 @@ function viewSite() {
           ];
         })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-             No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}
-      ${rows.length ? `<div class="vw-card-footer-divider legend">
-        <span class="legend-i">${rst('ok')} record and network agree</span>
-        <span class="legend-i">${rst('drift')} an attribute differs</span>
-        <span class="legend-i">${rst('stale')} past the verification SLA</span>
-        <span class="legend-i">${rst('none')} not discovered</span>
-      </div>` : ''}`)}
+             No ${SITE_TABS.find(t=>t.k===SITE_TAB).n.toLowerCase()} elements recorded at this site.</div>`}`)}
   </div>`;
 }
 
@@ -246584,14 +246578,7 @@ function viewPhysical() {
           ? []
           : [...(hasNodeView(t) ? [A('Node view', { v:'node', l:`${nodeClassName(t)} · ${rows[i].name}`, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` })] : []),
              A('View details', { v:'resource', l:rows[i].name, q:`name=${encodeURIComponent(rows[i].name)}${rows[i].ip ? `&ip=${encodeURIComponent(rows[i].ip)}` : ''}` }),
-             siteA(rows[i].loc)])}
-      <div class="vw-card-footer-divider legend">
-        <span class="legend-i">${rst('ok')} record and network agree</span>
-        <span class="legend-i">${rst('drift')} an attribute differs</span>
-        <span class="legend-i">${rst('stale')} past the verification SLA</span>
-        <span class="legend-i">${rst('miss')} did not answer</span>
-        <span class="legend-i">${rst('none')} no collector reaches this class</span>
-      </div>`)}
+             siteA(rows[i].loc)])}`)}
   </div>`;
 }
 
