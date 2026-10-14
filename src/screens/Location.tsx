@@ -160,7 +160,7 @@ export default function Location() {
   };
 
   return (
-    <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div className="page" style={{ padding: '16px 32px 24px', maxWidth: '1600px', margin: '0 auto' }}>
       {/* ── Top 4 KPI Progress Cards ─────────────────────────────── */}
       <section className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: '0' }}>
         <KpiCard label="Total locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" tone="sky"

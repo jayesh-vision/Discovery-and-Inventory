@@ -101,7 +101,10 @@ export default function Topbar() {
      sub-route screens are not landings, so they always render the full chain.
      Decided from the matched route and these two params only, so a filter or
      tab change in the query string on a landing never reveals a crumb. */
-  if (s.root || (isLanding(s) && !drill && !from)) return null;
+  const isLandingClean = Boolean(s.root || (isLanding(s) && !drill && !from));
+  // On clean landing pages, Topbar hides breadcrumbs.
+  // Location renders Topbar initially so the top-right GeoDropdown is available.
+  if (isLandingClean && s.key !== 'location') return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();
@@ -676,7 +679,7 @@ export default function Topbar() {
   return (
     <div className="topbar">
       <nav className="topbar-crumbs" aria-label="Breadcrumb">
-        {segs.map((g, i) => (
+        {!isLandingClean && segs.map((g, i) => (
           <span key={i} className="topbar-seg">
             {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
             {g.to

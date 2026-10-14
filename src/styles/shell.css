@@ -1953,7 +1953,7 @@ a.side-item.active:not(.is-active) { background: transparent; }
    content's own side padding, not the page's own title (some screens
    have none), so it always sits flush above whatever renders below it. */
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
-  padding: var(--vw-space-lg) var(--vw-space-xl) 0; font-size: var(--vw-font-label-md); }
+  padding: 16px 32px 0; font-size: var(--vw-font-label-md); max-width: 1600px; margin: 0 auto; box-sizing: border-box; width: 100%; }
 .topbar-crumbs { display: flex; align-items: center; flex-wrap: wrap; }
 .topbar-right { display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; }
 .topbar-seg { display: inline-flex; align-items: center; }
