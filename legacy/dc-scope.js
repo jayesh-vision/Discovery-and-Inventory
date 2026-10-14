@@ -262,7 +262,15 @@ function dcApplyScope(geo) {
 /* ── what the data center records do not hold stays empty ── */
 function dcScopeLegacy() {
   if (!DC_ON) return;
-  SITE_TABS.push(...DC_EXTRA_TABS);
+  SITE_TABS.length = 0;
+  SITE_TABS.push(
+    { k: 'router', n: 'Router' },
+    { k: 'switch', n: 'Switch' },
+    { k: 'firewall', n: 'Firewall' },
+    { k: 'server', n: 'Server' },
+    { k: 'storage', n: 'Storage' },
+    { k: 'gpu', n: 'GPU' }
+  );
   PASS_TAB = 'rack';   /* open Passive infrastructure on the first tab the data centers have records for */
   VNFS.length = 0;
   window.__dcSumAll = [...(window.__dcSum || [])];

@@ -1426,7 +1426,7 @@ const statStrip = cells => `<div class="stat-strip">${cells.map(c => {
   const inner = `<span class="stat-dot" style="background:${cv(tone,400)}"></span>
     <span class="stat-k">${c.k}</span>
     <span class="stat-v num stat-v--${tone}" style="color:${cv(tone,700)}">${c.v}</span>
-    <span class="stat-s">${c.s}</span>${pct === null ? '' :
+    <span class="stat-s" title="${c.s}">${c.s}</span>${pct === null ? '' :
     `<span class="stat-bar" title="${pct}%" role="img" aria-label="${c.k}: ${pct} percent"><span style="width:${pct}%;background:${cv(tone,400)}"></span></span>`}`;
   return c.go ? `<button class="stat-cell is-click stat-cell--${tone}" data-tone="${tone}" data-sitesection="${c.go}">${inner}</button>`
     : c.d ? `<button class="stat-cell is-click stat-cell--${tone}" data-tone="${tone}"${dA(c.d)}>${inner}</button>`
@@ -2229,7 +2229,7 @@ function viewSite() {
   const cxData = capexOf(l.id, l.ne), cxTotal = capexTotal(cxData.items), cxA = cxData.approved;
   const oxRun = opexRun(opexOf(l.id, l.ne).items);
   const meta = [['Name', l.name], ['Site type', l.type], ['Location ID', l.id], ['Address', l.addr],
-                ['Zone', l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'],
+                ['Zone', (typeof DC_ON !== 'undefined' && DC_ON && typeof dcSumOf === 'function' && dcSumOf(l.id) && dcSumOf(l.id).regionId) ? (dcSumOf(l.id).regionId.charAt(0).toUpperCase() + dcSumOf(l.id).regionId.slice(1)) : ((typeof STATE_REGION !== 'undefined' && STATE_REGION[l.state]) || (l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'))],
                 ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']];
 
   const cols = SITE_TAB === 'switch'
@@ -2457,7 +2457,7 @@ function siteHeadData(id) {
         : { t: `${l.ne - l.disc} not discovered`, tone: 'warning' }
     ],
     meta: [['Name', l.name], ['Site type', l.type], ['Location ID', l.id], ['Address', l.addr],
-      ['Zone', l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'],
+      ['Zone', (typeof DC_ON !== 'undefined' && DC_ON && typeof dcSumOf === 'function' && dcSumOf(l.id) && dcSumOf(l.id).regionId) ? (dcSumOf(l.id).regionId.charAt(0).toUpperCase() + dcSumOf(l.id).regionId.slice(1)) : ((typeof STATE_REGION !== 'undefined' && STATE_REGION[l.state]) || (l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'))],
       ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']],
     cells: [
       { k: 'Network elements', v: n(tot), s: counts.map(c => `${c.n} ${c.c}`).join(' · '), t: 'sky', section: 'ne' },
