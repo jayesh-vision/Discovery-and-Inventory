@@ -5,6 +5,7 @@
    ─────────────────────────────────────────────────────────────────── */
 
 import { DC_CIRCLES, DC_REGIONS, DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
+import type { DcGeo } from './dc';
 
 export interface CityItem {
   id: string;
@@ -5362,7 +5363,7 @@ const DEFAULT_GEOGRAPHIC_HIERARCHY: RegionItem[] = [
 const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 /* a US region borrows the look of the Indian region it sits nearest to */
 const US_LOOK: Record<string, RegionItem['iconType']> = { northeast: 'north', southeast: 'south', central: 'east', west: 'west' };
-function scopedHierarchy(): RegionItem[] {
+function scopedHierarchy(geo?: DcGeo | null): RegionItem[] {
   const regions: RegionItem[] = [];
   const look = (t: RegionItem['iconType']) => DEFAULT_GEOGRAPHIC_HIERARCHY.find(r => r.iconType === t)!;
   const palette = DEFAULT_GEOGRAPHIC_HIERARCHY.flatMap(r => r.states.map(st => [st.themeColor, st.bgColor] as const));
@@ -5372,7 +5373,8 @@ function scopedHierarchy(): RegionItem[] {
       const here = ds.filter(d => d.city === name), k = known?.cities.find(c => c.name === name);
       return { id: k?.id ?? `${stateId}-${slug(name)}`, name, count: here.reduce((a, d) => a + d.devices, 0), stateId, dcCount: here.length, popCount: 0, siteCount: 0 };
     });
-  for (const reg of DC_REGIONS) {
+  const filteredRegs = geo ? DC_REGIONS.filter(r => r.geo === geo) : DC_REGIONS;
+  for (const reg of filteredRegs) {
     const inRegion = DC_CIRCLES.filter(c => c.geo === reg.geo && c.regionId === reg.id);
     const us = reg.geo === 'us';
     const base = us ? look(US_LOOK[reg.id] ?? 'west') : DEFAULT_GEOGRAPHIC_HIERARCHY.find(r => r.id === reg.id);
@@ -5392,18 +5394,37 @@ function scopedHierarchy(): RegionItem[] {
   }
   return regions;
 }
+
+export const getGeographicHierarchy = (geo?: DcGeo | null): RegionItem[] =>
+  SCOPED ? scopedHierarchy(geo) : DEFAULT_GEOGRAPHIC_HIERARCHY;
+
 export const GEOGRAPHIC_HIERARCHY: RegionItem[] = SCOPED ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
-export const TOP_HIERARCHY_METRICS = SCOPED
-  ? DEFAULT_TOP_HIERARCHY_METRICS.map(m => ({ ...m, count: ({
-      regions: String(GEOGRAPHIC_HIERARCHY.length), states: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.states.length, 0)),
-      cities: String(GEOGRAPHIC_HIERARCHY.reduce((a, r) => a + r.cityCount, 0)), datacenters: String(DC_SUM.length), pops: '0', sites: '0', alarms: '0'
-    } as Record<string, string>)[m.id] ?? m.count }))
-  : DEFAULT_TOP_HIERARCHY_METRICS;
+export const getTopHierarchyMetrics = (geo?: DcGeo | null) => {
+  if (!SCOPED) return DEFAULT_TOP_HIERARCHY_METRICS;
+  const h = scopedHierarchy(geo);
+  const dcs = geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
+  return DEFAULT_TOP_HIERARCHY_METRICS.map(m => ({
+    ...m,
+    count: ({
+      regions: String(h.length),
+      states: String(h.reduce((a, r) => a + r.states.length, 0)),
+      cities: String(h.reduce((a, r) => a + r.cityCount, 0)),
+      datacenters: String(dcs.length),
+      Datacenters: String(dcs.length),
+      pops: '0',
+      sites: '0',
+      alarms: '0'
+    } as Record<string, string>)[m.id] ?? m.count
+  }));
+};
+
+export const TOP_HIERARCHY_METRICS = getTopHierarchyMetrics();
 
 // Helper to look up a city item without default fallback
 export function findCityById(cityId?: string | null): { city: CityItem; state: StateItem; region: RegionItem; facilityType?: 'dc' | 'pop' | 'site' } | null {
   if (!cityId) return null;
-  for (const reg of GEOGRAPHIC_HIERARCHY) {
+  const allHierarchy = SCOPED ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
+  for (const reg of allHierarchy) {
     for (const st of reg.states) {
       const city = st.cities.find(c => c.id === cityId);
       if (city) {

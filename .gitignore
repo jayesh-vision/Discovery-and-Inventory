@@ -22,3 +22,7 @@ tests/unit/.vite-cache/
 .vite-user-cache/
 .vite-cache-local/
 .vite-cache-user/
+.vite_dev_cache/
+dist.old/
+dist_root/
+.vite_run_cache/

@@ -1948,19 +1948,52 @@ function locList() {
     LOC_CAT ? `cat=${LOC_CAT}` : '', LOC_STATE ? `state=${LOC_STATE}` : '',
     LOC_GROUP ? `group=${LOC_GROUP}` : ''
   ].filter(Boolean).join('&');
-  const REGION_TONE = { North:'sky', East:'purple', West:'orange', South:'teal' };
-  const regionCards = (DC_ON ? dcRegionList() : ['North','East','West','South']).map(r => {
+  /* Four macro region cards (West, North, South, East) above the list.
+     Consolidates all geographies (India, US, and any future countries) into 4 cardinal macro regions.
+     The subtitle explicitly shows the country breakdown (e.g. 6 India, 9 US), and the segmented meter
+     bar shows the status breakdown (On-air, In progress, Planned, Failed).
+     Clicking a card filters the table to that macro region, and clicking it again toggles it off. */
+  const REGION_TONE = { North:'sky', South:'teal', West:'orange', East:'purple' };
+  const REGIONS = ['North', 'South', 'West', 'East'];
+  const regionCardsHtml = REGIONS.map(r => {
     const rows = base.filter(l => STATE_REGION[l.state] === r);
     const c = k => rows.filter(l => l.st === k).length;
     const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
     const tot = rows.length, live = c('On-air'), failed = c('Failed');
+    const isSel = LOC_REGION === r;
+    const geoQ = LOC_GEO_FILTER ? `geo=${LOC_GEO_FILTER}` : '';
+    const qParts = [
+      'view=list',
+      isSel ? '' : `region=${r}`,
+      geoQ,
+      carry
+    ].filter(Boolean).join('&');
+    const targetQ = qParts;
+
+    let subText = tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here';
+    if (DC_ON && tot) {
+      const geoCounts = {};
+      rows.forEach(l => {
+        const d = dcSumOf(l.id);
+        const g = (d && d.geo ? d.geo : 'in').toUpperCase();
+        geoCounts[g] = (geoCounts[g] || 0) + 1;
+      });
+      const geoParts = Object.entries(geoCounts).map(([g, count]) => `${count} ${g === 'IN' ? 'India' : g === 'US' ? 'US' : g}`);
+      if (geoParts.length > 0) {
+        subText = `${(live/tot*100).toFixed(0)}% on-air · ${geoParts.join(' · ')}`;
+        if (failed > 0) subText += ` · ${n(failed)} failed`;
+      }
+    }
+
     return kpiProgress(`${r} region`, n(tot),
-      tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here',
+      subText,
       segs, REGION_TONE[r] || 'slate',
-      { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
-      LOC_REGION === r);
+      { v:'location', l:`Locations in ${r} region`, q: targetQ },
+      isSel);
   }).join('');
-  return `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
+
+  return `
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -1982,7 +2015,7 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), 'chip-auto',
-        i => [A('View details', { v:'site', l:shown[i].name, q:`id=${shown[i].id}` })],
+        i => [A('View details', { v:'site', l:shown[i].name, q:`id=${shown[i].id}${LOC_GEO_FILTER ? '&geo=' + LOC_GEO_FILTER : ''}` })],
         i => ({ 'data-site': shown[i].id }))}`)}`;
 }
 

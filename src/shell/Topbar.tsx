@@ -4,6 +4,8 @@ import { getCityById, findCityById, findCityByFacilityCode } from '../data/geogr
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 import { store } from '../dcim/api';
+import { isDatacenter, isInventoryPath, withSolution } from '../solution';
+import GeoDropdown from '../components/ui/GeoDropdown';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -678,16 +680,17 @@ export default function Topbar() {
           <span key={i} className="topbar-seg">
             {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
             {g.to
-              ? <button className="topbar-crumb-link" onClick={() => nav(g.to as string, { state: { reset: true } })}>{g.label}</button>
+              ? <button className="topbar-crumb-link" onClick={() => nav(withSolution(g.to as string), { state: { reset: true } })}>{g.label}</button>
               : <span className={i === segs.length - 1 ? 'topbar-crumb-current' : 'topbar-crumb-text'}>{g.label}</span>}
           </span>
         ))}
       </nav>
-      {reportDef && reportContent && (
-        <div className="topbar-right">
+      <div className="topbar-right" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+        {(isDatacenter() || isInventoryPath(loc.pathname)) && <GeoDropdown />}
+        {reportDef && reportContent && (
           <ExportMenu def={reportDef} content={reportContent} withPrint label="Download report" />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

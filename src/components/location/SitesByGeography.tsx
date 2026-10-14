@@ -4,6 +4,7 @@ import geo from '../../data/geo.json';
 import { ROSTER as allLocations } from '../../data/locationRoster';
 import { DC_CIRCLES, DC_GEO_LABEL, DC_SUM, SCOPED } from '../../data/dc/scope';
 import type { DcGeo } from '../../data/dc';
+import { withSolution } from '../../solution';
 
 const GEO = geo as {
   W: number;
@@ -228,11 +229,15 @@ function UsMap({ pins, selected, onPin, onOpen }: {
 export interface SitesByGeographyProps {
   selectedCircle?: string | null;
   onSelectCircle?: (circleCode: string | null) => void;
+  activeCountry?: DcGeo;
+  onSelectCountry?: (country: DcGeo) => void;
 }
 
 export default function SitesByGeography({
   selectedCircle: propSelectedCircle,
-  onSelectCircle
+  onSelectCircle,
+  activeCountry: propActiveCountry,
+  onSelectCountry: _onSelectCountry
 }: SitesByGeographyProps = {}) {
   const nav = useNavigate();
   const [mapColor, setMapColor] = useState<MapMode>('onair');
@@ -246,8 +251,8 @@ export default function SitesByGeography({
   };
   const [pinGroup, setPinGroup] = useState<string[] | null>(null);
   /* the data center solution covers two countries: one map and one list at a time */
-  const countries = useMemo(() => (SCOPED ? ([...new Set(LOC_GEO.map(g => g.geo))].filter(Boolean) as DcGeo[]) : []), []);
-  const [country, setCountry] = useState<DcGeo>('in');
+  const internalCountry = propActiveCountry || (SCOPED ? 'us' : 'in');
+  const country = propActiveCountry !== undefined ? propActiveCountry : (SCOPED ? 'us' : internalCountry);
   const geoList = SCOPED ? LOC_GEO.filter(g => g.geo === country) : LOC_GEO;
   const isUs = SCOPED && country === 'us';
   const countryName = SCOPED ? DC_GEO_LABEL[country] : 'India';
@@ -382,16 +387,6 @@ export default function SitesByGeography({
       <div className="row vw-justify-between vw-items-start vw-wrap" style={{ marginBottom: 'var(--vw-space-md)', gap: 'var(--vw-space-md)' }}>
         <span className="vw-card-title-sm">Sites by geography</span>
         <div className="row vw-wrap" style={{ gap: 'var(--vw-space-md)', alignItems: 'center' }}>
-          {countries.length > 1 && (
-            <div className="seg" role="group" aria-label="Country">
-              {countries.map(c => (
-                <button key={c} type="button" className={country === c ? 'is-on' : ''}
-                  onClick={() => { setCountry(c); setSelectedCircle(null); setPinGroup(null); }}>
-                  {DC_GEO_LABEL[c]}
-                </button>
-              ))}
-            </div>
-          )}
           {!isUs && <span className="vw-card-metric-label-sub">Colour by</span>}
           {!isUs && <div className="seg">
             {MAP_MODES.map(m => (
@@ -429,7 +424,7 @@ export default function SitesByGeography({
         {/* Left: Map */}
         <div className="map-wrap">
           {isUs ? (
-            <UsMap pins={mapLayer === 'sites' ? usPins : []} selected={activeGeo?.st ?? null} onPin={ids => setPinGroup(ids)} onOpen={id => nav(`/inventory/location/site/${id}`)} />
+            <UsMap pins={mapLayer === 'sites' ? usPins : []} selected={activeGeo?.st ?? null} onPin={ids => setPinGroup(ids)} onOpen={id => nav(withSolution(`/inventory/location/site/${id}`))} />
           ) : (
           <>
           <svg
@@ -528,7 +523,7 @@ export default function SitesByGeography({
                       onClick={e => {
                         e.stopPropagation();
                         if (!dragRef.current?.moved) {
-                          nav(`/inventory/location/site/${l.id}`);
+                          nav(withSolution(`/inventory/location/site/${l.id}`));
                         }
                       }}
                     >
@@ -642,7 +637,7 @@ export default function SitesByGeography({
                       key={l!.id}
                       type="button"
                       className="site-row"
-                      onClick={() => nav(`/inventory/location/site/${l!.id}`)}
+                      onClick={() => nav(withSolution(`/inventory/location/site/${l!.id}`))}
                     >
                       <span className="row" style={{ gap: 'var(--vw-space-xs)', alignItems: 'center' }}>
                         <span className={`vw-chip vw-chip--${l!.chip === 'warning' ? 'warning' : l!.chip === 'error' ? 'error' : l!.chip === 'info' ? 'info' : 'success'}`}>
@@ -766,7 +761,7 @@ export default function SitesByGeography({
                               key={l.id}
                               type="button"
                               className="site-row"
-                              onClick={() => nav(`/inventory/location/site/${l.id}`)}
+                              onClick={() => nav(withSolution(`/inventory/location/site/${l.id}`))}
                             >
                               <span className="row" style={{ gap: 'var(--vw-space-xs)', alignItems: 'center' }}>
                                 <span className={`vw-chip vw-chip--${l.chip === 'warning' ? 'warning' : l.chip === 'error' ? 'error' : l.chip === 'info' ? 'info' : 'success'}`}>
@@ -796,7 +791,7 @@ export default function SitesByGeography({
                       type="button"
                       className="nst-btn nst-btn--sm nst-btn--filled is-drill"
                       style={{ alignSelf: 'flex-start', marginTop: 'auto' }}
-                      onClick={() => nav(`/inventory/location?view=list&state=${encodeURIComponent(activeGeo.st)}`)}
+                      onClick={() => nav(withSolution(`/inventory/location?view=list&state=${encodeURIComponent(activeGeo.st)}${country ? `&geo=${country}` : ''}`))}
                     >
                       Open {fmt(activeGeo.tot)} sites
                     </button>

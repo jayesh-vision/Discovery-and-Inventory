@@ -234,6 +234,12 @@ function applyDrillQuery(view, q, label) {
     LOC_ST = dq(p.st); LOC_CAT = dq(p.cat); LOC_STATE = dq(p.state); LOC_REGION = dq(p.region);
     LOC_TYPEGRP = dq(p.type);
     LOC_GROUP = dq(p.group);
+    const g = (p.geo || p.country || (typeof DC_ON !== 'undefined' && DC_ON ? 'us' : '')).toLowerCase();
+    if (g === 'in') {
+      if (typeof dcApplyScope === 'function') dcApplyScope('in');
+    } else if (g === 'us' || (typeof DC_ON !== 'undefined' && DC_ON)) {
+      if (typeof dcApplyScope === 'function') dcApplyScope('us');
+    }
   }
   if (view === 'site')     {
     if (p.id) {
@@ -436,6 +442,19 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
+  const geoBtn = e.target.closest('[data-geofilter]');
+  if (geoBtn) {
+    const g = geoBtn.getAttribute('data-geofilter');
+    const targetGeo = (g === 'all' || !g) ? null : g;
+    if (typeof dcApplyScope === 'function') dcApplyScope(targetGeo);
+    if (window.__nsBridge && window.__nsBridge.navigate) {
+      const q = targetGeo ? `view=list&geo=${targetGeo}` : 'view=list&geo=all';
+      window.__nsBridge.navigate('location', { q, label: 'Locations' });
+    } else {
+      go(CURRENT);
+    }
+    return;
+  }
   const kbBtn = e.target.closest('[data-kebab]');
   if (kbBtn) { const k = kbBtn.dataset.kebab; KEBAB = (KEBAB === k) ? null : k;
     GRIDMENU = false; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }

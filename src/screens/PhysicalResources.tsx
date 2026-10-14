@@ -8,8 +8,8 @@ import {
   type DcDevice, type DcFacility, type DcGpuData, type DcGpuNode, type DcTab
 } from '../data/dc';
 import '../styles/dc-inventory.css';
-import { isDatacenter } from '../solution';
-import { SCOPED, dcRegionLabel, dcRegionLabels } from '../data/dc/scope';
+import { currentGeo, isDatacenter, withSolution, type DcGeo } from '../solution';
+import { SCOPED, dcRegionLabel, dcRegionLabels, dcSumList } from '../data/dc/scope';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
   ACTIVE_STATES, NE_CLASSES, PHY_TABS, RSTATE, fmt, hasNodeView, nodeClassName,
@@ -72,6 +72,8 @@ export default function PhysicalResources() {
   /* screen state lives in the URL, so drill-downs and reloads land on the same view */
   const oem = sp.get('oem');
   const model = sp.get('model');
+  const geoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (scoped ? 'us' : '')).toLowerCase();
+  const activeGeo: DcGeo | null = scoped ? (geoParam === 'in' ? 'in' : 'us') : ((geoParam === 'us' || geoParam === 'in') ? (geoParam as DcGeo) : null);
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
   const discoveryScoped = !scoped && !!(oem || model);
@@ -118,6 +120,14 @@ export default function PhysicalResources() {
   }, [stockParam]);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const geoFacs = useMemo(() => {
+    if (!facilities) return null;
+    return activeGeo ? facilities.filter(f => f.geo === activeGeo) : facilities;
+  }, [facilities, activeGeo]);
+  const validFacIds = useMemo(() => {
+    return geoFacs ? new Set(geoFacs.map(f => f.id)) : null;
+  }, [geoFacs]);
+
   const netRows: Row[] = useMemo(() => {
     if (scoped || !isNe(cls)) return [];
     let r = phyRows(cls, stock);
@@ -132,17 +142,23 @@ export default function PhysicalResources() {
     const role = DC_ROLE_BY_TAB[cls];
     const fac = new Map(facilities.map(f => [f.id, f]));
     const node = new Map((gpu?.nodes ?? []).map(n => [n.neId, n]));
-    return devices.filter(d => d.role === role && (!dcId || d.dcId === dcId) && stock.has(STOCK_OF[d.lifecycle]))
+    return devices.filter(d => d.role === role && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId)) && stock.has(STOCK_OF[d.lifecycle]))
       .map(d => dcRow(d, fac.get(d.dcId)!, node.get(d.id)));
-  }, [scoped, devices, facilities, gpu, cls, dcId, stock]);
+  }, [scoped, devices, facilities, gpu, cls, dcId, validFacIds, stock]);
   const dcRows = dcAll;
 
   const rows = useMemo(() => [...netRows, ...dcRows], [netRows, dcRows]);
   /* default: the ledger's own count. data center solution: the records in scope (the manifest's
      count until they have loaded) */
   const netCount = scoped || !isNe(cls) ? 0 : oem || model ? netRows.length : phyCount(cls, stock);
+  const dcExpectedCount = useMemo(() => {
+    if (!isDcTab(cls)) return 0;
+    if (!activeGeo) return dcTabCount(cls);
+    const role = DC_ROLE_BY_TAB[cls];
+    return dcSumList(activeGeo).reduce((a, d) => a + (d.byRole[role] ?? 0), 0);
+  }, [activeGeo, cls]);
   const dcWait = scoped && isDcTab(cls) && !(devices && facilities);
-  const dcCount = dcWait ? (dcId ? 0 : dcTabCount(cls)) : dcAll.length;
+  const dcCount = dcWait ? (dcId ? 0 : dcExpectedCount) : dcAll.length;
   const total = netCount + dcCount;
   const open = openName ? rows.find(r => r.name === openName) ?? null : null;
 
@@ -152,7 +168,7 @@ export default function PhysicalResources() {
      the breadcrumb then reads Resources > Physical Resources > … instead of
      jumping to the Location chain. */
   const FROM = `Resources · Physical Resources?cls=${cls}`;
-  const openRack = (r: Row) => r.dc && nav(`/inventory/passive?tab=rack&dc=${encodeURIComponent(r.loc)}&rack=${encodeURIComponent(dcShort(r.dc.dev.rackId, r.loc))}`);
+  const openRack = (r: Row) => r.dc && nav(withSolution(`/inventory/passive?tab=rack&dc=${encodeURIComponent(r.loc)}&rack=${encodeURIComponent(dcShort(r.dc.dev.rackId, r.loc))}`));
   const openSite = (loc: string) => {
     /* the row's location tag is a sample city code — resolve it to the real
        roster site first, so the URL, breadcrumb and page all name one site */
@@ -195,13 +211,13 @@ export default function PhysicalResources() {
   /* GPU servers in scope: the data center picked, or all of them */
   const gpuScope = useMemo(() => {
     if (!gpu) return null;
-    const nodes = gpu.nodes.filter(n => !dcId || n.dcId === dcId);
-    return { nodes, clusters: gpu.clusters.filter(c => !dcId || c.dcId === dcId) };
-  }, [gpu, dcId]);
+    const nodes = gpu.nodes.filter(n => (!dcId || n.dcId === dcId) && (!validFacIds || validFacIds.has(n.dcId)));
+    return { nodes, clusters: gpu.clusters.filter(c => (!dcId || c.dcId === dcId) && (!validFacIds || validFacIds.has(c.dcId))) };
+  }, [gpu, dcId, validFacIds]);
   const gpuStats = useMemo(() => {
     if (!gpuScope || !devices) return null;
     const n = gpuScope.nodes, st = (k: string) => n.filter(x => x.state === k).length;
-    const onRecord = devices.filter(d => d.role === 'GPU' && (!dcId || d.dcId === dcId)).length;
+    const onRecord = devices.filter(d => d.role === 'GPU' && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId))).length;
     return [
       { k: 'GPU servers', v: fmt(n.length), s: `${fmt(onRecord)} on record · ${fmt(onRecord - n.length)} planned`, t: 'cyan' as const },
       { k: 'GPUs', v: fmt(n.reduce((a, x) => a + x.gpus.length, 0)), s: '8 per server', t: 'emerald' as const },
@@ -210,15 +226,16 @@ export default function PhysicalResources() {
       { k: 'Burn-in', v: fmt(st('burn-in')), s: 'new or repaired', t: 'amber' as const },
       { k: 'Liquid-cooled', v: fmt(n.filter(x => x.cooling === 'liquid').length), s: `${fmt(n.filter(x => x.cooling === 'air').length)} air-cooled`, t: 'purple' as const }
     ];
-  }, [gpuScope, devices, dcId]);
+  }, [gpuScope, devices, dcId, validFacIds]);
 
   /* the data center solution narrows to one data center from a picker; the default view has no such control */
+  const totalDcs = geoFacs ? geoFacs.length : (activeGeo ? 24 : DC_COUNTS.datacenters);
   const sourceControls = scoped ? (
     <span className="dc-filters">
       <span className="nst-select-shell">
         <select className="nst-input" aria-label="Data center" value={dcId} onChange={e => setParam('dc', e.target.value)}>
-          <option value="">All data centers ({DC_COUNTS.datacenters})</option>
-          {(facilities ?? []).map(f => <option key={f.id} value={f.id}>{f.id} · {f.city}</option>)}
+          <option value="">All data centers ({totalDcs})</option>
+          {(geoFacs ?? []).map(f => <option key={f.id} value={f.id}>{f.id} · {f.city}</option>)}
         </select>
       </span>
     </span>
@@ -239,8 +256,8 @@ export default function PhysicalResources() {
           tabs={tabs.map(k => {
             const meta = tabMeta(k);
             if (scoped) {
-              const n = dcTabCount(k as DcTab), name = meta?.n ?? NEW_NAME[k] ?? k;
-              return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${DC_COUNTS.datacenters} data centers` };
+              const n = dcTabCount(k as DcTab, activeGeo), name = meta?.n ?? NEW_NAME[k] ?? k;
+              return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${totalDcs} data centers` };
             }
             const x = meta!;
             return {

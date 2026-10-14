@@ -77,11 +77,7 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
   <main id="top" style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 20px 28px 28px; box-sizing: border-box">
 
     <!-- Top bar -->
-    <header style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap">
-      <div>
-        <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #111827">Inventory Insights</h1>
-        <p style="margin: 4px 0 0; color: #4B5563">One view of active, physical, logical and passive inventory — what exists, how healthy it is, and where the gaps are.</p>
-      </div>
+    <header style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-wrap: wrap">
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
         <label for="inv-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search inventory</label>
         <input id="inv-search" type="search" value="{{q}}" onChange="{{setQuery}}" placeholder="Search by serial, IP, circuit ID, hostname…" style="min-height: 40px; width: 300px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5DAE2; background: #FFFFFF; color: #111827; font: inherit; box-sizing: border-box">
@@ -124,21 +120,21 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
 
     <!-- KPI row: overall + 4 inventory types + issues -->
     <section aria-label="Key metrics" style="display: grid; grid-template-columns: 1fr 1.7fr 1.7fr 0.9fr; gap: 14px">
-      <div style="background: #0E1B33; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; color: #FFFFFF">
-        <span style="font-size: 12px; color: #C7D0E0; font-weight: 500">Total inventory records</span>
-        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">1.61M</div>
-        <div style="font-size: 12px; color: #C7D0E0"><span style="color: #86EFAC; font-weight: 600">+3.8%</span> vs last month · 4,218 sites · 65,680 managed elements</div>
-        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; border-top: 1px solid #2A3A5C; padding-top: 8px; margin-top: 2px">
-          <span style="color: #C7D0E0">Overall inventory health</span>
-          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #86EFAC">90%</span>
+      <div style="background: linear-gradient(180deg, #F0F7FF 0%, #E8F2FD 100%); border: 1px solid #BFDBFE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; color: #111827; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08)">
+        <span style="font-size: 12px; color: #1E40AF; font-weight: 600">Total inventory records</span>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; color: #111827">1.61M</div>
+        <div style="font-size: 12px; color: #4B5563"><span style="background: #DCFCE7; color: #15803D; font-weight: 600; padding: 1px 6px; border-radius: 4px; border: 1px solid #BBF7D0">+3.8%</span> vs last month · 4,218 sites · 65,680 managed elements</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; border-top: 1px solid #DBEAFE; padding-top: 8px; margin-top: 2px">
+          <span style="color: #4B5563">Overall inventory health</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #15803D">90%</span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px">
-          <span style="color: #C7D0E0">Confirmed against source</span>
-          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #86EFAC">92.4%</span>
+          <span style="color: #4B5563">Confirmed against source</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #111827">92.4%</span>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px">
-          <span style="color: #C7D0E0">Stranded or unconfirmed</span>
-          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #FCD34D">7.6% · 123k</span>
+          <span style="color: #4B5563">Stranded or unconfirmed</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #B45309">7.6% · 123k</span>
         </div>
       </div>
       <sc-for list="{{parents}}" as="p" hint-placeholder-count="2">
@@ -336,9 +332,11 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
         <div style="display: flex; align-items: center; gap: 14px">
           <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Bucket share donut">
             <circle cx="50" cy="50" r="40" fill="none" stroke="#EEF1F5" stroke-width="14"></circle>
-            <sc-for list="{{bucketShare}}" as="b" hint-placeholder-count="4">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="{{b.color}}" stroke-width="14" stroke-dasharray="{{b.dash}}" stroke-dashoffset="{{b.offset}}" transform="rotate(-90 50 50)"></circle>
-            </sc-for>
+            <g transform="rotate(-90 50 50)">
+              <sc-for list="{{bucketShare}}" as="b" hint-placeholder-count="4">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="{{b.color}}" stroke-width="14" stroke-dasharray="{{b.dash}}" stroke-dashoffset="{{b.offset}}"></circle>
+              </sc-for>
+            </g>
             <text x="50" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#111827">1.61M</text>
             <text x="50" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="7" fill="#4B5563">records</text>
           </svg>
@@ -382,9 +380,11 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
         <div style="display: flex; align-items: center; gap: 14px">
           <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label="Vendor share donut">
             <circle cx="50" cy="50" r="40" fill="none" stroke="#EEF1F5" stroke-width="14"></circle>
-            <sc-for list="{{vendors}}" as="v" hint-placeholder-count="6">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="{{v.color}}" stroke-width="14" stroke-dasharray="{{v.dash}}" stroke-dashoffset="{{v.offset}}" transform="rotate(-90 50 50)"></circle>
-            </sc-for>
+            <g transform="rotate(-90 50 50)">
+              <sc-for list="{{vendors}}" as="v" hint-placeholder-count="6">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="{{v.color}}" stroke-width="14" stroke-dasharray="{{v.dash}}" stroke-dashoffset="{{v.offset}}"></circle>
+              </sc-for>
+            </g>
             <text x="50" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#111827">65.7k</text>
             <text x="50" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="7" fill="#4B5563">active NEs</text>
           </svg>
@@ -436,9 +436,9 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
 
     <!-- ===== Tier 4: trust in the data ===== -->
     <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #4B5563; font-weight: 600; margin-top: 4px">Trust in the data</div>
-    <section aria-label="Quality and integrity" style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px">
+    <section aria-label="Quality" style="display: grid; grid-template-columns: 1fr; gap: 16px">
       <div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0">
-        <div style="display: flex; align-items: center; justify-content: space-between">
+        <div style="display: align-items: center; justify-content: space-between">
           <div style="font-weight: 600; font-size: 14px">Inventory quality by bucket</div>
           <span style="font-size: 12px; color: #4B5563">Target ≥ 90% · dup/orphan ≤ 1%</span>
         </div>
@@ -470,92 +470,9 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
         </div>
         <div style="font-size: 11px; color: #4B5563">Complete = mandatory attributes filled · Integrity = parent/child and A–Z relationships resolved · Fresh = updated by discovery, NFVO, mapping or survey within SLA (24 h active/virtual/logical, 90 d passive).</div>
       </div>
-
-      <div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
-        <div style="font-weight: 600; font-size: 14px">Cross-inventory integrity</div>
-        <div style="font-size: 12px; color: #4B5563; margin-top: -4px">How well the four inventories are linked to each other.</div>
-        <div style="display: flex; flex-direction: column; gap: 9px">
-          <sc-for list="{{links}}" as="l" hint-placeholder-count="7">
-            <div style="display: flex; flex-direction: column; gap: 3px">
-              <div style="display: flex; justify-content: space-between; font-size: 12px; gap: 8px">
-                <span>{{l.name}}</span>
-                <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: {{l.color}}">{{l.value}}</span>
-              </div>
-              <div style="height: 6px; border-radius: 3px; background: #EEF1F5; overflow: hidden"><div style="height: 100%; width: {{l.value}}; background: {{l.color}}"></div></div>
-            </div>
-          </sc-for>
-        </div>
-      </div>
-
     </section>
 
-    <!-- ===== Tier 5: operational trend ===== -->
-    <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #4B5563; font-weight: 600; margin-top: 4px">Operational trend</div>
-    <!-- Row: discovery / lifecycle / vendor / trend -->
-    <section aria-label="Discovery, support and trend" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
-      <div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
-        <div style="font-weight: 600; font-size: 14px">Discovery &amp; reconciliation</div>
-        <div style="font-size: 12px; color: #4B5563; margin-top: -4px">Active via EMS/NMS and NETCONF/SNMP · Virtual via NFVO and K8s API · Logical via mapping to active ports · Passive via GIS and field survey</div>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
-          <div><div style="font-size: 11px; color: #4B5563">Inventory only</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #B45309">778</div></div>
-          <div><div style="font-size: 11px; color: #4B5563">Matched</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #15803D">119,840</div></div>
-          <div><div style="font-size: 11px; color: #4B5563">Network only</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #B91C1C">224</div></div>
-        </div>
-        <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px">
-          <div style="width: 3%; background: #B45309"></div><div style="width: 95%; background: #15803D"></div><div style="width: 2%; background: #B91C1C"></div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 5px; font-size: 12px">
-          <sc-for list="{{gapRows}}" as="g" hint-placeholder-count="5">
-            <div style="display: flex; justify-content: space-between; border-top: 1px solid #EEF1F5; padding-top: 5px"><span>{{g.name}}</span><span style="font-family: 'IBM Plex Mono', monospace; color: #4B5563">{{g.value}}</span></div>
-          </sc-for>
-        </div>
-        <button type="button" onClick="{{runReconciliation}}" style="font-size: 12px; font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: #1D4ED8; font: inherit; font-weight: 600; cursor: pointer">Run reconciliation →</button>
-      </div>
-
-      <div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
-        <div style="font-weight: 600; font-size: 14px">Support &amp; ageing</div>
-        <div style="display: flex; flex-direction: column; gap: 5px; font-size: 12px">
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">End-of-support within 12 mo</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #B45309">3,870</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Warranty expiring (90 d)</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">1,240</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Spares in stock</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">6,112</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Fibre cable age &gt; 15 yrs</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #B45309">1,860 km</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Maintenance contracts ending (12 mo)</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">214</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Licences expiring (90 d)</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #B45309">1,380</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Average active-equipment age</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">5.8 yrs</span></div>
-        </div>
-        <div style="background: #F3F5F8; border-radius: 8px; padding: 8px 10px; font-size: 11.5px; color: #374151">Warranty, licence and contract dates come from the asset's commercial record; 11% of active elements have no purchase or warranty date filled.</div>
-      </div>
-
-      <div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <div style="font-weight: 600; font-size: 14px">Net record change</div>
-          <span style="font-size: 12px; color: #4B5563">{{rangeLabel}}</span>
-        </div>
-        <div style="display: flex; gap: 14px">
-          <div><div style="font-size: 11px; color: #4B5563">Added</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 600; color: #15803D">+41,200</div></div>
-          <div><div style="font-size: 11px; color: #4B5563">Retired</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 600; color: #B91C1C">−12,640</div></div>
-          <div><div style="font-size: 11px; color: #4B5563">Net</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 600">+28,560</div></div>
-        </div>
-        <div style="display: flex; align-items: flex-end; gap: 5px; height: 96px; margin-top: 4px">
-          <sc-for list="{{trend}}" as="m" hint-placeholder-count="6">
-            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%">
-              <div style="width: 100%; height: {{m.h}}; border-radius: 3px 3px 0 0; background: {{m.color}}"></div>
-            </div>
-          </sc-for>
-        </div>
-        <div style="display: flex; gap: 5px">
-          <sc-for list="{{trend}}" as="m" hint-placeholder-count="6">
-            <div style="flex-grow: 1; text-align: center; font-size: 10px; color: #4B5563">{{m.label}}</div>
-          </sc-for>
-        </div>
-        <div style="border-top: 1px solid #EEF1F5; padding-top: 8px; display: flex; flex-direction: column; gap: 5px; font-size: 12px">
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Fastest growing</span><span style="font-weight: 500">Cells, cell-site routers</span></div>
-          <div style="display: flex; justify-content: space-between"><span style="color: #4B5563">Largest retirement</span><span style="font-weight: 500">SDH nodes, copper pairs</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Tier 6: tactical drill-down ===== -->
+    <!-- ===== Tier 5: tactical drill-down ===== -->
     <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #4B5563; font-weight: 600; margin-top: 4px">Drill-down</div>
     <!-- Row: sites / services / activity -->
     <section aria-label="Sites, services and activity" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px">
@@ -651,7 +568,7 @@ a{color:#1D4ED8}a:hover{color:#1E40AF}
       </sc-for>
     </section>
 
-    <p style="margin: 0; font-size: 11px; color: #4B5563">Figures are hand-authored aggregate values for layout, not a literal record count. Physical inventory = Active (powered, managed elements and their rack → shelf → card → port hierarchy) + Passive (unpowered outside/inside plant: fibre, ducts, closures, towers, passive antennas, ODFs). Logical inventory = Virtual (VNF/CNF instances and the clusters hosting them) + Logical (cells, tunnels, VRFs, addresses, trails, links, services). Record totals are additive across the four leaf buckets.</p>
+    <p style="margin: 0; font-size: 11px; color: #4B5563">Figures are hand-authored aggregate values for layout, not a literal record count. Physical inventory = Active (powered, managed elements and their rack → shelf → card → port hierarchy) + Passive (unpowered outside/inside plant: fibre, ducts, closures, towers, passive antennas, ODFs). Connectivity inventory = Virtual (VNF/CNF instances and the clusters hosting them) + Connectivity (cells, tunnels, VRFs, addresses, trails, links, services). Record totals are additive across the four leaf buckets.</p>
   </main>
 </div>
 <sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
@@ -726,32 +643,32 @@ class Component extends DCLogic {
         ['Active', '1.48M', 92, '65,680 managed elements and their shelves, cards, ports', 'Discovered', '96%', 39, 136, ACT],
         ['Passive', '69,730', 84, 'fibre, ducts, closures, towers, ODFs', 'Survey verified', '72%', 38, 94, PAS]
       ].map(leaf) },
-      { name: 'Logical inventory', desc: 'configured on top of physical', count: '59,870', delta: '+5.4%', health: '91%', children: [
-        ['Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99%', 3, 8, VIR],
-        ['Logical', '57,010', 91, 'cells, tunnels, VRFs, trails, links', 'Mapped to port', '93%', 24, 80, LOG]
+      { name: 'Connectivity inventory', desc: 'configured on top of physical', count: '59,870', delta: '+5.4%', health: '91%', children: [
+        ['Virtual', '2,860', 96, 'VNF / CNF instances on 46 clusters', 'Mapped to host', '99.5%', 3, 8, VIR],
+        ['Connectivity', '57,010', 92, 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', '96.8%', 18, 62, LOG]
       ].map(leaf) }
     ];
 
     const panels = [
-      { title: 'Active (Physical)', color: ACT, open: go.physical, desc: 'Powered elements managed through EMS / NMS, with their full component hierarchy.',
-        items: bars([['Ports / interfaces', '1,246,300', 1246300], ['Cards / modules', '118,200', 118200], ['Shelves / chassis', '31,840', 31840], ['Cell-site routers', '21,640', 21640], ['Radio units (RRU / RU)', '18,640', 18640], ['Racks and power units', '20,580', 20580], ['Microwave radios (IDU / ODU)', '7,210', 7210], ['Baseband units (BBU / DU)', '6,230', 6230], ['Agg., PE and P routers', '5,680', 5680], ['DWDM / OTN / ROADM nodes', '4,860', 4860]]),
-        facts: [{ name: 'Reachable in last discovery', value: '96.2%', color: GOOD }, { name: 'Software version recorded', value: '94%', color: GOOD }, { name: 'Cards without slot position', value: '2,310', color: WARN }, { name: 'Port utilisation', value: '61%', color: '#111827' }] },
+      { title: 'Active (Physical)', color: ACT, open: go.physical, desc: 'Physical routers, switches, RAN, optical & microwave nodes managed via EMS / NMS.',
+        items: bars([['Cell-site routers (CSR)', '21,640', 21640], ['Radio units (RRU / AAU)', '18,640', 18640], ['Carrier Ethernet & access switches', '9,120', 9120], ['Baseband units (BBU / DU)', '6,230', 6230], ['Microwave radios (IDU / ODU)', '4,210', 4210], ['Metro agg. & PE routers', '2,910', 2910], ['DWDM / ROADM optical nodes', '1,510', 1510], ['Data centre & spine-leaf switches', '860', 860], ['GPON / XGS-PON OLTs', '390', 390], ['Core / backbone routers (P)', '170', 170]]),
+        facts: [{ name: 'Reachable in last discovery', value: '96.2%', color: GOOD }, { name: 'Software version recorded', value: '94%', color: GOOD }, { name: 'Chassis serial verified', value: '97.6%', color: GOOD }, { name: 'Dual PSU / power monitored', value: '98.8%', color: '#111827' }] },
       { title: 'Passive (Physical)', color: PAS, open: go.passive, desc: 'Unpowered outside and inside plant from GIS and field survey.',
         items: bars([['Manholes / handholes', '14,920', 14920], ['Fibre spans / segments', '12,480', 12480], ['Antennas (passive)', '11,280', 11280], ['ODF / patch panels', '9,870', 9870], ['Splice closures / joints', '9,640', 9640], ['Fibre cables', '8,420', 8420], ['Ducts / sub-ducts', '6,310', 6310], ['Towers / masts / poles', '5,210', 5210]]),
         facts: [{ name: 'Fibre route length', value: '48,210 km', color: '#111827' }, { name: 'Geo-referenced (GIS)', value: '87%', color: WARN }, { name: 'Strands lit', value: '66% of 582k', color: '#111827' }, { name: 'Avg. duct occupancy', value: '64%', color: '#111827' }] },
-      { title: 'Virtual (Logical)', color: VIR, open: go.virtual, desc: 'Network functions running as VNFs / CNFs on NFVI and Kubernetes clusters.',
-        items: bars([['IMS (CSCF / TAS / SBC)', '820', 820], ['UPF / SGW-U / PGW-U', '640', 640], ['AMF / MME', '420', 420], ['SMF / SGW-C / PGW-C', '380', 380], ['UDM / HSS / UDR', '310', 310], ['PCF / PCRF / CHF', '290', 290]]),
+      { title: 'Virtual (Logical)', color: VIR, open: go.virtual, desc: 'Network functions (VNFs / CNFs) across Core, vRAN, Transport, IMS & Security domains.',
+        items: bars([['5G UPF & Packet Core (UPF/SGW-U)', '590', 590], ['vIMS Core (CSCF / TAS / vSBC)', '500', 500], ['5G/4G Control (AMF / MME / SMF)', '430', 430], ['vRAN Cloud Units (vCU / vDU)', '370', 370], ['vRouter & vBNG (Transport / IP)', '320', 320], ['vFirewall & SecGW (Security Domain)', '260', 260], ['UDM, UDR & Policy (PCF / PCRF)', '230', 230], ['vCPE & SD-WAN Virtual Edge', '160', 160]]),
         facts: [{ name: 'Mapped to hosting cluster / server', value: '99.5%', color: GOOD }, { name: 'Clusters · pods tracked', value: '46 · 18,400', color: '#111827' }, { name: 'Release recorded', value: '98%', color: GOOD }, { name: 'Licence capacity mismatches', value: '15', color: WARN }] },
-      { title: 'Logical', color: LOG, open: go.links, desc: 'Software-defined objects riding on active ports and virtual functions.',
-        items: bars([['Cells (4G / 5G)', '28,900', 28900], ['LSPs / SR tunnels', '14,120', 14120], ['VRFs / L3VPN', '6,380', 6380], ['EVPN / VLAN services', '3,080', 3080], ['Transport paths / trails', '2,390', 2390], ['Wavelength services', '2,140', 2140]]),
-        facts: [{ name: 'Mapped to an active port', value: '93%', color: GOOD }, { name: 'IP addresses in use / stranded', value: '361,400 / 57,200', color: WARN }, { name: 'Orphan logical objects', value: '539', color: WARN }, { name: 'Links / circuits with A–Z resolved', value: '94%', color: GOOD }] }
+      { title: 'Connectivity (Logical & Services)', color: LOG, open: go.links, desc: 'End-to-end transport paths, VPN services, routing protocols & network slices configured across physical and virtual fabrics.',
+        items: bars([['4G / 5G radio cells & sector carriers', '23,400', 23400], ['SRv6 & SR-MPLS policy tunnels (LSPs)', '11,650', 11650], ['L3VPN VRFs & 5G network slices', '6,840', 6840], ['EVPN-VPWS & E-Line / E-LAN services', '4,210', 4210], ['Optical channels & OTN trails (DWDM/OCh)', '3,140', 3140], ['BGP peering & routing adjacency sessions', '2,920', 2920], ['IP subnets & interface address pools', '2,760', 2760], ['Broadband subscriber sessions (PPPoE/PON)', '2,090', 2090]]),
+        facts: [{ name: 'Mapped to active port / interface', value: '94.2%', color: GOOD }, { name: 'A–Z circuit path continuity resolved', value: '96.8%', color: GOOD }, { name: 'Protected / redundant paths (1+1 / FRR)', value: '89.4%', color: GOOD }, { name: 'IP addresses in use / stranded', value: '361,400 / 42,100', color: WARN }, { name: 'Orphan connectivity objects', value: '184', color: WARN }] }
     ];
 
     const qualityRows = [
-      ['Active', ACT, 95, 92, 93, 0.5, 0.6], ['Passive', PAS, 86, 81, 72, 1.4, 2.1], ['Virtual', VIR, 97, 95, 96, 0.2, 0.3], ['Logical', LOG, 94, 92, 90, 0.5, 0.9]
+      ['Active', ACT, 95, 92, 93, 0.5, 0.6], ['Passive', PAS, 86, 81, 72, 1.4, 2.1], ['Virtual', VIR, 97, 95, 96, 0.2, 0.3], ['Connectivity', LOG, 94, 92, 90, 0.5, 0.9]
     ].map((q) => ({ name: q[0], color: q[1], v1: q[2] + '%', c1: hc(q[2]), v2: q[3] + '%', c2: hc(q[3]), v3: q[4] + '%', c3: hc(q[4]), v4: q[5] + '%', c4: ic(q[5]), v5: q[6] + '%', c5: ic(q[6]) }));
 
-    const links = [['Logical object ↔ active port', 93], ['Virtual function ↔ active host / cluster', 99], ['Passive span ↔ active termination (ODF / port)', 88], ['Active element ↔ site & rack position', 95], ['Passive antenna ↔ cell', 90], ['IP address ↔ interface', 91], ['Service ↔ end-to-end path', 86]].map((l) => ({ name: l[0], value: l[1] + '%', color: hc(l[1]) }));
+    const links = [['Connectivity object ↔ active port', 93], ['Virtual function ↔ active host / cluster', 99], ['Passive span ↔ active termination (ODF / port)', 88], ['Active element ↔ site & rack position', 95], ['Passive antenna ↔ cell', 90], ['IP address ↔ interface', 91], ['Service ↔ end-to-end path', 86]].map((l) => ({ name: l[0], value: l[1] + '%', color: hc(l[1]) }));
 
     const attention = [
       ['Elements with no parent site', 'Radios, routers and nodes missing a site link', 198, 'Critical', 'Active'],

@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
 import SitesByGeography from '../components/location/SitesByGeography';
-import { LOC_STATS, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
+import { getLocStats, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
 import { SCOPED, dcSum, scope } from '../data/dc/scope';
+import { currentGeo, setGeo, withSolution, type DcGeo } from '../solution';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
 
 /* the Coverage-by-circle rows come from src/data/locationStats.ts: the estate's own in the default
    Inventory, the data centers' in the data center solution */
-const COVERAGE_CIRCLES: CoverageCircle[] = LOC_STATS.circles;
 
 const STATE_ID_TO_CIRCLE: Record<string, string> = {
   punjab: 'PB',
@@ -51,7 +51,22 @@ const STATE_ID_TO_CIRCLE: Record<string, string> = {
   telangana: 'TS',
   ap: 'AP',
   kerala: 'KL',
-  lakshadweep: 'KL'
+  lakshadweep: 'KL',
+  // US states
+  'us-virginia': 'US-VA',
+  'us-texas': 'US-TX',
+  'us-california': 'US-CA',
+  'us-illinois': 'US-IL',
+  'us-arizona': 'US-AZ',
+  'us-georgia': 'US-GA',
+  'us-new-jersey': 'US-NJ',
+  'us-washington': 'US-WA',
+  'us-oregon': 'US-OR',
+  'us-colorado': 'US-CO',
+  'us-ohio': 'US-OH',
+  'us-florida': 'US-FL',
+  'us-utah': 'US-UT',
+  'us-north-carolina': 'US-NC'
 };
 
 const CIRCLE_TO_STATE_ID: Record<string, string> = {
@@ -82,13 +97,31 @@ const CIRCLE_TO_STATE_ID: Record<string, string> = {
   TN: 'tamilnadu',
   TS: 'telangana',
   AP: 'ap',
-  KL: 'kerala'
+  KL: 'kerala',
+  // US circles (with or without US- prefix)
+  'US-VA': 'us-virginia', VA: 'us-virginia',
+  'US-TX': 'us-texas', TX: 'us-texas',
+  'US-CA': 'us-california', CA: 'us-california',
+  'US-IL': 'us-illinois', IL: 'us-illinois',
+  'US-AZ': 'us-arizona', AZ: 'us-arizona',
+  'US-GA': 'us-georgia',
+  'US-NJ': 'us-new-jersey', NJ: 'us-new-jersey',
+  'US-WA': 'us-washington', WA: 'us-washington',
+  'US-OR': 'us-oregon',
+  'US-CO': 'us-colorado', CO: 'us-colorado',
+  'US-OH': 'us-ohio', OH: 'us-ohio',
+  'US-FL': 'us-florida', FL: 'us-florida',
+  'US-UT': 'us-utah', UT: 'us-utah',
+  'US-NC': 'us-north-carolina', NC: 'us-north-carolina'
 };
 
 export default function Location() {
   const nav = useNavigate();
-  const S = LOC_STATS;
   const [searchParams] = useSearchParams();
+  const geoParam = (searchParams.get('geo') || searchParams.get('country') || currentGeo() || (SCOPED ? 'us' : '')).toLowerCase() as DcGeo | '';
+  const activeGeo: DcGeo = (geoParam === 'in' ? 'in' : 'us');
+  const S = React.useMemo(() => getLocStats(activeGeo), [activeGeo]);
+  const COVERAGE_CIRCLES: CoverageCircle[] = S.circles;
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
   const [selectedCircle, setSelectedCircle] = useState<string | null>(null);
 
@@ -98,16 +131,28 @@ export default function Location() {
     return <LegacyView legacyKey="location" />;
   }
 
+  const handleCountryChange = (c: DcGeo | null) => {
+    setGeo(c);
+    const params = new URLSearchParams(searchParams);
+    if (c) params.set('geo', c);
+    else params.set('geo', 'us');
+    params.delete('country');
+    nav(withSolution(`/inventory/location?${params.toString()}`));
+  };
+
   const handleCardClick = (type?: string, label?: string) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     params.set('view', 'list');
+    if (activeGeo) {
+      params.set('geo', activeGeo);
+    }
     if (type) {
       params.set('type', type);
     }
     if (label) {
       params.set('drill', label);
     }
-    nav(`/inventory/location?${params.toString()}`);
+    nav(withSolution(`/inventory/location?${params.toString()}`));
   };
 
   const toggleCircle = (code: string) => {
@@ -140,6 +185,7 @@ export default function Location() {
           <div className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', border: '1px solid var(--vw-color-slate-200)' }}>
             <NetworkHierarchyTopology
               isExpanded={true}
+              activeGeo={activeGeo}
               selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
               onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
               onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
@@ -192,6 +238,8 @@ export default function Location() {
       <SitesByGeography
         selectedCircle={selectedCircle}
         onSelectCircle={setSelectedCircle}
+        activeCountry={activeGeo || 'us'}
+        onSelectCountry={handleCountryChange}
       />
     </div>
   );

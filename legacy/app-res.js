@@ -751,13 +751,15 @@ function viewPassive() {
   const tabList = SC ? PASSIVE_DC_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)) : PASSIVE_TABS;
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
-  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => !PASS_DC || r.dcId === PASS_DC) : [];
+  const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
+  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || r.dcId === PASS_DC) && (!validDcs || validDcs.has(r.dcId))) : [];
   const netRows = SC ? [] : (PASSIVE[t] || []);
   const rows = gridApply('passive', SC ? dcPool : netRows);
   const P = PASSIVE_STATS;
+  const facList = SC && validDcs ? DC_FAC.filter(f => validDcs.has(f.id)) : DC_FAC;
   const sourceBar = SC ? `<span class="nst-select-shell"><select class="nst-input" aria-label="Data center" data-passdc="1">
-      <option value="">All data centers (${DC_FAC.length})</option>
-      ${DC_FAC.map(f => `<option value="${f.id}"${f.id===PASS_DC?' selected':''}>${f.id} · ${f.city}</option>`).join('')}</select></span>` : '';
+      <option value="">All data centers (${facList.length})</option>
+      ${facList.map(f => `<option value="${f.id}"${f.id===PASS_DC?' selected':''}>${f.id} · ${f.city}</option>`).join('')}</select></span>` : '';
   const cols = { fiber:[{t:'Status', plain:true},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status', plain:true},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
                  rack:[{t:'Status', plain:true},{t:'Rack'},{t:'Site'},{t:'Height',r:true},{t:'U used',r:true},{t:'U free',r:true},{t:'Elevation'},{t:'Power'},{t:'Cooling'}],

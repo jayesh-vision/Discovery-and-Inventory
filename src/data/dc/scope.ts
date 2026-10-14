@@ -40,14 +40,20 @@ export const DC_SUM = SUMMARY.datacenters;
 export const DC_REGIONS = SUMMARY.regions;
 export const DC_CIRCLES = SUMMARY.circles;
 export const DC_GEO_LABEL: Record<DcGeo, string> = { in: 'India', us: 'United States' };
+export const dcSumList = (geo?: DcGeo | null): DcSum[] =>
+  geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
+
 export const dcSum = (id: string): DcSum | undefined => DC_SUM.find(d => d.id === id);
-/** a site's region as it is written on a screen: India's North / East / West / South, the USA's "US Northeast" … ("West" exists in both) */
+/** a site's macro region: North / East / West / South consolidating all countries */
 export const dcRegionLabel = (d: { geo: DcGeo; regionId: string }): string => {
-  const name = DC_REGIONS.find(r => r.geo === d.geo && r.id === d.regionId)?.name ?? d.regionId;
-  return d.geo === 'us' ? `US ${name}` : name;
+  const r = String(d && d.regionId || '').toLowerCase();
+  if (r.includes('west')) return 'West';
+  if (r.includes('north')) return 'North';
+  if (r.includes('south')) return 'South';
+  return 'East';
 };
-/** every region label that has a data center, in order */
-export const dcRegionLabels = (): string[] => [...new Set(DC_SUM.map(dcRegionLabel))];
+/** the 4 standard macro regions in order */
+export const dcRegionLabels = (): string[] => ['North', 'South', 'West', 'East'];
 
 const add = (f: (d: DcSum) => number) => DC_SUM.reduce((a, d) => a + f(d), 0);
 const roleSum = (r: DcRole) => add(d => d.byRole[r] ?? 0);
@@ -80,8 +86,22 @@ export async function preloadScope(): Promise<void> {
 }
 
 /** the full records, once preloaded (always, by the time any screen renders in the data center solution) */
-export function scope(): ScopeData {
+export function scope(geo?: DcGeo | null): ScopeData {
   if (!loaded) throw new Error('data center scope used before preloadScope() finished');
-  return loaded;
+  if (!geo) return loaded;
+  const facs = loaded.facs.filter(f => f.geo === geo);
+  const facIds = new Set(facs.map(f => f.id));
+  const devices = loaded.devices.filter(d => facIds.has(d.dcId));
+  const by = new Map<string, DcDevice[]>();
+  for (const d of devices) (by.get(d.dcId) ?? by.set(d.dcId, []).get(d.dcId)!).push(d);
+  const fac = new Map(facs.map(f => [f.id, f]));
+  const links = loaded.links.filter(l => facIds.has(l.dc));
+  const services = loaded.services.filter(s => facIds.has(s.dc));
+  const customers = loaded.customers.filter(c => c.geo === geo);
+  const gpuNodes = (loaded.gpu?.nodes ?? []).filter(n => facIds.has(n.dcId));
+  const gpuClusters = (loaded.gpu?.clusters ?? []).filter(c => facIds.has(c.dcId));
+  const gpuCdus = (loaded.gpu?.cdus ?? []).filter(c => facIds.has(c.dcId));
+  const gpu: DcGpuData = { ...loaded.gpu, nodes: gpuNodes, clusters: gpuClusters, cdus: gpuCdus };
+  return { facs, devices, gpu, links, services, customers, devicesOf: id => by.get(id) ?? [], facOf: id => fac.get(id) };
 }
 export const scopeReady = (): boolean => loaded !== null;

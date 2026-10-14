@@ -49,9 +49,15 @@ function dcLocHier() {
   return [...by.entries()].map(([code, ds]) => ({ code, n: ds[0].state, dc: ds.length, pop: 0, site: 0, tot: ds.length, live: ds.filter(d => d.status === 'on-air').length }));
 }
 
-/* the regions of both countries as a site's state is filed under them (India's North … South, the USA's "US Northeast" …) */
-const dcRegionOf = d => { const r = d.regionId[0].toUpperCase() + d.regionId.slice(1); return d.geo === 'us' ? 'US ' + r : r; };
-function dcRegionList() { return [...new Set(window.__dcSum.map(dcRegionOf))]; }
+/* the macro regions (West, North, South, East) consolidating all geographies (India, USA, and future countries) */
+const dcRegionOf = d => {
+  const r = String(d && d.regionId || '').toLowerCase();
+  if (r.includes('west')) return 'West';
+  if (r.includes('north')) return 'North';
+  if (r.includes('south')) return 'South';
+  return 'East';
+};
+function dcRegionList() { return ['North', 'South', 'West', 'East']; }
 
 /* ── one site: its real devices, capex, opex and open risks ── */
 const DC_ST = { verified: 'ok', drifted: 'drift', 'not-discovered': 'none' };
@@ -112,9 +118,9 @@ function dcLoadLogical() {
   LINK_ST_OPTS.lldp = ['up', 'down']; LINK_ST_OPTS.ospf = ['up', 'down']; LINK_ST_OPTS.isis = ['up', 'down'];
   LINK_ST_OPTS.bgp = ['established', 'idle']; LINK_ST_OPTS.lsp = ['up', 'down', 'standby'];
   for (const k of Object.keys(LINKS)) delete LINKS[k];
-  LINK_TABS.length = 0;
+  const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
   for (const [k, n_, p, tone] of DC_LINK_PROTO) {
-    const rows = sc.links.filter(l => l.p === p).map((l, i) => ({
+    const rows = sc.links.filter(l => l.p === p && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
       _i: i, st: p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
       name: l.id, linkId: l.id, site: l.dc, role: l.role, cap: l.cap, cable: l.cable || '', strand: l.strand || '', ap: l.ap || '', zp: l.zp || '',
       extra: [['Site', l.dc], ['Role', l.role], ['Capacity', dcRate(l.cap)], ...(l.cable ? [['Cable', l.cable], ['Strand', l.strand], ['Source patch port', l.ap], ['Destination patch port', l.zp]] : [])]
@@ -126,7 +132,7 @@ function dcLoadLogical() {
   for (const k of Object.keys(SERVICES)) delete SERVICES[k];
   SVC_TABS.length = 0;
   for (const [k, n_, type, tone] of DC_SVC_TYPE) {
-    const rows = sc.services.filter(x => x.type === type).map((x, i) => {
+    const rows = sc.services.filter(x => x.type === type && (!validDcs || validDcs.has(x.dc))).map((x, i) => {
       const c = cust.get(x.cust) || {};
       return { _i: i, status: x.status, id: x.id, name: x.id, cust: c.name || x.cust, segment: c.segment || '', plan: c.plan || '', geo: c.geo, site: x.dc, ne: x.ne, ifc: x.ifc, qty: x.qty, unit: x.unit, bw: x.bw,
         sla: x.sla, uptime: x.uptime, rev: x.rev, cur: x.cur, crit: x.crit, path: x.path, links: x.links };
@@ -227,13 +233,38 @@ function dcViewServices() {
   </div>`;
 }
 
+let LOC_GEO_FILTER = typeof window !== 'undefined' && window.__dcGeo ? window.__dcGeo : 'us';
+
+function dcApplyScope(geo) {
+  if (!DC_ON) return;
+  LOC_GEO_FILTER = geo === 'in' ? 'in' : 'us';
+  const fullList = window.__dcSumAll || (window.__dcSumAll = [...(window.__dcSum || [])]);
+  const list = fullList.filter(d => d.geo === LOC_GEO_FILTER);
+  window.__dcSum = list;
+  if (typeof LOCATIONS !== 'undefined' && Array.isArray(LOCATIONS)) {
+    LOCATIONS.length = 0;
+    LOCATIONS.push(...list.map(d => d.location));
+  }
+  Object.keys(STATE_REGION).forEach(k => delete STATE_REGION[k]);
+  list.forEach(d => { STATE_REGION[d.state] = dcRegionOf(d); });
+  Object.keys(STATE_CIRCLE).forEach(k => delete STATE_CIRCLE[k]);
+  LOC_GEO.forEach(g => { STATE_CIRCLE[g.st] = g; });
+  if (typeof IL !== 'undefined') {
+    Object.assign(IL, dcIL(IL));
+  }
+  if (typeof dcLoadLogical === 'function') {
+    dcLoadLogical();
+  }
+}
+
 /* ── what the data center records do not hold stays empty ── */
 function dcScopeLegacy() {
   if (!DC_ON) return;
   SITE_TABS.push(...DC_EXTRA_TABS);
   PASS_TAB = 'rack';   /* open Passive infrastructure on the first tab the data centers have records for */
   VNFS.length = 0;
-  dcLoadLogical();
+  window.__dcSumAll = [...(window.__dcSum || [])];
+  dcApplyScope(window.__dcGeo || 'us');
   /* detail pages for records the data centers do not hold (VNFs, cells, passive plant of the estate): the same
      page frame, empty, instead of a sample record */
   const empty = what => () => `<div class="page">${drillBar()}${card(`<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
@@ -241,8 +272,4 @@ function dcScopeLegacy() {
   const NONE = { vnflifecycle: 'VNF', vnfdetails: 'VNF', cell4gdetails: '4G cell', cell5gdetails: '5G cell', odf: 'ODF frame', rack: 'rack', power: 'power unit',
     splice: 'splice closure', cord: 'patch cord', duct: 'duct', fiber: 'fibre span' };
   Object.entries(NONE).forEach(([k, what]) => { if (VIEWS[k]) VIEWS[k].render = empty(what); });
-  Object.keys(STATE_REGION).forEach(k => delete STATE_REGION[k]);
-  window.__dcSum.forEach(d => { STATE_REGION[d.state] = dcRegionOf(d); });
-  Object.keys(STATE_CIRCLE).forEach(k => delete STATE_CIRCLE[k]);
-  LOC_GEO.forEach(g => { STATE_CIRCLE[g.st] = g; });
 }

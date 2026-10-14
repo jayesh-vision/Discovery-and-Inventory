@@ -1,11 +1,12 @@
 import { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GEOGRAPHIC_HIERARCHY,
+  getGeographicHierarchy,
   type RegionItem,
   type StateItem,
   type CityItem
 } from '../../data/geographicHierarchy';
+import type { DcGeo } from '../../solution';
 import '../../styles/topology.css';
 
 interface ConnectorLine {
@@ -86,25 +87,48 @@ interface NetworkHierarchyTopologyProps {
   onNavigateToSite?: (siteId: string) => void;
   selectedStateId?: string;
   onSelectState?: (stateId: string, stateName: string) => void;
+  activeGeo?: DcGeo;
 }
 
 export default function NetworkHierarchyTopology({
   onNavigateToCity,
   selectedStateId: propSelectedStateId,
-  onSelectState
+  onSelectState,
+  activeGeo = 'us'
 }: NetworkHierarchyTopologyProps) {
   const nav = useNavigate();
 
+  const hierarchy = useMemo(() => getGeographicHierarchy(activeGeo), [activeGeo]);
+
   // ── Hierarchy Selection State (Defaults matching reference design) ──
-  const [selectedRegionId, setSelectedRegionId] = useState<string>('north');
-  const [selectedStateId, setSelectedStateId] = useState<string>(() => propSelectedStateId || 'punjab');
-  const [selectedCityId, setSelectedCityId] = useState<string>('pb-ludhiana');
+  const initialRegion = hierarchy[0]?.id || (activeGeo === 'us' ? 'us-northeast' : 'north');
+  const initialState = propSelectedStateId || hierarchy[0]?.states[0]?.id || (activeGeo === 'us' ? 'us-virginia' : 'punjab');
+  const initialCity = hierarchy[0]?.states[0]?.cities[0]?.id || (activeGeo === 'us' ? 'us-virginia-ashburn' : 'pb-ludhiana');
+
+  const [selectedRegionId, setSelectedRegionId] = useState<string>(initialRegion);
+  const [selectedStateId, setSelectedStateId] = useState<string>(initialState);
+  const [selectedCityId, setSelectedCityId] = useState<string>(initialCity);
+
+  const prevGeoRef = useRef<DcGeo>(activeGeo);
+  useEffect(() => {
+    if (prevGeoRef.current !== activeGeo) {
+      prevGeoRef.current = activeGeo;
+      const r = hierarchy[0];
+      const s = r?.states[0];
+      const c = s?.cities[0];
+      if (r && s) {
+        setSelectedRegionId(r.id);
+        setSelectedStateId(s.id);
+        setSelectedCityId(c?.id || '');
+      }
+    }
+  }, [activeGeo, hierarchy]);
 
   const prevPropSelectedStateId = useRef<string | undefined>(propSelectedStateId);
 
   useEffect(() => {
     if (propSelectedStateId && propSelectedStateId !== selectedStateId) {
-      for (const r of GEOGRAPHIC_HIERARCHY) {
+      for (const r of hierarchy) {
         const found = r.states.find(s => s.id === propSelectedStateId);
         if (found) {
           setSelectedRegionId(r.id);
@@ -114,13 +138,17 @@ export default function NetworkHierarchyTopology({
         }
       }
     } else if (prevPropSelectedStateId.current && !propSelectedStateId) {
-      // Circle selection cleared -> restore default North -> Punjab -> Ludhiana
-      setSelectedRegionId('north');
-      setSelectedStateId('punjab');
-      setSelectedCityId('pb-ludhiana');
+      const r = hierarchy[0];
+      const s = r?.states[0];
+      const c = s?.cities[0];
+      if (r && s) {
+        setSelectedRegionId(r.id);
+        setSelectedStateId(s.id);
+        setSelectedCityId(c?.id || '');
+      }
     }
     prevPropSelectedStateId.current = propSelectedStateId;
-  }, [propSelectedStateId, selectedStateId]);
+  }, [propSelectedStateId, selectedStateId, hierarchy]);
 
   // ── Hovered facility state on the donut chart (dc | pop | site) ─────
   const [hoveredFacility, setHoveredFacility] = useState<'dc' | 'pop' | 'site' | null>(null);
@@ -252,11 +280,11 @@ export default function NetworkHierarchyTopology({
 
   // ── Derived Selected Objects ───────────────────────────────────────
   const currentRegion = useMemo<RegionItem>(() => {
-    return GEOGRAPHIC_HIERARCHY.find(r => r.id === selectedRegionId) || GEOGRAPHIC_HIERARCHY[0];
-  }, [selectedRegionId]);
+    return hierarchy.find(r => r.id === selectedRegionId) || hierarchy[0];
+  }, [hierarchy, selectedRegionId]);
 
   const currentState = useMemo<StateItem>(() => {
-    return currentRegion.states.find(s => s.id === selectedStateId) || currentRegion.states[0];
+    return currentRegion?.states.find(s => s.id === selectedStateId) || currentRegion?.states[0];
   }, [currentRegion, selectedStateId]);
 
   const selectedCity = useMemo<CityItem>(() => {
@@ -265,7 +293,8 @@ export default function NetworkHierarchyTopology({
       if (match) return match;
       return currentState.cities[0];
     }
-    return {
+    const defaultCity = hierarchy[0]?.states[0]?.cities[0];
+    return defaultCity || {
       id: 'pb-ludhiana',
       name: 'Ludhiana',
       count: 140,
@@ -274,12 +303,12 @@ export default function NetworkHierarchyTopology({
       popCount: 18,
       siteCount: 48
     };
-  }, [currentState, selectedCityId]);
+  }, [currentState, selectedCityId, hierarchy]);
 
   // ── Aggregated DC, PoP, and Site Counts for Regions & States ─────────
   const regionCountsMap = useMemo(() => {
     const map: Record<string, { dc: number; pop: number; site: number }> = {};
-    for (const r of GEOGRAPHIC_HIERARCHY) {
+    for (const r of hierarchy) {
       let dc = 0, pop = 0, site = 0;
       for (const s of r.states) {
         for (const c of s.cities) {
@@ -291,11 +320,11 @@ export default function NetworkHierarchyTopology({
       map[r.id] = { dc, pop, site };
     }
     return map;
-  }, []);
+  }, [hierarchy]);
 
   const stateCountsMap = useMemo(() => {
     const map: Record<string, { dc: number; pop: number; site: number }> = {};
-    for (const r of GEOGRAPHIC_HIERARCHY) {
+    for (const r of hierarchy) {
       for (const s of r.states) {
         let dc = 0, pop = 0, site = 0;
         for (const c of s.cities) {
@@ -307,17 +336,17 @@ export default function NetworkHierarchyTopology({
       }
     }
     return map;
-  }, []);
+  }, [hierarchy]);
 
   // ── Filtered Lists based on In-Column Search ────────────────────────
   const filteredRegions = useMemo(() => {
     const q = regionSearch.trim().toLowerCase();
-    if (!q) return GEOGRAPHIC_HIERARCHY;
-    return GEOGRAPHIC_HIERARCHY.filter(r =>
+    if (!q) return hierarchy;
+    return hierarchy.filter(r =>
       r.name.toLowerCase().includes(q) ||
       r.states.some(s => s.name.toLowerCase().includes(q))
     );
-  }, [regionSearch]);
+  }, [hierarchy, regionSearch]);
 
   const filteredStates = useMemo(() => {
     if (!currentRegion) return [];
@@ -1041,7 +1070,7 @@ export default function NetworkHierarchyTopology({
                 onPointerDown={e => handleDragStart('region', e)}
                 title="Drag card freely in any direction (left, right, up, down)"
               >
-                <span className="geo-col-title">Regions ({GEOGRAPHIC_HIERARCHY.length})</span>
+                <span className="geo-col-title">Regions ({hierarchy.length})</span>
                 <span className="geo-drag-icon" title="Drag to reposition">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="9" cy="5" r="1.7" />

@@ -329,9 +329,15 @@ function dcLocHier() {
   return [...by.entries()].map(([code, ds]) => ({ code, n: ds[0].state, dc: ds.length, pop: 0, site: 0, tot: ds.length, live: ds.filter(d => d.status === 'on-air').length }));
 }
 
-/* the regions of both countries as a site's state is filed under them (India's North … South, the USA's "US Northeast" …) */
-const dcRegionOf = d => { const r = d.regionId[0].toUpperCase() + d.regionId.slice(1); return d.geo === 'us' ? 'US ' + r : r; };
-function dcRegionList() { return [...new Set(window.__dcSum.map(dcRegionOf))]; }
+/* the macro regions (West, North, South, East) consolidating all geographies (India, USA, and future countries) */
+const dcRegionOf = d => {
+  const r = String(d && d.regionId || '').toLowerCase();
+  if (r.includes('west')) return 'West';
+  if (r.includes('north')) return 'North';
+  if (r.includes('south')) return 'South';
+  return 'East';
+};
+function dcRegionList() { return ['North', 'South', 'West', 'East']; }
 
 /* ── one site: its real devices, capex, opex and open risks ── */
 const DC_ST = { verified: 'ok', drifted: 'drift', 'not-discovered': 'none' };
@@ -392,9 +398,9 @@ function dcLoadLogical() {
   LINK_ST_OPTS.lldp = ['up', 'down']; LINK_ST_OPTS.ospf = ['up', 'down']; LINK_ST_OPTS.isis = ['up', 'down'];
   LINK_ST_OPTS.bgp = ['established', 'idle']; LINK_ST_OPTS.lsp = ['up', 'down', 'standby'];
   for (const k of Object.keys(LINKS)) delete LINKS[k];
-  LINK_TABS.length = 0;
+  const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
   for (const [k, n_, p, tone] of DC_LINK_PROTO) {
-    const rows = sc.links.filter(l => l.p === p).map((l, i) => ({
+    const rows = sc.links.filter(l => l.p === p && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
       _i: i, st: p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
       name: l.id, linkId: l.id, site: l.dc, role: l.role, cap: l.cap, cable: l.cable || '', strand: l.strand || '', ap: l.ap || '', zp: l.zp || '',
       extra: [['Site', l.dc], ['Role', l.role], ['Capacity', dcRate(l.cap)], ...(l.cable ? [['Cable', l.cable], ['Strand', l.strand], ['Source patch port', l.ap], ['Destination patch port', l.zp]] : [])]
@@ -406,7 +412,7 @@ function dcLoadLogical() {
   for (const k of Object.keys(SERVICES)) delete SERVICES[k];
   SVC_TABS.length = 0;
   for (const [k, n_, type, tone] of DC_SVC_TYPE) {
-    const rows = sc.services.filter(x => x.type === type).map((x, i) => {
+    const rows = sc.services.filter(x => x.type === type && (!validDcs || validDcs.has(x.dc))).map((x, i) => {
       const c = cust.get(x.cust) || {};
       return { _i: i, status: x.status, id: x.id, name: x.id, cust: c.name || x.cust, segment: c.segment || '', plan: c.plan || '', geo: c.geo, site: x.dc, ne: x.ne, ifc: x.ifc, qty: x.qty, unit: x.unit, bw: x.bw,
         sla: x.sla, uptime: x.uptime, rev: x.rev, cur: x.cur, crit: x.crit, path: x.path, links: x.links };
@@ -507,13 +513,38 @@ function dcViewServices() {
   </div>`;
 }
 
+let LOC_GEO_FILTER = typeof window !== 'undefined' && window.__dcGeo ? window.__dcGeo : 'us';
+
+function dcApplyScope(geo) {
+  if (!DC_ON) return;
+  LOC_GEO_FILTER = geo === 'in' ? 'in' : 'us';
+  const fullList = window.__dcSumAll || (window.__dcSumAll = [...(window.__dcSum || [])]);
+  const list = fullList.filter(d => d.geo === LOC_GEO_FILTER);
+  window.__dcSum = list;
+  if (typeof LOCATIONS !== 'undefined' && Array.isArray(LOCATIONS)) {
+    LOCATIONS.length = 0;
+    LOCATIONS.push(...list.map(d => d.location));
+  }
+  Object.keys(STATE_REGION).forEach(k => delete STATE_REGION[k]);
+  list.forEach(d => { STATE_REGION[d.state] = dcRegionOf(d); });
+  Object.keys(STATE_CIRCLE).forEach(k => delete STATE_CIRCLE[k]);
+  LOC_GEO.forEach(g => { STATE_CIRCLE[g.st] = g; });
+  if (typeof IL !== 'undefined') {
+    Object.assign(IL, dcIL(IL));
+  }
+  if (typeof dcLoadLogical === 'function') {
+    dcLoadLogical();
+  }
+}
+
 /* ── what the data center records do not hold stays empty ── */
 function dcScopeLegacy() {
   if (!DC_ON) return;
   SITE_TABS.push(...DC_EXTRA_TABS);
   PASS_TAB = 'rack';   /* open Passive infrastructure on the first tab the data centers have records for */
   VNFS.length = 0;
-  dcLoadLogical();
+  window.__dcSumAll = [...(window.__dcSum || [])];
+  dcApplyScope(window.__dcGeo || 'us');
   /* detail pages for records the data centers do not hold (VNFs, cells, passive plant of the estate): the same
      page frame, empty, instead of a sample record */
   const empty = what => () => `<div class="page">${drillBar()}${card(`<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
@@ -521,10 +552,6 @@ function dcScopeLegacy() {
   const NONE = { vnflifecycle: 'VNF', vnfdetails: 'VNF', cell4gdetails: '4G cell', cell5gdetails: '5G cell', odf: 'ODF frame', rack: 'rack', power: 'power unit',
     splice: 'splice closure', cord: 'patch cord', duct: 'duct', fiber: 'fibre span' };
   Object.entries(NONE).forEach(([k, what]) => { if (VIEWS[k]) VIEWS[k].render = empty(what); });
-  Object.keys(STATE_REGION).forEach(k => delete STATE_REGION[k]);
-  window.__dcSum.forEach(d => { STATE_REGION[d.state] = dcRegionOf(d); });
-  Object.keys(STATE_CIRCLE).forEach(k => delete STATE_CIRCLE[k]);
-  LOC_GEO.forEach(g => { STATE_CIRCLE[g.st] = g; });
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -245738,19 +245765,52 @@ function locList() {
     LOC_CAT ? `cat=${LOC_CAT}` : '', LOC_STATE ? `state=${LOC_STATE}` : '',
     LOC_GROUP ? `group=${LOC_GROUP}` : ''
   ].filter(Boolean).join('&');
-  const REGION_TONE = { North:'sky', East:'purple', West:'orange', South:'teal' };
-  const regionCards = (DC_ON ? dcRegionList() : ['North','East','West','South']).map(r => {
+  /* Four macro region cards (West, North, South, East) above the list.
+     Consolidates all geographies (India, US, and any future countries) into 4 cardinal macro regions.
+     The subtitle explicitly shows the country breakdown (e.g. 6 India, 9 US), and the segmented meter
+     bar shows the status breakdown (On-air, In progress, Planned, Failed).
+     Clicking a card filters the table to that macro region, and clicking it again toggles it off. */
+  const REGION_TONE = { North:'sky', South:'teal', West:'orange', East:'purple' };
+  const REGIONS = ['North', 'South', 'West', 'East'];
+  const regionCardsHtml = REGIONS.map(r => {
     const rows = base.filter(l => STATE_REGION[l.state] === r);
     const c = k => rows.filter(l => l.st === k).length;
     const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
     const tot = rows.length, live = c('On-air'), failed = c('Failed');
+    const isSel = LOC_REGION === r;
+    const geoQ = LOC_GEO_FILTER ? `geo=${LOC_GEO_FILTER}` : '';
+    const qParts = [
+      'view=list',
+      isSel ? '' : `region=${r}`,
+      geoQ,
+      carry
+    ].filter(Boolean).join('&');
+    const targetQ = qParts;
+
+    let subText = tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here';
+    if (DC_ON && tot) {
+      const geoCounts = {};
+      rows.forEach(l => {
+        const d = dcSumOf(l.id);
+        const g = (d && d.geo ? d.geo : 'in').toUpperCase();
+        geoCounts[g] = (geoCounts[g] || 0) + 1;
+      });
+      const geoParts = Object.entries(geoCounts).map(([g, count]) => `${count} ${g === 'IN' ? 'India' : g === 'US' ? 'US' : g}`);
+      if (geoParts.length > 0) {
+        subText = `${(live/tot*100).toFixed(0)}% on-air · ${geoParts.join(' · ')}`;
+        if (failed > 0) subText += ` · ${n(failed)} failed`;
+      }
+    }
+
     return kpiProgress(`${r} region`, n(tot),
-      tot ? `${(live/tot*100).toFixed(0)}% on-air · ${n(failed)} failed` : 'no locations here',
+      subText,
       segs, REGION_TONE[r] || 'slate',
-      { v:'location', l:`Locations in ${r} region`, q:`view=list&region=${r}${carry ? '&' + carry : ''}` },
-      LOC_REGION === r);
+      { v:'location', l:`Locations in ${r} region`, q: targetQ },
+      isSel);
   }).join('');
-  return `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCards}</div>
+
+  return `
+    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -245772,7 +245832,7 @@ function locList() {
               <span class="num" style="color:${cv(tone,700)};width:2.5rem;text-align:right">${l.st === 'Planned' ? '—' : pct + '%'}</span></span>`
           ];
         }), 'chip-auto',
-        i => [A('View details', { v:'site', l:shown[i].name, q:`id=${shown[i].id}` })],
+        i => [A('View details', { v:'site', l:shown[i].name, q:`id=${shown[i].id}${LOC_GEO_FILTER ? '&geo=' + LOC_GEO_FILTER : ''}` })],
         i => ({ 'data-site': shown[i].id }))}`)}`;
 }
 
@@ -248733,13 +248793,15 @@ function viewPassive() {
   const tabList = SC ? PASSIVE_DC_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)) : PASSIVE_TABS;
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
-  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => !PASS_DC || r.dcId === PASS_DC) : [];
+  const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
+  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || r.dcId === PASS_DC) && (!validDcs || validDcs.has(r.dcId))) : [];
   const netRows = SC ? [] : (PASSIVE[t] || []);
   const rows = gridApply('passive', SC ? dcPool : netRows);
   const P = PASSIVE_STATS;
+  const facList = SC && validDcs ? DC_FAC.filter(f => validDcs.has(f.id)) : DC_FAC;
   const sourceBar = SC ? `<span class="nst-select-shell"><select class="nst-input" aria-label="Data center" data-passdc="1">
-      <option value="">All data centers (${DC_FAC.length})</option>
-      ${DC_FAC.map(f => `<option value="${f.id}"${f.id===PASS_DC?' selected':''}>${f.id} · ${f.city}</option>`).join('')}</select></span>` : '';
+      <option value="">All data centers (${facList.length})</option>
+      ${facList.map(f => `<option value="${f.id}"${f.id===PASS_DC?' selected':''}>${f.id} · ${f.city}</option>`).join('')}</select></span>` : '';
   const cols = { fiber:[{t:'Status', plain:true},{t:'Span'},{t:'A end'},{t:'B end'},{t:'Length',r:true},{t:'Cores used'},{t:'Splices',r:true},{t:'Last OTDR'},{t:'Attenuation'},{t:'Ownership'}],
                  odf:[{t:'Status', plain:true},{t:'ODF'},{t:'Site'},{t:'Type'},{t:'Capacity',r:true},{t:'Used',r:true},{t:'Free',r:true},{t:'Fill'},{t:'Rack position'},{t:'Termination'}],
                  rack:[{t:'Status', plain:true},{t:'Rack'},{t:'Site'},{t:'Height',r:true},{t:'U used',r:true},{t:'U free',r:true},{t:'Elevation'},{t:'Power'},{t:'Cooling'}],
@@ -254900,6 +254962,12 @@ function applyDrillQuery(view, q, label) {
     LOC_ST = dq(p.st); LOC_CAT = dq(p.cat); LOC_STATE = dq(p.state); LOC_REGION = dq(p.region);
     LOC_TYPEGRP = dq(p.type);
     LOC_GROUP = dq(p.group);
+    const g = (p.geo || p.country || (typeof DC_ON !== 'undefined' && DC_ON ? 'us' : '')).toLowerCase();
+    if (g === 'in') {
+      if (typeof dcApplyScope === 'function') dcApplyScope('in');
+    } else if (g === 'us' || (typeof DC_ON !== 'undefined' && DC_ON)) {
+      if (typeof dcApplyScope === 'function') dcApplyScope('us');
+    }
   }
   if (view === 'site')     {
     if (p.id) {
@@ -255139,6 +255207,19 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
+  const geoBtn = e.target.closest('[data-geofilter]');
+  if (geoBtn) {
+    const g = geoBtn.getAttribute('data-geofilter');
+    const targetGeo = (g === 'all' || !g) ? null : g;
+    if (typeof dcApplyScope === 'function') dcApplyScope(targetGeo);
+    if (window.__nsBridge && window.__nsBridge.navigate) {
+      const q = targetGeo ? `view=list&geo=${targetGeo}` : 'view=list&geo=all';
+      window.__nsBridge.navigate('location', { q, label: 'Locations' });
+    } else {
+      go(CURRENT);
+    }
+    return;
+  }
   const kbBtn = e.target.closest('[data-kebab]');
   if (kbBtn) { const k = kbBtn.dataset.kebab; KEBAB = (KEBAB === k) ? null : k;
     GRIDMENU = false; FILTER_OPEN = false; CHIPS_MODAL = null; go(CURRENT); return; }
@@ -255958,6 +256039,7 @@ let __siteSectionPending = null;
 window.__nsLegacy = {
   go, drillTo, applyDrillQuery, VIEWS,
   current: () => CURRENT,
+  applyGeo: geo => { if (typeof dcApplyScope === 'function') dcApplyScope(geo); },
   /* the site header, as data — the React Site details / Site equipment
      screens render the same header viewSite draws */
   siteHead: siteHeadData,

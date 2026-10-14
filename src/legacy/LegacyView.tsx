@@ -1,5 +1,5 @@
-import { isDatacenter, solution, withoutSolution } from '../solution';
-import { DC_SUM, scope } from '../data/dc/scope';
+import { currentGeo, isDatacenter, solution, withoutSolution, type DcGeo } from '../solution';
+import { dcSumList, scope } from '../data/dc/scope';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -22,6 +22,7 @@ declare global {
       setSection?: (s: string) => void;
       /* maps any location tag (sample city codes included) to the roster row */
       resolveSite?: (ref: string) => { id: string; name: string } | null;
+      applyGeo?: (geo: string | null) => void;
     };
     __nsBridge?: {
       owns: (k: string) => boolean;
@@ -36,9 +37,11 @@ let loading: Promise<void> | null = null;
 export function loadLegacy(): Promise<void> {
   if (window.__nsLegacy) return Promise.resolve();
   /* the bundle builds its data once, so it learns the mode (src/solution.ts) before it runs */
-  const w = window as unknown as { __nsSolution?: string | null; __dcSum?: unknown; __dcScope?: unknown };
+  const w = window as unknown as { __nsSolution?: string | null; __dcSum?: unknown; __dcScope?: unknown; __dcGeo?: unknown };
   w.__nsSolution = solution();
-  if (isDatacenter()) { w.__dcSum = DC_SUM; w.__dcScope = scope(); }   // what legacy/dc-scope.js reads
+  const geo = currentGeo() || (isDatacenter() ? 'us' : null);
+  w.__dcGeo = geo;
+  if (isDatacenter()) { w.__dcSum = dcSumList(geo); w.__dcScope = scope(geo); }   // what legacy/dc-scope.js reads
   if (!loading) loading = new Promise((res, rej) => {
     const s = document.createElement('script');
     /* a plain '/legacy.js' can serve a browser tab a stale cached copy after
@@ -151,8 +154,20 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
       ...(params as Record<string, string>)
     };
 
+    const activeGeoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (isDatacenter() ? 'us' : '')).toLowerCase();
+    const activeGeo: DcGeo | null = isDatacenter() ? (activeGeoParam === 'in' ? 'in' : 'us') : ((activeGeoParam === 'us' || activeGeoParam === 'in') ? (activeGeoParam as DcGeo) : null);
+    const w = window as any;
+    w.__dcGeo = activeGeo;
+    if (isDatacenter()) {
+      w.__dcSum = dcSumList(activeGeo);
+      w.__dcScope = scope(activeGeo);
+    }
+
     isUpdatingFromUrl.current = true;
     try {
+      if (isDatacenter()) {
+        L.applyGeo?.(activeGeo);
+      }
       L.setParams(legacyKey, combinedParams);
       /* always applied, empty query included — a plain URL means the screen's
          clean default state, which is what a breadcrumb click navigates to */

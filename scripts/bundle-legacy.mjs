@@ -132,6 +132,7 @@ let __siteSectionPending = null;
 window.__nsLegacy = {
   go, drillTo, applyDrillQuery, VIEWS,
   current: () => CURRENT,
+  applyGeo: geo => { if (typeof dcApplyScope === 'function') dcApplyScope(geo); },
   /* the site header, as data — the React Site details / Site equipment
      screens render the same header viewSite draws */
   siteHead: siteHeadData,

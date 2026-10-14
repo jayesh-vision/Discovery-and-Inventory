@@ -106,7 +106,14 @@ export const dcRack = (id: string) => id.replace(/^.*-(RACK-)/, '$1');          
 export const dcShort = (id: string, dcId: string) => id.startsWith(dcId + '-') ? id.slice(dcId.length + 1) : id;
 export const DC_ROLE_BY_TAB = { router: 'Router', switch: 'Switch', server: 'Server', dwdm: 'DWDM', firewall: 'Firewall', storage: 'Storage', gpu: 'GPU' } as const;
 export type DcTab = keyof typeof DC_ROLE_BY_TAB;
-export const dcTabCount = (tab: DcTab): number => DC_COUNTS.devicesByRole[DC_ROLE_BY_TAB[tab]] ?? 0;
+import summaryJson from './summary.json';
+const sRaw = summaryJson as unknown as { datacenters?: { geo: string; byRole: Partial<Record<DcRole, number>> }[]; Datacenters?: { geo: string; byRole: Partial<Record<DcRole, number>> }[] };
+const summaryDcs = sRaw.datacenters ?? sRaw.Datacenters ?? [];
+export const dcTabCount = (tab: DcTab, geo?: DcGeo | null): number => {
+  const role = DC_ROLE_BY_TAB[tab];
+  if (!geo) return DC_COUNTS.devicesByRole[role] ?? 0;
+  return summaryDcs.filter(d => d.geo === geo).reduce((a, d) => a + (d.byRole[role] ?? 0), 0);
+};
 
 export const GPU_STATE: Record<GpuNodeState, [string, 'success' | 'neutral' | 'warning' | 'error' | 'info']> = {
   'in-job': ['In a job', 'success'], idle: ['Idle', 'neutral'], drained: ['Drained', 'warning'], failed: ['Failed', 'error'], 'burn-in': ['Burn-in', 'info']

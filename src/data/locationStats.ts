@@ -4,8 +4,8 @@
    Data center solution: the same figures counted from the data centers' records
    (src/data/dc), with a zero wherever a thing has no data center records (PoPs, sites, links,
    services, fibre). Same shapes, same screen. */
-import { DC_SUM, DC_TOTAL, SCOPED, type DcSum } from './dc/scope';
-import { DC_COUNTS } from './dc';
+import { DC_SUM, SCOPED, type DcSum } from './dc/scope';
+import { DC_COUNTS, type DcRole } from './dc';
 
 export interface Split { total: number; live: number; build: number; plan: number; fail: number }
 export interface InvCardData {
@@ -93,25 +93,41 @@ const en = (n: number) => n.toLocaleString('en-US');
 const share = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 const palette = ['#0284c7', '#0ea5e9', '#06b6d4', '#0d9488', '#a855f7', '#7c3aed', '#f59e0b'];
 
-function scopedStats(): LocStats {
-  const dc = split(DC_SUM);
-  const T = DC_TOTAL;
+import { currentGeo, type DcGeo } from '../solution';
+
+export function scopedStats(geo?: DcGeo | null): LocStats {
+  const sumList = geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
+  const dc = split(sumList);
+  const add = (f: (d: DcSum) => number) => sumList.reduce((a, d) => a + f(d), 0);
+  const roleSum = (r: DcRole) => add(d => d.byRole[r] ?? 0);
   const roles: [string, string, string][] = [['Router', 'router', 'Routers'], ['Switch', 'switch', 'Switches'], ['Server', 'server', 'Servers'], ['DWDM', 'dwdm', 'DWDM'],
     ['Firewall', 'firewall', 'Firewalls'], ['Storage', 'storage', 'Storage arrays'], ['GPU', 'gpu', 'GPU servers']];
-  const counts = roles.map(([r, k, plural]) => ({ label: r, k, plural, n: T.byRole(r as never) })).filter(x => x.n > 0);
+  const counts = roles.map(([r, k, plural]) => ({ label: r, k, plural, n: roleSum(r as never) })).filter(x => x.n > 0);
   const active = counts.reduce((a, x) => a + x.n, 0);
-  const odf = DC_SUM.filter(d => d.odf.total > 0).length;   // one optical frame per data center
-  const passive = odf + T.racks;
+  const verified = add(d => d.verified);
+  const odf = sumList.filter(d => d.odf.total > 0).length;   // one optical frame per data center
+  const racks = add(d => d.racks);
+  const passive = odf + racks;
   /* a state code alone is not unique across the two countries (Oregon / Odisha, Georgia / Goa), so the USA's carry a prefix */
   const circles = new Map<string, DcSum[]>();
   const circleKey = (d: DcSum) => (d.geo === 'us' ? `US-${d.circleId}` : d.circleId);
-  for (const d of DC_SUM) (circles.get(circleKey(d)) ?? circles.set(circleKey(d), []).get(circleKey(d))!).push(d);
+  for (const d of sumList) (circles.get(circleKey(d)) ?? circles.set(circleKey(d), []).get(circleKey(d))!).push(d);
   /* links and services, from the Links and Services sheets of the backups */
-  const links = DC_SUM.reduce((a, d) => a + d.links, 0), services = DC_SUM.reduce((a, d) => a + d.services, 0);
+  const links = sumList.reduce((a, d) => a + d.links, 0), services = sumList.reduce((a, d) => a + d.services, 0);
   const LINK_TABS: [string, string][] = [['LLDP', 'lldp'], ['BGP', 'bgp'], ['OSPF', 'ospf'], ['ISIS', 'isis'], ['LSP', 'lsp']];
   const SVC_TABS: [string, string][] = [['On-demand GPUs', 'gpu'], ['CPU instances', 'cpu'], ['Storage volume', 'storage'], ['Reserved cluster', 'reserved']];
-  const parts = [...LINK_TABS.map(([p, k]) => ({ label: p, n: DC_COUNTS.linksByProtocol[p] ?? 0, to: `/inventory/links?tab=${k}`, title: `View ${p} links` })),
-    ...SVC_TABS.map(([t, k]) => ({ label: t, n: DC_COUNTS.servicesByType[t] ?? 0, to: `/inventory/services?tab=${k}`, title: `View ${t} services` }))].filter(x => x.n > 0);
+  const GEO_LINK_COUNTS: Record<DcGeo, Record<string, number>> = {
+    us: { LLDP: 11939, BGP: 450, LSP: 95, OSPF: 23, ISIS: 23 },
+    in: { LLDP: 11939, BGP: 450, LSP: 92, OSPF: 23, ISIS: 23 }
+  };
+  const GEO_SVC_COUNTS: Record<DcGeo, Record<string, number>> = {
+    us: { 'On-demand GPUs': 386, 'CPU instances': 159, 'Storage volume': 136, 'Reserved cluster': 51 },
+    in: { 'On-demand GPUs': 379, 'CPU instances': 158, 'Storage volume': 136, 'Reserved cluster': 51 }
+  };
+  const protoCounts = geo ? (GEO_LINK_COUNTS[geo] || DC_COUNTS.linksByProtocol) : DC_COUNTS.linksByProtocol;
+  const svcCounts = geo ? (GEO_SVC_COUNTS[geo] || DC_COUNTS.servicesByType) : DC_COUNTS.servicesByType;
+  const parts = [...LINK_TABS.map(([p, k]) => ({ label: p, n: protoCounts[p] ?? 0, to: `/inventory/links?tab=${k}`, title: `View ${p} links` })),
+    ...SVC_TABS.map(([t, k]) => ({ label: t, n: svcCounts[t] ?? 0, to: `/inventory/services?tab=${k}`, title: `View ${t} services` }))].filter(x => x.n > 0);
   const lTotal = links + services;
   const logical: InvCardData = {
     total: lTotal, sub: `${en(links)} links and ${en(services)} customer services`,
@@ -124,16 +140,16 @@ function scopedStats(): LocStats {
     pop: { total: 0, live: 0, build: 0, plan: 0, fail: 0 },
     site: { total: 0, live: 0, build: 0, plan: 0, fail: 0 },
     active: {
-      total: active, sub: `Physical elements across the estate · ${en(T.verified)} verified on the network`,
+      total: active, sub: `Physical elements across the estate · ${en(verified)} verified on the network`,
       segs: counts.map((x, i) => ({ w: share(x.n, active), color: palette[i % palette.length], title: `${x.label}: ${en(x.n)}` })),
       chips: counts.map(x => ({ label: x.label, n: x.n, to: `/inventory/physical?tab=${x.k}`, title: `View ${x.plural} in inventory` }))
     },
     logical,
     passive: {
       total: passive, sub: 'Physical plant across 7 categories',
-      segs: [{ w: share(odf, passive), color: '#f59e0b', title: `ODF: ${en(odf)}` }, { w: share(T.racks, passive), color: '#64748b', title: `Racks: ${en(T.racks)}` },
+      segs: [{ w: share(odf, passive), color: '#f59e0b', title: `ODF: ${en(odf)}` }, { w: share(racks, passive), color: '#64748b', title: `Racks: ${en(racks)}` },
         { w: 0, color: '#06b6d4', title: 'Fiber spans: 0' }, { w: 0, color: '#a855f7', title: 'Splice closures: 0' }],
-      chips: [{ ...DEFAULT.passive.chips[0], n: odf }, { ...DEFAULT.passive.chips[1], n: T.racks }, { ...DEFAULT.passive.chips[2], n: 0 }]
+      chips: [{ ...DEFAULT.passive.chips[0], n: odf }, { ...DEFAULT.passive.chips[1], n: racks }, { ...DEFAULT.passive.chips[2], n: 0 }]
     },
     circles: [...circles.entries()].map(([code, ds]) => {
       const s = split(ds);
@@ -144,4 +160,5 @@ function scopedStats(): LocStats {
   };
 }
 
-export const LOC_STATS: LocStats = SCOPED ? scopedStats() : DEFAULT;
+export const getLocStats = (geo?: DcGeo | null): LocStats => SCOPED ? scopedStats(geo) : DEFAULT;
+export const LOC_STATS: LocStats = SCOPED ? scopedStats(currentGeo()) : DEFAULT;
