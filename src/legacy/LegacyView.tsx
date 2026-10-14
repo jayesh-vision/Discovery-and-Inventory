@@ -39,9 +39,15 @@ export function loadLegacy(): Promise<void> {
   /* the bundle builds its data once, so it learns the mode (src/solution.ts) before it runs */
   const w = window as unknown as { __nsSolution?: string | null; __dcSum?: unknown; __dcScope?: unknown; __dcGeo?: unknown };
   w.__nsSolution = solution();
-  const geo = currentGeo() || (isDatacenter() ? 'us' : null);
+  const geo = isDatacenter() ? (currentGeo() || 'us') : null;
   w.__dcGeo = geo;
-  if (isDatacenter()) { w.__dcSum = dcSumList(geo); w.__dcScope = scope(geo); }   // what legacy/dc-scope.js reads
+  if (isDatacenter()) {
+    w.__dcSum = dcSumList(geo);
+    w.__dcScope = scope(geo);
+  } else {
+    delete w.__dcSum;
+    delete w.__dcScope;
+  }
   if (!loading) loading = new Promise((res, rej) => {
     const s = document.createElement('script');
     /* a plain '/legacy.js' can serve a browser tab a stale cached copy after

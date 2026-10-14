@@ -4,7 +4,7 @@ import { getCityById, findCityById, findCityByFacilityCode } from '../data/geogr
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 import { store } from '../dcim/api';
-import { isDatacenter, isInventoryPath, withSolution } from '../solution';
+import { isDatacenter, withSolution } from '../solution';
 import GeoDropdown from '../components/ui/GeoDropdown';
 
 export function screenFor(pathname: string) {
@@ -689,7 +689,7 @@ export default function Topbar() {
         ))}
       </nav>
       <div className="topbar-right" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-        {(isDatacenter() || isInventoryPath(loc.pathname)) && <GeoDropdown />}
+        {isDatacenter() && <GeoDropdown />}
         {reportDef && reportContent && (
           <ExportMenu def={reportDef} content={reportContent} withPrint label="Download report" />
         )}

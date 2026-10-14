@@ -34,37 +34,38 @@ export const isInventoryPath = (p: string) => p === '/inventory' || p.startsWith
 
 export const DEFAULT_GEO: DcGeo = 'us';
 
-let current: Solution | null = 'datacenter';
+let current: Solution | null = null;
 let currentGeoVal: DcGeo = DEFAULT_GEO;
 
 /* the very first render must already know the mode and active geo, so read the URL right now */
-if (typeof window !== 'undefined') {
-  const isInv = isInventoryPath(window.location.pathname);
+if (typeof window !== 'undefined' && isInventoryPath(window.location.pathname)) {
   const sp = new URLSearchParams(window.location.search);
   const v = sp.get(KEY);
   if (isLeave(v)) {
     current = null;
   } else if (parse(v)) {
     current = parse(v);
-  } else if (isInv) {
-    current = 'datacenter';
+  } else {
+    current = null;
   }
 
-  const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
-  if (g === 'us' || g === 'in') {
-    currentGeoVal = g as DcGeo;
-    try { sessionStorage.setItem(GEO_STORAGE_KEY, g); } catch {}
-  } else {
-    try {
-      const saved = sessionStorage.getItem(GEO_STORAGE_KEY);
-      if (saved === 'us' || saved === 'in') {
-        currentGeoVal = saved as DcGeo;
-      } else {
+  if (current === 'datacenter') {
+    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
+    if (g === 'us' || g === 'in') {
+      currentGeoVal = g as DcGeo;
+      try { sessionStorage.setItem(GEO_STORAGE_KEY, g); } catch {}
+    } else {
+      try {
+        const saved = sessionStorage.getItem(GEO_STORAGE_KEY);
+        if (saved === 'us' || saved === 'in') {
+          currentGeoVal = saved as DcGeo;
+        } else {
+          currentGeoVal = DEFAULT_GEO;
+          try { sessionStorage.setItem(GEO_STORAGE_KEY, DEFAULT_GEO); } catch {}
+        }
+      } catch {
         currentGeoVal = DEFAULT_GEO;
-        try { sessionStorage.setItem(GEO_STORAGE_KEY, DEFAULT_GEO); } catch {}
       }
-    } catch {
-      currentGeoVal = DEFAULT_GEO;
     }
   }
 }
@@ -75,7 +76,11 @@ export const solution = (): Solution | null => current;
 /** true when Inventory shows only the data center solution's data */
 export const isDatacenter = (): boolean => current === 'datacenter';
 
-export const currentGeo = (): DcGeo => (currentGeoVal === 'in' ? 'in' : 'us');
+export const currentGeo = (): DcGeo | null => {
+  if (current !== 'datacenter') return null;
+  return currentGeoVal === 'in' ? 'in' : 'us';
+};
+
 export const setGeo = (g: DcGeo | 'all' | null): void => {
   if (g === 'in') {
     currentGeoVal = 'in';
@@ -96,24 +101,26 @@ export function syncSolution(pathname: string, search: string): Solution | null 
   } else if (parse(v)) {
     current = parse(v);
   } else {
-    current = 'datacenter';
+    current = null;
   }
 
-  const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
-  if (g === 'us' || g === 'in') {
-    currentGeoVal = g as DcGeo;
-    try { sessionStorage.setItem(GEO_STORAGE_KEY, g); } catch {}
-  } else if (!g) {
-    try {
-      const saved = sessionStorage.getItem(GEO_STORAGE_KEY);
-      if (saved === 'us' || saved === 'in') {
-        currentGeoVal = saved as DcGeo;
-      } else {
+  if (current === 'datacenter') {
+    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
+    if (g === 'us' || g === 'in') {
+      currentGeoVal = g as DcGeo;
+      try { sessionStorage.setItem(GEO_STORAGE_KEY, g); } catch {}
+    } else if (!g) {
+      try {
+        const saved = sessionStorage.getItem(GEO_STORAGE_KEY);
+        if (saved === 'us' || saved === 'in') {
+          currentGeoVal = saved as DcGeo;
+        } else {
+          currentGeoVal = DEFAULT_GEO;
+          try { sessionStorage.setItem(GEO_STORAGE_KEY, DEFAULT_GEO); } catch {}
+        }
+      } catch {
         currentGeoVal = DEFAULT_GEO;
-        try { sessionStorage.setItem(GEO_STORAGE_KEY, DEFAULT_GEO); } catch {}
       }
-    } catch {
-      currentGeoVal = DEFAULT_GEO;
     }
   }
   return current;
@@ -121,15 +128,15 @@ export function syncSolution(pathname: string, search: string): Solution | null 
 
 /** the URL with the active solution and active geo on it (Inventory URLs only; an existing value is kept) */
 export function withSolution(url: string): string {
-  const geoToUse = currentGeo();
-  if (!current && !geoToUse) return url;
+  if (!current) return url;
   const [pathAndQuery, hash = ''] = url.split('#');
   const [path, q = ''] = pathAndQuery.split('?');
   if (!isInventoryPath(path)) return url;
   const sp = new URLSearchParams(q);
-  if (current && !sp.has(KEY)) {
+  if (!sp.has(KEY)) {
     sp.set(KEY, solutionParam(current));
   }
+  const geoToUse = currentGeo();
   if (geoToUse && !sp.has(GEO_KEY) && !sp.has(COUNTRY_KEY)) {
     sp.set(GEO_KEY, geoToUse);
   }
