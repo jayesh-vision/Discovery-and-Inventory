@@ -266,6 +266,7 @@ function dcScopeLegacy() {
   SITE_TABS.push(
     { k: 'router', n: 'Router' },
     { k: 'switch', n: 'Switch' },
+    { k: 'dwdm', n: 'DWDM' },
     { k: 'firewall', n: 'Firewall' },
     { k: 'server', n: 'Server' },
     { k: 'storage', n: 'Storage' },
