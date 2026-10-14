@@ -2352,7 +2352,7 @@ function viewSite() {
       </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
 
     ${statStrip([
-      { k:'Network elements', v:n(tot),  s:counts.map(c=>`${c.n} ${c.c}`).join(' · '), t:'sky' },
+      { k: DC_ON ? 'Devices' : 'Network elements', v:n(tot),  s:counts.map(c=>`${c.n} ${c.c}`).join(' · '), t:'sky' },
       { k:'Discovered',       v:n(l.disc), s:`${((l.disc/Math.max(l.ne,1))*100).toFixed(0)}% of record`, t:'emerald' },
       { k:'Drifted',          v:n(drift), s:'incl. duplicate serials', t:'amber' },
       { k:'Not discovered',   v:n(notDisc), s:'planned or no collector', t:'red' },
@@ -2363,7 +2363,7 @@ function viewSite() {
 
     <div class="section-tabs">
       <button class="stab${SITE_SECTION==='attention'?' is-on':''}" data-sitesection="attention">Attention <span class="tab-n num">${attn.length}</span></button>
-      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">Network elements <span class="tab-n num">${tot}</span></button>
+      <button class="stab${SITE_SECTION==='ne'?' is-on':''}" data-sitesection="ne">${DC_ON ? 'Devices' : 'Network elements'} <span class="tab-n num">${tot}</span></button>
       <button class="stab${SITE_SECTION==='capex'?' is-on':''}" data-sitesection="capex">Capex <span class="tab-n num">${inrShort(cxTotal)}</span></button>
       <button class="stab${SITE_SECTION==='opex'?' is-on':''}" data-sitesection="opex">Opex <span class="tab-n num">${inrShort(oxRun)}/mo</span></button>
       <button class="stab" data-nav="sitedetails">Site details</button>
@@ -2460,7 +2460,7 @@ function siteHeadData(id) {
       ['Zone', (typeof DC_ON !== 'undefined' && DC_ON && typeof dcSumOf === 'function' && dcSumOf(l.id) && dcSumOf(l.id).regionId) ? (dcSumOf(l.id).regionId.charAt(0).toUpperCase() + dcSumOf(l.id).regionId.slice(1)) : ((typeof STATE_REGION !== 'undefined' && STATE_REGION[l.state]) || (l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'))],
       ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']],
     cells: [
-      { k: 'Network elements', v: n(tot), s: counts.map(c => `${c.n} ${c.c}`).join(' · '), t: 'sky', section: 'ne' },
+      { k: DC_ON ? 'Devices' : 'Network elements', v: n(tot), s: counts.map(c => `${c.n} ${c.c}`).join(' · '), t: 'sky', section: 'ne' },
       { k: 'Discovered', v: n(l.disc), s: `${((l.disc / Math.max(l.ne, 1)) * 100).toFixed(0)}% of record`, t: 'emerald',
         drill: { v: 'reconcile', l: `Verified at ${l.name}`, q: 'ne=Agree' } },
       { k: 'Drifted', v: n(drift), s: 'incl. duplicate serials', t: 'amber',
