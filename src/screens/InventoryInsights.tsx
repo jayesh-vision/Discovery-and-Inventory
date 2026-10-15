@@ -1,6 +1,7 @@
 import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { isDatacenter, withSolution } from '../solution';
 import '../styles/inventory-insights.css';
 import SparesRiskCard from '../components/insights/SparesRiskCard';
 import StaleRecordsCard from '../components/insights/StaleRecordsCard';
@@ -86,7 +87,7 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
     `Active (${PARENTS_DATA_DYNAMIC[range][0].children[0].count}) + Passive (${PARENTS_DATA_DYNAMIC[range][0].children[1].count})`
   ]);
   rows.push([
-    'Connectivity Inventory',
+    PARENTS_DATA_DYNAMIC[range][1].name,
     PARENTS_DATA_DYNAMIC[range][1].count,
     `${PARENTS_DATA_DYNAMIC[range][1].health} Health (${PARENTS_DATA_DYNAMIC[range][1].delta})`,
     `Virtual (${PARENTS_DATA_DYNAMIC[range][1].children[0].count}) + Connectivity (${PARENTS_DATA_DYNAMIC[range][1].children[1].count})`
@@ -104,7 +105,7 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
   rows.push(['Active', 'Physical', bShare[0][1], `${pData[0].children[0].coverage} Discovered`, pData[0].children[0].critical, pData[0].children[0].high]);
   rows.push(['Passive', 'Physical', bShare[1][1], `${pData[0].children[1].coverage} Survey verified`, pData[0].children[1].critical, pData[0].children[1].high]);
   rows.push(['Connectivity', 'Connectivity', bShare[2][1], `${pData[1].children[1].coverage} ${pData[1].children[1].covLabel}`, pData[1].children[1].critical, pData[1].children[1].high]);
-  rows.push(['Virtual', 'Connectivity', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
+  rows.push(['Virtual', isDatacenter() ? 'Virtual Layer' : 'Connectivity', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
 
   // 4. Component Hierarchy Detail
   addSection('COMPONENT HIERARCHY DETAIL');
@@ -294,11 +295,38 @@ const LOGICAL_CONNECTIVITY_META: Record<string, { layer: string; protocol: strin
     protocol: 'PPPoE, IPoE, GPON GEM Ports, T-CONT Alloc-IDs',
     underlying: 'Broadband Network Gateways (BNG) & GPON OLTs',
     note: 'Logical subscriber access sessions terminating residential and enterprise FTTH connectivity.'
+  },
+  'Virtual Machines (VM)': {
+    layer: 'Hypervisor Compute Virtualization',
+    protocol: 'VMware ESXi, KVM, Nutanix AHV',
+    underlying: 'Compute Nodes, Memory & CPU Cores',
+    note: '56 Virtual Machines running across production, staging, and development data center environments.'
+  },
+  'Kubernetes Pods & Nodes (K8s)': {
+    layer: 'Container Orchestration & Pod Runtime',
+    protocol: 'Red Hat OpenShift 4.14, Kubernetes CRI-O',
+    underlying: 'Worker Nodes & Container Pods',
+    note: '34 Container workloads and pods across 6 Kubernetes clusters in the data centers.'
+  },
+  'Storage Datastores & Pools': {
+    layer: 'Virtual Storage & Datastores',
+    protocol: 'VMFS 6, NFS 4.1, Ceph RBD, Nutanix DSF',
+    underlying: 'SAN/NAS Storage Arrays & NVMe Pools',
+    note: '20 Datastores providing virtual disk storage capacity across data center hosts.'
+  },
+  'Virtual Networks & vSwitches': {
+    layer: 'SDN & Distributed Virtual Switching',
+    protocol: 'VMware vDS, Open vSwitch (OVS), VXLAN / Geneve',
+    underlying: 'TOR Switches, Physical NICs & VLANs',
+    note: '18 Virtual network entities, overlays and distributed port groups connecting workloads.'
   }
 };
 
 export default function InventoryInsights() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const solParam = searchParams.get('solution')?.toLowerCase();
+  const isDc = solParam === 'datacenter' || isDatacenter();
 
   // ── State & Filters ──
   const [dayRange, setDayRange] = useState<DayRangeOption>('30d');
@@ -676,7 +704,7 @@ export default function InventoryInsights() {
           {/* Tile 1: Light blue summary KPI tile */}
           <div
             className="ii-card-blue"
-            onClick={() => navigate('/inventory/physical?from=Inventory%20insights')}
+            onClick={() => navigate(withSolution('/inventory/physical?from=Inventory%20insights'))}
             title="Drill down to all inventory records"
           >
             <div className="ii-kpi-label">Total inventory records</div>
@@ -712,9 +740,11 @@ export default function InventoryInsights() {
               className="ii-card is-clickable"
               onClick={() => {
                 if (p.name.includes('Physical')) {
-                  navigate('/inventory/physical?from=Inventory%20insights');
+                  navigate(withSolution('/inventory/physical?from=Inventory%20insights'));
+                } else if (isDc) {
+                  navigate(withSolution('/inventory/virtual?from=Inventory%20insights'));
                 } else {
-                  navigate('/inventory/links?from=Inventory%20insights');
+                  navigate(withSolution('/inventory/links?from=Inventory%20insights'));
                 }
               }}
               title={`Drill down to ${p.name}`}
@@ -738,13 +768,13 @@ export default function InventoryInsights() {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (k.name === 'Active') {
-                        navigate('/inventory/physical?from=Inventory%20insights');
+                        navigate(withSolution('/inventory/physical?from=Inventory%20insights'));
                       } else if (k.name === 'Passive') {
-                        navigate('/inventory/passive?from=Inventory%20insights');
+                        navigate(withSolution('/inventory/passive?from=Inventory%20insights'));
                       } else if (k.name === 'Virtual') {
-                        navigate('/inventory/virtual?from=Inventory%20insights');
+                        navigate(withSolution('/inventory/virtual?from=Inventory%20insights'));
                       } else if (k.name === 'Connectivity') {
-                        navigate('/inventory/links?from=Inventory%20insights');
+                        navigate(withSolution('/inventory/links?from=Inventory%20insights'));
                       }
                     }}
                     onMouseEnter={(e) => {
@@ -788,7 +818,7 @@ export default function InventoryInsights() {
           {/* Tile 4: Open inventory issues */}
           <div
             className="ii-card is-clickable"
-            onClick={() => navigate('/inventory/inactive?from=Inventory%20insights')}
+            onClick={() => navigate(withSolution('/inventory/inactive?from=Inventory%20insights'))}
             title="Drill down to inactive records and backlog"
           >
             <div className="ii-card-head">
@@ -954,7 +984,9 @@ export default function InventoryInsights() {
                               : b.name === 'Passive'
                               ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
                               : b.name === 'Virtual'
-                              ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
+                              ? (isDc
+                                  ? 'Virtual Machines, K8s pods, datastores & vSwitches across 24 data centers.'
+                                  : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
                               : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
                           }, e);
                         }}
@@ -993,7 +1025,7 @@ export default function InventoryInsights() {
                         dotColor: b.color,
                         badge: b.pctLabel,
                         rows: [
-                          { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : 'Connectivity Layer' },
+                          { label: 'Domain', value: b.name === 'Active' || b.name === 'Passive' ? 'Physical Layer' : (isDc && b.name === 'Virtual' ? 'Virtualization Layer' : 'Connectivity Layer') },
                           { label: 'Total count', value: b.count },
                           { label: 'Share of total', value: b.pctLabel }
                         ],
@@ -1002,7 +1034,9 @@ export default function InventoryInsights() {
                           : b.name === 'Passive'
                           ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
                           : b.name === 'Virtual'
-                          ? 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.'
+                          ? (isDc
+                              ? 'Virtual Machines, K8s pods, datastores & vSwitches across 24 data centers.'
+                              : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
                           : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
                       }, e);
                     }}
@@ -1210,7 +1244,7 @@ export default function InventoryInsights() {
         {/* Row 2 of What exists: The 4 Detailed Inventory Panels */}
         <section aria-label="Inventory by type" className="ii-grid ii-grid--panels">
           {PANELS_DATA_DYNAMIC[dayRange].map(p => {
-            const panelRoute = p.route.includes('?') ? `${p.route}&from=Inventory%20insights` : `${p.route}?from=Inventory%20insights`;
+            const panelRoute = withSolution(p.route.includes('?') ? `${p.route}&from=Inventory%20insights` : `${p.route}?from=Inventory%20insights`);
             return (
               <div key={p.title} className="ii-card">
                 <div className="ii-card-header">
@@ -1237,8 +1271,8 @@ export default function InventoryInsights() {
                         onClick={() => {
                           if (p.route === '/inventory/physical') {
                             /* only classes the Physical page actually has can be drilled to;
-                               Microwave and PON have no tab of their own, so they open
-                               the page as the reader last left it rather than a wrong tab */
+                                Microwave and PON have no tab of their own, so they open
+                                the page as the reader last left it rather than a wrong tab */
                             const clsMap: Record<string, string> = {
                               'Routers': 'router',
                               'Switches': 'switch',
@@ -1247,7 +1281,7 @@ export default function InventoryInsights() {
                             };
                             const cls = Object.entries(clsMap).find(([k]) => t.name.startsWith(k))?.[1];
                             navigate(cls
-                              ? `/inventory/physical?cls=${cls}&from=Inventory%20insights`
+                              ? withSolution(`/inventory/physical?cls=${cls}&from=Inventory%20insights`)
                               : panelRoute);
                           } else {
                             navigate(panelRoute);
@@ -1608,7 +1642,7 @@ export default function InventoryInsights() {
         {/* 5 Navigation Tiles */}
         <section aria-label="Navigate" className="ii-grid ii-grid--nav">
           {BOTTOM_NAVIGATE_DYNAMIC[dayRange].map(n => {
-            const tileRoute = n.route.includes('?') ? `${n.route}&from=Inventory%20insights` : `${n.route}?from=Inventory%20insights`;
+            const tileRoute = withSolution(n.route.includes('?') ? `${n.route}&from=Inventory%20insights` : `${n.route}?from=Inventory%20insights`);
             return (
               <button
                 key={n.name}
@@ -1631,7 +1665,7 @@ export default function InventoryInsights() {
           <div className="ii-card">
             <div className="ii-card-head">
               <div className="ii-card-title">Sites needing attention</div>
-              <button type="button" onClick={() => navigate('/inventory/location?from=Inventory%20insights')} className="ii-link-btn">
+              <button type="button" onClick={() => navigate(withSolution('/inventory/location?from=Inventory%20insights'))} className="ii-link-btn">
                 All {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites
               </button>
             </div>
@@ -1653,7 +1687,7 @@ export default function InventoryInsights() {
                   {sitesList.map(s => (
                     <tr
                       key={s.name}
-                      onClick={() => navigate(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`)}
+                      onClick={() => navigate(withSolution(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`))}
                       className="is-clickable"
                       title={`View ${s.name} location details`}
                     >
@@ -1694,7 +1728,7 @@ export default function InventoryInsights() {
           <div className="ii-card">
             <div className="ii-card-head">
               <div className="ii-card-title">Services on inventory</div>
-              <button type="button" onClick={() => navigate('/inventory/services?from=Inventory%20insights')} className="ii-link-btn">
+              <button type="button" onClick={() => navigate(withSolution('/inventory/services?from=Inventory%20insights'))} className="ii-link-btn">
                 View all
               </button>
             </div>
@@ -1712,7 +1746,7 @@ export default function InventoryInsights() {
               {servicesList.map(s => (
                 <div
                   key={s.name}
-                  onClick={() => navigate('/inventory/services?from=Inventory%20insights')}
+                  onClick={() => navigate(withSolution('/inventory/services?from=Inventory%20insights'))}
                   className="ii-stat-row"
                   style={{ cursor: 'pointer' }}
                   title={`View ${s.name} service path`}

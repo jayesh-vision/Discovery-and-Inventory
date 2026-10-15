@@ -7,8 +7,9 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
   '90d': 'Last 90 days',
   '12m': 'Last 12 months'
 };
-import { DC_SUM, DC_TOTAL, SCOPED, dcRegionLabel, type DcSum } from './dc/scope';
-import { currentGeo } from '../solution';
+import { DC_SUM, DC_TOTAL, dcRegionLabel, type DcSum } from './dc/scope';
+import { currentGeo, isDatacenter } from '../solution';
+import { DC_VIRTUAL_RESOURCES } from './dcVirtualResources';
 import {
   ACT,
   PAS,
@@ -2121,8 +2122,18 @@ function buildDc() {
   const powerUnits = T.feeds + T.ups + DC_SUM.length * 2;   // utility feeds, UPS, one DG set and one battery bank per data center
   const odfFrames = DC_SUM.filter(d => d.odf.total > 0).length;
   const passive = T.racks + powerUnits + T.coolingUnits + T.sensors + odfFrames + T.coresLit;
-  const records = dev + passive;
-  const risks = { critical: DC_SUM.reduce((a, d) => a + d.risks.critical, 0), major: DC_SUM.reduce((a, d) => a + d.risks.major, 0), minor: DC_SUM.reduce((a, d) => a + d.risks.minor, 0) };
+  const virtTotal = DC_VIRTUAL_RESOURCES.length; // 128
+  const vms = DC_VIRTUAL_RESOURCES.filter(i => i.type === 'Virtual Machine').length; // 56
+  const k8s = DC_VIRTUAL_RESOURCES.filter(i => i.type === 'K8s Pod').length; // 34
+  const storage = DC_VIRTUAL_RESOURCES.filter(i => i.type === 'Datastore').length; // 20
+  const net = DC_VIRTUAL_RESOURCES.filter(i => i.type === 'Virtual Network').length; // 18
+  const virtRunning = DC_VIRTUAL_RESOURCES.filter(i => i.status === 'Running').length; // 114
+  const virtWarning = DC_VIRTUAL_RESOURCES.filter(i => i.status === 'Warning' || i.status === 'Degraded').length; // 2
+  const virtError = DC_VIRTUAL_RESOURCES.filter(i => i.status === 'Error').length; // 2
+  const virtHealthPct = Math.round((virtRunning / virtTotal) * 100); // 89%
+
+  const records = dev + passive + virtTotal;
+  const risks = { critical: DC_SUM.reduce((a, d) => a + d.risks.critical, 0) + virtError, major: DC_SUM.reduce((a, d) => a + d.risks.major, 0) + virtWarning, minor: DC_SUM.reduce((a, d) => a + d.risks.minor, 0) };
   const riskTotal = risks.critical + risks.major + risks.minor;
   const verifiedPct = dev ? Math.round((T.verified / dev) * 100) : 0;
   const roleRows: [string, string][] = [['Router', 'Routers'], ['Switch', 'Switches'], ['Server', 'Servers'], ['Storage', 'Storage arrays'], ['Firewall', 'Firewalls'], ['GPU', 'GPU servers'], ['DWDM', 'Optical & DWDM']];
@@ -2131,12 +2142,12 @@ function buildDc() {
     health: `${verifiedPct}%`, confirmed: pcs(T.discovered, dev, 1), stranded: pcs(T.notDiscovered, dev, 1), strandedVal: fn(T.notDiscovered) }));
 
   const PARENTS = eachRange(() => [
-    { name: 'Physical inventory', desc: '', count: fn(records), delta: '+0.0%', health: `${verifiedPct}%`, children: [
+    { name: 'Physical inventory', desc: '', count: fn(dev + passive), delta: '+0.0%', health: `${verifiedPct}%`, children: [
       leaf('Active', fn(dev), verifiedPct, `${fn(dev)} managed elements in ${DC_SUM.length} data centers`, 'Discovered', pcs(T.discovered, dev, 1), risks.critical, risks.major, ACT),
       leaf('Passive', fn(passive), 100, 'racks, power plant, cooling, sensors, optical frames and cabling', 'Recorded', '100%', 0, 0, PAS)
     ] },
-    { name: 'Connectivity inventory', desc: '', count: '0', delta: '+0.0%', health: NONE, children: [
-      noLeaf('Virtual', 'VNF / CNF instances', 'Mapped to host', VIR),
+    { name: 'Connectivity & Virtual inventory', desc: '', count: fn(virtTotal), delta: '+0.0%', health: `${virtHealthPct}%`, children: [
+      leaf('Virtual', fn(virtTotal), virtHealthPct, `${virtTotal} virtual resources across ${DC_SUM.length} data centers`, 'Mapped to host', '100%', virtError, virtWarning, VIR),
       noLeaf('Connectivity', 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', LOG)
     ] }
   ] as ParentCategory[]);
@@ -2145,8 +2156,8 @@ function buildDc() {
     medianDays: 0, assigned: riskTotal }));
 
   const BUCKET = eachRange(() => ({ centerLabel: fn(records),
-    summaryText: `Physical inventory is all of the records in the data centers (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); there are no connectivity or virtual records.`,
-    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', '0', 0, LOG], ['Virtual', '0', 0, VIR]] as [string, string, number, string][] }));
+    summaryText: `Physical inventory represents ${pcs(dev + passive, records, 1)} of data center assets (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); Virtual holds ${fn(virtTotal)} VMs, K8s pods, datastores & vSwitches across ${DC_SUM.length} facilities.`,
+    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', '0', 0, LOG], ['Virtual', fn(virtTotal), virtTotal, VIR]] as [string, string, number, string][] }));
 
   const planned = T.planned;
   const LIFECYCLE = eachRange(() => ({
@@ -2188,7 +2199,25 @@ function buildDc() {
         ['ODF frames', fn(odfFrames), odfFrames], ['Fibre cores in use', fn(T.coresLit), T.coresLit]]),
       facts: [{ name: 'Rack space used', value: pcs(T.uUsed, T.uTotal), color: '#111827' }, { name: 'Power capacity', value: `${(T.powerKw / 1000).toFixed(1)} MW`, color: '#111827' },
         { name: 'Cooling capacity', value: `${(T.coolingKw / 1000).toFixed(1)} MW`, color: '#111827' }, { name: 'Fibre cores lit', value: `${pcs(T.coresLit, T.cores)} of ${fn(T.cores)}`, color: '#111827' }] },
-    blank(defPanels[2]), blank(defPanels[3])
+    {
+      title: 'Virtual (Logical)',
+      color: VIR,
+      route: '/inventory/virtual',
+      desc: `Virtual Machines, Kubernetes Pods, Datastores & SDN Fabrics across ${DC_SUM.length} Data Centers.`,
+      items: bars0([
+        ['Virtual Machines (VM)', fn(vms), vms],
+        ['Kubernetes Pods & Nodes (K8s)', fn(k8s), k8s],
+        ['Storage Datastores & Pools', fn(storage), storage],
+        ['Virtual Networks & vSwitches', fn(net), net]
+      ]),
+      facts: [
+        { name: 'Mapped to host / cluster', value: '100%', color: GOOD },
+        { name: 'Data centers · clusters', value: `${DC_SUM.length} DCs · 128 entities`, color: '#111827' },
+        { name: 'Active workloads running', value: `${virtRunning} running (${virtHealthPct}%)`, color: GOOD },
+        { name: 'Platforms supported', value: 'vSphere · K8s · OpenStack · AHV', color: '#111827' }
+      ]
+    },
+    blank(defPanels[3])
   ] as PanelCategory[]);
 
   const ZERO6 = [0, 0, 0, 0, 0, 0];
@@ -2206,12 +2235,21 @@ function buildDc() {
     items: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].items.map((it, i) => ({ name: it.name, count: i === 0 ? fn(T.notDiscovered) : '0' })) }));
   const q = (name: string, color: string, v: string[]) => ({ name, color, v1: v[0], c1: v[0] === NONE ? GREY : hc(parseFloat(v[0])), v2: v[1], c2: v[1] === NONE ? GREY : hc(parseFloat(v[1])), v3: v[2], c3: v[2] === NONE ? GREY : hc(parseFloat(v[2])), v4: v[3], c4: GREY, v5: v[4], c5: GREY });
   const QUALITY = eachRange(() => [q('Active', ACT, ['100%', `${verifiedPct}%`, pcs(T.discovered, dev), NONE, NONE]), q('Passive', PAS, [NONE, NONE, NONE, NONE, NONE]),
-    q('Virtual', VIR, [NONE, NONE, NONE, NONE, NONE]), q('Logical', LOG, [NONE, NONE, NONE, NONE, NONE])] as QualityRow[]);
-  const CROSS = eachRange(r => DEFAULT_CROSS_LINKS_DYNAMIC[r].map(c => c.name.startsWith('Active element ↔ site') ? { ...c, value: '100%', color: GOOD } : { ...c, value: NONE, color: GREY }));
+    q('Virtual', VIR, ['100%', '98%', `${virtHealthPct}%`, '0.0%', '0.0%']), q('Logical', LOG, [NONE, NONE, NONE, NONE, NONE])] as QualityRow[]);
+  const CROSS = eachRange(r => DEFAULT_CROSS_LINKS_DYNAMIC[r].map(c => {
+    if (c.name.startsWith('Active element ↔ site')) return { ...c, value: '100%', color: GOOD };
+    if (c.name.toLowerCase().includes('virtual')) return { ...c, value: '100%', color: GOOD };
+    return { ...c, value: NONE, color: GREY };
+  }));
   const RECON = eachRange(r => ({ invOnly: fn(T.notDiscovered), matched: fn(T.verified), netOnly: '0',
     gaps: DEFAULT_RECON_DYNAMIC[r].gaps.map(g => ({ name: g.name, value: g.name.startsWith('Software version') ? fn(T.drifted) : '0' })) }));
   const SUPPORT = eachRange(() => ({ eos: '0', war: NONE, spares: NONE, fibre: NONE, contracts: NONE, lic: NONE, age: NONE }));
-  const NAV = eachRange(r => DEFAULT_BOTTOM_NAVIGATE_DYNAMIC[r].map((b, i) => ({ ...b, count: [fn(dev), fn(passive), '0', '0', fn(DC_SUM.length)][i] })));
+  const NAV = eachRange(r => DEFAULT_BOTTOM_NAVIGATE_DYNAMIC[r].map((b, i) => {
+    if (i === 2) {
+      return { ...b, count: fn(virtTotal), name: 'Virtual resources', where: 'Resources › Virtual', color: VIR, route: '/inventory/virtual' };
+    }
+    return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), '0', fn(DC_SUM.length)][i] };
+  }));
   const issueCount = (d: DcSum) => d.risks.critical + d.risks.major + d.risks.minor;
   const sites = [...DC_SUM].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).slice(0, 7).map(d => {
     const h = d.devices ? Math.round((d.verified / d.devices) * 100) : 0;
@@ -2248,28 +2286,52 @@ function buildDc() {
 
   return { TOTAL, PARENTS, ISSUES, BUCKET, LIFECYCLE, VENDOR, PANELS, DECOM, DECOM_BUCKET, EOL, DRIFT, SPARES, NOT_RECONF, QUALITY, CROSS, RECON, SUPPORT, NAV, SITES, SERVICES, NET, TREND, ACTIVITY };
 }
-const DC = SCOPED ? buildDc() : null;
 
-export const TOTAL_RECORDS_DATA: typeof DEFAULT_TOTAL_RECORDS_DATA = DC ? DC.TOTAL : DEFAULT_TOTAL_RECORDS_DATA;
-export const PARENTS_DATA_DYNAMIC: typeof DEFAULT_PARENTS_DATA_DYNAMIC = DC ? DC.PARENTS : DEFAULT_PARENTS_DATA_DYNAMIC;
-export const ISSUES_DYNAMIC: typeof DEFAULT_ISSUES_DYNAMIC = DC ? DC.ISSUES : DEFAULT_ISSUES_DYNAMIC;
-export const BUCKET_SHARE_DATA: typeof DEFAULT_BUCKET_SHARE_DATA = DC ? DC.BUCKET : DEFAULT_BUCKET_SHARE_DATA;
-export const LIFECYCLE_DYNAMIC: typeof DEFAULT_LIFECYCLE_DYNAMIC = DC ? DC.LIFECYCLE : DEFAULT_LIFECYCLE_DYNAMIC;
-export const VENDOR_MIX_DATA: typeof DEFAULT_VENDOR_MIX_DATA = DC ? DC.VENDOR : DEFAULT_VENDOR_MIX_DATA;
-export const PANELS_DATA_DYNAMIC: typeof DEFAULT_PANELS_DATA_DYNAMIC = DC ? DC.PANELS : DEFAULT_PANELS_DATA_DYNAMIC;
-export const DECOM_DYNAMIC: typeof DEFAULT_DECOM_DYNAMIC = DC ? DC.DECOM : DEFAULT_DECOM_DYNAMIC;
-export const DECOM_BUCKET_DYNAMIC: typeof DEFAULT_DECOM_BUCKET_DYNAMIC = DC ? DC.DECOM_BUCKET : DEFAULT_DECOM_BUCKET_DYNAMIC;
-export const EOL_DYNAMIC: typeof DEFAULT_EOL_DYNAMIC = DC ? DC.EOL : DEFAULT_EOL_DYNAMIC;
-export const DRIFT_DYNAMIC: typeof DEFAULT_DRIFT_DYNAMIC = DC ? DC.DRIFT : DEFAULT_DRIFT_DYNAMIC;
-export const SPARES_DYNAMIC: typeof DEFAULT_SPARES_DYNAMIC = DC ? DC.SPARES : DEFAULT_SPARES_DYNAMIC;
-export const NOT_RECONFIRMED_DYNAMIC: typeof DEFAULT_NOT_RECONFIRMED_DYNAMIC = DC ? DC.NOT_RECONF : DEFAULT_NOT_RECONFIRMED_DYNAMIC;
-export const QUALITY_ROWS_DYNAMIC: typeof DEFAULT_QUALITY_ROWS_DYNAMIC = DC ? DC.QUALITY : DEFAULT_QUALITY_ROWS_DYNAMIC;
-export const CROSS_LINKS_DYNAMIC: typeof DEFAULT_CROSS_LINKS_DYNAMIC = DC ? DC.CROSS : DEFAULT_CROSS_LINKS_DYNAMIC;
-export const RECON_DYNAMIC: typeof DEFAULT_RECON_DYNAMIC = DC ? DC.RECON : DEFAULT_RECON_DYNAMIC;
-export const SUPPORT_DYNAMIC: typeof DEFAULT_SUPPORT_DYNAMIC = DC ? DC.SUPPORT : DEFAULT_SUPPORT_DYNAMIC;
-export const BOTTOM_NAVIGATE_DYNAMIC: typeof DEFAULT_BOTTOM_NAVIGATE_DYNAMIC = DC ? DC.NAV : DEFAULT_BOTTOM_NAVIGATE_DYNAMIC;
-export const SITES_DYNAMIC: typeof DEFAULT_SITES_DYNAMIC = DC ? DC.SITES : DEFAULT_SITES_DYNAMIC;
-export const SERVICES_DYNAMIC: typeof DEFAULT_SERVICES_DYNAMIC = DC ? DC.SERVICES : DEFAULT_SERVICES_DYNAMIC;
-export const NET_RECORD_DYNAMIC: typeof DEFAULT_NET_RECORD_DYNAMIC = DC ? DC.NET : DEFAULT_NET_RECORD_DYNAMIC;
-export const TREND_SERIES: typeof DEFAULT_TREND_SERIES = DC ? DC.TREND : DEFAULT_TREND_SERIES;
-export const ACTIVITY_BY_RANGE: typeof DEFAULT_ACTIVITY_BY_RANGE = DC ? DC.ACTIVITY : DEFAULT_ACTIVITY_BY_RANGE;
+let dcDataCache: ReturnType<typeof buildDc> | null = null;
+export function getDcInsightsData() {
+  if (!dcDataCache) {
+    dcDataCache = buildDc();
+  }
+  return dcDataCache;
+}
+
+function dynamicExport<T extends object>(getDc: () => T, def: T): T {
+  return new Proxy(def, {
+    get(_target, prop: string | symbol) {
+      const active = isDatacenter() ? getDc() : def;
+      return (active as any)[prop];
+    },
+    ownKeys() {
+      const active = isDatacenter() ? getDc() : def;
+      return Reflect.ownKeys(active);
+    },
+    getOwnPropertyDescriptor(_target, prop: string | symbol) {
+      const active = isDatacenter() ? getDc() : def;
+      return Reflect.getOwnPropertyDescriptor(active, prop);
+    }
+  });
+}
+
+export const TOTAL_RECORDS_DATA = dynamicExport(() => getDcInsightsData().TOTAL, DEFAULT_TOTAL_RECORDS_DATA);
+export const PARENTS_DATA_DYNAMIC = dynamicExport(() => getDcInsightsData().PARENTS, DEFAULT_PARENTS_DATA_DYNAMIC);
+export const ISSUES_DYNAMIC = dynamicExport(() => getDcInsightsData().ISSUES, DEFAULT_ISSUES_DYNAMIC);
+export const BUCKET_SHARE_DATA = dynamicExport(() => getDcInsightsData().BUCKET, DEFAULT_BUCKET_SHARE_DATA);
+export const LIFECYCLE_DYNAMIC = dynamicExport(() => getDcInsightsData().LIFECYCLE, DEFAULT_LIFECYCLE_DYNAMIC);
+export const VENDOR_MIX_DATA = dynamicExport(() => getDcInsightsData().VENDOR, DEFAULT_VENDOR_MIX_DATA);
+export const PANELS_DATA_DYNAMIC = dynamicExport(() => getDcInsightsData().PANELS, DEFAULT_PANELS_DATA_DYNAMIC);
+export const DECOM_DYNAMIC = dynamicExport(() => getDcInsightsData().DECOM, DEFAULT_DECOM_DYNAMIC);
+export const DECOM_BUCKET_DYNAMIC = dynamicExport(() => getDcInsightsData().DECOM_BUCKET, DEFAULT_DECOM_BUCKET_DYNAMIC);
+export const EOL_DYNAMIC = dynamicExport(() => getDcInsightsData().EOL, DEFAULT_EOL_DYNAMIC);
+export const DRIFT_DYNAMIC = dynamicExport(() => getDcInsightsData().DRIFT, DEFAULT_DRIFT_DYNAMIC);
+export const SPARES_DYNAMIC = dynamicExport(() => getDcInsightsData().SPARES, DEFAULT_SPARES_DYNAMIC);
+export const NOT_RECONFIRMED_DYNAMIC = dynamicExport(() => getDcInsightsData().NOT_RECONF, DEFAULT_NOT_RECONFIRMED_DYNAMIC);
+export const QUALITY_ROWS_DYNAMIC = dynamicExport(() => getDcInsightsData().QUALITY, DEFAULT_QUALITY_ROWS_DYNAMIC);
+export const CROSS_LINKS_DYNAMIC = dynamicExport(() => getDcInsightsData().CROSS, DEFAULT_CROSS_LINKS_DYNAMIC);
+export const RECON_DYNAMIC = dynamicExport(() => getDcInsightsData().RECON, DEFAULT_RECON_DYNAMIC);
+export const SUPPORT_DYNAMIC = dynamicExport(() => getDcInsightsData().SUPPORT, DEFAULT_SUPPORT_DYNAMIC);
+export const BOTTOM_NAVIGATE_DYNAMIC = dynamicExport(() => getDcInsightsData().NAV, DEFAULT_BOTTOM_NAVIGATE_DYNAMIC);
+export const SITES_DYNAMIC = dynamicExport(() => getDcInsightsData().SITES, DEFAULT_SITES_DYNAMIC);
+export const SERVICES_DYNAMIC = dynamicExport(() => getDcInsightsData().SERVICES, DEFAULT_SERVICES_DYNAMIC);
+export const NET_RECORD_DYNAMIC = dynamicExport(() => getDcInsightsData().NET, DEFAULT_NET_RECORD_DYNAMIC);
+export const TREND_SERIES = dynamicExport(() => getDcInsightsData().TREND, DEFAULT_TREND_SERIES);
+export const ACTIVITY_BY_RANGE = dynamicExport(() => getDcInsightsData().ACTIVITY, DEFAULT_ACTIVITY_BY_RANGE);
