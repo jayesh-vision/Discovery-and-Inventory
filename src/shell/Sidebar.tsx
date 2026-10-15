@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS, screenByKey } from '../routes';
+import { withSolution } from '../solution';
 import { CHEV, SIDE_CHEVRON, SIDE_GRID, SIDE_ICONS } from './sideIcons';
 
 const Svg = ({ html }: { html: string }) => <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: html }} />;
@@ -52,7 +53,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
       ? `${s.path}?cls=${encodeURIComponent(sessionStorage.getItem('ns_phy_tab')!)}`
       : s.path;
     return (
-      <NavLink key={key} to={targetPath} state={{ reset: true }} data-label={label}
+      <NavLink key={key} to={withSolution(targetPath)} state={{ reset: true }} data-label={label}
         className={`side-item${child ? ' is-child' : ''}${active === key ? ' is-active' : ''}`}>
         <Svg html={SIDE_ICONS[key]} /><span className="grow">{label}</span>
       </NavLink>

@@ -1,4 +1,4 @@
-import { isDatacenter, withSolution } from './solution';
+import { withSolution } from './solution';
 import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
 import InactiveInventory from './screens/InactiveInventory';
@@ -127,8 +127,7 @@ export const isReactOwned = (k: string) => {
   if (k === 'virtual') {
     const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const sol = sp.get('solution')?.toLowerCase();
-    if (sol === 'all') return false;
-    return isDatacenter() || sol === 'datacenter';
+    return sol === 'datacenter';
   }
   return !!screenByKey(k)?.component;
 };

@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { isDatacenter, isLeave } from '../solution';
 import LegacyView from '../legacy/LegacyView';
 import {
   DC_VIRTUAL_RESOURCES,
@@ -1758,8 +1757,8 @@ function VirtualResourcesDatacenter() {
 
 export default function VirtualResources() {
   const [searchParams] = useSearchParams();
-  const solParam = searchParams.get('solution');
-  const isDc = !isLeave(solParam) && (isDatacenter() || solParam?.toLowerCase() === 'datacenter');
+  const solParam = searchParams.get('solution')?.toLowerCase();
+  const isDc = solParam === 'datacenter';
 
   if (!isDc) {
     return <LegacyView legacyKey="virtual" />;
