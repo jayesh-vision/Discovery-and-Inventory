@@ -1,0 +1,1513 @@
+/* ── Data Center Virtual Resources Inventory Styles ───────────────────────────
+   Enterprise SaaS Cloud Infrastructure Console Aesthetics
+   Refined for optimal breathing room, symmetry, and visual hierarchy.
+─────────────────────────────────────────────────────────────────────────── */
+
+.vr-container {
+  --vr-bg: var(--vw-color-slate-50, #f8fafc);
+  --vr-card-bg: #ffffff;
+  --vr-border: #e2e8f0;
+  --vr-border-subtle: #f1f5f9;
+  --vr-text-main: #0f172a;
+  --vr-text-muted: #64748b;
+  --vr-text-subtle: #94a3b8;
+  --vr-primary: #2563eb;
+  --vr-primary-hover: #1d4ed8;
+  --vr-primary-light: #eff6ff;
+  --vr-primary-border: #bfdbfe;
+  --vr-success: #10b981;
+  --vr-success-light: #ecfdf5;
+  --vr-warning: #f59e0b;
+  --vr-warning-light: #fffbeb;
+  --vr-danger: #ef4444;
+  --vr-danger-light: #fef2f2;
+  --vr-slate: #64748b;
+  --vr-slate-light: #f8fafc;
+
+  width: 100%;
+  min-height: 100vh;
+  background: var(--vr-bg);
+  color: var(--vr-text-main);
+  font-family: var(--fontFamily, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
+}
+
+.vr-mono {
+  font-family: var(--vw-font-mono, 'IBM Plex Mono', monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Top Metric Cards Grid (Clean, Airy & Symmetrical) ───────────────────── */
+.vr-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1360px) {
+  .vr-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .vr-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vr-metric-card {
+  background: var(--vr-card-bg);
+  border: 1px solid var(--vr-border);
+  border-radius: 13px;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.2s ease;
+  position: relative;
+  min-height: 176px;
+  box-sizing: border-box;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.vr-metric-card:hover {
+  transform: translateY(-2.5px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.09), 0 3px 8px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Category Top Accent Gradient Bar */
+.vr-card-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  border-radius: 13px 13px 0 0;
+  opacity: 0.85;
+  transition: height 0.2s ease, opacity 0.2s ease;
+}
+
+.vr-metric-card:hover .vr-card-accent-bar,
+.vr-metric-card.is-active .vr-card-accent-bar {
+  height: 4.5px;
+  opacity: 1;
+}
+
+.vr-card-vm .vr-card-accent-bar {
+  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.vr-card-k8s .vr-card-accent-bar {
+  background: linear-gradient(90deg, #7c3aed 0%, #c084fc 100%);
+}
+
+.vr-card-storage .vr-card-accent-bar {
+  background: linear-gradient(90deg, #059669 0%, #34d399 100%);
+}
+
+.vr-card-network .vr-card-accent-bar {
+  background: linear-gradient(90deg, #ea580c 0%, #fb923c 100%);
+}
+
+/* Active Filter Selection on Cards */
+.vr-card-vm.is-active {
+  border-color: #2563eb !important;
+  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 55%) !important;
+  box-shadow: 0 0 0 2px #2563eb, 0 8px 24px rgba(37, 99, 235, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.vr-card-k8s.is-active {
+  border-color: #7c3aed !important;
+  background: linear-gradient(180deg, #faf5ff 0%, #ffffff 55%) !important;
+  box-shadow: 0 0 0 2px #7c3aed, 0 8px 24px rgba(124, 58, 237, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.vr-card-storage.is-active {
+  border-color: #059669 !important;
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 55%) !important;
+  box-shadow: 0 0 0 2px #059669, 0 8px 24px rgba(5, 150, 105, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.vr-card-network.is-active {
+  border-color: #ea580c !important;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 55%) !important;
+  box-shadow: 0 0 0 2px #ea580c, 0 8px 24px rgba(234, 88, 12, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+/* Card Header */
+.vr-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.vr-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vr-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+}
+
+.vr-metric-card:hover .vr-card-icon {
+  transform: scale(1.06);
+}
+
+.vr-card-icon.icon-blue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+}
+
+.vr-card-icon.icon-purple {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.18);
+}
+
+.vr-card-icon.icon-emerald {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.18);
+}
+
+.vr-card-icon.icon-orange {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  color: #ea580c;
+  border: 1px solid rgba(234, 88, 12, 0.18);
+}
+
+.vr-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+/* Badges & Live Status Indicators */
+.vr-card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2.5px 8.5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.vr-card-badge.is-active-badge {
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.vr-card-vm.is-active .vr-card-badge.is-active-badge {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+}
+
+.vr-card-k8s.is-active .vr-card-badge.is-active-badge {
+  background: #ede9fe !important;
+  color: #6d28d9 !important;
+  border-color: #ddd6fe !important;
+}
+
+.vr-card-storage.is-active .vr-card-badge.is-active-badge {
+  background: #d1fae5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.vr-card-network.is-active .vr-card-badge.is-active-badge {
+  background: #ffedd5 !important;
+  color: #c2410c !important;
+  border-color: #fed7aa !important;
+}
+
+.vr-badge-check {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vr-live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: vrPulse 2.2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.vr-live-pulse-dot.dot-purple {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+}
+
+.vr-live-pulse-dot.dot-emerald {
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+}
+
+.vr-live-pulse-dot.dot-orange {
+  background: #ea580c;
+  box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7);
+}
+
+@keyframes vrPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Metric Display Row */
+.vr-metric-display-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.vr-metric-num-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.vr-metric-big-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.vr-metric-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Secondary Metric Sub-Stat */
+.vr-card-sub-stat {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  padding: 2.5px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.18s ease;
+}
+
+.vr-metric-card:hover .vr-card-sub-stat {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.vr-card-vm.is-active .vr-card-sub-stat {
+  color: #1e40af;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.18);
+  font-weight: 600;
+}
+
+.vr-card-k8s.is-active .vr-card-sub-stat {
+  color: #5b21b6;
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.18);
+  font-weight: 600;
+}
+
+.vr-card-storage.is-active .vr-card-sub-stat {
+  color: #065f46;
+  background: rgba(5, 150, 105, 0.08);
+  border-color: rgba(5, 150, 105, 0.18);
+  font-weight: 600;
+}
+
+.vr-card-network.is-active .vr-card-sub-stat {
+  color: #9a3412;
+  background: rgba(234, 88, 12, 0.08);
+  border-color: rgba(234, 88, 12, 0.18);
+  font-weight: 600;
+}
+
+/* Multi-Segment Horizontal Progress Bar */
+.vr-segmented-track {
+  width: 100%;
+  height: 6.5px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  gap: 2px;
+  margin-bottom: 11px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.vr-track-seg {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Micro-Pill Status Chips Row */
+.vr-card-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+
+.vr-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+}
+
+.vr-chip-item:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.vr-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green { background: #10b981; }
+.dot-slate { background: #94a3b8; }
+.dot-amber { background: #f59e0b; }
+.dot-red { background: #ef4444; }
+.dot-blue { background: #3b82f6; }
+.dot-orange { background: #ea580c; }
+.dot-purple { background: #8b5cf6; }
+
+.vr-chip-val {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Two-Tone Hardware Console Footer */
+.vr-card-footer {
+  border-top: 1px solid #f1f5f9;
+  margin: 10px -18px -12px;
+  padding: 8px 16px;
+  background: #fafbfd;
+  border-radius: 0 0 12px 12px;
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.vr-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vr-footer-info svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.vr-footer-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1.5px 6.5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ── Category TabBar ────────────────────────────────────────────────────── */
+.vr-tabbar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0;
+}
+
+.vr-tab-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  transition: color 0.15s ease;
+  font-family: inherit;
+}
+
+.vr-tab-btn:hover {
+  color: #0f172a;
+}
+
+.vr-tab-btn.is-active {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.vr-tab-btn.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2.5px;
+  background: #2563eb;
+  border-radius: 2px 2px 0 0;
+}
+
+.vr-tab-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.vr-tab-btn.is-active .vr-tab-badge {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* ── Main Unified Grid Card ─────────────────────────────────────────────── */
+.vr-main-grid-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+/* Symmetrical Grid Toolbar */
+.vr-grid-toolbar {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.vr-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.vr-search-container {
+  position: relative;
+  width: 280px;
+  max-width: 100%;
+}
+
+.vr-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.vr-search-field {
+  width: 100%;
+  height: 34px;
+  padding: 0 30px 0 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.vr-search-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.vr-search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.vr-search-clear-btn:hover {
+  color: #475569;
+}
+
+.vr-toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vr-filter-select {
+  height: 34px;
+  padding: 0 26px 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat calc(100% - 9px) center;
+  background-size: 9px;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.vr-filter-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.vr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vr-count-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.vr-count-label strong {
+  color: #0f172a;
+}
+
+.vr-clear-filters-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #2563eb;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.vr-selection-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.vr-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+  background: #eff6ff;
+  border-bottom: 1px solid #bfdbfe;
+  font-size: 12px;
+  color: #1e3a8a;
+  animation: vrFadeIn 0.15s ease;
+}
+
+.vr-bulk-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vr-bulk-btn {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #1d4ed8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vr-bulk-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.vr-tool-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.vr-tool-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.vr-tool-btn:active {
+  background: #f1f5f9;
+}
+
+/* ── Table Container ────────────────────────────────────────────────────── */
+.vr-tbl-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.vr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.vr-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.vr-table th.is-sortable {
+  cursor: pointer;
+}
+
+.vr-table th.is-sortable:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.vr-table th.vr-actions-th {
+  text-align: right;
+  padding-right: 18px;
+  width: 140px;
+}
+
+.vr-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.vr-table td.vr-actions-td {
+  text-align: right;
+  padding-right: 18px;
+}
+
+.vr-table tr:hover td {
+  background: #f8fafc;
+}
+
+.vr-table tr.is-selected td {
+  background: #eff6ff;
+}
+
+/* ── Status Pill ────────────────────────────────────────────────────────── */
+.vr-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.vr-status-pill.is-running {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.vr-status-pill.is-stopped {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.vr-status-pill.is-suspended,
+.vr-status-pill.is-pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.vr-status-pill.is-warning,
+.vr-status-pill.is-degraded {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.vr-status-pill.is-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.vr-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.vr-pulse-dot.pulse {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  animation: vrPulse 2s infinite;
+}
+
+@keyframes vrPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* ── Type Badge ─────────────────────────────────────────────────────────── */
+.vr-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.vr-type-badge.vm {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.vr-type-badge.pod {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.vr-type-badge.ds {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.vr-type-badge.net {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+/* ── Entity Name Cell ───────────────────────────────────────────────────── */
+.vr-entity-name-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vr-entity-icon {
+  margin-top: 2px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.vr-entity-title {
+  font-weight: 600;
+  color: #1d4ed8;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.vr-entity-title:hover {
+  text-decoration: underline;
+  color: #1e40af;
+}
+
+.vr-entity-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* ── Platform Badge ─────────────────────────────────────────────────────── */
+.vr-platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #334155;
+}
+
+/* ── Row Action Buttons (Direct "View details" + Kebab) ─────────────────── */
+.vr-row-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.vr-view-detail-btn {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.vr-view-detail-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.vr-kebab-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.vr-kebab-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* ── Pagination Bar ─────────────────────────────────────────────────────── */
+.vr-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid var(--vr-border);
+  background: #ffffff;
+  font-size: 12px;
+  color: #64748b;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vr-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vr-page-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vr-page-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.vr-page-btn.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.vr-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── Drawer / Slide-Over Modal ───────────────────────────────────────────── */
+.vr-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: vrFadeIn 0.2s ease;
+}
+
+.vr-drawer {
+  width: 580px;
+  max-width: 90vw;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: vrSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vrFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes vrSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.vr-drawer-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+
+.vr-drawer-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.vr-drawer-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.vr-drawer-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+.vr-drawer-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vr-drawer-tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+}
+
+.vr-drawer-tab.is-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
+.vr-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.vr-spec-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+
+.vr-spec-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 3px;
+}
+
+.vr-spec-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* ── Empty State ────────────────────────────────────────────────────────── */
+.vr-empty-state {
+  padding: 56px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.vr-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.vr-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.vr-empty-desc {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 400px;
+}
+
+/* ── Compatibility & Symmetry with CityDetails / Topology Tables ── */
+.city-table-card .net-table-container {
+  height: auto;
+  min-height: 420px;
+  max-height: 600px;
+}
+
+.net-elements-table th {
+  user-select: none;
+}
+
+.net-elements-table th.is-sortable {
+  cursor: pointer;
+}
+
+.net-elements-table th.is-sortable:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* ── Active Filter Chips Bar ─────────────────────────────────────────────── */
+.vr-active-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 0 14px;
+}
+
+.vr-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 11.5px;
+}
+
+.vr-filter-chip button {
+  border: none;
+  background: none;
+  color: #3b82f6;
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.vr-filter-chip button:hover {
+  color: #1d4ed8;
+}
+
+.vr-filter-clear-all {
+  border: none;
+  background: none;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-left: 2px;
+}
+
+.vr-filter-clear-all:hover {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+/* ── Interactive Card Filter Styles ───────────────────────────────────────── */
+.vr-metric-card {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.vr-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+/* active styles handled per category above */
+
+/* ── Scrollable Table with Sticky Header (No Pagination) ─────────────────── */
+.vr-table-scroll {
+  max-height: calc(100vh - 290px);
+  min-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  position: relative;
+}
+
+/* ── Semantic Grid Typography & Visual Balance ── */
+.vr-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 0 #e2e8f0;
+  white-space: nowrap;
+}
+
+.vr-table-scroll thead th.is-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.vr-table-scroll thead th.is-sortable:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.vr-table-scroll tbody td {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.vr-table-scroll .net-table-row:hover td {
+  background: #f8fafc;
+}
+
+.vr-table-scroll .net-name-primary {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.vr-table-scroll .net-ip-secondary,
+.vr-table-scroll .net-vendor-secondary {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+  font-family: inherit;
+}
+
+/* Proper Status Chip (Modern Cloud Console Pill) */
+.vr-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  max-width: 185px;
+}
+
+.vr-status-chip .vr-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vr-status-chip .vr-chip-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Running / Active / Healthy */
+.vr-status-chip.is-running {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+/* Pending / Provisioning */
+.vr-status-chip.is-pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+/* Warning / Degraded / Rebuilding */
+.vr-status-chip.is-warning {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+/* Suspended */
+.vr-status-chip.is-suspended {
+  background: #faf5ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+/* Stopped / Offline */
+.vr-status-chip.is-stopped {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+/* Error / CrashLoop / Critical */
+.vr-status-chip.is-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* Backward compatibility for .net-status-badge */
+.vr-table-scroll .net-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8.5px;
+  border-radius: 999px;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+
+.vr-table-scroll .net-status-badge.is-verified {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.vr-table-scroll .net-status-badge.is-drifted {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.vr-table-scroll .net-status-badge.is-stale {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.vr-table-scroll .net-status-badge.is-missing {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.vr-table-scroll .vr-type-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.vr-table-scroll .vr-cell-title {
+  color: #334155;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.vr-table-scroll .vr-cell-subtitle {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.vr-table-scroll .vr-cell-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #475569;
+}
+
+

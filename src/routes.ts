@@ -1,4 +1,4 @@
-import { withSolution } from './solution';
+import { isDatacenter, withSolution } from './solution';
 import type { ComponentType } from 'react';
 import PhysicalResources from './screens/PhysicalResources';
 import InactiveInventory from './screens/InactiveInventory';
@@ -26,6 +26,7 @@ import DataCenterDetail from './screens/DataCenterDetail';
 import DataCenters from './screens/DataCenters';
 import DcimImport from './screens/DcimImport';
 import SiteInfrastructure from './screens/SiteInfrastructure';
+import VirtualResources from './screens/VirtualResources';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -95,7 +96,7 @@ export const SCREENS: Screen[] = [
   { key: 'siteequipment', path: '/inventory/location/site/:id/equipment', module: 'Inventory', crumb: 'Location · Site details · Site equipment', rail: 'location', component: SiteEquipment },
   { key: 'siteinfra', path: '/inventory/location/site/:id/infrastructure', module: 'Inventory', crumb: 'Location · Site details · Infrastructure', rail: 'location', component: SiteInfrastructure },
   { key: 'node',      path: '/inventory/node/:name',              module: 'Inventory', crumb: 'Location · Site details · Node view', rail: 'location', legacy: true },
-  { key: 'virtual',   path: '/inventory/virtual',   module: 'Inventory', crumb: 'Resources · Virtual Resources', legacy: true },
+  { key: 'virtual',   path: '/inventory/virtual',   module: 'Inventory', crumb: 'Resources · Virtual Resources', component: VirtualResources },
   { key: 'vnflifecycle', path: '/inventory/virtual/lifecycle', module: 'Inventory', crumb: 'Resources · Virtual Resources · Lifecycle operation', rail: 'virtual', legacy: true },
   { key: 'vnfdetails', path: '/inventory/virtual/details', module: 'Inventory', crumb: 'Resources · Virtual Resources · View', rail: 'virtual', legacy: true },
   { key: 'cell4gdetails', path: '/inventory/virtual/cell-4g-details', module: 'Inventory', crumb: 'Resources · Virtual Resources · View · Cell 4G details', rail: 'virtual', legacy: true },
@@ -122,6 +123,12 @@ export const isReactOwned = (k: string) => {
   if (k === 'location') {
     const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     if (sp.get('view') === 'list') return false;
+  }
+  if (k === 'virtual') {
+    const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const sol = sp.get('solution')?.toLowerCase();
+    if (sol === 'all') return false;
+    return isDatacenter() || sol === 'datacenter';
   }
   return !!screenByKey(k)?.component;
 };
