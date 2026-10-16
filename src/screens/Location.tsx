@@ -160,9 +160,9 @@ export default function Location() {
   };
 
   return (
-    <div className="page" style={{ padding: '16px 32px 24px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div className="page" style={{ padding: '16px 32px 24px', maxWidth: '1600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* ── Top 4 KPI Progress Cards ─────────────────────────────── */}
-      <section className="vw-grid vw-grid-cols-4 vw-gap-md" style={{ marginBottom: '0' }}>
+      <section className="vw-grid vw-grid-cols-4 vw-gap-md">
         <KpiCard label="Total locations" border="var(--vw-color-sky-200)" hover="var(--vw-color-sky-400)" tone="sky"
           onClick={() => handleCardClick(undefined, "All locations")}
           aria={`Total locations: ${en(S.all.total)} locations, ${en(S.all.live)} on-air`}
@@ -178,46 +178,41 @@ export default function Location() {
           onClick={() => handleCardClick("site", "Sites — filtered list")} />
       </section>
 
-      {/* ── Network Hierarchy & Coverage By Circle ──────────────── */}
-      <section style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Network Hierarchy (Full Width) */}
-          <div className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', border: '1px solid var(--vw-color-slate-200)' }}>
-            <NetworkHierarchyTopology
-              isExpanded={true}
-              activeGeo={activeGeo}
-              selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
-              onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
-              onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
-                nav(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`)
-              }
-            />
-          </div>
+      {/* ── Network Hierarchy (Full Width) ───────────────────────── */}
+      <section className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '16px 20px', border: '1px solid var(--vw-color-slate-200)' }}>
+        <NetworkHierarchyTopology
+          isExpanded={true}
+          activeGeo={activeGeo}
+          selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
+          onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
+          onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
+            nav(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`)
+          }
+        />
+      </section>
 
-          {/* Coverage by circle below it */}
-          <div className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid var(--vw-color-slate-200)' }}>
-            <div className="row vw-justify-between vw-items-start" style={{ marginBottom: '16px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
-                    Coverage by circle
-                  </h3>
-                  <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', color: '#475569', fontWeight: 500 }}>
-                    {COVERAGE_CIRCLES.length} circles
-                  </span>
-                </div>
-                <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--vw-color-gray-500)' }}>
-                  ranked by total · click a circle for rollout detail
-                </p>
-              </div>
+      {/* ── Coverage by circle ────────────────────────────────────── */}
+      <section className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid var(--vw-color-slate-200)' }}>
+        <div className="row vw-justify-between vw-items-start" style={{ marginBottom: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
+                Coverage by circle
+              </h3>
+              <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', color: '#475569', fontWeight: 500 }}>
+                {COVERAGE_CIRCLES.length} circles
+              </span>
             </div>
-            <CoverageTable circles={COVERAGE_CIRCLES} expandedCircle={expandedCircle} onToggleCircle={toggleCircle} />
+            <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--vw-color-gray-500)' }}>
+              ranked by total · click a circle for rollout detail
+            </p>
           </div>
         </div>
+        <CoverageTable circles={COVERAGE_CIRCLES} expandedCircle={expandedCircle} onToggleCircle={toggleCircle} />
       </section>
 
       {/* ── Inventory Across The Estate ──────────────────────────── */}
-      <section className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid var(--vw-color-slate-200)', marginBottom: '24px' }}>
+      <section className="vw-card-section" style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid var(--vw-color-slate-200)' }}>
         <div style={{ marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--vw-color-gray-900)' }}>
             Inventory across the estate

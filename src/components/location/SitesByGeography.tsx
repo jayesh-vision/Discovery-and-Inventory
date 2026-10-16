@@ -544,13 +544,15 @@ export interface SitesByGeographyProps {
   onSelectCircle?: (circleCode: string | null) => void;
   activeCountry?: DcGeo;
   onSelectCountry?: (country: DcGeo) => void;
+  style?: React.CSSProperties;
 }
 
 export default function SitesByGeography({
   selectedCircle: propSelectedCircle,
   onSelectCircle,
   activeCountry: propActiveCountry,
-  onSelectCountry: _onSelectCountry
+  onSelectCountry: _onSelectCountry,
+  style
 }: SitesByGeographyProps = {}) {
   const nav = useNavigate();
   const [mapColor, setMapColor] = useState<MapMode>('onair');
@@ -695,7 +697,7 @@ export default function SitesByGeography({
   }, [pinGroup]);
 
   return (
-    <section className="vw-card-section" style={{ marginTop: '24px', background: '#fff' }}>
+    <section className="vw-card-section" style={{ background: '#fff', ...style }}>
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="row vw-justify-between vw-items-start vw-wrap" style={{ marginBottom: 'var(--vw-space-md)', gap: 'var(--vw-space-md)' }}>
         <span className="vw-card-title-sm">Sites by geography</span>
