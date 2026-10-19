@@ -2623,12 +2623,25 @@ details[open] > summary .vw-tx-chevron {
 /* needs attention + featured chart */
 .rpt-overview { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--vw-space-md); align-items: stretch; }
 @media (max-width: 1100px) { .rpt-overview { grid-template-columns: 1fr; } }
-.rpt-attn { display: flex; flex-direction: column; min-height: 0; }
+.rpt-attn {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 18px 20px;
+  box-sizing: border-box;
+}
+.rpt-attn-list-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: var(--vw-space-sm);
+}
 .rpt-attn-list {
+  position: absolute;
+  inset: 0;
   list-style: none;
-  margin: var(--vw-space-sm) 0 0;
+  margin: 0;
   padding: 0 6px 0 0;
-  max-height: 312px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;

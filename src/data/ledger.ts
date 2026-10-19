@@ -4,6 +4,7 @@
 
 import { DC_TOTAL, SCOPED, scope } from './dc/scope';
 import type { DcDevice, DcRole } from './dc';
+import { currentGeo } from '../solution';
 
 /* In the data center solution (src/solution.ts) the same ledger is counted from the data centers'
    records (src/data/dc); nothing else changes shape. Where the data center records hold nothing
@@ -154,4 +155,7 @@ export const RSTATE: Record<RecState, [string, ChipTone]> = {
   miss: ['Missing', 'error'], none: ['Not discovered', 'neutral']
 };
 
-export const fmt = (v: number): string => v.toLocaleString('en-IN');
+export const fmt = (v: number): string => {
+  const isIndia = typeof window !== 'undefined' && currentGeo() === 'in';
+  return v.toLocaleString(isIndia ? 'en-IN' : 'en-US');
+};

@@ -11,7 +11,7 @@ import {
   type NeClass, type RecState, type Source
 } from '../ledger';
 import { PHY, complianceOf, eosOf, regionOf } from '../physical';
-import { DECOMM, DECOMM_OLDEST, DECOMM_ZOMBIES, TODAY, parseDmy } from '../archive';
+import { DECOMM_OLDEST, TODAY, parseDmy, decommRows, type InactiveTab } from '../archive';
 import { LOCATIONS } from '../locations';
 import { facilityOf, portTotals, totalLoad, uTotals } from '../facility';
 import { type ReportBuilder, TONE_HEX, countBy, fmtNum, pct, plural, r1, sum } from './model';
@@ -337,7 +337,7 @@ const quality: ReportBuilder = () => {
 
 /* ── IN-05 Decommission archive & zombie assets ──────────── */
 const archive: ReportBuilder = () => {
-  const rows = NE_CLASSES.flatMap(k => DECOMM[k].map(r => ({ ...r, cls: k })));
+  const rows = NE_CLASSES.flatMap(k => decommRows(k as InactiveTab).map(r => ({ ...r, cls: k })));
   const zombies = rows.filter(r => r.zombie);
   const lastYear = rows.filter(r => TODAY.getTime() - parseDmy(r.on).getTime() <= 365 * 86400000).length;
   const reasonOf = (why: string) => /^Replaced under/.test(why) ? 'Replaced under change request' : /written off/i.test(why) ? 'Written off' : /Capacity migration/.test(why) ? 'Capacity migration' : why;
@@ -358,9 +358,9 @@ const archive: ReportBuilder = () => {
       { title: 'Decommissioned', definition: 'Elements retired from service and moved to the archive.', value: IL.inactive, fmt: 'num', of: 'archived records', tone: 'slate',
         delta: { text: `${lastYear} in the last 12 months`, better: null },
         visual: { kind: 'segments', parts: NE_CLASSES.map(k => ({ n: name(k), c: PHY_MATRIX[k].decomm, hex: CLASS_HEX[k] })), total: IL.inactive } },
-      { title: 'Still answering', definition: 'Archived elements that still respond to discovery scans.', value: DECOMM_ZOMBIES, fmt: 'num', of: 'zombie assets', tone: 'red',
+      { title: 'Still answering', definition: 'Archived elements that still respond to discovery scans.', value: zombies.length, fmt: 'num', of: 'zombie assets', tone: 'red',
         delta: { text: zombies.map(z => z.loc).join(', '), better: false },
-        visual: { kind: 'against', value: DECOMM_ZOMBIES, limit: 10 } },
+        visual: { kind: 'against', value: zombies.length, limit: 10 } },
       { title: 'Retired, last 12 months', definition: 'Elements decommissioned in the 12 months to the report date.', value: lastYear, fmt: 'num', of: `${r1(pct(lastYear, rows.length))}% of archive`, tone: 'sky',
         delta: { text: years.length ? `${years[years.length - 1][1]} so far in ${years[years.length - 1][0]}` : 'none in the archive', better: null },
         visual: { kind: 'against', value: lastYear, limit: rows.length } },

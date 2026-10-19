@@ -5,6 +5,7 @@ import { DataGrid, type Action } from '../components/grid/DataGrid';
 import { INACTIVE_TABS, DC_INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 import { isScoped } from '../data/dc/scope';
+import { currentGeo, type DcGeo } from '../solution';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
@@ -18,6 +19,8 @@ export default function InactiveInventory() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
   const dcMode = isScoped();
+  const geoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (dcMode ? 'us' : '')).toLowerCase();
+  const activeGeo: DcGeo = dcMode ? (geoParam === 'in' ? 'in' : 'us') : 'us';
   const tabsList = dcMode ? DC_INACTIVE_TABS : INACTIVE_TABS;
   const isTab = (v: string | null): v is InactiveTab => !!v && tabsList.some(t => t.k === v);
   const rawCls = sp.get('cls');
@@ -28,12 +31,12 @@ export default function InactiveInventory() {
      state — the same store any restore/purge action already writes to —
      without touching cls, search or filters. */
   const [refreshKey, setRefreshKey] = useState(0);
-  const rows = useMemo(() => decommRows(cls), [cls, refreshKey, dcMode]);
+  const rows = useMemo(() => decommRows(cls, activeGeo), [cls, refreshKey, dcMode, activeGeo]);
   const total = rows.length;
 
   const tabCounts = useMemo(() => {
-    return Object.fromEntries(tabsList.map(t => [t.k, decommRows(t.k).length]));
-  }, [tabsList, refreshKey, dcMode]);
+    return Object.fromEntries(tabsList.map(t => [t.k, decommRows(t.k, activeGeo).length]));
+  }, [tabsList, refreshKey, dcMode, activeGeo]);
 
   const setCls = (k: InactiveTab) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile/exceptions?state=${encodeURIComponent('Rogue')}`);
@@ -44,12 +47,12 @@ export default function InactiveInventory() {
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(dcMode ? 122 : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Decommissioned NE', v: fmt(dcMode ? (activeGeo === 'in' ? 108 : 122) : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
         { k: 'Still answering discovery', v: String(dcMode ? 2 : DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red' },
-        { k: 'Retired links', v: fmt(dcMode ? 412 : 1188), s: 'adjacency no longer seen', t: 'amber' },
-        { k: 'Retired services', v: fmt(dcMode ? 86 : 264), s: 'no longer provisioned', t: 'purple' },
+        { k: 'Retired links', v: fmt(dcMode ? (activeGeo === 'in' ? 368 : 412) : 1188), s: 'adjacency no longer seen', t: 'amber' },
+        { k: 'Retired services', v: fmt(dcMode ? (activeGeo === 'in' ? 74 : 86) : 264), s: 'no longer provisioned', t: 'purple' },
         { k: 'Oldest record', v: dcMode ? '3y 8mo' : DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
-        { k: 'Recovered to store', v: fmt(dcMode ? 24 : 38), s: 'restored in last 12 months', t: 'emerald' }
+        { k: 'Recovered to store', v: fmt(dcMode ? (activeGeo === 'in' ? 20 : 24) : 38), s: 'restored in last 12 months', t: 'emerald' }
       ]} />
 
       <Card>

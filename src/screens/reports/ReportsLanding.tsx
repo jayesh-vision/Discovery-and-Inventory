@@ -7,7 +7,9 @@ import { IcSearch } from '../../components/grid/icons';
 import {
   type Audience, type ReportDef, type ReportModule, AUDIENCES, MODULE_LABEL, STATE_TONE, buildReport, fmtValue, reportDefById, reportsFor, formatReportDate
 } from '../../data/reports';
-import { REPORT_RUNS, RUN_STATUS_TONE, type ReportRun } from '../../data/reports/runs';
+import { RUN_STATUS_TONE, reportRuns, type ReportRun } from '../../data/reports/runs';
+import { isScoped } from '../../data/dc/scope';
+import type { DcGeo } from '../../data/dc';
 import { AUDIENCE_GLYPH, ExportMenu, TrendSpark, VisualCard, reportPath } from './parts';
 
 /* The headline of the reports that matter most for each module, as tiles.
@@ -88,38 +90,40 @@ function NeedsAttention({ reports }: { reports: ReportDef[] }) {
     <section className="vw-card-section rpt-attn">
       <span className="vw-card-title-sm">Needs attention</span>
       <div className="vw-card-metric-label-sub" style={{ marginTop: 2 }}>The findings most likely to need a decision · {items.length} across {reports.length} reports</div>
-      <ul className="rpt-attn-list" tabIndex={0} aria-label="Needs attention findings list">
-        {items.map(({ def, f }, idx) => {
-          const isClickable = idx >= 6;
-          return (
-            <li key={`${def.id}-${f.title}`}>
-              {isClickable ? (
-                <button
-                  type="button"
-                  className="rpt-attn-row is-clickable"
-                  onClick={() => nav(reportPath(def))}
-                  title={`Open report: ${def.name}`}
-                >
-                  <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
-                  <span className="rpt-attn-main">
-                    <span className="rpt-attn-t">{f.title}</span>
-                    <span className="rpt-attn-d"><span className="rpt-attn-link">{def.name}</span> · {f.detail}</span>
-                  </span>
-                  <span className="rpt-attn-chev" aria-hidden>›</span>
-                </button>
-              ) : (
-                <div className="rpt-attn-row is-static" aria-disabled="true">
-                  <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
-                  <span className="rpt-attn-main">
-                    <span className="rpt-attn-t">{f.title}</span>
-                    <span className="rpt-attn-d"><span className="rpt-attn-static-label">{def.name}</span> · {f.detail}</span>
-                  </span>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <div className="rpt-attn-list-wrap">
+        <ul className="rpt-attn-list" tabIndex={0} aria-label="Needs attention findings list">
+          {items.map(({ def, f }, idx) => {
+            const isClickable = idx >= 6;
+            return (
+              <li key={`${def.id}-${f.title}`}>
+                {isClickable ? (
+                  <button
+                    type="button"
+                    className="rpt-attn-row is-clickable"
+                    onClick={() => nav(reportPath(def))}
+                    title={`Open report: ${def.name}`}
+                  >
+                    <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
+                    <span className="rpt-attn-main">
+                      <span className="rpt-attn-t">{f.title}</span>
+                      <span className="rpt-attn-d"><span className="rpt-attn-link">{def.name}</span> · {f.detail}</span>
+                    </span>
+                    <span className="rpt-attn-chev" aria-hidden>›</span>
+                  </button>
+                ) : (
+                  <div className="rpt-attn-row is-static" aria-disabled="true">
+                    <span className="rpt-attn-ic" data-tone={f.tone} aria-hidden>{f.tone === 'crit' ? <IcAlert /> : <IcFlag />}</span>
+                    <span className="rpt-attn-main">
+                      <span className="rpt-attn-t">{f.title}</span>
+                      <span className="rpt-attn-d"><span className="rpt-attn-static-label">{def.name}</span> · {f.detail}</span>
+                    </span>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 }
@@ -170,7 +174,10 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
   const shown = all.filter(r => (audience === 'All' || r.audience === audience)
     && (!needle || `${r.name} ${r.question} ${r.audience} ${r.id}`.toLowerCase().includes(needle)));
   const audiences = AUDIENCES.map(a => ({ a, n: all.filter(r => r.audience === a).length })).filter(x => x.n);
-  const runs = REPORT_RUNS.filter(r => r.module === module);
+  const isDc = isScoped();
+  const geoParam = sp.get('geo') as DcGeo | null;
+  const activeGeo: DcGeo = isDc ? (geoParam === 'in' ? 'in' : 'us') : (geoParam === 'us' ? 'us' : 'in');
+  const runs = useMemo(() => reportRuns(activeGeo).filter(r => r.module === module), [activeGeo, module]);
   const attention = all.filter(r => r.state !== 'Current').length;
   const latest = formatReportDate(new Date());
   const featureDef = reportDefById(FEATURE[module].id);

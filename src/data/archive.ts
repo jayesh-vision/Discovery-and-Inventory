@@ -1,6 +1,9 @@
 import { NE_CLASSES, INACTIVE_TABS, DC_INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
 import { MASTER_NE } from './master';
+import { currentGeo, type DcGeo } from '../solution';
 import { isScoped } from './dc/scope';
+
+export type { InactiveTab };
 
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
@@ -101,9 +104,39 @@ const fromMaster = (cls: NeClass): ArchiveRow[] => MASTER_NE
   .sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
 
 /* Decommissioned records in Datacenter mode */
-const DC_SITES_US = ['VA-DC-001', 'VA-DC-002', 'CA-DC-001', 'CA-DC-002', 'TX-DC-001', 'TX-DC-002', 'IL-DC-001', 'NY-DC-001'];
-const DC_SITES_IN = ['BOM-DC-001', 'BOM-DC-002', 'DEL-DC-001', 'DEL-DC-002', 'BLR-DC-001', 'BLR-DC-002', 'HYD-DC-001', 'MAA-DC-001'];
-const DC_SITES = [...DC_SITES_US, ...DC_SITES_IN];
+const DC_SITES_US = [
+  'VA-DC-001', 'VA-DC-002', 'VA-DC-003', 'VA-DC-004', 'TX-DC-005', 'TX-DC-006', 'TX-DC-007',
+  'CA-DC-008', 'IL-DC-009', 'AZ-DC-010', 'GA-DC-011', 'NJ-DC-012', 'WA-DC-013', 'OR-DC-014',
+  'CO-DC-015', 'OH-DC-016', 'OH-DC-017', 'FL-DC-018', 'UT-DC-019', 'CA-DC-020', 'CA-DC-021',
+  'TX-DC-022', 'NC-DC-023', 'WA-DC-024'
+];
+
+const DC_SITES_IN = [
+  'MH-DC-001', 'MH-DC-002', 'MH-DC-003', 'MH-DC-004', 'UP-DC-005', 'UP-DC-006', 'UP-DC-007',
+  'KA-DC-008', 'DL-DC-009', 'AP-DC-010', 'HR-DC-011', 'PB-DC-012', 'GJ-DC-013', 'MP-DC-014',
+  'RJ-DC-015', 'WB-DC-016', 'WB-DC-017', 'OD-DC-018', 'BR-DC-019', 'KA-DC-020', 'KA-DC-021',
+  'TN-DC-022', 'TS-DC-023', 'KL-DC-024'
+];
+
+const DC_ENGINEERS_US = [
+  'Sarah Jenkins (DCO Lead)',
+  'Michael Chang (Infrastructure)',
+  'David Miller (Asset Mgr)',
+  'Robert Hayes (Site Operations)',
+  'Emily Watson (Capacity Planning)',
+  'James Anderson (Hardware Eng)',
+  'Marcus Vance (Systems Arch)',
+  'Brian Cooper (DCO Ops)'
+];
+
+const DC_ENGINEERS_IN = [
+  'Rahul Sharma (DCO Lead)',
+  'Priya Patel (Site Operations)',
+  'Anita Desai (Capacity Planning)',
+  'Vikram Rao (Infrastructure)',
+  'Meera Nair (Asset Mgr)',
+  'Anjali Verma (DCO Ops)'
+];
 
 const DC_DECOMM_SEEDS: Record<InactiveTab, { model: string; oem: string; prefix: string; why: string }[]> = {
   server: [
@@ -168,12 +201,14 @@ const DC_COUNTS: Record<InactiveTab, number> = {
   enodeb: 0, gnodeb: 0, l2vpn: 0, l3vpn: 0
 };
 
-const buildDcDecomm = (): Record<InactiveTab, ArchiveRow[]> => {
+const buildDcDecomm = (geo: 'us' | 'in' = 'us'): Record<InactiveTab, ArchiveRow[]> => {
   const res: Record<string, ArchiveRow[]> = {};
-  const engineers = [
-    'Sarah Jenkins (DCO Lead)', 'Michael Chang (Infrastructure)', 'Rahul Sharma (DCO Lead)',
-    'Priya Patel (Site Operations)', 'David Miller (Asset Mgr)', 'Anita Desai (Capacity Planning)'
-  ];
+  const isUs = geo === 'us';
+  const sites = isUs ? DC_SITES_US : DC_SITES_IN;
+  const engineers = isUs ? DC_ENGINEERS_US : DC_ENGINEERS_IN;
+  const ipPrefix = isUs ? '10.240' : '10.244';
+  const woPrefix = isUs ? 'WO-US' : 'WO-IN';
+
   for (const tab of DC_INACTIVE_TABS) {
     const k = tab.k;
     const seeds = DC_DECOMM_SEEDS[k] || [];
@@ -181,14 +216,14 @@ const buildDcDecomm = (): Record<InactiveTab, ArchiveRow[]> => {
     const list: ArchiveRow[] = [];
     for (let i = 0; i < count; i++) {
       const s = seeds[i % seeds.length];
-      const loc = DC_SITES[i % DC_SITES.length];
+      const loc = sites[i % sites.length];
       const year = 2023 + (i % 4);
       const mo = MONTHS[(i * 3 + 2) % 12];
       const day = String(1 + ((i * 7) % 27)).padStart(2, '0');
       const isZombie = (k === 'server' && i === 3) || (k === 'switch' && i === 1);
       list.push({
         name: `${loc}-${s.prefix}-OLD-${String(i + 1).padStart(2, '0')}`,
-        ip: `10.${loc.startsWith('VA') || loc.startsWith('CA') ? '240' : '244'}.${30 + (i % 20)}.${10 + (i % 80)}`,
+        ip: `${ipPrefix}.${30 + (i % 20)}.${10 + (i % 80)}`,
         model: s.model,
         oem: s.oem,
         sn: `${s.oem.slice(0, 3)}-RET-${String(1000 + i * 47).padStart(4, '0')}`,
@@ -196,7 +231,7 @@ const buildDcDecomm = (): Record<InactiveTab, ArchiveRow[]> => {
         why: s.why,
         on: `${day}-${mo}-${year}`,
         by: engineers[i % engineers.length],
-        wo: `WO-${year}-DC-${1000 + i * 137}`,
+        wo: `${woPrefix}-${year}-DC-${1000 + i * 137}`,
         zombie: isZombie
       });
     }
@@ -205,7 +240,9 @@ const buildDcDecomm = (): Record<InactiveTab, ArchiveRow[]> => {
   return res as Record<InactiveTab, ArchiveRow[]>;
 };
 
-export const DC_DECOMM: Record<InactiveTab, ArchiveRow[]> = buildDcDecomm();
+export const DC_DECOMM_US: Record<InactiveTab, ArchiveRow[]> = buildDcDecomm('us');
+export const DC_DECOMM_IN: Record<InactiveTab, ArchiveRow[]> = buildDcDecomm('in');
+export const DC_DECOMM: Record<InactiveTab, ArchiveRow[]> = DC_DECOMM_US;
 
 export const DEFAULT_DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
   [...new Set<InactiveTab>([...INACTIVE_TABS.map(t => t.k), ...NE_CLASSES])].map(k => {
@@ -216,9 +253,11 @@ export const DEFAULT_DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntr
 /* DECOMM defaults to DEFAULT_DECOMM for strict estate verification */
 export const DECOMM: Record<InactiveTab, ArchiveRow[]> = DEFAULT_DECOMM;
 
-export const decommRows = (cls: InactiveTab): ArchiveRow[] => {
+export const decommRows = (cls: InactiveTab, geo?: DcGeo | null): ArchiveRow[] => {
   if (isScoped()) {
-    return DC_DECOMM[cls] || DC_DECOMM.server || [];
+    const targetGeo = geo || (typeof window !== 'undefined' ? currentGeo() : 'us') || 'us';
+    const store = targetGeo === 'in' ? DC_DECOMM_IN : DC_DECOMM_US;
+    return store[cls] || store.server || [];
   }
   return DEFAULT_DECOMM[cls] || DEFAULT_DECOMM.router || [];
 };
