@@ -1,7 +1,27 @@
 /* Data center inventory inside Physical resources: the source filter, GPU
    overview and the device drawer. Pairs with dcim.css (.dcim .kv, .plain). */
 .dc-filters { display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap; }
-.dc-filters select { min-width: 11rem; }
+.dc-filters select {
+  min-width: 12rem;
+  height: 38px;
+  min-height: 38px;
+  border-radius: var(--vw-radius-md);
+  border: 1px solid var(--vw-color-slate-200);
+  padding: 0 12px;
+  font-size: 0.875rem;
+  color: var(--vw-color-slate-800, #1e293b);
+  background-color: var(--vw-color-white);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.dc-filters select:hover {
+  border-color: var(--vw-color-slate-400);
+}
+.dc-filters select:focus {
+  outline: none;
+  border-color: var(--vw-color-blue-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
 .dcd h4 { margin: 0 0 6px; font-size: 0.8125rem; font-weight: 600; color: var(--vw-color-gray-800); }
 .dcd-sec { margin-top: 16px; }
 .dcd-gpus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

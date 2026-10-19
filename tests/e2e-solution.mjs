@@ -54,9 +54,8 @@ await p.locator('a[href], button').filter({ hasText: /Physical/i }).first().clic
 await open('/inventory/physical?solution=Datacenter');
 await p.getByText('Switch', { exact: true }).first().click(); await p.waitForTimeout(500);
 ok('switching a Physical tab keeps it', hasParam() && url().searchParams.get('cls') === 'switch');
-await p.getByText('GPU', { exact: true }).first().click(); await p.waitForTimeout(500);
-ok('and the GPU tab', hasParam() && url().searchParams.get('cls') === 'gpu');
-await p.getByText('KA-DC-008-GPU-001').first().isVisible().catch(() => {});
+await p.getByText('Storage', { exact: true }).first().click(); await p.waitForTimeout(500);
+ok('and the Storage tab', hasParam() && url().searchParams.get('cls') === 'storage');
 await open('/inventory/passive?solution=Datacenter');
 await p.getByText('Racks', { exact: true }).first().click(); await p.waitForTimeout(600);
 ok('legacy Passive tab click keeps it, no loop', hasParam() && (await body()).includes('U used'));

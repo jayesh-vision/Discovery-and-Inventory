@@ -169,7 +169,7 @@ export function legacyPath(key: string, drill?: { label?: string; q?: string; fr
    The breadcrumb is hidden on a landing until the reader drills in. */
 export function isLanding(s: Screen): boolean {
   if (s.path.includes(':')) return false;
-  if (s.key === 'dcim') return false;
+  if (s.key === 'dcim' || s.key === 'physical') return false;
   if (!s.rail) return true;
   const parent = screenByKey(s.rail);
   return !!parent && parent.crumb === s.crumb;

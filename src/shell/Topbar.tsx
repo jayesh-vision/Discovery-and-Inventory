@@ -103,8 +103,8 @@ export default function Topbar() {
      tab change in the query string on a landing never reveals a crumb. */
   const isLandingClean = Boolean(s.root || (isLanding(s) && !drill && !from));
   // On clean landing pages, Topbar hides breadcrumbs.
-  // Location and Links render Topbar initially so the top-right GeoDropdown is available.
-  if (isLandingClean && s.key !== 'location' && s.key !== 'links') return null;
+  // Location, Links and Physical Resources render Topbar so breadcrumbs and GeoDropdown are available.
+  if (isLandingClean && s.key !== 'location' && s.key !== 'links' && s.key !== 'physical') return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();
@@ -125,7 +125,7 @@ export default function Topbar() {
   const targetFor = (prefix: string, hopQuery?: string): string | null => {
     const p = prefix.toLowerCase().trim();
     const norm = p.replace(/[\s\-_]+/g, '');
-    if (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights') {
+    if (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights' || p === 'resources') {
       return '/inventory/insights';
     }
     const t = screenForCrumb(prefix);
@@ -265,6 +265,7 @@ export default function Topbar() {
   } else {
     const chain = ownParts.slice(0, -1);
     segs = chain.map((label, i) => {
+      const displayLabel = label === 'Resources' ? 'Inventory insights' : label;
       const prefix = chain.slice(0, i + 1).join(' · ');
       const base = targetFor(prefix);
       let to = base;
@@ -279,7 +280,7 @@ export default function Topbar() {
           to = `${base}?cls=${encodeURIComponent(reqCls)}`;
         }
       }
-      return { label, to };
+      return { label: displayLabel, to };
     });
     if (drill && !chain.length) {
       segs.push({ label: leaf, to: pathname });

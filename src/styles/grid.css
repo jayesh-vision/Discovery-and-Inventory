@@ -21,7 +21,7 @@
 /* ── toolbar ─────────────────────────────────────────────── */
 .grid-bar {
   display: flex; align-items: center; gap: var(--vw-space-md); flex-wrap: wrap;
-  margin: var(--vw-space-sm) 0 var(--vw-space-md);
+  margin: var(--vw-space-md) 0 var(--vw-space-md);
 }
 .grid-count { white-space: nowrap; font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-slate-600, #475569); }
 
@@ -334,8 +334,8 @@
 }
 
 /* the action column is the last cell of the row, not a column of its own */
-.kb-th, .kb-td { width: 40px; min-width: 40px; }
-.nst-table th.kb-th, .nst-table td.kb-td { background: transparent; padding-left: 0; padding-right: 6px; }
+.kb-th, .kb-td { width: 44px; min-width: 44px; }
+.nst-table th.kb-th, .nst-table td.kb-td { background: transparent; padding-left: 0; padding-right: 12px; }
 .kb-td { position: relative; text-align: right; overflow: visible !important; }
 .kb {
   display: inline-flex; align-items: center; justify-content: center;

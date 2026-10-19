@@ -342,7 +342,7 @@ function RowMenu({ actions, open, onToggle, onClose }: { actions: Action[]; open
 export const PAGE_STEP = 25;
 
 export const GRID_GAP = 72;   /* card padding and footer below the grid */
-export const GRID_MIN = 320;  /* never squeezed below ~6 rows */
+export const GRID_MIN = 480;  /* comfortable viewport showing ~10 rows without cramped truncation */
 
 /* A grid is as tall as its page of 25 rows, and never taller than the room left
    on screen below where it starts — so a screen whose grid is the content fills

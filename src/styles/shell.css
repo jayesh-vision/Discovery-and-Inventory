@@ -1198,13 +1198,13 @@ main:has(.node-page) {
   .cx-row > :last-child { display: none; } }
 
 /* ── compact stat strip ──────────────────────────────── */
-.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-lg); overflow: hidden; }
-.stat-cell { display: grid; grid-template-columns: 8px 1fr; grid-template-rows: auto auto auto;
-  column-gap: var(--vw-space-xs); row-gap: 1px; align-content: center;
-  padding: 0.625rem 0.875rem; border: 0; background: transparent; text-align: left; font: inherit;
-  border-left: 1px solid var(--vw-color-slate-200); min-width: 0; }
+  border-radius: var(--vw-radius-lg); overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+.stat-cell { display: grid; grid-template-columns: 4px 1fr; grid-template-rows: auto auto auto;
+  column-gap: 12px; row-gap: 2px; align-content: center;
+  padding: 0.75rem 1rem; border: 0; background: transparent; text-align: left; font: inherit;
+  border-left: 1px solid var(--vw-color-slate-200); min-width: 0; transition: background 150ms ease; }
 .stat-cell:first-child { border-left: 0; }
 .stat-cell.is-click { cursor: pointer; }
 .stat-cell.is-click:hover { background: var(--vw-color-slate-50); }
