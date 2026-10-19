@@ -106,7 +106,7 @@ export const STOCK_ST: StockMeta[] = [
   { k: 'instore',  n: 'In store',       c: SCOPED ? 0 : 34,                     chip: 'cyan',    tone: 'cyan' },
   { k: 'deployed', n: 'Deployed',       c: SCOPED ? dcStock('deployed') : 2503, chip: 'success', tone: 'emerald' },
   { k: 'faulty',   n: 'Faulty / RMA',   c: SCOPED ? dcStock('faulty') : 74,     chip: 'warning', tone: 'amber' },
-  { k: 'decomm',   n: 'Decommissioned', c: SCOPED ? 152 : 412,                  chip: 'neutral', tone: 'slate' }
+  { k: 'decomm',   n: 'Decommissioned', c: SCOPED ? 0 : 412,                    chip: 'neutral', tone: 'slate' }
 ];
 export const stockMeta = (k: StockState): StockMeta => STOCK_ST.find(s => s.k === k)!;
 
