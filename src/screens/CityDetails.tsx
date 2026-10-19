@@ -14,7 +14,7 @@ import '../styles/topology.css';
 type FacilityType = 'dc' | 'pop' | 'site';
 type DeviceCategory = 'All' | 'Router' | 'Switch' | 'DWDM' | 'eNodeB' | 'gNodeB' | 'Firewall' | 'Server' | 'Storage' | 'GPU';
 
-import { SCOPED, dcSum } from '../data/dc/scope';
+import { dcSum } from '../data/dc/scope';
 import { currentGeo, isDatacenter, withSolution } from '../solution';
 
 export interface SiteFilterState {
@@ -224,7 +224,7 @@ export default function CityDetails() {
   const { cityId } = useParams<{ cityId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
-  const isDatacenterMode = isDatacenter() || SCOPED;
+  const isDatacenterMode = isDatacenter();
 
   const openNodeView = (el: NetworkElementRow) => {
     const cls = getElementCls(el.category);

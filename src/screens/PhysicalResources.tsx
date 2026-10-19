@@ -8,7 +8,7 @@ import {
   type DcDevice, type DcFacility, type DcGpuData, type DcGpuNode, type DcTab
 } from '../data/dc';
 import '../styles/dc-inventory.css';
-import { isDatacenter, isDatacenterUser, withSolution, type DcGeo } from '../solution';
+import { isDatacenter, currentGeo, withSolution, type DcGeo } from '../solution';
 import { SCOPED, dcRegionLabel, dcRegionLabels, dcSumList } from '../data/dc/scope';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
@@ -72,8 +72,7 @@ export default function PhysicalResources() {
   /* screen state lives in the URL, so drill-downs and reloads land on the same view */
   const oem = sp.get('oem');
   const model = sp.get('model');
-  const isDcUser = isDatacenterUser();
-  const activeGeo: DcGeo | null = scoped ? (isDcUser ? 'us' : 'in') : null;
+  const activeGeo: DcGeo | null = scoped ? currentGeo() : null;
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
   const discoveryScoped = !scoped && !!(oem || model);

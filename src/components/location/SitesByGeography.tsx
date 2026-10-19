@@ -566,12 +566,11 @@ export default function SitesByGeography({
   };
   const [pinGroup, setPinGroup] = useState<string[] | null>(null);
   /* the data center solution covers two countries: one map and one list at a time */
-  const isDc = isDatacenter() || SCOPED;
-  const internalCountry = propActiveCountry || (isDc ? 'us' : 'in');
-  const country = propActiveCountry !== undefined ? propActiveCountry : (isDc ? 'us' : internalCountry);
+  const isDc = isDatacenter();
+  const country = isDc ? (propActiveCountry || 'us') : 'in';
   const geoList = isDc ? scopedLocGeo().filter(g => g.geo === country) : DEFAULT_LOC_GEO;
   const isUs = isDc && country === 'us';
-  const countryName = isDc ? DC_GEO_LABEL[country] : 'India';
+  const countryName = isDc ? (DC_GEO_LABEL[country] || 'United States') : 'India';
   const geoOf = useMemo(() => new Map(DC_SUM.map(d => [d.id, d.geo])), []);
   const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
 

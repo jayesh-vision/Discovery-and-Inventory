@@ -1,6 +1,6 @@
 import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { isDatacenter, currentGeo, withSolution } from '../solution';
 import '../styles/inventory-insights.css';
 import SparesRiskCard from '../components/insights/SparesRiskCard';
@@ -388,9 +388,7 @@ const DC_EOL_VENDORS = [
 
 export default function InventoryInsights() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const solParam = searchParams.get('solution')?.toLowerCase();
-  const isDc = solParam === 'datacenter' || isDatacenter();
+  const isDc = isDatacenter();
   const eolVendors = isDc ? DC_EOL_VENDORS : EOL_VENDORS;
 
   // ── State & Filters ──

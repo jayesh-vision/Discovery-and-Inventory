@@ -9,7 +9,7 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
 };
 import { DC_SUM, dcRegionLabel, type DcSum } from './dc/scope';
 import { DC_COUNTS, type DcRole } from './dc/index';
-import { currentGeo, isDatacenter, isDatacenterUser, type DcGeo } from '../solution';
+import { currentGeo, isDatacenter, type DcGeo } from '../solution';
 import { DC_VIRTUAL_RESOURCES } from './dcVirtualResources';
 import {
   ACT,
@@ -2116,7 +2116,7 @@ const DC_ACTIVITY_IN_BY_RANGE: Record<DayRangeOption, [string, string, string, s
 };
 
 function buildDc(targetGeo?: DcGeo | null) {
-  const geo = targetGeo !== undefined ? targetGeo : (typeof window !== 'undefined' ? currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
+  const geo = targetGeo !== undefined ? targetGeo : (typeof window !== 'undefined' ? currentGeo() : null) || 'us';
   const sumList = geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
   const add = (f: (d: DcSum) => number) => sumList.reduce((a, d) => a + f(d), 0);
   const roleSum = (r: DcRole) => add(d => d.byRole[r] ?? 0);
@@ -2562,7 +2562,7 @@ function buildDc(targetGeo?: DcGeo | null) {
 
 const dcDataCache = new Map<string, ReturnType<typeof buildDc>>();
 export function getDcInsightsData(geo?: DcGeo | null) {
-  const targetGeo = geo !== undefined ? geo : (typeof window !== 'undefined' ? currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
+  const targetGeo = geo !== undefined ? geo : (typeof window !== 'undefined' ? currentGeo() : null) || 'us';
   const cacheKey = targetGeo || 'all';
   let cached = dcDataCache.get(cacheKey);
   if (!cached) {

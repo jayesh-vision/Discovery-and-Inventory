@@ -14,13 +14,13 @@
    • Only Inventory (/inventory…) uses it. Discovery URLs never get it and never clear it.
    • The value is not case-sensitive (`Datacenter`, `datacenter`); URLs the app writes use `Datacenter`.
    • Any other value is ignored. */
-export const SOLUTIONS = ['datacenter'] as const;
+export const SOLUTIONS = ['datacenter', 'netsingularity'] as const;
 export type Solution = (typeof SOLUTIONS)[number];
 const KEY = 'solution';
 export const LEAVE = 'all';
 
 /** the value as written in a URL */
-export const solutionParam = (s: Solution): string => ({ datacenter: 'Datacenter' } as const)[s];
+export const solutionParam = (s: Solution): string => ({ datacenter: 'Datacenter', netsingularity: 'Netsingularity' } as const)[s];
 const parse = (v: string | null): Solution | null => { const l = v?.toLowerCase() ?? ''; return (SOLUTIONS as readonly string[]).includes(l) ? (l as Solution) : null; };
 /** true when a URL's value is the way out (`all`, any case) */
 export const isLeave = (v: string | null): boolean => v?.toLowerCase() === LEAVE;
@@ -33,17 +33,19 @@ const SOLUTION_STORAGE_KEY = 'dc_solution_mode';
 const DC_USER_KEY = 'vw_is_datacenter_user';
 const ACTIVE_USER_KEY = 'vw_active_user';
 
-export const isInventoryPath = (p: string) => {
+export const isSolutionPath = (p: string) => {
   try {
     if (p.startsWith('http://') || p.startsWith('https://')) {
       const u = new URL(p);
-      return u.pathname === '/inventory' || u.pathname.startsWith('/inventory/');
+      p = u.pathname;
     }
   } catch {}
-  return p === '/inventory' || p.startsWith('/inventory/');
+  return p === '/inventory' || p.startsWith('/inventory/') || p === '/discovery' || p.startsWith('/discovery/');
 };
 
-export const DEFAULT_GEO: DcGeo = 'in';
+export const isInventoryPath = isSolutionPath;
+
+export const DEFAULT_GEO: DcGeo = 'us';
 
 const readStorage = (k: string): string | null => {
   try {
@@ -58,10 +60,6 @@ const writeStorage = (k: string, v: string) => {
   try { localStorage.setItem(k, v); } catch {}
 };
 
-const clearStorage = (k: string) => {
-  try { sessionStorage.removeItem(k); } catch {}
-  try { localStorage.removeItem(k); } catch {}
-};
 
 function getWindows(): Window[] {
   const wins: Window[] = [];
@@ -122,6 +120,11 @@ function checkBase64ForDc(b64Str: string): boolean {
 
 function markDcUser() {
   try {
+    const sp = new URLSearchParams(window.location.search);
+    const sol = sp.get(KEY)?.toLowerCase();
+    if (sol === 'netsingularity' || sol === 'all') return;
+  } catch {}
+  try {
     sessionStorage.setItem(DC_USER_KEY, 'true');
     localStorage.setItem(DC_USER_KEY, 'true');
     sessionStorage.setItem(ACTIVE_USER_KEY, 'datacenter.user');
@@ -133,6 +136,19 @@ function markDcUser() {
   } catch {}
 }
 
+function clearDcUser() {
+  try {
+    sessionStorage.removeItem(DC_USER_KEY);
+    localStorage.removeItem(DC_USER_KEY);
+    sessionStorage.removeItem(ACTIVE_USER_KEY);
+    localStorage.removeItem(ACTIVE_USER_KEY);
+    sessionStorage.removeItem(SOLUTION_STORAGE_KEY);
+    localStorage.removeItem(SOLUTION_STORAGE_KEY);
+    sessionStorage.setItem(GEO_STORAGE_KEY, 'in');
+    localStorage.setItem(GEO_STORAGE_KEY, 'in');
+  } catch {}
+}
+
 /**
  * Check if the current user is datacenter.user.
  * Rule: if user = datacenter.user -> true -> EVERYTHING US BASED & DATACENTER SOLUTION
@@ -140,6 +156,13 @@ function markDcUser() {
  */
 export function isDatacenterUser(): boolean {
   if (typeof window === 'undefined') return false;
+
+  // 0. If current URL explicitly specifies Netsingularity, NEVER treat as DC user!
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const sol = sp.get(KEY)?.toLowerCase();
+    if (sol === 'netsingularity' || sol === 'all') return false;
+  } catch {}
 
   // 1. Cached decision in storage
   try {
@@ -297,159 +320,198 @@ let currentGeoVal: DcGeo = 'in';
 
 /* the very first render must already know the mode and active geo, so read right now */
 if (typeof window !== 'undefined') {
-  if (isDatacenterUser()) {
+  const sp = new URLSearchParams(window.location.search);
+  const v = sp.get(KEY);
+  const parsed = parse(v);
+
+  if (parsed === 'netsingularity' || isLeave(v)) {
+    current = 'netsingularity';
+    currentGeoVal = 'in';
+    clearDcUser();
+    writeStorage(SOLUTION_STORAGE_KEY, 'netsingularity');
+    writeStorage(GEO_STORAGE_KEY, 'in');
+  } else if (parsed === 'datacenter') {
     current = 'datacenter';
-    currentGeoVal = 'us';
+    writeStorage(SOLUTION_STORAGE_KEY, 'datacenter');
+    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
+    if (g === 'in' || g === 'us') {
+      currentGeoVal = g as DcGeo;
+      writeStorage(GEO_STORAGE_KEY, g);
+    } else {
+      const savedGeo = readStorage(GEO_STORAGE_KEY);
+      currentGeoVal = savedGeo === 'in' ? 'in' : 'us';
+      writeStorage(GEO_STORAGE_KEY, currentGeoVal);
+    }
     markDcUser();
   } else {
-    const sp = new URLSearchParams(window.location.search);
-    const v = sp.get(KEY);
-    if (isLeave(v)) {
-      current = null;
-      clearStorage(SOLUTION_STORAGE_KEY);
-      clearStorage(GEO_STORAGE_KEY);
-    } else if (parse(v)) {
-      current = parse(v)!;
-      writeStorage(SOLUTION_STORAGE_KEY, current);
+    const saved = readStorage(SOLUTION_STORAGE_KEY);
+    if (saved === 'datacenter' || (!saved && isDatacenterUser())) {
+      current = 'datacenter';
+      const savedGeo = readStorage(GEO_STORAGE_KEY);
+      currentGeoVal = savedGeo === 'in' ? 'in' : 'us';
+      markDcUser();
     } else {
-      const saved = readStorage(SOLUTION_STORAGE_KEY);
-      if (saved === 'datacenter' && sp.has(KEY)) {
-        current = 'datacenter';
-      } else {
-        current = null;
-      }
+      current = 'netsingularity';
+      currentGeoVal = 'in';
     }
-    currentGeoVal = 'in';
   }
 
-  // Live polling for the first few seconds in case DOM or parent iframe renders late
-  let checkAttempts = 0;
-  const pollTimer = setInterval(() => {
-    checkAttempts++;
-    if (isDatacenterUser()) {
-      current = 'datacenter';
-      currentGeoVal = 'us';
-      markDcUser();
-      window.dispatchEvent(new CustomEvent('ns:user_changed', { detail: { isDc: true } }));
-      clearInterval(pollTimer);
-    }
-    if (checkAttempts > 30) clearInterval(pollTimer);
-  }, 200);
+  // Live polling only if not explicitly netsingularity
+  if (current !== 'netsingularity') {
+    let checkAttempts = 0;
+    const pollTimer = setInterval(() => {
+      checkAttempts++;
+      const urlSp = new URLSearchParams(window.location.search);
+      const urlSol = urlSp.get(KEY)?.toLowerCase();
+      if (urlSol === 'netsingularity' || urlSol === 'all') {
+        current = 'netsingularity';
+        currentGeoVal = 'in';
+        clearDcUser();
+        clearInterval(pollTimer);
+        return;
+      }
+      if (isDatacenterUser()) {
+        current = 'datacenter';
+        const savedGeo = readStorage(GEO_STORAGE_KEY);
+        currentGeoVal = savedGeo === 'in' ? 'in' : 'us';
+        markDcUser();
+        window.dispatchEvent(new CustomEvent('ns:user_changed', { detail: { isDc: true } }));
+        clearInterval(pollTimer);
+      }
+      if (checkAttempts > 30) clearInterval(pollTimer);
+    }, 200);
+  }
 }
 
 /** what this page load started in; data that is built once (the legacy bundle) follows this */
 export const bootSolution: Solution | null = current;
 
 export const solution = (): Solution | null => {
-  if (isDatacenterUser()) {
-    current = 'datacenter';
-    return 'datacenter';
-  }
-  if (current) return current;
-  if (typeof window !== 'undefined') {
-    const saved = readStorage(SOLUTION_STORAGE_KEY);
-    if (saved === 'datacenter') {
-      current = 'datacenter';
-      return current;
-    }
-  }
-  return current;
+  return isDatacenter() ? 'datacenter' : 'netsingularity';
 };
 
 /** true when Inventory shows only the data center solution's data */
 export const isDatacenter = (): boolean => {
-  if (isDatacenterUser()) {
-    current = 'datacenter';
-    return true;
+  if (typeof window !== 'undefined') {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const v = sp.get(KEY)?.toLowerCase();
+      if (v === 'netsingularity' || isLeave(v || null)) return false;
+      if (v === 'datacenter') return true;
+    } catch {}
   }
   if (current === 'datacenter') return true;
+  if (current === 'netsingularity') return false;
   if (typeof window !== 'undefined') {
     const saved = readStorage(SOLUTION_STORAGE_KEY);
-    if (saved === 'datacenter') {
-      current = 'datacenter';
-      return true;
-    }
+    if (saved === 'netsingularity') return false;
+    if (saved === 'datacenter') return true;
   }
-  return false;
+  return isDatacenterUser();
 };
 
 /**
- * currentGeo: Pure user ID check!
- * If user is datacenter.user -> US ALWAYS
- * If any other user -> India ALWAYS
+ * currentGeo:
+ * If solution is Netsingularity -> ALWAYS India
+ * If Datacenter -> US by default, or India if selected
  */
 export const currentGeo = (): DcGeo => {
-  if (isDatacenterUser()) {
-    return 'us';
+  if (!isDatacenter()) {
+    return 'in';
   }
-  return currentGeoVal;
+  if (typeof window !== 'undefined') {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
+      if (g === 'in') return 'in';
+      if (g === 'us') return 'us';
+      const saved = readStorage(GEO_STORAGE_KEY);
+      if (saved === 'in') return 'in';
+      if (saved === 'us') return 'us';
+    } catch {}
+  }
+  return currentGeoVal === 'in' ? 'in' : 'us';
 };
 
 export const setGeo = (g: DcGeo | 'all' | null): void => {
-  if (isDatacenterUser()) {
-    currentGeoVal = 'us';
-    writeStorage(GEO_STORAGE_KEY, 'us');
+  if (!isDatacenter()) {
+    currentGeoVal = 'in';
+    writeStorage(GEO_STORAGE_KEY, 'in');
     return;
   }
   if (g === 'in') {
     currentGeoVal = 'in';
     writeStorage(GEO_STORAGE_KEY, 'in');
   } else {
-    currentGeoVal = 'in';
-    writeStorage(GEO_STORAGE_KEY, 'in');
+    currentGeoVal = 'us';
+    writeStorage(GEO_STORAGE_KEY, 'us');
   }
 };
 
-/** call on every location change: datacenter.user stays in datacenter US mode; other users stay India */
+/** call on every location change */
 export function syncSolution(pathname: string, search: string): Solution | null {
-  if (!isInventoryPath(pathname)) return current;
-  if (isDatacenterUser()) {
-    current = 'datacenter';
-    currentGeoVal = 'us';
-    markDcUser();
-    return 'datacenter';
-  }
+  if (!isSolutionPath(pathname)) return current;
 
   const sp = new URLSearchParams(search);
-  const v = sp.get(KEY);
+  const v = sp.get(KEY)?.toLowerCase();
 
-  if (isLeave(v)) {
-    current = null;
-    clearStorage(SOLUTION_STORAGE_KEY);
-    clearStorage(GEO_STORAGE_KEY);
-  } else if (parse(v)) {
-    current = parse(v)!;
-    writeStorage(SOLUTION_STORAGE_KEY, current);
-  } else {
-    const saved = readStorage(SOLUTION_STORAGE_KEY);
-    if (saved === 'datacenter' && sp.has(KEY)) {
-      current = 'datacenter';
-      writeStorage(SOLUTION_STORAGE_KEY, 'datacenter');
-    } else {
-      current = null;
-    }
+  if (v === 'netsingularity' || isLeave(v || null)) {
+    current = 'netsingularity';
+    currentGeoVal = 'in';
+    clearDcUser();
+    writeStorage(SOLUTION_STORAGE_KEY, 'netsingularity');
+    writeStorage(GEO_STORAGE_KEY, 'in');
+    return current;
   }
 
-  currentGeoVal = 'in';
-  writeStorage(GEO_STORAGE_KEY, 'in');
+  if (v === 'datacenter') {
+    current = 'datacenter';
+    writeStorage(SOLUTION_STORAGE_KEY, 'datacenter');
+    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
+    if (g === 'in' || g === 'us') {
+      currentGeoVal = g as DcGeo;
+      writeStorage(GEO_STORAGE_KEY, g);
+    } else {
+      const saved = readStorage(GEO_STORAGE_KEY);
+      currentGeoVal = saved === 'in' ? 'in' : 'us';
+      writeStorage(GEO_STORAGE_KEY, currentGeoVal);
+    }
+    markDcUser();
+    return current;
+  }
+
+  const saved = readStorage(SOLUTION_STORAGE_KEY);
+  if (saved === 'datacenter' || (!saved && isDatacenterUser())) {
+    current = 'datacenter';
+    const savedGeo = readStorage(GEO_STORAGE_KEY);
+    currentGeoVal = savedGeo === 'in' ? 'in' : 'us';
+  } else {
+    current = 'netsingularity';
+    currentGeoVal = 'in';
+  }
+
   return current;
 }
 
-/** the URL with the active solution and active geo on it (Inventory URLs only; an existing value is kept) */
+/** the URL with the active solution and active geo on it */
 export function withSolution(url: string): string {
-  const isDcUser = isDatacenterUser();
-  const sol = isDcUser ? 'datacenter' : solution();
-  if (!sol) return url;
+  const isDc = isDatacenter();
+  const sol: Solution = isDc ? 'datacenter' : 'netsingularity';
   if (url.startsWith('http://') || url.startsWith('https://')) {
     try {
       const u = new URL(url);
-      if (!isInventoryPath(u.pathname)) return url;
+      if (!isSolutionPath(u.pathname)) return url;
       if (!u.searchParams.has(KEY)) {
         u.searchParams.set(KEY, solutionParam(sol));
       }
-      const geoToUse = isDcUser ? 'us' : currentGeo();
-      if (geoToUse && !u.searchParams.has(GEO_KEY) && !u.searchParams.has(COUNTRY_KEY)) {
-        u.searchParams.set(GEO_KEY, geoToUse);
+      if (isDc) {
+        const geoToUse = currentGeo();
+        if (geoToUse && !u.searchParams.has(GEO_KEY) && !u.searchParams.has(COUNTRY_KEY)) {
+          u.searchParams.set(GEO_KEY, geoToUse);
+        }
+      } else {
+        u.searchParams.delete(GEO_KEY);
+        u.searchParams.delete(COUNTRY_KEY);
       }
       return u.toString();
     } catch {
@@ -458,14 +520,19 @@ export function withSolution(url: string): string {
   }
   const [pathAndQuery, hash = ''] = url.split('#');
   const [path, q = ''] = pathAndQuery.split('?');
-  if (!isInventoryPath(path)) return url;
+  if (!isSolutionPath(path)) return url;
   const sp = new URLSearchParams(q);
   if (!sp.has(KEY)) {
     sp.set(KEY, solutionParam(sol));
   }
-  const geoToUse = isDcUser ? 'us' : currentGeo();
-  if (geoToUse && !sp.has(GEO_KEY) && !sp.has(COUNTRY_KEY)) {
-    sp.set(GEO_KEY, geoToUse);
+  if (isDc) {
+    const geoToUse = currentGeo();
+    if (geoToUse && !sp.has(GEO_KEY) && !sp.has(COUNTRY_KEY)) {
+      sp.set(GEO_KEY, geoToUse);
+    }
+  } else {
+    sp.delete(GEO_KEY);
+    sp.delete(COUNTRY_KEY);
   }
   const qs = sp.toString();
   return `${path}${qs ? '?' + qs : ''}${hash ? '#' + hash : ''}`;
