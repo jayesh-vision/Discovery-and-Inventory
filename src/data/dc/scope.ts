@@ -11,7 +11,7 @@
    Nothing in the default Inventory reads from this module except through `scoped()`, which
    returns the default value untouched. */
 import summaryJson from './summary.json';
-import { isDatacenter } from '../../solution';
+import { isDatacenter, currentGeo } from '../../solution';
 import { loadCustomers, loadDevices, loadFacilities, loadGpu, loadLinks, loadServices, type DcCustomer, type DcDevice, type DcFacility, type DcGeo, type DcGpuData, type DcLink, type DcRole, type DcService } from './index';
 
 export interface DcSum {
@@ -41,8 +41,10 @@ export const DC_SUM = SUMMARY.datacenters;
 export const DC_REGIONS = SUMMARY.regions;
 export const DC_CIRCLES = SUMMARY.circles;
 export const DC_GEO_LABEL: Record<DcGeo, string> = { in: 'India', us: 'United States' };
-export const dcSumList = (geo?: DcGeo | null): DcSum[] =>
-  geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
+export const dcSumList = (geo?: DcGeo | null): DcSum[] => {
+  const g = geo !== undefined ? geo : currentGeo();
+  return g ? DC_SUM.filter(d => d.geo === g) : DC_SUM;
+};
 
 export const dcSum = (id: string): DcSum | undefined => DC_SUM.find(d => d.id === id);
 /** a site's macro region: North / East / West / South consolidating all countries */
@@ -89,8 +91,9 @@ export async function preloadScope(): Promise<void> {
 /** the full records, once preloaded (always, by the time any screen renders in the data center solution) */
 export function scope(geo?: DcGeo | null): ScopeData {
   if (!loaded) throw new Error('data center scope used before preloadScope() finished');
-  if (!geo) return loaded;
-  const facs = loaded.facs.filter(f => f.geo === geo);
+  const targetGeo = geo !== undefined ? geo : currentGeo();
+  if (!targetGeo) return loaded;
+  const facs = loaded.facs.filter(f => f.geo === targetGeo);
   const facIds = new Set(facs.map(f => f.id));
   const devices = loaded.devices.filter(d => facIds.has(d.dcId));
   const by = new Map<string, DcDevice[]>();

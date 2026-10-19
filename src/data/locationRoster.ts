@@ -1,13 +1,13 @@
 /* The location roster every location screen reads: the estate's 12,475 locations by default, the
    24 data centers (from src/data/dc) in the data center solution. Same record shape either way. */
 import allLocations from './allLocations.json';
-import { DC_SUM, SCOPED } from './dc/scope';
+import { dcSumList, SCOPED } from './dc/scope';
 import { isDatacenter } from '../solution';
 
 export type Loc = (typeof allLocations)[number];
 
 export const getRoster = (): Loc[] =>
-  (isDatacenter() || SCOPED) ? (DC_SUM.map(d => d.location) as unknown as Loc[]) : (allLocations as unknown as Loc[]);
+  (isDatacenter() || SCOPED) ? (dcSumList().map(d => d.location) as unknown as Loc[]) : (allLocations as unknown as Loc[]);
 
 /**
  * Dynamic ROSTER proxy that always delegates to getRoster() so callers accessing ROSTER

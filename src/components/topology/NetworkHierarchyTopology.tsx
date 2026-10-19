@@ -6,7 +6,7 @@ import {
   type StateItem,
   type CityItem
 } from '../../data/geographicHierarchy';
-import { withSolution, type DcGeo } from '../../solution';
+import { withSolution, isDatacenterUser, type DcGeo } from '../../solution';
 import '../../styles/topology.css';
 
 interface ConnectorLine {
@@ -94,9 +94,11 @@ export default function NetworkHierarchyTopology({
   onNavigateToCity,
   selectedStateId: propSelectedStateId,
   onSelectState,
-  activeGeo = 'us'
+  activeGeo: propActiveGeo
 }: NetworkHierarchyTopologyProps) {
   const nav = useNavigate();
+  const isDcUser = isDatacenterUser();
+  const activeGeo: DcGeo = propActiveGeo ?? (isDcUser ? 'us' : 'in');
 
   const hierarchy = useMemo(() => getGeographicHierarchy(activeGeo), [activeGeo]);
 

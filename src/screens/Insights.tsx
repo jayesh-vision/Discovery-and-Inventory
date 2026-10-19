@@ -7,6 +7,8 @@ import { Code, Delta, DomainTag, Ic, Meter, ModuleRule, Panel, Pill, SectionHead
 import { IcFilter } from '../components/grid/icons';
 import { FilterPanel, type FilterField } from '../components/grid/DataGrid';
 import { legacyPath } from '../routes';
+import { isDatacenter, currentGeo } from '../solution';
+import { getDcDiscoveryData } from '../data/dcDiscoveryOverview';
 import {
   TRUST_METRICS, DISCOVERY_SCAN_JOBS, OBJECTS_DAILY_SERIES, OBJECTS_DAILY_VALUES,
   getObjectsDailyDays,
@@ -48,7 +50,10 @@ function drawerSub(d: DrawerState): string {
 const DOMAIN_KEYS: DomainKey[] = DOMAIN_ORDER;
 const byDomain = <T extends { domain: DomainKey }>(rows: T[]) =>
   [...rows].sort((a, b) => DOMAIN_KEYS.indexOf(a.domain) - DOMAIN_KEYS.indexOf(b.domain));
-const n = (v: number) => v.toLocaleString('en-IN');
+const n = (v: number) => {
+  const isUs = typeof window !== 'undefined' && isDatacenter() && currentGeo() === 'us';
+  return v.toLocaleString(isUs ? 'en-US' : 'en-IN');
+};
 
 const TONE_HEX: Record<Tone, string> = {
   success: cv('emerald', 500), warning: cv('amber', 500), critical: cv('red', 500), info: cv('blue', 500), neutral: cv('slate', 400)
@@ -164,6 +169,15 @@ function TargetBar({ value, target, min, max, hex, higherIsBetter, format }: {
 
 export default function Insights() {
   const nav = useNavigate();
+  const isDc = isDatacenter();
+  const geo = currentGeo();
+  const dcData = useMemo(() => isDc ? getDcDiscoveryData(geo) : null, [isDc, geo]);
+  const trustMetrics = dcData ? dcData.trustMetrics : TRUST_METRICS;
+  const allJobs = dcData ? dcData.scanJobs : DISCOVERY_SCAN_JOBS;
+  const adapterRows = dcData ? dcData.adapters : ADAPTER_ROWS;
+  const rootCauseFailures = dcData ? dcData.rootCauses : ROOT_CAUSE_FAILURES;
+  const dailyValues = dcData ? dcData.dailyValues : OBJECTS_DAILY_VALUES;
+
   const openDomain = (d: DomainKey, region?: string) => {
     const r = domainRoute(d);
     nav(legacyPath(r.key, region ? { q: `region=${encodeURIComponent(region)}` } : null, r.params));
@@ -205,7 +219,7 @@ export default function Insights() {
     }));
   };
   const visibleJobs = useMemo(() => {
-    let list = DISCOVERY_SCAN_JOBS;
+    let list = allJobs;
     if (jobFilters.Status) {
       list = list.filter(j => j.status === jobFilters.Status);
     }
@@ -226,7 +240,7 @@ export default function Insights() {
       );
     }
     return byDomain(list);
-  }, [jobFilters]);
+  }, [jobFilters, allJobs]);
   /* Each of the four headline KPI tiles opens its respective drill-down listing */
   const toDevices = () => {
     nav('/discovery/insights/devices?from=Insights');
@@ -248,12 +262,12 @@ export default function Insights() {
   };
   const dailyDays = useMemo(() => getObjectsDailyDays(14), []);
   const objDays = objRange === '7d' ? dailyDays.slice(-7) : dailyDays;
-  const objValues = objRange === '7d' ? OBJECTS_DAILY_VALUES.slice(-7) : OBJECTS_DAILY_VALUES;
+  const objValues = objRange === '7d' ? dailyValues.slice(-7) : dailyValues;
   const objTotal = objValues.reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
-  const objToday = OBJECTS_DAILY_VALUES[OBJECTS_DAILY_VALUES.length - 1].reduce((a, b) => a + b, 0);
+  const objToday = dailyValues[dailyValues.length - 1].reduce((a, b) => a + b, 0);
 
   const todayDateStr = dailyDays[dailyDays.length - 1];
-  const failedTargets = ROOT_CAUSE_FAILURES.reduce((a, f) => a + f.targets, 0);
+  const failedTargets = rootCauseFailures.reduce((a, f) => a + f.targets, 0);
   const lastCycle = RECONCILE_CYCLE_ROWS[0];
   const onKey = (fn: () => void) => (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
@@ -278,7 +292,7 @@ export default function Insights() {
             </span>
           </>} />
         <div className="ix-kpis">
-          {TRUST_METRICS.map(m => {
+          {trustMetrics.map(m => {
             const r = kpiRead(m);
             const to = KPI_TARGET[m.label];
             const Wrap = to ? 'button' : 'div';
@@ -320,7 +334,7 @@ export default function Insights() {
       </section>
 
       <ModuleRule num="I" label="Discovery" meta={<>
-        <b>{DISCOVERY_SCAN_JOBS.length}</b> jobs · <b>{ADAPTER_ROWS.length}</b> adapters · <b>{ROOT_CAUSE_FAILURES.length}</b> root causes · <b>{failedTargets}</b> failed targets
+        <b>{allJobs.length}</b> jobs · <b>{adapterRows.length}</b> adapters · <b>{rootCauseFailures.length}</b> root causes · <b>{failedTargets}</b> failed targets
       </>} />
 
       {/* ── jobs + daily discovery ───────────────────────────────── */}
@@ -330,7 +344,7 @@ export default function Insights() {
         <div className="ix-grid" style={{ ['--cols' as string]: 'minmax(0, 1.25fr) minmax(0, 1fr)' }}>
           {/* Discovery jobs grid */}
           <Panel title="Discovery jobs" info={CARD_DEF['Discovery jobs']}
-            description={<>Showing <b>{visibleJobs.length}</b> of <b>{DISCOVERY_SCAN_JOBS.length}</b> scan jobs · click row for targets</>}
+            description={<>Showing <b>{visibleJobs.length}</b> of <b>{allJobs.length}</b> scan jobs · click row for targets</>}
             right={
               <div ref={filterRef} style={{ position: 'relative' }}>
                 <button
@@ -433,7 +447,7 @@ export default function Insights() {
           <Panel title="Discovery adapters" info={CARD_DEF['Discovery adapters']} description="Endpoint counts and per-adapter success" flush>
             <table className="ix-table">
               <thead><tr><th>Adapter</th><th>Domains</th><th className="t-r">Endpoints</th><th className="t-r">Success</th><th>Status</th></tr></thead>
-              <tbody>{ADAPTER_ROWS.map(a => (
+              <tbody>{adapterRows.map(a => (
                 <tr key={a.adapter} className="is-click" tabIndex={0} onClick={() => setDrawer({ kind: 'adapter', row: a })}
                   onKeyDown={onKey(() => setDrawer({ kind: 'adapter', row: a }))} aria-label={`View ${a.adapter} adapter details`}>
                   <td><span className="ix-primary">{a.adapter}</span><span className="ix-secondary mono">{a.proto}</span></td>
@@ -447,9 +461,9 @@ export default function Insights() {
           </Panel>
 
           <Panel title="Failures by root cause" info={CARD_DEF['Failures by root cause']}
-            description={<><b>{failedTargets}</b> targets · <b>{ROOT_CAUSE_FAILURES.length}</b> root causes · one fix each</>} flush>
+            description={<><b>{failedTargets}</b> targets · <b>{rootCauseFailures.length}</b> root causes · one fix each</>} flush>
             <div>
-              {ROOT_CAUSE_FAILURES.map(f => {
+              {rootCauseFailures.map(f => {
                 const extra = f.targets - f.examples.length;
                 const acted = !!requested[f.cause];
                 const cat = FAIL_CAT[f.tag];

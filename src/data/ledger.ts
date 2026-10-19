@@ -2,7 +2,7 @@
    Every count on every screen comes from here. Sample rows are samples;
    nothing derives a total from an array length. */
 
-import { DC_TOTAL, SCOPED, scope } from './dc/scope';
+import { DC_SUM, DC_TOTAL, SCOPED, scope } from './dc/scope';
 import type { DcDevice, DcRole } from './dc';
 import { currentGeo } from '../solution';
 
@@ -24,19 +24,25 @@ const DEFAULT_EST = {
 const DC_CLASS: Record<DcRole, NeClass> = { Router: 'router', Switch: 'switch', Server: 'server', DWDM: 'dwdm', Firewall: 'firewall', Storage: 'storage', GPU: 'gpu' };
 const DC_STOCK: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed' };
 const DC_ROWS = SCOPED ? scope().devices : [];
+const dcGeo = typeof window !== 'undefined' ? currentGeo() : null;
+const sumList = SCOPED ? (dcGeo ? DC_SUM.filter(d => d.geo === dcGeo) : DC_SUM) : [];
+const dcDevCount = DC_ROWS.length;
+const dcDcsCount = sumList.length || (DC_ROWS.length > 0 ? (dcGeo ? 24 : DC_TOTAL.dcs) : DC_TOTAL.dcs);
+const addSum = (f: (d: (typeof DC_SUM)[number]) => number) => sumList.reduce((a, d) => a + f(d), 0);
+
 /** a device counts as "discovered" when its source is Discovery: seen by discovery and already in service */
 export const dcDiscovered = (d: DcDevice) => d.discovery !== 'not-discovered' && d.lifecycle !== 'Planned';
 export const dcStockOf = (d: DcDevice): StockState => DC_STOCK[d.lifecycle];
 export const dcClassOf = (d: DcDevice): NeClass => DC_CLASS[d.role];
 
 export const IL: typeof DEFAULT_IL = SCOPED ? {
-  locations: DC_TOTAL.dcs, central: DC_TOTAL.dcs, regional: 0, edge: 0, ne: DC_TOTAL.devices, discovered: DC_ROWS.filter(dcDiscovered).length,
+  locations: dcDcsCount, central: dcDcsCount, regional: 0, edge: 0, ne: dcDevCount, discovered: DC_ROWS.filter(dcDiscovered).length,
   links: 0, services: 0, vnf: 0, inactive: 0, reports: 0
 } : DEFAULT_IL;
 
 export const EST: typeof DEFAULT_EST = SCOPED ? {
-  ports: { total: DC_TOTAL.portsTotal, used: DC_TOTAL.portsUsed, free: DC_TOTAL.portsTotal - DC_TOTAL.portsUsed },
-  compliance: { compliant: DC_TOTAL.verified, behind: DC_TOTAL.drifted, unknown: DC_TOTAL.notDiscovered },
+  ports: { total: addSum(d => d.ports.total) || DC_TOTAL.portsTotal, used: addSum(d => d.ports.used) || DC_TOTAL.portsUsed, free: (addSum(d => d.ports.total) - addSum(d => d.ports.used)) || (DC_TOTAL.portsTotal - DC_TOTAL.portsUsed) },
+  compliance: { compliant: addSum(d => d.verified) || DC_TOTAL.verified, behind: addSum(d => d.drifted) || DC_TOTAL.drifted, unknown: addSum(d => d.notDiscovered) || DC_TOTAL.notDiscovered },
   eol: { past: 0, within12: 0 }, spares: { instore: 0, rma: 0, intransit: 0 }
 } : DEFAULT_EST;
 

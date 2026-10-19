@@ -6,7 +6,7 @@
 
 import { DC_CIRCLES, DC_REGIONS, DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
 import type { DcGeo } from './dc';
-import { currentGeo, isDatacenter } from '../solution';
+import { currentGeo, isDatacenter, isDatacenterUser } from '../solution';
 
 export interface CityItem {
   id: string;
@@ -5512,7 +5512,7 @@ export function getCityById(cityId: string): { city: CityItem; state: StateItem;
   }
   // Default fallback if not found directly
   if (isDcMode()) {
-    const dcH = scopedHierarchy(currentGeo() || 'us');
+    const dcH = scopedHierarchy(currentGeo() || (isDatacenterUser() ? 'us' : 'in'));
     const firstReg = dcH[0] || scopedHierarchy()[0];
     const firstSt = firstReg?.states[0];
     const firstCity = firstSt?.cities[0];

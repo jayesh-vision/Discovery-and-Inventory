@@ -1,7 +1,7 @@
 import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { isDatacenter, withSolution } from '../solution';
+import { isDatacenter, currentGeo, withSolution } from '../solution';
 import '../styles/inventory-insights.css';
 import SparesRiskCard from '../components/insights/SparesRiskCard';
 import StaleRecordsCard from '../components/insights/StaleRecordsCard';
@@ -75,8 +75,10 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
   };
 
   // 1. Report Metadata
+  const isUsDc = isDatacenter() && currentGeo() === 'us';
+  const tzLabel = isUsDc ? 'UTC' : 'IST';
   rows.push(['Report', 'Inventory Insights & Executive Summary']);
-  rows.push(['Generated At', `${timestamp} IST`]);
+  rows.push(['Generated At', `${timestamp} ${tzLabel}`]);
   rows.push(['Time Window', rangeName]);
   rows.push(['Monitored Locations', `${TOTAL_RECORDS_DATA[range].sitesCount} sites`]);
   rows.push(['Managed Elements', TOTAL_RECORDS_DATA[range].managedElements]);

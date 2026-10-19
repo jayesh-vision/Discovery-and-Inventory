@@ -8,7 +8,7 @@ import {
   type DcDevice, type DcFacility, type DcGpuData, type DcGpuNode, type DcTab
 } from '../data/dc';
 import '../styles/dc-inventory.css';
-import { currentGeo, isDatacenter, withSolution, type DcGeo } from '../solution';
+import { currentGeo, isDatacenter, isDatacenterUser, withSolution, type DcGeo } from '../solution';
 import { SCOPED, dcRegionLabel, dcRegionLabels, dcSumList } from '../data/dc/scope';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import {
@@ -72,8 +72,9 @@ export default function PhysicalResources() {
   /* screen state lives in the URL, so drill-downs and reloads land on the same view */
   const oem = sp.get('oem');
   const model = sp.get('model');
-  const geoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (scoped ? 'us' : '')).toLowerCase();
-  const activeGeo: DcGeo | null = scoped ? (geoParam === 'in' ? 'in' : 'us') : ((geoParam === 'us' || geoParam === 'in') ? (geoParam as DcGeo) : null);
+  const isDcUser = isDatacenterUser();
+  const geoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (scoped ? (isDcUser ? 'us' : 'in') : '')).toLowerCase();
+  const activeGeo: DcGeo | null = scoped ? (!isDcUser ? 'in' : (geoParam === 'in' ? 'in' : 'us')) : ((geoParam === 'us' || geoParam === 'in') ? (geoParam as DcGeo) : null);
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
   const discoveryScoped = !scoped && !!(oem || model);

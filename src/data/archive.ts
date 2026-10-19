@@ -1,6 +1,6 @@
 import { NE_CLASSES, INACTIVE_TABS, DC_INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
 import { MASTER_NE } from './master';
-import { currentGeo, type DcGeo } from '../solution';
+import { currentGeo, isDatacenterUser, type DcGeo } from '../solution';
 import { isScoped } from './dc/scope';
 
 export type { InactiveTab };
@@ -255,7 +255,7 @@ export const DECOMM: Record<InactiveTab, ArchiveRow[]> = DEFAULT_DECOMM;
 
 export const decommRows = (cls: InactiveTab, geo?: DcGeo | null): ArchiveRow[] => {
   if (isScoped()) {
-    const targetGeo = geo || (typeof window !== 'undefined' ? currentGeo() : 'us') || 'us';
+    const targetGeo = geo || (typeof window !== 'undefined' ? currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
     const store = targetGeo === 'in' ? DC_DECOMM_IN : DC_DECOMM_US;
     return store[cls] || store.server || [];
   }

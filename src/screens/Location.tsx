@@ -4,7 +4,7 @@ import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTop
 import SitesByGeography from '../components/location/SitesByGeography';
 import { getLocStats, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
 import { SCOPED, dcSum, scope } from '../data/dc/scope';
-import { currentGeo, isDatacenter, setGeo, withSolution, type DcGeo } from '../solution';
+import { currentGeo, isDatacenterUser, setGeo, withSolution, type DcGeo } from '../solution';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
@@ -118,9 +118,9 @@ const CIRCLE_TO_STATE_ID: Record<string, string> = {
 export default function Location() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
-  const isDc = isDatacenter() || SCOPED;
-  const geoParam = (searchParams.get('geo') || searchParams.get('country') || currentGeo() || (isDc ? 'us' : '')).toLowerCase() as DcGeo | '';
-  const activeGeo: DcGeo = (geoParam === 'in' ? 'in' : 'us');
+  const isDcUser = isDatacenterUser();
+  // If user = datacenter.user then make everything US based. If any other user it will point to India always.
+  const activeGeo: DcGeo = !isDcUser ? 'in' : ((searchParams.get('geo') || searchParams.get('country') || currentGeo() || 'us').toLowerCase() === 'in' ? 'in' : 'us');
   const S = React.useMemo(() => getLocStats(activeGeo), [activeGeo]);
   const COVERAGE_CIRCLES: CoverageCircle[] = S.circles;
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
@@ -136,7 +136,7 @@ export default function Location() {
     setGeo(c);
     const params = new URLSearchParams(searchParams);
     if (c) params.set('geo', c);
-    else params.set('geo', 'us');
+    else params.set('geo', isDcUser ? 'us' : 'in');
     params.delete('country');
     nav(withSolution(`/inventory/location?${params.toString()}`));
   };
@@ -234,7 +234,7 @@ export default function Location() {
       <SitesByGeography
         selectedCircle={selectedCircle}
         onSelectCircle={setSelectedCircle}
-        activeCountry={activeGeo || 'us'}
+        activeCountry={activeGeo}
         onSelectCountry={handleCountryChange}
       />
     </div>

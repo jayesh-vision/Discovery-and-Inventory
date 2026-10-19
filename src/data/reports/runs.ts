@@ -9,6 +9,7 @@ import type { ReportModule } from './model';
 import { formatReportDate } from './catalog';
 import { isScoped } from '../dc/scope';
 import type { DcGeo } from '../dc';
+import { currentGeo, isDatacenterUser } from '../../solution';
 
 export interface ReportRun {
   status: 'Completed' | 'Failed' | 'Pending'; name: string; type: 'Cluster' | 'Discovery' | 'Site';
@@ -51,7 +52,7 @@ export const REPORT_RUNS: ReportRun[] = REPORT_RUNS_IN;
 
 export const reportRuns = (geo?: DcGeo | null): ReportRun[] => {
   if (isScoped()) {
-    const targetGeo = geo || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('geo') as DcGeo) : 'us') || 'us';
+    const targetGeo = geo || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('geo') as DcGeo) || currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
     return targetGeo === 'in' ? REPORT_RUNS_IN : REPORT_RUNS_US;
   }
   return REPORT_RUNS_IN;

@@ -1,4 +1,4 @@
-import { currentGeo, isDatacenter, solution, withoutSolution, type DcGeo } from '../solution';
+import { currentGeo, isDatacenter, isDatacenterUser, solution, withoutSolution, type DcGeo } from '../solution';
 import { dcSumList, scope } from '../data/dc/scope';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -39,7 +39,7 @@ export function loadLegacy(): Promise<void> {
   /* the bundle builds its data once, so it learns the mode (src/solution.ts) before it runs */
   const w = window as unknown as { __nsSolution?: string | null; __dcSum?: unknown; __dcScope?: unknown; __dcGeo?: unknown };
   w.__nsSolution = solution();
-  const geo = isDatacenter() ? (currentGeo() || 'us') : null;
+  const geo = isDatacenter() ? (currentGeo() || (isDatacenterUser() ? 'us' : 'in')) : null;
   w.__dcGeo = geo;
   if (isDatacenter()) {
     w.__dcSum = dcSumList(geo);
@@ -160,8 +160,9 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
       ...(params as Record<string, string>)
     };
 
-    const activeGeoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (isDatacenter() ? 'us' : '')).toLowerCase();
-    const activeGeo: DcGeo | null = isDatacenter() ? (activeGeoParam === 'in' ? 'in' : 'us') : ((activeGeoParam === 'us' || activeGeoParam === 'in') ? (activeGeoParam as DcGeo) : null);
+    const isDcUser = isDatacenterUser();
+    const activeGeoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (isDatacenter() ? (isDcUser ? 'us' : 'in') : '')).toLowerCase();
+    const activeGeo: DcGeo | null = isDatacenter() ? (!isDcUser ? 'in' : (activeGeoParam === 'in' ? 'in' : 'us')) : ((activeGeoParam === 'us' || activeGeoParam === 'in') ? (activeGeoParam as DcGeo) : null);
     const w = window as any;
     w.__dcGeo = activeGeo;
     if (isDatacenter()) {
