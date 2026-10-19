@@ -34,7 +34,7 @@ type Row = NeRow & { region: Region; sysDescr: string; dc?: { dev: DcDevice; fac
    hold none, so they are empty. */
 type PhyTab = NeClass | DcTab;
 const DEFAULT_TABS: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'enodeb', 'gnodeb'];
-const DC_TABS: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'firewall', 'storage', 'gpu', 'enodeb', 'gnodeb'];
+const DC_TABS: PhyTab[] = ['router', 'switch', 'server', 'firewall', 'storage', 'gpu'];
 const NEW_NAME: Partial<Record<PhyTab, string>> = { firewall: 'Firewall', storage: 'Storage', gpu: 'GPU' };
 const isNe = (c: PhyTab): c is NeClass => (NE_CLASSES as string[]).includes(c);
 const isDcTab = (c: PhyTab): c is DcTab => c in DC_ROLE_BY_TAB;
@@ -111,7 +111,13 @@ export default function PhysicalResources() {
   const facilities = useLoaded(scoped ? loadFacilities : loadNoFacilities);
   const devices = useLoaded(scoped ? loadDevices : loadNoDevices);
   const gpu = useLoaded<DcGpuData | null>(scoped && cls === 'gpu' ? loadGpu : loadNone);
-  const setParam = (k: string, v: string) => { const next = new URLSearchParams(sp); if (v) next.set(k, v); else next.delete(k); setSp(next, { replace: true }); };
+  const setParam = (k: string, v: string) => {
+    const next = new URLSearchParams(sp);
+    if (scoped && !next.has('solution')) next.set('solution', 'Datacenter');
+    if (activeGeo && !next.has('geo')) next.set('geo', activeGeo);
+    if (v) next.set(k, v); else next.delete(k);
+    setSp(next, { replace: true });
+  };
   const [openName, setOpenName] = useState<string | null>(null);
   const stockParam = sp.get('stock');
   const stock = useMemo<Set<StockState>>(() => {
@@ -199,6 +205,8 @@ export default function PhysicalResources() {
       sessionStorage.setItem('ns_phy_tab', targetClass);
     }
     const next = new URLSearchParams(sp);
+    if (scoped && !next.has('solution')) next.set('solution', 'Datacenter');
+    if (activeGeo && !next.has('geo')) next.set('geo', activeGeo);
     next.delete('tab');
     next.delete('drill');
     next.delete('from');

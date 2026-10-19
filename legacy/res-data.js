@@ -270,7 +270,7 @@ const DC_FAC = DC_ON ? window.__dcScope.facs : [];
 const dcDate = t => { const d = new Date(t); return `${String(d.getUTCDate()).padStart(2, '0')}-${MONTHS_SHORT[d.getUTCMonth()]}-${d.getUTCFullYear()}`; };
 const dcShort = (id, dc) => id.startsWith(dc + '-') ? id.slice(dc.length + 1) : id;
 const PASSIVE_DC = (() => {
-  const out = { rack: [], power: [], odf: [], cord: [], cooling: [], sensors: [] };
+  const out = { rack: [], power: [], odf: [], cord: [], cooling: [], sensors: [], fiber: [], splice: [], duct: [] };
   const ok = { st: 'In service', chip: 'success' };
   for (const f of DC_FAC) {
     const dc = f.id;
@@ -294,13 +294,60 @@ const PASSIVE_DC = (() => {
       dc: true, dcId: dc, n: u.id, site: dc, zone: u.zone, type: u.type, cap: u.capacityKw, load: u.loadPct, supply: u.supplyC, ret: u.returnC });
     for (const s of f.cooling.sensors) out.sensors.push({ ...((s.smoke || s.leak) ? { st: 'Alarm', chip: 'error' } : ok),
       dc: true, dcId: dc, n: s.id, site: dc, zone: s.zone, temp: s.tempC, hum: s.humidity, smoke: s.smoke, leak: s.leak });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-DCI-01`, a: `${dc} MMR-01 ODF`, b: `${dc} Metro IX / Meet-Me Vault A`,
+      len: `${((1 + (dc.charCodeAt(0) % 5)) * 1420).toLocaleString('en-IN')} m`,
+      cores: '96 / 144', splices: 4 + (dc.charCodeAt(1) % 4), otdr: '14-Jul-2026', att: '0.21 dB/km', own: 'Own'
+    });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-DCI-02`, a: `${dc} MMR-02 ODF`, b: `${dc} Carrier Diverse Vault B`,
+      len: `${((2 + (dc.charCodeAt(1) % 4)) * 1850).toLocaleString('en-IN')} m`,
+      cores: '72 / 144', splices: 6 + (dc.charCodeAt(2) % 3), otdr: '02-Aug-2026', att: '0.23 dB/km', own: 'Leased'
+    });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-CAMPUS-01`, a: `${dc} Hall-1 ODF-01`, b: `${dc} Hall-2 ODF-01`,
+      len: '650 m', cores: '192 / 288', splices: 2, otdr: '20-Aug-2026', att: '0.19 dB/km', own: 'Own'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-VAULT-A`, site: dc, span: `FS-${dc}-DCI-01`,
+      type: 'Dome 288F', fibers: '144 / 288', loss: '0.03 dB', housing: 'Manhole Vault', surveyed: '15-Jul-2026'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-MMR-B`, site: dc, span: `FS-${dc}-DCI-02`,
+      type: 'Inline 144F', fibers: '96 / 144', loss: '0.04 dB', housing: 'MMR Cabinet', surveyed: '08-Aug-2026'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-CAMPUS-C`, site: dc, span: `FS-${dc}-CAMPUS-01`,
+      type: 'Dome 288F', fibers: '192 / 288', loss: '0.02 dB', housing: 'Basement Vault', surveyed: '22-Aug-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-ENTRY-SOUTH`, a: `${dc} Boundary Pit-1`, b: `${dc} Telecom Vault A`,
+      len: '420 m', ways: '8 / 12', bore: '110 mm HDPE', own: 'Own', surveyed: '10-Jun-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-ENTRY-NORTH`, a: `${dc} Boundary Pit-2`, b: `${dc} Telecom Vault B`,
+      len: '580 m', ways: '6 / 8', bore: '110 mm HDPE', own: 'Own', surveyed: '12-Jul-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-RACEWAY-01`, a: `${dc} MMR-01`, b: `${dc} Server Hall A`,
+      len: '180 m', ways: '4 / 4', bore: '150 mm Yellow Raceway', own: 'Own', surveyed: '25-Aug-2026'
+    });
   }
   return out;
 })();
 /* the two tabs that exist only for data centers; their count is the rows */
 const PASSIVE_NEW_TABS = [{ k: 'cooling', n: 'Cooling', c: PASSIVE_DC.cooling.length }, { k: 'sensors', n: 'Sensors', c: PASSIVE_DC.sensors.length }];
 /* tab order in the data center solution */
-const PASSIVE_DC_ORDER = ['fiber', 'odf', 'rack', 'power', 'cooling', 'sensors', 'splice', 'cord', 'duct'];
+const PASSIVE_DC_ORDER = ['rack', 'power', 'cooling', 'sensors', 'odf', 'cord', 'fiber', 'splice', 'duct'];
 /* what the data center solution's tiles above the grid count, from the records themselves */
 const passiveDcStats = () => {
   const racks = DC_FAC.reduce((a, f) => a.concat(f.racks), []);

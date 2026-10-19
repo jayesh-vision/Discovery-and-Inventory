@@ -57,11 +57,23 @@ export const PHY_TABS: ClassMeta[] = SCOPED
   { k: 'server', n: 'Server', c: 96,  disc: 0 },     { k: 'dwdm',   n: 'DWDM',   c: 78,  disc: 0 },
   { k: 'enodeb', n: 'eNodeB', c: 18,  disc: 0 },     { k: 'gnodeb', n: 'gNodeB', c: 14,  disc: 0 }
 ];
-export type InactiveTab = NeClass | 'l2vpn' | 'l3vpn';
+export type InactiveTab = NeClass | 'l2vpn' | 'l3vpn' | 'link' | 'service';
 export const INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
   { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
   { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
   { k: 'l2vpn', n: 'L2VPN' }, { k: 'l3vpn', n: 'L3VPN' }
+];
+
+export const DC_INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
+  { k: 'server', n: 'Compute (CPU)' },
+  { k: 'gpu', n: 'GPU Nodes' },
+  { k: 'switch', n: 'Fabric Switches' },
+  { k: 'router', n: 'Border Routers' },
+  { k: 'storage', n: 'Storage Arrays' },
+  { k: 'firewall', n: 'Security / FW' },
+  { k: 'dwdm', n: 'DWDM DCI' },
+  { k: 'link', n: 'Retired Links' },
+  { k: 'service', n: 'Retired Services' }
 ];
 export const classMeta = (k: NeClass): ClassMeta => PHY_TABS.find(x => x.k === k)!;
 
@@ -94,7 +106,7 @@ export const STOCK_ST: StockMeta[] = [
   { k: 'instore',  n: 'In store',       c: SCOPED ? 0 : 34,                     chip: 'cyan',    tone: 'cyan' },
   { k: 'deployed', n: 'Deployed',       c: SCOPED ? dcStock('deployed') : 2503, chip: 'success', tone: 'emerald' },
   { k: 'faulty',   n: 'Faulty / RMA',   c: SCOPED ? dcStock('faulty') : 74,     chip: 'warning', tone: 'amber' },
-  { k: 'decomm',   n: 'Decommissioned', c: SCOPED ? 0 : 412,                    chip: 'neutral', tone: 'slate' }
+  { k: 'decomm',   n: 'Decommissioned', c: SCOPED ? 152 : 412,                  chip: 'neutral', tone: 'slate' }
 ];
 export const stockMeta = (k: StockState): StockMeta => STOCK_ST.find(s => s.k === k)!;
 

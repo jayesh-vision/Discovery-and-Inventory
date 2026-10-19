@@ -93,7 +93,7 @@ const en = (n: number) => n.toLocaleString('en-US');
 const share = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 const palette = ['#0284c7', '#0ea5e9', '#06b6d4', '#0d9488', '#a855f7', '#7c3aed', '#f59e0b'];
 
-import { currentGeo, type DcGeo } from '../solution';
+import { currentGeo, isDatacenter, type DcGeo } from '../solution';
 
 export function scopedStats(geo?: DcGeo | null): LocStats {
   const sumList = geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
@@ -114,11 +114,17 @@ export function scopedStats(geo?: DcGeo | null): LocStats {
   for (const d of sumList) (circles.get(circleKey(d)) ?? circles.set(circleKey(d), []).get(circleKey(d))!).push(d);
   /* links and services, from the Links and Services sheets of the backups */
   const links = sumList.reduce((a, d) => a + d.links, 0), services = sumList.reduce((a, d) => a + d.services, 0);
-  const LINK_TABS: [string, string][] = [['LLDP', 'lldp'], ['BGP', 'bgp'], ['OSPF', 'ospf'], ['ISIS', 'isis'], ['LSP', 'lsp']];
+  const LINK_TABS: [string, string][] = [
+    ['InfiniBand', 'ib'],
+    ['Ethernet Fabric', 'eth'],
+    ['BGP / EVPN', 'bgp'],
+    ['Compute & Storage', 'access'],
+    ['Management (OOB)', 'oob']
+  ];
   const SVC_TABS: [string, string][] = [['On-demand GPUs', 'gpu'], ['CPU instances', 'cpu'], ['Storage volume', 'storage'], ['Reserved cluster', 'reserved']];
   const GEO_LINK_COUNTS: Record<DcGeo, Record<string, number>> = {
-    us: { LLDP: 11939, BGP: 450, LSP: 95, OSPF: 23, ISIS: 23 },
-    in: { LLDP: 11939, BGP: 450, LSP: 92, OSPF: 23, ISIS: 23 }
+    us: { 'InfiniBand': 4846, 'Ethernet Fabric': 542, 'BGP / EVPN': 450, 'Compute & Storage': 3609, 'Management (OOB)': 2942 },
+    in: { 'InfiniBand': 4846, 'Ethernet Fabric': 542, 'BGP / EVPN': 450, 'Compute & Storage': 3609, 'Management (OOB)': 2942 }
   };
   const GEO_SVC_COUNTS: Record<DcGeo, Record<string, number>> = {
     us: { 'On-demand GPUs': 386, 'CPU instances': 159, 'Storage volume': 136, 'Reserved cluster': 51 },
@@ -160,5 +166,5 @@ export function scopedStats(geo?: DcGeo | null): LocStats {
   };
 }
 
-export const getLocStats = (geo?: DcGeo | null): LocStats => SCOPED ? scopedStats(geo) : DEFAULT;
-export const LOC_STATS: LocStats = SCOPED ? scopedStats(currentGeo()) : DEFAULT;
+export const getLocStats = (geo?: DcGeo | null): LocStats => (isDatacenter() || SCOPED) ? scopedStats(geo) : DEFAULT;
+export const LOC_STATS: LocStats = (isDatacenter() || SCOPED) ? scopedStats(currentGeo()) : DEFAULT;

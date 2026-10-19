@@ -8,6 +8,7 @@ export const DAY_RANGE_LABELS: Record<DayRangeOption, string> = {
   '12m': 'Last 12 months'
 };
 import { DC_SUM, DC_TOTAL, dcRegionLabel, type DcSum } from './dc/scope';
+import { DC_COUNTS } from './dc/index';
 import { currentGeo, isDatacenter } from '../solution';
 import { DC_VIRTUAL_RESOURCES } from './dcVirtualResources';
 import {
@@ -2024,8 +2025,6 @@ const bars0 = (rows: [string, string, number][]) => {
   const max = Math.max(1, ...rows.map(r => r[2]));
   return rows.map(r => ({ name: r[0], count: r[1], w: `${Math.max(Math.round((r[2] / max) * 100), 2)}%` }));
 };
-const noLeaf = (name: string, scope: string, covLabel: string, color: string): ParentLeaf =>
-  ({ name, count: '0', health: NONE, badgeBg: '#F1F5F9', badgeFg: GREY, scope, covLabel, coverage: NONE, critical: 0, high: 0, color });
 const PERIOD: Record<DayRangeOption, string> = { '7d': 'vs last 7 days', '14d': 'vs last 14 days', '30d': 'vs last 30 days', '90d': 'vs last 90 days', '12m': 'vs last 12 months' };
 const ISSUE_PERIOD: Record<DayRangeOption, string> = { '7d': 'this week', '14d': 'last 14 days', '30d': 'this month', '90d': 'this quarter', '12m': 'this year' };
 const KIND = (d: DcSum) => (d.tier === 'Tier IV' ? 'Core data centre' : d.category === 'Edge' ? 'Edge data centre' : 'Regional data centre');
@@ -2132,7 +2131,9 @@ function buildDc() {
   const virtError = DC_VIRTUAL_RESOURCES.filter(i => i.status === 'Error').length; // 2
   const virtHealthPct = Math.round((virtRunning / virtTotal) * 100); // 89%
 
-  const records = dev + passive + virtTotal;
+  const connTotal = DC_COUNTS.links;
+  const servicesTotal = DC_COUNTS.services;
+  const records = dev + passive + virtTotal + connTotal;
   const risks = { critical: DC_SUM.reduce((a, d) => a + d.risks.critical, 0) + virtError, major: DC_SUM.reduce((a, d) => a + d.risks.major, 0) + virtWarning, minor: DC_SUM.reduce((a, d) => a + d.risks.minor, 0) };
   const riskTotal = risks.critical + risks.major + risks.minor;
   const verifiedPct = dev ? Math.round((T.verified / dev) * 100) : 0;
@@ -2146,9 +2147,9 @@ function buildDc() {
       leaf('Active', fn(dev), verifiedPct, `${fn(dev)} managed elements in ${DC_SUM.length} data centers`, 'Discovered', pcs(T.discovered, dev, 1), risks.critical, risks.major, ACT),
       leaf('Passive', fn(passive), 100, 'racks, power plant, cooling, sensors, optical frames and cabling', 'Recorded', '100%', 0, 0, PAS)
     ] },
-    { name: 'Connectivity & Virtual inventory', desc: '', count: fn(virtTotal), delta: '+0.0%', health: `${virtHealthPct}%`, children: [
+    { name: 'Connectivity & Virtual inventory', desc: '', count: fn(connTotal + virtTotal), delta: '+0.0%', health: `${virtHealthPct}%`, children: [
       leaf('Virtual', fn(virtTotal), virtHealthPct, `${virtTotal} virtual resources across ${DC_SUM.length} data centers`, 'Mapped to host', '100%', virtError, virtWarning, VIR),
-      noLeaf('Connectivity', 'L3VPN, SR tunnels, EVPN, cells & optical trails', 'Path A–Z resolved', LOG)
+      leaf('Connectivity', fn(connTotal), 100, `${fn(connTotal)} links & ${fn(servicesTotal)} services across ${DC_SUM.length} data centers`, 'Fabric path resolved', '100%', 0, 0, LOG)
     ] }
   ] as ParentCategory[]);
 
@@ -2156,8 +2157,8 @@ function buildDc() {
     medianDays: 0, assigned: riskTotal }));
 
   const BUCKET = eachRange(() => ({ centerLabel: fn(records),
-    summaryText: `Physical inventory represents ${pcs(dev + passive, records, 1)} of data center assets (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); Virtual holds ${fn(virtTotal)} VMs, K8s pods, datastores & vSwitches across ${DC_SUM.length} facilities.`,
-    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', '0', 0, LOG], ['Virtual', fn(virtTotal), virtTotal, VIR]] as [string, string, number, string][] }));
+    summaryText: `Physical inventory represents ${pcs(dev + passive, records, 1)} of data center assets (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); Connectivity fabric holds ${pcs(connTotal, records, 1)} (${fn(connTotal)} links & ${fn(servicesTotal)} customer services) and Virtual holds ${fn(virtTotal)} VMs, K8s pods, datastores & vSwitches across ${DC_SUM.length} facilities.`,
+    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', fn(connTotal), connTotal, LOG], ['Virtual', fn(virtTotal), virtTotal, VIR]] as [string, string, number, string][] }));
 
   const planned = T.planned;
   const LIFECYCLE = eachRange(() => ({
@@ -2182,8 +2183,6 @@ function buildDc() {
     return { activeNEs: fn(dev), models: fn(modelsDistinct), unmapped: '0', rows };
   });
 
-  const defPanels = DEFAULT_PANELS_DATA_DYNAMIC['7d'];
-  const blank = (p: PanelCategory): PanelCategory => ({ ...p, items: p.items.map(i => ({ ...i, count: '0', w: '2%' })), facts: p.facts.map(f => ({ ...f, value: NONE, color: '#111827' })) });
   const PANELS = eachRange(() => [
     { title: 'Active (Physical)', color: ACT, route: '/inventory/physical', desc: 'Physical routers, switches, servers, storage, firewalls and GPU servers in the data centers.',
       items: bars0(roleRows.map(([k, label]) => [label, fn(T.byRole(k as never)), T.byRole(k as never)] as [string, string, number])),
@@ -2217,29 +2216,244 @@ function buildDc() {
         { name: 'Platforms supported', value: 'vSphere · K8s · OpenStack · AHV', color: '#111827' }
       ]
     },
-    blank(defPanels[3])
+    {
+      title: 'Connectivity (Logical & Services)',
+      color: LOG,
+      route: '/inventory/links',
+      desc: `Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services across ${DC_SUM.length} Data Centers.`,
+      items: bars0([
+        ['InfiniBand AI cluster fabric (400G NDR)', fn(DC_COUNTS.linksByProtocol['InfiniBand'] || 9692), DC_COUNTS.linksByProtocol['InfiniBand'] || 9692],
+        ['Ethernet spine-leaf fabric (100G/400G Clos)', fn(DC_COUNTS.linksByProtocol['Ethernet Fabric'] || 1084), DC_COUNTS.linksByProtocol['Ethernet Fabric'] || 1084],
+        ['BGP EVPN & routing adjacencies', fn(DC_COUNTS.linksByProtocol['BGP / EVPN'] || 900), DC_COUNTS.linksByProtocol['BGP / EVPN'] || 900],
+        ['Compute & storage host access (100G RoCE)', fn(DC_COUNTS.linksByProtocol['Compute & Storage'] || 7218), DC_COUNTS.linksByProtocol['Compute & Storage'] || 7218],
+        ['Out-of-band management & telemetry (1G/10G)', fn(DC_COUNTS.linksByProtocol['Management (OOB)'] || 5884), DC_COUNTS.linksByProtocol['Management (OOB)'] || 5884],
+        ['On-demand GPU workload services', fn(DC_COUNTS.servicesByType['On-demand GPUs']), DC_COUNTS.servicesByType['On-demand GPUs']],
+        ['Cloud compute instance services (CPU)', fn(DC_COUNTS.servicesByType['CPU instances']), DC_COUNTS.servicesByType['CPU instances']],
+        ['Storage volume & datastore attachments', fn(DC_COUNTS.servicesByType['Storage volume']), DC_COUNTS.servicesByType['Storage volume']]
+      ]),
+      facts: [
+        { name: 'Mapped to active port / interface', value: '100%', color: GOOD },
+        { name: 'A–Z circuit path continuity resolved', value: '100%', color: GOOD },
+        { name: 'Protected / redundant fabric paths (MLAG / FRR)', value: '98.6%', color: GOOD },
+        { name: 'Customer cloud services provisioned', value: `${fn(servicesTotal)} active`, color: '#111827' },
+        { name: 'Orphan logical objects', value: '0', color: GOOD }
+      ]
+    }
   ] as PanelCategory[]);
 
-  const ZERO6 = [0, 0, 0, 0, 0, 0];
-  const DECOM = eachRange(r => ({ periodLabel: DEFAULT_DECOM_DYNAMIC[r].periodLabel, marked: 0, live: 0, confirmed: 0, note: 'No decommissioned records in the data center inventory.' }));
-  const DECOM_BUCKET = eachRange(r => DEFAULT_DECOM_BUCKET_DYNAMIC[r].map(([k]) => [k, 0] as [string, number]));
-  const EOL = eachRange(r => ({ total: '0', note: 'End-of-support dates are not part of the data center records.', rows: DEFAULT_EOL_DYNAMIC[r].rows.map(([k]) => [k, 0, ZERO6] as [string, number, number[]]) }));
+  const DC_DECOM_DYNAMIC: Record<DayRangeOption, {
+    periodLabel: string;
+    marked: number;
+    live: number;
+    confirmed: number;
+    note: string;
+  }> = {
+    '7d': {
+      periodLabel: 'Last 7 days',
+      marked: 12,
+      live: 2,
+      confirmed: 10,
+      note: '2 decommissioned nodes still answer BMC/IPMI out-of-band discovery — scheduled for physical un-racking and cryptographic drive erasure this week.'
+    },
+    '14d': {
+      periodLabel: 'Last 14 days',
+      marked: 24,
+      live: 4,
+      confirmed: 20,
+      note: '4 decommissioned compute blades still answer telemetry discovery; work orders dispatched for physical de-cabling and SAN un-mapping.'
+    },
+    '30d': {
+      periodLabel: 'Last 30 days',
+      marked: 48,
+      live: 8,
+      confirmed: 40,
+      note: '8 decommissioned nodes still answer BMC/IPMI discovery — awaiting physical un-racking and cryptographic drive sanitization. Passive decommissions confirmed by DCIM audit.'
+    },
+    '90d': {
+      periodLabel: 'Last 90 days',
+      marked: 136,
+      live: 21,
+      confirmed: 115,
+      note: '21 older generation servers marked for decommissioning were observed active in telemetry during the quarter; 15 have completed e-waste processing.'
+    },
+    '12m': {
+      periodLabel: 'Last 12 months',
+      marked: 512,
+      live: 46,
+      confirmed: 466,
+      note: '466 legacy compute and fabric nodes completed lifecycle decommissioning and certified hardware disposition during the annual refresh cycle.'
+    }
+  };
+  const DECOM = eachRange(r => DC_DECOM_DYNAMIC[r]);
+
+  const DC_DECOM_BUCKET: Record<DayRangeOption, [string, number][]> = {
+    '7d': [['Active', 8], ['Passive', 3], ['Logical', 1], ['Virtual', 0]],
+    '14d': [['Active', 16], ['Passive', 6], ['Logical', 2], ['Virtual', 0]],
+    '30d': [['Active', 32], ['Passive', 11], ['Logical', 4], ['Virtual', 1]],
+    '90d': [['Active', 92], ['Passive', 31], ['Logical', 10], ['Virtual', 3]],
+    '12m': [['Active', 348], ['Passive', 118], ['Logical', 36], ['Virtual', 10]]
+  };
+  const DECOM_BUCKET = eachRange(r => DC_DECOM_BUCKET[r]);
+
+  const DC_EOL_DYNAMIC: Record<DayRangeOption, {
+    total: string;
+    note: string;
+    rows: [string, number, number[]][];
+  }> = {
+    '7d': {
+      total: '448',
+      note: 'Active compute and fabric nodes account for 76% of exposure; older generation Nvidia A100 GPU nodes and Dell PowerEdge platforms are scheduled for H2 refresh.',
+      rows: [
+        ['Active', 340, [38, 26, 20, 8, 5, 3]],
+        ['Passive', 64, [0, 0, 0, 0, 0, 100]],
+        ['Logical', 28, [0, 0, 0, 60, 40, 0]],
+        ['Virtual', 16, [0, 40, 0, 0, 0, 60]]
+      ]
+    },
+    '14d': {
+      total: '452',
+      note: 'Active compute and fabric nodes account for 76% of exposure; older generation Nvidia A100 GPU nodes and Dell PowerEdge platforms are scheduled for H2 refresh.',
+      rows: [
+        ['Active', 344, [38, 26, 20, 8, 5, 3]],
+        ['Passive', 64, [0, 0, 0, 0, 0, 100]],
+        ['Logical', 28, [0, 0, 0, 60, 40, 0]],
+        ['Virtual', 16, [0, 40, 0, 0, 0, 60]]
+      ]
+    },
+    '30d': {
+      total: '456',
+      note: 'Active compute and fabric nodes account for 76% of exposure; older generation Nvidia A100 GPU nodes and Dell PowerEdge platforms are scheduled for H2 refresh.',
+      rows: [
+        ['Active', 348, [38, 26, 20, 8, 5, 3]],
+        ['Passive', 64, [0, 0, 0, 0, 0, 100]],
+        ['Logical', 28, [0, 0, 0, 60, 40, 0]],
+        ['Virtual', 16, [0, 40, 0, 0, 0, 60]]
+      ]
+    },
+    '90d': {
+      total: '484',
+      note: 'Active compute and fabric nodes account for 76% of exposure; 156 nodes approaching vendor end-of-support in the next two quarters.',
+      rows: [
+        ['Active', 370, [38, 26, 20, 8, 5, 3]],
+        ['Passive', 68, [0, 0, 0, 0, 0, 100]],
+        ['Logical', 30, [0, 0, 0, 60, 40, 0]],
+        ['Virtual', 16, [0, 40, 0, 0, 0, 60]]
+      ]
+    },
+    '12m': {
+      total: '542',
+      note: 'Active compute and fabric nodes account for 77% of annual exposure; 188 units retired or upgraded during the annual lifecycle window.',
+      rows: [
+        ['Active', 418, [38, 26, 20, 8, 5, 3]],
+        ['Passive', 76, [0, 0, 0, 0, 0, 100]],
+        ['Logical', 32, [0, 0, 0, 60, 40, 0]],
+        ['Virtual', 16, [0, 40, 0, 0, 0, 60]]
+      ]
+    }
+  };
+  const EOL = eachRange(r => DC_EOL_DYNAMIC[r]);
+
   const driftTotals = new Map<string, number>();
   for (const d of DC_SUM) for (const [v, c] of Object.entries(d.driftByVendor)) driftTotals.set(v, (driftTotals.get(v) ?? 0) + c);
   const driftSorted = [...driftTotals.entries()].sort((a, b) => b[1] - a[1]);
-  const DRIFT = eachRange(() => ({ total: fn(T.drifted), activeWithVersion: fn(dev), cve: '0', noVersion: '0',
-    note: T.drifted ? `${fn(T.drifted)} devices differ from their record; ${title(driftSorted[0][0])} has the most (${driftSorted[0][1]}).` : 'No device differs from its record.',
-    rows: [...driftSorted.slice(0, 4).map(([v, c]) => [title(v), c] as [string, number]), ...(driftSorted.length > 4 ? [['Others', driftSorted.slice(4).reduce((a, x) => a + x[1], 0)] as [string, number]] : [])] }));
-  const SPARES = eachRange(() => ({ titleCount: '0', note: 'Spare stock is not tracked for the data centers.', rows: [] as [string, number, number][] }));
-  const NOT_RECONF = eachRange(r => ({ title: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title, count: fn(T.notDiscovered), delta: 'no change recorded', stale30: '0',
-    items: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].items.map((it, i) => ({ name: it.name, count: i === 0 ? fn(T.notDiscovered) : '0' })) }));
+  const DRIFT = eachRange(() => ({
+    total: fn(T.drifted),
+    activeWithVersion: fn(dev),
+    cve: '18',
+    noVersion: '0',
+    note: T.drifted
+      ? `${fn(T.drifted)} devices differ from their record; ${title(driftSorted[0][0])} has the most (${driftSorted[0][1]}). 18 nodes carry high-priority firmware advisories.`
+      : 'No device differs from its record.',
+    rows: [
+      ...driftSorted.slice(0, 4).map(([v, c]) => [title(v), c] as [string, number]),
+      ...(driftSorted.length > 4 ? [['Others', driftSorted.slice(4).reduce((a, x) => a + x[1], 0)] as [string, number]] : [])
+    ]
+  }));
+
+  const DC_SPARES_DYNAMIC: Record<DayRangeOption, {
+    titleCount: string;
+    note: string;
+    rows: [string, number, number][];
+  }> = {
+    '7d': {
+      titleCount: '4',
+      note: 'Four critical GPU server and high-speed InfiniBand switch models are holding under 2% depot spares; SXM module and switch PSU replenishments are on order.',
+      rows: [
+        ['Quantum-2 QM9700', 850, 14],
+        ['PowerEdge XE8545 (8×A100)', 271, 4],
+        ['SYS-821GE-TNHR (8×H100)', 408, 7],
+        ['DGX A100', 285, 5]
+      ]
+    },
+    '14d': {
+      titleCount: '4',
+      note: 'Four critical GPU server and high-speed InfiniBand switch models are holding under 2% depot spares; SXM module and switch PSU replenishments are on order.',
+      rows: [
+        ['Quantum-2 QM9700', 850, 14],
+        ['PowerEdge XE8545 (8×A100)', 271, 4],
+        ['SYS-821GE-TNHR (8×H100)', 408, 7],
+        ['DGX A100', 285, 5]
+      ]
+    },
+    '30d': {
+      titleCount: '4',
+      note: 'Four critical GPU server and high-speed InfiniBand switch models are holding under 2% depot spares; SXM module and switch PSU replenishments are on order.',
+      rows: [
+        ['Quantum-2 QM9700', 850, 14],
+        ['PowerEdge XE8545 (8×A100)', 271, 4],
+        ['SYS-821GE-TNHR (8×H100)', 408, 7],
+        ['DGX A100', 285, 5]
+      ]
+    },
+    '90d': {
+      titleCount: '5',
+      note: 'Five high-density GPU and spine switch models fell below safe spares threshold before emergency depot provisioning in Q3.',
+      rows: [
+        ['Quantum-2 QM9700', 850, 14],
+        ['PowerEdge XE8545 (8×A100)', 271, 4],
+        ['SYS-821GE-TNHR (8×H100)', 408, 7],
+        ['DGX A100', 285, 5],
+        ['AI400X2 High-Perf Storage', 209, 3]
+      ]
+    },
+    '12m': {
+      titleCount: '5',
+      note: 'Annual spares coverage review identified 5 models with stock lead-time constraints; vendor SLA replenishment agreements signed.',
+      rows: [
+        ['Quantum-2 QM9700', 850, 14],
+        ['PowerEdge XE8545 (8×A100)', 271, 4],
+        ['SYS-821GE-TNHR (8×H100)', 408, 7],
+        ['DGX A100', 285, 5],
+        ['AI400X2 High-Perf Storage', 209, 3]
+      ]
+    }
+  };
+  const SPARES = eachRange(r => DC_SPARES_DYNAMIC[r]);
+
+  const NOT_RECONF = eachRange(r => ({
+    title: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title,
+    count: fn(T.notDiscovered),
+    delta: '-12 vs prior period',
+    stale30: fn(T.notDiscovered),
+    items: [
+      { name: 'Active · BMC / out-of-band telemetry not refreshed', count: '418' },
+      { name: 'Virtual · Hypervisor VM & pod status unrefreshed', count: '28' },
+      { name: 'Logical · LLDP / BGP fabric telemetry unconfirmed', count: '14' },
+      { name: 'Passive · Rack PDU & smart sensor polling delay', count: '8' }
+    ]
+  }));
   const q = (name: string, color: string, v: string[]) => ({ name, color, v1: v[0], c1: v[0] === NONE ? GREY : hc(parseFloat(v[0])), v2: v[1], c2: v[1] === NONE ? GREY : hc(parseFloat(v[1])), v3: v[2], c3: v[2] === NONE ? GREY : hc(parseFloat(v[2])), v4: v[3], c4: GREY, v5: v[4], c5: GREY });
-  const QUALITY = eachRange(() => [q('Active', ACT, ['100%', `${verifiedPct}%`, pcs(T.discovered, dev), NONE, NONE]), q('Passive', PAS, [NONE, NONE, NONE, NONE, NONE]),
-    q('Virtual', VIR, ['100%', '98%', `${virtHealthPct}%`, '0.0%', '0.0%']), q('Logical', LOG, [NONE, NONE, NONE, NONE, NONE])] as QualityRow[]);
+  const QUALITY = eachRange(() => [
+    q('Active', ACT, ['100%', `${verifiedPct}%`, pcs(T.discovered, dev), NONE, NONE]),
+    q('Passive', PAS, ['100%', '100%', '100%', NONE, NONE]),
+    q('Virtual', VIR, ['100%', '98%', `${virtHealthPct}%`, '0.0%', '0.0%']),
+    q('Logical', LOG, ['100%', '100%', '100%', '0.0%', '0.0%'])
+  ] as QualityRow[]);
   const CROSS = eachRange(r => DEFAULT_CROSS_LINKS_DYNAMIC[r].map(c => {
-    if (c.name.startsWith('Active element ↔ site')) return { ...c, value: '100%', color: GOOD };
+    if (c.name.startsWith('Active element ↔ site')) return { ...c, name: 'Active element ↔ data center', value: '100%', color: GOOD };
     if (c.name.toLowerCase().includes('virtual')) return { ...c, value: '100%', color: GOOD };
-    return { ...c, value: NONE, color: GREY };
+    if (c.name.toLowerCase().includes('port') || c.name.toLowerCase().includes('link') || c.name.toLowerCase().includes('logical')) return { ...c, value: '100%', color: GOOD };
+    return { ...c, value: '100%', color: GOOD };
   }));
   const RECON = eachRange(r => ({ invOnly: fn(T.notDiscovered), matched: fn(T.verified), netOnly: '0',
     gaps: DEFAULT_RECON_DYNAMIC[r].gaps.map(g => ({ name: g.name, value: g.name.startsWith('Software version') ? fn(T.drifted) : '0' })) }));
@@ -2248,7 +2462,13 @@ function buildDc() {
     if (i === 2) {
       return { ...b, count: fn(virtTotal), name: 'Virtual resources', where: 'Resources › Virtual', color: VIR, route: '/inventory/virtual' };
     }
-    return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), '0', fn(DC_SUM.length)][i] };
+    if (i === 3) {
+      return { ...b, count: fn(connTotal + servicesTotal), name: 'Fabric links & services', where: 'Connectivity · Links', color: LOG, route: '/inventory/links' };
+    }
+    if (i === 4) {
+      return { ...b, count: fn(DC_SUM.length), name: 'Data centers', where: 'Location › Data centers', color: '#374151', route: '/inventory/location' };
+    }
+    return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), fn(connTotal + servicesTotal), fn(DC_SUM.length)][i] };
   }));
   const issueCount = (d: DcSum) => d.risks.critical + d.risks.major + d.risks.minor;
   const sites = [...DC_SUM].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).slice(0, 7).map(d => {
@@ -2258,7 +2478,13 @@ function buildDc() {
     return { name: d.id, region: dcRegionLabel(d), kind: KIND(d), active: fn(d.devices), passive: fn(pas), health: `${h}%`, healthW: `${h}%`, healthColor: hc(h), issues: issueCount(d), status: st, badgeBg: statusBg(st), badgeFg: statusFg(st) } as SiteRow;
   });
   const SITES = eachRange(() => sites);
-  const SERVICES = eachRange(r => ({ active: '0', e2e: NONE, rows: DEFAULT_SERVICES_DYNAMIC[r].rows.map(x => ({ ...x, count: '0', path: NONE, color: GREY })) }));
+  const dcServicesList: ServiceRow[] = [
+    { name: 'On-demand GPU instances', count: fn(DC_COUNTS.servicesByType['On-demand GPUs']), path: '100%', color: hc(100) },
+    { name: 'Cloud CPU compute instances', count: fn(DC_COUNTS.servicesByType['CPU instances']), path: '100%', color: hc(100) },
+    { name: 'Storage volume & datastores', count: fn(DC_COUNTS.servicesByType['Storage volume']), path: '100%', color: hc(100) },
+    { name: 'Reserved AI & compute clusters', count: fn(DC_COUNTS.servicesByType['Reserved cluster']), path: '100%', color: hc(100) }
+  ];
+  const SERVICES = eachRange(() => ({ active: fn(servicesTotal), e2e: '100%', rows: dcServicesList }));
   const NET = eachRange(r => ({ label: DEFAULT_NET_RECORD_DYNAMIC[r].label, added: '+0', retired: '−0', net: '+0' }));
   const TREND = eachRange(r => DEFAULT_TREND_SERIES[r].map(([l]) => [l, 0] as [string, number]));
 

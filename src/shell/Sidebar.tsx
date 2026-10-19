@@ -65,7 +65,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
       <div className="side-top">
         <button className="side-toggle" onClick={onToggle} aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
           aria-expanded={!collapsed} title={collapsed ? 'Expand menu' : 'Collapse menu'}><Svg html={SIDE_GRID} /></button>
-        <button className="side-home" onClick={() => nav('/inventory/insights', { state: { reset: true } })}>Home</button>
+        <button className="side-home" onClick={() => nav(withSolution('/inventory/insights'), { state: { reset: true } })}>Home</button>
         <span className="grow" />
         <span onClick={onToggle} style={{ display: 'contents', cursor: 'pointer' }}><Svg html={SIDE_CHEVRON} /></span>
       </div>

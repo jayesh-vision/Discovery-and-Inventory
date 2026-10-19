@@ -29,7 +29,7 @@
   background: var(--vr-bg);
   color: var(--vr-text-main);
   font-family: var(--fontFamily, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
-  padding: 24px 32px 48px;
+  padding: 16px 32px 24px;
   box-sizing: border-box;
 }
 
@@ -43,7 +43,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 1360px) {

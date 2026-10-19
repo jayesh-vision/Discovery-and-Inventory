@@ -3,6 +3,7 @@
    here is counted from the client's uploaded records. */
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { withSolution } from '../solution';
 import { Card, Chip, Mono, StatStrip, Sub } from '../components/ui';
 import { DataGrid } from '../components/grid/DataGrid';
 import { Empty } from '../components/dcim/common';
@@ -41,8 +42,8 @@ export default function DataCenters() {
     try { await (k === 'template' ? downloadTemplate() : downloadSample()); } catch (e) { setErr(`Could not build the workbook: ${(e as Error).message}`); }
     finally { setBusy(null); }
   };
-  const toImport = () => nav(`/inventory/dcim/import?${clientId ? `client=${encodeURIComponent(clientId)}&` : ''}from=${encodeURIComponent('Location · Data centers')}`);
-  const open = (dc: DataCenter) => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}&from=${encodeURIComponent('Location · Data centers')}`);
+  const toImport = () => nav(withSolution(`/inventory/dcim/import?${clientId ? `client=${encodeURIComponent(clientId)}&` : ''}from=${encodeURIComponent('Location · Data centers')}`));
+  const open = (dc: DataCenter) => nav(withSolution(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(dc.clientId)}&from=${encodeURIComponent('Location · Data centers')}`));
 
   return (
     <div className="page dcim">

@@ -224,7 +224,7 @@ export default function CityDetails() {
   const { cityId } = useParams<{ cityId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
-  const isDatacenterUS = (isDatacenter() || SCOPED) && (currentGeo() === 'us' || String(cityId).startsWith('us-'));
+  const isDatacenterMode = isDatacenter() || SCOPED;
 
   const openNodeView = (el: NetworkElementRow) => {
     const cls = getElementCls(el.category);
@@ -266,18 +266,20 @@ export default function CityDetails() {
 
   // Look up city details
   const cityInfo = useMemo(() => {
-    return getCityById(cityId || 'delhi-central');
-  }, [cityId]);
+    return getCityById(cityId || (isDatacenterMode ? 'us-new-jersey-secaucus' : 'delhi-central'));
+  }, [cityId, isDatacenterMode]);
 
   const { city } = cityInfo || {
-    city: { id: 'delhi-central', name: 'Central Delhi', count: 340, stateId: 'delhi', dcCount: 14, popCount: 42, siteCount: 284 }
+    city: isDatacenterMode
+      ? { id: 'us-new-jersey-secaucus', name: 'Secaucus', count: 96, stateId: 'us-new-jersey', dcCount: 1, popCount: 0, siteCount: 0 }
+      : { id: 'delhi-central', name: 'Central Delhi', count: 340, stateId: 'delhi', dcCount: 14, popCount: 42, siteCount: 284 }
   };
 
   // ── 3 Summary Cards Active Selection (dc | pop | site) ─────────────
   // Default is 'dc' (Data Centers) as requested, or driven by URL param ?facility=
   const facilityParam = searchParams.get('facility');
   const initialFacility: FacilityType =
-    facilityParam === 'pop' || facilityParam === 'site' || facilityParam === 'dc' ? facilityParam : 'dc';
+    isDatacenterMode ? 'dc' : (facilityParam === 'pop' || facilityParam === 'site' || facilityParam === 'dc' ? facilityParam : 'dc');
 
   const [selectedFacility, setSelectedFacility] = useState<FacilityType>(initialFacility);
 
@@ -538,7 +540,7 @@ export default function CityDetails() {
       if (match) {
         setSelectedFacilityItem(match);
         setSelectedCategory(prev => {
-          if (isDatacenterUS && match.facilityType === 'dc') {
+          if (isDatacenterMode && match.facilityType === 'dc') {
             return (DC_CATEGORIES as readonly string[]).includes(prev) || prev === 'All' ? prev : 'All';
           }
           if (prev !== 'All') return prev;
@@ -649,9 +651,9 @@ export default function CityDetails() {
 
   // Official datacenter summary data for the selected facility (if Datacenter solution)
   const dcFacilityInfo = useMemo(() => {
-    if (!selectedFacilityItem || !isDatacenterUS) return null;
+    if (!selectedFacilityItem || !isDatacenterMode) return null;
     return dcSum(selectedFacilityItem.code) || dcSum(selectedFacilityItem.id);
-  }, [selectedFacilityItem, isDatacenterUS]);
+  }, [selectedFacilityItem, isDatacenterMode]);
 
   // Filter network elements by category, search, and status
   const filteredElements = useMemo(() => {
@@ -697,7 +699,8 @@ export default function CityDetails() {
 
   // Card click handler
   const handleCardClick = (type: FacilityType) => {
-    setSelectedFacility(type);
+    const targetType = isDatacenterMode ? 'dc' : type;
+    setSelectedFacility(targetType);
     setSelectedFacilityItem(null); // Return to facility listing of the new card
     setFacilitySearch('');
     // Switching facility views resets all filters to default
@@ -717,13 +720,18 @@ export default function CityDetails() {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('facility', type);
     nextParams.delete('facilityId');
+    if (isDatacenterMode) {
+      if (!nextParams.has('solution')) nextParams.set('solution', 'Datacenter');
+      const curG = currentGeo();
+      if (curG && !nextParams.has('geo') && !nextParams.has('country')) nextParams.set('geo', curG);
+    }
     setSearchParams(nextParams, { replace: true });
   };
 
   // Facility row click handler
   const handleSelectFacility = (fac: FacilityItem) => {
     setSelectedFacilityItem(fac);
-    setSelectedCategory(fac.facilityType === 'site' ? 'gNodeB' : (isDatacenterUS ? 'All' : 'Router'));
+    setSelectedCategory(fac.facilityType === 'site' ? 'gNodeB' : (isDatacenterMode ? 'All' : 'Router'));
     setElementSearch('');
     setAppliedElementFilters(DEFAULT_ELEMENT_FILTERS);
     setDraftElementFilters(DEFAULT_ELEMENT_FILTERS);
@@ -735,6 +743,11 @@ export default function CityDetails() {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set('facility', selectedFacility);
     nextParams.set('facilityId', fac.code);
+    if (isDatacenterMode) {
+      if (!nextParams.has('solution')) nextParams.set('solution', 'Datacenter');
+      const curG = currentGeo();
+      if (curG && !nextParams.has('geo') && !nextParams.has('country')) nextParams.set('geo', curG);
+    }
     setSearchParams(nextParams, { replace: true });
   };
 
@@ -788,9 +801,9 @@ export default function CityDetails() {
     if (selectedFacilityItem.facilityType === 'site') {
       return ['All', 'gNodeB', 'eNodeB', 'Router', 'Switch'];
     }
-    if (isDatacenterUS) return ['All', ...DC_CATEGORIES];
+    if (isDatacenterMode) return ['All', ...DC_CATEGORIES];
     return ['All', 'Router', 'Switch', 'DWDM'];
-  }, [selectedFacilityItem, isDatacenterUS]);
+  }, [selectedFacilityItem, isDatacenterMode]);
 
   // Clean device tabs for facility view (matching Router, Switch, DWDM tabbar style)
   const deviceTabs: { key: DeviceCategory; label: string }[] = useMemo(() => {
@@ -803,13 +816,13 @@ export default function CityDetails() {
         { key: 'Switch', label: 'Switch' }
       ];
     }
-    if (isDatacenterUS && selectedFacilityItem.facilityType === 'dc') return DC_CATEGORIES.map(k => ({ key: k, label: k }));
+    if (isDatacenterMode && selectedFacilityItem.facilityType === 'dc') return DC_CATEGORIES.map(k => ({ key: k, label: k }));
     return [
       { key: 'Router', label: 'Router' },
       { key: 'Switch', label: 'Switch' },
       { key: 'DWDM', label: 'DWDM' }
     ];
-  }, [selectedFacilityItem, isDatacenterUS]);
+  }, [selectedFacilityItem, isDatacenterMode]);
 
   // Category-specific statistics for the currently selected facility
   const deviceCategoryCards = useMemo(() => {
@@ -824,7 +837,7 @@ export default function CityDetails() {
           { cat: 'Switch', title: 'Site Access Switches', subtitle: 'Access / Aggregation', colorClass: 'top-bar-purple' }
         ]
         : selectedFacilityItem.facilityType === 'dc'
-          ? (isDatacenterUS
+          ? (isDatacenterMode
             ? [
               { cat: 'All' as DeviceCategory, title: 'All Equipment', subtitle: 'Facility Overview', colorClass: 'top-bar-slate' },
               { cat: 'Router', title: 'Core Routers', subtitle: 'Edge & Gateway Routing', colorClass: 'top-bar-blue' },
@@ -874,13 +887,13 @@ export default function CityDetails() {
         models: models || '—'
       };
     });
-  }, [selectedFacilityItem, facilityElements, isDatacenterUS]);
+  }, [selectedFacilityItem, facilityElements, isDatacenterMode]);
 
   return (
-    <div className="page" style={{ padding: '24px 32px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div className="page" style={{ padding: '16px 32px 24px', maxWidth: '1600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* ── Top Summary: Datacenter Facility View OR Standard 3-Cards Grid ── */}
-      {selectedFacilityItem && isDatacenterUS ? (
-        <div style={{ marginBottom: '20px' }}>
+      {selectedFacilityItem && isDatacenterMode ? (
+        <div>
           {/* Executive DC Facility Hero Bar */}
           <div
             className="dc-facility-hero-bar"
@@ -1091,156 +1104,286 @@ export default function CityDetails() {
       ) : (
         <section
           className="city-three-cards-grid"
-          style={{
-            marginBottom: '24px',
-            ...(selectedFacilityItem && deviceCategoryCards.length > 3
+          style={
+            selectedFacilityItem && deviceCategoryCards.length > 3
               ? { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }
-              : {})
-          }}
+              : undefined
+          }
         >
           {!selectedFacilityItem ? (
-            <>
-              {/* Card 1: Data Centers */}
-              <div
-                className={`city-summary-card top-bar-yellow${selectedFacility === 'dc' ? ' is-active' : ''}`}
-                onClick={() => handleCardClick('dc')}
-                role="button"
-                tabIndex={0}
-                title="Click to view listing of all Data Centers in this city"
-              >
-                <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-                  <span className="city-card-title">Data Centers</span>
-                  {selectedFacility === 'dc' && (
+            isDatacenterMode ? (
+              <>
+                {/* Card 1: Data Centers */}
+                <div
+                  className="city-summary-card top-bar-yellow is-active"
+                  onClick={() => handleCardClick('dc')}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to view listing of all Data Centers in this city"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">Data Centers</span>
                     <span className="nst-badge nst-badge--xs" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
                       Active view
                     </span>
-                  )}
-                </div>
-                <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-                  <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.total}</span>
-                  <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-                </div>
-                <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                  {dcStats.onAirPct}% on-air · {dcStats.failed} failed
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.total}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>facilities</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {dcStats.onAirPct}% operational · {dcStats.failed} failed
+                  </div>
+
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: `${(dcStats.verified / (dcStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
+                    <span style={{ width: `${(dcStats.inProgress / (dcStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
+                    {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / (dcStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
+                    {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / (dcStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.verified} on-air</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.inProgress} in build</span>
+                    {dcStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.planned} planned</span>}
+                    {dcStats.failed > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.failed} failed</span>}
+                  </div>
+
+                  {/* Clean secondary capacity insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Racks: <strong style={{ color: '#1e293b' }}>{dcStats.racksUsed}/{dcStats.racksTotal}</strong> ({dcStats.rackPct}%)</span>
+                    <span>Power: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
+                  </div>
                 </div>
 
-                {/* Meter progress bar */}
-                <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                  <span style={{ width: `${(dcStats.verified / (dcStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
-                  <span style={{ width: `${(dcStats.inProgress / (dcStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
-                  {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / (dcStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
-                  {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / (dcStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
-                </div>
-
-                {/* Dot Legend */}
-                <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.verified} on-air</span>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.inProgress} in progress</span>
-                  {dcStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.planned} planned</span>}
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.failed} failed</span>
-                </div>
-
-                {/* Clean secondary capacity insight */}
-                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Racks: <strong style={{ color: '#1e293b' }}>{dcStats.racksUsed}/{dcStats.racksTotal}</strong> ({dcStats.rackPct}%)</span>
-                  <span>Power: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
-                </div>
-              </div>
-
-              {/* Card 2: PoP Locations */}
-              <div
-                className={`city-summary-card top-bar-blue${selectedFacility === 'pop' ? ' is-active' : ''}`}
-                onClick={() => handleCardClick('pop')}
-                role="button"
-                tabIndex={0}
-                title="Click to view listing of all PoP Locations in this city"
-              >
-                <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-                  <span className="city-card-title">PoP Locations</span>
-                  {selectedFacility === 'pop' && (
+                {/* Card 2: Racks & Space Utilized */}
+                <div
+                  className="city-summary-card top-bar-blue"
+                  onClick={() => handleCardClick('dc')}
+                  role="button"
+                  tabIndex={0}
+                  title="Data Center rack footprint and power utilization"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">Racks & Capacity</span>
                     <span className="nst-badge nst-badge--xs" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                      Active view
+                      Physical plant
                     </span>
-                  )}
-                </div>
-                <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-                  <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{popStats.total}</span>
-                  <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-                </div>
-                <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                  {popStats.onAirPct}% on-air · {popStats.failed} failed
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.racksTotal}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>total racks</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {dcStats.rackPct}% rack capacity utilized
+                  </div>
+
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: `${dcStats.rackPct}%`, background: '#0284c7' }} title={`Racks used: ${dcStats.racksUsed}`} />
+                    <span style={{ width: `${100 - dcStats.rackPct}%`, background: '#94a3b8' }} title={`Racks available: ${dcStats.racksTotal - dcStats.racksUsed}`} />
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#0284c7', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.racksUsed} used</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#94a3b8', width: '8px', height: '8px', borderRadius: '50%' }} />{Math.max(0, dcStats.racksTotal - dcStats.racksUsed)} available</span>
+                  </div>
+
+                  {/* Clean secondary capacity insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Power capacity: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
+                    <span>Tiers: <strong style={{ color: '#1e293b' }}>Tier III / IV</strong></span>
+                  </div>
                 </div>
 
-                {/* Meter progress bar */}
-                <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                  <span style={{ width: `${(popStats.verified / (popStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
-                  <span style={{ width: `${(popStats.inProgress / (popStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
-                  {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / (popStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
-                  {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / (popStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
-                </div>
-
-                {/* Dot Legend */}
-                <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.verified} on-air</span>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.inProgress} in progress</span>
-                  {popStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.planned} planned</span>}
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.failed} failed</span>
-                </div>
-
-                {/* Clean secondary connectivity insight */}
-                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Homed NEs: <strong style={{ color: '#1e293b' }}>{popStats.homedElements}</strong></span>
-                  <span>Tiers: <strong style={{ color: '#1e293b' }}>{popStats.metroHubs} Hub · {popStats.transitNodes} Transit</strong></span>
-                </div>
-              </div>
-
-              {/* Card 3: Sites */}
-              <div
-                className={`city-summary-card top-bar-cyan${selectedFacility === 'site' ? ' is-active' : ''}`}
-                onClick={() => handleCardClick('site')}
-                role="button"
-                tabIndex={0}
-                title="Click to view listing of all Sites in this city"
-              >
-                <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
-                  <span className="city-card-title">Sites</span>
-                  {selectedFacility === 'site' && (
-                    <span className="nst-badge nst-badge--xs" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
-                      Active view
+                {/* Card 3: Homed Devices & Compute */}
+                <div
+                  className="city-summary-card top-bar-emerald"
+                  onClick={() => handleCardClick('dc')}
+                  role="button"
+                  tabIndex={0}
+                  title="Homed devices and equipment in city data centers"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">Managed Hardware</span>
+                    <span className="nst-badge nst-badge--xs" style={{ background: '#dcfce7', color: '#15803d', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                      Fleet
                     </span>
-                  )}
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcList.reduce((acc, f) => acc + f.deviceCount, 0)}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>elements</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    100% telemetry discovered & verified
+                  </div>
+
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: '100%', background: '#10b981' }} title="Fleet active" />
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />Spine & Leaf</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#06b6d4', width: '8px', height: '8px', borderRadius: '50%' }} />GPU & Server</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#8b5cf6', width: '8px', height: '8px', borderRadius: '50%' }} />Storage & FW</span>
+                  </div>
+
+                  {/* Clean secondary structure insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Facilities: <strong style={{ color: '#1e293b' }}>{dcStats.total} Data Centers</strong></span>
+                    <span>Status: <strong style={{ color: '#10b981' }}>Operational</strong></span>
+                  </div>
                 </div>
-                <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
-                  <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{siteStats.total}</span>
-                  <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
-                </div>
-                <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                  {siteStats.onAirPct}% on-air · {siteStats.failed} failed
+              </>
+            ) : (
+              <>
+                {/* Card 1: Data Centers */}
+                <div
+                  className={`city-summary-card top-bar-yellow${selectedFacility === 'dc' ? ' is-active' : ''}`}
+                  onClick={() => handleCardClick('dc')}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to view listing of all Data Centers in this city"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">Data Centers</span>
+                    {selectedFacility === 'dc' && (
+                      <span className="nst-badge nst-badge--xs" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                        Active view
+                      </span>
+                    )}
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{dcStats.total}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {dcStats.onAirPct}% on-air · {dcStats.failed} failed
+                  </div>
+
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: `${(dcStats.verified / (dcStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${dcStats.verified}`} />
+                    <span style={{ width: `${(dcStats.inProgress / (dcStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${dcStats.inProgress}`} />
+                    {dcStats.planned > 0 && <span style={{ width: `${(dcStats.planned / (dcStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${dcStats.planned}`} />}
+                    {dcStats.failed > 0 && <span style={{ width: `${(dcStats.failed / (dcStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${dcStats.failed}`} />}
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.verified} on-air</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.inProgress} in progress</span>
+                    {dcStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.planned} planned</span>}
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{dcStats.failed} failed</span>
+                  </div>
+
+                  {/* Clean secondary capacity insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Racks: <strong style={{ color: '#1e293b' }}>{dcStats.racksUsed}/{dcStats.racksTotal}</strong> ({dcStats.rackPct}%)</span>
+                    <span>Power: <strong style={{ color: '#1e293b' }}>{dcStats.powerMW} MW</strong></span>
+                  </div>
                 </div>
 
-                {/* Meter progress bar */}
-                <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
-                  <span style={{ width: `${(siteStats.verified / (siteStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
-                  <span style={{ width: `${(siteStats.inProgress / (siteStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In build: ${siteStats.inProgress}`} />
-                  {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / (siteStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
-                  {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / (siteStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
+                {/* Card 2: PoP Locations */}
+                <div
+                  className={`city-summary-card top-bar-blue${selectedFacility === 'pop' ? ' is-active' : ''}`}
+                  onClick={() => handleCardClick('pop')}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to view listing of all PoP Locations in this city"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">PoP Locations</span>
+                    {selectedFacility === 'pop' && (
+                      <span className="nst-badge nst-badge--xs" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                        Active view
+                      </span>
+                    )}
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{popStats.total}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {popStats.onAirPct}% on-air · {popStats.failed} failed
+                  </div>
+
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: `${(popStats.verified / (popStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${popStats.verified}`} />
+                    <span style={{ width: `${(popStats.inProgress / (popStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In progress: ${popStats.inProgress}`} />
+                    {popStats.planned > 0 && <span style={{ width: `${(popStats.planned / (popStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${popStats.planned}`} />}
+                    {popStats.failed > 0 && <span style={{ width: `${(popStats.failed / (popStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${popStats.failed}`} />}
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.verified} on-air</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.inProgress} in progress</span>
+                    {popStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.planned} planned</span>}
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{popStats.failed} failed</span>
+                  </div>
+
+                  {/* Clean secondary connectivity insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Homed NEs: <strong style={{ color: '#1e293b' }}>{popStats.homedElements}</strong></span>
+                    <span>Tiers: <strong style={{ color: '#1e293b' }}>{popStats.metroHubs} Hub · {popStats.transitNodes} Transit</strong></span>
+                  </div>
                 </div>
 
-                {/* Dot Legend */}
-                <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.verified} on-air</span>
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.inProgress} in build</span>
-                  {siteStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.planned} planned</span>}
-                  <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.failed} failed</span>
-                </div>
+                {/* Card 3: Sites */}
+                <div
+                  className={`city-summary-card top-bar-cyan${selectedFacility === 'site' ? ' is-active' : ''}`}
+                  onClick={() => handleCardClick('site')}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to view listing of all Sites in this city"
+                >
+                  <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '6px' }}>
+                    <span className="city-card-title">Sites</span>
+                    {selectedFacility === 'site' && (
+                      <span className="nst-badge nst-badge--xs" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 600, fontSize: '11px', padding: '1px 6px', borderRadius: '4px' }}>
+                        Active view
+                      </span>
+                    )}
+                  </div>
+                  <div className="row vw-items-baseline" style={{ gap: '6px', marginBottom: '2px' }}>
+                    <span className="vw-card-metric-xl num" style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a' }}>{siteStats.total}</span>
+                    <span className="vw-card-metric-label-sub" style={{ fontSize: '12.5px', color: '#64748b' }}>locations</span>
+                  </div>
+                  <div className="vw-card-metric-label-sub" style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {siteStats.onAirPct}% on-air · {siteStats.failed} failed
+                  </div>
 
-                {/* Clean secondary structure insight */}
-                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Types: <strong style={{ color: '#1e293b' }}>{siteStats.macroCount} Macro · {siteStats.rooftopCount} Rooftop</strong></span>
-                  <span>Small cell: <strong style={{ color: '#1e293b' }}>{siteStats.smallCellCount}</strong></span>
+                  {/* Meter progress bar */}
+                  <div className="meter" style={{ height: '7px', display: 'flex', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                    <span style={{ width: `${(siteStats.verified / (siteStats.total || 1)) * 100}%`, background: '#10b981' }} title={`On-air: ${siteStats.verified}`} />
+                    <span style={{ width: `${(siteStats.inProgress / (siteStats.total || 1)) * 100}%`, background: '#f59e0b' }} title={`In build: ${siteStats.inProgress}`} />
+                    {siteStats.planned > 0 && <span style={{ width: `${(siteStats.planned / (siteStats.total || 1)) * 100}%`, background: '#0ea5e9' }} title={`Planned: ${siteStats.planned}`} />}
+                    {siteStats.failed > 0 && <span style={{ width: `${(siteStats.failed / (siteStats.total || 1)) * 100}%`, background: '#ef4444' }} title={`Failed: ${siteStats.failed}`} />}
+                  </div>
+
+                  {/* Dot Legend */}
+                  <div className="legend" style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: '#475569' }}>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#10b981', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.verified} on-air</span>
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#f59e0b', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.inProgress} in build</span>
+                    {siteStats.planned > 0 && <span className="legend-i"><span className="legend-sw" style={{ background: '#0ea5e9', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.planned} planned</span>}
+                    <span className="legend-i"><span className="legend-sw" style={{ background: '#ef4444', width: '8px', height: '8px', borderRadius: '50%' }} />{siteStats.failed} failed</span>
+                  </div>
+
+                  {/* Clean secondary structure insight */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '11.5px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Types: <strong style={{ color: '#1e293b' }}>{siteStats.macroCount} Macro · {siteStats.rooftopCount} Rooftop</strong></span>
+                    <span>Small cell: <strong style={{ color: '#1e293b' }}>{siteStats.smallCellCount}</strong></span>
+                  </div>
                 </div>
-              </div>
-            </>
+              </>
+            )
           ) : (
             deviceCategoryCards.map(card => (
               <div
@@ -1321,7 +1464,7 @@ export default function CityDetails() {
             <div className="row vw-justify-between vw-items-center" style={{ marginBottom: '16px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
-                  {selectedFacility === 'dc'
+                  {isDatacenterMode || selectedFacility === 'dc'
                     ? `Data Centers in ${city.name} (${filteredFacilities.length})`
                     : selectedFacility === 'pop'
                       ? `PoP Locations in ${city.name} (${filteredFacilities.length})`
@@ -2058,8 +2201,8 @@ export default function CityDetails() {
         {/* ── VIEW 2: Network Element Listing for Selected Facility ─────── */}
         {selectedFacilityItem && (
           <div>
-            {/* Device Category Tabs Bar (Router, Switch, DWDM, etc.) for non-DC-US */}
-            {!isDatacenterUS && (
+            {/* Device Category Tabs Bar (Router, Switch, DWDM, etc.) for non-DC */}
+            {!isDatacenterMode && (
               <div
                 style={{
                   display: 'flex',

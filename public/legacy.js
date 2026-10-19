@@ -267,7 +267,7 @@ function showCopyToast(x, y, text, type) {
     setTimeout(() => el.remove(), 200);
   }, 1400);
 }
-window.showCopyToast = showCopyToast;
+if (typeof window !== 'undefined') window.showCopyToast = showCopyToast;
 
 /* ── currency ─────────────────────────────────────────── */
 /* In the data center solution a US site's capex and opex are in dollars (dcCur(), dc-scope.js); everywhere else, and
@@ -382,10 +382,16 @@ function dcRisks(id) {
 }
 
 /* ── links and services, from the Links and Services sheets of the backups ──
-   The Links screen gets one tab per protocol the sheet holds (LLDP, BGP, OSPF, ISIS, LSP), the Services screen one
-   tab per service type (on-demand GPUs, CPU instances, storage volumes, reserved clusters). Both are drawn by
+   The Links screen gets one tab per Data Center link tier (InfiniBand, Ethernet Fabric, BGP / EVPN, Compute & Storage, Management OOB),
+   the Services screen one tab per service type (on-demand GPUs, CPU instances, storage volumes, reserved clusters). Both are drawn by
    dcViewLinks / dcViewServices below, which use the same page frame as the default screens. */
-const DC_LINK_PROTO = [['lldp', 'LLDP', 'LLDP', 'sky'], ['ospf', 'OSPF', 'OSPF', 'emerald'], ['bgp', 'BGP', 'BGP', 'purple'], ['isis', 'ISIS', 'ISIS', 'amber'], ['lsp', 'LSP', 'LSP', 'cyan']];
+const DC_LINK_PROTO = [
+  ['ib', 'InfiniBand', 'InfiniBand', 'purple'],
+  ['eth', 'Ethernet Fabric', 'Ethernet Fabric', 'indigo'],
+  ['bgp', 'BGP / EVPN', 'BGP / EVPN', 'sky'],
+  ['access', 'Compute & Storage', 'Compute & Storage', 'emerald'],
+  ['oob', 'Management (OOB)', 'Management (OOB)', 'slate']
+];
 const DC_SVC_TYPE = [['gpu', 'On-demand GPUs', 'On-demand GPUs', 'sky'], ['cpu', 'CPU instances', 'CPU instances', 'indigo'], ['storage', 'Storage volume', 'Storage volume', 'emerald'], ['reserved', 'Reserved cluster', 'Reserved cluster', 'purple']];
 const DC_PAGE = 1000;   /* rows put on the page at once; the grid then reveals them 25 at a time as the reader scrolls (app-grid.js) */
 const DC_SHOWN = {};
@@ -395,14 +401,33 @@ const dcRate = mbps => mbps >= 1e6 ? `${+(mbps / 1e6).toFixed(2)} Tbps` : mbps >
 function dcLoadLogical() {
   const sc = window.__dcScope, ip = new Map(sc.devices.map(d => [d.id, d.ip]));
   LINK_ST.standby = ['Standby', 'info'];
-  LINK_ST_OPTS.lldp = ['up', 'down']; LINK_ST_OPTS.ospf = ['up', 'down']; LINK_ST_OPTS.isis = ['up', 'down'];
-  LINK_ST_OPTS.bgp = ['established', 'idle']; LINK_ST_OPTS.lsp = ['up', 'down', 'standby'];
+  LINK_ST_OPTS.ib = ['up', 'down'];
+  LINK_ST_OPTS.eth = ['up', 'down'];
+  LINK_ST_OPTS.bgp = ['established', 'idle'];
+  LINK_ST_OPTS.access = ['up', 'down'];
+  LINK_ST_OPTS.oob = ['up', 'down'];
   for (const k of Object.keys(LINKS)) delete LINKS[k];
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
   LINK_TABS.length = 0;
+
+  const isIB = l => l.p === 'LLDP' && (l.ai.startsWith('ib') || l.zi.startsWith('ib') || l.cap === 400000);
+  const isOOB = l => l.p === 'LLDP' && (l.ai.startsWith('mgmt') || l.zi.startsWith('mgmt') || l.a.includes('OOB') || l.z.includes('OOB') || l.cap === 1000);
+  const isAccess = l => l.p === 'LLDP' && !isIB(l) && !isOOB(l) && (l.a.includes('GPU') || l.z.includes('GPU') || l.role === 'Access');
+  const isFabric = l => l.p === 'LLDP' && !isIB(l) && !isOOB(l) && !isAccess(l);
+  const isBGP = l => l.p === 'BGP';
+
+  const linkFilter = {
+    ib: isIB,
+    eth: isFabric,
+    bgp: isBGP,
+    access: isAccess,
+    oob: isOOB
+  };
+
   for (const [k, n_, p, tone] of DC_LINK_PROTO) {
-    const rows = sc.links.filter(l => l.p === p && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
-      _i: i, st: p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
+    const fn = linkFilter[k] || (l => l.p === p);
+    const rows = sc.links.filter(l => fn(l) && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
+      _i: i, st: k === 'bgp' || l.p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
       name: l.id, linkId: l.id, site: l.dc, role: l.role, cap: l.cap, cable: l.cable || '', strand: l.strand || '', ap: l.ap || '', zp: l.zp || '',
       extra: [['Site', l.dc], ['Role', l.role], ['Capacity', dcRate(l.cap)], ...(l.cable ? [['Cable', l.cable], ['Strand', l.strand], ['Source patch port', l.ap], ['Destination patch port', l.zp]] : [])]
     }));
@@ -424,7 +449,7 @@ function dcLoadLogical() {
   }
   for (const k of Object.keys(SVC_TABS_BY_DOMAIN)) delete SVC_TABS_BY_DOMAIN[k];
   SVC_TABS_BY_DOMAIN.services = SVC_TABS;
-  TAB.link = LINK_TABS.some(x => x.k === TAB.link) ? TAB.link : (LINK_TABS[0]?.k || 'lldp');
+  TAB.link = LINK_TABS.some(x => x.k === TAB.link) ? TAB.link : (LINK_TABS[0]?.k || 'ib');
   TAB.svc = SVC_TABS.some(x => x.k === TAB.svc) ? TAB.svc : (SVC_TABS[0]?.k || 'gpu');
 }
 /* the grid counts the rows it was given; tell it how many the result set really holds */
@@ -472,22 +497,80 @@ function dcSvcDialog() {
   if (!SVC_VIEW) return '';
   const r = (SERVICES[SVC_VIEW.tab] || [])[SVC_VIEW.i];
   if (!r) return '';
+  const isServer = name => /-CPU-|-GPU-|-STR-/.test(name);
   const node = name => `<button class="linkdiagram-node"${dA({ v: 'resource', l: name, q: `name=${encodeURIComponent(name)}` })} title="View ${esc(name)}">
-      <span class="linkdiagram-icon">${nodeThumb('router')}</span><span class="linkdiagram-label" title="${esc(name)}">${esc(name)}</span></button>`;
+      <span class="linkdiagram-icon">${nodeThumb(isServer(name) ? 'server' : 'router')}</span><span class="linkdiagram-label" title="${esc(name)}">${esc(name)}</span></button>`;
   const far = r.path[r.path.length - 1] || r.ne;
   const tone = r.status === 'Active' ? 'success' : r.status === 'Degraded' ? 'warning' : 'error';
+
+  const pathHops = (r.path && r.path.length) ? r.path : [r.ne];
+  const pathHtml = pathHops.map(p => `<span class="dc-path-hop mono">${esc(p)}</span>`).join('<span class="dc-path-arrow">➔</span>');
+  const linksHtml = (r.links && r.links.length)
+    ? r.links.map(l => `<span class="dc-link-chip mono">${esc(l)}</span>`).join('')
+    : `<span class="vw-card-description" style="color:var(--vw-color-gray-400)">Direct host connection · No external patch links</span>`;
+
   return `
     <div class="drawer-overlay" data-svcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service ${esc(r.id)}">
-      <div class="linkview-head"><span class="vw-card-title-sm">Service</span><button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button></div>
+      <div class="linkview-head">
+        <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
+          <span class="vw-card-title-sm" style="font-size:1.0625rem;font-weight:600">Service</span>
+          <span class="mono" style="font-size:0.8125rem;padding:2px 8px;background:var(--vw-color-slate-100);border-radius:4px;color:var(--vw-color-gray-600)">${esc(r.id)}</span>
+        </div>
+        <div class="row vw-items-center" style="gap:var(--vw-space-md)">
+          ${chip(r.status, tone)}
+          <button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button>
+        </div>
+      </div>
+      <div class="linkview-hero">
+        <div class="linkview-hero-main">
+          <div class="linkview-hero-title">${esc(r.cust)}</div>
+          <div class="linkview-hero-meta">
+            <span class="linkview-hero-pill">${esc(r.segment)}</span>
+            <span>•</span>
+            <span>${esc(r.plan)}</span>
+            <span>•</span>
+            <span>Site <strong style="color:var(--vw-color-gray-800)">${esc(r.site)}</strong></span>
+          </div>
+        </div>
+        <div class="linkview-hero-rev">
+          <div class="linkview-hero-rev-label">Monthly revenue</div>
+          <div class="linkview-hero-rev-val">${dcMoney(r.rev, r.cur)}</div>
+        </div>
+      </div>
       <div class="linkview-body">
-        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)"><span class="vw-card-description">${esc(r.id)} · ${esc(r.cust)}</span>${chip(r.status, tone)}</div>
         ${far !== r.ne ? `<div class="linkdiagram-canvas">${node(r.ne)}<span class="linkdiagram-wire is-static"><span class="linkdiagram-wire-badge">${esc(r.ifc)}</span></span>${node(far)}</div>` : ''}
-        ${detailFieldGrid([
-          ['Customer', r.cust], ['Segment', r.segment], ['Plan', r.plan], ['Site', r.site], ['Device', r.ne], ['Interface', r.ifc],
-          ['Quantity', `${dcNum(r.qty)} ${r.unit}`], ['Bandwidth', dcRate(r.bw)], ['SLA target', `${r.sla}%`], ['Uptime (30 days)', `${r.uptime}%`],
-          ['Monthly revenue', dcMoney(r.rev, r.cur)], ['Critical', r.crit ? 'Yes' : 'No'], ['Path', r.path.join(' → ')], ['Links', r.links.join(', ') || '—']
-        ])}
+        
+        <div class="dc-dialog-card">
+          <div class="dc-dialog-card-head">
+            <span class="dc-dialog-card-dot" style="background:var(--vw-color-indigo-500)"></span>
+            <span class="dc-dialog-card-title">Specification & Performance</span>
+          </div>
+          <div class="site-meta detail-field-grid">
+            ${[
+              ['Customer', r.cust], ['Segment', r.segment], ['Plan', r.plan], ['Site', r.site],
+              ['Device', r.ne], ['Interface', r.ifc], ['Quantity', `${dcNum(r.qty)} ${r.unit}`], ['Bandwidth', dcRate(r.bw)],
+              ['SLA target', `${r.sla}%`], ['Uptime (30 days)', `${r.uptime}%`], ['Monthly revenue', dcMoney(r.rev, r.cur)], ['Critical', r.crit ? 'Yes' : 'No']
+            ].map(detailField).join('')}
+          </div>
+        </div>
+
+        <div class="dc-dialog-card">
+          <div class="dc-dialog-card-head">
+            <span class="dc-dialog-card-dot" style="background:var(--vw-color-sky-500)"></span>
+            <span class="dc-dialog-card-title">Network Path & Physical Links</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--vw-space-md);padding-top:var(--vw-space-xs)">
+            <div class="meta-cell">
+              <span class="vw-label">Path</span>
+              <div class="dc-path-chain">${pathHtml}</div>
+            </div>
+            <div class="meta-cell">
+              <span class="vw-label">Links</span>
+              <div class="dc-links-wrap">${linksHtml}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -243775,7 +243858,7 @@ const DC_FAC = DC_ON ? window.__dcScope.facs : [];
 const dcDate = t => { const d = new Date(t); return `${String(d.getUTCDate()).padStart(2, '0')}-${MONTHS_SHORT[d.getUTCMonth()]}-${d.getUTCFullYear()}`; };
 const dcShort = (id, dc) => id.startsWith(dc + '-') ? id.slice(dc.length + 1) : id;
 const PASSIVE_DC = (() => {
-  const out = { rack: [], power: [], odf: [], cord: [], cooling: [], sensors: [] };
+  const out = { rack: [], power: [], odf: [], cord: [], cooling: [], sensors: [], fiber: [], splice: [], duct: [] };
   const ok = { st: 'In service', chip: 'success' };
   for (const f of DC_FAC) {
     const dc = f.id;
@@ -243799,13 +243882,60 @@ const PASSIVE_DC = (() => {
       dc: true, dcId: dc, n: u.id, site: dc, zone: u.zone, type: u.type, cap: u.capacityKw, load: u.loadPct, supply: u.supplyC, ret: u.returnC });
     for (const s of f.cooling.sensors) out.sensors.push({ ...((s.smoke || s.leak) ? { st: 'Alarm', chip: 'error' } : ok),
       dc: true, dcId: dc, n: s.id, site: dc, zone: s.zone, temp: s.tempC, hum: s.humidity, smoke: s.smoke, leak: s.leak });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-DCI-01`, a: `${dc} MMR-01 ODF`, b: `${dc} Metro IX / Meet-Me Vault A`,
+      len: `${((1 + (dc.charCodeAt(0) % 5)) * 1420).toLocaleString('en-IN')} m`,
+      cores: '96 / 144', splices: 4 + (dc.charCodeAt(1) % 4), otdr: '14-Jul-2026', att: '0.21 dB/km', own: 'Own'
+    });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-DCI-02`, a: `${dc} MMR-02 ODF`, b: `${dc} Carrier Diverse Vault B`,
+      len: `${((2 + (dc.charCodeAt(1) % 4)) * 1850).toLocaleString('en-IN')} m`,
+      cores: '72 / 144', splices: 6 + (dc.charCodeAt(2) % 3), otdr: '02-Aug-2026', att: '0.23 dB/km', own: 'Leased'
+    });
+    out.fiber.push({
+      ...ok, dc: true, dcId: dc,
+      n: `FS-${dc}-CAMPUS-01`, a: `${dc} Hall-1 ODF-01`, b: `${dc} Hall-2 ODF-01`,
+      len: '650 m', cores: '192 / 288', splices: 2, otdr: '20-Aug-2026', att: '0.19 dB/km', own: 'Own'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-VAULT-A`, site: dc, span: `FS-${dc}-DCI-01`,
+      type: 'Dome 288F', fibers: '144 / 288', loss: '0.03 dB', housing: 'Manhole Vault', surveyed: '15-Jul-2026'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-MMR-B`, site: dc, span: `FS-${dc}-DCI-02`,
+      type: 'Inline 144F', fibers: '96 / 144', loss: '0.04 dB', housing: 'MMR Cabinet', surveyed: '08-Aug-2026'
+    });
+    out.splice.push({
+      ...ok, dc: true, dcId: dc,
+      n: `SC-${dc}-CAMPUS-C`, site: dc, span: `FS-${dc}-CAMPUS-01`,
+      type: 'Dome 288F', fibers: '192 / 288', loss: '0.02 dB', housing: 'Basement Vault', surveyed: '22-Aug-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-ENTRY-SOUTH`, a: `${dc} Boundary Pit-1`, b: `${dc} Telecom Vault A`,
+      len: '420 m', ways: '8 / 12', bore: '110 mm HDPE', own: 'Own', surveyed: '10-Jun-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-ENTRY-NORTH`, a: `${dc} Boundary Pit-2`, b: `${dc} Telecom Vault B`,
+      len: '580 m', ways: '6 / 8', bore: '110 mm HDPE', own: 'Own', surveyed: '12-Jul-2026'
+    });
+    out.duct.push({
+      ...ok, dc: true, dcId: dc,
+      n: `DT-${dc}-RACEWAY-01`, a: `${dc} MMR-01`, b: `${dc} Server Hall A`,
+      len: '180 m', ways: '4 / 4', bore: '150 mm Yellow Raceway', own: 'Own', surveyed: '25-Aug-2026'
+    });
   }
   return out;
 })();
 /* the two tabs that exist only for data centers; their count is the rows */
 const PASSIVE_NEW_TABS = [{ k: 'cooling', n: 'Cooling', c: PASSIVE_DC.cooling.length }, { k: 'sensors', n: 'Sensors', c: PASSIVE_DC.sensors.length }];
 /* tab order in the data center solution */
-const PASSIVE_DC_ORDER = ['fiber', 'odf', 'rack', 'power', 'cooling', 'sensors', 'splice', 'cord', 'duct'];
+const PASSIVE_DC_ORDER = ['rack', 'power', 'cooling', 'sensors', 'odf', 'cord', 'fiber', 'splice', 'duct'];
 /* what the data center solution's tiles above the grid count, from the records themselves */
 const passiveDcStats = () => {
   const racks = DC_FAC.reduce((a, f) => a.concat(f.racks), []);
@@ -248786,9 +248916,10 @@ function rackStrip(r) {
 }
 function viewPassive() {
   const SC = passScoped();
-  /* default: the network estate's seven classes, as before. data center solution: the data centers'
-     racks, power plant, cooling, sensors, optical frames and cabling, and nothing else */
-  const tabList = SC ? PASSIVE_DC_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)) : PASSIVE_TABS;
+  const tabList = SC ? PASSIVE_DC_ORDER.map(k => {
+    const o = PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k);
+    return { ...o, c: (PASSIVE_DC[k] || []).length };
+  }) : PASSIVE_TABS;
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
@@ -248854,8 +248985,10 @@ function viewPassive() {
 
     ${drillBar()}
 
-    ${SC ? (() => { const D = passiveDcStats(); const pct = (a, b) => b ? Math.round(a / b * 100) : 0; return statStrip([
-      { k:'Passive records', v:n(D.racks + PASSIVE_DC.power.length + PASSIVE_DC.cooling.length + PASSIVE_DC.sensors.length + PASSIVE_DC.odf.length + PASSIVE_DC.cord.length), s:'6 classes · 0 discovered', t:'cyan',
+    ${SC ? (() => { const D = passiveDcStats(); const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+      const totalDc = PASSIVE_DC_ORDER.reduce((acc, k) => acc + (PASSIVE_DC[k] ? PASSIVE_DC[k].length : 0), 0);
+      return statStrip([
+      { k:'Passive records', v:n(totalDc), s:'9 classes · 0 discovered', t:'cyan',
         d:{ v:'passive', l:'All passive records', q:'tab=rack' } },
       { k:'Fiber core fill', v:`${pct(D.lit, D.cores)}%`, s:`across ${n(D.cores)} cores`, t:'emerald', d:{ v:'passive', l:'Patch cords', q:'tab=cord' } },
       { k:'Spans impaired',  v:'0', s:'0 cut · 0 degraded', t:'red', d:{ v:'passive', l:'Impaired fiber spans', q:'tab=fiber' } },

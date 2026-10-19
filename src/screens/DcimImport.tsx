@@ -14,6 +14,7 @@ import { unmappedRequired, type Issue, type SheetPlan } from '../dcim/parse';
 import type { StagedImport } from '../dcim/reconcile';
 import { ENTITY_KEYS, type EntityKey, type ImportBatch } from '../dcim/model';
 import { findCityByFacilityCode } from '../data/geographicHierarchy';
+import { withSolution } from '../solution';
 import '../styles/dcim.css';
 
 type Step = 'client' | 'file' | 'columns' | 'review' | 'done';
@@ -224,22 +225,22 @@ export default function DcimImport() {
       goTo('client');
     } else if (step === 'client') {
       if (from?.toLowerCase().includes('infrastructure') && location) {
-        nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`);
+        nav(withSolution(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`));
       } else if (from?.toLowerCase().includes('passive')) {
-        nav('/inventory/passive');
+        nav(withSolution('/inventory/passive'));
       } else if (from?.toLowerCase().includes('city') && location) {
         const cityMatch = findCityByFacilityCode(location);
         if (cityMatch) {
-          nav(`/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}&facilityId=${encodeURIComponent(location)}`);
+          nav(withSolution(`/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}&facilityId=${encodeURIComponent(location)}`));
         } else {
-          nav('/inventory/location');
+          nav(withSolution('/inventory/location'));
         }
       } else if (from?.toLowerCase().includes('site') && location) {
-        nav(`/inventory/location/site/${encodeURIComponent(location)}`);
+        nav(withSolution(`/inventory/location/site/${encodeURIComponent(location)}`));
       } else if (location) {
-        nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`);
+        nav(withSolution(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`));
       } else {
-        nav(clientId ? `/inventory/dcim?client=${encodeURIComponent(clientId)}` : '/inventory/dcim');
+        nav(withSolution(clientId ? `/inventory/dcim?client=${encodeURIComponent(clientId)}` : '/inventory/dcim'));
       }
     }
   };
@@ -946,7 +947,7 @@ export default function DcimImport() {
                 const fromQuery = `&from=${encodeURIComponent(from ? `${from} · Import` : 'Import')}`;
                 const locQuery = location || dc.locationId ? `&location=${encodeURIComponent(location || dc.locationId!)}` : '';
                 return (
-                  <button key={dc.id} type="button" className="client-card" onClick={() => nav(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}${fromQuery}${locQuery}`)}>
+                  <button key={dc.id} type="button" className="client-card" onClick={() => nav(withSolution(`/inventory/datacenter/${encodeURIComponent(dc.id)}?client=${encodeURIComponent(batch.clientId)}${fromQuery}${locQuery}`))}>
                     <span className="client-av" aria-hidden>▦</span>
                     <span className="client-b"><strong>{dc.name}</strong><small><Mono>{dc.id}</Mono>{dc.locationId ? ` · location ${dc.locationId}` : ''}</small><small>Open inventory ›</small></span>
                   </button>
@@ -955,8 +956,8 @@ export default function DcimImport() {
             </div>
             <div className="row" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => goTo('review')}>Back to review</button>
-              {location && <button type="button" className="nst-btn nst-btn--sm" onClick={() => nav(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`)}>Back to site {location}</button>}
-              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(`/inventory/dcim?client=${encodeURIComponent(batch.clientId)}`)}>All data centers</button>
+              {location && <button type="button" className="nst-btn nst-btn--sm" onClick={() => nav(withSolution(`/inventory/location/site/${encodeURIComponent(location)}/infrastructure`))}>Back to site {location}</button>}
+              <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={() => nav(withSolution(`/inventory/dcim?client=${encodeURIComponent(batch.clientId)}`))}>All data centers</button>
               <button type="button" className="nst-btn nst-btn--sm nst-btn--ghost" onClick={restart}>Upload another file</button>
             </div>
           </div>

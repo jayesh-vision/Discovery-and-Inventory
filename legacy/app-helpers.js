@@ -260,7 +260,7 @@ function showCopyToast(x, y, text, type) {
     setTimeout(() => el.remove(), 200);
   }, 1400);
 }
-window.showCopyToast = showCopyToast;
+if (typeof window !== 'undefined') window.showCopyToast = showCopyToast;
 
 /* ── currency ─────────────────────────────────────────── */
 /* In the data center solution a US site's capex and opex are in dollars (dcCur(), dc-scope.js); everywhere else, and

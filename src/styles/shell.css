@@ -582,9 +582,9 @@ button { font: inherit; }
    record, so it reads better as a floating panel than a docked rail. */
 .linkview-panel {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: min(46rem, 94vw); max-height: min(38rem, 88vh);
-  background: var(--vw-color-white); border-radius: var(--vw-radius-lg);
-  box-shadow: 0 24px 60px rgba(15,23,42,.24); z-index: 91;
+  width: min(58rem, 95vw); max-height: min(48rem, 90vh);
+  background: var(--vw-color-white); border-radius: var(--vw-radius-xl, 16px);
+  box-shadow: 0 24px 64px -12px rgba(15,23,42,.28), 0 0 1px 1px rgba(15,23,42,.06); z-index: 91;
   display: flex; flex-direction: column; overflow: hidden;
   animation: linkview-in 160ms ease-out;
 }
@@ -592,24 +592,41 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) { .linkview-panel { animation: none; } }
 .linkview-head {
   flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
-  padding: var(--vw-space-md) var(--vw-space-lg); border-bottom: 1px solid var(--vw-color-slate-200);
+  padding: var(--vw-space-md) var(--vw-space-xl); border-bottom: 1px solid var(--vw-color-slate-200);
+  background: var(--vw-color-white);
 }
-.linkview-body { padding: var(--vw-space-lg); overflow-y: auto; }
+.linkview-hero {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
+  padding: var(--vw-space-md) var(--vw-space-xl); background: var(--vw-color-slate-50);
+  border-bottom: 1px solid var(--vw-color-slate-200); flex-shrink: 0;
+}
+.linkview-hero-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.linkview-hero-title { font-size: 1.125rem; font-weight: 600; color: var(--vw-color-gray-900); }
+.linkview-hero-meta { display: flex; align-items: center; gap: var(--vw-space-sm); font-size: 0.8125rem; color: var(--vw-color-gray-500); flex-wrap: wrap; }
+.linkview-hero-pill { background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200); padding: 1px 8px; border-radius: var(--vw-radius-full); font-weight: 500; color: var(--vw-color-gray-700); }
+.linkview-hero-rev { text-align: right; flex-shrink: 0; }
+.linkview-hero-rev-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vw-color-gray-500); font-weight: 600; margin-bottom: 2px; }
+.linkview-hero-rev-val { font-size: 1.25rem; font-weight: 600; color: var(--vw-color-gray-900); }
+.linkview-body {
+  padding: var(--vw-space-xl); overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--vw-space-lg);
+}
 
 .linkdiagram-canvas {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-md);
-  padding: var(--vw-space-2xl) var(--vw-space-xl);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--vw-space-lg);
+  padding: var(--vw-space-xl) var(--vw-space-2xl);
   background-color: var(--vw-color-slate-50);
-  background-image: radial-gradient(var(--vw-color-slate-200) 1px, transparent 1px);
+  background-image: radial-gradient(var(--vw-color-slate-300) 1px, transparent 1px);
   background-size: 18px 18px;
-  border: 1px solid var(--vw-color-slate-100); border-radius: var(--vw-radius-lg);
+  border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-lg);
 }
 /* Nodes and the wire between them are the controls — hover/focus read like
    a live canvas element, not decoration: a node opens that element, the
    wire copies the link name. */
 .linkdiagram-node {
-  display: flex; flex-direction: column; align-items: center; gap: var(--vw-space-sm); width: 9rem; flex-shrink: 0;
-  background: none; border: 0; padding: var(--vw-space-xs); border-radius: var(--vw-radius-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--vw-space-sm);
+  min-width: 10rem; max-width: 16rem; width: auto; flex-shrink: 0;
+  background: none; border: 0; padding: var(--vw-space-xs) var(--vw-space-sm); border-radius: var(--vw-radius-md);
   cursor: pointer; font: inherit; color: inherit;
 }
 .linkdiagram-node:hover .linkdiagram-icon { background: var(--vw-color-sky-700); box-shadow: 0 0 0 5px var(--vw-color-sky-100); }
@@ -630,11 +647,11 @@ button { font: inherit; }
 }
 .linkdiagram-label {
   font-size: 0.8125rem; font-weight: 500; color: var(--vw-color-gray-800);
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 16rem; text-align: center; word-break: break-word; line-height: 1.35;
   transition: color .12s ease;
 }
 .linkdiagram-wire {
-  flex: 1; min-width: 3rem; height: 56px; position: relative; align-self: center;
+  flex: 1; min-width: 4rem; height: 56px; position: relative; align-self: center;
   display: flex; align-items: center; justify-content: center;
   background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
 }
@@ -649,14 +666,81 @@ button { font: inherit; }
 .linkdiagram-wire:focus-visible { outline: 2px solid var(--vw-color-sky-500); outline-offset: 2px; }
 .linkdiagram-wire-badge {
   position: relative; z-index: 1; background: var(--vw-color-white); border: 1px solid var(--vw-color-slate-200);
-  border-radius: var(--vw-radius-full); padding: 4px 10px; font-size: 0.75rem; font-weight: 500;
+  border-radius: var(--vw-radius-full); padding: 4px 12px; font-size: 0.75rem; font-weight: 500;
   color: var(--vw-color-gray-700); white-space: nowrap;
   transition: border-color .12s ease, color .12s ease, box-shadow .12s ease;
+}
+
+/* Modal cards & uncongested field layout */
+.dc-dialog-card {
+  background: var(--vw-color-white);
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-lg, 12px);
+  padding: var(--vw-space-md) var(--vw-space-lg);
+  display: flex; flex-direction: column; gap: var(--vw-space-md);
+}
+.dc-dialog-card-head {
+  display: flex; align-items: center; gap: 8px;
+}
+.dc-dialog-card-dot {
+  width: 6px; height: 14px; border-radius: 3px;
+}
+.dc-dialog-card-title {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--vw-color-gray-500);
+}
+
+.linkview-panel .site-meta {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--vw-space-md) var(--vw-space-xl);
+  margin-top: 0; padding-top: 0; border-top: none;
+}
+.linkview-panel .meta-cell {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.linkview-panel .meta-cell .vw-label {
+  font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--vw-color-gray-500); line-height: 1.35;
+}
+.linkview-panel .meta-cell .vw-value {
+  font-size: 0.875rem; font-weight: 500; color: var(--vw-color-gray-900);
+  line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.dc-path-chain {
+  display: flex; align-items: center; gap: var(--vw-space-sm); flex-wrap: wrap;
+  padding: 2px 0;
+}
+.dc-path-hop {
+  display: inline-flex; align-items: center;
+  background: var(--vw-color-slate-100); color: var(--vw-color-gray-800);
+  border: 1px solid var(--vw-color-slate-200); border-radius: var(--vw-radius-sm, 6px);
+  padding: 4px 10px; font-size: 0.8125rem; font-family: var(--vw-font-mono, monospace);
+  font-weight: 500;
+}
+.dc-path-arrow {
+  color: var(--vw-color-sky-500); font-weight: 600; font-size: 0.875rem;
+}
+.dc-links-wrap {
+  display: flex; align-items: center; gap: var(--vw-space-xs); flex-wrap: wrap;
+  padding: 2px 0;
+}
+.dc-link-chip {
+  display: inline-flex; align-items: center;
+  background: var(--vw-color-sky-50); color: var(--vw-color-sky-700);
+  border: 1px solid var(--vw-color-sky-200); border-radius: var(--vw-radius-sm, 6px);
+  padding: 3px 10px; font-size: 0.8125rem; font-family: var(--vw-font-mono, monospace);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .linkview-panel .site-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   .linkview-panel { width: 94vw; }
   .linkdiagram-canvas { flex-direction: column; padding: var(--vw-space-xl); }
   .linkdiagram-wire { width: 100%; min-height: 2.5rem; height: auto; flex: 0 0 auto; }
+  .linkview-panel .site-meta { grid-template-columns: 1fr; }
 }
 
 /* Provenance */

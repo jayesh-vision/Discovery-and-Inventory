@@ -4,7 +4,7 @@ import geo from '../../data/geo.json';
 import { ROSTER as allLocations } from '../../data/locationRoster';
 import { DC_CIRCLES, DC_GEO_LABEL, DC_SUM, SCOPED } from '../../data/dc/scope';
 import type { DcGeo } from '../../data/dc';
-import { withSolution } from '../../solution';
+import { isDatacenter, withSolution } from '../../solution';
 
 const GEO = geo as {
   W: number;
@@ -566,11 +566,12 @@ export default function SitesByGeography({
   };
   const [pinGroup, setPinGroup] = useState<string[] | null>(null);
   /* the data center solution covers two countries: one map and one list at a time */
-  const internalCountry = propActiveCountry || (SCOPED ? 'us' : 'in');
-  const country = propActiveCountry !== undefined ? propActiveCountry : (SCOPED ? 'us' : internalCountry);
-  const geoList = SCOPED ? LOC_GEO.filter(g => g.geo === country) : LOC_GEO;
-  const isUs = SCOPED && country === 'us';
-  const countryName = SCOPED ? DC_GEO_LABEL[country] : 'India';
+  const isDc = isDatacenter() || SCOPED;
+  const internalCountry = propActiveCountry || (isDc ? 'us' : 'in');
+  const country = propActiveCountry !== undefined ? propActiveCountry : (isDc ? 'us' : internalCountry);
+  const geoList = isDc ? scopedLocGeo().filter(g => g.geo === country) : DEFAULT_LOC_GEO;
+  const isUs = isDc && country === 'us';
+  const countryName = isDc ? DC_GEO_LABEL[country] : 'India';
   const geoOf = useMemo(() => new Map(DC_SUM.map(d => [d.id, d.geo])), []);
   const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
 
@@ -657,7 +658,7 @@ export default function SitesByGeography({
     const buckets = new Map<string, { x: number; y: number; items: typeof allLocations }>();
     allLocations.forEach(l => {
       if (!l.lat || !l.lon) return;
-      if (SCOPED && geoOf.get(l.id) !== country) return;
+      if (isDc && geoOf.get(l.id) !== country) return;
       const x = mpx(l.lon);
       const y = mpy(l.lat);
       const key = `${Math.round(x / grid)}:${Math.round(y / grid)}`;
@@ -665,7 +666,7 @@ export default function SitesByGeography({
       buckets.get(key)!.items.push(l);
     });
     return Array.from(buckets.values());
-  }, [mapLayer, zoom.k, country, geoOf]);
+  }, [mapLayer, zoom.k, country, geoOf, isDc]);
 
   // Overall totals
   const totalSites = geoList.reduce((a, x) => a + x.tot, 0); // 2,400
@@ -688,13 +689,13 @@ export default function SitesByGeography({
         (activeGeo.c === 'TN' && (l.state === 'Tamil Nadu' || l.state === 'Puducherry' || l.state === 'Andaman & Nicobar' || l.state.includes('Andaman'))) ||
         (activeGeo.c === 'KL' && (l.state === 'Kerala' || l.state === 'Lakshadweep'))
     );
-  }, [activeGeo]);
+  }, [activeGeo, isDc]);
 
-  const usPins = useMemo(() => (isUs ? allLocations.filter(l => l.lat && l.lon && geoOf.get(l.id) === 'us') : []), [isUs, geoOf]);
+  const usPins = useMemo(() => (isUs ? allLocations.filter(l => l.lat && l.lon && geoOf.get(l.id) === 'us') : []), [isUs, geoOf, isDc]);
   const pinGroupItems = useMemo(() => {
     if (!pinGroup) return [];
     return pinGroup.map(id => allLocations.find(l => l.id === id)).filter(Boolean);
-  }, [pinGroup]);
+  }, [pinGroup, isDc]);
 
   return (
     <section className="vw-card-section" style={{ background: '#fff', ...style }}>

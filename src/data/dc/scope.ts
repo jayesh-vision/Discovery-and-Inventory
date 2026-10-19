@@ -32,6 +32,7 @@ export interface DcSum {
 }
 
 export const SCOPED: boolean = isDatacenter();
+export const isScoped = (): boolean => isDatacenter() || SCOPED;
 export interface DcRegion { geo: DcGeo; id: string; name: string }
 export interface DcCircle { geo: DcGeo; id: string; name: string; state: string; regionId: string; lat: number; lng: number }
 const SUMMARY = summaryJson as unknown as { datacenters: DcSum[]; regions: DcRegion[]; circles: DcCircle[] };
@@ -69,7 +70,7 @@ export const DC_TOTAL = {
 };
 
 /** the default value in the default Inventory, the data center value in the data center solution */
-export function scoped<T>(def: T, dc: () => T): T { return SCOPED ? dc() : def; }
+export function scoped<T>(def: T, dc: () => T): T { return (isDatacenter() || SCOPED) ? dc() : def; }
 
 /* ── full records ── */
 export interface ScopeData { facs: DcFacility[]; devices: DcDevice[]; gpu: DcGpuData; links: DcLink[]; services: DcService[]; customers: DcCustomer[]; devicesOf: (dcId: string) => DcDevice[]; facOf: (dcId: string) => DcFacility | undefined }
@@ -77,7 +78,7 @@ let loaded: ScopeData | null = null;
 
 /** load the full records; the app calls this before it renders in the data center solution */
 export async function preloadScope(): Promise<void> {
-  if (!SCOPED || loaded) return;
+  if ((!SCOPED && !isDatacenter()) || loaded) return;
   const [facs, devices, gpu, links, services, customers] = await Promise.all([loadFacilities(), loadDevices(), loadGpu(), loadLinks(), loadServices(), loadCustomers()]);
   const by = new Map<string, DcDevice[]>();
   for (const d of devices) (by.get(d.dcId) ?? by.set(d.dcId, []).get(d.dcId)!).push(d);

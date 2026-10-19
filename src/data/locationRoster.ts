@@ -2,6 +2,24 @@
    24 data centers (from src/data/dc) in the data center solution. Same record shape either way. */
 import allLocations from './allLocations.json';
 import { DC_SUM, SCOPED } from './dc/scope';
+import { isDatacenter } from '../solution';
 
 export type Loc = (typeof allLocations)[number];
-export const ROSTER: Loc[] = SCOPED ? (DC_SUM.map(d => d.location) as unknown as Loc[]) : allLocations;
+
+export const getRoster = (): Loc[] =>
+  (isDatacenter() || SCOPED) ? (DC_SUM.map(d => d.location) as unknown as Loc[]) : (allLocations as unknown as Loc[]);
+
+/**
+ * Dynamic ROSTER proxy that always delegates to getRoster() so callers accessing ROSTER
+ * get the correct scoped data center locations when solution=datacenter without requiring manual cache invalidation.
+ */
+export const ROSTER: Loc[] = new Proxy([] as Loc[], {
+  get(_target, prop) {
+    const list = getRoster();
+    const val = (list as any)[prop];
+    if (typeof val === 'function') {
+      return val.bind(list);
+    }
+    return val;
+  }
+});

@@ -10,12 +10,17 @@ import {
   GOOD,
   WARN,
   CRIT,
+  INFO,
+  PURP,
+  TEAL,
+  GREY,
   ACT,
   PAS,
   VIR,
   LOG,
   EOL_VENDORS,
   VERIFY_TREND,
+  DC_VERIFY_TREND,
   tagBg,
   tagFg
 } from '../data/inventoryInsightsData';
@@ -172,7 +177,7 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
 
   // 12. EOL / EOS Hardware
   addSection('EOL / EOS HARDWARE & SOFTWARE EXPOSURE');
-  rows.push(['Bucket', 'Assets exposed', `Vendor split % (${EOL_VENDORS.map(v => v.name).join(' / ')})`]);
+  rows.push(['Bucket', 'Assets exposed', `Vendor split % (${(isDatacenter() ? DC_EOL_VENDORS : EOL_VENDORS).map(v => v.name).join(' / ')})`]);
   EOL_DYNAMIC[range].rows.forEach(e => {
     rows.push([e[0], e[1], e[2].join(' / ')]);
   });
@@ -319,14 +324,72 @@ const LOGICAL_CONNECTIVITY_META: Record<string, { layer: string; protocol: strin
     protocol: 'VMware vDS, Open vSwitch (OVS), VXLAN / Geneve',
     underlying: 'TOR Switches, Physical NICs & VLANs',
     note: '18 Virtual network entities, overlays and distributed port groups connecting workloads.'
+  },
+  'Fabric links (LLDP / Spine-Leaf-ToR)': {
+    layer: 'Data Center Fabric Layer 2/3 (Underlay)',
+    protocol: 'IEEE 802.1AB LLDP, 100GbE / 400GbE / 800GbE QSFP-DD',
+    underlying: 'Spine Switches, Leaf Switches & High-Density ToR Uplinks',
+    note: 'Physical and logical Ethernet interconnects between leaf-spine fabric tiers and compute/storage nodes.'
+  },
+  'BGP EVPN & routing adjacencies': {
+    layer: 'Control Plane & Overlay Routing',
+    protocol: 'BGP EVPN (RFC 7432), VXLAN (RFC 7348), MP-BGP',
+    underlying: 'Spine & Leaf Switches, Route Reflectors',
+    note: 'Distributed multi-tenant network overlay fabrics providing Layer 2/3 workload segmentation and mobility.'
+  },
+  'On-demand GPU workload services': {
+    layer: 'AI Compute & Accelerated Fabric',
+    protocol: 'NVIDIA RoCE v2, InfiniBand NDR/HDR, GPUDirect RDMA',
+    underlying: 'NVIDIA HGX H100/A100 GPU Nodes, NVLink / NVSwitch',
+    note: 'High-bandwidth, ultra-low latency compute instances provisioned for AI model training and inference.'
+  },
+  'Cloud compute instance services (CPU)': {
+    layer: 'Multi-Tenant Cloud Compute',
+    protocol: 'KVM, OpenStack Nova, Kubernetes Node Runtime',
+    underlying: 'General Purpose Xeon/EPYC Server Clusters',
+    note: 'Elastic enterprise compute instances hosting customer application workloads and core services.'
+  },
+  'Storage volume & datastore attachments': {
+    layer: 'Storage Area Network & NVMe Fabric',
+    protocol: 'NVMe-oF, iSCSI, Ceph, Fibre Channel SAN',
+    underlying: 'All-Flash NVMe Arrays, Ceph Clusters & Datastores',
+    note: 'High-IOPS persistent storage volumes attached to bare-metal servers and virtualized instances.'
+  },
+  'DCI tunnels & MPLS policy paths (LSP)': {
+    layer: 'Data Center Interconnect (DCI) & Transport',
+    protocol: 'Segment Routing (SR-MPLS / SRv6), EVPN-DCI, RSVP-TE',
+    underlying: 'Edge Core Gateways, Inter-DC Border Routers',
+    note: 'Encrypted low-latency transport tunnels connecting multi-region data centers and peering hubs.'
+  },
+  'Reserved AI & compute clusters': {
+    layer: 'Dedicated AI/ML Infrastructure',
+    protocol: 'Slurm, Kubernetes MPI-Operator, InfiniBand Subnet Mgr',
+    underlying: 'Dedicated SuperPOD Rows & Liquid-Cooled Racks',
+    note: 'Multi-node dedicated compute clusters reserved for enterprise foundation model development.'
+  },
+  'Fabric underlay routing (OSPF / IS-IS)': {
+    layer: 'Interior Gateway Routing (IGP)',
+    protocol: 'OSPFv3, IS-IS Point-to-Point, BFD Fast Convergence',
+    underlying: 'Spine, Leaf & Border Gateway Routing Engines',
+    note: 'Resilient Equal-Cost Multi-Path (ECMP) routing topology establishing fabric loopback reachability.'
   }
 };
+
+const DC_EOL_VENDORS = [
+  { name: 'Nvidia', color: PURP },
+  { name: 'Dell', color: INFO },
+  { name: 'Supermicro', color: TEAL },
+  { name: 'Arista', color: '#0891B2' },
+  { name: 'Cisco', color: WARN },
+  { name: 'Others', color: GREY }
+];
 
 export default function InventoryInsights() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const solParam = searchParams.get('solution')?.toLowerCase();
   const isDc = solParam === 'datacenter' || isDatacenter();
+  const eolVendors = isDc ? DC_EOL_VENDORS : EOL_VENDORS;
 
   // ── State & Filters ──
   const [dayRange, setDayRange] = useState<DayRangeOption>('30d');
@@ -519,7 +582,7 @@ export default function InventoryInsights() {
       w: `${Math.round((r[1] / maxVal) * 100)}%`,
       segs: r[2]
         .map((p, i) => {
-          const ven = EOL_VENDORS[i];
+          const ven = eolVendors[i] || { name: 'Vendor', color: GREY };
           return {
             w: `${p}%`,
             color: ven.color
@@ -980,14 +1043,16 @@ export default function InventoryInsights() {
                               { label: 'Share of total', value: b.pctLabel }
                             ],
                             note: b.name === 'Active'
-                              ? 'Physical routers, switches, RAN, optical nodes & hardware components.'
+                              ? (isDc ? 'Physical routers, switches, servers, storage arrays, firewalls and GPU servers in data centers.' : 'Physical routers, switches, RAN, optical nodes & hardware components.')
                               : b.name === 'Passive'
-                              ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
+                              ? (isDc ? 'Data center physical plant: racks, power feeds, UPS, cooling units, sensors and ODF cabling.' : 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.')
                               : b.name === 'Virtual'
                               ? (isDc
-                                  ? 'Virtual Machines, K8s pods, datastores & vSwitches across 24 data centers.'
+                                  ? 'Virtual Machines, K8s pods, datastores & vSwitches across 48 data centers.'
                                   : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
-                              : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
+                              : (isDc
+                                  ? 'Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services.'
+                                  : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.')
                           }, e);
                         }}
                         onMouseMove={moveTip}
@@ -1030,14 +1095,16 @@ export default function InventoryInsights() {
                           { label: 'Share of total', value: b.pctLabel }
                         ],
                         note: b.name === 'Active'
-                          ? 'Physical routers, switches, RAN, optical nodes & hardware components.'
+                          ? (isDc ? 'Physical routers, switches, servers, storage arrays, firewalls and GPU servers in data centers.' : 'Physical routers, switches, RAN, optical nodes & hardware components.')
                           : b.name === 'Passive'
-                          ? 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.'
+                          ? (isDc ? 'Data center physical plant: racks, power feeds, UPS, cooling units, sensors and ODF cabling.' : 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.')
                           : b.name === 'Virtual'
                           ? (isDc
-                              ? 'Virtual Machines, K8s pods, datastores & vSwitches across 24 data centers.'
+                              ? 'Virtual Machines, K8s pods, datastores & vSwitches across 48 data centers.'
                               : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
-                          : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.'
+                          : (isDc
+                              ? 'Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services.'
+                              : 'End-to-end transport paths: SRv6/MPLS tunnels, L3VPN VRFs, EVPN E-Line/E-LAN, radio cells, and optical DWDM wavelengths.')
                       }, e);
                     }}
                     onMouseMove={moveTip}
@@ -1463,7 +1530,7 @@ export default function InventoryInsights() {
                         className="ii-eol-seg"
                         style={{ width: s.w, background: s.color }}
                         onMouseEnter={(e) => showTip({
-                          title: `${r.name} · ${EOL_VENDORS[idx]?.name || 'Vendor'}`,
+                          title: `${r.name} · ${eolVendors[idx]?.name || 'Vendor'}`,
                           dotColor: s.color,
                           badge: s.w,
                           rows: [
@@ -1483,7 +1550,7 @@ export default function InventoryInsights() {
               ))}
             </div>
             <div className="ii-legend-inline">
-              {EOL_VENDORS.map(v => (
+              {eolVendors.map(v => (
                 <span
                   key={v.name}
                   onMouseEnter={(e) => showTip({
@@ -1571,15 +1638,15 @@ export default function InventoryInsights() {
 
           <StaleRecordsCard
             title={NOT_RECONFIRMED_DYNAMIC[dayRange].title}
-            subtitle="Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive."
+            subtitle={isDc ? "Records not reconfirmed within SLA — telemetry discovery for Active & Virtual, topology mapping for Connectivity, DCIM audit for Passive." : "Records not reconfirmed by their source within SLA — discovery for Active, NFVO for Virtual, mapping for Connectivity, survey for Passive."}
             count={NOT_RECONFIRMED_DYNAMIC[dayRange].count}
             delta={NOT_RECONFIRMED_DYNAMIC[dayRange].delta}
             items={NOT_RECONFIRMED_DYNAMIC[dayRange].items}
             stale30Label="Active / Virtual / Connectivity not reconfirmed 30+ days"
             stale30={NOT_RECONFIRMED_DYNAMIC[dayRange].stale30}
-            trend={VERIFY_TREND}
-            trendCaption="Verification climbed from 58% to 72% in 6 months; at that rate the survey backlog clears in roughly 12 more months."
-            note="Most stale Active records sit under two EMS instances that missed the last three sync windows — a collector issue, not missing hardware."
+            trend={isDc ? DC_VERIFY_TREND : VERIFY_TREND}
+            trendCaption={isDc ? "Verification climbed from 84% to 91% in 6 months as BMC discovery was enrolled across data halls." : "Verification climbed from 58% to 72% in 6 months; at that rate the survey backlog clears in roughly 12 more months."}
+            note={isDc ? "Most stale Active records sit under two DCIM collector instances that missed the last three sync windows — an agent connectivity issue, not missing hardware." : "Most stale Active records sit under two EMS instances that missed the last three sync windows — a collector issue, not missing hardware."}
             bucketColors={{ Active: ACT, Passive: PAS, Virtual: VIR, Logical: LOG }}
             tip={{ showTip, moveTip, hideTip }}
           />

@@ -6,7 +6,7 @@ import {
   type StateItem,
   type CityItem
 } from '../../data/geographicHierarchy';
-import type { DcGeo } from '../../solution';
+import { withSolution, type DcGeo } from '../../solution';
 import '../../styles/topology.css';
 
 interface ConnectorLine {
@@ -406,7 +406,7 @@ export default function NetworkHierarchyTopology({
     if (onNavigateToCity) {
       onNavigateToCity(city.id, facility);
     } else {
-      nav(`/inventory/location/city/${city.id}${facility ? `?facility=${facility}` : ''}`);
+      nav(withSolution(`/inventory/location/city/${city.id}${facility ? `?facility=${facility}` : ''}`));
     }
   };
 

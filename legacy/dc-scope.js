@@ -102,10 +102,16 @@ function dcRisks(id) {
 }
 
 /* ── links and services, from the Links and Services sheets of the backups ──
-   The Links screen gets one tab per protocol the sheet holds (LLDP, BGP, OSPF, ISIS, LSP), the Services screen one
-   tab per service type (on-demand GPUs, CPU instances, storage volumes, reserved clusters). Both are drawn by
+   The Links screen gets one tab per Data Center link tier (InfiniBand, Ethernet Fabric, BGP / EVPN, Compute & Storage, Management OOB),
+   the Services screen one tab per service type (on-demand GPUs, CPU instances, storage volumes, reserved clusters). Both are drawn by
    dcViewLinks / dcViewServices below, which use the same page frame as the default screens. */
-const DC_LINK_PROTO = [['lldp', 'LLDP', 'LLDP', 'sky'], ['ospf', 'OSPF', 'OSPF', 'emerald'], ['bgp', 'BGP', 'BGP', 'purple'], ['isis', 'ISIS', 'ISIS', 'amber'], ['lsp', 'LSP', 'LSP', 'cyan']];
+const DC_LINK_PROTO = [
+  ['ib', 'InfiniBand', 'InfiniBand', 'purple'],
+  ['eth', 'Ethernet Fabric', 'Ethernet Fabric', 'indigo'],
+  ['bgp', 'BGP / EVPN', 'BGP / EVPN', 'sky'],
+  ['access', 'Compute & Storage', 'Compute & Storage', 'emerald'],
+  ['oob', 'Management (OOB)', 'Management (OOB)', 'slate']
+];
 const DC_SVC_TYPE = [['gpu', 'On-demand GPUs', 'On-demand GPUs', 'sky'], ['cpu', 'CPU instances', 'CPU instances', 'indigo'], ['storage', 'Storage volume', 'Storage volume', 'emerald'], ['reserved', 'Reserved cluster', 'Reserved cluster', 'purple']];
 const DC_PAGE = 1000;   /* rows put on the page at once; the grid then reveals them 25 at a time as the reader scrolls (app-grid.js) */
 const DC_SHOWN = {};
@@ -115,14 +121,33 @@ const dcRate = mbps => mbps >= 1e6 ? `${+(mbps / 1e6).toFixed(2)} Tbps` : mbps >
 function dcLoadLogical() {
   const sc = window.__dcScope, ip = new Map(sc.devices.map(d => [d.id, d.ip]));
   LINK_ST.standby = ['Standby', 'info'];
-  LINK_ST_OPTS.lldp = ['up', 'down']; LINK_ST_OPTS.ospf = ['up', 'down']; LINK_ST_OPTS.isis = ['up', 'down'];
-  LINK_ST_OPTS.bgp = ['established', 'idle']; LINK_ST_OPTS.lsp = ['up', 'down', 'standby'];
+  LINK_ST_OPTS.ib = ['up', 'down'];
+  LINK_ST_OPTS.eth = ['up', 'down'];
+  LINK_ST_OPTS.bgp = ['established', 'idle'];
+  LINK_ST_OPTS.access = ['up', 'down'];
+  LINK_ST_OPTS.oob = ['up', 'down'];
   for (const k of Object.keys(LINKS)) delete LINKS[k];
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
   LINK_TABS.length = 0;
+
+  const isIB = l => l.p === 'LLDP' && (l.ai.startsWith('ib') || l.zi.startsWith('ib') || l.cap === 400000);
+  const isOOB = l => l.p === 'LLDP' && (l.ai.startsWith('mgmt') || l.zi.startsWith('mgmt') || l.a.includes('OOB') || l.z.includes('OOB') || l.cap === 1000);
+  const isAccess = l => l.p === 'LLDP' && !isIB(l) && !isOOB(l) && (l.a.includes('GPU') || l.z.includes('GPU') || l.role === 'Access');
+  const isFabric = l => l.p === 'LLDP' && !isIB(l) && !isOOB(l) && !isAccess(l);
+  const isBGP = l => l.p === 'BGP';
+
+  const linkFilter = {
+    ib: isIB,
+    eth: isFabric,
+    bgp: isBGP,
+    access: isAccess,
+    oob: isOOB
+  };
+
   for (const [k, n_, p, tone] of DC_LINK_PROTO) {
-    const rows = sc.links.filter(l => l.p === p && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
-      _i: i, st: p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
+    const fn = linkFilter[k] || (l => l.p === p);
+    const rows = sc.links.filter(l => fn(l) && (!validDcs || validDcs.has(l.dc))).map((l, i) => ({
+      _i: i, st: k === 'bgp' || l.p === 'BGP' ? (l.st === 'up' ? 'established' : l.st) : l.st, sne: l.a, sif: l.ai, sip: ip.get(l.a) || '—', dne: l.z, dif: l.zi, dip: ip.get(l.z) || '—',
       name: l.id, linkId: l.id, site: l.dc, role: l.role, cap: l.cap, cable: l.cable || '', strand: l.strand || '', ap: l.ap || '', zp: l.zp || '',
       extra: [['Site', l.dc], ['Role', l.role], ['Capacity', dcRate(l.cap)], ...(l.cable ? [['Cable', l.cable], ['Strand', l.strand], ['Source patch port', l.ap], ['Destination patch port', l.zp]] : [])]
     }));
@@ -144,7 +169,7 @@ function dcLoadLogical() {
   }
   for (const k of Object.keys(SVC_TABS_BY_DOMAIN)) delete SVC_TABS_BY_DOMAIN[k];
   SVC_TABS_BY_DOMAIN.services = SVC_TABS;
-  TAB.link = LINK_TABS.some(x => x.k === TAB.link) ? TAB.link : (LINK_TABS[0]?.k || 'lldp');
+  TAB.link = LINK_TABS.some(x => x.k === TAB.link) ? TAB.link : (LINK_TABS[0]?.k || 'ib');
   TAB.svc = SVC_TABS.some(x => x.k === TAB.svc) ? TAB.svc : (SVC_TABS[0]?.k || 'gpu');
 }
 /* the grid counts the rows it was given; tell it how many the result set really holds */
@@ -192,22 +217,80 @@ function dcSvcDialog() {
   if (!SVC_VIEW) return '';
   const r = (SERVICES[SVC_VIEW.tab] || [])[SVC_VIEW.i];
   if (!r) return '';
+  const isServer = name => /-CPU-|-GPU-|-STR-/.test(name);
   const node = name => `<button class="linkdiagram-node"${dA({ v: 'resource', l: name, q: `name=${encodeURIComponent(name)}` })} title="View ${esc(name)}">
-      <span class="linkdiagram-icon">${nodeThumb('router')}</span><span class="linkdiagram-label" title="${esc(name)}">${esc(name)}</span></button>`;
+      <span class="linkdiagram-icon">${nodeThumb(isServer(name) ? 'server' : 'router')}</span><span class="linkdiagram-label" title="${esc(name)}">${esc(name)}</span></button>`;
   const far = r.path[r.path.length - 1] || r.ne;
   const tone = r.status === 'Active' ? 'success' : r.status === 'Degraded' ? 'warning' : 'error';
+
+  const pathHops = (r.path && r.path.length) ? r.path : [r.ne];
+  const pathHtml = pathHops.map(p => `<span class="dc-path-hop mono">${esc(p)}</span>`).join('<span class="dc-path-arrow">➔</span>');
+  const linksHtml = (r.links && r.links.length)
+    ? r.links.map(l => `<span class="dc-link-chip mono">${esc(l)}</span>`).join('')
+    : `<span class="vw-card-description" style="color:var(--vw-color-gray-400)">Direct host connection · No external patch links</span>`;
+
   return `
     <div class="drawer-overlay" data-svcclose="1"></div>
     <div class="linkview-panel" role="dialog" aria-label="Service ${esc(r.id)}">
-      <div class="linkview-head"><span class="vw-card-title-sm">Service</span><button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button></div>
+      <div class="linkview-head">
+        <div class="row vw-items-center" style="gap:var(--vw-space-sm)">
+          <span class="vw-card-title-sm" style="font-size:1.0625rem;font-weight:600">Service</span>
+          <span class="mono" style="font-size:0.8125rem;padding:2px 8px;background:var(--vw-color-slate-100);border-radius:4px;color:var(--vw-color-gray-600)">${esc(r.id)}</span>
+        </div>
+        <div class="row vw-items-center" style="gap:var(--vw-space-md)">
+          ${chip(r.status, tone)}
+          <button class="fp-x" data-svcclose="1" aria-label="Close">${IC_X}</button>
+        </div>
+      </div>
+      <div class="linkview-hero">
+        <div class="linkview-hero-main">
+          <div class="linkview-hero-title">${esc(r.cust)}</div>
+          <div class="linkview-hero-meta">
+            <span class="linkview-hero-pill">${esc(r.segment)}</span>
+            <span>•</span>
+            <span>${esc(r.plan)}</span>
+            <span>•</span>
+            <span>Site <strong style="color:var(--vw-color-gray-800)">${esc(r.site)}</strong></span>
+          </div>
+        </div>
+        <div class="linkview-hero-rev">
+          <div class="linkview-hero-rev-label">Monthly revenue</div>
+          <div class="linkview-hero-rev-val">${dcMoney(r.rev, r.cur)}</div>
+        </div>
+      </div>
       <div class="linkview-body">
-        <div class="row vw-justify-between vw-items-center vw-wrap" style="margin-bottom:var(--vw-space-md)"><span class="vw-card-description">${esc(r.id)} · ${esc(r.cust)}</span>${chip(r.status, tone)}</div>
         ${far !== r.ne ? `<div class="linkdiagram-canvas">${node(r.ne)}<span class="linkdiagram-wire is-static"><span class="linkdiagram-wire-badge">${esc(r.ifc)}</span></span>${node(far)}</div>` : ''}
-        ${detailFieldGrid([
-          ['Customer', r.cust], ['Segment', r.segment], ['Plan', r.plan], ['Site', r.site], ['Device', r.ne], ['Interface', r.ifc],
-          ['Quantity', `${dcNum(r.qty)} ${r.unit}`], ['Bandwidth', dcRate(r.bw)], ['SLA target', `${r.sla}%`], ['Uptime (30 days)', `${r.uptime}%`],
-          ['Monthly revenue', dcMoney(r.rev, r.cur)], ['Critical', r.crit ? 'Yes' : 'No'], ['Path', r.path.join(' → ')], ['Links', r.links.join(', ') || '—']
-        ])}
+        
+        <div class="dc-dialog-card">
+          <div class="dc-dialog-card-head">
+            <span class="dc-dialog-card-dot" style="background:var(--vw-color-indigo-500)"></span>
+            <span class="dc-dialog-card-title">Specification & Performance</span>
+          </div>
+          <div class="site-meta detail-field-grid">
+            ${[
+              ['Customer', r.cust], ['Segment', r.segment], ['Plan', r.plan], ['Site', r.site],
+              ['Device', r.ne], ['Interface', r.ifc], ['Quantity', `${dcNum(r.qty)} ${r.unit}`], ['Bandwidth', dcRate(r.bw)],
+              ['SLA target', `${r.sla}%`], ['Uptime (30 days)', `${r.uptime}%`], ['Monthly revenue', dcMoney(r.rev, r.cur)], ['Critical', r.crit ? 'Yes' : 'No']
+            ].map(detailField).join('')}
+          </div>
+        </div>
+
+        <div class="dc-dialog-card">
+          <div class="dc-dialog-card-head">
+            <span class="dc-dialog-card-dot" style="background:var(--vw-color-sky-500)"></span>
+            <span class="dc-dialog-card-title">Network Path & Physical Links</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--vw-space-md);padding-top:var(--vw-space-xs)">
+            <div class="meta-cell">
+              <span class="vw-label">Path</span>
+              <div class="dc-path-chain">${pathHtml}</div>
+            </div>
+            <div class="meta-cell">
+              <span class="vw-label">Links</span>
+              <div class="dc-links-wrap">${linksHtml}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>`;
 }

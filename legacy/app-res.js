@@ -746,9 +746,10 @@ function rackStrip(r) {
 }
 function viewPassive() {
   const SC = passScoped();
-  /* default: the network estate's seven classes, as before. data center solution: the data centers'
-     racks, power plant, cooling, sensors, optical frames and cabling, and nothing else */
-  const tabList = SC ? PASSIVE_DC_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)) : PASSIVE_TABS;
+  const tabList = SC ? PASSIVE_DC_ORDER.map(k => {
+    const o = PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k);
+    return { ...o, c: (PASSIVE_DC[k] || []).length };
+  }) : PASSIVE_TABS;
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
@@ -814,8 +815,10 @@ function viewPassive() {
 
     ${drillBar()}
 
-    ${SC ? (() => { const D = passiveDcStats(); const pct = (a, b) => b ? Math.round(a / b * 100) : 0; return statStrip([
-      { k:'Passive records', v:n(D.racks + PASSIVE_DC.power.length + PASSIVE_DC.cooling.length + PASSIVE_DC.sensors.length + PASSIVE_DC.odf.length + PASSIVE_DC.cord.length), s:'6 classes · 0 discovered', t:'cyan',
+    ${SC ? (() => { const D = passiveDcStats(); const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+      const totalDc = PASSIVE_DC_ORDER.reduce((acc, k) => acc + (PASSIVE_DC[k] ? PASSIVE_DC[k].length : 0), 0);
+      return statStrip([
+      { k:'Passive records', v:n(totalDc), s:'9 classes · 0 discovered', t:'cyan',
         d:{ v:'passive', l:'All passive records', q:'tab=rack' } },
       { k:'Fiber core fill', v:`${pct(D.lit, D.cores)}%`, s:`across ${n(D.cores)} cores`, t:'emerald', d:{ v:'passive', l:'Patch cords', q:'tab=cord' } },
       { k:'Spans impaired',  v:'0', s:'0 cut · 0 degraded', t:'red', d:{ v:'passive', l:'Impaired fiber spans', q:'tab=fiber' } },

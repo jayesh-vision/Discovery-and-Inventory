@@ -24,8 +24,6 @@ export async function closeLoader() { await server?.close(); server = undefined;
    it in a sandbox and read the globals it defines */
 export function loadLegacyHelpers() {
   const src = readFileSync(join(root, 'legacy', 'app-helpers.js'), 'utf8');
-  const ctx = { console };
-  vm.createContext(ctx);
-  vm.runInContext(src + '\n;this.__x = { DOMAIN_META, DOMAIN_ORDER, DOMAIN_FILTER_OPTIONS, domainFilterMatch, domainDot };', ctx);
-  return ctx.__x;
+  const fn = new Function('console', src + '\nreturn { DOMAIN_META, DOMAIN_ORDER, DOMAIN_FILTER_OPTIONS, domainFilterMatch, domainDot };');
+  return fn(console);
 }

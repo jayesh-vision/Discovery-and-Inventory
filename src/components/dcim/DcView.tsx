@@ -16,6 +16,7 @@ import { candidatesFor, confirmLink, downloadInventory, importHistory, removeLin
 import { counts, dcScope, deviceLinks, downstream, freePorts, rackOccupancy, rackPower, redundancyGroups, type DcScope } from '../../dcim/derive';
 import { findings, pathOf, worst, type Finding } from '../../dcim/findings';
 import { WHITE_SPACE, type ClientData, type Device, type PowerEquipment, type Rack } from '../../dcim/model';
+import { withSolution } from '../../solution';
 import '../../styles/dcim.css';
 
 export type DcSource = { clientId: string; clientName?: string };
@@ -38,7 +39,7 @@ export function DcView({ data, dcId, source }: { data: ClientData; dcId: string;
   const batches = importHistory(source.clientId);
   const upload = () => {
     const from = sp.get('from') || (typeof window !== 'undefined' && window.location.pathname.includes('/infrastructure') ? 'Infrastructure' : typeof window !== 'undefined' && window.location.pathname.includes('/passive') ? 'Passive Infrastructure' : 'Location · Data centers');
-    nav(`/inventory/dcim/import?client=${encodeURIComponent(source.clientId)}${s.dc.locationId ? `&location=${encodeURIComponent(s.dc.locationId)}` : ''}&from=${encodeURIComponent(from)}`);
+    nav(withSolution(`/inventory/dcim/import?client=${encodeURIComponent(source.clientId)}${s.dc.locationId ? `&location=${encodeURIComponent(s.dc.locationId)}` : ''}&from=${encodeURIComponent(from)}`));
   };
   const download = async () => { setBusy(true); try { await downloadInventory(source.clientId, dcId); } finally { setBusy(false); } };
   const TABS: { k: TabK; n: string; count?: number }[] = [
@@ -58,13 +59,13 @@ export function DcView({ data, dcId, source }: { data: ClientData; dcId: string;
       if (locParam) q.set('location', locParam);
       if (source.clientId) q.set('client', source.clientId);
       q.set('from', 'Infrastructure');
-      nav(`/inventory/dcim/import?${q.toString()}`);
+      nav(withSolution(`/inventory/dcim/import?${q.toString()}`));
     } else if (fromParam?.toLowerCase().includes('infrastructure') || locParam) {
-      nav(`/inventory/location/site/${encodeURIComponent(locParam!)}/infrastructure`);
+      nav(withSolution(`/inventory/location/site/${encodeURIComponent(locParam!)}/infrastructure`));
     } else if (fromParam?.toLowerCase().includes('passive')) {
-      nav('/inventory/passive');
+      nav(withSolution('/inventory/passive'));
     } else {
-      nav(source.clientId ? `/inventory/dcim?client=${encodeURIComponent(source.clientId)}` : '/inventory/dcim');
+      nav(withSolution(source.clientId ? `/inventory/dcim?client=${encodeURIComponent(source.clientId)}` : '/inventory/dcim'));
     }
   };
   const backOriginLabel = useMemo(() => {

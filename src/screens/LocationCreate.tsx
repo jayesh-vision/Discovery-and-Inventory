@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import geo from '../data/geo.json';
 import sitesJson from '../data/sites.json';
 import { LOCATIONS, type Location } from '../data/locations';
+import { withSolution } from '../solution';
 
 const GEO = geo as { W: number; H: number; LON0: number; K: number; Y0: number; KY: number; paths: Record<string, string> };
 const mpx = (lon: number) => (lon - GEO.LON0) * GEO.K;
@@ -237,7 +238,7 @@ export default function LocationCreate() {
     };
 
     LOCATIONS.unshift(newLoc);
-    nav('/inventory/location?view=list');
+    nav(withSolution('/inventory/location?view=list'));
   };
 
   /* Zoom controls */
@@ -599,7 +600,7 @@ export default function LocationCreate() {
       <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
         <button
           type="button"
-          onClick={() => nav('/inventory/location')}
+          onClick={() => nav(withSolution('/inventory/location'))}
           style={{ padding: '10px 24px', fontSize: '0.875rem', fontWeight: 500, borderRadius: '20px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', cursor: 'pointer' }}
         >
           Cancel

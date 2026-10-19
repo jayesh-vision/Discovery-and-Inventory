@@ -35,11 +35,13 @@
     "cdus": 83,
     "links": 25057,
     "linksByProtocol": {
+      "InfiniBand": 9692,
+      "Ethernet Fabric": 1084,
+      "BGP / EVPN": 900,
+      "Compute & Storage": 7218,
+      "Management (OOB)": 5884,
       "LLDP": 23878,
-      "OSPF": 46,
-      "ISIS": 46,
-      "BGP": 900,
-      "LSP": 187
+      "BGP": 900
     },
     "services": 1456,
     "servicesByType": {

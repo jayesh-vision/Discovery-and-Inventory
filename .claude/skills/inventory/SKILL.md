@@ -183,96 +183,73 @@ console errors) — verify any deeper change to those by hand.
 
 # MUST Rules
 
-- MUST treat `domainDevices.ts` and `physical.ts` as separate datasets —
-  never write code that looks up a `DomainDevice` and expects to find a
-  matching `NeRow`, or that "fixes" a discrepancy by editing `physical.ts`.
-- MUST use each entity's actual identity field (`name` for `NeRow`, `sn` for
-  `ArchiveRow`, `id` for `Location`, `siteId` for `Facility`) — don't assume
-  one key generalizes across entities.
-- MUST preserve the self-check invariants in `physical.ts`/`facility.ts`/
-  `archive.ts` (count sums, cable port/core uniqueness) when adding or
-  editing seed rows — these throw at import, which will break the whole app,
-  not just the screen you're changing.
-- MUST grep `scripts/bundle-legacy.mjs` before renaming any legacy global
-  read by `__legacyParams()` (`RES_ID`, `NODE_ID`, `CAPEX_ID`, `OPEX_ID`,
-  `SITE_ID`, etc.) — those names are relied on by the bridge even though no
-  Inventory-specific function body is itself patched.
+- MUST keep the Telecom Network Estate and Data Center Estate strictly isolated:
+  - **Telecom Estate (Default)**: `router`, `switch`, `server`, `dwdm`, `enodeb`, `gnodeb`. Handled by `src/data/{physical,ledger,locations,facility}.ts`.
+  - **Data Center Estate (`?solution=Datacenter`)**: `router`, `switch`, `server`, `firewall`, `storage`, `gpu`. Handled by `src/data/dc/` (`manifest.json`, `summary.json`, `datacenters.json`, `devices.json`, `gpu.json`, `links.json`, `services.json`).
+- MUST NOT display cellular radio equipment (`gNodeB`, `eNodeB`, `RAN`, `Macro`, `Rooftop`, `Small Cell`, `Cell towers`) or optical transport (`DWDM`) in Data Center mode. Data centers have 0 radio assets.
+- MUST use `withSolution(url)` on all internal navigation links within the Inventory module to ensure `solution=Datacenter` and `geo` query parameters are preserved.
+- MUST treat `solution=Datacenter` (solution architecture domain) and `geo` (country filter: `us` vs `in` across the 48 data centers) as distinct dimensions:
+  - `solution` selects the domain (Datacenter vs Telecom).
+  - `geo` selects the regional data center cluster (24 in US, 24 in India).
+  - Telecom mode has no country filter (it is single-country national telecom in India).
+- MUST persist Datacenter mode using dual storage (`localStorage` + `sessionStorage` via `solution.ts`); mode MUST NOT clear when internal routes omit query parameters or when navigating between views. Only explicit `?solution=all` clears Datacenter mode.
+- MUST evaluate Datacenter scope dynamically via `(isDatacenter() || SCOPED)` or helper functions (`isScoped()`, `isDcMode()`, `getRoster()`, `getGeographicHierarchy()`, `getLocStats()`); NEVER freeze scope at module evaluation time with static booleans.
+- MUST resolve DC facility codes (e.g., `NJ-DC-012`, `VA-DC-001`) to their corresponding city (`us-new-jersey-secaucus`) in `findCityByFacilityCode` so breadcrumbs and back buttons never fail or fall back to Indian sites.
+- MUST use `us-new-jersey-secaucus` (not Indian `delhi-central` or `Mumbai`) as the default fallback in `CityDetails.tsx` when `isDatacenter()` is true.
+- MUST use authentic Data Center link tiers on `/inventory/links` in Datacenter mode: `InfiniBand` (400G AI GPU compute fabric), `Ethernet Fabric` (100G/400G Spine-Leaf Clos ISL), `BGP / EVPN` (L3 underlay & overlay routing), `Compute & Storage` (100G RoCE & host access), and `Management (OOB)` (1G/10G IPMI/BMC telemetry).
+- MUST treat `domainDevices.ts` and `physical.ts` as separate datasets — never write code that looks up a `DomainDevice` and expects to find a matching `NeRow`, or that "fixes" a discrepancy by editing `physical.ts`.
+- MUST use each entity's actual identity field (`name` for `NeRow`, `id` for `DcDevice`, `sn` for `ArchiveRow`, `id` for `Location`/`DcFacility`, `siteId` for `Facility`).
+- MUST preserve the self-check invariants in `physical.ts`/`facility.ts`/`archive.ts` and `src/data/dc/` count invariants.
+- MUST grep `scripts/bundle-legacy.mjs` before renaming any legacy global read by `__legacyParams()` (`RES_ID`, `NODE_ID`, `CAPEX_ID`, `OPEX_ID`, `SITE_ID`, etc.).
 
 # MUST NOT Rules
 
-- MUST NOT implement a "decommission"/"change stock state" action that
-  silently mutates `PHY`/`PHY_MATRIX` in place — no such write path exists
-  today; adding one is new scope requiring explicit confirmation, not a
-  wiring fix.
-- MUST NOT assume Inventory writes persist across reload — even the one real
-  mutation path (Capex/Opex drafts) is process-memory only; don't add
-  `localStorage` persistence to Inventory data without being asked (that
-  would be new, inconsistent with the rest of this domain, which has none).
-- MUST NOT treat `locationOf(id)`'s fallback-to-`LOCATIONS[0]` as proof a
-  site id exists — it swallows misses silently.
-- MUST NOT invent a real backend/API call for Inventory reads or writes —
-  matches the same "no backend" constraint as Discovery & Reconciliation.
+- MUST NOT leak cellular radio tabs (`eNodeB`, `gNodeB`) into `PhysicalResources.tsx` when `scoped` (`isDatacenter()`) is active (`DC_TABS` must only contain `router, switch, server, firewall, storage, gpu`).
+- MUST NOT render cellular site summary cards (Macro/Rooftop/Small cell) in `CityDetails.tsx` when in Data Center mode; render Data Centers, Racks & Capacity, and Managed Hardware (Fleet) instead.
+- MUST NOT display telecom WAN protocols (`OSPF`, `ISIS`, `LSP`) in Data Center mode on `/inventory/links`; data centers do not run telecom carrier LSPs or ISIS transport backbones.
+- MUST NOT purge storage mode when a URL merely omits `?solution=Datacenter`; only exit Datacenter mode when explicitly navigating with `?solution=all`.
+- MUST NOT export or rely on a static `export const SCOPED = isDatacenter()` evaluated only once at bundle load time; always evaluate dynamically so late-initialized or storage-persisted Datacenter state works correctly.
+- MUST NOT render telecom radio vendors (`Ericsson, Nokia, Ciena, Huawei`) on EOL/EOS cards in Data Center mode; use authentic data center compute/fabric vendors (`Nvidia, Dell, Supermicro, Arista, Cisco, Others`).
+- MUST NOT implement a "decommission"/"change stock state" action that silently mutates `PHY`/`PHY_MATRIX` in place.
+- MUST NOT assume Inventory writes persist across reload.
+- MUST NOT treat `locationOf(id)`'s fallback-to-`LOCATIONS[0]` as proof a site id exists.
+- MUST NOT invent a real backend/API call for Inventory reads or writes.
 
 # SHOULD Rules
 
-- SHOULD reuse `DataGrid`/`Drawer`/`Chip`/`Card`/`StatStrip` for any new
-  Inventory list/detail UI rather than hand-rolling markup — `PhysicalResources.tsx`
-  is the reference implementation for a filtered, tabbed, row-actioned grid.
-- SHOULD verify a `facility.ts`/`cableView.ts` change against a *derived*
-  site (not just the one hand-written `BGLK-277` record) since most sites
-  exercise the `derive()` path, not the literal one.
-- SHOULD check `tests/e2e.mjs`'s row-menu-count assertion against the actual
-  current `rowActions` code before trusting it (see Common Pitfalls) — it
-  may be stale relative to what `PhysicalResources.tsx` can currently render.
+- SHOULD reuse `DataGrid`/`Drawer`/`Chip`/`Card`/`StatStrip` for any new Inventory list/detail UI rather than hand-rolling markup.
+- SHOULD verify a `facility.ts`/`cableView.ts` change against a *derived* site (not just the one hand-written `BGLK-277` record).
+- SHOULD check `tests/e2e.mjs`'s row-menu-count assertion against the actual current `rowActions` code before trusting it.
 
 # Common Pitfalls
 
-- **Assuming a "device" in a Discovery screen and a "resource" in Inventory
-  are the same record** — they usually aren't (see Source of Truth section).
-- **Assuming a stock-state UI action does something** — every stock-related
-  button today either filters, or navigates to a different static dataset;
-  none of them mutate.
-- **Reusing `rowKey` across entities** — `name` works for `NeRow` but is not
-  the identity field for `ArchiveRow` (`sn`) or `Location` (`id`).
-- **`tests/e2e.mjs` asserts `.kmenu .kmenu-i` count === 5** for the Physical
-  Resources row menu at a point in the flow where the current `rowActions`
-  code (Node view / View details / Site info, 0 for gNodeB) doesn't obviously
-  produce 5 items — treat a failure on this specific assertion as worth
-  double-checking against the live DOM before assuming your change broke it.
-- **`facility.ts`'s hand-written `BGLK-277` vs. `derive()`d sites** — a fix
-  that only accounts for the one literal record will silently not apply to
-  every other site.
+- **Confusing `solution=Datacenter` with the Country filter (`geo=us` vs `geo=in`)** — `solution` is the domain (Datacenter vs Telecom); `geo` is the regional cluster within Datacenter mode. Neocloud has 24 data centers in the US and 24 in India.
+- **Accidental fallback to Telecom estate** — If an internal link fails to use `withSolution()`, previously `solution.ts` cleared storage and dropped the user into the Indian telecom network. Now dual storage (`localStorage` + `sessionStorage`) preserves mode until `solution=all` is explicitly passed.
+- **Static module boolean freezing** — If `SCOPED` is evaluated once on module load before query params are synced, a static boolean stays `false` permanently. Always use dynamic getter functions like `isDcMode = () => isDatacenter() || SCOPED`.
+- **Missing DC facility codes in hierarchy lookups** — If `findCityByFacilityCode` only checks telecom regex (`DEL-DC-01`), lookups for `NJ-DC-012` fail and breadcrumbs drop back to Indian defaults. Always match DC records in `DC_SUM`.
+- **Displaying radio tabs in Physical Resources** — `DC_TABS` previously included `enodeb` and `gnodeb`, which showed 0 records because data centers have no radio cells. Always ensure `DC_TABS` is restricted to `['router', 'switch', 'server', 'firewall', 'storage', 'gpu']`.
+- **Assuming a "device" in a Discovery screen and a "resource" in Inventory are the same record** — they usually aren't.
+- **Assuming a stock-state UI action does something** — every stock-related button today either filters or navigates to a different static dataset; none mutate.
 
 # Decision Rules
 
-- **Changing what a Physical Resources row shows** → `src/data/physical.ts`
-  (`NeRow`, `PHY_SEEDS`, the per-row derived helpers `portsOf`/`complianceOf`/
-  `eosOf`/`sysDescrOf`) — keep `PHY_MATRIX` (`ledger.ts`) in sync or the
-  self-check throws.
-- **Changing counts shown anywhere (tabs, KPIs, ledger totals)** → `ledger.ts`'s
-  `IL`/`EST`/`PHY_MATRIX` are the single source every other file derives
-  from — per the file's own header comment, "nothing derives a total from an
-  array length." Edit the ledger, not a screen's local count.
-- **Changing the cable-view payload** → `facility.ts` (the underlying
-  ledger) for real changes to what exists; `cableView.ts`'s `siteInfoFor()`
-  only reshapes it for Fiberneo — don't duplicate ledger data into the
-  reshaping function.
-- **Adding a genuine write/mutation feature to Inventory** → there is no
-  existing service layer to extend (see Read vs Write Operations); scope it
-  as new work, decide together whether it needs to persist across reload,
-  and don't retrofit it into a component that currently only reads.
-- **A change that seems to require touching both `physical.ts` and
-  `domainDevices.ts`** → stop and confirm scope; today they're intentionally
-  decoupled, and unifying them is a larger architectural change than most
-  single tasks intend.
+- **Changing Data Center records or counts** → `src/data/dc/` (`manifest.json`, `summary.json`, `devices.json`, `gpu.json`, `links.json`, `services.json`).
+- **Changing what a Physical Resources row shows in Telecom mode** → `src/data/physical.ts` (`NeRow`, `PHY_SEEDS`, `ledger.ts`).
+- **Changing what a Physical Resources row shows in Datacenter mode** → `src/screens/PhysicalResources.tsx` (`dcRow`, `DC_ROLE_BY_TAB`).
+- **Changing counts shown anywhere (tabs, KPIs, ledger totals) in Telecom mode** → `ledger.ts`'s `IL`/`EST`/`PHY_MATRIX`.
+- **Changing counts in Datacenter mode** → `src/data/dc/manifest.json` (`DC_COUNTS`) and `src/data/dc/summary.json` (`DC_SUM`).
+
+# Data Center Operational Metrics ("Needs action now")
+
+In Data Center mode, the 5 action cards must never be hardcoded to 0 or left blank with disclaimer notes:
+1. **Decommission & disposal pipeline**: Reflects rolling server and rack retirement lifecycle (`marked` for decom, `live` ghost presence answering BMC out-of-band discovery, and `confirmed` removed for e-waste salvage).
+2. **EOL / EOS exposure**: Tracks hardware approaching vendor end-of-support across the 6 DC vendors (`Nvidia, Dell, Supermicro, Arista, Cisco, Others`) across leaf buckets (`Active, Passive, Logical, Virtual`).
+3. **OS / firmware drift**: Tracks active nodes differing from golden firmware baselines, including high-priority CVE counts (e.g., Nvidia GPU driver or Dell iDRAC advisories).
+4. **Spares coverage risk**: Evaluates CRU/FRU depot spares against the ≥ 2.0% safe threshold across heavily deployed DC models (`Quantum-2 QM9700`, `PowerEdge XE8545`, `SYS-821GE-TNHR`, `DGX A100`).
+5. **Not reconfirmed (Staleness)**: Groups telemetry timeouts across DCIM collectors, hypervisor VM agents, out-of-band BMC/IPMI controllers, and smart rack PDU polling.
 
 # References
 
-- `[[references/architecture.md]]` — the legacy bridge mechanics shared with
-  Discovery & Reconciliation, and the Inventory-specific globals
-  `__legacyParams()` depends on.
-- `[[references/domain-model.md]]` — every entity's exact field shape
-  (`NeRow`, `Location`, `Facility`/cabling ledger types, `SiteInfo`,
-  `ArchiveRow`), plus the ledger/ self-check invariants.
-- `[[references/testing.md]]` — exact `tests/e2e.mjs` coverage by screen and
-  validation commands.
+- `[[references/architecture.md]]` — the legacy bridge mechanics, dual estates, and globals.
+- `[[references/domain-model.md]]` — entity shapes for Telecom (`NeRow`, `Location`, `Facility`, `ArchiveRow`) and Data Center (`DcFacility`, `DcDevice`, `DcRole`, `DcLink`, `DcService`).
+- `[[references/testing.md]]` — exact `tests/e2e.mjs` coverage by screen and validation commands.

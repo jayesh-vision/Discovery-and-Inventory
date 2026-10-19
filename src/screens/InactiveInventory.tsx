@@ -2,33 +2,38 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, Num, StatStrip, Sub, TabBar } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
-import { INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
+import { INACTIVE_TABS, DC_INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
-import { SCOPED } from '../data/dc/scope';
+import { isScoped } from '../data/dc/scope';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
-  { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ADVA', 'HPE', 'DELL'] },
+  { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'HPE', 'DELL', 'NVIDIA', 'ARISTA', 'PURE STORAGE', 'PALO ALTO', 'SUPERMICRO', 'LENOVO'] },
   { n: 'Reason', o: ['End of life', 'End of support', 'Faulty, returned to OEM', 'Site consolidation', 'Capacity migration', 'Hardware refresh'] },
   { n: 'Decommissioned after' }, { n: 'Workorder' },
   { n: 'Discovery', o: ['Silent', 'Still answering'], h: 'A decommissioned unit that still answers is a reconciliation exception.' }
 ];
 
-const isTab = (v: string | null): v is InactiveTab => !!v && INACTIVE_TABS.some(t => t.k === v);
-
 export default function InactiveInventory() {
   const nav = useNavigate();
   const [sp, setSp] = useSearchParams();
+  const dcMode = isScoped();
+  const tabsList = dcMode ? DC_INACTIVE_TABS : INACTIVE_TABS;
+  const isTab = (v: string | null): v is InactiveTab => !!v && tabsList.some(t => t.k === v);
   const rawCls = sp.get('cls');
-  const cls: InactiveTab = isTab(rawCls) ? rawCls : 'router';
+  const cls: InactiveTab = isTab(rawCls) ? rawCls : tabsList[0].k;
 
   /* Refresh has no server round-trip to make in this build (no backend), so
      "reload" means re-deriving rows from the archive's current in-memory
      state — the same store any restore/purge action already writes to —
      without touching cls, search or filters. */
   const [refreshKey, setRefreshKey] = useState(0);
-  const rows = useMemo(() => decommRows(cls), [cls, refreshKey]);
+  const rows = useMemo(() => decommRows(cls), [cls, refreshKey, dcMode]);
   const total = rows.length;
+
+  const tabCounts = useMemo(() => {
+    return Object.fromEntries(tabsList.map(t => [t.k, decommRows(t.k).length]));
+  }, [tabsList, refreshKey, dcMode]);
 
   const setCls = (k: InactiveTab) => { const n = new URLSearchParams(sp); n.set('cls', k); setSp(n, { replace: true }); };
   const toExceptions = () => nav(`/discovery/reconcile/exceptions?state=${encodeURIComponent('Rogue')}`);
@@ -39,17 +44,17 @@ export default function InactiveInventory() {
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(SCOPED ? 0 : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
-        { k: 'Still answering discovery', v: String(DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red' },
-        { k: 'Retired links', v: fmt(SCOPED ? 0 : 1188), s: 'adjacency no longer seen', t: 'amber' },
-        { k: 'Retired services', v: fmt(SCOPED ? 0 : 264), s: 'no longer provisioned', t: 'purple' },
-        { k: 'Oldest record', v: DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
-        { k: 'Recovered to store', v: fmt(SCOPED ? 0 : 38), s: 'restored in last 12 months', t: 'emerald' }
+        { k: 'Decommissioned NE', v: fmt(dcMode ? 122 : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Still answering discovery', v: String(dcMode ? 2 : DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red' },
+        { k: 'Retired links', v: fmt(dcMode ? 412 : 1188), s: 'adjacency no longer seen', t: 'amber' },
+        { k: 'Retired services', v: fmt(dcMode ? 86 : 264), s: 'no longer provisioned', t: 'purple' },
+        { k: 'Oldest record', v: dcMode ? '3y 8mo' : DECOMM_OLDEST, s: 'archived record', t: 'cyan' },
+        { k: 'Recovered to store', v: fmt(dcMode ? 24 : 38), s: 'restored in last 12 months', t: 'emerald' }
       ]} />
 
       <Card>
         <TabBar
-          tabs={INACTIVE_TABS.map(x => ({ k: x.k, n: x.n, count: 0, title: `Decommissioned ${x.n.toLowerCase()} records` }))}
+          tabs={tabsList.map(x => ({ k: x.k, n: x.n, count: tabCounts[x.k] || 0, title: `Decommissioned ${x.n.toLowerCase()} records` }))}
           active={cls} onChange={setCls} />
 
         <DataGrid<ArchiveRow> chipWidth="auto"

@@ -1,6 +1,6 @@
-import { NE_CLASSES, INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
+import { NE_CLASSES, INACTIVE_TABS, DC_INACTIVE_TABS, type NeClass, type InactiveTab } from './ledger';
 import { MASTER_NE } from './master';
-import { SCOPED } from './dc/scope';
+import { isScoped } from './dc/scope';
 
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
@@ -55,7 +55,8 @@ const DK_ROLE: Record<InactiveTab, string[]> = {
   router: ['P','PE','BNG','EDGE','AGG'], switch: ['ACC','DIST','CORE','TOR'],
   server: ['SRV','CDC','APP','DB'], dwdm: ['OADM','ROADM','MUX','ILA'],
   enodeb: ['ENB'], gnodeb: ['GNB'], firewall: ['FW'], storage: ['STO'], gpu: ['GPU'],
-  l2vpn: ['LINE', 'VPLS', 'PW'], l3vpn: ['VRF', 'VPN', 'MPLS']
+  l2vpn: ['LINE', 'VPLS', 'PW'], l3vpn: ['VRF', 'VPN', 'MPLS'],
+  link: ['LNK', 'FBR', 'TRK'], service: ['SVC', 'VPN', 'LINE']
 };
 
 /* one small deterministic generator so a rebuild never reshuffles the archive */
@@ -99,20 +100,133 @@ const fromMaster = (cls: NeClass): ArchiveRow[] => MASTER_NE
     why: n.why ?? '', on: n.on ?? '', by: n.by ?? '', wo: n.wo ?? '', zombie: !!n.zombie }))
   .sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
 
-/* the data center records hold no decommissioned equipment: in the data center solution the archive is empty */
-export const DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
+/* Decommissioned records in Datacenter mode */
+const DC_SITES_US = ['VA-DC-001', 'VA-DC-002', 'CA-DC-001', 'CA-DC-002', 'TX-DC-001', 'TX-DC-002', 'IL-DC-001', 'NY-DC-001'];
+const DC_SITES_IN = ['BOM-DC-001', 'BOM-DC-002', 'DEL-DC-001', 'DEL-DC-002', 'BLR-DC-001', 'BLR-DC-002', 'HYD-DC-001', 'MAA-DC-001'];
+const DC_SITES = [...DC_SITES_US, ...DC_SITES_IN];
+
+const DC_DECOMM_SEEDS: Record<InactiveTab, { model: string; oem: string; prefix: string; why: string }[]> = {
+  server: [
+    { model: 'ProLiant DL380 Gen10', oem: 'HPE', prefix: 'SRV', why: 'Hardware refresh: upgraded to Sapphire Rapids' },
+    { model: 'PowerEdge R740xd', oem: 'DELL', prefix: 'SRV', why: 'End of 3-year hardware lease, returned to OEM' },
+    { model: 'UCS C220 M5', oem: 'CISCO', prefix: 'SRV', why: 'Motherboard failure / RMA exchange complete' },
+    { model: 'ThinkSystem SR650', oem: 'LENOVO', prefix: 'SRV', why: 'Consolidated into high-density liquid-cooled rack' }
+  ],
+  gpu: [
+    { model: 'DGX-1 (8x V100 32GB)', oem: 'NVIDIA', prefix: 'GPU', why: 'AI cluster refresh: upgraded to H100 SXM5 SuperPOD' },
+    { model: 'DGX-2 (16x V100 32GB)', oem: 'NVIDIA', prefix: 'GPU', why: 'Capacity migration to dedicated Hopper cluster' },
+    { model: 'HGX A100 80GB', oem: 'SUPERMICRO', prefix: 'GPU', why: 'GPU baseboard fault, replaced under vendor SLA' },
+    { model: 'Apollo 6500 Gen10', oem: 'HPE', prefix: 'GPU', why: 'Hardware refresh under capital replacement cycle' }
+  ],
+  switch: [
+    { model: '7050QX-32S', oem: 'ARISTA', prefix: 'SW', why: 'Upgraded fabric to 400G Quantum-2 NDR' },
+    { model: 'Nexus 93180YC-EX', oem: 'CISCO', prefix: 'SW', why: 'Spine-Leaf Clos migration to 100G/400G underlay' },
+    { model: 'SB7800 100G EDR', oem: 'MELLANOX', prefix: 'SW', why: 'InfiniBand fabric upgrade from EDR 100G to NDR 400G' },
+    { model: 'QFX5100-48S', oem: 'JUNIPER', prefix: 'SW', why: 'End of software maintenance / replaced with QFX5120' }
+  ],
+  router: [
+    { model: 'MX480', oem: 'JUNIPER', prefix: 'BDR', why: 'Border gateway migration to 400G PTX10001' },
+    { model: 'ASR 9006', oem: 'CISCO', prefix: 'BDR', why: 'Hardware refresh under 5-year capital plan' },
+    { model: '7280CR2-60', oem: 'ARISTA', prefix: 'BDR', why: 'Replaced during dual-homed border re-design' },
+    { model: '7750 SR-7', oem: 'NOKIA', prefix: 'BDR', why: 'Transferred to decommissioned storage pool' }
+  ],
+  storage: [
+    { model: 'FlashArray//M50', oem: 'PURE STORAGE', prefix: 'STR', why: 'Storage pool evacuated to NVMe-oF FlashArray//X' },
+    { model: 'AFF A300', oem: 'NETAPP', prefix: 'STR', why: 'Lease expired, returned to OEM' },
+    { model: 'PowerStore 5000T', oem: 'DELL', prefix: 'STR', why: 'Consolidated into high-density storage row' },
+    { model: 'Nimble AF5000', oem: 'HPE', prefix: 'STR', why: 'Replaced by NVMe all-flash cluster' }
+  ],
+  firewall: [
+    { model: 'PA-5060', oem: 'PALO ALTO', prefix: 'FW', why: 'Perimeter firewall upgraded to PA-5450' },
+    { model: 'FortiGate 3000D', oem: 'FORTINET', prefix: 'FW', why: 'End of security subscription & hardware support' },
+    { model: 'Check Point 23800', oem: 'CHECK POINT', prefix: 'FW', why: 'Replaced with 100G next-generation firewall' },
+    { model: 'Firepower 4120', oem: 'CISCO', prefix: 'FW', why: 'Decommissioned under data center security audit' }
+  ],
+  dwdm: [
+    { model: 'Waveserver Classic', oem: 'CIENA', prefix: 'DCI', why: 'Upgraded metro DCI transponder to 800G Waveserver 5' },
+    { model: 'Groove G30', oem: 'INFINERA', prefix: 'DCI', why: 'DCI ring capacity consolidation' },
+    { model: '1830 PSS-32', oem: 'NOKIA', prefix: 'DCI', why: 'Channel retired after dark fiber re-route' },
+    { model: 'NCS 1002', oem: 'CISCO', prefix: 'DCI', why: 'Replaced under scheduled DCI link upgrade' }
+  ],
+  link: [
+    { model: 'MPO-12 Trunk Cable', oem: 'CORNING', prefix: 'LNK', why: 'Patch cable retired during spine-leaf upgrade' },
+    { model: '100G AOC Cable', oem: 'MELLANOX', prefix: 'LNK', why: 'Faulty optical transceiver / high attenuation' },
+    { model: '400G DAC Breakout', oem: 'ARISTA', prefix: 'LNK', why: 'De-cabled during GPU rack relocation' },
+    { model: 'LC-LC Single-mode', oem: 'PANDUIT', prefix: 'LNK', why: 'Fiber strand retired on cross-connect re-patch' }
+  ],
+  service: [
+    { model: 'On-demand GPU Cluster (8x V100)', oem: 'NVIDIA', prefix: 'SVC', why: 'Contract term completed, cluster released' },
+    { model: 'Dedicated Training Pod (16x V100)', oem: 'NVIDIA', prefix: 'SVC', why: 'Customer migrated to reserved H100 cluster' },
+    { model: 'Multi-node Slurm Job', oem: 'RED HAT', prefix: 'SVC', why: 'Job completed, tenant storage evacuated' },
+    { model: 'High-Memory Analytics Instance', oem: 'UBUNTU', prefix: 'SVC', why: 'Cloud project completed and decommissioned' }
+  ],
+  enodeb: [], gnodeb: [], l2vpn: [], l3vpn: []
+};
+
+const DC_COUNTS: Record<InactiveTab, number> = {
+  server: 28, gpu: 18, switch: 24, router: 14, storage: 16, firewall: 12, dwdm: 10, link: 16, service: 14,
+  enodeb: 0, gnodeb: 0, l2vpn: 0, l3vpn: 0
+};
+
+const buildDcDecomm = (): Record<InactiveTab, ArchiveRow[]> => {
+  const res: Record<string, ArchiveRow[]> = {};
+  const engineers = [
+    'Sarah Jenkins (DCO Lead)', 'Michael Chang (Infrastructure)', 'Rahul Sharma (DCO Lead)',
+    'Priya Patel (Site Operations)', 'David Miller (Asset Mgr)', 'Anita Desai (Capacity Planning)'
+  ];
+  for (const tab of DC_INACTIVE_TABS) {
+    const k = tab.k;
+    const seeds = DC_DECOMM_SEEDS[k] || [];
+    const count = DC_COUNTS[k] || 10;
+    const list: ArchiveRow[] = [];
+    for (let i = 0; i < count; i++) {
+      const s = seeds[i % seeds.length];
+      const loc = DC_SITES[i % DC_SITES.length];
+      const year = 2023 + (i % 4);
+      const mo = MONTHS[(i * 3 + 2) % 12];
+      const day = String(1 + ((i * 7) % 27)).padStart(2, '0');
+      const isZombie = (k === 'server' && i === 3) || (k === 'switch' && i === 1);
+      list.push({
+        name: `${loc}-${s.prefix}-OLD-${String(i + 1).padStart(2, '0')}`,
+        ip: `10.${loc.startsWith('VA') || loc.startsWith('CA') ? '240' : '244'}.${30 + (i % 20)}.${10 + (i % 80)}`,
+        model: s.model,
+        oem: s.oem,
+        sn: `${s.oem.slice(0, 3)}-RET-${String(1000 + i * 47).padStart(4, '0')}`,
+        loc: loc,
+        why: s.why,
+        on: `${day}-${mo}-${year}`,
+        by: engineers[i % engineers.length],
+        wo: `WO-${year}-DC-${1000 + i * 137}`,
+        zombie: isZombie
+      });
+    }
+    res[k] = list.sort((a, b) => parseDmy(b.on).getTime() - parseDmy(a.on).getTime());
+  }
+  return res as Record<InactiveTab, ArchiveRow[]>;
+};
+
+export const DC_DECOMM: Record<InactiveTab, ArchiveRow[]> = buildDcDecomm();
+
+export const DEFAULT_DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntries(
   [...new Set<InactiveTab>([...INACTIVE_TABS.map(t => t.k), ...NE_CLASSES])].map(k => {
-    if (SCOPED) return [k, [] as ArchiveRow[]];
     return [k, (NE_CLASSES as string[]).includes(k) ? fromMaster(k as NeClass) : expand(k, DECOMM_SEEDS[k as 'l2vpn' | 'l3vpn'], 18)];
   })
 ) as Record<InactiveTab, ArchiveRow[]>;
 
-export const decommRows = (cls: InactiveTab): ArchiveRow[] => DECOMM[cls] || DECOMM.router;
-export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DECOMM[k]).filter(r => r.zombie).length;
+/* DECOMM defaults to DEFAULT_DECOMM for strict estate verification */
+export const DECOMM: Record<InactiveTab, ArchiveRow[]> = DEFAULT_DECOMM;
+
+export const decommRows = (cls: InactiveTab): ArchiveRow[] => {
+  if (isScoped()) {
+    return DC_DECOMM[cls] || DC_DECOMM.server || [];
+  }
+  return DEFAULT_DECOMM[cls] || DEFAULT_DECOMM.router || [];
+};
+
+export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DEFAULT_DECOMM[k]).filter(r => r.zombie).length;
 
 export const DECOMM_OLDEST = (() => {
-  if (SCOPED) return '—';
-  const dates = NE_CLASSES.flatMap(k => DECOMM[k]).map(r => parseDmy(r.on)).sort((a, b) => a.getTime() - b.getTime());
+  const dates = NE_CLASSES.flatMap(k => DEFAULT_DECOMM[k]).map(r => parseDmy(r.on)).sort((a, b) => a.getTime() - b.getTime());
   const mo = Math.round((TODAY.getTime() - dates[0].getTime()) / 2629800000);
   return `${Math.floor(mo / 12)}y ${mo % 12}mo`;
 })();

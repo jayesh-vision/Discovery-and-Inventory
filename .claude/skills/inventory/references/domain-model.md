@@ -116,3 +116,46 @@ total/count, add it to `ledger.ts` and have the screen read it, don't
 Belongs to Discovery & Reconciliation (see that Skill's `domain-model.md`).
 Listed here only as a boundary reminder: `DomainDevice` shares no field or
 key with `NeRow` — never conflate the two when a task mentions "devices."
+
+## Data Center Estate Entities (`src/data/dc/`)
+
+When `?solution=Datacenter` is active (`isDatacenter() === true`):
+
+```ts
+type DcGeo = 'in' | 'us';
+type DcRole = 'Router' | 'Switch' | 'Server' | 'Firewall' | 'Storage' | 'GPU';
+
+interface DcFacility {
+  id: string; locationId: string; name: string; status: 'on-air' | 'in-progress' | 'planned' | 'failed';
+  category: 'Central' | 'Regional' | 'Edge'; geo: DcGeo; currency: 'INR' | 'USD';
+  city: string; state: string; address: string; lat: number; lng: number; tier: 'Tier II' | 'Tier III' | 'Tier IV';
+  racks: DcRack[]; power: DcPower; cooling: DcCooling; compute: DcCompute;
+}
+
+interface DcDevice {
+  id: string; dcId: string; name: string; role: DcRole; layer: 'core' | 'spine' | 'leaf' | 'access';
+  vendor: string; model: string; os: string; serial: string; ip: string; mac: string;
+  rackId: string; u: number; lifecycle: 'Ready' | 'Planned' | 'Maintenance' | 'Decommissioning';
+  discovery: 'verified' | 'drifted' | 'not-discovered';
+}
+
+interface DcLink {
+  id: string; p: 'LLDP' | 'OSPF' | 'ISIS' | 'BGP' | 'LSP';
+  a: string; ai: string; z: string; zi: string; dc: string; cap: number; role: string; st: string; util: number;
+}
+
+interface DcService {
+  id: string; type: string; cust: string; dc: string; ne: string; ifc: string;
+  bw: number; status: string; sla: number; uptime: number; rev: number; crit: boolean;
+}
+```
+
+### Key Invariants for Data Center Mode:
+- **No Radio Assets**: Data centers contain NO cellular radio cells (`gNodeB`, `eNodeB`, `RAN`) and NO optical transponders (`DWDM`). Role is strictly one of: `Router`, `Switch`, `Server`, `Firewall`, `Storage`, `GPU`.
+- **48 Data Centers Across Two Geographies**:
+  - `us` (24 DCs, 3,840 racks, USD currency)
+  - `in` (24 DCs, 3,838 racks, INR currency)
+  - Total = 7,678 devices (4,412 GPU servers, 1,358 switches, 1,104 compute servers, 612 storage arrays, 96 routers, 96 firewalls).
+  - 25,057 topology links (23,878 LLDP, 900 BGP EVPN, 187 LSP tunnels, 92 OSPF/ISIS).
+  - 1,456 provisioned customer cloud services (765 GPU instances, 317 CPU instances, 272 storage volumes, 102 reserved AI clusters).
+- Counts single source of truth: `src/data/dc/manifest.json` (`DC_COUNTS`) and `src/data/dc/summary.json` (`DC_SUM`).

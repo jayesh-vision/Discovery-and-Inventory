@@ -134,7 +134,11 @@ export function FindingCard({ f }: { f: Finding }) {
 function HBars({ v }: { v: Extract<Visual, { kind: 'bars' }> }) {
   const lo = v.min ?? 0;
   const hi = v.max ?? Math.max(...v.rows.map(r => r.value), v.target?.value ?? 0);
-  const w = (x: number) => `${Math.max(0.8, Math.min(100, ((x - lo) / ((hi - lo) || 1)) * 100)).toFixed(2)}%`;
+  const w = (x: number) => {
+    if (x <= lo || x <= 0) return '0%';
+    const pct = ((x - lo) / ((hi - lo) || 1)) * 100;
+    return `${Math.max(0.8, Math.min(100, pct)).toFixed(2)}%`;
+  };
   return (
     <div className="rpt-bars">
       {v.rows.map(r => (
@@ -144,7 +148,14 @@ function HBars({ v }: { v: Extract<Visual, { kind: 'bars' }> }) {
             {(r.sub || r.tag) && <span className="rpt-bar-sub">{[r.sub, r.tag].filter(Boolean).join(' · ')}</span>}
           </div>
           <div className="rpt-bar-track">
-            <span className="rpt-bar-fill" style={{ width: w(r.value), background: r.hex ?? cv('blue', 400) }} />
+            <span
+              className="rpt-bar-fill"
+              style={{
+                width: w(r.value),
+                background: r.hex ?? cv('blue', 400),
+                display: r.value > lo && r.value > 0 ? 'block' : 'none'
+              }}
+            />
             {v.target && <span className="rpt-bar-target" style={{ left: w(v.target.value) }} title={v.target.label} />}
           </div>
           <span className="rpt-bar-v num">{fmtValue(r.value, v.fmt)}</span>

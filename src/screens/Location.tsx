@@ -4,7 +4,7 @@ import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTop
 import SitesByGeography from '../components/location/SitesByGeography';
 import { getLocStats, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
 import { SCOPED, dcSum, scope } from '../data/dc/scope';
-import { currentGeo, setGeo, withSolution, type DcGeo } from '../solution';
+import { currentGeo, isDatacenter, setGeo, withSolution, type DcGeo } from '../solution';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
@@ -118,7 +118,8 @@ const CIRCLE_TO_STATE_ID: Record<string, string> = {
 export default function Location() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
-  const geoParam = (searchParams.get('geo') || searchParams.get('country') || currentGeo() || (SCOPED ? 'us' : '')).toLowerCase() as DcGeo | '';
+  const isDc = isDatacenter() || SCOPED;
+  const geoParam = (searchParams.get('geo') || searchParams.get('country') || currentGeo() || (isDc ? 'us' : '')).toLowerCase() as DcGeo | '';
   const activeGeo: DcGeo = (geoParam === 'in' ? 'in' : 'us');
   const S = React.useMemo(() => getLocStats(activeGeo), [activeGeo]);
   const COVERAGE_CIRCLES: CoverageCircle[] = S.circles;
@@ -186,7 +187,7 @@ export default function Location() {
           selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
           onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
           onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
-            nav(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`)
+            nav(withSolution(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`))
           }
         />
       </section>
@@ -979,7 +980,7 @@ function CoverageTable({
                 {isOpen && (
                   <tr className="cov-detail-row" id={`cov-detail-${c.code}`}>
                     <td colSpan={7}>
-                      <CoverageCircleDetail circle={c} onOpenSite={(siteId) => nav(`/inventory/location/site/${siteId}`)} />
+                      <CoverageCircleDetail circle={c} onOpenSite={(siteId) => nav(withSolution(`/inventory/location/site/${siteId}`))} />
                     </td>
                   </tr>
                 )}

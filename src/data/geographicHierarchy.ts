@@ -6,6 +6,7 @@
 
 import { DC_CIRCLES, DC_REGIONS, DC_SUM, SCOPED, scope, type DcSum } from './dc/scope';
 import type { DcGeo } from './dc';
+import { currentGeo, isDatacenter } from '../solution';
 
 export interface CityItem {
   id: string;
@@ -5395,12 +5396,14 @@ function scopedHierarchy(geo?: DcGeo | null): RegionItem[] {
   return regions;
 }
 
+export const isDcMode = (): boolean => isDatacenter() || SCOPED;
+
 export const getGeographicHierarchy = (geo?: DcGeo | null): RegionItem[] =>
-  SCOPED ? scopedHierarchy(geo) : DEFAULT_GEOGRAPHIC_HIERARCHY;
+  isDcMode() ? scopedHierarchy(geo) : DEFAULT_GEOGRAPHIC_HIERARCHY;
 
 export const GEOGRAPHIC_HIERARCHY: RegionItem[] = SCOPED ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
 export const getTopHierarchyMetrics = (geo?: DcGeo | null) => {
-  if (!SCOPED) return DEFAULT_TOP_HIERARCHY_METRICS;
+  if (!isDcMode()) return DEFAULT_TOP_HIERARCHY_METRICS;
   const h = scopedHierarchy(geo);
   const dcs = geo ? DC_SUM.filter(d => d.geo === geo) : DC_SUM;
   return DEFAULT_TOP_HIERARCHY_METRICS.map(m => ({
@@ -5423,10 +5426,10 @@ export const TOP_HIERARCHY_METRICS = getTopHierarchyMetrics();
 // Helper to look up a city item without default fallback
 export function findCityById(cityId?: string | null): { city: CityItem; state: StateItem; region: RegionItem; facilityType?: 'dc' | 'pop' | 'site' } | null {
   if (!cityId) return null;
-  const allHierarchy = SCOPED ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
+  const allHierarchy = isDcMode() ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
   for (const reg of allHierarchy) {
     for (const st of reg.states) {
-      const city = st.cities.find(c => c.id === cityId);
+      const city = st.cities.find(c => c.id === cityId || c.id.endsWith('-' + slug(cityId)) || slug(c.name) === slug(cityId));
       if (city) {
         return { city, state: st, region: reg };
       }
@@ -5444,6 +5447,22 @@ export function findCityByFacilityCode(code?: string | null): {
 } | null {
   if (!code) return null;
   const upper = code.trim().toUpperCase();
+
+  // If in DC mode or code looks like a DC id, match directly against DC_SUM
+  const matchedDc = DC_SUM.find(d => d.id.toUpperCase() === upper || d.location?.id?.toUpperCase() === upper || upper.includes(d.id.toUpperCase()));
+  if (matchedDc) {
+    const allHierarchy = scopedHierarchy();
+    for (const reg of allHierarchy) {
+      for (const st of reg.states) {
+        for (const ct of st.cities) {
+          if (ct.name.toLowerCase() === matchedDc.city.toLowerCase() && (st.name.toLowerCase() === matchedDc.state.toLowerCase() || st.id.includes(matchedDc.circleId.toLowerCase()))) {
+            return { city: ct, state: st, region: reg, facilityType: 'dc' };
+          }
+        }
+      }
+    }
+  }
+
   const parts = upper.split('-');
   const pfx = parts[0]; // e.g. 'CEN', 'MUM', 'DEL'
   const mid = parts[1]; // e.g. 'DC', 'POP', 'STE'
@@ -5453,8 +5472,10 @@ export function findCityByFacilityCode(code?: string | null): {
   else if (mid === 'POP') facilityType = 'pop';
   else if (mid === 'STE') facilityType = 'site';
 
+  const activeHierarchy = isDcMode() ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
+
   // 1. Check 3-letter prefix matching city name prefix (e.g. CEN -> Central Delhi, MUM -> Mumbai)
-  for (const reg of GEOGRAPHIC_HIERARCHY) {
+  for (const reg of activeHierarchy) {
     for (const st of reg.states) {
       for (const ct of st.cities) {
         if (ct.name.slice(0, 3).toUpperCase() === pfx) {
@@ -5465,10 +5486,10 @@ export function findCityByFacilityCode(code?: string | null): {
   }
 
   // 2. Check if pfx matches city ID or city name prefix
-  for (const reg of GEOGRAPHIC_HIERARCHY) {
+  for (const reg of activeHierarchy) {
     for (const st of reg.states) {
       for (const ct of st.cities) {
-        if (ct.id.toUpperCase().startsWith(pfx) || ct.name.toUpperCase().startsWith(pfx)) {
+        if (ct.id.toUpperCase().startsWith(pfx) || ct.name.toUpperCase().startsWith(pfx) || ct.id.toUpperCase().endsWith('-' + pfx.toLowerCase())) {
           return { city: ct, state: st, region: reg, facilityType };
         }
       }
@@ -5480,16 +5501,26 @@ export function findCityByFacilityCode(code?: string | null): {
 
 // Helper to look up a city item
 export function getCityById(cityId: string): { city: CityItem; state: StateItem; region: RegionItem } | null {
-  for (const reg of GEOGRAPHIC_HIERARCHY) {
+  const activeHierarchy = isDcMode() ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
+  for (const reg of activeHierarchy) {
     for (const st of reg.states) {
-      const city = st.cities.find(c => c.id === cityId);
+      const city = st.cities.find(c => c.id === cityId || c.id.endsWith('-' + slug(cityId)) || slug(c.name) === slug(cityId) || c.name.toLowerCase() === cityId.toLowerCase());
       if (city) {
         return { city, state: st, region: reg };
       }
     }
   }
   // Default fallback if not found directly
-  const defRegion = GEOGRAPHIC_HIERARCHY[1]; // West
+  if (isDcMode()) {
+    const dcH = scopedHierarchy(currentGeo() || 'us');
+    const firstReg = dcH[0] || scopedHierarchy()[0];
+    const firstSt = firstReg?.states[0];
+    const firstCity = firstSt?.cities[0];
+    if (firstReg && firstSt && firstCity) {
+      return { city: firstCity, state: firstSt, region: firstReg };
+    }
+  }
+  const defRegion = DEFAULT_GEOGRAPHIC_HIERARCHY[1]; // West
   const defState = defRegion.states[0]; // Maharashtra
   const defCity = defState.cities[0]; // Mumbai
   return { city: defCity, state: defState, region: defRegion };
@@ -5784,7 +5815,7 @@ function scopedElements(cityId: string, facility: FacilityItem): NetworkElementR
 }
 
 export function getFacilitiesForCity(cityId: string, facilityType: 'dc' | 'pop' | 'site'): FacilityItem[] {
-  if (SCOPED) return scopedFacilities(cityId, facilityType);
+  if (isDcMode()) return scopedFacilities(cityId, facilityType);
   const info = getCityById(cityId);
   const city = info?.city;
   const cityName = city?.name || 'Central Delhi';
@@ -6151,7 +6182,7 @@ function facilityMix(facilityId: string, facilityType: 'dc' | 'pop' | 'site'): F
 }
 
 export const facilityDeviceCount = (facilityId: string, facilityType: 'dc' | 'pop' | 'site') => {
-  if (SCOPED) return DC_SUM.find(d => facilityId.endsWith(`-dc-${d.id}`) || facilityId === d.id)?.devices ?? 0;
+  if (isDcMode()) return DC_SUM.find(d => facilityId.endsWith(`-dc-${d.id}`) || facilityId === d.id)?.devices ?? 0;
   const m = facilityMix(facilityId, facilityType);
   return m.routers + m.switches + m.dwdm + m.gnodeb + m.enodeb;
 };
@@ -6173,7 +6204,7 @@ function expandTemplates(templates: DeviceTemplate[], n: number): DeviceTemplate
 }
 
 export function getNetworkElementsForFacility(cityId: string, facility: FacilityItem): NetworkElementRow[] {
-  if (SCOPED) return scopedElements(cityId, facility);
+  if (isDcMode()) return scopedElements(cityId, facility);
   const info = getCityById(cityId);
   const regionName = info?.region.name.replace(' Region', '') || 'North';
   const code = facility.code;
