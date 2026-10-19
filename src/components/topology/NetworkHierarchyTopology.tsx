@@ -97,7 +97,26 @@ export default function NetworkHierarchyTopology({
   activeGeo: propActiveGeo
 }: NetworkHierarchyTopologyProps) {
   const nav = useNavigate();
-  const isDcUser = isDatacenterUser();
+  const [isDcUser, setIsDcUser] = useState<boolean>(() => isDatacenterUser());
+
+  useEffect(() => {
+    const handleUserChange = () => setIsDcUser(isDatacenterUser());
+    window.addEventListener('ns:user_changed', handleUserChange);
+    let count = 0;
+    const timer = setInterval(() => {
+      count++;
+      const detected = isDatacenterUser();
+      if (detected !== isDcUser) {
+        setIsDcUser(detected);
+      }
+      if (count > 25) clearInterval(timer);
+    }, 200);
+    return () => {
+      window.removeEventListener('ns:user_changed', handleUserChange);
+      clearInterval(timer);
+    };
+  }, [isDcUser]);
+
   const activeGeo: DcGeo = propActiveGeo ?? (isDcUser ? 'us' : 'in');
 
   const hierarchy = useMemo(() => getGeographicHierarchy(activeGeo), [activeGeo]);

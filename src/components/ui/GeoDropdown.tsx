@@ -1,5 +1,5 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { currentGeo, isDatacenterUser, setGeo, withSolution, type DcGeo } from '../../solution';
+import { isDatacenterUser, setGeo, withSolution, type DcGeo } from '../../solution';
 
 export interface GeoDropdownProps {
   align?: 'left' | 'right';
@@ -14,9 +14,7 @@ export default function GeoDropdown({
   const [searchParams] = useSearchParams();
   const nav = useNavigate();
   const isDcUser = isDatacenterUser();
-
-  const rawGeo = (searchParams.get('geo') || searchParams.get('country') || currentGeo() || (isDcUser ? 'us' : 'in')).toLowerCase();
-  const activeGeo: DcGeo = !isDcUser ? 'in' : (rawGeo === 'in' ? 'in' : 'us');
+  const activeGeo: DcGeo = isDcUser ? 'us' : 'in';
 
   const selectCountry = (g: DcGeo) => {
     setGeo(g);

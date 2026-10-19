@@ -5,7 +5,7 @@ import { DataGrid, type Action } from '../components/grid/DataGrid';
 import { INACTIVE_TABS, DC_INACTIVE_TABS, fmt, stockMeta, type InactiveTab } from '../data/ledger';
 import { DECOMM_OLDEST, DECOMM_ZOMBIES, decommRows, type ArchiveRow } from '../data/archive';
 import { isScoped } from '../data/dc/scope';
-import { currentGeo, isDatacenterUser, type DcGeo } from '../solution';
+import { isDatacenterUser, type DcGeo } from '../solution';
 
 const FILTERS = [
   { n: 'Name' }, { n: 'Serial number' }, { n: 'Model' },
@@ -20,8 +20,7 @@ export default function InactiveInventory() {
   const [sp, setSp] = useSearchParams();
   const dcMode = isScoped();
   const isDcUser = isDatacenterUser();
-  const geoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (dcMode ? (isDcUser ? 'us' : 'in') : '')).toLowerCase();
-  const activeGeo: DcGeo = !isDcUser ? 'in' : (geoParam === 'in' ? 'in' : 'us');
+  const activeGeo: DcGeo = isDcUser ? 'us' : 'in';
   const tabsList = dcMode ? DC_INACTIVE_TABS : INACTIVE_TABS;
   const isTab = (v: string | null): v is InactiveTab => !!v && tabsList.some(t => t.k === v);
   const rawCls = sp.get('cls');

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NetworkHierarchyTopology from '../components/topology/NetworkHierarchyTopology';
 import SitesByGeography from '../components/location/SitesByGeography';
 import { getLocStats, type CoverageCircle, type InvCardData, type Split } from '../data/locationStats';
 import { SCOPED, dcSum, scope } from '../data/dc/scope';
-import { currentGeo, isDatacenterUser, setGeo, withSolution, type DcGeo } from '../solution';
+import { isDatacenterUser, setGeo, withSolution, type DcGeo } from '../solution';
 import LegacyView from '../legacy/LegacyView';
 import '../styles/shell.css';
 import '../styles/topology.css';
@@ -118,9 +118,28 @@ const CIRCLE_TO_STATE_ID: Record<string, string> = {
 export default function Location() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
-  const isDcUser = isDatacenterUser();
-  // If user = datacenter.user then make everything US based. If any other user it will point to India always.
-  const activeGeo: DcGeo = !isDcUser ? 'in' : ((searchParams.get('geo') || searchParams.get('country') || currentGeo() || 'us').toLowerCase() === 'in' ? 'in' : 'us');
+  const [isDcUser, setIsDcUser] = useState<boolean>(() => isDatacenterUser());
+
+  useEffect(() => {
+    const handleUserChange = () => setIsDcUser(isDatacenterUser());
+    window.addEventListener('ns:user_changed', handleUserChange);
+    let count = 0;
+    const timer = setInterval(() => {
+      count++;
+      const detected = isDatacenterUser();
+      if (detected !== isDcUser) {
+        setIsDcUser(detected);
+      }
+      if (count > 25) clearInterval(timer);
+    }, 200);
+    return () => {
+      window.removeEventListener('ns:user_changed', handleUserChange);
+      clearInterval(timer);
+    };
+  }, [isDcUser]);
+
+  // Pure user ID check: datacenter.user is ALWAYS US; other users ALWAYS India
+  const activeGeo: DcGeo = isDcUser ? 'us' : 'in';
   const S = React.useMemo(() => getLocStats(activeGeo), [activeGeo]);
   const COVERAGE_CIRCLES: CoverageCircle[] = S.circles;
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);

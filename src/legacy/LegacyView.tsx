@@ -161,8 +161,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     };
 
     const isDcUser = isDatacenterUser();
-    const activeGeoParam = (sp.get('geo') || sp.get('country') || currentGeo() || (isDatacenter() ? (isDcUser ? 'us' : 'in') : '')).toLowerCase();
-    const activeGeo: DcGeo | null = isDatacenter() ? (!isDcUser ? 'in' : (activeGeoParam === 'in' ? 'in' : 'us')) : ((activeGeoParam === 'us' || activeGeoParam === 'in') ? (activeGeoParam as DcGeo) : null);
+    const activeGeo: DcGeo | null = isDatacenter() ? (isDcUser ? 'us' : 'in') : null;
     const w = window as any;
     w.__dcGeo = activeGeo;
     if (isDatacenter()) {

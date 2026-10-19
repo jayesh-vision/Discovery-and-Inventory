@@ -30,6 +30,8 @@ const GEO_KEY = 'geo';
 const COUNTRY_KEY = 'country';
 const GEO_STORAGE_KEY = 'dc_active_geo';
 const SOLUTION_STORAGE_KEY = 'dc_solution_mode';
+const DC_USER_KEY = 'vw_is_datacenter_user';
+const ACTIVE_USER_KEY = 'vw_active_user';
 
 export const isInventoryPath = (p: string) => {
   try {
@@ -61,265 +63,289 @@ const clearStorage = (k: string) => {
   try { localStorage.removeItem(k); } catch {}
 };
 
-/**
- * Detect the current active / logged-in user from all possible sources:
- * URL parameters, parent iframe URL, localStorage, sessionStorage, JWT tokens, cookies, globals, DOM.
- */
-export function getActiveUser(): string {
-  if (typeof window === 'undefined') return '';
-
-  // 1. Direct URL search parameters (?user=..., ?username=..., ?email=..., ?login=..., ?u=...)
+function getWindows(): Window[] {
+  const wins: Window[] = [];
+  if (typeof window === 'undefined') return wins;
+  wins.push(window);
   try {
-    const sp = new URLSearchParams(window.location.search);
-    for (const k of ['user', 'username', 'email', 'login', 'u']) {
-      const v = sp.get(k);
-      if (v) return v.trim().toLowerCase();
-    }
-
-    // Check ?data= base64 payload (used by NetSingularity/VisionWaves router)
-    const dataParam = sp.get('data');
-    if (dataParam) {
-      try {
-        const b64 = dataParam.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=');
-        const decoded = atob(padded);
-        if (decoded.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-        const parsed = JSON.parse(decoded);
-        const u = parsed.user || parsed.username || parsed.email || parsed.login || parsed.sub || parsed.name || parsed.account;
-        if (u && typeof u === 'string') return u.trim().toLowerCase();
-      } catch {}
-    }
+    if (window.parent && window.parent !== window) wins.push(window.parent);
   } catch {}
-
-  // 2. Parent window (if embedded in an iframe inside VisionWaves / NetSingularity portal)
   try {
-    if (window.parent && window.parent !== window) {
-      const pSp = new URLSearchParams(window.parent.location.search);
-      for (const k of ['user', 'username', 'email', 'login', 'u']) {
-        const v = pSp.get(k);
-        if (v) return v.trim().toLowerCase();
-      }
-      const pData = pSp.get('data');
-      if (pData) {
-        try {
-          const b64 = pData.replace(/-/g, '+').replace(/_/g, '/');
-          const padded = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=');
-          const decoded = atob(padded);
-          if (decoded.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-          const parsed = JSON.parse(decoded);
-          const u = parsed.user || parsed.username || parsed.email || parsed.login || parsed.sub || parsed.name || parsed.account;
-          if (u && typeof u === 'string') return u.trim().toLowerCase();
-        } catch {}
-      }
-    }
+    if (window.top && window.top !== window && window.top !== window.parent) wins.push(window.top);
   } catch {}
+  return wins;
+}
 
-  // 3. Storage (sessionStorage and localStorage)
-  const userKeys = [
-    'user', 'username', 'email', 'login', 'currentUser', 'current_user',
-    'authUser', 'auth_user', 'auth', 'profile', 'session', 'account',
-    'userInfo', 'user_info', 'vw_user', 'vw_auth', 'vw_username', 'active_user'
-  ];
-
-  for (const store of [sessionStorage, localStorage]) {
-    try {
-      for (const k of userKeys) {
-        const val = store.getItem(k);
-        if (!val) continue;
-        if (typeof val === 'string') {
-          if (val.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-          if (val.startsWith('{') && val.endsWith('}')) {
-            try {
-              const obj = JSON.parse(val);
-              const u = obj.username || obj.user || obj.email || obj.login || obj.name || obj.sub || obj.id || obj.preferred_username;
-              if (u && typeof u === 'string') return u.trim().toLowerCase();
-            } catch {}
-          } else if (val.length < 100 && !val.includes(';')) {
-            return val.trim().toLowerCase();
-          }
-        }
-      }
-
-      // Check JWT tokens in storage (Keycloak / OAuth / custom JWTs)
-      for (let i = 0; i < store.length; i++) {
-        const k = store.key(i);
-        if (!k) continue;
-        const val = store.getItem(k);
-        if (val && typeof val === 'string') {
-          if (val.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-          if (val.split('.').length === 3) {
-            try {
-              const payload = val.split('.')[1];
-              const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-              const padded = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=');
-              const decoded = atob(padded);
-              if (decoded.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-              const parsed = JSON.parse(decoded);
-              const u = parsed.preferred_username || parsed.username || parsed.user || parsed.email || parsed.sub || parsed.name;
-              if (u && typeof u === 'string') return u.trim().toLowerCase();
-            } catch {}
-          }
-        }
-      }
-    } catch {}
-  }
-
-  // 4. Cookies
+function getDocs(): Document[] {
+  const docs: Document[] = [];
+  if (typeof document === 'undefined') return docs;
+  docs.push(document);
   try {
-    if (document.cookie) {
-      if (document.cookie.toLowerCase().includes('datacenter.user')) return 'datacenter.user';
-      const match = document.cookie.match(/(?:user|username|email|login|currentUser)=([^;]+)/i);
-      if (match && match[1]) {
-        return decodeURIComponent(match[1]).trim().toLowerCase();
+    if (window.parent && window.parent !== window && window.parent.document) docs.push(window.parent.document);
+  } catch {}
+  try {
+    if (window.top && window.top !== window && window.top.document) docs.push(window.top.document);
+  } catch {}
+  return docs;
+}
+
+function isDcString(str: unknown): boolean {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim().toLowerCase();
+  return (
+    s === 'datacenter.user' ||
+    s.includes('datacenter.user') ||
+    s.includes('datacenter user') ||
+    s.includes('datacenter.user@visionwaves.com') ||
+    s.includes('datacenter configurator') ||
+    s.includes('dataceneter configurator') ||
+    s === 'du' ||
+    s.startsWith('datacenter')
+  );
+}
+
+function checkBase64ForDc(b64Str: string): boolean {
+  try {
+    const clean = b64Str.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = clean.padEnd(clean.length + (4 - (clean.length % 4)) % 4, '=');
+    const decoded = atob(padded);
+    if (isDcString(decoded)) return true;
+    if (decoded.includes('data=')) {
+      const match = decoded.match(/data=([A-Za-z0-9+/=_-]+)/);
+      if (match && match[1] && match[1] !== b64Str) {
+        return checkBase64ForDc(match[1]);
       }
     }
   } catch {}
+  return false;
+}
 
-  // 5. Global window objects
+function markDcUser() {
   try {
-    const win = window as any;
-    const globalUser = win.currentUser || win.user || win.__USER__ || win.sessionUser;
-    if (globalUser) {
-      if (typeof globalUser === 'string') return globalUser.trim().toLowerCase();
-      if (typeof globalUser === 'object') {
-        const gu = globalUser.username || globalUser.user || globalUser.email || globalUser.name || globalUser.preferred_username;
-        if (gu && typeof gu === 'string') return gu.trim().toLowerCase();
-      }
-    }
-    if (window.parent && window.parent !== window) {
-      const pWin = window.parent as any;
-      const pGlobalUser = pWin.currentUser || pWin.user || pWin.__USER__ || pWin.sessionUser;
-      if (pGlobalUser) {
-        if (typeof pGlobalUser === 'string') return pGlobalUser.trim().toLowerCase();
-        if (typeof pGlobalUser === 'object') {
-          const gu = pGlobalUser.username || pGlobalUser.user || pGlobalUser.email || pGlobalUser.name;
-          if (gu && typeof gu === 'string') return gu.trim().toLowerCase();
-        }
-      }
-    }
+    sessionStorage.setItem(DC_USER_KEY, 'true');
+    localStorage.setItem(DC_USER_KEY, 'true');
+    sessionStorage.setItem(ACTIVE_USER_KEY, 'datacenter.user');
+    localStorage.setItem(ACTIVE_USER_KEY, 'datacenter.user');
+    sessionStorage.setItem(GEO_STORAGE_KEY, 'us');
+    localStorage.setItem(GEO_STORAGE_KEY, 'us');
+    sessionStorage.setItem(SOLUTION_STORAGE_KEY, 'datacenter');
+    localStorage.setItem(SOLUTION_STORAGE_KEY, 'datacenter');
   } catch {}
-
-  // 6. DOM inspection for avatar initials or user labels (e.g. "DU" for Datacenter User, "VK" for another user)
-  try {
-    const docs = [document];
-    if (window.parent && window.parent !== window) {
-      try { docs.push(window.parent.document); } catch {}
-    }
-    for (const doc of docs) {
-      const elements = doc.querySelectorAll('*');
-      for (const el of Array.from(elements)) {
-        if (el.children.length === 0) {
-          const text = el.textContent?.trim() || '';
-          if (text.toLowerCase() === 'datacenter.user') return 'datacenter.user';
-          if (text === 'DU' && (el.className?.toLowerCase().includes('avatar') || el.parentElement?.className?.toLowerCase().includes('avatar') || (el.tagName === 'SPAN' && el.parentElement?.tagName === 'DIV'))) {
-            return 'datacenter.user';
-          }
-        }
-      }
-    }
-  } catch {}
-
-  return '';
 }
 
 /**
  * Check if the current user is datacenter.user.
- * Rule: if user = datacenter.user -> true
- * If any other user -> false
+ * Rule: if user = datacenter.user -> true -> EVERYTHING US BASED & DATACENTER SOLUTION
+ * If any other user -> false -> ALWAYS INDIA BASED
  */
 export function isDatacenterUser(): boolean {
-  const u = getActiveUser();
-  if (u) {
-    return u === 'datacenter.user' || u.includes('datacenter.user') || u.startsWith('datacenter');
-  }
-  // Check direct URL param ?user=datacenter.user or ?username=datacenter.user
-  if (typeof window !== 'undefined') {
+  if (typeof window === 'undefined') return false;
+
+  // 1. Cached decision in storage
+  try {
+    if (sessionStorage.getItem(DC_USER_KEY) === 'true' || localStorage.getItem(DC_USER_KEY) === 'true') {
+      return true;
+    }
+    const savedUser = sessionStorage.getItem(ACTIVE_USER_KEY) || localStorage.getItem(ACTIVE_USER_KEY);
+    if (savedUser && isDcString(savedUser)) {
+      return true;
+    }
+  } catch {}
+
+  // 2. Check URL & Parameters across all accessible windows
+  for (const win of getWindows()) {
     try {
-      const sp = new URLSearchParams(window.location.search);
-      const userParam = (sp.get('user') || sp.get('username') || '').toLowerCase();
-      if (userParam === 'datacenter.user' || userParam.includes('datacenter')) return true;
-      if (userParam && userParam !== 'datacenter.user') return false;
+      const sp = new URLSearchParams(win.location.search);
+      for (const k of ['user', 'username', 'email', 'login', 'u', 'sub', 'account', 'id']) {
+        const v = sp.get(k);
+        if (v && isDcString(v)) {
+          markDcUser();
+          return true;
+        }
+      }
+
+      // Check ?data= base64 router parameter (NetSingularity/VisionWaves router)
+      const dataParam = sp.get('data');
+      if (dataParam && checkBase64ForDc(dataParam)) {
+        markDcUser();
+        return true;
+      }
+
+      // Check full href string
+      if (isDcString(win.location.href)) {
+        markDcUser();
+        return true;
+      }
     } catch {}
   }
+
+  // 3. Storage scan across all accessible windows
+  for (const win of getWindows()) {
+    try {
+      for (const store of [win.sessionStorage, win.localStorage]) {
+        if (!store) continue;
+        for (let i = 0; i < store.length; i++) {
+          const k = store.key(i);
+          if (!k) continue;
+          if (isDcString(k)) {
+            markDcUser();
+            return true;
+          }
+          const val = store.getItem(k);
+          if (!val || typeof val !== 'string') continue;
+          if (isDcString(val)) {
+            markDcUser();
+            return true;
+          }
+          // JWT token segment check
+          if (val.includes('.') && val.split('.').length === 3) {
+            try {
+              const payload = val.split('.')[1];
+              if (checkBase64ForDc(payload)) {
+                markDcUser();
+                return true;
+              }
+            } catch {}
+          }
+          // JSON string check
+          if (val.startsWith('{') && val.endsWith('}')) {
+            try {
+              const parsed = JSON.parse(val);
+              for (const field of ['user', 'username', 'email', 'login', 'name', 'sub', 'role', 'roles', 'profile', 'preferred_username']) {
+                if (isDcString(parsed[field])) {
+                  markDcUser();
+                  return true;
+                }
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 4. Cookies across all accessible documents
+  for (const doc of getDocs()) {
+    try {
+      if (doc.cookie && (isDcString(doc.cookie) || doc.cookie.includes('datacenter%2euser') || doc.cookie.includes('datacenter%20user'))) {
+        markDcUser();
+        return true;
+      }
+    } catch {}
+  }
+
+  // 5. Global window variables across accessible windows
+  for (const win of getWindows()) {
+    try {
+      const anyWin = win as any;
+      for (const prop of ['currentUser', 'user', '__USER__', 'sessionUser', 'auth', 'profile', 'session', 'userData', 'userInfo', 'vwUser', 'vwAuth']) {
+        const obj = anyWin[prop];
+        if (!obj) continue;
+        if (typeof obj === 'string' && isDcString(obj)) {
+          markDcUser();
+          return true;
+        }
+        if (typeof obj === 'object') {
+          for (const k of ['user', 'username', 'email', 'login', 'name', 'sub', 'preferred_username']) {
+            if (isDcString(obj[k])) {
+              markDcUser();
+              return true;
+            }
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 6. DOM inspection across all accessible documents (for "DU" badge, "Datacenter User" label)
+  for (const doc of getDocs()) {
+    try {
+      const bodyText = (doc.body?.innerText || doc.body?.textContent || '').toLowerCase();
+      if (bodyText.includes('datacenter.user') || bodyText.includes('datacenter user') || bodyText.includes('datacenter configurator') || bodyText.includes('dataceneter configurator')) {
+        markDcUser();
+        return true;
+      }
+      const candidates = doc.querySelectorAll('button, div, span, p, a, [class*="avatar"], [class*="user"], [class*="profile"], [class*="badge"]');
+      for (const el of Array.from(candidates)) {
+        const t = (el.textContent || '').trim();
+        if (t === 'DU' || t.toLowerCase() === 'datacenter user' || t.toLowerCase() === 'datacenter.user') {
+          markDcUser();
+          return true;
+        }
+      }
+    } catch {}
+  }
+
   return false;
 }
 
+export function getActiveUser(): string {
+  if (isDatacenterUser()) return 'datacenter.user';
+  return readStorage(ACTIVE_USER_KEY) || '';
+}
+
+/**
+ * Geo resolution:
+ * Purely User-ID based:
+ * If user = datacenter.user -> ALWAYS US
+ * If any other user -> ALWAYS India
+ */
 export const defaultGeo = (): DcGeo => (isDatacenterUser() ? 'us' : 'in');
 
 let current: Solution | null = null;
 let currentGeoVal: DcGeo = 'in';
 
-/* the very first render must already know the mode and active geo, so read the URL and storage right now */
+/* the very first render must already know the mode and active geo, so read right now */
 if (typeof window !== 'undefined') {
-  const sp = new URLSearchParams(window.location.search);
-  const u = getActiveUser();
-  const isDcUser = isDatacenterUser();
-
-  // Detect user switch: if user changed from datacenter.user to another user, clear stale storage
-  const lastUser = readStorage('vw_last_logged_user');
-  if (u && lastUser && u !== lastUser) {
-    clearStorage(GEO_STORAGE_KEY);
-    if (!isDcUser) {
-      clearStorage(SOLUTION_STORAGE_KEY);
-    }
-  }
-  if (u) {
-    writeStorage('vw_last_logged_user', u);
-  }
-
-  const v = sp.get(KEY);
-  if (isLeave(v)) {
-    current = null;
-    clearStorage(SOLUTION_STORAGE_KEY);
-    clearStorage(GEO_STORAGE_KEY);
-  } else if (parse(v)) {
-    current = parse(v)!;
-    writeStorage(SOLUTION_STORAGE_KEY, current);
-  } else if (isDcUser) {
-    // datacenter.user is automatically in datacenter solution
+  if (isDatacenterUser()) {
     current = 'datacenter';
-    writeStorage(SOLUTION_STORAGE_KEY, 'datacenter');
+    currentGeoVal = 'us';
+    markDcUser();
   } else {
-    const saved = readStorage(SOLUTION_STORAGE_KEY);
-    if (saved === 'datacenter' && sp.has(KEY)) {
-      current = 'datacenter';
-    } else {
+    const sp = new URLSearchParams(window.location.search);
+    const v = sp.get(KEY);
+    if (isLeave(v)) {
       current = null;
-    }
-  }
-
-  // Geo resolution:
-  // "make a check that if the user = datacenter.user then make everything us based and if any other user it will point to the india always"
-  if (!isDcUser) {
-    // ANY OTHER USER: ALWAYS POINT TO INDIA!
-    currentGeoVal = 'in';
-    writeStorage(GEO_STORAGE_KEY, 'in');
-  } else {
-    // datacenter.user: DEFAULT TO US!
-    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
-    if (g === 'us' || g === 'in') {
-      currentGeoVal = g as DcGeo;
-      writeStorage(GEO_STORAGE_KEY, g);
+      clearStorage(SOLUTION_STORAGE_KEY);
+      clearStorage(GEO_STORAGE_KEY);
+    } else if (parse(v)) {
+      current = parse(v)!;
+      writeStorage(SOLUTION_STORAGE_KEY, current);
     } else {
-      const saved = readStorage(GEO_STORAGE_KEY);
-      if (saved === 'us' || saved === 'in') {
-        currentGeoVal = saved as DcGeo;
+      const saved = readStorage(SOLUTION_STORAGE_KEY);
+      if (saved === 'datacenter' && sp.has(KEY)) {
+        current = 'datacenter';
       } else {
-        currentGeoVal = 'us';
-        writeStorage(GEO_STORAGE_KEY, 'us');
+        current = null;
       }
     }
+    currentGeoVal = 'in';
   }
+
+  // Live polling for the first few seconds in case DOM or parent iframe renders late
+  let checkAttempts = 0;
+  const pollTimer = setInterval(() => {
+    checkAttempts++;
+    if (isDatacenterUser()) {
+      current = 'datacenter';
+      currentGeoVal = 'us';
+      markDcUser();
+      window.dispatchEvent(new CustomEvent('ns:user_changed', { detail: { isDc: true } }));
+      clearInterval(pollTimer);
+    }
+    if (checkAttempts > 30) clearInterval(pollTimer);
+  }, 200);
 }
+
 /** what this page load started in; data that is built once (the legacy bundle) follows this */
 export const bootSolution: Solution | null = current;
 
 export const solution = (): Solution | null => {
-  if (current) return current;
   if (isDatacenterUser()) {
     current = 'datacenter';
-    return current;
+    return 'datacenter';
   }
+  if (current) return current;
   if (typeof window !== 'undefined') {
     const saved = readStorage(SOLUTION_STORAGE_KEY);
     if (saved === 'datacenter') {
@@ -332,11 +358,11 @@ export const solution = (): Solution | null => {
 
 /** true when Inventory shows only the data center solution's data */
 export const isDatacenter = (): boolean => {
-  if (current === 'datacenter') return true;
   if (isDatacenterUser()) {
     current = 'datacenter';
     return true;
   }
+  if (current === 'datacenter') return true;
   if (typeof window !== 'undefined') {
     const saved = readStorage(SOLUTION_STORAGE_KEY);
     if (saved === 'datacenter') {
@@ -347,42 +373,44 @@ export const isDatacenter = (): boolean => {
   return false;
 };
 
-export const currentGeo = (): DcGeo | null => {
-  const isDcUser = isDatacenterUser();
-  if (!isDcUser) {
-    // Any other user ALWAYS points to India!
-    return 'in';
+/**
+ * currentGeo: Pure user ID check!
+ * If user is datacenter.user -> US ALWAYS
+ * If any other user -> India ALWAYS
+ */
+export const currentGeo = (): DcGeo => {
+  if (isDatacenterUser()) {
+    return 'us';
   }
-  // datacenter.user defaults to US:
-  if (typeof window !== 'undefined') {
-    const sp = new URLSearchParams(window.location.search);
-    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
-    if (g === 'in' || g === 'us') return g as DcGeo;
-    const saved = readStorage(GEO_STORAGE_KEY);
-    if (saved === 'in' || saved === 'us') {
-      currentGeoVal = saved as DcGeo;
-      return currentGeoVal;
-    }
-  }
-  if (currentGeoVal === 'in' || currentGeoVal === 'us') return currentGeoVal;
-  return 'us';
+  return currentGeoVal;
 };
 
 export const setGeo = (g: DcGeo | 'all' | null): void => {
+  if (isDatacenterUser()) {
+    currentGeoVal = 'us';
+    writeStorage(GEO_STORAGE_KEY, 'us');
+    return;
+  }
   if (g === 'in') {
     currentGeoVal = 'in';
     writeStorage(GEO_STORAGE_KEY, 'in');
   } else {
-    currentGeoVal = 'us';
-    writeStorage(GEO_STORAGE_KEY, 'us');
+    currentGeoVal = 'in';
+    writeStorage(GEO_STORAGE_KEY, 'in');
   }
 };
 
-/** call on every location change: the parameters set it (`all` clears it); Discovery leaves it alone */
+/** call on every location change: datacenter.user stays in datacenter US mode; other users stay India */
 export function syncSolution(pathname: string, search: string): Solution | null {
   if (!isInventoryPath(pathname)) return current;
+  if (isDatacenterUser()) {
+    current = 'datacenter';
+    currentGeoVal = 'us';
+    markDcUser();
+    return 'datacenter';
+  }
+
   const sp = new URLSearchParams(search);
-  const isDcUser = isDatacenterUser();
   const v = sp.get(KEY);
 
   if (isLeave(v)) {
@@ -392,9 +420,6 @@ export function syncSolution(pathname: string, search: string): Solution | null 
   } else if (parse(v)) {
     current = parse(v)!;
     writeStorage(SOLUTION_STORAGE_KEY, current);
-  } else if (isDcUser) {
-    current = 'datacenter';
-    writeStorage(SOLUTION_STORAGE_KEY, 'datacenter');
   } else {
     const saved = readStorage(SOLUTION_STORAGE_KEY);
     if (saved === 'datacenter' && sp.has(KEY)) {
@@ -405,32 +430,15 @@ export function syncSolution(pathname: string, search: string): Solution | null 
     }
   }
 
-  if (!isDcUser) {
-    // ANY OTHER USER: ALWAYS POINT TO INDIA!
-    currentGeoVal = 'in';
-    writeStorage(GEO_STORAGE_KEY, 'in');
-  } else {
-    // datacenter.user:
-    const g = (sp.get(GEO_KEY) || sp.get(COUNTRY_KEY) || '').toLowerCase();
-    if (g === 'us' || g === 'in') {
-      currentGeoVal = g as DcGeo;
-      writeStorage(GEO_STORAGE_KEY, g);
-    } else {
-      const saved = readStorage(GEO_STORAGE_KEY);
-      if (saved === 'us' || saved === 'in') {
-        currentGeoVal = saved as DcGeo;
-      } else {
-        currentGeoVal = 'us';
-        writeStorage(GEO_STORAGE_KEY, 'us');
-      }
-    }
-  }
+  currentGeoVal = 'in';
+  writeStorage(GEO_STORAGE_KEY, 'in');
   return current;
 }
 
 /** the URL with the active solution and active geo on it (Inventory URLs only; an existing value is kept) */
 export function withSolution(url: string): string {
-  const sol = solution();
+  const isDcUser = isDatacenterUser();
+  const sol = isDcUser ? 'datacenter' : solution();
   if (!sol) return url;
   if (url.startsWith('http://') || url.startsWith('https://')) {
     try {
@@ -439,7 +447,7 @@ export function withSolution(url: string): string {
       if (!u.searchParams.has(KEY)) {
         u.searchParams.set(KEY, solutionParam(sol));
       }
-      const geoToUse = currentGeo();
+      const geoToUse = isDcUser ? 'us' : currentGeo();
       if (geoToUse && !u.searchParams.has(GEO_KEY) && !u.searchParams.has(COUNTRY_KEY)) {
         u.searchParams.set(GEO_KEY, geoToUse);
       }
@@ -455,7 +463,7 @@ export function withSolution(url: string): string {
   if (!sp.has(KEY)) {
     sp.set(KEY, solutionParam(sol));
   }
-  const geoToUse = currentGeo();
+  const geoToUse = isDcUser ? 'us' : currentGeo();
   if (geoToUse && !sp.has(GEO_KEY) && !sp.has(COUNTRY_KEY)) {
     sp.set(GEO_KEY, geoToUse);
   }
