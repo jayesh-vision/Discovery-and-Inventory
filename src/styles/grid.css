@@ -164,8 +164,22 @@
   padding: var(--vw-space-sm) var(--vw-space-lg) var(--vw-space-md);
   border-top: 1px solid var(--vw-color-slate-100);
 }
-/* the platform's primary in this panel is the dark one */
-.fp-apply, .fp-apply:hover { background: var(--vw-color-gray-900); border-color: var(--vw-color-gray-900); color: var(--vw-color-white); }
+/* the platform's primary in this panel: light by default, black with white text on hover */
+.fpanel-foot .nst-btn.fp-apply,
+.fp-apply {
+  background: var(--vw-color-white, #ffffff);
+  border: 1px solid var(--vw-color-slate-200, #cbd5e1);
+  color: var(--vw-color-slate-900, #0f172a);
+  transition: all 150ms ease-out;
+}
+.fpanel-foot .nst-btn.fp-apply:hover,
+.fpanel-foot .nst-btn.fp-apply:focus-visible,
+.fp-apply:hover,
+.fp-apply:focus-visible {
+  background: var(--vw-color-gray-900, #0f172a) !important;
+  border-color: var(--vw-color-gray-900, #0f172a) !important;
+  color: #ffffff !important;
+}
 
 /* compact / smaller filter panel */
 .fpanel--sm {

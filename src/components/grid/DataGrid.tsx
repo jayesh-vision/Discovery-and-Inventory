@@ -69,6 +69,9 @@ export interface DataGridProps<Row> {
       prop entirely for the 'md' default, which matches every grid's prior
       fixed-width behaviour exactly. */
   chipWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'auto';
+  /** When true, opening the filter resets any active filters back to default (unfiltered),
+      and switching filter tabs inside the panel resets the active form fields every time. */
+  autoResetFilter?: boolean;
 }
 
 const STATUS_COL = /^(status|state|outcome|result|stock state)$/i;
@@ -85,10 +88,11 @@ function useOutsideClose(open: boolean, close: () => void) {
   return ref;
 }
 
-export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: _onReset, compact, hideReset: _hideReset }: {
+export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: _onReset, compact, hideReset: _hideReset, resetOnTabChange }: {
   fields: FilterField[]; activeFilters?: Record<string, string>; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset?: () => void;
   compact?: boolean;
   hideReset?: boolean;
+  resetOnTabChange?: boolean;
 }) {
   const isCompact = compact ?? (fields.length <= 4);
   const activeFieldIndex = fields.findIndex(f => activeFilters && Boolean(activeFilters[f.n]));
@@ -96,23 +100,34 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: 
   const [values, setValues] = useState<Record<string, string>>(() => (activeFilters ? { ...activeFilters } : {}));
   const f = fields[Math.min(fi, fields.length - 1)];
 
-  /* When switching filter tab, switch without resetting applied filters */
+  /* When switching filter tab, reset if resetOnTabChange is enabled, otherwise switch without resetting */
   const handleTabClick = (i: number) => {
     if (i !== fi) {
       setFi(i);
+      if (resetOnTabChange) {
+        setValues({});
+      }
     }
   };
 
   /* When selecting a filter value, update that specific filter */
   const setField = (v: string) => {
-    setValues(prev => {
+    if (resetOnTabChange) {
       if (!v) {
-        const next = { ...prev };
-        delete next[f.n];
-        return next;
+        setValues({});
+      } else {
+        setValues({ [f.n]: v });
       }
-      return { ...prev, [f.n]: v };
-    });
+    } else {
+      setValues(prev => {
+        if (!v) {
+          const next = { ...prev };
+          delete next[f.n];
+          return next;
+        }
+        return { ...prev, [f.n]: v };
+      });
+    }
   };
 
   const handleApply = () => {
@@ -208,11 +223,13 @@ function MenuItem({ a, onDone, onTriggerRefresh }: { a: Action; onDone: () => vo
   );
 }
 
-function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onTriggerRefresh, onSearch, searchValue, onFilterChange, activeFilters, wrap }: {
+function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onTriggerRefresh, onSearch, searchValue, onFilterChange, activeFilters, wrap, autoResetFilter, onResetFilter }: {
   showing: number; total: number; placeholder: string; filters?: FilterField[];
   extra?: ReactNode; gridActions?: Action[]; onTriggerRefresh: (r?: DOMRect) => void; onSearch?: (q: string) => void;
   searchValue?: string; onFilterChange?: (values: Record<string, string>) => void;
   activeFilters?: Record<string, string>; wrap: React.RefObject<HTMLDivElement | null>;
+  autoResetFilter?: boolean;
+  onResetFilter?: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const [filter, setFilter] = useState(false);
@@ -221,6 +238,20 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onT
   const menuRef = useOutsideClose(menu, closeMenu);
   const filterRef = useOutsideClose(filter, closeFilter);
   const n = (v: number) => v.toLocaleString('en-IN');
+  const hasActiveFilters = Boolean(activeFilters && Object.values(activeFilters).some(v => Boolean(v && v.trim())));
+
+  const handleToggleFilter = () => {
+    if (!filter) {
+      if (autoResetFilter) {
+        onResetFilter?.();
+      }
+      setFilter(true);
+    } else {
+      setFilter(false);
+    }
+    setMenu(false);
+  };
+
   return (
     <div className="grid-bar">
       <span className="vw-card-description grid-count">Showing {n(showing)} of {n(total)}</span>
@@ -233,10 +264,11 @@ function Toolbar({ showing, total, placeholder, filters, extra, gridActions, onT
       <span className="grow" />
       <div className="grid-tools">
         <div ref={filterRef} style={{ display: 'contents' }}>
-          <button className={`icon-btn${filter ? ' is-on' : ''}`} onClick={() => { setFilter(v => !v); setMenu(false); }}
+          <button className={`icon-btn${filter ? ' is-on' : ''}${hasActiveFilters ? ' has-value' : ''}`} onClick={handleToggleFilter}
             aria-label="Filters" aria-expanded={filter}><IcFilter /></button>
           {filter && <FilterPanel fields={filters?.length ? filters : [{ n: 'Status', o: ['On-air', 'Planned'] }]}
-            activeFilters={activeFilters} onClose={closeFilter}
+            activeFilters={autoResetFilter ? {} : activeFilters} onClose={closeFilter}
+            resetOnTabChange={autoResetFilter}
             onApply={values => onFilterChange?.(values)} onReset={() => onFilterChange?.({})} />}
         </div>
         <div ref={menuRef} style={{ display: 'contents' }}>
@@ -369,6 +401,19 @@ function useInfinite<Row>(rows: Row[], resetKey: unknown) {
   return { visible: rows.slice(0, count), count, more, next: Math.min(PAGE_STEP, rows.length - count), sentinel, wrap, loadMore };
 }
 
+function parseDateVal(s: string): number {
+  const parts = s.split('-');
+  if (parts.length === 3) {
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const mi = months.indexOf(parts[1]?.toLowerCase());
+    if (mi >= 0) {
+      return new Date(Number(parts[2]), mi, Number(parts[0])).getTime();
+    }
+  }
+  const t = Date.parse(s);
+  return isNaN(t) ? 0 : t;
+}
+
 function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<string, string>): boolean {
   const q = searchQuery.trim().toLowerCase();
   const activeFilters = Object.entries(filterValues).filter(([, v]) => v && v.trim() !== '');
@@ -393,6 +438,7 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
     if (r.ip) text += ' ' + String(r.ip).toLowerCase();
     if (r.loc) text += ' ' + String(r.loc).toLowerCase();
     if (r.zombie) text += ' still answering';
+    else if (r.zombie === false) text += ' silent';
   }
 
   if (q && !text.includes(q)) return false;
@@ -410,13 +456,51 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
       continue;
     }
 
+    if (field.toLowerCase() === 'discovery' && r && typeof r === 'object' && 'zombie' in r) {
+      if (val === 'still answering' && !r.zombie) return false;
+      if (val === 'silent' && r.zombie) return false;
+      continue;
+    }
+
+    if (field.toLowerCase().includes('decommissioned') && r && typeof r === 'object' && r.on) {
+      if (String(r.on).toLowerCase().includes(val)) {
+        continue;
+      }
+      const rowDate = parseDateVal(String(r.on));
+      const filterDate = parseDateVal(val);
+      if (rowDate && filterDate) {
+        if (rowDate < filterDate) return false;
+        continue;
+      }
+    }
+
     let matchFound = false;
     if (r && typeof r === 'object') {
-      for (const [k, v] of Object.entries(r)) {
-        if (v != null && (k.toLowerCase() === field.toLowerCase() || k.toLowerCase().replace(/[^a-z0-9]/g, '') === field.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
-          if (String(v).toLowerCase().includes(val)) {
-            matchFound = true;
-            break;
+      const fieldNorm = field.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const fieldAliases: Record<string, string[]> = {
+        serialnumber: ['sn', 'serial', 'serialnumber', 'serial_number'],
+        vendor: ['oem', 'vendor', 'make', 'manufacturer'],
+        reason: ['why', 'reason'],
+        workorder: ['wo', 'workorder', 'work_order'],
+        model: ['model'],
+        name: ['name']
+      };
+
+      const keysToCheck = fieldAliases[fieldNorm] || [field.toLowerCase(), fieldNorm];
+      for (const k of keysToCheck) {
+        if (r[k] != null && String(r[k]).toLowerCase().includes(val)) {
+          matchFound = true;
+          break;
+        }
+      }
+
+      if (!matchFound) {
+        for (const [k, v] of Object.entries(r)) {
+          if (v != null && (k.toLowerCase() === field.toLowerCase() || k.toLowerCase().replace(/[^a-z0-9]/g, '') === fieldNorm)) {
+            if (String(v).toLowerCase().includes(val)) {
+              matchFound = true;
+              break;
+            }
           }
         }
       }
@@ -495,7 +579,8 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
       {/* the toolbar counts what is on screen, so the page size is visible without scrolling */}
       <Toolbar showing={Math.min(count, filteredRows.length)} total={filteredRows.length} placeholder={p.searchPlaceholder}
         filters={p.filters} extra={p.extra} gridActions={p.gridActions} onTriggerRefresh={handleTriggerRefresh}
-        onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} activeFilters={internalFilters} wrap={wrap} />
+        onSearch={handleSearch} searchValue={searchQuery} onFilterChange={handleFilterChange} activeFilters={internalFilters} wrap={wrap}
+        autoResetFilter={p.autoResetFilter} onResetFilter={() => handleFilterChange({})} />
       <div className={`tbl-wrap${p.chipWidth && p.chipWidth !== 'md' ? ` tbl-wrap--chip-${p.chipWidth}` : ''}`} ref={wrap}>
         {isRefreshing && (
           <div className="grid-loader-overlay" role="status" aria-label="Refreshing data">

@@ -65,6 +65,7 @@ export default function InactiveInventory() {
           searchPlaceholder="Name, serial number, workorder, Vendor" filters={FILTERS}
           onRefresh={() => setRefreshKey(k => k + 1)}
           rowActions={rowActions}
+          autoResetFilter
           renderRow={r => [
             <><span className="vw-value">{r.name}</span> <span className="ro-lock" title="Read-only">🔒</span></>,
             <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
