@@ -12,7 +12,7 @@ import { buildSample } from './sample';
 import { buildSiteSample, type SiteInfo } from './siteSample';
 import { buildWorkbook, exportRows, sheetCsv } from './template';
 import { linkCandidates, type DiscoveredRef, type InventoryRef } from './discoveryLink';
-import type { Client, ClientData, DiscoveryLink } from './model';
+import type { Client, ClientData, DiscoveryLink, DataCenter } from './model';
 import { PHY } from '../data/physical';
 import { DOMAIN_DEVICES } from '../data/domainDevices';
 import { NE_CLASSES } from '../data/ledger';
@@ -32,6 +32,9 @@ export function useClientData(clientId: string | null | undefined): ClientData |
 /* ---- clients ---- */
 export const listClients = async () => store.clients();                                              // GET /dcim/clients
 export const saveClient = async (c: Client) => store.upsertClient(c);                                // PUT /dcim/clients/:id
+export const deleteClient = async (id: string) => store.deleteClient(id);                            // DELETE /dcim/clients/:id
+export const updateDataCenter = async (clientId: string, dc: DataCenter) => store.updateDataCenter(clientId, dc);
+export const deleteDataCenter = async (clientId: string, dcId: string) => store.deleteDataCenter(clientId, dcId);
 export const importHistory = (clientId?: string) => store.batches(clientId);                          // GET /dcim/imports?client
 
 /* ---- import pipeline ---- */

@@ -181,6 +181,49 @@
   color: #ffffff !important;
 }
 
+.fpanel-foot .nst-btn.fp-reset,
+.fp-reset {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--vw-color-slate-600, #64748b);
+  font-weight: 500;
+  transition: all 150ms ease-out;
+}
+.fpanel-foot .nst-btn.fp-reset:hover:not(:disabled),
+.fpanel-foot .nst-btn.fp-reset:focus-visible:not(:disabled),
+.fp-reset:hover:not(:disabled),
+.fp-reset:focus-visible:not(:disabled) {
+  background: var(--vw-color-slate-100, #f1f5f9);
+  color: var(--vw-color-slate-900, #0f172a);
+  border-color: var(--vw-color-slate-200, #cbd5e1);
+}
+.fpanel-foot .nst-btn.fp-reset:disabled,
+.fp-reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fp-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.fp-clear-field {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 0.6875rem;
+  color: var(--vw-color-slate-500, #64748b);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 150ms;
+}
+.fp-clear-field:hover {
+  color: var(--vw-color-danger, #ef4444);
+}
+
+
 /* compact / smaller filter panel */
 .fpanel--sm {
   width: min(23rem, 92vw);

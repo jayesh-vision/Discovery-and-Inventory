@@ -66,16 +66,29 @@ const NBR_TABS = [
   { k: 'isis', n: 'ISIS', c: NBRS.isis.length }
 ];
 
+const RES_SVC_TABS = [
+  { k: 'l3vpn', n: 'L3VPN' },
+  { k: 'l2vpn', n: 'L2VPN' },
+  { k: 'ibw',   n: 'IBW' }
+];
+
 const RES_SERVICES = [
-  { st:'Up',   chip:'success', t:'L3VPN', name:'CORP-ILL-PRIMARY',   rd:'24186:1023575', rt:'24186:900429', extraRt: 5, ifc:'et-0/0/10.48', erp:'10235', linkId:'L3:114031', cust:'Enterprise ILL' },
-  { st:'Up',   chip:'success', t:'L3VPN', name:'NET-OPS-MONITORING', rd:'24186:1015770', rt:'24186:900287', extraRt: 1, ifc:'et-0/0/10.100', erp:'10157', linkId:'L3:113965', cust:'Enterprise Ops' },
-  { st:'Up',   chip:'success', t:'L3VPN', name:'VSS-MGMT-THANA',     rd:'24186:1019081', rt:'24186:900624', extraRt: 1, ifc:'et-0/0/16.100', erp:'10190', linkId:'L3:61549', cust:'Safe City' },
-  { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',   rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
-  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',        vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
-  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',       vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
-  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',    vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' },
-  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORP-DELHI-HQ-10G', bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
-  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORE-MUM-GW-40G',   bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Core Backbone' }
+  { st:'Up',   chip:'success', t:'L3VPN', name:'CORP-ILL-PRIMARY',      rd:'24186:1023575', rt:'24186:900429', extraRt: 5, ifc:'et-0/0/10.48', erp:'10235', linkId:'L3:114031', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'NET-OPS-MONITORING',    rd:'24186:1015770', rt:'24186:900287', extraRt: 1, ifc:'et-0/0/10.100', erp:'10157', linkId:'L3:113965', cust:'Enterprise Ops' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'VSS-MGMT-THANA',        rd:'24186:1019081', rt:'24186:900624', extraRt: 1, ifc:'et-0/0/16.100', erp:'10190', linkId:'L3:61549', cust:'Safe City' },
+  { st:'Down', chip:'error',   t:'L3VPN', name:'POLICE-NET-ZONE4',      rd:'24186:1019680', rt:'24186:900185', extraRt: 4, ifc:'TenGigE0/0/0/2.400', erp:'10196', linkId:'L3:119153', cust:'Police Dept' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'HEALTH-NET-PRIMARY',     rd:'24186:1021440', rt:'24186:900312', extraRt: 2, ifc:'et-0/0/12.20', erp:'10214', linkId:'L3:115201', cust:'Healthcare Net' },
+  { st:'Up',   chip:'success', t:'L3VPN', name:'FIN-CORP-SECURE-GW',     rd:'24186:1024890', rt:'24186:900540', extraRt: 3, ifc:'et-0/0/14.50', erp:'10248', linkId:'L3:117490', cust:'National Banking' },
+  { st:'Down', chip:'error',   t:'L3VPN', name:'TRANSIT-ZONE-FAILOVER',  rd:'24186:1025110', rt:'24186:900780', extraRt: 1, ifc:'TenGigE0/0/0/4.200', erp:'10251', linkId:'L3:119840', cust:'State Transit' },
+  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_3530',           vcId:'3530', rd:'24186:2001144', ifc:'et-0/0/15.3530', erp:'3530', linkId:'L2:2114', cust:'Enterprise' },
+  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_VPN_31297',          vcId:'31297', rd:'24186:2001188', ifc:'xe-0/1/7.104', erp:'31297', linkId:'L2:118274', cust:'Enterprise' },
+  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_VPN_15002022',       vcId:'15002022', rd:'24186:2001202', ifc:'lt-0/0/13.95', erp:'15002022', linkId:'L2:60292', cust:'Gov Data Net' },
+  { st:'Up',   chip:'success', t:'L2VPN', name:'L2_EVC_METRO_8801',      vcId:'8801', rd:'24186:2001305', ifc:'xe-0/1/8.201', erp:'8801', linkId:'L2:119044', cust:'Metro Transport' },
+  { st:'Down', chip:'error',   t:'L2VPN', name:'L2_DC_INTERCONNECT_404', vcId:'404', rd:'24186:2001410', ifc:'lt-0/0/14.101', erp:'404', linkId:'L2:60991', cust:'Cloud Exchange' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORP-DELHI-HQ-10G',  bandwidth:'10 Gbps', ifc:'et-0/0/10.48', erp:'10235', linkId:'IBW:10235', cust:'Enterprise ILL' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CORE-MUM-GW-40G',    bandwidth:'40 Gbps', ifc:'xe-0/0/2.100', erp:'10236', linkId:'IBW:10236', cust:'Core Backbone' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-BACKUP-TRANSIT-10G', bandwidth:'10 Gbps', ifc:'et-0/0/11.10', erp:'10237', linkId:'IBW:10237', cust:'Global Transit' },
+  { st:'Up',   chip:'success', t:'IBW',   name:'IBW-CLOUD-CONNECT-100G', bandwidth:'100 Gbps', ifc:'et-0/0/18.100', erp:'10238', linkId:'IBW:10238', cust:'Direct Cloud' }
 ];
 
 const _dynAlarmDate = (hoursAgo, timeStr) => {

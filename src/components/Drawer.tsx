@@ -6,7 +6,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
    on open and returns to whatever opened it on close, same as the grid's own
    filter panel and kebab menus expect from a dismissable overlay. */
 export function Drawer({ open, title, sub, onClose, children }: {
-  open: boolean; title: string; sub?: string; onClose: () => void; children: ReactNode;
+  open: boolean; title: ReactNode; sub?: ReactNode; onClose: () => void; children: ReactNode;
 }) {
   const closeBtn = useRef<HTMLButtonElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
@@ -27,13 +27,25 @@ export function Drawer({ open, title, sub, onClose, children }: {
   return (
     <>
       <div className="ov-scrim" onClick={onClose} />
-      <aside className="ov-drawer" role="dialog" aria-modal="true" aria-label={title}>
+      <aside className="ov-drawer" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined}>
         <div className="ov-drawer-head">
-          <div style={{ minWidth: 0 }}>
-            <div className="vw-card-title-sm">{title}</div>
-            {sub && <div className="vw-card-metric-label-sub" style={{ marginTop: '2px' }}>{sub}</div>}
+          <div style={{ minWidth: 0, flex: 1, paddingRight: 8 }}>
+            <div className="vw-card-title-sm" style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.01em' }}>{title}</div>
+            {sub && <div className="vw-card-metric-label-sub" style={{ marginTop: '3px', fontSize: '0.8125rem', color: '#64748b' }}>{sub}</div>}
           </div>
-          <button ref={closeBtn} className="nst-btn nst-btn--xs" onClick={onClose}>Close</button>
+          <button
+            ref={closeBtn}
+            type="button"
+            className="ov-drawer-close-btn"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
         <div className="ov-drawer-body">{children}</div>
       </aside>

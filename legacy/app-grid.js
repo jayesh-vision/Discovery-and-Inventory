@@ -25,9 +25,15 @@ function getLegacyFieldValue(r, field) {
   const f = field.toLowerCase().trim();
 
   if (f === 'status' || f === 'state' || f === 'outcome' || f === 'result') {
+    if (r.admin !== undefined && r.oper !== undefined) {
+      return r.admin === 'down' ? 'Free' : (r.oper === 'down' ? 'Down' : 'Up');
+    }
     if (r.st) {
+      if ((r.pn || r.extra || r.k || r.pid) && typeof HW_ST !== 'undefined' && HW_ST[r.st]) return HW_ST[r.st][0];
+      if (typeof lst !== 'undefined' && (r.remote || r.local) && lst[r.st]) return lst[r.st][0];
       if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) return RSTATE[r.st][0];
       if (typeof lst !== 'undefined' && lst[r.st]) return lst[r.st][0];
+      if (typeof HW_ST !== 'undefined' && HW_ST[r.st]) return HW_ST[r.st][0];
       return String(r.st);
     }
     if (r.status) return String(r.status);
@@ -42,6 +48,29 @@ function getLegacyFieldValue(r, field) {
     if (r.res) return String(r.res);
   }
 
+  if (f === 'component') return r.n || r.name || '';
+  if (f === 'part number' || f === 'partnumber' || f === 'part') return r.pid || r.pn || r.part || r.model || '';
+  if (f === 'serial number' || f === 'serialnumber' || f === 'serial') return r.sn || r.serial || '';
+  if (f === 'interface' || f === 'local port' || f === 'local') return r.local || r.n || r.name || r.ifc || '';
+  if (f === 'remote element' || f === 'remote') return r.remote || r.dstNe || '';
+  if (f === 'remote ip') return r.rip || r.dstIp || '';
+  if (f === 'service name' || f === 'service') return r.name || r.n || '';
+  if (f === 'customer') return r.cust || r.customer || '';
+  if (f === 'attachment interface') return r.ifc || r.local || '';
+  if (f === 'link id') return r.linkId || r.vcId || r.erp || '';
+  if (f === 'severity') return r.sev || r.severity || '';
+  if (f === 'acknowledged' || f === 'ack') return r.ack || '';
+  if (f === 'source component') return r.src || '';
+  if (f === 'alarm') return r.n || r.name || '';
+  if (f === 'path') return r.p || r.path || '';
+  if (f === 'field') return r.f || r.field || '';
+  if (f === 'changed by') return r.who || '';
+  if (f === 'speed') return r.sp || r.speed || r.bandwidth || '';
+  if (f === 'compliance') return r.compliant ? 'Compliant' : 'Non-Compliant';
+  if (f === 'link types') return r.type || '';
+  if (f === 'admin status') return r.admin || '';
+  if (f === 'operational status') return r.oper || '';
+
   if (f === 'stock state' || f === 'stock') {
     if (r.stock && typeof stockMeta !== 'undefined') return stockMeta(r.stock).n;
     if (r.stock) return String(r.stock);
@@ -50,6 +79,7 @@ function getLegacyFieldValue(r, field) {
   if (f === 'source') {
     if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) return SRC[r.s][0];
     if (r.source) return String(r.source);
+    if (r.src) return String(r.src);
   }
 
   if (f === 'domain' && r.domain && typeof DOMAIN_META !== 'undefined' && DOMAIN_META[r.domain]) {
@@ -87,8 +117,12 @@ function gridApply(key, rows) {
     let text = JSON.stringify(r).toLowerCase();
     if (r && typeof r === 'object') {
       if (r.st) {
+        if (typeof HW_ST !== 'undefined' && HW_ST[r.st]) text += ' ' + HW_ST[r.st][0].toLowerCase();
         if (typeof RSTATE !== 'undefined' && RSTATE[r.st]) text += ' ' + RSTATE[r.st][0].toLowerCase();
         if (typeof lst !== 'undefined' && lst[r.st]) text += ' ' + lst[r.st][0].toLowerCase();
+      }
+      if (r.admin !== undefined && r.oper !== undefined) {
+        text += ' ' + (r.admin === 'down' ? 'free' : (r.oper === 'down' ? 'down' : 'up'));
       }
       if (r.stock && typeof stockMeta !== 'undefined') text += ' ' + stockMeta(r.stock).n.toLowerCase();
       if (r.s && typeof SRC !== 'undefined' && SRC[r.s]) text += ' ' + SRC[r.s][0].toLowerCase();
@@ -111,7 +145,7 @@ function gridApply(key, rows) {
           if (!domainFilterMatch(r.domain, v)) return false;
           continue;
         }
-        const exact = field.toLowerCase() === 'domain' || field.toLowerCase() === 'status';
+        const exact = ['domain', 'status', 'state', 'severity', 'compliance', 'acknowledged'].includes(field.toLowerCase());
         if (exact ? fieldVal !== v : !fieldVal.includes(v)) return false;
       } else {
         if (!text.includes(v)) return false;
@@ -244,7 +278,7 @@ function filterPanel(spec, key = '') {
         <span class="fp-label">${f.n}</span>
         ${f.o
           ? `<span class="nst-select-shell"><select class="nst-input fp-sel${val ? '' : ' is-placeholder'}" data-filterval="${key}|${esc(f.n)}" placeholder="${esc(f.n)}">
-               <option value=""${val ? '' : ' selected'}>${esc(f.n)}</option>
+               <option value="" disabled hidden${val ? '' : ' selected'}>Select ${esc(f.n.toLowerCase())}</option>
                ${f.o.map(o => {
                  const ov = (typeof o === 'object' && o !== null) ? o.v : o;
                  const ol = (typeof o === 'object' && o !== null) ? (o.l || o.v) : o;
@@ -387,7 +421,29 @@ const FS = {
   passive:  [{ n:'Class' }, { n:'Identifier' }, { n:'Site' }, { n:'State' }, { n:'Owner' }],
   vlan:     [{ n:'VLAN ID' }, { n:'Name' }, { n:'Type', o:['Data','Server','Wireless','Voice','Guest','Management'] },
              { n:'STP state', o:['Forwarding','Blocking','Learning'] }, { n:'Status', o:['Active','Suspended'] },
-             { n:'Trunk port' }, { n:'Access port' }]
+             { n:'Trunk port' }, { n:'Access port' }],
+  res_hw:   [{ n:'State', o:['Online','Degrading','Failed','Empty'] }, { n:'Component' }, { n:'Part number' }, { n:'Serial number' }],
+  interfaces:[{ n:'Status', o:['Up','Down','Free'] }, { n:'Interface' }, { n:'Speed', o:['10G','40G','100G'] }, { n:'Description' }],
+  res_nbrs_lldp: [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Local port' }, { n:'Remote element' }, { n:'Remote IP' }],
+  res_nbrs_ospf: [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Local' }, { n:'Remote element' }, { n:'Remote IP' }],
+  res_nbrs_bgp:  [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Local' }, { n:'Remote element' }, { n:'Remote IP' }],
+  res_nbrs_isis: [{ n:'State', o:['Confirmed','New this cycle','No longer seen'] }, { n:'Local' }, { n:'Remote element' }, { n:'Remote IP' }],
+  res_svc_l3vpn: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'Customer' }, { n:'Attachment interface' }, { n:'Link ID' }],
+  res_svc_l2vpn: [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'Customer' }, { n:'Attachment interface' }, { n:'Link ID' }],
+  res_svc_ibw:   [{ n:'Status', o:['Up','Down'] }, { n:'Service name' }, { n:'Customer' }, { n:'Attachment interface' }, { n:'Link ID' }],
+  res_alarms:    [{ n:'Severity', o:['Critical','Major','Minor','Info'] }, { n:'Acknowledged', o:['Acked','Unacked'] }, { n:'Source component' }, { n:'Alarm' }],
+  res_config:    [{ n:'Severity', o:['Major','Minor','Info'] }, { n:'Path' }],
+  res_history:   [{ n:'Source', o:['Device collector','Manual','Workorder WO-2291','Fault management','Planned · CIQ'] }, { n:'Field' }, { n:'Changed by' }],
+  res_sw_hw:     [{ n:'Type', o:['CPU','Power supply','Fan','Backplane','Chassis','Module'] }, { n:'Name' }, { n:'Model' }, { n:'Serial number' }],
+  res_sw_ifall:  [{ n:'Admin status', o:['up(1)','down(2)'] }, { n:'Operational status', o:['up(1)','down(2)','lowerLayerDown(7)'] }, { n:'Name' }],
+  res_sw_ifdown: [{ n:'Name' }, { n:'Ifspeed' }],
+  res_sw_lldp:   [{ n:'Destination NE' }, { n:'Source interface' }, { n:'Link name' }],
+  res_dw_hw:     [{ n:'Type' }, { n:'Name' }, { n:'Model' }],
+  res_dw_ifall:  [{ n:'Admin status', o:['up(1)','down(2)'] }, { n:'Operational status', o:['up(1)','down(2)'] }, { n:'Name' }],
+  res_dw_ifdown: [{ n:'Name' }],
+  res_enb_cell:  [{ n:'Status', o:['Good','Degraded','Critical'] }, { n:'Band' }],
+  res_enb_links: [{ n:'Link types', o:['Backhaul','X2 interface','S1 interface'] }, { n:'Name' }, { n:'Protocol' }],
+  res_enb_config:[{ n:'Compliance', o:['Compliant','Non-Compliant'] }, { n:'Category' }, { n:'Parameter' }]
 };
 
 /* ── infinite scroll ───────────────────────────────────────

@@ -4167,7 +4167,7 @@ function viewInactive() {
       ${table([{t:'Name'},{t:'Model / Vendor'},{t:'Serial number'},{t:'Last IP / location'},
                {t:'Decommissioned'},{t:'Reason'},{t:'Authorised by'},{t:'Discovery'}],
         rows.map(r => [
-          `<span class="vw-value">${r.name}</span> <span class="ro-lock" title="Read-only">&#128274;</span>`,
+          `<span class="vw-value">${r.name}</span><span class="ro-lock" style="display:none"></span>`,
           `<span class="mono">${r.model}</span><span class="cell-sub">${r.oem}</span>`,
           `<span class="mono">${r.sn}</span>`,
           `<span class="mono">${r.ip}</span><span class="cell-sub mono">${r.loc}</span>`,

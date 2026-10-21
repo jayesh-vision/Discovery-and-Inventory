@@ -224,8 +224,7 @@ export default function PhysicalResources() {
         }] : []),
         { l: 'Device details', onClick: () => setOpenName(r.name) },
         { l: 'View rack', onClick: () => openRack(r) },
-        { l: 'Site info', onClick: () => openSite(r.loc) },
-        ...(!canNodeView && (rowCls === 'server' || rowCls === 'gpu' || rowCls === 'storage') ? [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }] : [])
+        { l: 'Site info', onClick: () => openSite(r.loc) }
       ];
     }
     return [
@@ -237,8 +236,7 @@ export default function PhysicalResources() {
         l: 'View details',
         onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)
       }]),
-      { l: 'Site info', onClick: () => openSite(r.loc) },
-      ...(!canNodeView ? [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }] : [])
+      { l: 'Site info', onClick: () => openSite(r.loc) }
     ];
   };
 

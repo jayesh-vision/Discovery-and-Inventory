@@ -9,8 +9,9 @@
 
    Storage is injectable (tests use an in-memory map). A write that fails —
    quota exceeded, storage blocked — throws, and the previous state stays. */
-import { emptyEntities, type Client, type ClientData, type ImportBatch, type DiscoveryLink } from './model';
+import { emptyEntities, type Client, type ClientData, type ImportBatch, type DiscoveryLink, type DataCenter } from './model';
 import { applyStaged, type StagedImport } from './reconcile';
+import { dcScope } from './derive';
 
 export interface KV { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void }
 
@@ -78,6 +79,60 @@ export class DcimStore {
     this.writeIndex(ix);
     this.changed();
     return next;
+  }
+
+  deleteClient(id: string) {
+    const ix = this.index();
+    ix.clients = ix.clients.filter(c => c.id !== id);
+    ix.batches = ix.batches.filter(b => b.clientId !== id);
+    this.writeIndex(ix);
+    this.kv.removeItem(clientKey(id));
+    this.cache.delete(id);
+    this.changed();
+  }
+
+  updateDataCenter(clientId: string, dc: DataCenter) {
+    const d = this.data(clientId);
+    if (!d) throw new Error(`Unknown client ${clientId}`);
+    d.entities.dataCenters = d.entities.dataCenters.map(x => x.id === dc.id ? { ...x, ...dc } : x);
+    this.writeData(d);
+    this.changed();
+  }
+
+  deleteDataCenter(clientId: string, dcId: string) {
+    const d = this.data(clientId);
+    if (!d) throw new Error(`Unknown client ${clientId}`);
+    const scope = dcScope(d.entities, dcId);
+    if (!scope) {
+      d.entities.dataCenters = d.entities.dataCenters.filter(x => x.id !== dcId);
+    } else {
+      const bIds = new Set(scope.buildings.map(b => b.id));
+      const fIds = new Set(scope.floors.map(f => f.id));
+      const rIds = new Set(scope.rooms.map(r => r.id));
+      const rowIds = new Set(scope.rows.map(r => r.id));
+      const rkIds = new Set(scope.racks.map(r => r.id));
+      const devIds = new Set(scope.devices.map(dev => dev.id));
+      const pIds = new Set(scope.ports.map(p => p.id));
+      const connIds = new Set(scope.connections.map(c => c.id));
+      const pwrIds = new Set(scope.power.map(p => p.id));
+      const clIds = new Set(scope.cooling.map(c => c.id));
+      const sIds = new Set(scope.sensors.map(s => s.id));
+
+      d.entities.dataCenters = d.entities.dataCenters.filter(x => x.id !== dcId);
+      d.entities.buildings = d.entities.buildings.filter(x => !bIds.has(x.id));
+      d.entities.floors = d.entities.floors.filter(x => !fIds.has(x.id));
+      d.entities.rooms = d.entities.rooms.filter(x => !rIds.has(x.id));
+      d.entities.rows = d.entities.rows.filter(x => !rowIds.has(x.id));
+      d.entities.racks = d.entities.racks.filter(x => !rkIds.has(x.id));
+      d.entities.devices = d.entities.devices.filter(x => !devIds.has(x.id));
+      d.entities.ports = d.entities.ports.filter(x => !pIds.has(x.id));
+      d.entities.connections = d.entities.connections.filter(x => !connIds.has(x.id));
+      d.entities.powerEquipment = d.entities.powerEquipment.filter(x => !pwrIds.has(x.id));
+      d.entities.coolingEquipment = d.entities.coolingEquipment.filter(x => !clIds.has(x.id));
+      d.entities.sensors = d.entities.sensors.filter(x => !sIds.has(x.id));
+    }
+    this.writeData(d);
+    this.changed();
   }
 
   data(clientId: string): ClientData | undefined {

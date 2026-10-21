@@ -65,18 +65,20 @@ export function FacilityBody({ f }: { f: Facility }) {
       <div className="ins2-row ins2-8-4">
         <Card className="ins2-fill">
           <div className="row vw-justify-between"><span className="vw-card-title">Power</span><span className="vw-card-description">{f.power.supply}</span></div>
-          <table className="mtbl"><thead><tr><th>Feed</th><th>Type</th><th>Source</th><th>Rating</th><th className="t-right">Load</th><th style={{ width: '22%' }}>Utilisation</th><th>Status</th></tr></thead>
-            <tbody>{f.power.feeds.map(x => (
-              <tr key={x.id}>
-                <td className="vw-value mono">{x.id}</td>
-                <td><Chip tone={x.kind === 'AC' ? 'warning' : 'info'}>{x.kind}</Chip></td>
-                <td>{x.source}</td><td className="mono">{x.rating}</td>
-                <td className="t-right num">{fmt(x.loadKw, 1)} kW</td>
-                <td><Fill used={x.loadKw} total={x.ratingKw} /></td>
-                <td><Chip tone={stChip(x.status)}>{x.status}</Chip></td>
-              </tr>))}
-              <tr className="mtbl-total"><td colSpan={4} className="vw-value">All feeds</td><td className="t-right num">{fmt(load, 1)} kW</td><td><Fill used={load} total={f.power.capacityKw} /></td><td /></tr>
-            </tbody></table>
+          <div className="site-list-scroll">
+            <table className="mtbl"><thead><tr><th>Feed</th><th>Type</th><th>Source</th><th>Rating</th><th className="t-right">Load</th><th style={{ width: '22%' }}>Utilisation</th><th>Status</th></tr></thead>
+              <tbody>{f.power.feeds.map(x => (
+                <tr key={x.id}>
+                  <td className="vw-value mono">{x.id}</td>
+                  <td><Chip tone={x.kind === 'AC' ? 'warning' : 'info'}>{x.kind}</Chip></td>
+                  <td>{x.source}</td><td className="mono">{x.rating}</td>
+                  <td className="t-right num">{fmt(x.loadKw, 1)} kW</td>
+                  <td><Fill used={x.loadKw} total={x.ratingKw} /></td>
+                  <td><Chip tone={stChip(x.status)}>{x.status}</Chip></td>
+                </tr>))}
+                <tr className="mtbl-total"><td colSpan={4} className="vw-value">All feeds</td><td className="t-right num">{fmt(load, 1)} kW</td><td><Fill used={load} total={f.power.capacityKw} /></td><td /></tr>
+              </tbody></table>
+          </div>
           <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">Load, last 24 hours</span><span className="vw-card-description">{f.power.load24.length ? `hourly · peak ${fmt(f.power.peak24Kw, 1)} kW · capacity ${fmt(f.power.capacityKw)} kW` : `peak ${fmt(f.power.peak24Kw, 1)} kW · capacity ${fmt(f.power.capacityKw)} kW`}</span></div>
           {f.power.load24.length > 0
             ? <LineChart height={205} labels={f.power.load24.map((_, h) => h % 4 === 0 || h === 23 ? (h === 23 ? 'now' : `${String(h).padStart(2, '0')}:00`) : '')} values={f.power.load24} format={v => `${fmt(v, 1)} kW`} />
@@ -90,12 +92,14 @@ export function FacilityBody({ f }: { f: Facility }) {
               <div key={x.n} className="ins2-reason"><span className="ch-dot" style={{ background: [cv('blue', 500), cv('cyan', 500), cv('slate', 400)][i] }} /><span className="grow">{x.n}</span><span className="num">{fmt(x.kw, 1)} kW</span><span className="vw-card-metric-label-sub num">{pct(x.kw, load)}</span></div>))}</div>
           </div>
           <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">Backup</span><span className="vw-card-description">if a feed drops</span></div>
-          <table className="mtbl"><tbody>{f.power.backups.map(b => (
-            <tr key={b.unit} title={`${b.unit} · ${b.rating} · tested ${b.lastTest}`}>
-              <td><span className="vw-value">{b.kind}</span><span className="cell-sub mono">{b.rating}</span></td>
-              <td className="num">{b.autonomy}</td>
-              <td className="t-right"><Chip tone={stChip(b.status)}>{b.status}</Chip></td>
-            </tr>))}</tbody></table>
+          <div className="site-list-scroll">
+            <table className="mtbl"><tbody>{f.power.backups.map(b => (
+              <tr key={b.unit} title={`${b.unit} · ${b.rating} · tested ${b.lastTest}`}>
+                <td><span className="vw-value">{b.kind}</span><span className="cell-sub mono">{b.rating}</span></td>
+                <td className="num">{b.autonomy}</td>
+                <td className="t-right"><Chip tone={stChip(b.status)}>{b.status}</Chip></td>
+              </tr>))}</tbody></table>
+          </div>
           <div className="ins2-foot vw-card-description"><span>PUE <b className="num">{f.power.pue}</b></span><span className="grow" /><span>AC {fmt(ac, 1)} kW · DC {fmt(dc, 1)} kW</span></div>
         </Card>
       </div>
@@ -104,43 +108,51 @@ export function FacilityBody({ f }: { f: Facility }) {
       <div className="ins2-row ins2-6-6">
         <Card className="ins2-fill">
           <div className="row vw-justify-between"><span className="vw-card-title">Floors, rooms and racks</span><span className="vw-card-description">{f.floors.length} floors · {rooms} rooms · {f.racks.length} racks</span></div>
-          <table className="mtbl"><thead><tr><th>Rack</th><th>Floor · room</th><th>Role</th><th className="t-right">Height</th><th className="t-right">Used</th><th style={{ width: '22%' }}>U-space</th><th className="t-right">Draw</th></tr></thead>
-            <tbody>{f.racks.map(r => (
-              <tr key={r.id}>
-                <td className="vw-value mono">{r.id}</td><td>{r.floor} · {r.room}</td><td>{r.role}</td>
-                <td className="t-right num">{r.u} U</td><td className="t-right num">{r.used} U</td>
-                <td><Fill used={r.used} total={r.u} /></td>
-                <td className="t-right num">{fmt(r.kw, 1)} kW</td>
-              </tr>))}
-              <tr className="mtbl-total"><td colSpan={3} className="vw-value">All racks</td><td className="t-right num">{u.u} U</td><td className="t-right num">{u.used} U</td><td><Fill used={u.used} total={u.u} /></td><td className="t-right num">{fmt(f.racks.reduce((a, r) => a + r.kw, 0), 1)} kW</td></tr>
-            </tbody></table>
+          <div className="site-list-scroll">
+            <table className="mtbl"><thead><tr><th>Rack</th><th>Floor · room</th><th>Role</th><th className="t-right">Height</th><th className="t-right">Used</th><th style={{ width: '22%' }}>U-space</th><th className="t-right">Draw</th></tr></thead>
+              <tbody>{f.racks.map(r => (
+                <tr key={r.id}>
+                  <td className="vw-value mono">{r.id}</td><td>{r.floor} · {r.room}</td><td>{r.role}</td>
+                  <td className="t-right num">{r.u} U</td><td className="t-right num">{r.used} U</td>
+                  <td><Fill used={r.used} total={r.u} /></td>
+                  <td className="t-right num">{fmt(r.kw, 1)} kW</td>
+                </tr>))}
+                <tr className="mtbl-total"><td colSpan={3} className="vw-value">All racks</td><td className="t-right num">{u.u} U</td><td className="t-right num">{u.used} U</td><td><Fill used={u.used} total={u.u} /></td><td className="t-right num">{fmt(f.racks.reduce((a, r) => a + r.kw, 0), 1)} kW</td></tr>
+              </tbody></table>
+          </div>
           <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">By floor</span></div>
-          <div className="floors">
-            {f.floors.map(fl => {
-              const rs = f.racks.filter(r => r.floor === fl.n);
-              const fu = rs.reduce((a, r) => a + r.u, 0), fused = rs.reduce((a, r) => a + r.used, 0);
-              return (
-                <div key={fl.n} className="floor">
-                  <div className="row vw-justify-between"><span className="vw-value">{fl.n}</span><span className="vw-card-description">{fl.rooms.length} rooms · {rs.length} racks</span></div>
-                  <div className="vw-card-description">{fl.rooms.join(' · ')}</div>
-                  <Fill used={fused} total={fu} label={`${fused} / ${fu} U`} />
-                  <div className="vw-card-metric-label-sub">{fmt(rs.reduce((a, r) => a + r.kw, 0), 1)} kW draw</div>
-                </div>
-              );
-            })}
+          <div className="site-list-scroll">
+            <div className="floors">
+              {f.floors.map(fl => {
+                const rs = f.racks.filter(r => r.floor === fl.n);
+                const fu = rs.reduce((a, r) => a + r.u, 0), fused = rs.reduce((a, r) => a + r.used, 0);
+                return (
+                  <div key={fl.n} className="floor">
+                    <div className="row vw-justify-between"><span className="vw-value">{fl.n}</span><span className="vw-card-description">{fl.rooms.length} rooms · {rs.length} racks</span></div>
+                    <div className="vw-card-description">{fl.rooms.join(' · ')}</div>
+                    <Fill used={fused} total={fu} label={`${fused} / ${fu} U`} />
+                    <div className="vw-card-metric-label-sub">{fmt(rs.reduce((a, r) => a + r.kw, 0), 1)} kW draw</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </Card>
         <Card className="ins2-fill">
           <div className="row vw-justify-between"><span className="vw-card-title">Ports</span><span className="vw-card-description">{fmt(p.total - p.used)} free of {fmt(p.total)}</span></div>
-          <table className="mtbl"><thead><tr><th>Port class</th><th className="t-right">Total</th><th className="t-right">Used</th><th className="t-right">Free</th><th style={{ width: '30%' }}>Fill</th></tr></thead>
-            <tbody>{f.portClasses.map(x => (
-              <tr key={x.n}><td className="vw-value">{x.n}</td><td className="t-right num">{fmt(x.total)}</td><td className="t-right num">{fmt(x.used)}</td><td className="t-right num">{fmt(x.total - x.used)}</td><td><Fill used={x.used} total={x.total} /></td></tr>))}
-            </tbody></table>
+          <div className="site-list-scroll">
+            <table className="mtbl"><thead><tr><th>Port class</th><th className="t-right">Total</th><th className="t-right">Used</th><th className="t-right">Free</th><th style={{ width: '30%' }}>Fill</th></tr></thead>
+              <tbody>{f.portClasses.map(x => (
+                <tr key={x.n}><td className="vw-value">{x.n}</td><td className="t-right num">{fmt(x.total)}</td><td className="t-right num">{fmt(x.used)}</td><td className="t-right num">{fmt(x.total - x.used)}</td><td><Fill used={x.used} total={x.total} /></td></tr>))}
+              </tbody></table>
+          </div>
           <div className="row vw-justify-between" style={{ marginTop: 'var(--vw-space-md)' }}><span className="vw-card-title-sm">By rack</span></div>
-          <table className="mtbl"><thead><tr><th>Rack</th><th className="t-right">Ports</th><th className="t-right">Used</th><th style={{ width: '30%' }}>Fill</th></tr></thead>
-            <tbody>{f.racks.filter(r => r.ports).map(r => (
-              <tr key={r.id}><td className="vw-value mono">{r.id}</td><td className="t-right num">{fmt(r.ports)}</td><td className="t-right num">{fmt(r.portsUsed)}</td><td><Fill used={r.portsUsed} total={r.ports} /></td></tr>))}
-            </tbody></table>
+          <div className="site-list-scroll">
+            <table className="mtbl"><thead><tr><th>Rack</th><th className="t-right">Ports</th><th className="t-right">Used</th><th style={{ width: '30%' }}>Fill</th></tr></thead>
+              <tbody>{f.racks.filter(r => r.ports).map(r => (
+                <tr key={r.id}><td className="vw-value mono">{r.id}</td><td className="t-right num">{fmt(r.ports)}</td><td className="t-right num">{fmt(r.portsUsed)}</td><td><Fill used={r.portsUsed} total={r.ports} /></td></tr>))}
+              </tbody></table>
+          </div>
         </Card>
       </div>
 

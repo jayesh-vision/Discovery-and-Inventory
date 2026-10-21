@@ -2309,6 +2309,52 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .fill-l { min-width: 2.6rem; text-align: right; font-size: 0.75rem; font-weight: 500; color: var(--vw-color-gray-700); font-variant-numeric: tabular-nums; }
 .mtbl tr.mtbl-total td { border-top: 2px solid var(--vw-color-slate-200); background: var(--vw-color-slate-50); font-weight: 500; color: var(--vw-color-gray-900); }
 
+/* ── Site details scrollable lists ──────────────────────── */
+.site-list-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--vw-color-slate-200);
+  border-radius: var(--vw-radius-md);
+  background: var(--vw-color-white);
+  margin-top: var(--vw-space-xs);
+  scrollbar-width: thin;
+}
+.site-list-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.site-list-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.site-list-scroll::-webkit-scrollbar-thumb {
+  background: var(--vw-color-slate-300);
+  border-radius: 3px;
+}
+.site-list-scroll .mtbl {
+  margin-top: 0;
+  width: 100%;
+}
+.site-list-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--vw-color-white);
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--vw-color-slate-200);
+}
+.site-list-scroll tr.mtbl-total td {
+  position: sticky;
+  bottom: 0;
+  background: var(--vw-color-slate-50);
+  z-index: 1;
+  box-shadow: 0 -1px 0 var(--vw-color-slate-200);
+}
+.site-list-scroll .floors {
+  margin-top: 0;
+  padding: var(--vw-space-sm);
+}
+
+
 /* site equipment: the Fiberneo cable view in its own frame */
 .cv-bar { display: flex; align-items: center; gap: var(--vw-space-md); }
 .cv-bar .vw-card-description { color: var(--vw-color-gray-600); }
@@ -2501,20 +2547,55 @@ details[open] > summary .vw-tx-chevron {
    platform shadow) but anchored to the viewport edge rather than a toolbar
    button, since it inspects one record rather than configuring a list. */
 .ov-scrim {
-  position: fixed; inset: 0; background: rgba(15, 23, 42, .38); z-index: 150;
+  position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 150;
+  backdrop-filter: blur(2px);
+  animation: ovFadeIn 0.2s ease-out;
 }
 .ov-drawer {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 151;
-  width: min(26rem, 92vw); background: var(--vw-color-white);
+  width: min(28rem, 94vw); background: var(--vw-color-white);
   border-left: 1px solid var(--vw-color-slate-200);
-  box-shadow: -12px 0 32px -14px rgba(15, 23, 42, .35);
+  box-shadow: -16px 0 40px -12px rgba(15, 23, 42, .22);
   display: flex; flex-direction: column;
+  animation: ovSlideIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ov-drawer-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: var(--vw-space-md);
-  padding: var(--vw-space-lg); border-bottom: 1px solid var(--vw-color-slate-100); flex: none;
+  padding: 16px 20px; border-bottom: 1px solid var(--vw-color-slate-100); flex: none;
+  background: #ffffff;
 }
-.ov-drawer-body { padding: var(--vw-space-lg); overflow-y: auto; flex: 1; }
+.ov-drawer-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: var(--vw-color-slate-50, #f8fafc);
+  color: var(--vw-color-slate-600, #475569);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+.ov-drawer-close-btn:hover {
+  background: var(--vw-color-slate-100, #f1f5f9);
+  color: var(--vw-color-slate-900, #0f172a);
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  transform: scale(1.05);
+}
+.ov-drawer-body { padding: 20px; overflow-y: auto; flex: 1; }
+
+@keyframes ovFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ovSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 
 /* a compact key/value list, for a record's own fields inside the drawer */
 /* a sub-domain's parent, muted in front of its name: "Transport · IP/MPLS"

@@ -95,23 +95,35 @@ function resOverview() {
 }
 
 function resHardware() {
+  const allRows = HW_TREE;
+  const rows = gridApply('res_hw', allRows);
   return card(`
-    ${table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
-      HW_TREE.map(h => [
-        `<span class="vw-value">${h.n}</span>`,
+    ${gridBar(rows.length, allRows.length, 'Component, part, serial number', [
+      { n: 'State', o: ['Online', 'Degrading', 'Failed', 'Empty'] },
+      { n: 'Component' },
+      { n: 'Part number' },
+      { n: 'Serial number' }
+    ], '', [], 'res_hw')}
+    ${rows.length ? table([{t:'Component'},{t:'Part number'},{t:'Serial number'},{t:'State'},{t:'Detail'}],
+      rows.map(h => [
+        `<span class="vw-value">${HW_ICON[h.k] || '▪'} ${h.n}</span>`,
         `<span class="mono">${h.pid}</span>`, `<span class="mono">${h.sn}</span>`,
         chip(HW_ST[h.st][0], HW_ST[h.st][1]),
         `<span class="vw-card-description">${h.info}</span>`]), 'chip-auto',
-        i => [])}`);
+        i => [])
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No hardware components match this filter.</div>`}`);
 }
 
 function resIfaces() {
-  const rows = gridApply('interfaces', IFACES.filter(i => IF_FILTER === 'all' ? true
+  const baseRows = IFACES.filter(i => IF_FILTER === 'all' ? true
     : IF_FILTER === 'down' ? (i.oper === 'down' && i.admin === 'up')
-    : IF_FILTER === 'free' ? i.admin === 'down' : i.oper === 'up'));
+    : IF_FILTER === 'free' ? i.admin === 'down' : i.oper === 'up');
+  const rows = gridApply('interfaces', baseRows);
   const st = i => i.admin === 'down' ? chip('Free','neutral')
     : i.oper === 'down' ? chip('Down','error') : chip('Up','success');
   const pct = (a,b) => (a/b*100).toFixed(0);
+  const segExtra = `<div class="seg">${[['all','All'],['up','Up'],['down','Down'],['free','Free']].map(([k,n2])=>
+    `<button class="${IF_FILTER===k?'is-on':''}" data-iffilter="${k}">${n2}</button>`).join('')}</div>`;
   return `
   ${card(`
     <div class="row vw-justify-between vw-items-start vw-wrap" style="margin-bottom:var(--vw-space-lg)">
@@ -142,17 +154,12 @@ function resIfaces() {
     </div>`)}
 
   ${card(`
-    <div class="grid-bar">
-      <span class="vw-card-description grid-count">Showing ${rows.length} of ${IF_CAP.total}</span>
-      <span class="nst-input-shell grid-search"><span class="gs-ic">${IC_SEARCH}</span>
-        <input class="nst-input" placeholder="Name, description, IP" aria-label="Search interfaces"
-          data-gridsearch="interfaces" value="${esc(gridOf('interfaces').search)}"></span>
-      <span class="grow"></span>
-      <div class="seg">
-        ${[['all','All'],['up','Up'],['down','Down'],['free','Free']].map(([k,n2])=>
-          `<button class="${IF_FILTER===k?'is-on':''}" data-iffilter="${k}">${n2}</button>`).join('')}
-      </div>
-    </div>
+    ${gridBar(rows.length, IF_CAP.total, 'Name, description, IP', [
+      { n: 'Status', o: ['Up', 'Down', 'Free'] },
+      { n: 'Interface' },
+      { n: 'Speed', o: ['10G', '40G', '100G'] },
+      { n: 'Description' }
+    ], segExtra, [], 'interfaces')}
     ${rows.length ? table([{t:'Status', plain:true},{t:'Interface'},{t:'Description'},{t:'Speed'},{t:'IP / VLAN'},
              {t:'Utilisation',r:true},{t:'Optical Rx'},{t:'Neighbour'},{t:'Last change'}],
       rows.map(i => [
@@ -208,7 +215,9 @@ function nbrViewDialog() {
 }
 
 function resNbrs() {
-  const rows = NBRS[NBR_TAB] || [];
+  const allRows = NBRS[NBR_TAB] || [];
+  const key = 'res_nbrs_' + NBR_TAB;
+  const rows = gridApply(key, allRows);
   const lst = { ok:['Confirmed','success'], new:['New this cycle','info'], gone:['No longer seen','error'] };
   /* the protocol switcher — LLDP/OSPF/BGP/ISIS — as a real WAI-ARIA tablist:
      a <nav> landmark naming what it's a list of, role="tablist" on the pill
@@ -226,17 +235,23 @@ function resNbrs() {
         class="tab${t.k===NBR_TAB?' is-on':''}" data-nbrtab="${t.k}">${t.n}</button>`).join('')}</div>
     </nav>
     <div id="${panelId}" role="tabpanel" aria-labelledby="nbrtab-${NBR_TAB}" style="margin-top:var(--vw-space-md)">
-      <div class="nst-table-toolbar row vw-justify-between" style="margin-bottom:var(--vw-space-md)">
-        <span class="vw-card-description">Showing ${rows.length} of ${NBR_TABS.find(t=>t.k===NBR_TAB).c}</span>
-      </div>
+      ${gridBar(rows.length, allRows.length, 'Local port, remote element, IP', [
+        { n: 'State', o: ['Confirmed', 'New this cycle', 'No longer seen'] },
+        { n: NBR_TAB === 'lldp' ? 'Local port' : 'Local' },
+        { n: 'Remote element' },
+        { n: 'Remote IP' }
+      ], '', [], key)}
       ${rows.length ? table([{t:'State', plain:true},{t:NBR_TAB==='lldp'?'Local port':'Local'},{t:'Remote element'},
                {t:NBR_TAB==='lldp'?'Remote port':'Session'},{t:'Remote IP'},{t:'Last seen'}],
         rows.map(r => [chip(lst[r.st][0], lst[r.st][1]), `<span class="mono">${r.local}</span>`,
           `<span class="vw-value">${r.remote}</span>`, `<span class="mono">${r.rport}</span>`,
           `<span class="mono">${r.rip}</span>`, r.seen]), 'chip-auto', null,
-        i => ({ class: 'is-click', 'data-nbrview': `${NBR_TAB}:${i}` }))
+        i => {
+          const originalIdx = allRows.indexOf(rows[i]);
+          return { class: 'is-click', 'data-nbrview': `${NBR_TAB}:${originalIdx >= 0 ? originalIdx : i}` };
+        })
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-             No ${NBR_TAB.toUpperCase()} adjacency on this element.</div>`}
+             No ${NBR_TAB.toUpperCase()} adjacency matches this filter.</div>`}
     </div>`) + nbrViewDialog();
 }
 
@@ -286,10 +301,26 @@ function resSvcViewDialog() {
 }
 
 function resSvcs() {
-  const t = RES_SVC_TAB;
-  const rows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
+  const tabs = typeof RES_SVC_TABS !== 'undefined' ? RES_SVC_TABS : [
+    { k: 'l3vpn', n: 'L3VPN' },
+    { k: 'l2vpn', n: 'L2VPN' },
+    { k: 'ibw',   n: 'IBW' }
+  ];
+  const activeTab = tabs.some(x => x.k === RES_SVC_TAB) ? RES_SVC_TAB : tabs[0].k;
+  RES_SVC_TAB = activeTab;
+  const t = activeTab;
+  const allRows = RES_SERVICES.filter(s => s.t.toLowerCase() === t);
+  const key = 'res_svc_' + t;
+  const rows = gridApply(key, allRows);
   return card(`
-    <div class="tabbar">${SVC_TABS.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
+    <div class="tabbar">${tabs.map(x=>`<button class="tab${x.k===t?' is-on':''}" data-ressvctab="${x.k}">${x.n}</button>`).join('')}</div>
+    ${gridBar(rows.length, allRows.length, 'Service name, attachment interface, link ID, customer', [
+      { n: 'Status', o: ['Up', 'Down'] },
+      { n: 'Service name' },
+      { n: 'Customer' },
+      { n: 'Attachment interface' },
+      { n: 'Link ID' }
+    ], '', [], key)}
     ${rows.length ? table(t === 'l3vpn'
       ? [{t:'Status', plain:true},{t:'Service name'},{t:'VRF — RD'},{t:'VRF — RT'},{t:'Attachment interface'},{t:'Link ID'},{t:'Customer'}]
       : t === 'l2vpn'
@@ -318,32 +349,51 @@ function resSvcs() {
         `<span class="mono">${s.linkId || `IBW:${s.erp}`}</span>`,
         s.cust
       ]), 'chip-auto', null,
-        i => ({ class: 'is-click', 'data-ressvcview': `${t}:${i}` }))
+        i => {
+          const originalIdx = allRows.indexOf(rows[i]);
+          return { class: 'is-click', 'data-ressvcview': `${t}:${originalIdx >= 0 ? originalIdx : i}` };
+        })
       : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">
-           No ${t.toUpperCase()} services on this element.</div>`}`) + resSvcViewDialog();
+           No ${t.toUpperCase()} services match this filter.</div>`}`) + resSvcViewDialog();
 }
 
 function resAlarms() {
+  const allRows = RES_ALARMS;
+  const rows = gridApply('res_alarms', allRows);
   return card(`
-    ${table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
-      RES_ALARMS.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
+    ${gridBar(rows.length, allRows.length, 'Alarm, source component', [
+      { n: 'Severity', o: ['Critical', 'Major', 'Minor', 'Info'] },
+      { n: 'Acknowledged', o: ['Acked', 'Unacked'] },
+      { n: 'Source component' },
+      { n: 'Alarm' }
+    ], '', [], 'res_alarms')}
+    ${rows.length ? table([{t:'Severity'},{t:'Alarm'},{t:'Source component'},{t:'Raised'},{t:'Age',r:true},{t:'Acknowledged'}],
+      rows.map(a => [chip(a.sev, a.chip), `<span class="vw-value">${a.n}</span>`,
         `<span class="mono">${a.src}</span>`, `<span class="num">${a.raised}</span>`, a.age,
         a.ack === 'Unacked' ? `<span style="color:${cv('red',700)}">${a.ack}</span>` : a.ack]), 'chip-auto',
-        () => [])}`);
+        () => [])
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No alarms match this filter.</div>`}`);
 }
 
 function resConfig() {
   const c = RES_CONFIG;
+  const allRows = c.drift;
+  const rows = gridApply('res_config', allRows);
   return `
   <div class="row-t" style="align-items:stretch">
     ${card(`${headSm('Configuration drift')}
       <div style="margin-top:var(--vw-space-md)">
-        ${table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
-          c.drift.map(d => [`<span class="mono">${d.p}</span>`,
+        ${gridBar(rows.length, allRows.length, 'Path, expects, device has', [
+          { n: 'Severity', o: ['Major', 'Minor', 'Info'] },
+          { n: 'Path' }
+        ], '', [], 'res_config')}
+        ${rows.length ? table([{t:'Path'},{t:'Template expects'},{t:'Device has'},{t:'Severity'}],
+          rows.map(d => [`<span class="mono">${d.p}</span>`,
             `<span class="mono" style="color:${cv('emerald',700)}">${d.want}</span>`,
             `<span class="mono" style="color:${cv('red',700)}">${d.got}</span>`,
             chip(d.sev, d.sev === 'Major' ? 'warning' : 'info')]), '',
-        i => [])}
+          i => [])
+          : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No configuration drift entries match this filter.</div>`}
         </div>
       </div>`, 'grow')}
   </div>`;
@@ -352,22 +402,29 @@ function resConfig() {
 function resHistory() {
   const histTest = { All: () => true, Discovery: h => h.src.includes('collector'),
     Manual: h => h.src.startsWith('Manual'), Workorder: h => h.src.startsWith('Workorder') };
-  const hist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
+  const baseHist = RES_HISTORY.filter(histTest[RES_HIST_FILTER] || histTest.All);
+  const rows = gridApply('res_history', baseHist);
+  const segExtra = `<div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
+    `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>`;
   return card(`
     <div class="row vw-justify-between vw-items-start" style="margin-bottom:var(--vw-space-md)">
       ${headSm('History')}
-      <div class="seg">${['All', 'Discovery', 'Manual', 'Workorder'].map(k =>
-        `<button class="${RES_HIST_FILTER === k ? 'is-on' : ''}" data-histfilter="${k}">${k}</button>`).join('')}</div>
     </div>
-    ${table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
-      hist.map(h => [`<span class="num">${h.minsAgo !== undefined ? agoStamp(h.minsAgo) : h.at}</span>`,
+    ${gridBar(rows.length, RES_HISTORY.length, 'Field, user, source', [
+      { n: 'Source', o: ['Discovery', 'Manual', 'Workorder', 'Fault'] },
+      { n: 'Field' },
+      { n: 'Changed by' }
+    ], segExtra, [], 'res_history')}
+    ${rows.length ? table([{t:'When'},{t:'Changed by'},{t:'Field'},{t:'From'},{t:'To'},{t:'Source'}],
+      rows.map(h => [`<span class="num">${h.minsAgo !== undefined ? agoStamp(h.minsAgo) : h.at}</span>`,
         h.who === 'discovery' || h.who === 'fault mgmt' || h.who === 'CIQ import'
           ? `<span class="mono" style="color:${cv('gray',500)}">${h.who}</span>` : `<span class="vw-value">${h.who}</span>`,
         h.f, `<span class="mono" style="color:${cv('gray',500)}">${h.from}</span>`,
         `<span class="mono">${h.to}</span>`,
         chip(h.src, h.src.includes('collector')?'success':h.src.startsWith('Manual')?'neutral'
           :h.src.startsWith('Workorder')?'purple':h.src.startsWith('Fault')?'warning':'info')]), 'chip-auto',
-        () => [])}`);
+        () => [])
+      : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No history records match this filter.</div>`}`);
 }
 
 /* ═══ eNodeB — View details ═══
@@ -391,18 +448,42 @@ function viewEnodebResource(N) {
   ];
   const linkTone = t => t === 'Backhaul' ? 'warning' : t === 'X2 interface' ? 'info' : 'purple';
 
+  const allLinksFiltered = gridApply('res_enb_links', allLinks);
+  const configFiltered = gridApply('res_enb_config', E.config);
+  const cellFiltered = gridApply('res_enb_cell', E.cellDetails);
+
   const body = tab === 'links'
-    ? card(table([{ t: 'Link types' }, { t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
-        allLinks.map(x => [chip(x.type, linkTone(x.type)), `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto, `${x.util}%`, n(x.users), x.growth, x.created, x.modified]),
-        'chip-auto', () => []))
+    ? card(
+        gridBar(allLinksFiltered.length, allLinks.length, 'Name, protocol', [
+          { n: 'Link types', o: ['Backhaul', 'X2 interface', 'S1 interface'] },
+          { n: 'Name' },
+          { n: 'Protocol' }
+        ], '', [], 'res_enb_links') +
+        (allLinksFiltered.length ? table([{ t: 'Link types' }, { t: 'Name' }, { t: 'Protocol' }, { t: 'Utilization', r: true }, { t: 'Active users', r: true }, { t: 'Growth rate' }, { t: 'Created on' }, { t: 'Modified on' }],
+          allLinksFiltered.map(x => [chip(x.type, linkTone(x.type)), `<span class="vw-value mono">${esc(x.n)}</span>`, x.proto, `${x.util}%`, n(x.users), x.growth, x.created, x.modified]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No links match this filter.</div>`))
     : tab === 'config'
-    ? card(table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
-        E.config.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`, `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`]),
-        'chip-auto', () => []))
-    : card(table([{ t: 'Status', plain:true }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
-        E.cellDetails.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
-          `B${c.band}`, String(c.health), String(c.alarms), String(c.users), `${c.prb}%`, c.bw, String(c.sinr)]),
-        'chip-auto', () => []));
+    ? card(
+        gridBar(configFiltered.length, E.config.length, 'Parameter, category', [
+          { n: 'Compliance', o: ['Compliant', 'Non-Compliant'] },
+          { n: 'Category' },
+          { n: 'Parameter' }
+        ], '', [], 'res_enb_config') +
+        (configFiltered.length ? table([{ t: 'Compliance' }, { t: 'Category' }, { t: 'Parameter' }, { t: 'Expected(db)' }, { t: 'Actual(db)' }, { t: 'Deviation' }, { t: 'Created on' }, { t: 'Updated on' }],
+          configFiltered.map(c => [chip(c.compliant ? 'Compliant' : 'Non-Compliant', c.compliant ? 'success' : 'error'), c.cat, c.p, String(c.exp), String(c.act), String(c.dev), `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`, `${pad2(new Date().getDate())}-${MONTHS_SHORT[new Date().getMonth()]}-${new Date().getFullYear()}`]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No configuration parameters match this filter.</div>`))
+    : card(
+        gridBar(cellFiltered.length, E.cellDetails.length, 'Band, health', [
+          { n: 'Status', o: ['Good', 'Degraded', 'Critical'] },
+          { n: 'Band' }
+        ], '', [], 'res_enb_cell') +
+        (cellFiltered.length ? table([{ t: 'Status', plain:true }, { t: 'Band' }, { t: 'Health(%)' }, { t: 'Alarms' }, { t: 'Users' }, { t: 'PRB DL/UL(%)' }, { t: 'Throughput DL/UL(Mbps)' }, { t: 'SINR(db)' }],
+          cellFiltered.map(c => [chip(c.status, c.status === 'Good' ? 'success' : c.status === 'Degraded' ? 'warning' : 'error'),
+            `B${c.band}`, String(c.health), String(c.alarms), String(c.users), `${c.prb}%`, c.bw, String(c.sinr)]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No cell details match this filter.</div>`));
 
   return `<div class="page">
     ${pageHead(N.name, `eNodeB · ${r.loc} · ${E.siteType}`)}
@@ -503,21 +584,51 @@ function viewSwitchResource(N) {
   const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
   const downIf = D.interfaces.filter(i => i.down);
 
+  const ifallFiltered = gridApply('res_sw_ifall', D.interfaces);
+  const ifdownFiltered = gridApply('res_sw_ifdown', downIf);
+  const lldpFiltered = gridApply('res_sw_lldp', D.lldp);
+  const hwFiltered = gridApply('res_sw_hw', D.hardware);
+
   const body = tab === 'ifall'
-    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
-        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, `<span class="mono">${i.ifalias}</span>`]),
-        'chip-auto', () => []))
+    ? card(
+        gridBar(ifallFiltered.length, D.interfaces.length, 'Name, alias, bandwidth', [
+          { n: 'Admin status', o: ['up(1)', 'down(2)'] },
+          { n: 'Operational status', o: ['up(1)', 'down(2)', 'lowerLayerDown(7)'] },
+          { n: 'Name' }
+        ], '', [], 'res_sw_ifall') +
+        (ifallFiltered.length ? table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+          ifallFiltered.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, `<span class="mono">${i.ifalias}</span>`]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`))
     : tab === 'ifdown'
-    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
-        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, `<span class="mono">${i.ifalias}</span>`, i.bw]),
-        'chip-auto', () => []))
+    ? card(
+        gridBar(ifdownFiltered.length, downIf.length, 'Name, alias', [{ n: 'Name' }, { n: 'Ifspeed' }], '', [], 'res_sw_ifdown') +
+        (ifdownFiltered.length ? table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+          ifdownFiltered.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, `<span class="mono">${i.ifalias}</span>`, i.bw]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No down interfaces match this filter.</div>`))
     : tab === 'lldp'
-    ? card(table([{ t: 'Source NE' }, { t: 'Source IP address' }, { t: 'Source interface' }, { t: 'Destination IP address' }, { t: 'Destination NE' }, { t: 'Destination interface' }, { t: 'Link name' }, { t: 'Ifalias' }],
-        D.lldp.map(l => [l.srcNe, `<span class="mono">${l.srcIp}</span>`, l.srcIf, `<span class="mono">${l.dstIp}</span>`, l.dstNe, l.dstIf, l.link, `<span class="mono">${l.ifalias}</span>`]),
-        '', () => []))
-    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
-        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
-        '', () => []));
+    ? card(
+        gridBar(lldpFiltered.length, D.lldp.length, 'NE, IP, interface, link', [
+          { n: 'Destination NE' },
+          { n: 'Source interface' },
+          { n: 'Link name' }
+        ], '', [], 'res_sw_lldp') +
+        (lldpFiltered.length ? table([{ t: 'Source NE' }, { t: 'Source IP address' }, { t: 'Source interface' }, { t: 'Destination IP address' }, { t: 'Destination NE' }, { t: 'Destination interface' }, { t: 'Link name' }, { t: 'Ifalias' }],
+          lldpFiltered.map(l => [l.srcNe, `<span class="mono">${l.srcIp}</span>`, l.srcIf, `<span class="mono">${l.dstIp}</span>`, l.dstNe, l.dstIf, l.link, `<span class="mono">${l.ifalias}</span>`]),
+          '', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No LLDP neighbours match this filter.</div>`))
+    : card(
+        gridBar(hwFiltered.length, D.hardware.length, 'Name, type, model, serial', [
+          { n: 'Type', o: ['CPU', 'Power supply', 'Fan', 'Backplane', 'Chassis', 'Module'] },
+          { n: 'Name' },
+          { n: 'Model' },
+          { n: 'Serial number' }
+        ], '', [], 'res_sw_hw') +
+        (hwFiltered.length ? table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+          hwFiltered.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+          '', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No hardware components match this filter.</div>`));
 
   return `<div class="page">
     ${pageHead(N.name, `Switch · ${r.loc || '—'} · ${r.model || ''}`)}
@@ -633,17 +744,38 @@ function viewDwdmResource(N) {
   const stChip = st => chip(st, st.startsWith('up') ? 'success' : 'error');
   const downIf = D.interfaces.filter(i => i.down);
 
+  const ifallFiltered = gridApply('res_dw_ifall', D.interfaces);
+  const ifdownFiltered = gridApply('res_dw_ifdown', downIf);
+  const hwFiltered = gridApply('res_dw_hw', D.hardware);
+
   const body = tab === 'ifall'
-    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
-        D.interfaces.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`]),
-        'chip-auto', () => []))
+    ? card(
+        gridBar(ifallFiltered.length, D.interfaces.length, 'Name, alias, bandwidth', [
+          { n: 'Admin status', o: ['up(1)', 'down(2)'] },
+          { n: 'Operational status', o: ['up(1)', 'down(2)'] },
+          { n: 'Name' }
+        ], '', [], 'res_dw_ifall') +
+        (ifallFiltered.length ? table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Bandwidth' }, { t: 'Capacity' }, { t: 'Ifalias' }],
+          ifallFiltered.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.bw, i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No interfaces match this filter.</div>`))
     : tab === 'ifdown'
-    ? card(table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
-        downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`, i.ifhigh]),
-        'chip-auto', () => []))
-    : card(table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
-        D.hardware.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
-        '', () => []));
+    ? card(
+        gridBar(ifdownFiltered.length, downIf.length, 'Name, alias', [{ n: 'Name' }], '', [], 'res_dw_ifdown') +
+        (ifdownFiltered.length ? table([{ t: 'Name' }, { t: 'Admin status' }, { t: 'Operational status' }, { t: 'Ifspeed' }, { t: 'Ifalias' }, { t: 'Ifhighspeed' }],
+          downIf.map(i => [i.name, stChip(i.admin), stChip(i.oper), i.cap, i.ifalias === '-' ? '-' : `<span class="mono">${esc(i.ifalias)}</span>`, i.ifhigh]),
+          'chip-auto', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No down interfaces match this filter.</div>`))
+    : card(
+        gridBar(hwFiltered.length, D.hardware.length, 'Name, type, model', [
+          { n: 'Type' },
+          { n: 'Name' },
+          { n: 'Model' }
+        ], '', [], 'res_dw_hw') +
+        (hwFiltered.length ? table([{ t: 'Name' }, { t: 'Type' }, { t: 'Model' }, { t: 'Serial number' }, { t: 'Manufacturer name' }],
+          hwFiltered.map(h => [h.n, h.t, `<span class="mono">${h.model}</span>`, `<span class="mono">${h.sn}</span>`, h.mfr]),
+          '', () => [])
+        : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-lg);text-align:center">No hardware components match this filter.</div>`));
 
   return `<div class="page">
     ${pageHead(N.name, `DWDM · ${r.loc || '—'} · ${r.model || ''}`)}

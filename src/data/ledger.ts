@@ -97,7 +97,7 @@ export const classMeta = (k: NeClass): ClassMeta => PHY_TABS.find(x => x.k === k
 /* Classes that have a Node view destination. Server has no node-level page —
    nothing to view — so it's the one class left out; every other class opens
    Node view, even where the page itself has no live assurance feed to show. */
-export const NODE_VIEW_CLASSES: NeClass[] = ['router', 'switch', 'dwdm', 'enodeb'];
+export const NODE_VIEW_CLASSES: NeClass[] = ['router', 'switch'];
 export const hasNodeView = (k?: string | null): boolean => !!k && NODE_VIEW_CLASSES.includes(k.toLowerCase() as NeClass);
 
 /* Node view is a genuinely different screen per class (see legacy/app-node2.js

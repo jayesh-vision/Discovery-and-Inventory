@@ -8,11 +8,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono } from '../components/ui';
 import { Head, fmt } from '../components/dcim/common';
-import { commitImport, downloadSample, downloadSheetCsv, downloadTemplate, importHistory, plan, readFiles, sampleFile, saveClient, stage, store, useClients } from '../dcim/api';
+import { commitImport, deleteClient, downloadSample, downloadSheetCsv, downloadTemplate, importHistory, plan, readFiles, sampleFile, saveClient, stage, store, useClients } from '../dcim/api';
 import { SHEETS, sheetByEntity } from '../dcim/schema';
 import { unmappedRequired, type Issue, type SheetPlan } from '../dcim/parse';
 import type { StagedImport } from '../dcim/reconcile';
-import { ENTITY_KEYS, type EntityKey, type ImportBatch } from '../dcim/model';
+import { ENTITY_KEYS, type EntityKey, type ImportBatch, type Client } from '../dcim/model';
 import { findCityByFacilityCode } from '../data/geographicHierarchy';
 import { withSolution } from '../solution';
 import '../styles/dcim.css';
@@ -148,6 +148,9 @@ export default function DcimImport() {
   const [files, setFiles] = useState<File[]>([]);
   const [plans, setPlans] = useState<SheetPlan[]>([]);
   const [open, setOpen] = useState<number | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [editClientForm, setEditClientForm] = useState({ name: '', industry: '' });
   const [staged, setStaged] = useState<StagedImport | null>(null);
   const [batch, setBatch] = useState<ImportBatch | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -253,6 +256,35 @@ export default function DcimImport() {
       else if (!clientId) throw new Error('Choose a client, or create one.');
       goTo('file');
     } catch (e) { setErr((e as Error).message); }
+  };
+
+  const handleSaveEditClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClient) return;
+    try {
+      await saveClient({
+        id: editingClient.id,
+        name: editClientForm.name.trim() || editingClient.name,
+        industry: editClientForm.industry.trim() || undefined,
+      });
+      setEditingClient(null);
+    } catch (err) {
+      setErr((err as Error).message);
+    }
+  };
+
+  const handleConfirmDeleteClient = async () => {
+    if (!deletingClient) return;
+    try {
+      await deleteClient(deletingClient.id);
+      if (clientId === deletingClient.id) {
+        const remaining = clients.filter(c => c.id !== deletingClient.id);
+        setClientId(remaining[0]?.id || '');
+      }
+      setDeletingClient(null);
+    } catch (err) {
+      setErr((err as Error).message);
+    }
   };
 
   /* step 2: reading a file goes straight on to the column check */
@@ -437,24 +469,62 @@ export default function DcimImport() {
               const last = importHistory(c.id)[0];
               const isSelected = !creating && clientId === c.id;
               return (
-                <button
+                <div
                   key={c.id}
-                  type="button"
                   role="radio"
+                  tabIndex={0}
                   aria-checked={isSelected}
                   className={`client-card${isSelected ? ' is-on' : ''}`}
                   onClick={() => { setClientId(c.id); setCreating(false); }}
+                  onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { setClientId(c.id); setCreating(false); } }}
                 >
                   <div className="client-card-top">
                     <span className="client-av" aria-hidden>{c.name.slice(0, 2).toUpperCase()}</span>
-                    {isSelected && (
-                      <span className="client-selected-badge">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        Selected
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {isSelected && (
+                        <span className="client-selected-badge">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                          Selected
+                        </span>
+                      )}
+                      <div className="client-card-actions">
+                        <button
+                          type="button"
+                          className="client-card-action-btn"
+                          title={`Edit ${c.name}`}
+                          aria-label={`Edit ${c.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingClient(c);
+                            setEditClientForm({ name: c.name, industry: c.industry || '' });
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="client-card-action-btn client-card-action-btn--danger"
+                          title={`Delete ${c.name}`}
+                          aria-label={`Delete ${c.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingClient(c);
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            <line x1="10" y1="11" x2="10" y2="17"/>
+                            <line x1="14" y1="11" x2="14" y2="17"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <span className="client-b">
                     <strong className="client-name">{c.name}</strong>
@@ -467,7 +537,7 @@ export default function DcimImport() {
                       <span>{dcs} data center{dcs === 1 ? '' : 's'}{last ? ` · last upload ${new Date(last.at).toLocaleDateString()}` : ' · nothing uploaded yet'}</span>
                     </span>
                   </span>
-                </button>
+                </div>
               );
             })}
 
@@ -588,6 +658,131 @@ export default function DcimImport() {
             </button>
           </div>
         </Card>
+      )}
+
+      {editingClient && (
+        <div className="dcim-modal-backdrop" onClick={() => setEditingClient(null)}>
+          <div className="dcim-modal" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <div className="dcim-modal-header">
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0f172a' }}>Edit Client</h3>
+              <button
+                type="button"
+                className="dcim-modal-close"
+                onClick={() => setEditingClient(null)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditClient} style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label className="nst-input-label" style={{ marginBottom: 4, display: 'block' }}>
+                  Client ID (Permanent)
+                </label>
+                <input
+                  type="text"
+                  className="nst-input"
+                  value={editingClient.id}
+                  disabled
+                  style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                />
+              </div>
+              <div>
+                <label className="nst-input-label" htmlFor="edit-client-name" style={{ marginBottom: 4, display: 'block' }}>
+                  Client Name <span className="req-star">*</span>
+                </label>
+                <input
+                  id="edit-client-name"
+                  type="text"
+                  className="nst-input"
+                  required
+                  value={editClientForm.name}
+                  onChange={e => setEditClientForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Acme Telecom"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="nst-input-label" htmlFor="edit-client-industry" style={{ marginBottom: 4, display: 'block' }}>
+                  Industry
+                </label>
+                <input
+                  id="edit-client-industry"
+                  type="text"
+                  className="nst-input"
+                  value={editClientForm.industry}
+                  onChange={e => setEditClientForm(f => ({ ...f, industry: e.target.value }))}
+                  placeholder="e.g. Telecom, Enterprise, Cloud"
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="nst-btn nst-btn-secondary"
+                  onClick={() => setEditingClient(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="nst-btn nst-btn-primary"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deletingClient && (
+        <div className="dcim-modal-backdrop" onClick={() => setDeletingClient(null)}>
+          <div className="dcim-modal" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <div className="dcim-modal-header">
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Delete Client
+              </h3>
+              <button
+                type="button"
+                className="dcim-modal-close"
+                onClick={() => setDeletingClient(null)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <p style={{ margin: '0 0 12px 0', fontSize: 14, color: '#334155', lineHeight: 1.5 }}>
+                Are you sure you want to delete client <strong>{deletingClient.name}</strong> (<Mono>{deletingClient.id}</Mono>)?
+              </p>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.4 }}>
+                This will permanently delete this client, all its associated data centers, and all uploaded inventory records.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button
+                type="button"
+                className="nst-btn nst-btn-secondary"
+                onClick={() => setDeletingClient(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="nst-btn"
+                style={{ background: '#dc2626', color: '#fff', borderColor: '#dc2626' }}
+                onClick={handleConfirmDeleteClient}
+              >
+                Delete Client
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {step === 'file' && (

@@ -88,7 +88,7 @@ function useOutsideClose(open: boolean, close: () => void) {
   return ref;
 }
 
-export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: _onReset, compact, hideReset: _hideReset, resetOnTabChange }: {
+export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset, compact, hideReset, resetOnTabChange }: {
   fields: FilterField[]; activeFilters?: Record<string, string>; onClose: () => void; onApply: (values: Record<string, string>) => void; onReset?: () => void;
   compact?: boolean;
   hideReset?: boolean;
@@ -135,6 +135,19 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: 
     onClose();
   };
 
+  const handleReset = () => {
+    setValues({});
+    if (onReset) {
+      onReset();
+    } else {
+      onApply({});
+    }
+    onClose();
+  };
+
+  const hasAnyFilter = Object.values(values).some(v => Boolean(v && v.trim())) ||
+    Boolean(activeFilters && Object.values(activeFilters).some(v => Boolean(v && v.trim())));
+
   return (
     <div className={`fpanel${isCompact ? ' fpanel--sm' : ''}`} role="dialog" aria-label="Filters">
       <div className="fpanel-head">
@@ -148,10 +161,22 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: 
           ))}
         </div>
         <div className="fpanel-ctl">
-          <span className="fp-label">{f.n}</span>
+          <div className="fp-label-row">
+            <span className="fp-label">{f.n}</span>
+            {Boolean(values[f.n]) && (
+              <button
+                type="button"
+                className="fp-clear-field"
+                onClick={() => setField('')}
+                title={`Clear ${f.n}`}
+              >
+                Clear
+              </button>
+            )}
+          </div>
           {f.o
             ? <span className="nst-select-shell"><select className={`nst-input fp-sel${values[f.n] ? '' : ' is-placeholder'}`} value={values[f.n] ?? ''} onChange={e => setField(e.target.value)}>
-                <option value="">{f.n}</option>
+                <option value="" disabled hidden>Select {f.n.toLowerCase()}</option>
                 {f.o.map(o => <option key={optValue(o)} value={optValue(o)}>{optLabel(o)}</option>)}
               </select></span>
             : <span className="nst-input-shell"><input className="nst-input" placeholder={f.n} value={values[f.n] ?? ''} onChange={e => setField(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleApply(); }} /></span>}
@@ -159,8 +184,18 @@ export function FilterPanel({ fields, activeFilters, onClose, onApply, onReset: 
         </div>
       </div>
       <div className="fpanel-foot">
+        {!hideReset && (
+          <button
+            type="button"
+            className="nst-btn nst-btn--sm nst-btn--ghost fp-reset"
+            onClick={handleReset}
+            disabled={!hasAnyFilter}
+          >
+            Reset filters
+          </button>
+        )}
         <span className="grow" />
-        <button className="nst-btn nst-btn--sm fp-apply" onClick={handleApply}>Apply filters</button>
+        <button type="button" className="nst-btn nst-btn--sm fp-apply" onClick={handleApply}>Apply filters</button>
       </div>
     </div>
   );

@@ -68,7 +68,7 @@ export default function InactiveInventory() {
           rowActions={rowActions}
           autoResetFilter
           renderRow={r => [
-            <><span className="vw-value">{r.name}</span> <span className="ro-lock" title="Read-only">🔒</span></>,
+            <><span className="vw-value">{r.name}</span><span className="ro-lock" style={{ display: 'none' }} /></>,
             <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
             <Mono>{r.sn}</Mono>,
             <><Mono>{r.ip}</Mono><Sub mono>{r.loc}</Sub></>,
