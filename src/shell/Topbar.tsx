@@ -273,9 +273,12 @@ export default function Topbar() {
         to = `${base}?tab=${encodeURIComponent(sp.get('tab')!)}`;
       }
       if (base && (prefix === 'Resources · Physical Resources' || label === 'Physical Resources')) {
-        const reqCls = sp.get('cls')
-          || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null)
-          || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls;
+        const isDc = isDatacenter();
+        const reqCls = isDc
+          ? sp.get('cls')
+          : (sp.get('cls')
+            || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null)
+            || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls);
         if (reqCls) {
           to = `${base}?cls=${encodeURIComponent(reqCls)}`;
         }

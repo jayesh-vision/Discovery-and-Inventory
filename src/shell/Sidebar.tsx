@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SCREENS, screenByKey } from '../routes';
-import { withSolution } from '../solution';
+import { withSolution, isDatacenter } from '../solution';
 import { CHEV, SIDE_CHEVRON, SIDE_GRID, SIDE_ICONS } from './sideIcons';
 
 const Svg = ({ html }: { html: string }) => <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: html }} />;
@@ -49,7 +49,8 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
 
   const item = (key: string, label: string, child = false) => {
     const s = screenByKey(key)!;
-    const targetPath = (key === 'physical' && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ns_phy_tab'))
+    const isDc = isDatacenter();
+    const targetPath = (!isDc && key === 'physical' && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ns_phy_tab'))
       ? `${s.path}?cls=${encodeURIComponent(sessionStorage.getItem('ns_phy_tab')!)}`
       : s.path;
     return (

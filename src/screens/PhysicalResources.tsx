@@ -75,25 +75,28 @@ export default function PhysicalResources() {
   const discoveryScoped = !scoped && !!(oem || model);
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
   const urlClass = sp.get('cls') || sp.get('tab');
-  const savedClass = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as PhyTab | null;
+  const savedClass = (!scoped && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as PhyTab | null;
   const rawCls: PhyTab = isClass(urlClass)
     ? urlClass
-    : (modelClass || (isClass(savedClass) ? savedClass : PHY_TABS[0].k));
+    : (modelClass || (isClass(savedClass) ? savedClass : TAB_ORDER[0]));
   const cls: PhyTab = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
 
   useEffect(() => {
-    if (cls && typeof sessionStorage !== 'undefined') {
+    if (!scoped && cls && typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem('ns_phy_tab', cls);
     }
-  }, [cls]);
+    if (scoped && typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('ns_phy_tab');
+    }
+  }, [cls, scoped]);
 
   useEffect(() => {
-    if (!urlClass && !discoveryScoped && !modelClass && isClass(savedClass) && savedClass !== 'router') {
+    if (!scoped && !urlClass && !discoveryScoped && !modelClass && isClass(savedClass) && savedClass !== 'router') {
       const next = new URLSearchParams(sp);
       next.set('cls', savedClass);
       setSp(next, { replace: true });
     }
-  }, [urlClass, discoveryScoped, modelClass, savedClass, setSp, sp]);
+  }, [scoped, urlClass, discoveryScoped, modelClass, savedClass, setSp, sp]);
 
   /* Every class is a tab. Server has no node-level digital twin, so its Node
      view stays in the row menu, disabled, rather than the whole class being
@@ -195,7 +198,7 @@ export default function PhysicalResources() {
   ];
 
   const selectTabClass = (targetClass: PhyTab) => {
-    if (typeof sessionStorage !== 'undefined') {
+    if (!scoped && typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem('ns_phy_tab', targetClass);
     }
     const next = new URLSearchParams(sp);
