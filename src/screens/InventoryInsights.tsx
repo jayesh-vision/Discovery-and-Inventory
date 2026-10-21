@@ -1,6 +1,6 @@
 import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isDatacenter, currentGeo, withSolution } from '../solution';
 import '../styles/inventory-insights.css';
 import SparesRiskCard from '../components/insights/SparesRiskCard';
@@ -80,18 +80,21 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
   rows.push(['Report', 'Inventory Insights & Executive Summary']);
   rows.push(['Generated At', `${timestamp} ${tzLabel}`]);
   rows.push(['Time Window', rangeName]);
-  rows.push(['Monitored Locations', `${TOTAL_RECORDS_DATA[range].sitesCount} sites`]);
+  rows.push(['Monitored Locations', `${TOTAL_RECORDS_DATA[range].sitesCount} ${isDatacenter() ? 'data centers' : 'sites'}`]);
   rows.push(['Managed Elements', TOTAL_RECORDS_DATA[range].managedElements]);
 
   // 2. High-Level Summary
   addSection('OVERVIEW & OVERALL METRICS');
   rows.push(['Metric', 'Count / Value', 'Benchmark / Health', 'Status']);
   rows.push(['Total Inventory Records', TOTAL_RECORDS_DATA[range].totalDisplay, `${TOTAL_RECORDS_DATA[range].delta} ${TOTAL_RECORDS_DATA[range].period}`, 'Active']);
+  const isDc = isDatacenter();
   rows.push([
     'Physical Inventory',
     PARENTS_DATA_DYNAMIC[range][0].count,
     `${PARENTS_DATA_DYNAMIC[range][0].health} Health (${PARENTS_DATA_DYNAMIC[range][0].delta})`,
-    `Active (${PARENTS_DATA_DYNAMIC[range][0].children[0].count}) + Passive (${PARENTS_DATA_DYNAMIC[range][0].children[1].count})`
+    isDc
+      ? `In service (${PARENTS_DATA_DYNAMIC[range][0].children[0].count}) + Planned (${PARENTS_DATA_DYNAMIC[range][0].children[1].count})`
+      : `Active (${PARENTS_DATA_DYNAMIC[range][0].children[0].count}) + Passive (${PARENTS_DATA_DYNAMIC[range][0].children[1].count})`
   ]);
   rows.push([
     PARENTS_DATA_DYNAMIC[range][1].name,
@@ -109,10 +112,10 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
   rows.push(['Bucket', 'Category', 'Total Records', 'Discovered / Verified Coverage', 'Critical Issues', 'High Issues']);
   const bShare = BUCKET_SHARE_DATA[range].rows;
   const pData = PARENTS_DATA_DYNAMIC[range];
-  rows.push(['Active', 'Physical', bShare[0][1], `${pData[0].children[0].coverage} Discovered`, pData[0].children[0].critical, pData[0].children[0].high]);
-  rows.push(['Passive', 'Physical', bShare[1][1], `${pData[0].children[1].coverage} Survey verified`, pData[0].children[1].critical, pData[0].children[1].high]);
+  rows.push(['Active', 'Physical', bShare[0][1], isDc ? `${pData[0].children[0].coverage} In service` : `${pData[0].children[0].coverage} Discovered`, pData[0].children[0].critical, pData[0].children[0].high]);
+  rows.push(['Passive', 'Physical', bShare[1][1], isDc ? '100% Survey verified' : `${pData[0].children[1].coverage} Survey verified`, isDc ? 0 : pData[0].children[1].critical, isDc ? 0 : pData[0].children[1].high]);
   rows.push(['Connectivity', 'Connectivity', bShare[2][1], `${pData[1].children[1].coverage} ${pData[1].children[1].covLabel}`, pData[1].children[1].critical, pData[1].children[1].high]);
-  rows.push(['Virtual', isDatacenter() ? 'Virtual Layer' : 'Connectivity', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
+  rows.push(['Virtual', isDc ? 'Virtual Layer' : 'Connectivity', bShare[3][1], `${pData[1].children[0].coverage} Mapped to host`, pData[1].children[0].critical, pData[1].children[0].high]);
 
   // 4. Component Hierarchy Detail
   addSection('COMPONENT HIERARCHY DETAIL');
@@ -163,9 +166,9 @@ function buildInsightsRows(range: DayRangeOption): (string | number)[][] {
     rows.push([act[0], act[1], act[2], act[3]]);
   });
 
-  // 10. Sites Needing Attention
-  addSection('SITES NEEDING ATTENTION');
-  rows.push(['Site ID', 'Region', 'Site Type', 'Active Elements', 'Passive Assets', 'Health (%)', 'Issues Count', 'Status']);
+  // 10. Sites / Data Centers Needing Attention
+  addSection(isDatacenter() ? 'DATA CENTERS NEEDING ATTENTION' : 'SITES NEEDING ATTENTION');
+  rows.push([isDatacenter() ? 'Data Center ID' : 'Site ID', 'Region', isDatacenter() ? 'Tier / Kind' : 'Site Type', 'Active Elements', 'Passive Assets', 'Health (%)', 'Issues Count', 'Status']);
   SITES_DYNAMIC[range].forEach(site => {
     rows.push([site.name, site.region, site.kind, site.active, site.passive, site.health, site.issues, site.status]);
   });
@@ -374,6 +377,36 @@ const LOGICAL_CONNECTIVITY_META: Record<string, { layer: string; protocol: strin
     protocol: 'OSPFv3, IS-IS Point-to-Point, BFD Fast Convergence',
     underlying: 'Spine, Leaf & Border Gateway Routing Engines',
     note: 'Resilient Equal-Cost Multi-Path (ECMP) routing topology establishing fabric loopback reachability.'
+  },
+  'InfiniBand AI cluster fabric (400G NDR)': {
+    layer: 'AI Cluster InfiniBand Interconnect',
+    protocol: 'InfiniBand NDR 400Gbps, SHARP v3 In-Network Reduction',
+    underlying: 'Quantum-2 QM9700 Spine & Leaf Switches, ConnectX-7 HCAs',
+    note: 'Non-blocking fat-tree InfiniBand fabric connecting accelerated GPU nodes for distributed AI training.'
+  },
+  'Ethernet spine-leaf fabric (100G/400G Clos)': {
+    layer: 'Data Center IP Fabric (Clos Underlay)',
+    protocol: 'BGP EVPN, VXLAN, 100G/400G RoCE v2, ECMP',
+    underlying: 'Arista 7060DX5, Nvidia Spectrum-4 & Dell PowerSwitch Spine/Leaf',
+    note: 'High-throughput leaf-spine IP fabric providing low-latency east-west interconnectivity.'
+  },
+  'Compute & storage host access (100G RoCE)': {
+    layer: 'Host Access & RDMA Storage Fabric',
+    protocol: 'RoCE v2, DCQCN Congestion Notification, PFC / ECN',
+    underlying: 'Dual-port 100G/200G NICs, Top-of-Rack Leaf Switches',
+    note: 'Lossless Ethernet access links connecting compute blades and storage arrays to the fabric.'
+  },
+  'Out-of-band management & telemetry (1G/10G)': {
+    layer: 'Management & Telemetry Plane',
+    protocol: 'IPMI, Redfish, SNMPv3, gNMI Telemetry, SSH',
+    underlying: 'Dedicated 1G/10G Management Switches & BMC Controllers',
+    note: 'Isolated out-of-band network for hardware telemetry, remote console, and DCIM orchestration.'
+  },
+  'Data center interconnect (DCI) & border links': {
+    layer: 'Data Center Interconnect (DCI) & Edge Transport',
+    protocol: 'EVPN-DCI, SR-MPLS / SRv6, 400G ZR/ZR+ Optical DCI',
+    underlying: 'Border Leaf & DCI Edge Gateways, Dark Fibre Spans',
+    note: 'Inter-facility transport links connecting regional data halls and public cloud exchange peering points.'
   }
 };
 
@@ -388,11 +421,30 @@ const DC_EOL_VENDORS = [
 
 export default function InventoryInsights() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isDc = isDatacenter();
   const eolVendors = isDc ? DC_EOL_VENDORS : EOL_VENDORS;
 
   // ── State & Filters ──
-  const [dayRange, setDayRange] = useState<DayRangeOption>('30d');
+  const urlRange = (searchParams.get('timeRange') || searchParams.get('range')) as DayRangeOption | null;
+  const initialRange: DayRangeOption = (urlRange && ['7d', '14d', '30d', '90d', '12m'].includes(urlRange)) ? urlRange : '30d';
+  const [dayRange, setDayRange] = useState<DayRangeOption>(initialRange);
+
+  useEffect(() => {
+    const r = (searchParams.get('timeRange') || searchParams.get('range')) as DayRangeOption | null;
+    if (r && ['7d', '14d', '30d', '90d', '12m'].includes(r) && r !== dayRange) {
+      setDayRange(r);
+    }
+  }, [searchParams]);
+
+  const handleRangeChange = (next: DayRangeOption) => {
+    setDayRange(next);
+    setSearchParams(prev => {
+      const sp = new URLSearchParams(prev);
+      sp.set('timeRange', next);
+      return sp;
+    }, { replace: true });
+  };
   const [exportOpen, setExportOpen] = useState<boolean>(false);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -635,7 +687,7 @@ export default function InventoryInsights() {
             <select
               aria-label="Time period"
               value={dayRange}
-              onChange={e => setDayRange(e.target.value as DayRangeOption)}
+              onChange={e => handleRangeChange(e.target.value as DayRangeOption)}
               className="ii-select"
             >
               <option value="7d">Last 7 days</option>
@@ -764,11 +816,10 @@ export default function InventoryInsights() {
 
         {/* ── Tier 1: Key Metrics (4 cards) ── */}
         <section aria-label="Key metrics" className="ii-grid ii-grid--kpi">
-          {/* Tile 1: Light blue summary KPI tile */}
+          {/* Tile 1: Light blue summary KPI tile (Static overview card) */}
           <div
-            className="ii-card-blue"
-            onClick={() => navigate(withSolution('/inventory/physical?from=Inventory%20insights'))}
-            title="Drill down to all inventory records"
+            className="ii-card-blue is-static"
+            style={{ cursor: 'default' }}
           >
             <div className="ii-kpi-label">Total inventory records</div>
             <div className="ii-kpi-value-row">
@@ -778,7 +829,7 @@ export default function InventoryInsights() {
               </span>
             </div>
             <div className="ii-kpi-trend">
-              {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
+              {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} {isDc ? 'data centers' : 'sites'} · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
             </div>
             <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
               <div className="ii-stat-row">
@@ -803,11 +854,13 @@ export default function InventoryInsights() {
               className="ii-card is-clickable"
               onClick={() => {
                 if (p.name.includes('Physical')) {
-                  navigate(withSolution('/inventory/physical?from=Inventory%20insights'));
-                } else if (isDc) {
-                  navigate(withSolution('/inventory/virtual?from=Inventory%20insights'));
+                  navigate(isDc
+                    ? withSolution('/inventory/resources/physical?type=active&from=Inventory%20insights')
+                    : withSolution('/inventory/physical?from=Inventory%20insights'));
                 } else {
-                  navigate(withSolution('/inventory/links?from=Inventory%20insights'));
+                  navigate(isDc
+                    ? withSolution('/inventory/connectivity/links?from=Inventory%20insights')
+                    : withSolution('/inventory/links?from=Inventory%20insights'));
                 }
               }}
               title={`Drill down to ${p.name}`}
@@ -831,13 +884,29 @@ export default function InventoryInsights() {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (k.name === 'Active') {
-                        navigate(withSolution('/inventory/physical?from=Inventory%20insights'));
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?from=Inventory%20insights'));
+                      } else if (k.name === 'In service' || k.name === 'Deployed') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=deployed&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=deployed&from=Inventory%20insights'));
+                      } else if (k.name === 'Planned') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=planned&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=planned&from=Inventory%20insights'));
                       } else if (k.name === 'Passive') {
-                        navigate(withSolution('/inventory/passive?from=Inventory%20insights'));
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=passive&from=Inventory%20insights')
+                          : withSolution('/inventory/passive?from=Inventory%20insights'));
                       } else if (k.name === 'Virtual') {
-                        navigate(withSolution('/inventory/virtual?from=Inventory%20insights'));
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/virtual?from=Inventory%20insights')
+                          : withSolution('/inventory/virtual?from=Inventory%20insights'));
                       } else if (k.name === 'Connectivity') {
-                        navigate(withSolution('/inventory/links?from=Inventory%20insights'));
+                        navigate(isDc
+                          ? withSolution('/inventory/connectivity/links?from=Inventory%20insights')
+                          : withSolution('/inventory/links?from=Inventory%20insights'));
                       }
                     }}
                     onMouseEnter={(e) => {
@@ -881,8 +950,10 @@ export default function InventoryInsights() {
           {/* Tile 4: Open inventory issues */}
           <div
             className="ii-card is-clickable"
-            onClick={() => navigate(withSolution('/inventory/inactive?from=Inventory%20insights'))}
-            title="Drill down to inactive records and backlog"
+            onClick={() => navigate(isDc
+              ? withSolution('/inventory/issues?status=open&from=Inventory%20insights')
+              : withSolution('/inventory/inactive?from=Inventory%20insights'))}
+            title={isDc ? "Drill down to open issues (34)" : "Drill down to inactive records and backlog"}
           >
             <div className="ii-card-head">
               <span className="ii-kpi-label">Open inventory issues</span>
@@ -899,8 +970,14 @@ export default function InventoryInsights() {
               return (
                 <div className="ii-stack">
                   <div
-                    className="ii-severity-seg"
-                    style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)' }}
+                    className="ii-severity-seg is-clickable"
+                    style={{ width: `${((iss.crit / tot) * 100).toFixed(1)}%`, background: 'var(--ii-danger)', cursor: isDc ? 'pointer' : undefined }}
+                    onClick={(e) => {
+                      if (isDc) {
+                        e.stopPropagation();
+                        navigate(withSolution('/inventory/issues?status=open&severity=critical&from=Inventory%20insights'));
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       showTip({
                         title: 'Critical Open Issues',
@@ -918,8 +995,14 @@ export default function InventoryInsights() {
                     onMouseLeave={hideTip}
                   />
                   <div
-                    className="ii-severity-seg"
-                    style={{ width: `${((iss.high / tot) * 100).toFixed(1)}%`, background: 'var(--ii-warning)' }}
+                    className="ii-severity-seg is-clickable"
+                    style={{ width: `${((iss.high / tot) * 100).toFixed(1)}%`, background: 'var(--ii-warning)', cursor: isDc ? 'pointer' : undefined }}
+                    onClick={(e) => {
+                      if (isDc) {
+                        e.stopPropagation();
+                        navigate(withSolution('/inventory/issues?status=open&severity=high&from=Inventory%20insights'));
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       showTip({
                         title: 'High Severity Issues',
@@ -936,8 +1019,14 @@ export default function InventoryInsights() {
                     onMouseLeave={hideTip}
                   />
                   <div
-                    className="ii-severity-seg"
-                    style={{ width: `${((iss.med / tot) * 100).toFixed(1)}%`, background: 'var(--ii-primary)' }}
+                    className="ii-severity-seg is-clickable"
+                    style={{ width: `${((iss.med / tot) * 100).toFixed(1)}%`, background: 'var(--ii-primary)', cursor: isDc ? 'pointer' : undefined }}
+                    onClick={(e) => {
+                      if (isDc) {
+                        e.stopPropagation();
+                        navigate(withSolution('/inventory/issues?status=open&from=Inventory%20insights'));
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       showTip({
                         title: 'Medium Severity Issues',
@@ -954,8 +1043,14 @@ export default function InventoryInsights() {
                     onMouseLeave={hideTip}
                   />
                   <div
-                    className="ii-severity-seg"
-                    style={{ width: `${((iss.low / tot) * 100).toFixed(1)}%`, background: 'var(--ii-text-faint)' }}
+                    className="ii-severity-seg is-clickable"
+                    style={{ width: `${((iss.low / tot) * 100).toFixed(1)}%`, background: 'var(--ii-text-faint)', cursor: isDc ? 'pointer' : undefined }}
+                    onClick={(e) => {
+                      if (isDc) {
+                        e.stopPropagation();
+                        navigate(withSolution('/inventory/issues?status=open&from=Inventory%20insights'));
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       showTip({
                         title: 'Low Severity Issues',
@@ -986,7 +1081,21 @@ export default function InventoryInsights() {
               return (
                 <ul className="ii-sev-list" aria-label="Open issues by severity">
                   {levels.map(l => (
-                    <li key={l.k} className="ii-sev-row">
+                    <li
+                      key={l.k}
+                      className="ii-sev-row is-clickable"
+                      style={{ cursor: isDc ? 'pointer' : undefined }}
+                      onClick={(e) => {
+                        if (isDc) {
+                          e.stopPropagation();
+                          const sev = l.k.toLowerCase();
+                          navigate(sev === 'critical' || sev === 'high'
+                            ? withSolution(`/inventory/issues?status=open&severity=${sev}&from=Inventory%20insights`)
+                            : withSolution('/inventory/issues?status=open&from=Inventory%20insights'));
+                        }
+                      }}
+                      title={isDc ? `Drill down to ${l.k} issues (${l.n})` : undefined}
+                    >
                       <span className="ii-sev-dot" style={{ background: l.c }} aria-hidden="true" />
                       <span className="ii-sev-name">{l.k}</span>
                       <span className="ii-mono ii-sev-count">{l.n.toLocaleString('en-US')}</span>
@@ -1048,7 +1157,7 @@ export default function InventoryInsights() {
                               ? (isDc ? 'Data center physical plant: racks, power feeds, UPS, cooling units, sensors and ODF cabling.' : 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.')
                               : b.name === 'Virtual'
                               ? (isDc
-                                  ? 'Virtual Machines, K8s pods, datastores & vSwitches across 48 data centers.'
+                                  ? `Virtual Machines, K8s pods, datastores & vSwitches across ${TOTAL_RECORDS_DATA[dayRange].sitesCount} data centers.`
                                   : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
                               : (isDc
                                   ? 'Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services.'
@@ -1100,7 +1209,7 @@ export default function InventoryInsights() {
                           ? (isDc ? 'Data center physical plant: racks, power feeds, UPS, cooling units, sensors and ODF cabling.' : 'OSP/ISP plant: fibre spans, ducts, closures, ODFs & towers.')
                           : b.name === 'Virtual'
                           ? (isDc
-                              ? 'Virtual Machines, K8s pods, datastores & vSwitches across 48 data centers.'
+                              ? `Virtual Machines, K8s pods, datastores & vSwitches across ${TOTAL_RECORDS_DATA[dayRange].sitesCount} data centers.`
                               : 'VNFs and CNFs deployed across Telco Cloud Kubernetes & NFVI.')
                           : (isDc
                               ? 'Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services.'
@@ -1336,6 +1445,39 @@ export default function InventoryInsights() {
                       <div
                         className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
                         onClick={() => {
+                          if (isDc) {
+                            if (p.title.includes('Active')) {
+                              const subTypeParam = t.name.toLowerCase().includes('gpu')
+                                ? 'gpu_server'
+                                : t.name.toLowerCase().includes('switch')
+                                ? 'switch'
+                                : t.name.toLowerCase().includes('compute server') || t.name.toLowerCase().includes('server')
+                                ? 'server'
+                                : t.name.toLowerCase().includes('storage')
+                                ? 'storage_array'
+                                : t.name.toLowerCase().includes('router')
+                                ? 'router'
+                                : t.name.toLowerCase().includes('firewall')
+                                ? 'firewall'
+                                : undefined;
+                              navigate(subTypeParam
+                                ? withSolution(`/inventory/resources/physical?type=active&subType=${subTypeParam}&from=Inventory%20insights`)
+                                : panelRoute);
+                              return;
+                            }
+                            if (p.title.includes('Passive')) {
+                              navigate(withSolution('/inventory/resources/physical?type=passive&from=Inventory%20insights'));
+                              return;
+                            }
+                            if (p.title.includes('Virtual')) {
+                              navigate(withSolution('/inventory/resources/virtual?from=Inventory%20insights'));
+                              return;
+                            }
+                            if (p.title.includes('Connectivity')) {
+                              navigate(withSolution('/inventory/connectivity/links?from=Inventory%20insights'));
+                              return;
+                            }
+                          }
                           if (p.route === '/inventory/physical') {
                             /* only classes the Physical page actually has can be drilled to;
                                 Microwave and PON have no tab of their own, so they open
@@ -1397,12 +1539,29 @@ export default function InventoryInsights() {
                 })}
               </div>
               <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
-                {p.facts.map(f => (
-                  <div key={f.name} className="ii-stat-row">
-                    <span>{f.name}</span>
-                    <span className="ii-mono">{f.value}</span>
-                  </div>
-                ))}
+                {p.facts.map(f => {
+                  const isDriftFact = isDc && f.name.includes('Off approved OS');
+                  const isEolFact = isDc && f.name.includes('EOL / EOS');
+                  const isClickable = isDriftFact || isEolFact;
+                  return (
+                    <div
+                      key={f.name}
+                      className={`ii-stat-row ${isClickable ? 'is-clickable' : ''}`}
+                      style={{ cursor: isClickable ? 'pointer' : undefined }}
+                      onClick={isClickable ? () => {
+                        if (isDriftFact) {
+                          navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights'));
+                        } else if (isEolFact) {
+                          navigate(withSolution('/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=active&from=Inventory%20insights'));
+                        }
+                      } : undefined}
+                      title={isDriftFact ? 'Drill down to firmware drift compliance (111)' : isEolFact ? 'Drill down to active EOL exposure (348)' : undefined}
+                    >
+                      <span>{f.name}</span>
+                      <span className="ii-mono">{f.value}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
@@ -1439,7 +1598,10 @@ export default function InventoryInsights() {
               </div>
               <div className="ii-pipeline-arrow" aria-hidden="true">→</div>
               <div
-                className="ii-pipeline-step"
+                className={`ii-pipeline-step ${isDc ? 'is-clickable' : ''}`}
+                style={{ cursor: isDc ? 'pointer' : undefined }}
+                onClick={isDc ? () => navigate(withSolution('/inventory/lifecycle?status=decommission_pending_removal&from=Inventory%20insights')) : undefined}
+                title={isDc ? 'Drill down to decommission pending removal (8)' : undefined}
                 onMouseEnter={(e) => showTip({
                   title: 'Still Live in Discovery',
                   badge: DECOM_DYNAMIC[dayRange].live,
@@ -1521,7 +1683,15 @@ export default function InventoryInsights() {
             </div>
             <div className="ii-bar-list" style={{ gap: 8 }}>
               {eolRows.map(r => (
-                <div key={r.name} className="ii-drift-row" style={{ cursor: 'default' }}>
+                <div
+                  key={r.name}
+                  className={`ii-drift-row ${isDc ? 'is-clickable' : ''}`}
+                  style={{ cursor: isDc ? 'pointer' : 'default' }}
+                  onClick={isDc ? () => {
+                    navigate(withSolution(`/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=${encodeURIComponent(r.name.toLowerCase())}&from=Inventory%20insights`));
+                  } : undefined}
+                  title={isDc ? `Drill down to ${r.name} EOL/EOS exposure (${r.count})` : undefined}
+                >
                   <span className="ii-axis-label" title={r.name}>{r.name}</span>
                   <div className="ii-axis-stack" style={{ width: r.w }}>
                     {r.segs.map((s, idx) => (
@@ -1587,7 +1757,10 @@ export default function InventoryInsights() {
               {driftRows.map(d => (
                 <div
                   key={d.name}
-                  className="ii-drift-row"
+                  className={`ii-drift-row ${isDc ? 'is-clickable' : ''}`}
+                  style={{ cursor: isDc ? 'pointer' : undefined }}
+                  onClick={isDc ? () => navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights')) : undefined}
+                  title={isDc ? 'Drill down to firmware drift compliance (111)' : undefined}
                   onMouseEnter={(e) => showTip({
                     title: `${d.name} Firmware Drift`,
                     badge: d.w,
@@ -1610,7 +1783,12 @@ export default function InventoryInsights() {
               ))}
             </div>
             <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
-              <div className="ii-stat-row">
+              <div
+                className={`ii-stat-row ${isDc ? 'is-clickable' : ''}`}
+                style={{ cursor: isDc ? 'pointer' : undefined }}
+                onClick={isDc ? () => navigate(withSolution('/inventory/compliance/firmware?drift=true&cve=true&from=Inventory%20insights')) : undefined}
+                title={isDc ? 'Drill down to firmware CVE advisories (18)' : undefined}
+              >
                 <span>Of the {DRIFT_DYNAMIC[dayRange].total}: on a version with published CVEs</span>
                 <span className="ii-mono">{DRIFT_DYNAMIC[dayRange].cve}</span>
               </div>
@@ -1698,7 +1876,9 @@ export default function InventoryInsights() {
               </table>
             </div>
             <p className="ii-foot">
-              Complete = mandatory attributes filled · Integrity = parent/child and A–Z relationships resolved · Fresh = updated by discovery, NFVO, mapping or survey within SLA (24 h active/virtual/logical, 90 d passive).
+              {isDc
+                ? 'Complete = mandatory attributes filled · Integrity = parent/child and fabric relationships resolved · Fresh = updated by discovery or DCIM telemetry within SLA (24 h active/virtual/connectivity, 90 d passive).'
+                : 'Complete = mandatory attributes filled · Integrity = parent/child and A–Z relationships resolved · Fresh = updated by discovery, NFVO, mapping or survey within SLA (24 h active/virtual/logical, 90 d passive).'}
             </p>
           </div>
         </section>
@@ -1728,21 +1908,21 @@ export default function InventoryInsights() {
         </section>
 
         <section aria-label="Sites, services and activity" className="ii-grid ii-grid--detail">
-          {/* Sites needing attention */}
+          {/* Sites / Data centers needing attention */}
           <div className="ii-card">
             <div className="ii-card-head">
-              <div className="ii-card-title">Sites needing attention</div>
+              <div className="ii-card-title">{isDc ? 'Data centers needing attention' : 'Sites needing attention'}</div>
               <button type="button" onClick={() => navigate(withSolution('/inventory/location?from=Inventory%20insights'))} className="ii-link-btn">
-                All {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites
+                All {TOTAL_RECORDS_DATA[dayRange].sitesCount} {isDc ? 'data centers' : 'sites'}
               </button>
             </div>
             <div className="ii-table-wrap">
               <table className="ii-table ii-table--sites">
                 <thead>
                   <tr>
-                    <th scope="col">Site</th>
+                    <th scope="col">{isDc ? 'Data center' : 'Site'}</th>
                     <th scope="col">Region</th>
-                    <th scope="col">Site type</th>
+                    <th scope="col">{isDc ? 'Tier / Kind' : 'Site type'}</th>
                     <th scope="col" className="is-num">Active</th>
                     <th scope="col" className="is-num">Passive</th>
                     <th scope="col">Health</th>
@@ -1754,9 +1934,11 @@ export default function InventoryInsights() {
                   {sitesList.map(s => (
                     <tr
                       key={s.name}
-                      onClick={() => navigate(withSolution(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`))}
+                      onClick={() => navigate(isDc
+                        ? withSolution(`/inventory/datacenter/${encodeURIComponent(s.name)}`)
+                        : withSolution(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`))}
                       className="is-clickable"
-                      title={`View ${s.name} location details`}
+                      title={isDc ? `View ${s.name} data center details` : `View ${s.name} location details`}
                     >
                       <td className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.name}</td>
                       <td>{s.region}</td>
@@ -1782,7 +1964,7 @@ export default function InventoryInsights() {
                   {sitesList.length === 0 && (
                     <tr>
                       <td colSpan={8} className="is-empty">
-                        No sites needing attention at this time.
+                        {isDc ? 'No data centers needing attention at this time.' : 'No sites needing attention at this time.'}
                       </td>
                     </tr>
                   )}

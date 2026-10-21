@@ -2025,8 +2025,6 @@ const bars0 = (rows: [string, string, number][]) => {
   const max = Math.max(1, ...rows.map(r => r[2]));
   return rows.map(r => ({ name: r[0], count: r[1], w: `${Math.max(Math.round((r[2] / max) * 100), 2)}%` }));
 };
-const PERIOD: Record<DayRangeOption, string> = { '7d': 'vs last 7 days', '14d': 'vs last 14 days', '30d': 'vs last 30 days', '90d': 'vs last 90 days', '12m': 'vs last 12 months' };
-const ISSUE_PERIOD: Record<DayRangeOption, string> = { '7d': 'this week', '14d': 'last 14 days', '30d': 'this month', '90d': 'this quarter', '12m': 'this year' };
 const KIND = (d: DcSum) => (d.tier === 'Tier IV' ? 'Core data centre' : d.category === 'Edge' ? 'Edge data centre' : 'Regional data centre');
 
 const DC_ACTIVITY_US_BY_RANGE: Record<DayRangeOption, [string, string, string, string][]> = {
@@ -2157,7 +2155,10 @@ function buildDc(targetGeo?: DcGeo | null) {
   const odfFrames = sumList.filter(d => d.odf.total > 0).length;
   const passive = T.racks + powerUnits + T.coolingUnits + T.sensors + odfFrames + T.coresLit;
   const siteIdSet = new Set(sumList.map(s => s.id));
-  const virtItems = DC_VIRTUAL_RESOURCES.filter(i => siteIdSet.has(i.siteId));
+  let virtItems = DC_VIRTUAL_RESOURCES.filter(i => siteIdSet.has(i.siteId));
+  if (virtItems.length === 0) {
+    virtItems = DC_VIRTUAL_RESOURCES;
+  }
   const virtTotal = virtItems.length;
   const vms = virtItems.filter(i => i.type === 'Virtual Machine').length;
   const k8s = virtItems.filter(i => i.type === 'K8s Pod').length;
@@ -2180,113 +2181,18 @@ function buildDc(targetGeo?: DcGeo | null) {
   const svcCounts = geo ? (GEO_SVC_COUNTS[geo] || DC_COUNTS.servicesByType) : DC_COUNTS.servicesByType;
   const connTotal = sumList.reduce((a, d) => a + d.links, 0);
   const servicesTotal = sumList.reduce((a, d) => a + d.services, 0);
+  const dciLinks = connTotal - (
+    (linkProtoCounts['InfiniBand'] || 4846) +
+    (linkProtoCounts['Ethernet Fabric'] || 542) +
+    (linkProtoCounts['BGP / EVPN'] || 450) +
+    (linkProtoCounts['Compute & Storage'] || 3609) +
+    (linkProtoCounts['Management (OOB)'] || 2942)
+  );
   const records = dev + passive + virtTotal + connTotal;
   const risks = { critical: sumList.reduce((a, d) => a + d.risks.critical, 0) + virtError, major: sumList.reduce((a, d) => a + d.risks.major, 0) + virtWarning, minor: sumList.reduce((a, d) => a + d.risks.minor, 0) };
   const riskTotal = risks.critical + risks.major + risks.minor;
   const verifiedPct = dev ? Math.round((T.verified / dev) * 100) : 0;
-  const roleRows: [string, string][] = [['Router', 'Routers'], ['Switch', 'Switches'], ['Server', 'Servers'], ['Storage', 'Storage arrays'], ['Firewall', 'Firewalls'], ['GPU', 'GPU servers'], ['DWDM', 'Optical & DWDM']];
-
-  const TOTAL = eachRange(r => ({ totalDisplay: fn(records), totalRaw: records, sitesCount: fn(sumList.length), managedElements: fn(dev), delta: '+0.0%', period: PERIOD[r],
-    health: `${verifiedPct}%`, confirmed: pcs(T.discovered, dev, 1), stranded: pcs(T.notDiscovered, dev, 1), strandedVal: fn(T.notDiscovered) }));
-
-  const PARENTS = eachRange(() => [
-    { name: 'Physical inventory', desc: '', count: fn(dev + passive), delta: '+0.0%', health: `${verifiedPct}%`, children: [
-      leaf('Active', fn(dev), verifiedPct, `${fn(dev)} managed elements in ${sumList.length} data centers`, 'Discovered', pcs(T.discovered, dev, 1), risks.critical, risks.major, ACT),
-      leaf('Passive', fn(passive), 100, 'racks, power plant, cooling, sensors, optical frames and cabling', 'Recorded', '100%', 0, 0, PAS)
-    ] },
-    { name: 'Connectivity & Virtual inventory', desc: '', count: fn(connTotal + virtTotal), delta: '+0.0%', health: `${virtHealthPct}%`, children: [
-      leaf('Virtual', fn(virtTotal), virtHealthPct, `${virtTotal} virtual resources across ${sumList.length} data centers`, 'Mapped to host', '100%', virtError, virtWarning, VIR),
-      leaf('Connectivity', fn(connTotal), 100, `${fn(connTotal)} links & ${fn(servicesTotal)} services across ${sumList.length} data centers`, 'Fabric path resolved', '100%', 0, 0, LOG)
-    ] }
-  ] as ParentCategory[]);
-
-  const ISSUES = eachRange(r => ({ count: fn(riskTotal), change: '0%', periodLabel: ISSUE_PERIOD[r], crit: risks.critical, high: risks.major, med: 0, low: risks.minor,
-    medianDays: 0, assigned: riskTotal }));
-
-  const BUCKET = eachRange(() => ({ centerLabel: fn(records),
-    summaryText: `Physical inventory represents ${pcs(dev + passive, records, 1)} of data center assets (Active ${pcs(dev, records, 1)}, Passive ${pcs(passive, records, 1)}); Connectivity fabric holds ${pcs(connTotal, records, 1)} (${fn(connTotal)} links & ${fn(servicesTotal)} customer services) and Virtual holds ${fn(virtTotal)} VMs, K8s pods, datastores & vSwitches across ${sumList.length} facilities.`,
-    rows: [['Active', fn(dev), dev, ACT], ['Passive', fn(passive), passive, PAS], ['Connectivity', fn(connTotal), connTotal, LOG], ['Virtual', fn(virtTotal), virtTotal, VIR]] as [string, string, number, string][] }));
-
-  const planned = T.planned;
-  const LIFECYCLE = eachRange(() => ({
-    states: [{ name: 'In service', count: fn(dev - planned), color: GOOD }, { name: 'Planned', count: fn(planned), color: INFO }, { name: 'Faulty', count: '0', color: CRIT },
-      { name: 'Maintenance', count: '0', color: WARN }, { name: 'Decommissioned', count: '0', color: GREY }],
-    bars: [{ name: 'In service', count: fn(dev - planned), pct: pcs(dev - planned, dev), w: pcs(dev - planned, dev), color: GOOD }, { name: 'Planned', count: fn(planned), pct: pcs(planned, dev), w: pcs(planned, dev), color: INFO },
-      { name: 'Faulty', count: '0', pct: '0%', w: '0%', color: CRIT }, { name: 'Under maintenance', count: '0', pct: '0%', w: '0%', color: WARN }, { name: 'Decommissioning', count: '0', pct: '0%', w: '0%', color: GREY }],
-    faultsNote: 'The data center records carry no fault or maintenance state.',
-    leadTimeNote: `${fn(planned)} planned devices are recorded but not yet in service.`
-  }));
-
-  const vendorTotals = new Map<string, number>();
-  for (const d of sumList) for (const [v, c] of Object.entries(d.vendors)) vendorTotals.set(v, (vendorTotals.get(v) ?? 0) + c);
-  const topVendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]);
-  const vcolor = [INFO, PURP, TEAL, WARN, '#0891B2'];
-  const title = (v: string) => v.charAt(0) + v.slice(1).toLowerCase();
-  const modelsDistinct = new Set(sumList.flatMap(d => d.models)).size;
-  const VENDOR = eachRange(() => {
-    const top = topVendors.slice(0, 5), rest = topVendors.slice(5).reduce((a, x) => a + x[1], 0);
-    const rows: [string, number, string][] = top.map((x, i) => [title(x[0]), Math.round((x[1] / dev) * 100), vcolor[i]]);
-    if (rest) rows.push(['Others', Math.round((rest / dev) * 100), GREY]);
-    return { activeNEs: fn(dev), models: fn(modelsDistinct), unmapped: '0', rows };
-  });
-
-  const PANELS = eachRange(() => [
-    { title: 'Active (Physical)', color: ACT, route: '/inventory/physical', desc: 'Physical routers, switches, servers, storage, firewalls and GPU servers in the data centers.',
-      items: bars0(roleRows.map(([k, label]) => [label, fn(T.byRole(k as never)), T.byRole(k as never)] as [string, string, number])),
-      facts: [
-        { name: 'Reachable in last discovery', value: pcs(T.discovered, dev, 1), color: GOOD }, { name: 'Software version recorded', value: '100%', color: GOOD }, { name: 'Chassis serial verified', value: '100%', color: GOOD },
-        { name: 'Dual PSU / power monitored', value: NONE, color: '#111827' }, { name: 'Complete · integrity · fresh', value: `100% · ${verifiedPct}% · ${pcs(T.discovered, dev)}`, color: '#111827' },
-        { name: 'Duplicate · orphan records', value: NONE, color: '#111827' }, { name: 'Open defects (critical · high)', value: `${risks.critical} · ${risks.major}`, color: '#111827' },
-        { name: 'Off approved OS baseline', value: fn(T.drifted), color: WARN }, { name: 'EOL / EOS exposed', value: '0', color: '#111827' },
-        { name: 'Not reconfirmed 7+ days', value: fn(T.notDiscovered), color: '#111827' }, { name: 'Decommissioned · last 7 days', value: '0', color: '#111827' }
-      ] },
-    { title: 'Passive (Physical)', color: PAS, route: '/inventory/passive', desc: 'Racks, power plant, cooling, sensors, optical frames and cabling recorded for the data centers.',
-      items: bars0([['Racks', fn(T.racks), T.racks], ['Power plant units', fn(powerUnits), powerUnits], ['Cooling units', fn(T.coolingUnits), T.coolingUnits], ['Environment sensors', fn(T.sensors), T.sensors],
-        ['ODF frames', fn(odfFrames), odfFrames], ['Fibre cores in use', fn(T.coresLit), T.coresLit]]),
-      facts: [{ name: 'Rack space used', value: pcs(T.uUsed, T.uTotal), color: '#111827' }, { name: 'Power capacity', value: `${(T.powerKw / 1000).toFixed(1)} MW`, color: '#111827' },
-        { name: 'Cooling capacity', value: `${(T.coolingKw / 1000).toFixed(1)} MW`, color: '#111827' }, { name: 'Fibre cores lit', value: `${pcs(T.coresLit, T.cores)} of ${fn(T.cores)}`, color: '#111827' }] },
-    {
-      title: 'Virtual (Logical)',
-      color: VIR,
-      route: '/inventory/virtual',
-      desc: `Virtual Machines, Kubernetes Pods, Datastores & SDN Fabrics across ${sumList.length} Data Centers.`,
-      items: bars0([
-        ['Virtual Machines (VM)', fn(vms), vms],
-        ['Kubernetes Pods & Nodes (K8s)', fn(k8s), k8s],
-        ['Storage Datastores & Pools', fn(storage), storage],
-        ['Virtual Networks & vSwitches', fn(net), net]
-      ]),
-      facts: [
-        { name: 'Mapped to host / cluster', value: '100%', color: GOOD },
-        { name: 'Data centers · clusters', value: `${sumList.length} DCs · ${virtTotal} entities`, color: '#111827' },
-        { name: 'Active workloads running', value: `${virtRunning} running (${virtHealthPct}%)`, color: GOOD },
-        { name: 'Platforms supported', value: 'vSphere · K8s · OpenStack · AHV', color: '#111827' }
-      ]
-    },
-    {
-      title: 'Connectivity (Logical & Services)',
-      color: LOG,
-      route: '/inventory/links',
-      desc: `Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services across ${sumList.length} Data Centers.`,
-      items: bars0([
-        ['InfiniBand AI cluster fabric (400G NDR)', fn(linkProtoCounts['InfiniBand'] || 4846), linkProtoCounts['InfiniBand'] || 4846],
-        ['Ethernet spine-leaf fabric (100G/400G Clos)', fn(linkProtoCounts['Ethernet Fabric'] || 542), linkProtoCounts['Ethernet Fabric'] || 542],
-        ['BGP EVPN & routing adjacencies', fn(linkProtoCounts['BGP / EVPN'] || 450), linkProtoCounts['BGP / EVPN'] || 450],
-        ['Compute & storage host access (100G RoCE)', fn(linkProtoCounts['Compute & Storage'] || 3609), linkProtoCounts['Compute & Storage'] || 3609],
-        ['Out-of-band management & telemetry (1G/10G)', fn(linkProtoCounts['Management (OOB)'] || 2942), linkProtoCounts['Management (OOB)'] || 2942],
-        ['On-demand GPU workload services', fn(svcCounts['On-demand GPUs'] || 386), svcCounts['On-demand GPUs'] || 386],
-        ['Cloud compute instance services (CPU)', fn(svcCounts['CPU instances'] || 159), svcCounts['CPU instances'] || 159],
-        ['Storage volume & datastore attachments', fn(svcCounts['Storage volume'] || 136), svcCounts['Storage volume'] || 136]
-      ]),
-      facts: [
-        { name: 'Mapped to active port / interface', value: '100%', color: GOOD },
-        { name: 'A–Z circuit path continuity resolved', value: '100%', color: GOOD },
-        { name: 'Protected / redundant fabric paths (MLAG / FRR)', value: '98.6%', color: GOOD },
-        { name: 'Customer cloud services provisioned', value: `${fn(servicesTotal)} active`, color: '#111827' },
-        { name: 'Orphan logical objects', value: '0', color: GOOD }
-      ]
-    }
-  ] as PanelCategory[]);
+  const roleRows: [string, string][] = [['GPU', 'GPU servers'], ['Switch', 'Switches'], ['Server', 'Servers'], ['Storage', 'Storage arrays'], ['Router', 'Routers'], ['Firewall', 'Firewalls'], ['DWDM', 'Optical & DWDM']];
 
   const DC_DECOM_DYNAMIC: Record<DayRangeOption, {
     periodLabel: string;
@@ -2331,7 +2237,6 @@ function buildDc(targetGeo?: DcGeo | null) {
       note: '466 legacy compute and fabric nodes completed lifecycle decommissioning and certified hardware disposition during the annual refresh cycle.'
     }
   };
-  const DECOM = eachRange(r => DC_DECOM_DYNAMIC[r]);
 
   const DC_DECOM_BUCKET: Record<DayRangeOption, [string, number][]> = {
     '7d': [['Active', 8], ['Passive', 3], ['Logical', 1], ['Virtual', 0]],
@@ -2340,7 +2245,6 @@ function buildDc(targetGeo?: DcGeo | null) {
     '90d': [['Active', 92], ['Passive', 31], ['Logical', 10], ['Virtual', 3]],
     '12m': [['Active', 348], ['Passive', 118], ['Logical', 36], ['Virtual', 10]]
   };
-  const DECOM_BUCKET = eachRange(r => DC_DECOM_BUCKET[r]);
 
   const DC_EOL_DYNAMIC: Record<DayRangeOption, {
     total: string;
@@ -2398,24 +2302,6 @@ function buildDc(targetGeo?: DcGeo | null) {
       ]
     }
   };
-  const EOL = eachRange(r => DC_EOL_DYNAMIC[r]);
-
-  const driftTotals = new Map<string, number>();
-  for (const d of DC_SUM) for (const [v, c] of Object.entries(d.driftByVendor)) driftTotals.set(v, (driftTotals.get(v) ?? 0) + c);
-  const driftSorted = [...driftTotals.entries()].sort((a, b) => b[1] - a[1]);
-  const DRIFT = eachRange(() => ({
-    total: fn(T.drifted),
-    activeWithVersion: fn(dev),
-    cve: '18',
-    noVersion: '0',
-    note: T.drifted
-      ? `${fn(T.drifted)} devices differ from their record; ${title(driftSorted[0][0])} has the most (${driftSorted[0][1]}). 18 nodes carry high-priority firmware advisories.`
-      : 'No device differs from its record.',
-    rows: [
-      ...driftSorted.slice(0, 4).map(([v, c]) => [title(v), c] as [string, number]),
-      ...(driftSorted.length > 4 ? [['Others', driftSorted.slice(4).reduce((a, x) => a + x[1], 0)] as [string, number]] : [])
-    ]
-  }));
 
   const DC_SPARES_DYNAMIC: Record<DayRangeOption, {
     titleCount: string;
@@ -2475,26 +2361,454 @@ function buildDc(targetGeo?: DcGeo | null) {
       ]
     }
   };
+
+  const activeManagedTotal = dev + connTotal + virtTotal;
+  const planned = T.planned;
+
+  const driftTotals = new Map<string, number>();
+  for (const d of sumList) for (const [v, c] of Object.entries(d.driftByVendor)) driftTotals.set(v, (driftTotals.get(v) ?? 0) + c);
+  const driftSorted = [...driftTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const title = (v: string) => v.toUpperCase() === 'DDN' ? 'DDN' : v.charAt(0) + v.slice(1).toLowerCase();
+
+  const DC_METRICS_BY_RANGE: Record<DayRangeOption, {
+    totalDisplay: string;
+    totalRaw: number;
+    delta: string;
+    period: string;
+    health: string;
+    confirmed: string;
+    stranded: string;
+    strandedVal: string;
+    activeNEs: number;
+    inService: number;
+    planned: number;
+    passive: number;
+    connectivity: number;
+    virtual: number;
+    records: number;
+    issuesCount: number;
+    issuesCrit: number;
+    issuesHigh: number;
+    issuesLow: number;
+    issuesChange: string;
+    issuesPeriod: string;
+    issuesMedian: number;
+    driftCount: number;
+    driftCve: number;
+    driftRows: [string, number][];
+    staleCount: number;
+    staleActive: number;
+    staleVirt: number;
+    staleConn: number;
+    stalePas: number;
+  }> = {
+    '7d': {
+      totalDisplay: '16,562',
+      totalRaw: 16562,
+      delta: '+0.4%',
+      period: 'vs last 7 days',
+      health: '95%',
+      confirmed: '94.6%',
+      stranded: '5.4%',
+      strandedVal: '208',
+      activeNEs: 3854,
+      inService: 3722,
+      planned: 132,
+      passive: 1652,
+      connectivity: 12578,
+      virtual: 130,
+      records: 18214,
+      issuesCount: 14,
+      issuesCrit: 2,
+      issuesHigh: 4,
+      issuesLow: 8,
+      issuesChange: '+16%',
+      issuesPeriod: 'this week',
+      issuesMedian: 1.9,
+      driftCount: 28,
+      driftCve: 4,
+      driftRows: [['Nvidia', 11], ['Supermicro', 8], ['Dell', 6], ['DDN', 1], ['Others', 2]],
+      staleCount: 64,
+      staleActive: 52,
+      staleVirt: 6,
+      staleConn: 4,
+      stalePas: 2
+    },
+    '14d': {
+      totalDisplay: '16,528',
+      totalRaw: 16528,
+      delta: '+0.9%',
+      period: 'vs last 14 days',
+      health: '94%',
+      confirmed: '94.2%',
+      stranded: '5.8%',
+      strandedVal: '221',
+      activeNEs: 3846,
+      inService: 3708,
+      planned: 138,
+      passive: 1650,
+      connectivity: 12553,
+      virtual: 129,
+      records: 18178,
+      issuesCount: 24,
+      issuesCrit: 3,
+      issuesHigh: 7,
+      issuesLow: 14,
+      issuesChange: '+8%',
+      issuesPeriod: 'last 14 days',
+      issuesMedian: 2.7,
+      driftCount: 56,
+      driftCve: 9,
+      driftRows: [['Nvidia', 21], ['Supermicro', 15], ['Dell', 14], ['DDN', 2], ['Others', 4]],
+      staleCount: 128,
+      staleActive: 106,
+      staleVirt: 12,
+      staleConn: 6,
+      stalePas: 4
+    },
+    '30d': {
+      totalDisplay: fn(activeManagedTotal),
+      totalRaw: activeManagedTotal,
+      delta: '+1.8%',
+      period: 'vs last 30 days',
+      health: `${verifiedPct}%`,
+      confirmed: pcs(T.discovered, dev, 1),
+      stranded: pcs(T.notDiscovered, dev, 1),
+      strandedVal: fn(T.notDiscovered),
+      activeNEs: dev,
+      inService: dev - planned,
+      planned: planned,
+      passive: passive,
+      connectivity: connTotal,
+      virtual: virtTotal,
+      records: records,
+      issuesCount: riskTotal,
+      issuesCrit: risks.critical,
+      issuesHigh: risks.major,
+      issuesLow: risks.minor,
+      issuesChange: '-8%',
+      issuesPeriod: 'this month',
+      issuesMedian: 3.5,
+      driftCount: T.drifted,
+      driftCve: 18,
+      driftRows: [
+        ...driftSorted.slice(0, 4).map(([v, c]) => [title(v), c] as [string, number]),
+        ...(driftSorted.length > 4 ? [['Others', driftSorted.slice(4).reduce((a, x) => a + x[1], 0)] as [string, number]] : [])
+      ],
+      staleCount: T.notDiscovered,
+      staleActive: Math.max(0, T.notDiscovered - 20 - 10 - 6),
+      staleVirt: 20,
+      staleConn: 10,
+      stalePas: 6
+    },
+    '90d': {
+      totalDisplay: '16,145',
+      totalRaw: 16145,
+      delta: '+4.6%',
+      period: 'vs last 90 days',
+      health: '93%',
+      confirmed: '92.8%',
+      stranded: '7.2%',
+      strandedVal: '274',
+      activeNEs: 3745,
+      inService: 3585,
+      planned: 160,
+      passive: 1612,
+      connectivity: 12278,
+      virtual: 122,
+      records: 17757,
+      issuesCount: 52,
+      issuesCrit: 6,
+      issuesHigh: 16,
+      issuesLow: 30,
+      issuesChange: '-14%',
+      issuesPeriod: 'this quarter',
+      issuesMedian: 5.2,
+      driftCount: 148,
+      driftCve: 24,
+      driftRows: [['Nvidia', 54], ['Supermicro', 40], ['Dell', 36], ['DDN', 4], ['Others', 14]],
+      staleCount: 380,
+      staleActive: 322,
+      staleVirt: 32,
+      staleConn: 16,
+      stalePas: 10
+    },
+    '12m': {
+      totalDisplay: '14,820',
+      totalRaw: 14820,
+      delta: '+16.2%',
+      period: 'vs last 12 months',
+      health: '91%',
+      confirmed: '90.4%',
+      stranded: '9.6%',
+      strandedVal: '365',
+      activeNEs: 3410,
+      inService: 3225,
+      planned: 185,
+      passive: 1485,
+      connectivity: 11305,
+      virtual: 105,
+      records: 16305,
+      issuesCount: 88,
+      issuesCrit: 9,
+      issuesHigh: 26,
+      issuesLow: 53,
+      issuesChange: '-21%',
+      issuesPeriod: 'this year',
+      issuesMedian: 7.6,
+      driftCount: 210,
+      driftCve: 36,
+      driftRows: [['Nvidia', 76], ['Supermicro', 58], ['Dell', 51], ['DDN', 6], ['Others', 19]],
+      staleCount: 540,
+      staleActive: 456,
+      staleVirt: 46,
+      staleConn: 24,
+      stalePas: 14
+    }
+  };
+
+  const TOTAL = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return {
+      totalDisplay: m.totalDisplay,
+      totalRaw: m.totalRaw,
+      sitesCount: fn(sumList.length),
+      managedElements: fn(m.activeNEs),
+      delta: m.delta,
+      period: m.period,
+      health: m.health,
+      confirmed: m.confirmed,
+      stranded: m.stranded,
+      strandedVal: m.strandedVal
+    };
+  });
+
+  const PARENTS = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    const physHealth = m.health;
+    const virtHealth = r === '7d' ? '92%' : r === '14d' ? '91%' : r === '30d' ? `${virtHealthPct}%` : r === '90d' ? '90%' : '88%';
+    return [
+      {
+        name: 'Physical inventory',
+        desc: '',
+        count: fn(m.activeNEs),
+        delta: r === '7d' ? '+0.3%' : r === '14d' ? '+0.8%' : r === '30d' ? '+1.6%' : r === '90d' ? '+4.2%' : '+14.8%',
+        health: physHealth,
+        children: [
+          leaf('In service', fn(m.inService), parseInt(physHealth, 10), `${fn(m.inService)} active in service across ${sumList.length} data centers`, 'In service', pcs(m.inService, m.activeNEs), m.issuesCrit, m.issuesHigh, GOOD),
+          leaf('Planned', fn(m.planned), 100, `${fn(m.planned)} staged / awaiting deployment in data halls`, 'Awaiting deployment', pcs(m.planned, m.activeNEs), 0, 0, INFO)
+        ]
+      },
+      {
+        name: 'Connectivity & Virtual inventory',
+        desc: '',
+        count: fn(m.connectivity + m.virtual),
+        delta: r === '7d' ? '+0.4%' : r === '14d' ? '+0.9%' : r === '30d' ? '+1.9%' : r === '90d' ? '+4.7%' : '+16.6%',
+        health: virtHealth,
+        children: [
+          leaf('Virtual', fn(m.virtual), parseInt(virtHealth, 10), `${m.virtual} virtual resources across ${sumList.length} data centers`, 'Mapped to host', '100%', r === '7d' ? 1 : r === '14d' ? 2 : virtError, r === '7d' ? 3 : r === '14d' ? 5 : virtWarning, VIR),
+          leaf('Connectivity', fn(m.connectivity), 100, `${fn(m.connectivity)} links & ${fn(servicesTotal)} services across ${sumList.length} data centers`, 'Fabric path resolved', '100%', 0, 0, LOG)
+        ]
+      }
+    ] as ParentCategory[];
+  });
+
+  const ISSUES = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return {
+      count: fn(m.issuesCount),
+      change: m.issuesChange,
+      periodLabel: m.issuesPeriod,
+      crit: m.issuesCrit,
+      high: m.issuesHigh,
+      med: 0,
+      low: m.issuesLow,
+      medianDays: m.issuesMedian,
+      assigned: m.issuesCount
+    };
+  });
+
+  const BUCKET = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    const totalRec = m.records;
+    return {
+      centerLabel: fn(totalRec),
+      summaryText: `Physical inventory represents ${pcs(m.activeNEs + m.passive, totalRec, 1)} of data center assets (Active ${pcs(m.activeNEs, totalRec, 1)}, Passive ${pcs(m.passive, totalRec, 1)}); Connectivity fabric holds ${pcs(m.connectivity, totalRec, 1)} (${fn(m.connectivity)} links & ${fn(servicesTotal)} customer services) and Virtual holds ${fn(m.virtual)} VMs, K8s pods, datastores & vSwitches across ${sumList.length} facilities.`,
+      rows: [
+        ['Active', fn(m.activeNEs), m.activeNEs, ACT],
+        ['Passive', fn(m.passive), m.passive, PAS],
+        ['Connectivity', fn(m.connectivity), m.connectivity, LOG],
+        ['Virtual', fn(m.virtual), m.virtual, VIR]
+      ] as [string, string, number, string][]
+    };
+  });
+
+  const LIFECYCLE = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return {
+      states: [
+        { name: 'In service', count: fn(m.inService), color: GOOD },
+        { name: 'Planned', count: fn(m.planned), color: INFO },
+        { name: 'Faulty', count: '0', color: CRIT },
+        { name: 'Maintenance', count: '0', color: WARN },
+        { name: 'Decommissioned', count: '0', color: GREY }
+      ],
+      bars: [
+        { name: 'In service', count: fn(m.inService), pct: pcs(m.inService, m.activeNEs), w: pcs(m.inService, m.activeNEs), color: GOOD },
+        { name: 'Planned', count: fn(m.planned), pct: pcs(m.planned, m.activeNEs), w: pcs(m.planned, m.activeNEs), color: INFO },
+        { name: 'Faulty', count: '0', pct: '0%', w: '0%', color: CRIT },
+        { name: 'Under maintenance', count: '0', pct: '0%', w: '0%', color: WARN },
+        { name: 'Decommissioning', count: '0', pct: '0%', w: '0%', color: GREY }
+      ],
+      faultsNote: 'The data center records carry no fault or maintenance state.',
+      leadTimeNote: `${fn(m.planned)} planned devices are recorded but not yet in service.`
+    };
+  });
+
+  const vendorTotals = new Map<string, number>();
+  for (const d of sumList) for (const [v, c] of Object.entries(d.vendors)) vendorTotals.set(v, (vendorTotals.get(v) ?? 0) + c);
+  const topVendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const vcolor = [INFO, PURP, TEAL, WARN, '#0891B2'];
+  const modelsDistinct = new Set(sumList.flatMap(d => d.models)).size;
+  const VENDOR = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    const top = topVendors.slice(0, 5), rest = topVendors.slice(5).reduce((a, x) => a + x[1], 0);
+    const rows: [string, number, string][] = top.map((x, i) => [title(x[0]), Math.round((x[1] / dev) * 100), vcolor[i]]);
+    if (rest) rows.push(['Others', Math.round((rest / dev) * 100), GREY]);
+    return { activeNEs: fn(m.activeNEs), models: fn(modelsDistinct), unmapped: '0', rows };
+  });
+
+  const PANELS = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return [
+      {
+        title: 'Active (Physical)',
+        color: ACT,
+        route: '/inventory/resources/physical?type=active',
+        desc: 'Physical routers, switches, servers, storage, firewalls and GPU servers in the data centers.',
+        items: bars0(roleRows.filter(([k]) => T.byRole(k as never) > 0).map(([k, label]) => {
+          const cnt = r === '30d' ? T.byRole(k as never) : Math.round((T.byRole(k as never) * m.activeNEs) / dev);
+          return [label, fn(cnt), cnt] as [string, string, number];
+        })),
+        facts: [
+          { name: 'Reachable in last discovery', value: pcs(Math.round((T.discovered * m.activeNEs) / dev), m.activeNEs, 1), color: GOOD },
+          { name: 'Software version recorded', value: '100%', color: GOOD },
+          { name: 'Chassis serial verified', value: '100%', color: GOOD },
+          { name: 'Dual PSU / power monitored', value: NONE, color: '#111827' },
+          { name: 'Complete · integrity · fresh', value: `100% · ${m.health} · ${pcs(Math.round((T.discovered * m.activeNEs) / dev), m.activeNEs)}`, color: '#111827' },
+          { name: 'Duplicate · orphan records', value: NONE, color: '#111827' },
+          { name: 'Open defects (critical · high)', value: `${m.issuesCrit} · ${m.issuesHigh}`, color: '#111827' },
+          { name: 'Off approved OS baseline', value: fn(m.driftCount), color: WARN },
+          { name: 'EOL / EOS exposed', value: fn(DC_EOL_DYNAMIC[r].rows[0][1]), color: '#111827' },
+          { name: 'Not reconfirmed 7+ days', value: fn(m.staleCount), color: '#111827' },
+          { name: 'Decommissioned · period', value: String(DC_DECOM_DYNAMIC[r].marked), color: '#111827' }
+        ]
+      },
+      {
+        title: 'Passive (Physical)',
+        color: PAS,
+        route: '/inventory/resources/physical?type=passive',
+        desc: 'Racks, power plant, cooling, sensors, optical frames and cabling recorded for the data centers.',
+        items: bars0([
+          ['Racks', fn(T.racks), T.racks],
+          ['Power plant units', fn(powerUnits), powerUnits],
+          ['Cooling units', fn(T.coolingUnits), T.coolingUnits],
+          ['Environment sensors', fn(T.sensors), T.sensors],
+          ['ODF frames', fn(odfFrames), odfFrames],
+          ['Fibre cores in use', fn(T.coresLit), T.coresLit]
+        ]),
+        facts: [
+          { name: 'Rack space used', value: pcs(T.uUsed, T.uTotal), color: '#111827' },
+          { name: 'Power capacity', value: `${(T.powerKw / 1000).toFixed(1)} MW`, color: '#111827' },
+          { name: 'Cooling capacity', value: `${(T.coolingKw / 1000).toFixed(1)} MW`, color: '#111827' },
+          { name: 'Fibre cores lit', value: `${pcs(T.coresLit, T.cores)} of ${fn(T.cores)}`, color: '#111827' }
+        ]
+      },
+      {
+        title: 'Virtual (Logical)',
+        color: VIR,
+        route: '/inventory/resources/virtual',
+        desc: `Virtual Machines, Kubernetes Pods, Datastores & SDN Fabrics across ${sumList.length} Data Centers.`,
+        items: bars0([
+          ['Virtual Machines (VM)', fn(r === '30d' ? vms : Math.round((vms * m.virtual) / virtTotal)), r === '30d' ? vms : Math.round((vms * m.virtual) / virtTotal)],
+          ['Kubernetes Pods & Nodes (K8s)', fn(r === '30d' ? k8s : Math.round((k8s * m.virtual) / virtTotal)), r === '30d' ? k8s : Math.round((k8s * m.virtual) / virtTotal)],
+          ['Storage Datastores & Pools', fn(r === '30d' ? storage : Math.round((storage * m.virtual) / virtTotal)), r === '30d' ? storage : Math.round((storage * m.virtual) / virtTotal)],
+          ['Virtual Networks & vSwitches', fn(r === '30d' ? net : Math.round((net * m.virtual) / virtTotal)), r === '30d' ? net : Math.round((net * m.virtual) / virtTotal)]
+        ]),
+        facts: [
+          { name: 'Mapped to host / cluster', value: '100%', color: GOOD },
+          { name: 'Data centers · clusters', value: `${sumList.length} DCs · ${m.virtual} entities`, color: '#111827' },
+          { name: 'Active workloads running', value: `${r === '30d' ? virtRunning : Math.round((virtRunning * m.virtual) / virtTotal)} running (${virtHealthPct}%)`, color: GOOD },
+          { name: 'Platforms supported', value: 'vSphere · K8s · OpenStack · AHV', color: '#111827' }
+        ]
+      },
+      {
+        title: 'Connectivity (Logical & Services)',
+        color: LOG,
+        route: '/inventory/connectivity/links',
+        desc: `Spine-leaf fabric links, BGP EVPN routing sessions, DCI policy tunnels and provisioned compute & storage services across ${sumList.length} Data Centers.`,
+        items: bars0([
+          ['InfiniBand AI cluster fabric (400G NDR)', fn(r === '30d' ? (linkProtoCounts['InfiniBand'] || 4846) : Math.round(((linkProtoCounts['InfiniBand'] || 4846) * m.connectivity) / connTotal)), r === '30d' ? (linkProtoCounts['InfiniBand'] || 4846) : Math.round(((linkProtoCounts['InfiniBand'] || 4846) * m.connectivity) / connTotal)],
+          ['Ethernet spine-leaf fabric (100G/400G Clos)', fn(r === '30d' ? (linkProtoCounts['Ethernet Fabric'] || 542) : Math.round(((linkProtoCounts['Ethernet Fabric'] || 542) * m.connectivity) / connTotal)), r === '30d' ? (linkProtoCounts['Ethernet Fabric'] || 542) : Math.round(((linkProtoCounts['Ethernet Fabric'] || 542) * m.connectivity) / connTotal)],
+          ['BGP EVPN & routing adjacencies', fn(r === '30d' ? (linkProtoCounts['BGP / EVPN'] || 450) : Math.round(((linkProtoCounts['BGP / EVPN'] || 450) * m.connectivity) / connTotal)), r === '30d' ? (linkProtoCounts['BGP / EVPN'] || 450) : Math.round(((linkProtoCounts['BGP / EVPN'] || 450) * m.connectivity) / connTotal)],
+          ['Compute & storage host access (100G RoCE)', fn(r === '30d' ? (linkProtoCounts['Compute & Storage'] || 3609) : Math.round(((linkProtoCounts['Compute & Storage'] || 3609) * m.connectivity) / connTotal)), r === '30d' ? (linkProtoCounts['Compute & Storage'] || 3609) : Math.round(((linkProtoCounts['Compute & Storage'] || 3609) * m.connectivity) / connTotal)],
+          ['Out-of-band management & telemetry (1G/10G)', fn(r === '30d' ? (linkProtoCounts['Management (OOB)'] || 2942) : Math.round(((linkProtoCounts['Management (OOB)'] || 2942) * m.connectivity) / connTotal)), r === '30d' ? (linkProtoCounts['Management (OOB)'] || 2942) : Math.round(((linkProtoCounts['Management (OOB)'] || 2942) * m.connectivity) / connTotal)],
+          ...(dciLinks > 0 ? [['Data center interconnect (DCI) & border links', fn(dciLinks), dciLinks] as [string, string, number]] : []),
+          ['On-demand GPU workload services', fn(svcCounts['On-demand GPUs'] || 386), svcCounts['On-demand GPUs'] || 386],
+          ['Cloud compute instance services (CPU)', fn(svcCounts['CPU instances'] || 159), svcCounts['CPU instances'] || 159],
+          ['Storage volume & datastore attachments', fn(svcCounts['Storage volume'] || 136), svcCounts['Storage volume'] || 136],
+          ['Reserved AI & compute clusters', fn(svcCounts['Reserved cluster'] || 51), svcCounts['Reserved cluster'] || 51]
+        ]),
+        facts: [
+          { name: 'Mapped to active port / interface', value: '100%', color: GOOD },
+          { name: 'A–Z circuit path continuity resolved', value: '100%', color: GOOD },
+          { name: 'Protected / redundant fabric paths (MLAG / FRR)', value: '98.6%', color: GOOD },
+          { name: 'Customer cloud services provisioned', value: `${fn(servicesTotal)} active`, color: '#111827' },
+          { name: 'Orphan logical objects', value: '0', color: GOOD }
+        ]
+      }
+    ] as PanelCategory[];
+  });
+
+  const DECOM = eachRange(r => DC_DECOM_DYNAMIC[r]);
+  const DECOM_BUCKET = eachRange(r => DC_DECOM_BUCKET[r]);
+  const EOL = eachRange(r => DC_EOL_DYNAMIC[r]);
+
+  const DRIFT = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return {
+      total: fn(m.driftCount),
+      activeWithVersion: fn(m.activeNEs),
+      cve: String(m.driftCve),
+      noVersion: '0',
+      note: `${fn(m.driftCount)} devices differ from their record; ${title(m.driftRows[0][0])} has the most (${m.driftRows[0][1]}). ${m.driftCve} nodes carry high-priority firmware advisories.`,
+      rows: m.driftRows
+    };
+  });
+
   const SPARES = eachRange(r => DC_SPARES_DYNAMIC[r]);
 
-  const NOT_RECONF = eachRange(r => ({
-    title: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title,
-    count: fn(T.notDiscovered),
-    delta: '-12 vs prior period',
-    stale30: fn(T.notDiscovered),
-    items: [
-      { name: 'Active · BMC / out-of-band telemetry not refreshed', count: '418' },
-      { name: 'Virtual · Hypervisor VM & pod status unrefreshed', count: '28' },
-      { name: 'Logical · LLDP / BGP fabric telemetry unconfirmed', count: '14' },
-      { name: 'Passive · Rack PDU & smart sensor polling delay', count: '8' }
-    ]
-  }));
+  const NOT_RECONF = eachRange(r => {
+    const m = DC_METRICS_BY_RANGE[r];
+    return {
+      title: DEFAULT_NOT_RECONFIRMED_DYNAMIC[r].title,
+      count: fn(m.staleCount),
+      delta: r === '7d' ? '-4 vs prior period' : r === '14d' ? '-8 vs prior period' : '-12 vs prior period',
+      stale30: fn(m.staleCount),
+      items: [
+        { name: 'Active · BMC / out-of-band telemetry not refreshed', count: fn(m.staleActive) },
+        { name: 'Virtual · Hypervisor VM & pod status unrefreshed', count: fn(m.staleVirt) },
+        { name: 'Connectivity · LLDP / BGP fabric telemetry unconfirmed', count: fn(m.staleConn) },
+        { name: 'Passive · Rack PDU & smart sensor polling delay', count: fn(m.stalePas) }
+      ]
+    };
+  });
   const q = (name: string, color: string, v: string[]) => ({ name, color, v1: v[0], c1: v[0] === NONE ? GREY : hc(parseFloat(v[0])), v2: v[1], c2: v[1] === NONE ? GREY : hc(parseFloat(v[1])), v3: v[2], c3: v[2] === NONE ? GREY : hc(parseFloat(v[2])), v4: v[3], c4: GREY, v5: v[4], c5: GREY });
   const QUALITY = eachRange(() => [
     q('Active', ACT, ['100%', `${verifiedPct}%`, pcs(T.discovered, dev), NONE, NONE]),
     q('Passive', PAS, ['100%', '100%', '100%', NONE, NONE]),
     q('Virtual', VIR, ['100%', '98%', `${virtHealthPct}%`, '0.0%', '0.0%']),
-    q('Logical', LOG, ['100%', '100%', '100%', '0.0%', '0.0%'])
+    q('Connectivity', LOG, ['100%', '100%', '100%', '0.0%', '0.0%'])
   ] as QualityRow[]);
   const CROSS = eachRange(r => DEFAULT_CROSS_LINKS_DYNAMIC[r].map(c => {
     if (c.name.startsWith('Active element ↔ site')) return { ...c, name: 'Active element ↔ data center', value: '100%', color: GOOD };
@@ -2506,16 +2820,22 @@ function buildDc(targetGeo?: DcGeo | null) {
     gaps: DEFAULT_RECON_DYNAMIC[r].gaps.map(g => ({ name: g.name, value: g.name.startsWith('Software version') ? fn(T.drifted) : '0' })) }));
   const SUPPORT = eachRange(() => ({ eos: '0', war: NONE, spares: NONE, fibre: NONE, contracts: NONE, lic: NONE, age: NONE }));
   const NAV = eachRange(r => DEFAULT_BOTTOM_NAVIGATE_DYNAMIC[r].map((b, i) => {
+    if (i === 0) {
+      return { ...b, count: fn(dev), name: 'Active elements', where: 'Resources › Physical', color: ACT, route: '/inventory/resources/physical?type=active' };
+    }
+    if (i === 1) {
+      return { ...b, count: fn(passive), name: 'Passive assets', where: 'Resources › Passive', color: PAS, route: '/inventory/resources/physical?type=passive' };
+    }
     if (i === 2) {
-      return { ...b, count: fn(virtTotal), name: 'Virtual resources', where: 'Resources › Virtual', color: VIR, route: '/inventory/virtual' };
+      return { ...b, count: fn(virtTotal), name: 'Virtual resources', where: 'Resources › Virtual', color: VIR, route: '/inventory/resources/virtual' };
     }
     if (i === 3) {
-      return { ...b, count: fn(connTotal + servicesTotal), name: 'Fabric links & services', where: 'Connectivity · Links', color: LOG, route: '/inventory/links' };
+      return { ...b, count: fn(connTotal), name: 'Fabric links', where: 'Connectivity · Links', color: LOG, route: '/inventory/connectivity/links' };
     }
     if (i === 4) {
       return { ...b, count: fn(sumList.length), name: 'Data centers', where: 'Location › Data centers', color: '#374151', route: '/inventory/location' };
     }
-    return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), fn(connTotal + servicesTotal), fn(sumList.length)][i] };
+    return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), fn(connTotal), fn(sumList.length)][i] };
   }));
   const issueCount = (d: DcSum) => d.risks.critical + d.risks.major + d.risks.minor;
   const sites = [...sumList].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).slice(0, 7).map(d => {
@@ -2532,8 +2852,22 @@ function buildDc(targetGeo?: DcGeo | null) {
     { name: 'Reserved AI & compute clusters', count: fn(svcCounts['Reserved cluster'] || 0), path: '100%', color: hc(100) }
   ];
   const SERVICES = eachRange(() => ({ active: fn(servicesTotal), e2e: '100%', rows: dcServicesList }));
-  const NET = eachRange(r => ({ label: DEFAULT_NET_RECORD_DYNAMIC[r].label, added: '+0', retired: '−0', net: '+0' }));
-  const TREND = eachRange(r => DEFAULT_TREND_SERIES[r].map(([l]) => [l, 0] as [string, number]));
+  const DC_NET_BY_RANGE: Record<DayRangeOption, { added: string; retired: string; net: string }> = {
+    '7d': { added: '+18', retired: '−12', net: '+6' },
+    '14d': { added: '+36', retired: '−24', net: '+12' },
+    '30d': { added: '+72', retired: '−48', net: '+24' },
+    '90d': { added: '+198', retired: '−136', net: '+62' },
+    '12m': { added: '+748', retired: '−512', net: '+236' }
+  };
+  const NET = eachRange(r => ({ label: DEFAULT_NET_RECORD_DYNAMIC[r].label, ...DC_NET_BY_RANGE[r] }));
+  const DC_TREND_SERIES: Record<DayRangeOption, [string, number][]> = {
+    '7d': [['Day 1', 1], ['Day 2', 0], ['Day 3', 2], ['Day 4', -1], ['Day 5', 1], ['Day 6', 2], ['Day 7', 1]],
+    '14d': [['W1 D1', 1], ['W1 D3', 2], ['W1 D5', 1], ['W2 D1', 3], ['W2 D3', 2], ['W2 D5', 3]],
+    '30d': [['Week 1', 5], ['Week 2', 7], ['Week 3', 4], ['Week 4', 8]],
+    '90d': [['Month 1', 18], ['Month 2', 22], ['Month 3', 22]],
+    '12m': [['Q1', 48], ['Q2', 56], ['Q3', 64], ['Q4', 68]]
+  };
+  const TREND = eachRange(r => DC_TREND_SERIES[r]);
 
   const getDcActivity = () => {
     const isIndia = typeof window !== 'undefined' && currentGeo() === 'in';

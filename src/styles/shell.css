@@ -3067,7 +3067,17 @@ details[open] > summary .vw-tx-chevron {
    never fights a fixed width for space, so there's no reason to inherit
    that squeeze — sized to read like the rest of the row (.mono is 13px,
    .vw-value 14px) instead of visibly smaller than the cells beside it. */
-.tbl-wrap--chip-auto td:not(.st-td) .vw-chip { width: auto; max-width: none; height: 24px; padding: 0 14px; font-size: 0.8125rem; }
+.tbl-wrap--chip-auto td .vw-chip,
+.tbl-wrap--chip-auto td:not(.st-td) .vw-chip {
+  width: auto !important;
+  max-width: none !important;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
 /* legacy table() helper has no wrapper-div class of its own to hook (see
    its `cls` param, app-helpers.js) — it lands on <table> itself instead, so
    the same tiers repeat scoped to that element */
@@ -3077,7 +3087,17 @@ details[open] > summary .vw-tx-chevron {
    the same too-small-next-to-its-row font as chip-auto did; same fix. */
 .nst-table.chip-lg td:not(.st-td) .vw-chip { width: 68px; height: 24px; font-size: 0.8125rem; }
 .nst-table.chip-xl td:not(.st-td) .vw-chip { width: 90px; }
-.nst-table.chip-auto td:not(.st-td) .vw-chip { width: auto; max-width: none; height: 24px; padding: 0 14px; font-size: 0.8125rem; }
+.nst-table.chip-auto td .vw-chip,
+.nst-table.chip-auto td:not(.st-td) .vw-chip {
+  width: auto !important;
+  max-width: none !important;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
 
 /* Range Toggle Pills (Today / Overall) */
 .range-pills, .ospf-range-pills {

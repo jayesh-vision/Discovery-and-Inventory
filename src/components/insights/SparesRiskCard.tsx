@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { withSolution } from '../../solution';
 import type { TipHandlers } from './types';
 
 /* Safe spare coverage is 2% of the deployed population; under 1% is critical.
@@ -36,6 +38,7 @@ export default function SparesRiskCard({
   colors: { critical: string; low: string };
   tip: TipHandlers;
 }) {
+  const navigate = useNavigate();
   const eolTokens = useMemo(() => eolModelsFromNote(note), [note]);
   const items = useMemo(
     () =>
@@ -84,7 +87,10 @@ export default function SparesRiskCard({
               return (
                 <tr
                   key={s.model}
-                  className="ii-spares-row"
+                  className="ii-spares-row is-clickable"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(withSolution(`/inventory/spares?model=${encodeURIComponent(s.model)}&from=Inventory%20insights`))}
+                  title={`Drill down to spares inventory for ${s.model}`}
                   onMouseEnter={e =>
                     tip.showTip(
                       {

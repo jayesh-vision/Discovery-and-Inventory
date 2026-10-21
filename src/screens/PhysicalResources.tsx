@@ -31,10 +31,18 @@ type Row = NeRow & { region: Region; sysDescr: string; dc?: { dev: DcDevice; fac
    ?solution=datacenter: the data centers' records from src/data/dc in their classes:
    Router, Switch, Server, Firewall, Storage. eNodeB and gNodeB stay as tabs; the data centers
    hold none, so they are empty. */
-type PhyTab = NeClass | DcTab;
+type PhyTab = 'all' | NeClass | DcTab;
 const DEFAULT_TABS: PhyTab[] = ['router', 'switch', 'server', 'dwdm', 'enodeb', 'gnodeb'];
-const DC_TABS: PhyTab[] = ['router', 'switch', 'server', 'firewall', 'storage'];
-const NEW_NAME: Partial<Record<PhyTab, string>> = { firewall: 'Firewall', storage: 'Storage' };
+const DC_TABS: PhyTab[] = ['all', 'gpu', 'switch', 'server', 'storage', 'router', 'firewall'];
+const NEW_NAME: Partial<Record<PhyTab, string>> = {
+  all: 'All Active',
+  gpu: 'GPU Servers',
+  switch: 'Switches',
+  server: 'Servers',
+  storage: 'Storage Arrays',
+  router: 'Routers',
+  firewall: 'Firewalls'
+};
 const isNe = (c: PhyTab): c is NeClass => (NE_CLASSES as string[]).includes(c);
 const isDcTab = (c: PhyTab): c is DcTab => c in DC_ROLE_BY_TAB;
 
@@ -70,15 +78,30 @@ export default function PhysicalResources() {
   const oem = sp.get('oem');
   const model = sp.get('model');
   const activeGeo: DcGeo | null = scoped ? currentGeo() : null;
+
+  const subTypeParam = (sp.get('subType') || '').toLowerCase();
+  const subTypeMap: Record<string, PhyTab> = {
+    gpu_server: 'gpu',
+    gpu: 'gpu',
+    switch: 'switch',
+    server: 'server',
+    storage_array: 'storage',
+    storage: 'storage',
+    router: 'router',
+    firewall: 'firewall'
+  };
+  const mappedSubtype = subTypeMap[subTypeParam];
+
   /* a discovery drill (by vendor or model) only ever concerns Router and Switch —
      the other classes have no collector and never appear in that breakdown */
   const discoveryScoped = !scoped && !!(oem || model);
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
-  const urlClass = sp.get('cls') || sp.get('tab');
+  const typeParam = (sp.get('type') || '').toLowerCase();
+  const urlClass = sp.get('cls') || sp.get('tab') || mappedSubtype || (scoped && typeParam === 'active' ? 'all' : null);
   const savedClass = (!scoped && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as PhyTab | null;
   const rawCls: PhyTab = isClass(urlClass)
     ? urlClass
-    : (modelClass || (isClass(savedClass) ? savedClass : TAB_ORDER[0]));
+    : (mappedSubtype || modelClass || (isClass(savedClass) ? savedClass : TAB_ORDER[0]));
   const cls: PhyTab = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
 
   useEffect(() => {
@@ -142,10 +165,11 @@ export default function PhysicalResources() {
 
   /* every data center row of this class in scope, whatever the Source filter says, so the filter can show its counts */
   const dcAll: Row[] = useMemo(() => {
-    if (!scoped || !devices || !facilities || !isDcTab(cls)) return [];
-    const role = DC_ROLE_BY_TAB[cls];
+    if (!scoped || !devices || !facilities) return [];
+    if (cls !== 'all' && !isDcTab(cls)) return [];
+    const role = cls === 'all' ? null : DC_ROLE_BY_TAB[cls as DcTab];
     const fac = new Map(facilities.map(f => [f.id, f]));
-    return devices.filter(d => d.role === role && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId)) && stock.has(STOCK_OF[d.lifecycle]))
+    return devices.filter(d => (!role || d.role === role) && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId)) && stock.has(STOCK_OF[d.lifecycle]))
       .map(d => dcRow(d, fac.get(d.dcId)!));
   }, [scoped, devices, facilities, cls, dcId, validFacIds, stock]);
   const dcRows = dcAll;
@@ -155,12 +179,15 @@ export default function PhysicalResources() {
      count until they have loaded) */
   const netCount = scoped || !isNe(cls) ? 0 : oem || model ? netRows.length : phyCount(cls, stock);
   const dcExpectedCount = useMemo(() => {
-    if (!isDcTab(cls)) return 0;
-    if (!activeGeo) return dcTabCount(cls);
-    const role = DC_ROLE_BY_TAB[cls];
+    if (cls !== 'all' && !isDcTab(cls)) return 0;
+    if (!activeGeo) return cls === 'all' ? 3839 : dcTabCount(cls as DcTab);
+    if (cls === 'all') {
+      return dcSumList(activeGeo).reduce((a, d) => a + d.devices, 0);
+    }
+    const role = DC_ROLE_BY_TAB[cls as DcTab];
     return dcSumList(activeGeo).reduce((a, d) => a + (d.byRole[role] ?? 0), 0);
   }, [activeGeo, cls]);
-  const dcWait = scoped && isDcTab(cls) && !(devices && facilities);
+  const dcWait = scoped && (cls === 'all' || isDcTab(cls)) && !(devices && facilities);
   const dcCount = dcWait ? (dcId ? 0 : dcExpectedCount) : dcAll.length;
   const total = netCount + dcCount;
   const open = openName ? rows.find(r => r.name === openName) ?? null : null;
@@ -227,7 +254,7 @@ export default function PhysicalResources() {
 
   /* Headline figures for the active class in scope */
   const kpiStats = useMemo(() => {
-    const tabName = tabMeta(cls)?.n ?? NEW_NAME[cls] ?? cap(cls);
+    const tabName = cls === 'all' ? 'Active Physical Element' : (tabMeta(cls)?.n ?? NEW_NAME[cls] ?? cap(cls));
     if (scoped) {
       if (!devices || !facilities) return null;
       const totalInScope = dcAll.length;
@@ -258,20 +285,126 @@ export default function PhysicalResources() {
     ];
   }, [cls, scoped, dcAll, totalDcs, activeGeo, stock, devices, facilities]);
 
+  const isPassive = sp.get('type') === 'passive';
+  const [passiveTab, setPassiveTab] = useState<string>('all');
+
+  // Passive records generation for data center scope (1,648 items)
+  const passiveRows = useMemo(() => {
+    if (!scoped || !isPassive) return [];
+    const list: { id: string; name: string; category: string; vendor: string; model: string; dcId: string; detail: string; status: string }[] = [];
+    const dcIds = geoFacs ? geoFacs.map(f => f.id) : dcSumList(activeGeo).map(d => d.id);
+
+    const passiveSpecs = [
+      { cat: 'Racks', vendor: 'Rittal', model: 'VX IT 48U Server Rack', count: 720, detail: '42U allocated · liquid containment' },
+      { cat: 'Power Plant', vendor: 'Schneider Electric', model: 'Galaxy VX 500kVA UPS', count: 312, detail: 'Dual 400V utility feed A+B' },
+      { cat: 'Cooling', vendor: 'Vertiv Liebert', model: 'DSE 120kW Free-Cooling CRAH', count: 240, detail: 'N+1 redundant liquid CDU loop' },
+      { cat: 'Sensors', vendor: 'Sensaphone', model: 'EA800 Smart Telemetry Sensor', count: 168, detail: 'Temp / Humidity / Smoke bus' },
+      { cat: 'ODF & Cabling', vendor: 'Corning', model: 'EDGE HD 288-Fiber Optical Frame', count: 48, detail: 'Pre-terminated MPO-24 trunk' },
+      { cat: 'ODF & Cabling', vendor: 'CommScope', model: 'TeraSPEED Single-Mode Core', count: 160, detail: 'Spine-to-spine coherent lit fiber' }
+    ]; // 720 + 312 + 240 + 168 + 48 + 160 = 1,648
+
+    let idx = 1;
+    for (const spec of passiveSpecs) {
+      for (let i = 0; i < spec.count; i++) {
+        const dId = dcIds[(idx - 1) % dcIds.length];
+        list.push({
+          id: `PAS-${String(idx).padStart(5, '0')}`,
+          name: `${spec.cat.toUpperCase().replace(/\s+/g, '-')}-${dId}-${String(i + 1).padStart(3, '0')}`,
+          category: spec.cat,
+          vendor: spec.vendor,
+          model: spec.model,
+          dcId: dId,
+          detail: spec.detail,
+          status: 'Operational'
+        });
+        idx++;
+      }
+    }
+    return list;
+  }, [scoped, isPassive, geoFacs, activeGeo]);
+
+  const filteredPassiveRows = useMemo(() => {
+    if (passiveTab === 'all') return passiveRows;
+    return passiveRows.filter(r => r.category.toLowerCase().includes(passiveTab.toLowerCase()));
+  }, [passiveRows, passiveTab]);
+
   const stdCols = [{ t: 'Status', w: '9%', plain: true }, { t: 'Name / IP', w: '16%' }, { t: 'Model / Vendor', w: '12%' }, { t: 'OS version', w: '8%' },
     { t: 'Serial number', w: '10%' }, { t: 'Region', w: '6%' }, { t: 'Ports', r: true, w: '7%' }, { t: 'Location', w: '11%' },
     { t: 'System description', w: '20%' }];
   const rowClick = (r: Row) => { if (r.dc) setOpenName(r.name); else rowActions(r)[0]?.onClick?.(); };
 
+  if (isPassive) {
+    return (
+      <div className="page">
+        <StatStrip cells={[
+          { k: 'Total passive plant', v: '1,648', s: 'physical plant inventory', t: 'emerald' },
+          { k: 'Server racks', v: '720', s: '48U containment racks', t: 'slate' },
+          { k: 'Power plant units', v: '312', s: 'UPS & utility feeds', t: 'amber' },
+          { k: 'Cooling units', v: '240', s: 'CRAC / CRAH / CDU loops', t: 'cyan' },
+          { k: 'Sensors', v: '168', s: 'temp / humidity / smoke', t: 'purple' },
+          { k: 'ODF & Lit cores', v: '208', s: 'optical frames & lit strands', t: 'emerald' }
+        ]} />
+
+        <Card>
+          <TabBar
+            tabs={[
+              { k: 'all', n: 'All Passive Plant', count: 1648, title: 'All 1,648 passive records' },
+              { k: 'racks', n: 'Server Racks', count: 720, title: '720 racks' },
+              { k: 'power', n: 'Power Plant', count: 312, title: '312 UPS & feeds' },
+              { k: 'cooling', n: 'Cooling Units', count: 240, title: '240 cooling units' },
+              { k: 'sensors', n: 'Sensors', count: 168, title: '168 environmental sensors' },
+              { k: 'odf', n: 'ODF & Cabling', count: 208, title: '208 ODF frames & lit fibers' }
+            ]}
+            active={passiveTab}
+            onChange={(k) => setPassiveTab(k)}
+          />
+
+          <DataGrid<{ id: string; name: string; category: string; vendor: string; model: string; dcId: string; detail: string; status: string }>
+            key={passiveTab}
+            chipWidth="auto"
+            columns={[
+              { t: 'Asset ID' },
+              { t: 'Plant Asset Name' },
+              { t: 'Category' },
+              { t: 'Vendor / OEM' },
+              { t: 'Model / Specification' },
+              { t: 'Data Center' },
+              { t: 'Capacity / Telemetry' },
+              { t: 'Status' }
+            ]}
+            rows={filteredPassiveRows}
+            total={filteredPassiveRows.length}
+            rowKey={r => r.id}
+            searchPlaceholder="Search passive asset, model, vendor, data center..."
+            renderRow={r => [
+              <Mono>{r.id}</Mono>,
+              <span style={{ fontWeight: 600, color: 'var(--ii-text-heading, #111827)' }}>{r.name}</span>,
+              <Chip tone="success">{r.category}</Chip>,
+              <span>{r.vendor}</span>,
+              <Mono>{r.model}</Mono>,
+              <Mono>{r.dcId}</Mono>,
+              <span style={{ fontSize: 13 }}>{r.detail}</span>,
+              <Chip tone="success">{r.status}</Chip>
+            ]}
+          />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
+
       {kpiStats && <StatStrip cells={kpiStats} />}
       <Card>
         <TabBar
           tabs={tabs.map(k => {
             const meta = tabMeta(k);
             if (scoped) {
-              const n = dcTabCount(k as DcTab, activeGeo), name = meta?.n ?? NEW_NAME[k] ?? k;
+              const n = k === 'all'
+                ? (activeGeo ? dcSumList(activeGeo).reduce((a, d) => a + d.devices, 0) : 3839)
+                : dcTabCount(k as DcTab, activeGeo);
+              const name = meta?.n ?? NEW_NAME[k] ?? k;
               return { k, n: name, count: n, title: `${fmt(n)} ${name.toLowerCase()} records across ${totalDcs} data centers` };
             }
             const x = meta!;
@@ -283,14 +416,6 @@ export default function PhysicalResources() {
           })}
           active={cls} onChange={selectTabClass} />
 
-        {/* Ports is right-aligned (numeric), so any width beyond its own content
-            collects as empty space before it, not after — a wide column here
-            reads as a gap before Ports, not real spacing next to Location.
-            Sized close to its actual content (bar + "NN/NN") keeps that gap
-            from swallowing the boundary with Location. System description is
-            a real SNMP sysDescr-length banner (see sysDescrOf) — capped to a
-            fixed width and ellipsis-truncated (full text on hover) so it
-            can't force the whole table to scroll horizontally. */}
         <DataGrid<Row> chipWidth="auto"
           key={cls}
           columns={stdCols}

@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { withSolution } from '../../solution';
 import type { TipHandlers } from './types';
 
 export interface StaleItem { name: string; count: string }
@@ -36,16 +38,33 @@ export default function StaleRecordsCard({
   bucketColors: Record<string, string>;
   tip: TipHandlers;
 }) {
+  const navigate = useNavigate();
+  const drillRoute = withSolution('/inventory/telemetry?stale_days_gte=30&from=Inventory%20insights');
   /* "↓" is an improvement here (fewer stale records), "↑" is a regression */
   const worse = delta.trim().startsWith('↑');
   return (
     <div className="ii-card">
       <div className="ii-card-header">
-        <div className="ii-card-head"><div className="ii-card-title">{title}</div></div>
+        <div className="ii-card-head">
+          <div className="ii-card-title">{title}</div>
+          <button
+            type="button"
+            onClick={() => navigate(drillRoute)}
+            className="ii-link-btn"
+            aria-label="Open Stale Telemetry Records"
+          >
+            Open
+          </button>
+        </div>
         <p className="ii-card-sub">{subtitle}</p>
       </div>
 
-      <div className="ii-kpi-value-row">
+      <div
+        className="ii-kpi-value-row is-clickable"
+        style={{ cursor: 'pointer' }}
+        onClick={() => navigate(drillRoute)}
+        title="Drill down to records stale 30+ days"
+      >
         <span className="ii-mono ii-big-value">{count}</span>
         <span className={`ii-delta-chip${worse ? ' is-bad' : ''}`}>{delta}</span>
       </div>
@@ -58,7 +77,13 @@ export default function StaleRecordsCard({
               {items.map(s => {
                 const { bucket, what } = split(s.name);
                 return (
-                  <li key={s.name} className="ii-dot-item">
+                  <li
+                    key={s.name}
+                    className="ii-dot-item is-clickable"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(drillRoute)}
+                    title="Drill down to stale telemetry records"
+                  >
                     <span className="ii-dot-ind" style={{ background: bucketColors[bucket] ?? 'var(--ii-text-faint)' }} aria-hidden="true" />
                     <span className="ii-dot-text">
                       {bucket && <strong>{bucket}</strong>}
@@ -70,7 +95,12 @@ export default function StaleRecordsCard({
               })}
             </ul>
             <div className="ii-stat-list has-divider">
-              <div className="ii-stat-row">
+              <div
+                className="ii-stat-row is-clickable"
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate(drillRoute)}
+                title="Drill down to records stale 30+ days"
+              >
                 <span>{stale30Label}</span>
                 <span className="ii-mono">{stale30}</span>
               </div>

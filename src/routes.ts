@@ -27,6 +27,13 @@ import DataCenters from './screens/DataCenters';
 import DcimImport from './screens/DcimImport';
 import SiteInfrastructure from './screens/SiteInfrastructure';
 import VirtualResources from './screens/VirtualResources';
+import AllInventory from './screens/AllInventory';
+import ConnectivityLinks from './screens/ConnectivityLinks';
+import InventoryIssues from './screens/InventoryIssues';
+import InventoryLifecycle from './screens/InventoryLifecycle';
+import FirmwareCompliance from './screens/FirmwareCompliance';
+import SparesCoverage from './screens/SparesCoverage';
+import TelemetryStaleness from './screens/TelemetryStaleness';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -115,7 +122,16 @@ export const SCREENS: Screen[] = [
   { key: 'services',  path: '/inventory/services',  module: 'Inventory', crumb: 'Services', legacy: true },
   { key: 'inactive',  path: '/inventory/inactive',  module: 'Inventory', crumb: 'Inactive inventory', component: InactiveInventory },
   { key: 'reports',   path: '/inventory/reports',   module: 'Inventory', crumb: 'Reports', component: InventoryReports },
-  { key: 'inventoryreport', path: '/inventory/reports/:id', module: 'Inventory', crumb: 'Reports · Report', rail: 'reports', component: InventoryReportView }
+  { key: 'inventoryreport', path: '/inventory/reports/:id', module: 'Inventory', crumb: 'Reports · Report', rail: 'reports', component: InventoryReportView },
+  { key: 'allinventory', path: '/inventory/all', module: 'Inventory', crumb: 'Total Inventory', component: AllInventory },
+  { key: 'resourcesphysical', path: '/inventory/resources/physical', module: 'Inventory', crumb: 'Resources · Physical Resources', rail: 'physical', component: PhysicalResources },
+  { key: 'resourcesvirtual', path: '/inventory/resources/virtual', module: 'Inventory', crumb: 'Resources · Virtual Resources', rail: 'virtual', component: VirtualResources },
+  { key: 'connectivitylinks', path: '/inventory/connectivity/links', module: 'Inventory', crumb: 'Connectivity · Links', rail: 'links', component: ConnectivityLinks },
+  { key: 'inventoryissues', path: '/inventory/issues', module: 'Inventory', crumb: 'Inventory Issues', component: InventoryIssues },
+  { key: 'inventorylifecycle', path: '/inventory/lifecycle', module: 'Inventory', crumb: 'Inventory Lifecycle', component: InventoryLifecycle },
+  { key: 'firmwarecompliance', path: '/inventory/compliance/firmware', module: 'Inventory', crumb: 'Compliance · Firmware', component: FirmwareCompliance },
+  { key: 'sparescoverage', path: '/inventory/spares', module: 'Inventory', crumb: 'Inventory Spares', component: SparesCoverage },
+  { key: 'telemetrystaleness', path: '/inventory/telemetry', module: 'Inventory', crumb: 'Telemetry Staleness', component: TelemetryStaleness }
 ];
 
 export const screenByKey = (k: string) => SCREENS.find(s => s.key === k);
