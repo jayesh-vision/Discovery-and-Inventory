@@ -151,11 +151,15 @@ function drillTo(view, label, q) {
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
     ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
     : null;
+  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const isInheritedPhysical = inheritedFrom && (inheritedFrom.toLowerCase().startsWith('resources') || inheritedFrom.toLowerCase().includes('physical'));
+  const nodeDrillFrom = (CURRENT === 'node' && typeof NODE_ID !== 'undefined' && NODE_ID)
+    ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}`
+    : null;
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
     ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
     : null;
-  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
      no richer curDrill/inherited state above) needs no "from" at all — the
      breadcrumb's own single-crumb-chain logic already renders "Location >
@@ -167,6 +171,7 @@ function drillTo(view, label, q) {
   const sameScreenDrillFrom = (DRILL && DRILL.view === CURRENT && view === CURRENT && DRILL.from) ? DRILL.from : null;
   const fromName = sameScreenDrillFrom
     || curDrillFrom
+    || nodeDrillFrom
     || siteDrillFrom
     || phyDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)

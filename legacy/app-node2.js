@@ -53,6 +53,16 @@ function nodeHeaderSwitch(N) {
           ${r.loc || N.name}(${coords})
         </span>
       </div>
+      <div class="row" style="flex-shrink:0">
+        ${(() => {
+          const fromQuery = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('from') : null;
+          const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
+          const curOrigin = fromQuery || drillFrom || '';
+          const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
+          const fromParam = isPhyOrigin ? 'Resources · Physical Resources · Node view?cls=switch' : 'Location · Site details · Node view';
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+        })()}
+      </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
@@ -510,7 +520,14 @@ function nodeHeaderRouter(N) {
         </span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}` })}>Node resources</button>
+        ${(() => {
+          const fromQuery = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('from') : null;
+          const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
+          const curOrigin = fromQuery || drillFrom || '';
+          const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
+          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=${encodeURIComponent(r.cls || 'router')}` : 'Location · Site details · Node view';
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+        })()}
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">

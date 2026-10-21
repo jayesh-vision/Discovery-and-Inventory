@@ -27,7 +27,15 @@ const RAIL: { section: string; items: Item[] }[] = [
 ];
 
 /* which rail item lights up for the current URL, including detail screens */
-export function activeRailKey(pathname: string): string | null {
+export function activeRailKey(pathname: string, search = ''): string | null {
+  const sp = new URLSearchParams(search);
+  const from = sp.get('from');
+  if (from && (from.toLowerCase().startsWith('resources') || from.toLowerCase().includes('physical'))) {
+    return 'physical';
+  }
+  if (from && (from.toLowerCase().startsWith('location') || from.toLowerCase().includes('node'))) {
+    return 'location';
+  }
   const s = SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
     ?? SCREENS.filter(x => x.path.includes(':')).find(x => {
       const re = new RegExp('^' + x.path.replace(/:[^/]+/g, '[^/]+') + '$');
@@ -37,9 +45,9 @@ export function activeRailKey(pathname: string): string | null {
 }
 
 export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const nav = useNavigate();
-  const active = activeRailKey(pathname);
+  const active = activeRailKey(pathname, search);
   const [open, setOpen] = useState<Record<string, boolean>>({ res: true, con: true, recon: true });
   useEffect(() => {
     /* a child that is active keeps its group open */

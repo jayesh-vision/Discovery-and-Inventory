@@ -1955,7 +1955,8 @@ function locList() {
      Clicking a card filters the table to that macro region, and clicking it again toggles it off. */
   const REGION_TONE = { North:'sky', South:'teal', West:'orange', East:'purple' };
   const REGIONS = ['North', 'South', 'West', 'East'];
-  const regionCardsHtml = REGIONS.map(r => {
+  const showRegionCards = !LOC_STATE;
+  const regionCardsHtml = showRegionCards ? REGIONS.map(r => {
     const rows = base.filter(l => STATE_REGION[l.state] === r);
     const c = k => rows.filter(l => l.st === k).length;
     const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
@@ -1990,10 +1991,10 @@ function locList() {
       segs, REGION_TONE[r] || 'slate',
       { v:'location', l:`Locations in ${r} region`, q: targetQ },
       isSel);
-  }).join('');
+  }).join('') : '';
 
   return `
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>
+    ${showRegionCards ? `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>` : ''}
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',

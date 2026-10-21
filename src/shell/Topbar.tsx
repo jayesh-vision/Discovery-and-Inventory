@@ -6,6 +6,7 @@ import { ExportMenu } from '../screens/reports/parts';
 import { store } from '../dcim/api';
 import { isDatacenter, withSolution } from '../solution';
 import GeoDropdown from '../components/ui/GeoDropdown';
+import { nodeClassName } from '../data/ledger';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -396,7 +397,58 @@ export default function Topbar() {
     finalLeafLabel = drill || subLabel;
   }
 
-  const isFromLocation = !from || from.toLowerCase().startsWith('location') || sp.has('cityId') || sp.has('facility');
+  const isFromPhysical = !!from && (from.toLowerCase().startsWith('resources') || from.toLowerCase().includes('physical'));
+  const isFromLocation = !isFromPhysical && (!from || from.toLowerCase().startsWith('location') || from.toLowerCase().includes('node view') || sp.has('cityId') || sp.has('facility'));
+
+  if (isFromPhysical && (s.key === 'node' || s.key === 'resource')) {
+    const isDc = isDatacenter();
+    const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
+    const reqCls = sp.get('cls')
+      || fromSp?.get('cls')
+      || (isDc ? null : (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null))
+      || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls
+      || 'router';
+
+    const geo = sp.get('geo') || fromSp?.get('geo');
+    const phySp = new URLSearchParams();
+    if (reqCls) phySp.set('cls', reqCls);
+    if (geo) phySp.set('geo', geo);
+    const phyTo = `/inventory/physical?${phySp.toString()}`;
+
+    const nodeParams = new URLSearchParams();
+    if (params.name) nodeParams.set('name', params.name);
+    if (sp.get('site')) nodeParams.set('site', sp.get('site')!);
+    if (reqCls) nodeParams.set('cls', reqCls);
+    if (sp.get('ip')) nodeParams.set('ip', sp.get('ip')!);
+    if (geo) nodeParams.set('geo', geo);
+    nodeParams.set('from', `Resources · Physical Resources?${phySp.toString()}`);
+    const nodeTo = `/inventory/node/${encodeURIComponent(params.name || '')}?${nodeParams.toString()}`;
+
+    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
+
+    if (s.key === 'resource' && isFromNode) {
+      segs = [
+        { label: 'Inventory insights', to: '/inventory/insights' },
+        { label: 'Physical Resources', to: phyTo },
+        { label: 'Node view', to: nodeTo }
+      ];
+      finalLeafLabel = drill || 'Node resources';
+    } else if (s.key === 'resource') {
+      segs = [
+        { label: 'Inventory insights', to: '/inventory/insights' },
+        { label: 'Physical Resources', to: phyTo }
+      ];
+      finalLeafLabel = drill || params.name || 'Element';
+    } else {
+      /* s.key === 'node' */
+      segs = [
+        { label: 'Inventory insights', to: '/inventory/insights' },
+        { label: 'Physical Resources', to: phyTo }
+      ];
+      finalLeafLabel = drill || `${nodeClassName(reqCls)} · ${params.name}` || params.name || 'Node view';
+    }
+  }
+
   if ((s.key === 'node' || (s.key === 'resource' && isFromLocation)) && isFromLocation) {
     const rawSite = sp.get('site') || sp.get('facilityId') || sp.get('id')
       || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.id
@@ -406,7 +458,17 @@ export default function Topbar() {
     const cityMatch = findCityById(directCityId) || findCityByFacilityCode(rawSite || params.name);
     const facilityType = (sp.get('facility') as 'dc' | 'pop' | 'site') || cityMatch?.facilityType || 'dc';
     const siteCode = rawSite || (cityMatch ? `${cityMatch.city.name.slice(0, 3).toUpperCase()}-${facilityType.toUpperCase()}-01` : null);
-    const deviceDisplayName = drill || params.name || 'Node view';
+    const tab = sp.get('tab') || sp.get('cls') || 'router';
+    const cls = sp.get('cls') || 'router';
+    const ip = sp.get('ip');
+
+    const nodeParams = new URLSearchParams();
+    if (params.name) nodeParams.set('name', params.name);
+    if (siteCode) nodeParams.set('site', siteCode);
+    if (tab) nodeParams.set('tab', tab);
+    if (cls) nodeParams.set('cls', cls);
+    if (ip) nodeParams.set('ip', ip);
+    const nodeTo = `/inventory/node/${encodeURIComponent(params.name || '')}?${nodeParams.toString()}`;
 
     if (cityMatch && siteCode) {
       segs = [
@@ -417,23 +479,26 @@ export default function Topbar() {
         },
         {
           label: siteCode,
-          to: `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}&facilityId=${encodeURIComponent(siteCode)}`
+          to: `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}`
         }
       ];
-      finalLeafLabel = deviceDisplayName;
     } else if (siteCode) {
-      const tab = sp.get('tab') || sp.get('cls');
-      const siteTo = `/inventory/location/site/${encodeURIComponent(siteCode)}${tab ? `?tab=${encodeURIComponent(tab)}` : ''}`;
+      const siteTo = `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}`;
       segs = [
         { label: 'Location', to: '/inventory/location' },
         { label: siteCode, to: siteTo }
       ];
-      finalLeafLabel = deviceDisplayName;
     } else {
       segs = [
         { label: 'Location', to: '/inventory/location' }
       ];
-      finalLeafLabel = deviceDisplayName;
+    }
+
+    if (s.key === 'resource') {
+      segs.push({ label: 'Node view', to: nodeTo });
+      finalLeafLabel = drill || 'Node resources';
+    } else {
+      finalLeafLabel = drill || params.name || 'Node view';
     }
   }
 

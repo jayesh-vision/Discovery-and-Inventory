@@ -245913,7 +245913,8 @@ function locList() {
      Clicking a card filters the table to that macro region, and clicking it again toggles it off. */
   const REGION_TONE = { North:'sky', South:'teal', West:'orange', East:'purple' };
   const REGIONS = ['North', 'South', 'West', 'East'];
-  const regionCardsHtml = REGIONS.map(r => {
+  const showRegionCards = !LOC_STATE;
+  const regionCardsHtml = showRegionCards ? REGIONS.map(r => {
     const rows = base.filter(l => STATE_REGION[l.state] === r);
     const c = k => rows.filter(l => l.st === k).length;
     const segs = LOC_STATES.map(st => ({ c: c(st.n), hex: cv(st.tone,500), n: st.n.toLowerCase() }));
@@ -245948,10 +245949,10 @@ function locList() {
       segs, REGION_TONE[r] || 'slate',
       { v:'location', l:`Locations in ${r} region`, q: targetQ },
       isSel);
-  }).join('');
+  }).join('') : '';
 
   return `
-    <div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>
+    ${showRegionCards ? `<div class="vw-grid vw-grid-cols-4 vw-gap-md" style="margin-bottom:var(--vw-space-md)">${regionCardsHtml}</div>` : ''}
     ${card(`
       ${gridBar(shown.length, n(IL.locations), 'Name, Location ID', FS.location,
         '',
@@ -253052,6 +253053,16 @@ function nodeHeaderSwitch(N) {
           ${r.loc || N.name}(${coords})
         </span>
       </div>
+      <div class="row" style="flex-shrink:0">
+        ${(() => {
+          const fromQuery = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('from') : null;
+          const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
+          const curOrigin = fromQuery || drillFrom || '';
+          const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
+          const fromParam = isPhyOrigin ? 'Resources · Physical Resources · Node view?cls=switch' : 'Location · Site details · Node view';
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+        })()}
+      </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
       <span class="nv-hk">${k}</span><span class="nv-mv">${v}</span></div>`).join('')}</div>`,
@@ -253509,7 +253520,14 @@ function nodeHeaderRouter(N) {
         </span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}` })}>Node resources</button>
+        ${(() => {
+          const fromQuery = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('from') : null;
+          const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
+          const curOrigin = fromQuery || drillFrom || '';
+          const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
+          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=${encodeURIComponent(r.cls || 'router')}` : 'Location · Site details · Node view';
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+        })()}
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(7, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">
@@ -255010,11 +255028,15 @@ function drillTo(view, label, q) {
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
     ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
     : null;
+  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
+  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
+  const isInheritedPhysical = inheritedFrom && (inheritedFrom.toLowerCase().startsWith('resources') || inheritedFrom.toLowerCase().includes('physical'));
+  const nodeDrillFrom = (CURRENT === 'node' && typeof NODE_ID !== 'undefined' && NODE_ID)
+    ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}`
+    : null;
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
     ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
     : null;
-  const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
-  const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
      no richer curDrill/inherited state above) needs no "from" at all — the
      breadcrumb's own single-crumb-chain logic already renders "Location >
@@ -255026,6 +255048,7 @@ function drillTo(view, label, q) {
   const sameScreenDrillFrom = (DRILL && DRILL.view === CURRENT && view === CURRENT && DRILL.from) ? DRILL.from : null;
   const fromName = sameScreenDrillFrom
     || curDrillFrom
+    || nodeDrillFrom
     || siteDrillFrom
     || phyDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)

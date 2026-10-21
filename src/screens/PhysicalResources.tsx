@@ -213,16 +213,34 @@ export default function PhysicalResources() {
      the server that was clicked. Server keeps Site info (that one resolves
      the row's own location correctly for every class) but not a link that
      opens the wrong element. */
-  const rowActions = (r: Row): Action[] => r.dc ? [
-    { l: 'Device details', onClick: () => setOpenName(r.name) },
-    { l: 'View rack', onClick: () => openRack(r) },
-    { l: 'Site info', onClick: () => openSite(r.loc) }
-  ] : [
-    ...(isNe(cls) && hasNodeView(cls) ? [{ l: 'Node view', onClick: () => nav(legacyPath('node', { label: `${nodeClassName(cls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip })) }] : []),
-    ...(cls === 'server' || !isNe(cls) ? [] : [{ l: 'View details', onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`) }]),
-    { l: 'Site info', onClick: () => openSite(r.loc) },
-    ...(isNe(cls) && hasNodeView(cls) ? [] : [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }])
-  ];
+  const rowActions = (r: Row): Action[] => {
+    const rowCls = (r.dc?.dev?.role ? r.dc.dev.role.toLowerCase() : cls) as PhyTab;
+    const canNodeView = hasNodeView(rowCls);
+    if (r.dc) {
+      return [
+        ...(canNodeView ? [{
+          l: 'Node view',
+          onClick: () => nav(legacyPath('node', { label: `${nodeClassName(rowCls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip, cls: rowCls, site: r.loc }))
+        }] : []),
+        { l: 'Device details', onClick: () => setOpenName(r.name) },
+        { l: 'View rack', onClick: () => openRack(r) },
+        { l: 'Site info', onClick: () => openSite(r.loc) },
+        ...(!canNodeView && (rowCls === 'server' || rowCls === 'gpu' || rowCls === 'storage') ? [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }] : [])
+      ];
+    }
+    return [
+      ...(canNodeView ? [{
+        l: 'Node view',
+        onClick: () => nav(legacyPath('node', { label: `${nodeClassName(rowCls)} · ${r.name}`, from: FROM }, { name: r.name, ip: r.ip, cls: rowCls, site: r.loc }))
+      }] : []),
+      ...(rowCls === 'server' || !isNe(rowCls) ? [] : [{
+        l: 'View details',
+        onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)
+      }]),
+      { l: 'Site info', onClick: () => openSite(r.loc) },
+      ...(!canNodeView ? [{ l: 'Node view', disabled: true, hint: 'This class has no node-level digital twin' }] : [])
+    ];
+  };
 
   const selectTabClass = (targetClass: PhyTab) => {
     if (!scoped && typeof sessionStorage !== 'undefined') {
