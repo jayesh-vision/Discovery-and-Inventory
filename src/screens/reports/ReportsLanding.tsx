@@ -237,15 +237,26 @@ export function ReportsLanding({ module }: { module: ReportModule }) {
         <Card><div className="tbl-empty">No reports match. <button type="button" className="nst-btn nst-btn--xs" onClick={() => { setQ(''); setAudience('All'); }}>Show all</button></div></Card>
       )}
 
-      <Card>
+      <Card className="rpt-runs">
         <span className="vw-card-title-sm">Recent report runs<InfoTip text="Report files generated for this module — scheduled, automated and ad hoc — with their status." /></span>
         <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>Generated files for {MODULE_LABEL[module].toLowerCase()}</div>
         <DataGrid<ReportRun> chipWidth="auto"
-          columns={[{ t: 'Status', w: '12%', plain: true }, { t: 'Report name', w: '28%' }, { t: 'Type' }, { t: 'Generated' }, { t: 'Frequency' }, { t: 'Creator' }, { t: 'Created on' }, { t: 'Size', r: true }]}
+          columns={[
+            { t: 'Status', w: '12.5%', plain: true },
+            { t: 'Report name', w: '12.5%' },
+            { t: 'Type', w: '12.5%' },
+            { t: 'Generated', w: '12.5%' },
+            { t: 'Frequency', w: '12.5%' },
+            { t: 'Creator', w: '12.5%' },
+            { t: 'Created on', w: '12.5%' },
+            { t: 'Size', r: true, w: '12.5%' }
+          ]}
           rows={runs} total={runs.length} rowKey={r => r.name} searchPlaceholder="Report name, type, creator"
           filters={[{ n: 'Status', o: ['Completed', 'Failed', 'Pending'] }, { n: 'Type', o: [...new Set(runs.map(r => r.type))] }, { n: 'Frequency', o: [...new Set(runs.map(r => r.frequency))] }]}
           renderRow={r => [
-            <Chip tone={RUN_STATUS_TONE[r.status]}>{r.status}</Chip>, <span className="vw-value">{r.name}</span>, r.type, r.generated, r.frequency, r.creator,
+            <Chip tone={RUN_STATUS_TONE[r.status]}>{r.status}</Chip>,
+            <span className="vw-value" title={r.name} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>,
+            r.type, r.generated, r.frequency, r.creator,
             <span className="num">{r.createdOn}</span>, <span className="num">{r.size}</span>
           ]}
         />

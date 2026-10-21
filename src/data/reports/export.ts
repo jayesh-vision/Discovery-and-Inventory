@@ -71,7 +71,7 @@ export function reportCsv(d: ReportDef, c: ReportContent): string {
   const out: string[] = [];
   meta(d).forEach(([k, v]) => out.push(csvRow([k, v])));
   out.push('', csvRow(['HEADLINE']), csvRow([fmtValue(c.headline.value, c.headline.fmt), c.headline.label]));
-  out.push('', csvRow(['EXECUTIVE SUMMARY']), csvRow([c.summary]));
+  if (c.summary) out.push('', csvRow(['EXECUTIVE SUMMARY']), csvRow([c.summary]));
   out.push('', csvRow(['KEY METRICS']), csvRow(['Metric', 'Value', 'Formatted', 'Context', 'Change', 'Definition']));
   c.kpis.forEach(k => out.push(csvRow([k.title, k.value, fmtValue(k.value, k.fmt), k.of, k.delta.text, k.definition])));
   out.push('', csvRow(['FINDINGS']), csvRow(['Severity', 'Finding', 'Detail']));
@@ -85,8 +85,10 @@ export function reportCsv(d: ReportDef, c: ReportContent): string {
     out.push('', csvRow([`CHART DATA — ${v.title.toUpperCase()}`]), csvRow(data.head));
     data.rows.forEach(row => out.push(csvRow(row)));
   });
-  out.push('', csvRow(['METHODOLOGY']));
-  c.methodology.forEach(m => out.push(csvRow([m.term, m.definition])));
+  if (c.methodology.length) {
+    out.push('', csvRow(['METHODOLOGY']));
+    c.methodology.forEach(m => out.push(csvRow([m.term, m.definition])));
+  }
   return `﻿${out.join('\r\n')}`;
 }
 
@@ -143,14 +145,14 @@ export function reportHtml(d: ReportDef, c: ReportContent, forWord = false): str
     <div style="font-size:26px;font-weight:700;color:#0f172a">${esc(fmtValue(c.headline.value, c.headline.fmt))}</div>
     <div style="font-size:12.5px;color:#334155">${esc(c.headline.label)}</div>
   </div>
-  ${h2('Executive summary')}<p style="font-size:13px;line-height:1.65;color:#1e293b;margin:0">${esc(c.summary)}</p>
+  ${c.summary ? `${h2('Executive summary')}<p style="font-size:13px;line-height:1.65;color:#1e293b;margin:0">${esc(c.summary)}</p>` : ''}
   ${h2('Key metrics')}${table(['Metric', 'Value', 'Context', 'Change'], c.kpis.map(k => [k.title, fmtValue(k.value, k.fmt), k.of ?? '', k.delta.text]), [false, true])}
   ${h2('Findings')}${c.findings.map(f => `<div style="border-left:4px solid ${FINDING_HEX[f.tone]};padding:8px 12px;margin-bottom:8px;background:#f8fafc;page-break-inside:avoid"><div style="font-size:12.5px;font-weight:700;color:#0f172a">${esc(FINDING_LABEL[f.tone])} · ${esc(f.title)}</div><div style="font-size:12px;color:#334155;margin-top:2px">${esc(f.detail)}</div></div>`).join('')}
   ${c.visuals.length ? `${h2('Analysis')}${c.visuals.map(visualHtml).join('')}` : ''}
   ${h2('Recommended actions')}${table(['Priority', 'Action', 'Owner', 'Impact'], c.actions.map(a => [a.priority, a.action, a.owner, a.impact]))}
   ${h2(`${c.table.title} (${c.table.rows.length} rows)`)}<div style="font-size:11px;color:#64748b;margin-bottom:6px">${esc(c.table.sub)}</div>
   ${table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), cols.map(col => !!col.right))}
-  ${h2('Methodology & definitions')}${table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]))}
+  ${c.methodology.length ? `${h2('Methodology & definitions')}${table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]))}` : ''}
   <div style="margin-top:22px;font-size:10.5px;color:#94a3b8">${esc(d.id)} · snapshot ${esc(d.snapshot)} · generated ${esc(TODAY_TEXT())} by NetSingularity OSS</div>`;
 
   if (forWord) {
@@ -208,8 +210,10 @@ async function reportXlsx(d: ReportDef, c: ReportContent): Promise<Blob> {
   section('Headline');
   const hl = ws.addRow([c.headline.label, c.headline.value]);
   hl.getCell(2).numFmt = XLSX_FMT[c.headline.fmt]; hl.getCell(2).font = { size: 16, bold: true };
-  section('Executive summary');
-  merged(c.summary, {}).height = Math.max(48, Math.ceil(c.summary.length / 115) * 15);
+  if (c.summary) {
+    section('Executive summary');
+    merged(c.summary, {}).height = Math.max(48, Math.ceil(c.summary.length / 115) * 15);
+  }
   section('Key metrics');
   header(['Metric', 'Value', 'Context', 'Change']);
   c.kpis.forEach(k => { const r = ws.addRow([k.title, k.value, k.of ?? '', k.delta.text]); r.getCell(2).numFmt = XLSX_FMT[k.fmt]; });
@@ -259,10 +263,12 @@ async function reportXlsx(d: ReportDef, c: ReportContent): Promise<Blob> {
     });
   }
 
-  const md = wb.addWorksheet('Methodology');
-  md.columns = [{ header: 'Term', key: 't', width: 32 }, { header: 'Definition', key: 'd', width: 110 }];
-  md.getRow(1).font = { bold: true };
-  c.methodology.forEach(m => { md.addRow({ t: m.term, d: m.definition }).alignment = { wrapText: true, vertical: 'top' }; });
+  if (c.methodology.length) {
+    const md = wb.addWorksheet('Methodology');
+    md.columns = [{ header: 'Term', key: 't', width: 32 }, { header: 'Definition', key: 'd', width: 110 }];
+    md.getRow(1).font = { bold: true };
+    c.methodology.forEach(m => { md.addRow({ t: m.term, d: m.definition }).alignment = { wrapText: true, vertical: 'top' }; });
+  }
 
   const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -359,7 +365,7 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   y += 30;
 
   h2('Executive summary');
-  para(c.summary, 10, ink, 2);
+  if (c.summary) para(c.summary, 10, ink, 2);
   c.findings.forEach(f => {
     const lines = doc.splitTextToSize(pdfText(f.detail), CW - 8) as string[];
     const h = 7 + lines.length * 3.8;
@@ -544,8 +550,10 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   doc.text(pdfText(`${c.table.sub} · ${c.table.rows.length} rows`), M, y); y += 4;
   table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), { right: cols.map(col => !!col.right), fontSize: wide ? 6.5 : 7.8 });
 
-  h2('Methodology & definitions');
-  table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]), { colWidths: [44, CW - 44] });
+  if (c.methodology.length) {
+    h2('Methodology & definitions');
+    table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]), { colWidths: [44, CW - 44] });
+  }
 
   /* footer on every page */
   const pages = doc.getNumberOfPages();

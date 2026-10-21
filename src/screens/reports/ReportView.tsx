@@ -67,7 +67,7 @@ export function ReportView({ module }: { module: ReportModule }) {
 
       <Card className="rpt-block">
         <span className="vw-card-title-sm">Executive summary</span>
-        <p className="rpt-summary">{content.summary}</p>
+        {content.summary ? <p className="rpt-summary">{content.summary}</p> : null}
         <div className="rpt-findings">{content.findings.map(f => <FindingCard key={f.title} f={f} />)}</div>
       </Card>
 
@@ -98,10 +98,16 @@ export function ReportView({ module }: { module: ReportModule }) {
 
       <Card className="rpt-detail">
         <span className="vw-card-title-sm">{t.title}</span>
-        <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>{subClean} · {t.rows.length.toLocaleString('en-IN')} rows</div>
+        {module !== 'inventory' && (
+          <div className="vw-card-metric-label-sub" style={{ marginTop: 2, marginBottom: 'var(--vw-space-sm)' }}>{subClean} · {t.rows.length.toLocaleString('en-IN')} rows</div>
+        )}
         <div className="rpt-noprint">
           <DataGrid<Row>
-            columns={t.columns.map(c => ({ t: c.header, r: c.right }))}
+            columns={t.columns.map(c => ({
+              t: c.header,
+              r: c.right,
+              w: c.width ?? (t.columns.some(col => col.width) ? undefined : `${(100 / t.columns.length).toFixed(2)}%`)
+            }))}
             rows={t.rows} total={t.rows.length} rowKey={r => r.id}
             searchPlaceholder={`Search ${t.title.toLowerCase()}`}
             filters={t.facet ? [{ n: t.columns.find(c => c.key === t.facet)!.header, o: facetOptions }] : undefined}
@@ -118,12 +124,14 @@ export function ReportView({ module }: { module: ReportModule }) {
         {t.rows.length > 60 && <div className="rpt-print-note">First 60 of {t.rows.length.toLocaleString('en-IN')} rows — the full set is in the PDF, Excel and CSV downloads.</div>}
       </Card>
 
-      <Card className="rpt-block">
-        <span className="vw-card-title-sm">Methodology & definitions</span>
-        <dl className="rpt-method">{content.methodology.map(m => (
-          <div key={m.term}><dt>{m.term}</dt><dd>{m.definition}</dd></div>
-        ))}</dl>
-      </Card>
+      {module !== 'inventory' && content.methodology && content.methodology.length > 0 && (
+        <Card className="rpt-block">
+          <span className="vw-card-title-sm">Methodology & definitions</span>
+          <dl className="rpt-method">{content.methodology.map(m => (
+            <div key={m.term}><dt>{m.term}</dt><dd>{m.definition}</dd></div>
+          ))}</dl>
+        </Card>
+      )}
     </div>
   );
 }

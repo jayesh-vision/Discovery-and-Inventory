@@ -15,6 +15,10 @@ import { DECOMM_OLDEST, TODAY, parseDmy, decommRows, type InactiveTab } from '..
 import { LOCATIONS } from '../locations';
 import { facilityOf, portTotals, totalLoad, uTotals } from '../facility';
 import { type ReportBuilder, TONE_HEX, countBy, fmtNum, pct, plural, r1, sum } from './model';
+import { isScoped } from '../dc/scope';
+import {
+  buildDcEstate, buildDcStock, buildDcLifecycle, buildDcQuality, buildDcArchive, buildDcSites, buildDcVendors
+} from './inventoryDc';
 
 const cv = (tone: string, shade: number) => `var(--vw-color-${tone}-${shade})`;
 
@@ -30,16 +34,15 @@ const physicalLink = (k: NeClass, stock?: string) => ({ key: 'physical', q: `cls
 
 /* ── IN-01 Inventory estate executive summary ────────────── */
 const estate: ReportBuilder = () => {
+  if (isScoped()) return buildDcEstate();
   const discPct = r1(pct(IL.discovered, IL.ne));
   const portPct = r1(pct(EST.ports.used, EST.ports.total));
   const assessed = EST.compliance.compliant + EST.compliance.behind + EST.compliance.unknown;
   const deployed = STOCK_ST.find(s => s.k === 'deployed')!.c;
   const faulty = STOCK_ST.find(s => s.k === 'faulty')!.c;
-  const routerShare = Math.round(pct(activeOf('router'), IL.ne));
-
   return {
     headline: { value: IL.ne, fmt: 'num', label: 'active network elements under management', tone: 'sky' },
-    summary: `The estate holds ${fmtNum(IL.ne)} active network elements across ${fmtNum(IL.locations)} locations (${IL.central} central, ${IL.regional} regional, ${fmtNum(IL.edge)} edge), connected by ${fmtNum(IL.links)} links and carrying ${fmtNum(IL.services)} services and ${IL.vnf} virtual network functions. Routers are ${routerShare}% of the estate. ${fmtNum(deployed)} elements are deployed, ${faulty} faulty or with the OEM, and ${fmtNum(IL.inactive)} decommissioned records are archived. ${fmtNum(IL.discovered)} elements (${discPct}%) are verified by discovery. Lifecycle risk is material: ${EST.eol.past} elements are past end of support, ${EST.eol.within12} more reach it within 12 months, and ${EST.compliance.behind} are behind the software baseline. Ports are ${portPct}% utilised.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${EST.eol.past} elements past end of support`, detail: `A further ${EST.eol.within12} reach end of support within 12 months — ${r1(pct(EST.eol.past + EST.eol.within12, IL.ne))}% of the active estate needs a refresh plan.` },
       { tone: 'warn', title: `${fmtNum(EST.compliance.behind)} elements behind the software baseline`, detail: `${r1(pct(EST.compliance.behind, assessed))}% of ${fmtNum(assessed)} assessed; ${EST.compliance.unknown} could not be assessed.` },
@@ -96,17 +99,13 @@ const estate: ReportBuilder = () => {
       })),
       empty: 'No equipment classes.'
     },
-    methodology: [
-      { term: 'Source of totals', definition: 'Every total in this report is read from the inventory ledger, the same figures every Inventory screen shows.' },
-      { term: 'Active element', definition: 'Any element in the planned, in-store, deployed or faulty stock state.' },
-      { term: 'Verified by discovery', definition: 'The element’s record was confirmed on the live network by the most recent discovery cycle.' },
-      { term: 'End of support', definition: 'The OEM’s published end-of-support date for the element’s model.' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-02 Stock position & spares cover ─────────────────── */
 const stock: ReportBuilder = () => {
+  if (isScoped()) return buildDcStock();
   const faulty = stockTotal('faulty'), instore = stockTotal('instore'), planned = stockTotal('planned'), deployed = stockTotal('deployed');
   const rows = NE_CLASSES.map(k => {
     const m = PHY_MATRIX[k], active = activeOf(k);
@@ -168,16 +167,13 @@ const stock: ReportBuilder = () => {
       rows: rows.map(r => ({ id: r.k, link: physicalLink(r.k, 'instore,faulty'), cells: { cls: name(r.k), planned: r.m.planned, instore: r.m.instore, deployed: r.m.deployed, faulty: r.m.faulty, rate: r.faultRate, cover: r.cover, status: r.status } })),
       facet: 'status', empty: 'No classes.'
     },
-    methodology: [
-      { term: 'Fault rate', definition: 'Faulty / RMA elements ÷ active elements of that class.' },
-      { term: 'Spares per fault', definition: 'In-store spares ÷ faulty elements. Below 1.00 not every fault can be swapped from stock.' },
-      { term: 'Spare cover', definition: 'No cover: faulty units and zero spares. Thin cover: fewer spares than faults. Covered: at least one spare per fault.' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-03 Hardware lifecycle risk ───────────────────────── */
 const lifecycle: ReportBuilder = () => {
+  if (isScoped()) return buildDcLifecycle();
   const models = countBy(register, r => r.model).map(([model]) => {
     const rs = register.filter(r => r.model === model);
     const [eos, band] = eosOf(model);
@@ -252,16 +248,13 @@ const lifecycle: ReportBuilder = () => {
       })),
       facet: 'band', empty: 'No models.'
     },
-    methodology: [
-      { term: 'Estate totals', definition: 'Past end of support, within 12 months and compliance totals come from the inventory ledger.' },
-      { term: 'Model catalogue', definition: 'Support status and software baseline per model come from the OEM lifecycle catalogue applied to every model in the element register.' },
-      { term: 'Refresh window', definition: 'The model’s end-of-support date falls inside the current planning horizon.' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-04 Discovery-verified inventory quality ──────────── */
 const quality: ReportBuilder = () => {
+  if (isScoped()) return buildDcQuality();
   const recStates: RecState[] = ['ok', 'drift', 'stale', 'miss', 'none'];
   const stateHex: Record<RecState, string> = { ok: TONE_HEX.success, drift: TONE_HEX.warning, stale: TONE_HEX.orange, miss: TONE_HEX.error, none: TONE_HEX.neutral };
   const srcHex: Record<Source, string> = { d: TONE_HEX.success, p: TONE_HEX.info, m: TONE_HEX.neutral, e: TONE_HEX.purple };
@@ -326,17 +319,13 @@ const quality: ReportBuilder = () => {
       })),
       empty: 'No classes.'
     },
-    methodology: [
-      { term: 'Verified', definition: 'Discovery found the element and every compared attribute matched the record.' },
-      { term: 'Drifted / Stale / Missing', definition: 'Drifted: reached but a value differs. Stale: not re-verified within the scan window. Missing: the record exists but discovery no longer finds the element.' },
-      { term: 'Record source', definition: `${Object.values(SRC).map(s => s[0]).join(', ')}.` },
-      { term: 'Populations', definition: 'Headline coverage uses the ledger’s verified count; class coverage uses each class’s discovered count; verification states are read from the element register.' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-05 Decommission archive & zombie assets ──────────── */
 const archive: ReportBuilder = () => {
+  if (isScoped()) return buildDcArchive();
   const rows = NE_CLASSES.flatMap(k => decommRows(k as InactiveTab).map(r => ({ ...r, cls: k })));
   const zombies = rows.filter(r => r.zombie);
   const lastYear = rows.filter(r => TODAY.getTime() - parseDmy(r.on).getTime() <= 365 * 86400000).length;
@@ -394,16 +383,13 @@ const archive: ReportBuilder = () => {
       })),
       facet: 'cls', empty: 'The archive is empty.'
     },
-    methodology: [
-      { term: 'Decommissioned', definition: 'Stock state set to decommissioned and moved to the inactive inventory archive.' },
-      { term: 'Zombie asset', definition: 'An archived element that still responds to discovery scans.' },
-      { term: 'Reason grouping', definition: 'Change-request-specific reasons are grouped as "Replaced under change request"; write-offs are grouped as "Written off".' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-06 Site footprint & facility capacity ────────────── */
 const sites: ReportBuilder = () => {
+  if (isScoped()) return buildDcSites();
   const s = LOCATIONS.map(l => {
     const f = facilityOf(l.id, l.ne);
     const load = totalLoad(f), rated = sum(f.power.feeds, x => x.ratingKw), u = uTotals(f), p = portTotals(f);
@@ -464,17 +450,13 @@ const sites: ReportBuilder = () => {
       })),
       facet: 'status', empty: 'No surveyed sites.'
     },
-    methodology: [
-      { term: 'Estate totals', definition: 'Location tiers and estate port figures come from the inventory ledger.' },
-      { term: 'Surveyed sites', definition: 'Sites with a facility record (power feeds, racks, port classes). Site-level figures describe those sites only.' },
-      { term: 'Power used', definition: 'Sum of feed load ÷ sum of feed rating at the site.' },
-      { term: 'Near capacity', definition: 'Power or rack use at or above 75%.' }
-    ]
+    methodology: []
   };
 };
 
 /* ── IN-07 Vendor (OEM) concentration ────────────────────── */
 const vendors: ReportBuilder = () => {
+  if (isScoped()) return buildDcVendors();
   const oems = countBy(register, r => r.oem).map(([oem, n]) => {
     const rs = register.filter(r => r.oem === oem);
     return {
@@ -539,11 +521,7 @@ const vendors: ReportBuilder = () => {
       rows: oems.map(o => ({ id: o.oem, cells: { oem: o.oem, n: o.n, share: o.share, models: o.models, classes: o.classes.join(', '), past: o.pastPct, soon: o.soonPct, behind: o.behindPct, region: `${o.regions[0][0]} (${o.regions[0][1]})` } })),
       empty: 'No vendors.'
     },
-    methodology: [
-      { term: 'Population', definition: `The element register (${fmtNum(register.length)} active elements, matching the ledger total).` },
-      { term: 'HHI', definition: 'Herfindahl–Hirschman index: sum of squared % shares. Above 2,500 is highly concentrated; 1,500–2,500 moderately.' },
-      { term: 'Lifecycle exposure', definition: 'Share of a vendor’s register elements on models past end of support or inside the refresh window. Shown as a share of each vendor’s own base; estate totals are in the Hardware lifecycle risk report.' }
-    ]
+    methodology: []
   };
 };
 

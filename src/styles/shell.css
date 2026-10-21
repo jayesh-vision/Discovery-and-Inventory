@@ -2963,6 +2963,31 @@ details[open] > summary .vw-tx-chevron {
 .rpt-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.8125rem; color: var(--vw-color-gray-500);
   border-top: 1px solid var(--vw-color-slate-200); padding-top: 10px; }
 .rpt-print-table, .rpt-print-note { display: none; }
+.rpt-detail .nst-table,
+.rpt-runs .nst-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.rpt-detail .nst-table th,
+.rpt-detail .nst-table td,
+.rpt-runs .nst-table th,
+.rpt-runs .nst-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rpt-detail .nst-table th:first-child,
+.rpt-detail .nst-table td:first-child,
+.rpt-runs .nst-table th:first-child,
+.rpt-runs .nst-table td:first-child {
+  padding-left: var(--vw-space-lg, 16px);
+}
+.rpt-detail .nst-table th:last-child,
+.rpt-detail .nst-table td:last-child,
+.rpt-runs .nst-table th:last-child,
+.rpt-runs .nst-table td:last-child {
+  padding-right: 36px;
+}
 
 /* ── Rule details: premium polish, additive only ──────────
    New, uniquely-scoped classes for RuleDetails.tsx's own tiles/cards — never

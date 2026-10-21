@@ -35,9 +35,20 @@ export const dcDiscovered = (d: DcDevice) => d.discovery !== 'not-discovered' &&
 export const dcStockOf = (d: DcDevice): StockState => DC_STOCK[d.lifecycle];
 export const dcClassOf = (d: DcDevice): NeClass => DC_CLASS[d.role];
 
+import { DC_COUNTS } from './dc';
+
 export const IL: typeof DEFAULT_IL = SCOPED ? {
-  locations: dcDcsCount, central: dcDcsCount, regional: 0, edge: 0, ne: dcDevCount, discovered: DC_ROWS.filter(dcDiscovered).length,
-  links: 0, services: 0, vnf: 0, inactive: 0, reports: 0
+  locations: dcDcsCount,
+  central: sumList.filter(d => d.category === 'Central').length || dcDcsCount,
+  regional: sumList.filter(d => d.category === 'Regional').length || 0,
+  edge: sumList.filter(d => d.category === 'Edge').length || 0,
+  ne: dcDevCount,
+  discovered: DC_ROWS.filter(dcDiscovered).length,
+  links: addSum(d => d.links) || DC_COUNTS.links,
+  services: addSum(d => d.services) || DC_COUNTS.services,
+  vnf: 0,
+  inactive: dcGeo === 'in' ? 90 : 104,
+  reports: 0
 } : DEFAULT_IL;
 
 export const EST: typeof DEFAULT_EST = SCOPED ? {
