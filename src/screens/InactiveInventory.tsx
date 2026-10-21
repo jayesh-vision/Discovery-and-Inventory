@@ -45,7 +45,7 @@ export default function InactiveInventory() {
   return (
     <div className="page">
       <StatStrip cells={[
-        { k: 'Decommissioned NE', v: fmt(dcMode ? (activeGeo === 'in' ? 108 : 122) : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
+        { k: 'Decommissioned NE', v: fmt(dcMode ? (activeGeo === 'in' ? 90 : 104) : stockMeta('decomm').c), s: 'removed from active estate', t: 'slate' },
         { k: 'Still answering discovery', v: String(dcMode ? 2 : DECOMM_ZOMBIES), s: 'written off, yet on network', t: 'red' },
         { k: 'Retired links', v: fmt(dcMode ? (activeGeo === 'in' ? 368 : 412) : 1188), s: 'adjacency no longer seen', t: 'amber' },
         { k: 'Retired services', v: fmt(dcMode ? (activeGeo === 'in' ? 74 : 86) : 264), s: 'no longer provisioned', t: 'purple' },

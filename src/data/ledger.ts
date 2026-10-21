@@ -73,7 +73,6 @@ export const INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
 
 export const DC_INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
   { k: 'server', n: 'Compute (CPU)' },
-  { k: 'gpu', n: 'GPU Nodes' },
   { k: 'switch', n: 'Fabric Switches' },
   { k: 'router', n: 'Border Routers' },
   { k: 'storage', n: 'Storage Arrays' },

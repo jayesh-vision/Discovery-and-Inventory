@@ -197,12 +197,12 @@ const DC_DECOMM_SEEDS: Record<InactiveTab, { model: string; oem: string; prefix:
 };
 
 const DC_COUNTS: Record<InactiveTab, number> = {
-  server: 28, gpu: 18, switch: 24, router: 14, storage: 16, firewall: 12, dwdm: 10, link: 16, service: 14,
+  server: 28, gpu: 0, switch: 24, router: 14, storage: 16, firewall: 12, dwdm: 10, link: 16, service: 14,
   enodeb: 0, gnodeb: 0, l2vpn: 0, l3vpn: 0
 };
 
 const buildDcDecomm = (geo: 'us' | 'in' = 'us'): Record<InactiveTab, ArchiveRow[]> => {
-  const res: Record<string, ArchiveRow[]> = {};
+  const res: Record<string, ArchiveRow[]> = { gpu: [] };
   const isUs = geo === 'us';
   const sites = isUs ? DC_SITES_US : DC_SITES_IN;
   const engineers = isUs ? DC_ENGINEERS_US : DC_ENGINEERS_IN;
@@ -257,7 +257,7 @@ export const decommRows = (cls: InactiveTab, geo?: DcGeo | null): ArchiveRow[] =
   if (isScoped()) {
     const targetGeo = geo || (typeof window !== 'undefined' ? currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
     const store = targetGeo === 'in' ? DC_DECOMM_IN : DC_DECOMM_US;
-    return store[cls] || store.server || [];
+    return store[cls] || (cls === 'gpu' ? [] : store.server) || [];
   }
   return DEFAULT_DECOMM[cls] || DEFAULT_DECOMM.router || [];
 };
