@@ -2649,6 +2649,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-context {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   width: 100%;
   flex-wrap: wrap;
