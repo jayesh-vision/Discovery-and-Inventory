@@ -86,10 +86,21 @@ export default function Topbar() {
      screen it came from, so the trail (and the way back) shows. Only landings
      do this: detail screens already carry their own from/drill context. */
   let from = sp.get('from');
-  if (!from && !drill && origin && !s.root && (isLanding(s) || s.key === 'dcim')) {
-    const originScreen = screenFor(origin.pathname);
-    if (originScreen && originScreen.key !== s.key) {
-      from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
+  const isSiteScreen = s.key === 'site' || s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
+  if (!from && !drill && origin && !s.root && (isLanding(s) || s.key === 'dcim' || isSiteScreen)) {
+    const originSp = new URLSearchParams(origin.search);
+    const originFrom = originSp.get('from');
+    if (originFrom && isSiteScreen) {
+      from = originFrom;
+    } else {
+      const originScreen = screenFor(origin.pathname);
+      if (originScreen && originScreen.key !== s.key) {
+        if (originScreen.key === 'inventoryinsights' || originScreen.key === 'home') {
+          from = 'Inventory insights' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
+        } else {
+          from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
+        }
+      }
     }
   }
 
@@ -295,6 +306,19 @@ export default function Topbar() {
      name already prominent in the page header. */
   let finalLeafLabel = drill || leaf;
 
+  const isFromInsights = !!(
+    (from && (
+      from.toLowerCase().includes('insight') ||
+      from.toLowerCase() === 'insights' ||
+      from.toLowerCase().startsWith('inventory')
+    )) ||
+    (origin && !from && (
+      origin.pathname.includes('/inventory/insights') ||
+      origin.pathname === '/inventory' ||
+      origin.pathname.startsWith('/discovery/insights')
+    ))
+  );
+
   if (s.key === 'citydetails' && params.cityId) {
     const cityName = getCityById(params.cityId)?.city.name || 'City';
     const facilityType = sp.get('facility') || 'dc';
@@ -302,7 +326,16 @@ export default function Topbar() {
     const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
     const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && x.label !== cityName) : [];
 
-    segs = [...originSegs, { label: 'Location', to: locTo }];
+    let rootSegs: { label: string; to: string | null }[] = [];
+    if (isFromInsights) {
+      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
+    } else if (originSegs.length > 0) {
+      rootSegs = originSegs;
+    } else {
+      rootSegs = [{ label: 'Location', to: locTo }];
+    }
+
+    segs = [...rootSegs];
 
     if (facilityId) {
       segs.push({
@@ -315,86 +348,53 @@ export default function Topbar() {
     }
   }
 
-  if (s.key === 'site' && params.id) {
+  const isSiteSubRoute = s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
+  if ((s.key === 'site' || isSiteSubRoute) && params.id) {
     const siteId = params.id;
     const cityMatch = findCityByFacilityCode(siteId);
     const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
     const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && (!cityMatch || x.label !== cityMatch.city.name) && x.label !== siteId) : [];
 
-    if (drill && drill !== siteId) {
-      if (cityMatch) {
-        segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo },
-          {
-            label: cityMatch.city.name,
-            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
-          },
-          {
-            label: siteId,
-            to: `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}`
-          }
-        ];
-      } else {
-        segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo },
-          { label: siteId, to: `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}` }
-        ];
-      }
-      finalLeafLabel = drill;
+    let rootSegs: { label: string; to: string | null }[] = [];
+    if (isFromInsights) {
+      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
+    } else if (originSegs.length > 0) {
+      rootSegs = originSegs;
     } else {
-      if (cityMatch) {
-        segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo },
-          {
-            label: cityMatch.city.name,
-            to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
-          }
-        ];
-        finalLeafLabel = siteId;
+      rootSegs = [{ label: 'Location', to: locTo }];
+    }
+
+    const cityTo = cityMatch
+      ? `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
+      : null;
+    const siteTo = `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
+
+    if (isSiteSubRoute) {
+      const subLabel = s.key === 'capex' ? 'Capex'
+        : s.key === 'opex' ? 'Opex'
+        : s.key === 'sitedetails' ? 'Site details'
+        : s.key === 'siteinfra' ? 'Infrastructure'
+        : 'Site equipment';
+
+      segs = [...rootSegs];
+      if (cityMatch && cityTo) {
+        segs.push({ label: cityMatch.city.name, to: cityTo });
+      }
+      segs.push({ label: siteId, to: siteTo });
+      finalLeafLabel = (drill && drill !== siteId && drill !== subLabel) ? drill : subLabel;
+    } else {
+      /* s.key === 'site' */
+      segs = [...rootSegs];
+      if (cityMatch && cityTo) {
+        segs.push({ label: cityMatch.city.name, to: cityTo });
+      }
+      if (drill && drill !== siteId) {
+        segs.push({ label: siteId, to: siteTo });
+        finalLeafLabel = drill;
       } else {
-        segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo }
-        ];
         finalLeafLabel = siteId;
       }
     }
-  }
-
-  if ((s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra') && params.id) {
-    const siteId = params.id;
-    const cityMatch = findCityByFacilityCode(siteId);
-    const subLabel = s.key === 'capex' ? 'Capex'
-      : s.key === 'opex' ? 'Opex'
-      : s.key === 'sitedetails' ? 'Facility'
-      : s.key === 'siteinfra' ? 'Infrastructure'
-      : 'Site equipment';
-
-    if (cityMatch) {
-      segs = [
-        { label: 'Location', to: '/inventory/location' },
-        {
-          label: cityMatch.city.name,
-          to: `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}`
-        },
-        {
-          label: siteId,
-          to: `/inventory/location/site/${siteId}`
-        }
-      ];
-    } else {
-      segs = [
-        { label: 'Location', to: '/inventory/location' },
-        {
-          label: siteId,
-          to: `/inventory/location/site/${siteId}`
-        }
-      ];
-    }
-    finalLeafLabel = drill || subLabel;
   }
 
   const isFromPhysical = !!from && (from.toLowerCase().startsWith('resources') || from.toLowerCase().includes('physical'));
@@ -510,18 +510,23 @@ export default function Topbar() {
     const clientParam = sp.get('client');
     const dcimTo = `/inventory/dcim${clientParam ? `?client=${encodeURIComponent(clientParam)}` : ''}`;
 
+    let rootSegs: { label: string; to: string | null }[] = [];
+    if (isFromInsights) {
+      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
+    } else if (originSegs.length > 0) {
+      rootSegs = originSegs;
+    } else {
+      rootSegs = [{ label: 'Location', to: locTo }];
+    }
+
     if (drill && drill !== 'Data centers') {
       segs = [
-        ...originSegs,
-        { label: 'Location', to: locTo },
+        ...rootSegs,
         { label: 'Data centers', to: dcimTo }
       ];
       finalLeafLabel = drill;
     } else {
-      segs = [
-        ...originSegs,
-        { label: 'Location', to: locTo }
-      ];
+      segs = [...rootSegs];
       finalLeafLabel = 'Data centers';
     }
   }
@@ -708,18 +713,25 @@ export default function Topbar() {
       const originSegs = hops.length > 0
         ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers' && x.label !== dcName)
         : [];
+      let rootSegs: { label: string; to: string | null }[] = [];
+      if (isFromInsights) {
+        rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
+      } else if (originSegs.length > 0) {
+        rootSegs = originSegs;
+      } else {
+        rootSegs = [{ label: 'Location', to: locTo }];
+      }
+
       if (drill && drill !== dcName) {
         segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo },
+          ...rootSegs,
           { label: 'Data centers', to: dcimTo },
           { label: dcName, to: dcSelfTo }
         ];
         finalLeafLabel = drill;
       } else {
         segs = [
-          ...originSegs,
-          { label: 'Location', to: locTo },
+          ...rootSegs,
           { label: 'Data centers', to: dcimTo }
         ];
         finalLeafLabel = dcName;

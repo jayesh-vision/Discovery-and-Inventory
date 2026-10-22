@@ -125,6 +125,15 @@ export default function Location() {
   const [expandedCircle, setExpandedCircle] = useState<string | null>(null);
   const [selectedCircle, setSelectedCircle] = useState<string | null>(null);
 
+  const siteParam = searchParams.get('site');
+  React.useEffect(() => {
+    if (siteParam) {
+      const fromParam = searchParams.get('from');
+      const target = `/inventory/location/site/${encodeURIComponent(siteParam)}${fromParam ? `?from=${encodeURIComponent(fromParam)}` : ''}`;
+      nav(withSolution(target), { replace: true });
+    }
+  }, [siteParam, searchParams, nav]);
+
   const isListView = searchParams.get('view') === 'list';
 
   if (isListView) {

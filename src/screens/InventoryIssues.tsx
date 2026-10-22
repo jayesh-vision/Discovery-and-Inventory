@@ -8,6 +8,21 @@ import { dcSumList } from '../data/dc/scope';
 
 export type IssueRole = 'GPU' | 'Switch' | 'Storage' | 'Server' | 'Router' | 'Cooling' | 'Power' | 'Passive';
 
+export const ROLE_BADGE_MAP: Record<IssueRole, { bg: string; color: string; border: string }> = {
+  GPU: { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
+  Switch: { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd' },
+  Router: { bg: '#eef2ff', color: '#4f46e5', border: '#c7d2fe' },
+  Storage: { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff' },
+  Server: { bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' },
+  Cooling: { bg: '#ecfeff', color: '#0e7490', border: '#a5f3fc' },
+  Power: { bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
+  Passive: { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' }
+};
+
+export function getRoleBadge(role: IssueRole) {
+  return ROLE_BADGE_MAP[role] || { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' };
+}
+
 export interface IssueRecord {
   id: string;
   title: string;
@@ -388,7 +403,7 @@ export default function InventoryIssues() {
   };
 
   const openSiteDetails = (dcId: string) => {
-    nav(withSolution(`/inventory/locations?site=${encodeURIComponent(dcId)}`));
+    nav(withSolution(`/inventory/location/site/${encodeURIComponent(dcId)}/details?from=Inventory%20issues`));
   };
 
   const openRackLayout = (issue: IssueRecord) => {
@@ -442,15 +457,15 @@ export default function InventoryIssues() {
           key={activeTab}
           chipWidth="auto"
           columns={[
-            { t: 'Issue ID', w: '9.5rem' },
-            { t: 'Severity', w: '7rem' },
-            { t: 'Defect Summary' },
-            { t: 'Correlated Inventory Asset' },
-            { t: 'Hardware Model & Spec' },
-            { t: 'Location / Rack' },
-            { t: 'Subsystem Domain' },
-            { t: 'Age', r: true },
-            { t: 'Status', plain: true }
+            { t: 'Issue ID', w: '8.5rem' },
+            { t: 'Severity', w: '6.5rem' },
+            { t: 'Defect Summary', w: '22rem' },
+            { t: 'Correlated Inventory Asset', w: '16rem' },
+            { t: 'Hardware Model & Spec', w: '16rem' },
+            { t: 'Location / Rack', w: '12rem' },
+            { t: 'Subsystem Domain', w: '11rem' },
+            { t: 'Age', r: true, w: '5.5rem' },
+            { t: 'Status', plain: true, w: '7.5rem' }
           ]}
           rows={filteredRows}
           total={filteredRows.length}
@@ -464,44 +479,63 @@ export default function InventoryIssues() {
           ]}
           rowActions={issueActions}
           onRowClick={(r) => setSelectedIssue(r)}
-          renderRow={r => [
-            <Mono>{r.id}</Mono>,
-            <Chip tone={r.severity === 'critical' ? 'error' : r.severity === 'high' ? 'warning' : 'neutral'}>
-              {r.severity.toUpperCase()}
-            </Chip>,
-            <div>
-              <div style={{ fontWeight: 600, color: 'var(--ii-text-heading, #0f172a)' }}>{r.title}</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>WO: {r.workorderId}</div>
-            </div>,
-            <div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{
-                  fontSize: '0.7rem',
+          renderRow={r => {
+            const badge = getRoleBadge(r.assetRole);
+            return [
+              <Mono>{r.id}</Mono>,
+              <Chip tone={r.severity === 'critical' ? 'error' : r.severity === 'high' ? 'warning' : 'neutral'}>
+                {r.severity.toUpperCase()}
+              </Chip>,
+              <div style={{ maxWidth: '21rem', minWidth: '16rem' }}>
+                <div style={{
                   fontWeight: 600,
-                  textTransform: 'uppercase',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  background: r.assetRole === 'GPU' ? '#ecfdf5' : r.assetRole === 'Switch' ? '#f0f9ff' : r.assetRole === 'Storage' ? '#faf5ff' : '#f8fafc',
-                  color: r.assetRole === 'GPU' ? '#047857' : r.assetRole === 'Switch' ? '#0369a1' : r.assetRole === 'Storage' ? '#7e22ce' : '#475569',
-                  border: '1px solid currentColor'
+                  color: 'var(--ii-text-heading, #0f172a)',
+                  whiteSpace: 'normal',
+                  lineHeight: 1.35,
+                  wordBreak: 'break-word'
                 }}>
-                  {r.assetRole}
-                </span>
-                <span className="mono" style={{ fontWeight: 600 }}>{r.asset}</span>
-              </div>
-            </div>,
-            <div>
-              <div style={{ fontWeight: 500, color: '#1e293b' }}>{r.model}</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{r.vendor} · <span className="mono">{r.serial}</span></div>
-            </div>,
-            <div>
-              <div style={{ fontWeight: 600, color: '#0f172a' }}>{r.dcId}</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>{r.rack}</div>
-            </div>,
-            <span>{r.domain}</span>,
-            <span style={{ fontFamily: 'monospace' }}>{r.ageDays}d</span>,
-            <Chip tone={r.status === 'In Progress' ? 'info' : 'neutral'}>{r.status}</Chip>
-          ]}
+                  {r.title}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap' }}>
+                  WO: {r.workorderId}
+                </div>
+              </div>,
+              <div style={{ minWidth: '14rem' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    flexShrink: 0,
+                    background: badge.bg,
+                    color: badge.color,
+                    border: `1px solid ${badge.border}`
+                  }}>
+                    {r.assetRole}
+                  </span>
+                  <span className="mono" style={{ fontWeight: 600, color: '#0f172a' }}>{r.asset}</span>
+                </div>
+              </div>,
+              <div style={{ minWidth: '14rem' }}>
+                <div style={{ fontWeight: 500, color: '#1e293b', whiteSpace: 'nowrap' }}>{r.model}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px', whiteSpace: 'nowrap' }}>
+                  {r.vendor} · <span className="mono">{r.serial}</span>
+                </div>
+              </div>,
+              <div style={{ minWidth: '10rem' }}>
+                <div style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{r.dcId}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', marginTop: '2px', whiteSpace: 'nowrap' }}>
+                  {r.rack}
+                </div>
+              </div>,
+              <span style={{ whiteSpace: 'nowrap', color: '#334155' }}>{r.domain}</span>,
+              <span style={{ fontFamily: 'monospace', color: '#475569', whiteSpace: 'nowrap' }}>{r.ageDays}d</span>,
+              <Chip tone={r.status === 'In Progress' ? 'info' : 'neutral'}>{r.status}</Chip>
+            ];
+          }}
         />
       </Card>
 
@@ -542,10 +576,12 @@ export default function InventoryIssues() {
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: '#0284c7',
-                  color: '#ffffff'
+                  background: getRoleBadge(selectedIssue.assetRole).bg,
+                  color: getRoleBadge(selectedIssue.assetRole).color,
+                  border: `1px solid ${getRoleBadge(selectedIssue.assetRole).border}`
                 }}>
                   {selectedIssue.assetRole}
                 </span>

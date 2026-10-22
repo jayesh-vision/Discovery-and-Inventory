@@ -178,7 +178,7 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
       /* always applied, empty query included — a plain URL means the screen's
          clean default state, which is what a breadcrumb click navigates to */
       L.applyDrillQuery(legacyKey, q, label);
-      L.setDrill(label ? { view: legacyKey, label, q, from, back } : null);
+      L.setDrill((label || from) ? { view: legacyKey, label: label || '', q, from, back } : null);
       L.go(legacyKey);
     } finally {
       isUpdatingFromUrl.current = false;

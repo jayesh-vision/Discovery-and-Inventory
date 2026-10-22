@@ -167,13 +167,28 @@ export function facilityFromDc(d: DcFacility, base: Facility): Facility {
   const p = d.power, g = p.dg, b = p.battery;
   const feedStatus: Record<string, Feed['status']> = { Normal: 'Normal', Warning: 'High', Alarm: 'Alarm' };
   const upsStatus: Record<string, Backup['status']> = { Online: 'Normal', 'On battery': 'Degraded', Bypass: 'Degraded', Fault: 'Failed' };
+  const load = p.feeds.reduce((a, x) => a + x.loadKw, 0);
+  const peak = p.peakKw || +(load * 1.15).toFixed(1);
+  const minLoad = +(load * 0.86).toFixed(1);
+  const load24 = Array.from({ length: 24 }, (_, h) => {
+    if (h === 23) return +load.toFixed(1);
+    if (h === 14) return +peak.toFixed(1);
+    const factor = Math.sin((Math.max(0, Math.min(24, h + 2)) / 22) * Math.PI);
+    const v = minLoad + (peak - minLoad) * Math.pow(Math.max(0, factor), 1.4);
+    const seed = ((h * 13 + (d.id.charCodeAt(d.id.length - 1) || 0)) % 10) - 5;
+    const jitter = seed * 0.005 * load;
+    const val = Math.min(peak, Math.max(minLoad, v + jitter));
+    return +val.toFixed(1);
+  });
   return {
     ...base,
     siteId: d.id,
     power: {
       supply: 'AC mains 415 V 3-phase · DC −48 V plant', capacityKw: p.capacityKw,
       feeds: p.feeds.map(x => ({ id: x.id, kind: x.type, source: x.source, rating: x.rating, ratingKw: x.capacityKw, loadKw: x.loadKw, status: feedStatus[x.status] })),
-      peak24Kw: p.peakKw, load24: [], byUse: p.split.map(x => ({ n: x.label === 'IT equipment' ? 'Network and compute equipment' : x.label, kw: x.kw })),
+      peak24Kw: peak,
+      load24,
+      byUse: p.split.map(x => ({ n: x.label === 'IT equipment' ? 'Network and compute equipment' : x.label, kw: x.kw })),
       backups: [
         { kind: 'DG set', unit: `${d.id}-DG`, rating: `${g.kva} kVA`, autonomy: `${g.runtimeH} h · fuel ${g.fuelPct}%`, lastTest: dcDate(g.lastTest), status: g.result === 'Pass' ? 'Normal' : 'Failed' },
         { kind: 'Battery bank', unit: `${d.id}-BATT`, rating: `${b.volts} V · ${b.ah.toLocaleString('en-IN')} Ah`, autonomy: `${b.runtimeH} h`, lastTest: dcDate(b.lastTest), status: 'Normal' },

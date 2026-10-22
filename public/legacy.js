@@ -255467,8 +255467,12 @@ function go(k) {
     /* the site's React tabs stay inside the same site: hand the active drill
        context (label + origin) over so the breadcrumb keeps naming the path
        the reader actually took */
-    if (!d && DRILL && DRILL.view === CURRENT && (k === 'sitedetails' || k === 'siteequipment' || k === 'siteinfra'))
-      d = { label: DRILL.label, q: '', from: DRILL.from };
+    if (!d && (k === 'sitedetails' || k === 'siteequipment' || k === 'siteinfra')) {
+      const curFrom = (DRILL && DRILL.from) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('from') : null);
+      const curDrill = (DRILL && DRILL.label) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('drill') : null);
+      if (curFrom || curDrill)
+        d = { label: curDrill || '', q: '', from: curFrom || undefined };
+    }
     KEBAB = null; GRIDMENU = false; FILTER_OPEN = false; FILTER_FIELD = 0;
     CURRENT = k;
     window.__nsBridge.navigate(k, d, __legacyParams(k));
@@ -255508,9 +255512,15 @@ function go(k) {
   });
   lazyGrids();
   layoutStockChips();
-  if (window.__nsBridge && window.__nsBridge.sync)
-    window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT),
-      DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
+  if (window.__nsBridge && window.__nsBridge.sync) {
+    const curFrom = (DRILL && DRILL.from) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('from') : null);
+    const curDrill = (DRILL && DRILL.label) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('drill') : null);
+    const siteKeys = ['site', 'capex', 'opex', 'sitedetails', 'siteequipment', 'siteinfra'];
+    const drillObj = (siteKeys.includes(CURRENT) && (curFrom || curDrill))
+      ? { label: curDrill || '', q: '', from: curFrom || undefined }
+      : (DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
+    window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT), drillObj);
+  }
 }
 function __legacyParams(k) {
   return k === 'site' ? { id: SITE_ID, ...(typeof SITE_TAB !== 'undefined' && SITE_TAB ? { tab: SITE_TAB } : {}) }

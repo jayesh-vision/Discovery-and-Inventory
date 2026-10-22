@@ -1936,7 +1936,7 @@ export default function InventoryInsights() {
                       key={s.name}
                       onClick={() => navigate(isDc
                         ? withSolution(`/inventory/datacenter/${encodeURIComponent(s.name)}`)
-                        : withSolution(`/inventory/location?site=${encodeURIComponent(s.name)}&from=Inventory%20insights`))}
+                        : withSolution(`/inventory/location/site/${encodeURIComponent(s.name)}?from=Inventory%20insights`))}
                       className="is-clickable"
                       title={isDc ? `View ${s.name} data center details` : `View ${s.name} location details`}
                     >
