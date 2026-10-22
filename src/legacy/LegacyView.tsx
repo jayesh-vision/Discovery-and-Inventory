@@ -3,7 +3,7 @@ import { dcSumList, scope } from '../data/dc/scope';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { isReactOwned, legacyPath } from '../routes';
+import { isReactOwned, legacyPath, screenByKey } from '../routes';
 import { exportTable } from '../utils/tableExport';
 import NodeDigitalTwinSection from '../components/NodeDigitalTwinSection';
 
@@ -140,7 +140,9 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
     const L = window.__nsLegacy;
     const sp = new URLSearchParams(loc.search);
     const label = sp.get('drill');
-    const from = sp.get('from') ?? (legacyKey === 'location' ? undefined : 'Inventory');
+    const s = screenByKey(legacyKey);
+    const isDiscovery = s?.module === 'Discovery and reconciliation';
+    const from = sp.get('from') ?? (isDiscovery || legacyKey === 'location' ? undefined : 'Inventory');
     const back = sp.get('back') ?? 'physical';
     sp.delete('drill'); sp.delete('from'); sp.delete('back');
     /* :name/:id live in the route path, not the query string, so a bare

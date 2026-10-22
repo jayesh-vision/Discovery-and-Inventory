@@ -1199,4 +1199,601 @@
   font-weight: 700;
 }
 
+/* ── Reschedule & Schedule Job Modal Enhanced Styling ───────────────── */
+
+.sched-modal-panel {
+  width: min(840px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.sched-header {
+  padding: 16px 26px;
+  border-bottom: 1px solid var(--vw-color-slate-100, #f1f5f9);
+  background: #ffffff;
+  flex: none;
+}
+
+.sched-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--vw-color-slate-100, #f1f5f9);
+  color: var(--vw-color-slate-700, #334155);
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+}
+
+.sched-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: var(--vw-color-slate-500, #64748b);
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.sched-body {
+  padding: 18px 26px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sched-cadence-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .sched-cadence-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sched-cadence-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1.5px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 130ms ease-in-out;
+  outline: none;
+  min-height: 86px;
+}
+
+.sched-cadence-btn:hover {
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  background: var(--vw-color-slate-50, #f8fafc);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+}
+
+.sched-cadence-btn.is-active {
+  border-color: var(--vw-color-blue-300, #93c5fd);
+  background: var(--vw-color-blue-50, #eff6ff);
+  box-shadow: 0 0 0 2.5px rgba(147, 197, 253, 0.35);
+}
+
+.sched-cadence-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.sched-cadence-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vw-color-slate-100, #f1f5f9);
+  color: var(--vw-color-slate-600, #475569);
+  transition: all 130ms ease;
+}
+
+.sched-cadence-btn.is-active .sched-cadence-icon {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.sched-cadence-check {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.sched-cadence-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800, #1e293b);
+  line-height: 1.3;
+}
+
+.sched-cadence-btn.is-active .sched-cadence-title {
+  color: var(--vw-color-slate-900, #0f172a);
+}
+
+.sched-cadence-desc {
+  font-size: 0.6875rem;
+  color: var(--vw-color-slate-500, #64748b);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.sched-cadence-btn.is-active .sched-cadence-desc {
+  color: var(--vw-color-slate-600, #475569);
+}
+
+/* Config Sub-panel */
+.sched-config-panel {
+  padding: 13px 18px;
+  border-radius: 9px;
+  background: var(--vw-color-slate-50, #f8fafc);
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+}
+
+.sched-config-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800, #1e293b);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Day Pills */
+.sched-day-pills {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.sched-day-pill {
+  flex: 1;
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  color: var(--vw-color-slate-700, #334155);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.sched-day-pill:hover {
+  background: var(--vw-color-slate-50, #f8fafc);
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  color: var(--vw-color-slate-900, #0f172a);
+}
+
+.sched-day-pill.is-active {
+  background: var(--vw-color-blue-50, #eff6ff);
+  border-color: var(--vw-color-blue-300, #93c5fd);
+  color: var(--vw-color-blue-700, #1d4ed8);
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);
+}
+
+/* Time presets */
+.sched-quick-chips {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.sched-quick-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  background: #ffffff;
+  color: var(--vw-color-slate-600, #475569);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.sched-quick-chip:hover {
+  background: var(--vw-color-slate-50, #f8fafc);
+  border-color: var(--vw-color-slate-300, #cbd5e1);
+  color: var(--vw-color-slate-900, #0f172a);
+}
+
+.sched-quick-chip.is-active {
+  background: var(--vw-color-blue-50, #eff6ff);
+  border-color: var(--vw-color-blue-300, #93c5fd);
+  color: var(--vw-color-blue-700, #1d4ed8);
+  font-weight: 600;
+}
+
+/* Cron Visual Builder */
+.sched-cron-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.sched-cron-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 36px 0 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--vw-color-slate-300, #cbd5e1);
+  background: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--vw-color-slate-900, #0f172a);
+  transition: all 130ms ease;
+}
+
+.sched-cron-input:focus {
+  outline: none;
+  border-color: var(--vw-color-blue-500, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.sched-cron-input.is-error {
+  border-color: var(--vw-color-red-500, #ef4444);
+  background: #fffafa;
+}
+
+.sched-cron-input.is-error:focus {
+  border-color: var(--vw-color-red-600, #dc2626);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.sched-cron-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--vw-color-slate-400, #94a3b8);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sched-cron-clear-btn:hover {
+  color: var(--vw-color-slate-700, #334155);
+}
+
+/* 5-Field Breakdown Grid */
+.sched-cron-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sched-cron-slot-card {
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 120ms ease;
+}
+
+.sched-cron-slot-card.is-active {
+  border-color: var(--vw-color-blue-300, #93c5fd);
+  background: var(--vw-color-blue-50, #eff6ff);
+}
+
+.sched-cron-slot-card.is-error {
+  border-color: var(--vw-color-red-300, #fca5a5);
+  background: #fef2f2;
+}
+
+.sched-cron-slot-header {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vw-color-slate-500, #64748b);
+}
+
+.sched-cron-slot-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--vw-color-blue-700, #1d4ed8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sched-cron-slot-card.is-error .sched-cron-slot-val {
+  color: var(--vw-color-red-600, #dc2626);
+}
+
+.sched-cron-slot-range {
+  font-size: 0.625rem;
+  color: var(--vw-color-slate-400, #94a3b8);
+}
+
+/* Error Callout Banner */
+.sched-error-banner {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--vw-color-red-700, #b91c1c);
+  line-height: 1.35;
+}
+
+/* Operational Parameters Section */
+.sched-params-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--vw-color-slate-200, #e2e8f0);
+}
+
+@media (max-width: 640px) {
+  .sched-params-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sched-param-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sched-param-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-800, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sched-custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--vw-color-slate-300, #cbd5e1);
+  background: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vw-color-slate-800, #1e293b);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.sched-custom-select:hover {
+  border-color: var(--vw-color-slate-400, #94a3b8);
+}
+
+.sched-custom-select:focus {
+  outline: none;
+  border-color: var(--vw-color-blue-400, #60a5fa);
+  box-shadow: 0 0 0 2.5px rgba(147, 197, 253, 0.3);
+}
+
+.sched-param-hint {
+  font-size: 0.6875rem;
+  color: var(--vw-color-slate-500, #64748b);
+  line-height: 1.35;
+}
+
+/* ── Docked Effective Schedule Preview (Pinned above footer) ────────── */
+.sched-docked-preview {
+  flex: none;
+  padding: 14px 26px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%);
+  border-top: 1px solid #dbeafe;
+  border-bottom: 1px solid #dbeafe;
+  transition: all 150ms ease;
+}
+
+.sched-docked-preview.is-invalid {
+  background: #fef2f2;
+  border-top: 1px solid #fecaca;
+  border-bottom: 1px solid #fecaca;
+}
+
+.sched-docked-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.sched-docked-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vw-color-blue-600, #2563eb);
+}
+
+.sched-docked-preview.is-invalid .sched-docked-tag {
+  color: var(--vw-color-red-700, #b91c1c);
+}
+
+.sched-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 9px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.sched-status-pill.is-ready {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.sched-status-pill.is-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.sched-docked-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--vw-color-slate-900, #0f172a);
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sched-docked-preview.is-invalid .sched-docked-title {
+  color: var(--vw-color-red-900, #7f1d1d);
+  font-size: 0.875rem;
+}
+
+.sched-docked-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.sched-preview-expr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3.5px 9px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vw-color-blue-700, #1d4ed8);
+  max-width: 100%;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.sched-preview-next-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3.5px 9px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--vw-color-slate-200, #e2e8f0);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vw-color-slate-700, #334155);
+}
+
+.sched-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 26px;
+  background: #ffffff;
+  flex: none;
+}
+
+.sched-submit-btn {
+  background: var(--vw-color-blue-600, #2563eb);
+  color: #ffffff;
+  border: 1px solid var(--vw-color-blue-600, #2563eb);
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 7px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sched-submit-btn:hover:not(:disabled) {
+  background: var(--vw-color-blue-700, #1d4ed8);
+  border-color: var(--vw-color-blue-700, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+}
+
+.sched-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--vw-color-slate-200, #e2e8f0);
+  border-color: var(--vw-color-slate-200, #e2e8f0);
+  color: var(--vw-color-slate-400, #94a3b8);
+  box-shadow: none;
+  transform: none;
+}
+
+
+
 

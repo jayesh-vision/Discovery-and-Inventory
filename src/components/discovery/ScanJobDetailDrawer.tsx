@@ -109,7 +109,7 @@ export function ScanJobDetailDrawer({
               className="nst-btn nst-btn--xs"
               onClick={() => {
                 onClose();
-                nav(`/discovery/targets?tgt=All&job=${encodeURIComponent(job.id)}`);
+                nav(`/discovery/targets?tgt=All&job=${encodeURIComponent(job.id)}&from=Scan+jobs`);
               }}
             >
               View targets ({job.targets})
@@ -191,7 +191,7 @@ export function ScanJobDetailDrawer({
                     style={{ fontWeight: 600 }}
                     onClick={() => {
                       onClose();
-                      nav(`/discovery/targets?tgt=Failed&job=${encodeURIComponent(job.id)}`);
+                      nav(`/discovery/targets?tgt=Failed&job=${encodeURIComponent(job.id)}&from=Scan+jobs`);
                     }}
                   >
                     🔍 View failed targets ({job.fail})

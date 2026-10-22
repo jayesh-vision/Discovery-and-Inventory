@@ -402,7 +402,7 @@ export default function ScanJobs() {
             },
             {
               l: 'View scan targets',
-              onClick: () => nav(`/discovery/targets?tgt=All&job=${encodeURIComponent(j.id)}`)
+              onClick: () => nav(`/discovery/targets?tgt=All&job=${encodeURIComponent(j.id)}&from=Scan+jobs`)
             }
           ]}
           filters={[

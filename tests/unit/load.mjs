@@ -10,6 +10,25 @@ import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
+
+if (typeof globalThis.window === 'undefined') {
+  globalThis.window = {
+    screen: { deviceXDPI: 1, logicalXDPI: 1 },
+    devicePixelRatio: 1,
+    location: { search: '', pathname: '', href: '' },
+    sessionStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    document: { createElement: () => ({ style: {} }), documentElement: { style: {} } },
+    requestAnimationFrame: (fn) => setTimeout(fn, 16),
+    cancelAnimationFrame: (id) => clearTimeout(id)
+  };
+  globalThis.document = globalThis.window.document;
+  globalThis.sessionStorage = globalThis.window.sessionStorage;
+  globalThis.localStorage = globalThis.window.localStorage;
+}
+
 let server;
 export async function loadModule(path) {
   server ??= await createServer({

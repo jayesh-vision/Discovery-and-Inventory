@@ -94,7 +94,7 @@ export default function Topbar() {
       from = originFrom;
     } else {
       const originScreen = screenFor(origin.pathname);
-      if (originScreen && originScreen.key !== s.key) {
+      if (originScreen && originScreen.module === s.module && originScreen.key !== s.key) {
         if (originScreen.key === 'inventoryinsights' || originScreen.key === 'home') {
           from = 'Inventory insights' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
         } else {
@@ -137,8 +137,11 @@ export default function Topbar() {
   const targetFor = (prefix: string, hopQuery?: string): string | null => {
     const p = prefix.toLowerCase().trim();
     const norm = p.replace(/[\s\-_]+/g, '');
-    if (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights' || p === 'resources') {
+    if (s.module === 'Inventory' && (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights' || p === 'resources')) {
       return '/inventory/insights';
+    }
+    if (s.module === 'Discovery and reconciliation' && (norm === 'insights' || p === 'discovery insights' || norm === 'discoveryinsights')) {
+      return '/discovery/insights';
     }
     const t = screenForCrumb(prefix);
     if (!t) return null;
@@ -198,6 +201,17 @@ export default function Topbar() {
     const ancestors = hops.slice().reverse();
     for (const hop of ancestors) {
       const originScreen = screenForCrumb(hop.crumb);
+      if (s.module === 'Discovery and reconciliation') {
+        const cLower = hop.crumb.toLowerCase();
+        if (
+          cLower.includes('inventory') ||
+          originScreen?.module === 'Inventory' ||
+          originScreen?.key === 'inventoryinsights' ||
+          originScreen?.key === 'home'
+        ) {
+          continue;
+        }
+      }
       if (originScreen && originScreen.crumb.toLowerCase() === s.crumb.toLowerCase()) {
         const rootTarget = targetFor(s.crumb) || s.path;
         if (!segs.some(g => g.label === leaf)) {
@@ -249,9 +263,18 @@ export default function Topbar() {
           }
         }
       }
-      const isInventoryInsights = originScreen?.key === 'inventoryinsights' || originScreen?.key === 'home' || hop.crumb.toLowerCase().includes('inventory');
-      const label = isInventoryInsights ? 'Inventory insights' : (hop.drill || parts[parts.length - 1]);
-      const base = isInventoryInsights ? '/inventory/insights' : targetFor(originScreen?.crumb || hop.crumb, hop.query);
+      const isInventoryInsights = s.module === 'Inventory' && (originScreen?.key === 'inventoryinsights' || originScreen?.key === 'home' || hop.crumb.toLowerCase().includes('inventory'));
+      const isDiscoveryInsights = s.module === 'Discovery and reconciliation' && (originScreen?.key === 'insights' || hop.crumb.toLowerCase() === 'insights');
+      const label = isInventoryInsights
+        ? 'Inventory insights'
+        : isDiscoveryInsights
+          ? (hop.drill || 'Insights')
+          : (hop.drill || parts[parts.length - 1]);
+      const base = isInventoryInsights
+        ? '/inventory/insights'
+        : isDiscoveryInsights
+          ? '/discovery/insights'
+          : targetFor(originScreen?.crumb || hop.crumb, hop.query);
       let toQuery = '';
       if (hop.query) {
         const qp = new URLSearchParams(hop.query);
@@ -306,7 +329,7 @@ export default function Topbar() {
      name already prominent in the page header. */
   let finalLeafLabel = drill || leaf;
 
-  const isFromInsights = !!(
+  const isFromInsights = s.module === 'Inventory' && !!(
     (from && (
       from.toLowerCase().includes('insight') ||
       from.toLowerCase() === 'insights' ||
@@ -314,8 +337,7 @@ export default function Topbar() {
     )) ||
     (origin && !from && (
       origin.pathname.includes('/inventory/insights') ||
-      origin.pathname === '/inventory' ||
-      origin.pathname.startsWith('/discovery/insights')
+      origin.pathname === '/inventory'
     ))
   );
 

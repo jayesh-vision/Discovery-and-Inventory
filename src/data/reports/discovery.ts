@@ -35,14 +35,12 @@ const domainLink = (d: DomainKey) => domainRoute(d);
 const trustExecutive: ReportBuilder = () => {
   const openTotal = sum(DOMAIN_TRUST_ROWS, r => r.open);
   const worst = [...DOMAIN_TRUST_ROWS].sort((a, b) => b.open - a.open)[0];
-  const lowestTrust = [...DOMAIN_TRUST_ROWS].sort((a, b) => a.trustIndexPct - b.trustIndexPct)[0];
   const optical = COST_OF_DRIFT.find(c => c.key === 'optical')!;
   const opticalValue = optical.compute(Object.fromEntries(optical.inputs.map(i => [i.key, i.value])));
-  const afterTwo = GAP_ACTIONS[GAP_TARGET_AFTER - 1];
 
   return {
     headline: { value: 98.23, fmt: 'pct2', label: 'inventory trust index', tone: 'sky', trend: TRUST.trend, better: 'up' },
-    summary: `Inventory trust stands at ${DOMAIN_TRUST_TOTAL.trustIndexPct}, ${TIME_TO_TARGET.gap} short of the ${TRAJECTORY_TARGET.toFixed(2)}% target and improving at ${TIME_TO_TARGET.runRate}; at that rate the target is reached on ${TIME_TO_TARGET.reachedOn}, ${TIME_TO_TARGET.days} days from now. Discovery reaches ${COVERAGE.value} of the ${DOMAIN_TRUST_TOTAL.inScope} assets in scope. ${openTotal} discrepancies are open, and ${DOMAIN_LABEL[worst.domain]} carries ${worst.open} of them (${Math.round(pct(worst.open, openTotal))}%), repairs slowest (${worst.mttrHours}h against an 8h target) and is the only domain still discovered on a nightly window; ${DOMAIN_LABEL[lowestTrust.domain]} has the lowest trust index (${lowestTrust.trustIndexPct}%) but only ${lowestTrust.open} open items. Completing the first two actions below takes trust to ${afterTwo.cumPct.toFixed(2)}%, past target, this week.`,
+    summary: '',
     findings: [
       { tone: 'good', title: `On course for ${TRAJECTORY_TARGET}% by ${TIME_TO_TARGET.reachedOn}`, detail: `Trust rose from ${TRAJECTORY_MEASURED[0].toFixed(2)}% to ${DOMAIN_TRUST_TOTAL.trustIndexPct} over 30 days (${TIME_TO_TARGET.runRate}). ${TIME_TO_TARGET.note}.` },
       { tone: 'crit', title: `${DOMAIN_LABEL[worst.domain]} is the outlier`, detail: `${worst.open} of ${openTotal} open discrepancies, ${worst.trustIndexPct}% trust, ${worst.mttrHours}h mean time to reconcile and ${worst.touchlessPct}% touchless — the only domain below 60% automation and the only one on a nightly discovery window.` },
@@ -102,14 +100,7 @@ const trustExecutive: ReportBuilder = () => {
       }),
       empty: 'No domains in scope.'
     },
-    methodology: [
-      { term: 'Inventory trust index', definition: 'Records whose identity, attributes and relationships all agree with the live network, as a share of records in scope. The estate figure is computed over the department-wide population of 12,174 assets, which is wider than the sum of the four domain job scopes.' },
-      { term: 'Discovery coverage', definition: 'Assets reached and classified by the latest discovery sweep, divided by assets in scope.' },
-      { term: 'Mean time to reconcile (MTTR)', definition: 'Average elapsed hours from detection of a discrepancy to its closure, manual or automatic.' },
-      { term: 'Touchless', definition: 'Share of discrepancies closed by policy without an engineer.' },
-      { term: 'Projection', definition: `The dashed line continues the measured run-rate (${TIME_TO_TARGET.runRate}) forward; it is not a forecast model.` },
-      { term: 'Path to 99%', definition: 'Estimated trust gain from each action if completed in the order shown; gains are cumulative.' }
-    ]
+    methodology: []
   };
 };
 
