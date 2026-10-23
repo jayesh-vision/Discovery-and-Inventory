@@ -229,9 +229,10 @@ export default function CityDetails() {
   const openNodeView = (el: NetworkElementRow) => {
     const cls = getElementCls(el.category);
     const facilityCode = selectedFacilityItem?.code || el.name.split('-').slice(0, 3).join('-');
+    const originFrom = searchParams.get('from') || 'Location · City details';
     const target = legacyPath(
       'node',
-      { label: `${el.category} · ${el.name}`, from: 'Location · City details' },
+      { label: `${el.category} · ${el.name}`, from: originFrom },
       {
         name: el.name,
         ip: el.ip,
@@ -248,9 +249,10 @@ export default function CityDetails() {
   const openResourceDetails = (el: NetworkElementRow) => {
     const cls = getElementCls(el.category);
     const facilityCode = selectedFacilityItem?.code || el.name.split('-').slice(0, 3).join('-');
+    const originFrom = searchParams.get('from') || 'Location · City details';
     const target = legacyPath(
       'resource',
-      { label: `${el.category} · ${el.name}`, from: 'Location · City details' },
+      { label: `${el.category} · ${el.name}`, from: originFrom },
       {
         name: el.name,
         ip: el.ip,
@@ -2276,7 +2278,7 @@ export default function CityDetails() {
                       background: 'var(--vw-color-sky-50, #f0f9ff)',
                       borderColor: 'var(--vw-color-sky-200, #bae6fd)'
                     }}
-                    onClick={() => navigate(withSolution(`/inventory/datacenter/${encodeURIComponent(selectedFacilityItem.code)}?from=${encodeURIComponent('Location · City details')}&cityId=${encodeURIComponent(city.id)}&facility=dc`))}
+                    onClick={() => navigate(withSolution(`/inventory/datacenter/${encodeURIComponent(selectedFacilityItem.code)}?from=${encodeURIComponent(searchParams.get('from') || 'Location · City details')}&cityId=${encodeURIComponent(city.id)}&facility=dc`))}
                     title={`Open data center view for ${selectedFacilityItem.name} (${selectedFacilityItem.code})`}
                   >
                     <span>Data center view</span>

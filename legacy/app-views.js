@@ -2346,8 +2346,6 @@ function viewSite() {
 
   return `<div class="page">
     ${card(`
-      <div class="chip-row">${chip(l.st, l.chip, true)}${chip(l.cat, l.ct==='amber'?'warning':l.ct==='sky'?'info':'success')}
-        ${l.disc === l.ne ? chip('Fully reconciled','success') : l.disc === 0 ? chip('Nothing discovered','error') : chip(`${l.ne - l.disc} not discovered`,'warning')}</div>
       <div class="site-meta">
         ${meta.map(([k,v])=>`<div class="meta-cell"><span class="vw-label">${k}</span><span class="vw-value">${v}</span></div>`).join('')}
       </div>`, '', 'padding:var(--vw-space-md) var(--vw-space-lg)')}
@@ -2444,13 +2442,7 @@ function siteHeadData(id) {
     addr: l.addr, lat: l.lat, lon: l.lon, ne: tot, disc: l.disc,
     sub: `${l.type} · ${l.id} · ${l.city}, ${l.state}`,
     coords: l.lat ? `${l.lat}°N ${l.lon}°E` : '—',
-    chips: [
-      { t: l.st, tone: l.chip, strong: true },
-      { t: l.cat, tone: l.ct === 'amber' ? 'warning' : l.ct === 'sky' ? 'info' : 'success' },
-      l.disc === l.ne ? { t: 'Fully reconciled', tone: 'success' }
-        : l.disc === 0 ? { t: 'Nothing discovered', tone: 'error' }
-        : { t: `${l.ne - l.disc} not discovered`, tone: 'warning' }
-    ],
+    chips: [],
     meta: [['Name', l.name], ['Site type', l.type], ['Location ID', l.id], ['Address', l.addr],
       ['Zone', (typeof DC_ON !== 'undefined' && DC_ON && typeof dcSumOf === 'function' && dcSumOf(l.id) && dcSumOf(l.id).regionId) ? (dcSumOf(l.id).regionId.charAt(0).toUpperCase() + dcSumOf(l.id).regionId.slice(1)) : ((typeof STATE_REGION !== 'undefined' && STATE_REGION[l.state]) || (l.state === 'Karnataka' || l.state === 'Tamil Nadu' || l.state === 'Andhra Pradesh' ? 'South' : l.state === 'Delhi' ? 'North' : 'West'))],
       ['State', l.state], ['City', l.city], ['Coordinates', l.lat ? `${l.lat}°N ${l.lon}°E` : '—']],

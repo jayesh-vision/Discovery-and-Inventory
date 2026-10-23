@@ -127,8 +127,15 @@ export default function Location() {
 
   const siteParam = searchParams.get('site');
   React.useEffect(() => {
+    const fromParam = searchParams.get('from');
+    if (typeof sessionStorage !== 'undefined') {
+      if (fromParam && fromParam.toLowerCase().includes('insight')) {
+        sessionStorage.setItem('ns_dc_from_insights', 'true');
+      } else if (!fromParam) {
+        sessionStorage.removeItem('ns_dc_from_insights');
+      }
+    }
     if (siteParam) {
-      const fromParam = searchParams.get('from');
       const target = `/inventory/location/site/${encodeURIComponent(siteParam)}${fromParam ? `?from=${encodeURIComponent(fromParam)}` : ''}`;
       nav(withSolution(target), { replace: true });
     }
@@ -194,9 +201,10 @@ export default function Location() {
           activeGeo={activeGeo}
           selectedStateId={selectedCircle ? CIRCLE_TO_STATE_ID[selectedCircle] : undefined}
           onSelectState={(stateId) => setSelectedCircle(STATE_ID_TO_CIRCLE[stateId] || null)}
-          onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') =>
-            nav(withSolution(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}`))
-          }
+          onNavigateToCity={(id: string, facility?: 'dc' | 'pop' | 'site') => {
+            const fromParam = searchParams.get('from');
+            nav(withSolution(`/inventory/location/city/${id}${facility ? `?facility=${facility}` : ''}${fromParam ? `${facility ? '&' : '?'}from=${encodeURIComponent(fromParam)}` : ''}`));
+          }}
         />
       </section>
 

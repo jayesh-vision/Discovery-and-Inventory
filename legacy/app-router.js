@@ -148,10 +148,16 @@ function drillTo(view, label, q) {
   const curDrillFrom = curDrill && (curDrill.q || curDrill.label)
     ? `${crumbName}?${curDrill.q || ''}${curDrill.label ? `${curDrill.q ? '&' : ''}drill=${encodeURIComponent(curDrill.label)}` : ''}${curDrill.from ? `&from=${encodeURIComponent(curDrill.from)}` : ''}`
     : null;
-  const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
-    ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}`
-    : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
+  const urlFrom = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('from')) || null;
+  const effectiveSiteFrom = (inheritedFrom && (inheritedFrom.toLowerCase().includes('insight') || inheritedFrom.toLowerCase().startsWith('inventory')))
+    ? inheritedFrom
+    : (urlFrom && (urlFrom.toLowerCase().includes('insight') || urlFrom.toLowerCase().startsWith('inventory')))
+    ? urlFrom
+    : inheritedFrom || urlFrom;
+  const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
+    ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}${effectiveSiteFrom ? `&from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`
+    : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
   const isInheritedPhysical = inheritedFrom && (inheritedFrom.toLowerCase().startsWith('resources') || inheritedFrom.toLowerCase().includes('physical'));
   const nodeDrillFrom = (CURRENT === 'node' && typeof NODE_ID !== 'undefined' && NODE_ID)

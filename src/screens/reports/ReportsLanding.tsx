@@ -150,8 +150,7 @@ function ReportCard({ def }: { def: ReportDef }) {
       </div>
       <div className="rpt-card-foot">
         <Chip tone={STATE_TONE[def.state]}>{def.state}</Chip>
-        <span className="rpt-card-meta">{def.cadence} · {def.lastRun.split(' ')[0]}</span>
-        <span className="grow" />
+        <span className="rpt-card-meta" title={`${def.cadence} · ${def.lastRun.split(' ')[0]}`}>{def.cadence} · {def.lastRun.split(' ')[0]}</span>
         <ExportMenu def={def} content={c} label="Download" size="xs" />
       </div>
     </article>

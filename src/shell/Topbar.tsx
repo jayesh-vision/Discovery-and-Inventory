@@ -87,12 +87,13 @@ export default function Topbar() {
      do this: detail screens already carry their own from/drill context. */
   let from = sp.get('from');
   const isSiteScreen = s.key === 'site' || s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
-  if (!from && !drill && origin && !s.root && (isLanding(s) || s.key === 'dcim' || isSiteScreen)) {
+  const isSiteOrNode = isSiteScreen || s.key === 'node' || s.key === 'resource';
+  if (!from && origin && !s.root && (isLanding(s) || s.key === 'dcim' || isSiteOrNode || !drill)) {
     const originSp = new URLSearchParams(origin.search);
     const originFrom = originSp.get('from');
-    if (originFrom && isSiteScreen) {
+    if (originFrom && isSiteOrNode) {
       from = originFrom;
-    } else {
+    } else if (!drill) {
       const originScreen = screenFor(origin.pathname);
       if (originScreen && originScreen.module === s.module && originScreen.key !== s.key) {
         if (originScreen.key === 'inventoryinsights' || originScreen.key === 'home') {
@@ -338,8 +339,17 @@ export default function Topbar() {
     (origin && !from && (
       origin.pathname.includes('/inventory/insights') ||
       origin.pathname === '/inventory'
-    ))
+    )) ||
+    (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ns_dc_from_insights') === 'true')
   );
+
+  if (typeof sessionStorage !== 'undefined') {
+    if (isFromInsights) {
+      try { sessionStorage.setItem('ns_dc_from_insights', 'true'); } catch {}
+    } else if (s.key === 'location' && !from && !drill) {
+      try { sessionStorage.removeItem('ns_dc_from_insights'); } catch {}
+    }
+  }
 
   if (s.key === 'citydetails' && params.cityId) {
     const cityName = getCityById(params.cityId)?.city.name || 'City';
@@ -386,10 +396,11 @@ export default function Topbar() {
       rootSegs = [{ label: 'Location', to: locTo }];
     }
 
+    const effectiveSiteFrom = isFromInsights ? (from && from.toLowerCase().includes('insight') ? from : 'Inventory insights') : from;
     const cityTo = cityMatch
-      ? `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
+      ? `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${effectiveSiteFrom ? `&from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`
       : null;
-    const siteTo = `/inventory/location/site/${siteId}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
+    const siteTo = `/inventory/location/site/${siteId}${effectiveSiteFrom ? `?from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`;
 
     if (isSiteSubRoute) {
       const subLabel = s.key === 'capex' ? 'Capex'
@@ -420,7 +431,7 @@ export default function Topbar() {
   }
 
   const isFromPhysical = !!from && (from.toLowerCase().startsWith('resources') || from.toLowerCase().includes('physical'));
-  const isFromLocation = !isFromPhysical && (!from || from.toLowerCase().startsWith('location') || from.toLowerCase().includes('node view') || sp.has('cityId') || sp.has('facility'));
+  const isFromLocation = !isFromPhysical;
 
   if (isFromPhysical && (s.key === 'node' || s.key === 'resource')) {
     const isDc = isDatacenter();
@@ -490,29 +501,41 @@ export default function Topbar() {
     if (tab) nodeParams.set('tab', tab);
     if (cls) nodeParams.set('cls', cls);
     if (ip) nodeParams.set('ip', ip);
+    const effectiveFrom = isFromInsights ? 'Inventory insights' : from;
+    const fromQuery = effectiveFrom ? `&from=${encodeURIComponent(effectiveFrom)}` : '';
+    const rootLabel = isFromInsights ? 'Inventory insights' : 'Location';
+    const rootTo = isFromInsights ? '/inventory/insights' : (from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location');
+
+    if (effectiveFrom) nodeParams.set('from', effectiveFrom);
     const nodeTo = `/inventory/node/${encodeURIComponent(params.name || '')}?${nodeParams.toString()}`;
+
+    const cityTo = cityMatch
+      ? `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}${fromQuery}`
+      : null;
+    const siteTo = siteCode
+      ? `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}${fromQuery}`
+      : null;
 
     if (cityMatch && siteCode) {
       segs = [
-        { label: 'Location', to: '/inventory/location' },
+        { label: rootLabel, to: rootTo },
         {
           label: cityMatch.city.name,
-          to: `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}`
+          to: cityTo
         },
         {
           label: siteCode,
-          to: `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}`
+          to: siteTo
         }
       ];
     } else if (siteCode) {
-      const siteTo = `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}`;
       segs = [
-        { label: 'Location', to: '/inventory/location' },
+        { label: rootLabel, to: rootTo },
         { label: siteCode, to: siteTo }
       ];
     } else {
       segs = [
-        { label: 'Location', to: '/inventory/location' }
+        { label: rootLabel, to: rootTo }
       ];
     }
 

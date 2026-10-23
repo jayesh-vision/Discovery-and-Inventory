@@ -76,8 +76,38 @@ export function ExportMenu({ def, content, withPrint, label = 'Export', size = '
 
   return (
     <div className="rpt-menu" ref={ref} onClick={e => e.stopPropagation()}>
-      <button className={`nst-btn nst-btn--${size}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)} disabled={!!busy}>
-        {busy ? `Preparing ${EXPORT_FORMATS.find(x => x.k === busy)!.ext}…` : `${label} ▾`}
+      <button
+        type="button"
+        className={`nst-btn nst-btn--${size} rpt-download-btn`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(v => !v)}
+        disabled={!!busy}
+      >
+        {busy ? (
+          <span>Preparing {EXPORT_FORMATS.find(x => x.k === busy)!.ext}…</span>
+        ) : (
+          <>
+            <span>{label}</span>
+            <svg
+              className="rpt-btn-chevron"
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{
+                transform: open ? 'rotate(180deg)' : 'none'
+              }}
+            >
+              <path d="M4 6.5L8 10.5L12 6.5" />
+            </svg>
+          </>
+        )}
       </button>
       {note && <span className="rpt-menu-note" role="status">{note}</span>}
       {open && (

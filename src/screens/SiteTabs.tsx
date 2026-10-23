@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Card, Chip, StatStrip } from '../components/ui';
+import { Card, StatStrip } from '../components/ui';
 import type { ChipTone, ColorTone } from '../data/ledger';
 import { locationOf, type Location } from '../data/locations';
 import { loadLegacy } from '../legacy/LegacyView';
@@ -69,9 +69,6 @@ export function SiteHeader({ head }: { l: Location; head: SiteHead | null }) {
       {head && (
         <>
           <Card style={{ padding: 'var(--vw-space-md) var(--vw-space-lg)' }}>
-            <div className="chip-row">
-              {head.chips.map(c => <Chip key={c.t} tone={c.tone} strong={c.strong}>{c.t}</Chip>)}
-            </div>
             <div className="site-meta">
               {head.meta.map(([k, v]) => (
                 <div key={k} className="meta-cell"><span className="vw-label">{k}</span><span className="vw-value">{v}</span></div>
