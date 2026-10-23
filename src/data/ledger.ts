@@ -168,7 +168,7 @@ export const SRC: Record<Source, [string, ChipTone]> = {
 export type RecState = 'ok' | 'drift' | 'stale' | 'miss' | 'none';
 export const RSTATE: Record<RecState, [string, ChipTone]> = {
   ok: ['Verified', 'success'], drift: ['Drifted', 'warning'], stale: ['Stale', 'orange'],
-  miss: ['Missing', 'error'], none: ['Not discovered', 'neutral']
+  miss: ['Missing', 'error'], none: ['Planned', 'neutral']
 };
 
 export const fmt = (v: number): string => {

@@ -1479,6 +1479,12 @@
   border: 1px solid #fecaca;
 }
 
+.vr-table-scroll .net-status-badge.is-planned {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
 .vr-table-scroll .vr-type-pill {
   display: inline-block;
   padding: 2px 7px;

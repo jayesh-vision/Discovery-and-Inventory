@@ -3049,6 +3049,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-runs .nst-table {
   table-layout: fixed;
   width: 100%;
+  min-width: 1100px;
 }
 .rpt-detail .nst-table th,
 .rpt-detail .nst-table td,
@@ -3068,7 +3069,7 @@ details[open] > summary .vw-tx-chevron {
 .rpt-detail .nst-table td:last-child,
 .rpt-runs .nst-table th:last-child,
 .rpt-runs .nst-table td:last-child {
-  padding-right: 36px;
+  padding-right: var(--vw-space-lg, 16px);
 }
 
 /* ── Rule details: premium polish, additive only ──────────
@@ -3173,6 +3174,22 @@ details[open] > summary .vw-tx-chevron {
 .nst-table.chip-auto td:not(.st-td) .vw-chip {
   width: auto !important;
   max-width: none !important;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Reports Detail Table: status chips and chips in data grids */
+.rpt-detail .tbl-wrap td .vw-chip,
+.rpt-detail .tbl-wrap td:not(.st-td) .vw-chip,
+.rpt-detail .nst-table td .vw-chip,
+.rpt-detail .vw-chip {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 68px;
   height: 24px;
   padding: 0 10px;
   font-size: 0.8125rem;

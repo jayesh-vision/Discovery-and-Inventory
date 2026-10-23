@@ -80,7 +80,6 @@ export default function Reconcile() {
     <div className="page ix">
       {/* ── match outcome ────────────────────────────────────────── */}
       <section className="ix-section">
-        <SectionHeader title="Match outcome" description="How the last reconciliation pass classified every compared record." />
         <Panel title="Match classes" info={CARD_DEF['Match classes']} description={MATCH_TOTAL_NOTE} flush>
           <div className="ix-tiles">
             {MATCH_OUTCOME.slice(0, 5).map((t, i) => {
@@ -298,16 +297,14 @@ export default function Reconcile() {
         <SectionHeader title="Quick actions" description="Direct access to reconciliation workbench, jobs, and rule definitions." />
         <div className="row vw-gap-md" style={{ flexWrap: 'wrap' }}>
           {QUICK_LINKS.map(q => (
-            <button key={q.title} className="vw-card-section row vw-items-center is-drill" style={{ gap: '12px', flex: '1 1 220px' }}
+            <button key={q.title} className="ix-quick-card"
               onClick={() => nav(QUICK_LINK_TARGET[q.icon])}>
-              <span style={{
-                width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: cv('blue', 50), color: cv('blue', 600), fontSize: '1.125rem'
-              }}>{QUICK_LINK_GLYPH[q.icon]}</span>
-              <span>
-                <div className="vw-value" style={{ fontWeight: 600 }}>{q.title}</div>
-                <div className="vw-card-metric-label-sub">{q.sub}</div>
+              <span className="ix-quick-icon">{QUICK_LINK_GLYPH[q.icon]}</span>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <div className="ix-quick-title">{q.title}</div>
+                <div className="ix-quick-sub">{q.sub}</div>
               </span>
+              <span className="ix-quick-arrow" aria-hidden="true">→</span>
             </button>
           ))}
         </div>

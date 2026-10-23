@@ -29,14 +29,14 @@ export default function SparesRiskCard({
   rows,
   note,
   colors,
-  tip
+  tip: _tip
 }: {
   title: string;
   subtitle: string;
   rows: SpareRow[];
   note: string;
   colors: { critical: string; low: string };
-  tip: TipHandlers;
+  tip?: TipHandlers;
 }) {
   const navigate = useNavigate();
   const eolTokens = useMemo(() => eolModelsFromNote(note), [note]);
@@ -60,8 +60,11 @@ export default function SparesRiskCard({
     <div className="ii-card">
       <div className="ii-card-header">
         <div className="ii-card-head">
-          <div className="ii-card-title">{title}</div>
-          <span className="ii-threshold-chip" title="Spares as a share of the deployed population">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <span className="ii-card-dot" style={{ background: 'var(--vw-color-amber-500, #f59e0b)' }} />
+            <div className="ii-card-title">{title}</div>
+          </div>
+          <span className="ii-threshold-chip" title="Spares buffer as a share of deployed population (Safe threshold ≥ 2.0%)">
             Safe threshold ≥ {SPARES_SAFE_PCT.toFixed(1)}%
           </span>
         </div>
@@ -73,11 +76,11 @@ export default function SparesRiskCard({
           <caption className="ii-sr-only">Models holding fewer spares than the safe threshold</caption>
           <thead>
             <tr>
-              <th scope="col">Model</th>
-              <th scope="col" className="is-num">Deployed</th>
-              <th scope="col" className="is-num">Spares</th>
-              <th scope="col">Coverage</th>
-              <th scope="col">Status</th>
+              <th scope="col" style={{ width: '34%' }}>Model</th>
+              <th scope="col" className="is-num" style={{ width: '15%' }}>Deployed</th>
+              <th scope="col" className="is-num" style={{ width: '13%' }}>Spares</th>
+              <th scope="col" style={{ width: '22%' }}>Coverage</th>
+              <th scope="col" style={{ width: '16%' }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -90,34 +93,12 @@ export default function SparesRiskCard({
                   className="ii-spares-row is-clickable"
                   style={{ cursor: 'pointer' }}
                   onClick={() => navigate(withSolution(`/inventory/spares?model=${encodeURIComponent(s.model)}&from=Inventory%20insights`))}
-                  title={`Drill down to spares inventory for ${s.model}`}
-                  onMouseEnter={e =>
-                    tip.showTip(
-                      {
-                        title: s.model,
-                        dotColor: color,
-                        badge: ratio,
-                        rows: [
-                          { label: 'Deployed in network', value: s.deployed.toLocaleString('en-IN') },
-                          { label: 'Spares in stock', value: `${s.spares}${s.spares === 1 ? ' spare' : ' spares'}` },
-                          { label: 'Coverage ratio', value: ratio },
-                          { label: 'Safe threshold', value: `≥ ${SPARES_SAFE_PCT.toFixed(1)}%` }
-                        ],
-                        note:
-                          s.level === 'critical'
-                            ? 'Critical spare parts shortage (< 1.0% buffer). Immediate order required.'
-                            : 'Below recommended 2% buffer threshold. Review warehouse lead time.'
-                      },
-                      e
-                    )
-                  }
-                  onMouseMove={tip.moveTip}
-                  onMouseLeave={tip.hideTip}
+                  title={`Drill down to spares inventory for ${s.model} (${s.spares} spares for ${s.deployed} deployed · ${ratio} coverage)`}
                 >
                   <td className="ii-spares-model">{s.model}</td>
-                  <td className="ii-mono is-num ii-muted">{s.deployed.toLocaleString('en-IN')}</td>
-                  <td className="ii-mono is-num ii-strong">{s.spares}</td>
-                  <td>
+                  <td className="ii-mono is-num ii-muted" data-label="Deployed">{s.deployed.toLocaleString('en-IN')}</td>
+                  <td className="ii-mono is-num ii-strong" data-label="Spares">{s.spares}</td>
+                  <td data-label="Coverage">
                     <div className="ii-cov">
                       <div
                         className="ii-cov-track"
@@ -125,17 +106,17 @@ export default function SparesRiskCard({
                         aria-label={`${ratio} spare coverage against a ${SPARES_SAFE_PCT}% safe threshold`}
                       >
                         <span className="ii-cov-fill" style={{ width: `${s.fill}%`, background: color }} />
-                        <span className="ii-cov-mark" aria-hidden="true" />
+                        <span className="ii-cov-mark" aria-hidden="true" title="Safe threshold (2.0%)" />
                       </div>
                       <span className="ii-mono ii-cov-val" style={{ color }}>{ratio}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <div className="ii-status-cell">
                       <span className={`ii-badge ii-badge--${s.level === 'critical' ? 'danger' : 'warning'}`}>
-                        {s.level === 'critical' ? 'Critical' : 'Below threshold'}
+                        {s.level === 'critical' ? 'Critical <1%' : 'Low Buffer'}
                       </span>
-                      {s.eol && <span className="ii-badge ii-badge--eol" title="Also on the EOL list">EOL · replace, don't restock</span>}
+                      {s.eol && <span className="ii-badge ii-badge--eol" title="Also on the EOL list: replace rather than restock">EOL</span>}
                     </div>
                   </td>
                 </tr>
@@ -143,14 +124,19 @@ export default function SparesRiskCard({
             })}
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} className="is-empty">No at-risk models for this vendor.</td>
+                <td colSpan={5} className="is-empty" style={{ textAlign: 'center', padding: '16px', color: 'var(--vw-color-slate-500, #64748b)' }}>
+                  No at-risk models for this selection.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="ii-note-box">{note}</div>
+      <div className="ii-note-box">
+        <span className="ii-note-icon" aria-hidden="true">ℹ</span>
+        <span>{note}</span>
+      </div>
     </div>
   );
 }

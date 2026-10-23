@@ -33,6 +33,7 @@ export default function ScanJobs() {
   const [query, setQuery] = useState('');
   const [quickFilter, setQuickFilter] = useState<QuickFilterKey>('All');
   const [domainFilter, setDomainFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [selectedJob, setSelectedJob] = useState<ScanJob | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rescheduleJob, setRescheduleJob] = useState<ScanJob | null>(null);
@@ -77,6 +78,9 @@ export default function ScanJobs() {
         return false;
       }
 
+      // Status filter
+      if (statusFilter && j.state !== statusFilter) return false;
+
       // Quick filter
       if (quickFilter === 'attention' && !isJobNeedingAttention(j)) return false;
       if (quickFilter === 'errors' && !isJobErrors(j) && !isJobFailed(j)) return false;
@@ -87,7 +91,7 @@ export default function ScanJobs() {
 
       return true;
     });
-  }, [jobs, query, quickFilter, domainFilter]);
+  }, [jobs, query, quickFilter, domainFilter, statusFilter]);
 
   // KPI Calculations
   const kpis = useMemo(() => calculateKpis(jobs), [jobs]);
@@ -367,7 +371,7 @@ export default function ScanJobs() {
           rows={filteredRows}
           total={jobs.length}
           rowKey={j => j.id}
-          resetKey={`${query}|${quickFilter}|${domainFilter}`}
+          resetKey={`${query}|${quickFilter}|${domainFilter}|${statusFilter}`}
           searchPlaceholder="Job, scope, collector"
           searchValue={query}
           onSearch={setQuery}
@@ -413,11 +417,13 @@ export default function ScanJobs() {
             if (values.Domain) setDomainFilter(values.Domain);
             else setDomainFilter('');
             if (values.Status) {
+              setStatusFilter(values.Status);
               if (values.Status === 'Completed with errors') setQuickFilter('errors');
               else if (values.Status === 'Failed') setQuickFilter('failed');
               else if (values.Status === 'Running') setQuickFilter('running');
               else if (values.Status === 'Held') setQuickFilter('held');
-              else setQuickFilter('All');
+            } else {
+              setStatusFilter('');
             }
           }}
           onRowClick={j => setSelectedJob(j)}

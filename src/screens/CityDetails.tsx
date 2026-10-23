@@ -762,6 +762,8 @@ export default function CityDetails() {
         return <span className="net-status-badge is-stale">Stale</span>;
       case 'Missing':
         return <span className="net-status-badge is-missing">Missing</span>;
+      case 'Planned':
+        return <span className="net-status-badge is-planned">Planned</span>;
       default:
         return <span className="net-status-badge">{status}</span>;
     }
@@ -2378,7 +2380,7 @@ export default function CityDetails() {
                                   <option value="Drifted">Drifted</option>
                                   <option value="Stale">Stale</option>
                                   <option value="Missing">Missing</option>
-                                  <option value="Not discovered">Not discovered</option>
+                                  <option value="Planned">Planned</option>
                                 </select>
                               </div>
                             )}

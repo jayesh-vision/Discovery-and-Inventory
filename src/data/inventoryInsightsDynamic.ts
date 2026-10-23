@@ -2838,7 +2838,7 @@ function buildDc(targetGeo?: DcGeo | null) {
     return { ...b, count: [fn(dev), fn(passive), fn(virtTotal), fn(connTotal), fn(sumList.length)][i] };
   }));
   const issueCount = (d: DcSum) => d.risks.critical + d.risks.major + d.risks.minor;
-  const sites = [...sumList].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).slice(0, 7).map(d => {
+  const sites = [...sumList].sort((a, b) => issueCount(b) - issueCount(a) || b.devices - a.devices).map(d => {
     const h = d.devices ? Math.round((d.verified / d.devices) * 100) : 0;
     const st = h >= 90 ? 'Healthy' : h >= 80 ? 'Watch' : 'At risk';
     const pas = d.racks + d.feeds + d.ups + 2 + d.coolingUnits + d.sensors + (d.odf.total > 0 ? 1 : 0) + d.cores.lit;

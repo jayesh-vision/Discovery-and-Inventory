@@ -1,5 +1,4 @@
 import { Fragment, useState, useMemo, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isDatacenter, currentGeo, withSolution } from '../solution';
 import '../styles/inventory-insights.css';
@@ -42,7 +41,6 @@ import {
   SPARES_DYNAMIC,
   NOT_RECONFIRMED_DYNAMIC,
   QUALITY_ROWS_DYNAMIC,
-  BOTTOM_NAVIGATE_DYNAMIC,
   SITES_DYNAMIC,
   SERVICES_DYNAMIC,
   NET_RECORD_DYNAMIC,
@@ -451,41 +449,13 @@ export default function InventoryInsights() {
   const [toast, setToast] = useState<string>('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Chart Hover & Tooltip State ──
-  const [tooltip, setTooltip] = useState<{
-    title: string;
-    badge?: string | number;
-    badgeColor?: string;
-    dotColor?: string;
-    rows?: Array<{ label: string; value: string }>;
-    note?: string;
-    x: number;
-    y: number;
-  } | null>(null);
-
   const [hoveredBucket, setHoveredBucket] = useState<string | null>(null);
   const [hoveredVendor, setHoveredVendor] = useState<string | null>(null);
   const [hoveredLifecycle, setHoveredLifecycle] = useState<string | null>(null);
   const [hoveredPanelItemKey, setHoveredPanelItemKey] = useState<string | null>(null);
-
-  const showTip = (payload: {
-    title: string;
-    badge?: string | number;
-    badgeColor?: string;
-    dotColor?: string;
-    rows?: Array<{ label: string; value: string }>;
-    note?: string;
-  }, e: React.MouseEvent) => {
-    setTooltip({ ...payload, x: e.clientX, y: e.clientY });
-  };
-
-  const moveTip = (e: React.MouseEvent) => {
-    setTooltip(prev => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null));
-  };
-
-  const hideTip = () => {
-    setTooltip(null);
-  };
+  const showTip = (..._args: unknown[]) => {};
+  const moveTip = (..._args: unknown[]) => {};
+  const hideTip = (..._args: unknown[]) => {};
 
   const say = (msg: string) => {
     setToast(msg);
@@ -816,36 +786,154 @@ export default function InventoryInsights() {
 
         {/* ── Tier 1: Key Metrics (4 cards) ── */}
         <section aria-label="Key metrics" className="ii-grid ii-grid--kpi">
-          {/* Tile 1: Light blue summary KPI tile (Static overview card) */}
-          <div
-            className="ii-card-blue is-static"
-            style={{ cursor: 'default' }}
-          >
-            <div className="ii-kpi-label">Total inventory records</div>
-            <div className="ii-kpi-value-row">
-              <span className="ii-mono ii-big-value">{TOTAL_RECORDS_DATA[dayRange].totalDisplay}</span>
-              <span className="ii-kpi-trend">
-                <span className="ii-delta-chip">{TOTAL_RECORDS_DATA[dayRange].delta}</span>
-              </span>
-            </div>
-            <div className="ii-kpi-trend">
-              {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} {isDc ? 'data centers' : 'sites'} · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
-            </div>
-            <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
-              <div className="ii-stat-row">
-                <span>Overall inventory health</span>
-                <span className="ii-mono" style={{ color: 'var(--ii-success)' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+          {/* Tile 1: Light blue summary KPI tile */}
+          {isDc ? (
+            <div
+              className="ii-card-blue ii-card-blue--split is-static"
+              style={{ cursor: 'default' }}
+            >
+              {/* Left Side: Total inventory records */}
+              <div className="ii-split-col ii-split-col--left">
+                <div className="ii-split-head-row">
+                  <div className="ii-split-title-group">
+                    <span className="ii-split-dot ii-split-dot--blue" />
+                    <span className="ii-kpi-label" title="Total inventory records">Total records</span>
+                  </div>
+                  <span className="ii-health-chip" style={{ color: 'var(--ii-success)', fontWeight: 600 }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+                </div>
+                <div className="ii-kpi-value-row">
+                  <span className="ii-mono ii-big-value">{TOTAL_RECORDS_DATA[dayRange].totalDisplay}</span>
+                  <span className="ii-kpi-trend">
+                    <span className="ii-delta-chip">{TOTAL_RECORDS_DATA[dayRange].delta}</span>
+                  </span>
+                </div>
+                <div className="ii-kpi-trend">
+                  {TOTAL_RECORDS_DATA[dayRange].period}
+                </div>
+
+                {/* Interactive Dual-Segment Progress Bar */}
+                <div className="ii-kpi-visual-block" title={`Confirmed: ${TOTAL_RECORDS_DATA[dayRange].confirmed} · Stranded: ${TOTAL_RECORDS_DATA[dayRange].stranded}`}>
+                  <div className="ii-kpi-visual-label">
+                    <span>Reconciliation sync</span>
+                    <span className="ii-mono" style={{ color: 'var(--ii-success)', fontWeight: 600 }}>{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
+                  </div>
+                  <div className="ii-dual-prog-track">
+                    <div className="ii-dual-prog-fill ii-dual-prog-fill--ok" style={{ width: TOTAL_RECORDS_DATA[dayRange].confirmed }} />
+                    <div className="ii-dual-prog-fill ii-dual-prog-fill--warn" style={{ width: TOTAL_RECORDS_DATA[dayRange].stranded }} />
+                  </div>
+                  <div className="ii-kpi-visual-sub">
+                    <span>{TOTAL_RECORDS_DATA[dayRange].stranded} stranded ({TOTAL_RECORDS_DATA[dayRange].strandedVal})</span>
+                  </div>
+                </div>
+
+                <div className="ii-stat-list has-divider" style={{ marginTop: 'auto', paddingTop: '8px' }}>
+                  <div className="ii-stat-row">
+                    <span>Overall health</span>
+                    <span className="ii-mono" style={{ color: 'var(--ii-success)' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+                  </div>
+                  <div className="ii-stat-row">
+                    <span>Confirmed</span>
+                    <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
+                  </div>
+                  <div className="ii-stat-row">
+                    <span>Managed NEs</span>
+                    <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].managedElements}</span>
+                  </div>
+                </div>
               </div>
-              <div className="ii-stat-row">
-                <span>Confirmed against source</span>
-                <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
-              </div>
-              <div className="ii-stat-row">
-                <span>Stranded or unconfirmed</span>
-                <span className="ii-mono" style={{ color: 'var(--ii-warning)' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
+
+              {/* Right Side: Data centers count (clickable & navigates to Datacenter location page) */}
+              <div
+                className="ii-split-col ii-split-col--right is-clickable"
+                onClick={() => navigate(withSolution('/inventory/location?from=Inventory%20insights'))}
+                title="View data centers in Location page"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(withSolution('/inventory/location?from=Inventory%20insights'));
+                  }
+                }}
+              >
+                <div className="ii-split-head-row">
+                  <div className="ii-split-title-group">
+                    <span className="ii-live-dot" />
+                    <span className="ii-kpi-label">Data centers</span>
+                  </div>
+                  <span className="ii-health-chip ii-health-chip--blue">24 Online</span>
+                </div>
+                <div className="ii-kpi-value-row">
+                  <span className="ii-mono ii-big-value">{TOTAL_RECORDS_DATA[dayRange].sitesCount}</span>
+                  <span className="ii-kpi-trend">
+                    <span className="ii-delta-chip ii-delta-chip--blue">100% On-air</span>
+                  </span>
+                </div>
+                <div className="ii-kpi-trend">
+                  Central & Edge facilities
+                </div>
+
+                {/* Interactive Operational Status Progress Track */}
+                <div className="ii-kpi-visual-block" title="All 24 data centers operational & monitored">
+                  <div className="ii-kpi-visual-label">
+                    <span>Facility operational</span>
+                    <span className="ii-mono" style={{ color: 'var(--ii-success)', fontWeight: 600 }}>24 / 24</span>
+                  </div>
+                  <div className="ii-dc-prog-track">
+                    <div className="ii-dc-prog-fill" style={{ width: '100%' }} />
+                  </div>
+                  <div className="ii-kpi-visual-sub">
+                    <span>All facilities online & monitored</span>
+                  </div>
+                </div>
+
+                <div className="ii-stat-list has-divider" style={{ marginTop: 'auto', paddingTop: '8px' }}>
+                  <div className="ii-stat-row">
+                    <span>Active elements</span>
+                    <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].managedElements}</span>
+                  </div>
+                  <div className="ii-stat-row">
+                    <span>Coverage</span>
+                    <span className="ii-mono" style={{ color: 'var(--ii-success)' }}>Network-wide</span>
+                  </div>
+                  <div className="ii-split-cta-btn">
+                    <span>Explore 24 locations</span>
+                    <span className="ii-split-arrow" aria-hidden="true">↗</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="ii-card-blue is-static"
+              style={{ cursor: 'default' }}
+            >
+              <div className="ii-kpi-label">Total inventory records</div>
+              <div className="ii-kpi-value-row">
+                <span className="ii-mono ii-big-value">{TOTAL_RECORDS_DATA[dayRange].totalDisplay}</span>
+                <span className="ii-kpi-trend">
+                  <span className="ii-delta-chip">{TOTAL_RECORDS_DATA[dayRange].delta}</span>
+                </span>
+              </div>
+              <div className="ii-kpi-trend">
+                {TOTAL_RECORDS_DATA[dayRange].period} · {TOTAL_RECORDS_DATA[dayRange].sitesCount} sites · {TOTAL_RECORDS_DATA[dayRange].managedElements} managed elements
+              </div>
+              <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
+                <div className="ii-stat-row">
+                  <span>Overall inventory health</span>
+                  <span className="ii-mono" style={{ color: 'var(--ii-success)' }}>{TOTAL_RECORDS_DATA[dayRange].health}</span>
+                </div>
+                <div className="ii-stat-row">
+                  <span>Confirmed against source</span>
+                  <span className="ii-mono">{TOTAL_RECORDS_DATA[dayRange].confirmed}</span>
+                </div>
+                <div className="ii-stat-row">
+                  <span>Stranded or unconfirmed</span>
+                  <span className="ii-mono" style={{ color: 'var(--ii-warning)' }}>{TOTAL_RECORDS_DATA[dayRange].stranded} · {TOTAL_RECORDS_DATA[dayRange].strandedVal}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tile 2 & 3: Physical & Logical Category KPI cards */}
           {PARENTS_DATA_DYNAMIC[dayRange].map(p => (
@@ -935,8 +1023,8 @@ export default function InventoryInsights() {
                       <span>{k.covLabel}</span>
                       <span className="ii-mono" style={{ color: 'var(--ii-text-body)' }}>{k.coverage}</span>
                     </div>
-                    <div className="ii-prog-track">
-                      <div className="ii-prog-bar" style={{ width: k.coverage, background: k.color }} />
+                    <div className="ii-prog-track ii-kpi-prog-track">
+                      <div className="ii-prog-bar ii-kpi-prog-bar" style={{ width: k.coverage, background: k.color }} />
                     </div>
                     <div className="ii-kpi-child-meta">
                       <span>{k.critical} crit · {k.high} high</span>
@@ -1123,7 +1211,6 @@ export default function InventoryInsights() {
                 <g transform="rotate(-90 50 50)">
                   {bucketShare.map(b => {
                     const isHov = hoveredBucket === b.name;
-                    const isDimmed = hoveredBucket !== null && !isHov;
                     return (
                       <circle
                         key={b.name}
@@ -1137,7 +1224,7 @@ export default function InventoryInsights() {
                         strokeDashoffset={b.offset}
                         className={`ii-donut-segment ${isHov ? 'is-active' : ''}`}
                         style={{
-                          opacity: isDimmed ? 0.35 : 1,
+                          opacity: 1,
                           cursor: 'pointer'
                         }}
                         onMouseEnter={(e) => {
@@ -1309,7 +1396,7 @@ export default function InventoryInsights() {
             </div>
           </div>
 
-          {/* Donut 3: Vendor mix (active equipment) */}
+          {/* Donut 2: Vendor mix (active equipment) */}
           <div className="ii-card">
             <div className="ii-card-head"><div className="ii-card-title">Vendor mix (active equipment)</div></div>
             <div className="ii-donut-wrap">
@@ -1318,7 +1405,6 @@ export default function InventoryInsights() {
                 <g transform="rotate(-90 50 50)">
                   {vendorMix.map(v => {
                     const isHov = hoveredVendor === v.name;
-                    const isDimmed = hoveredVendor !== null && !isHov;
                     return (
                       <circle
                         key={v.name}
@@ -1332,7 +1418,7 @@ export default function InventoryInsights() {
                         strokeDashoffset={v.offset}
                         className={`ii-donut-segment ${isHov ? 'is-active' : ''}`}
                         style={{
-                          opacity: isDimmed ? 0.35 : 1,
+                          opacity: 1,
                           cursor: 'pointer'
                         }}
                         onMouseEnter={(e) => {
@@ -1417,271 +1503,271 @@ export default function InventoryInsights() {
           </div>
         </section>
 
-        {/* Row 2 of What exists: The 4 Detailed Inventory Panels */}
+        {/* Row 2 of What exists: The 4 Detailed Inventory Panels with Fixed Height & Scroll */}
         <section aria-label="Inventory by type" className="ii-grid ii-grid--panels">
           {PANELS_DATA_DYNAMIC[dayRange].map(p => {
             const panelRoute = withSolution(p.route.includes('?') ? `${p.route}&from=Inventory%20insights` : `${p.route}?from=Inventory%20insights`);
+            const panelVariant = p.title.includes('Active')
+              ? 'active'
+              : p.title.includes('Passive')
+              ? 'passive'
+              : p.title.includes('Virtual')
+              ? 'virtual'
+              : 'connectivity';
             return (
-              <div key={p.title} className="ii-card">
+              <div key={p.title} className="ii-card ii-panel-card" style={{ ['--panel-theme-color' as string]: p.color }}>
                 <div className="ii-card-header">
                   <div className="ii-card-head">
-                    <span className="ii-card-swatch" style={{ background: p.color }} />
-                    <div className="ii-card-title">{p.title}</div>
-                    <button type="button" onClick={() => navigate(panelRoute)} className="ii-link-btn" aria-label={`Open ${p.title}`}>
-                      Open
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                      <span className="ii-panel-badge-dot" style={{ background: p.color }} />
+                      <div className="ii-card-title">{p.title}</div>
+                    </div>
+                    <button type="button" onClick={() => navigate(panelRoute)} className="ii-panel-open-btn" aria-label={`Open ${p.title}`}>
+                      <span>Open</span>
+                      <span className="ii-panel-open-arrow" aria-hidden="true">→</span>
                     </button>
                   </div>
                   <p className="ii-card-sub">{p.desc}</p>
                 </div>
-                <div className="ii-bar-list">
-                  {p.items.map((t, idx) => {
-                    const itemKey = `${p.title}-${t.name}`;
-                    const newGroup = t.group && t.group !== p.items[idx - 1]?.group;
-                    const isHov = hoveredPanelItemKey === itemKey;
-                    const meta = LOGICAL_CONNECTIVITY_META[t.name];
-                    return (
-                      <Fragment key={t.name}>
-                      {newGroup && <div className="ii-bar-group-label">{t.group}</div>}
-                      <div
-                        className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
-                        onClick={() => {
-                          if (isDc) {
-                            if (p.title.includes('Active')) {
-                              const subTypeParam = t.name.toLowerCase().includes('gpu')
-                                ? 'gpu_server'
-                                : t.name.toLowerCase().includes('switch')
-                                ? 'switch'
-                                : t.name.toLowerCase().includes('compute server') || t.name.toLowerCase().includes('server')
-                                ? 'server'
-                                : t.name.toLowerCase().includes('storage')
-                                ? 'storage_array'
-                                : t.name.toLowerCase().includes('router')
-                                ? 'router'
-                                : t.name.toLowerCase().includes('firewall')
-                                ? 'firewall'
-                                : undefined;
-                              navigate(subTypeParam
-                                ? withSolution(`/inventory/resources/physical?type=active&subType=${subTypeParam}&from=Inventory%20insights`)
-                                : panelRoute);
-                              return;
-                            }
-                            if (p.title.includes('Passive')) {
-                              navigate(withSolution('/inventory/resources/physical?type=passive&from=Inventory%20insights'));
-                              return;
-                            }
-                            if (p.title.includes('Virtual')) {
-                              navigate(withSolution('/inventory/resources/virtual?from=Inventory%20insights'));
-                              return;
-                            }
-                            if (p.title.includes('Connectivity')) {
-                              navigate(withSolution('/inventory/connectivity/links?from=Inventory%20insights'));
-                              return;
-                            }
-                          }
-                          if (p.route === '/inventory/physical') {
-                            /* only classes the Physical page actually has can be drilled to;
-                                Microwave and PON have no tab of their own, so they open
-                                the page as the reader last left it rather than a wrong tab */
-                            const clsMap: Record<string, string> = {
-                              'Routers': 'router',
-                              'Switches': 'switch',
-                              'Optical': 'dwdm',
-                              'RAN': 'gnodeb'
-                            };
-                            const cls = Object.entries(clsMap).find(([k]) => t.name.startsWith(k))?.[1];
-                            navigate(cls
-                              ? withSolution(`/inventory/physical?cls=${cls}&from=Inventory%20insights`)
-                              : panelRoute);
-                          } else {
-                            navigate(panelRoute);
-                          }
-                        }}
-                      onMouseEnter={(e) => {
-                        setHoveredPanelItemKey(itemKey);
-                        showTip({
-                          title: t.name,
-                          dotColor: p.color,
-                          badge: t.count,
-                          rows: meta ? [
-                            { label: 'Network layer', value: meta.layer },
-                            { label: 'Protocols & standards', value: meta.protocol },
-                            { label: 'Underlying assets', value: meta.underlying },
-                            { label: 'Configured instances', value: `${t.count} active` },
-                            { label: 'Category proportion', value: t.w }
-                          ] : [
-                            { label: 'Category', value: p.title },
-                            { label: 'Installed units', value: `${t.count} items` },
-                            { label: 'Category proportion', value: t.w }
-                          ],
-                          note: meta ? meta.note : t.members ? `Includes ${t.members}` : p.desc
-                        }, e);
-                      }}
-                      onMouseMove={moveTip}
-                      onMouseLeave={() => {
-                        setHoveredPanelItemKey(null);
-                        hideTip();
-                      }}
-                    >
-                      <div className="ii-panel-bar-label">
-                        <span title={t.name}>
-                          {t.name.includes(' (')
-                            ? <>{t.name.slice(0, t.name.indexOf(' ('))}<span className="ii-bar-qual">{t.name.slice(t.name.indexOf(' ('))}</span></>
-                            : t.name}
-                        </span>
-                        <span className="ii-mono">{t.count}</span>
-                      </div>
-                      <div className="ii-panel-bar-track">
-                        <div className="ii-panel-bar-fill" style={{ width: t.w, background: p.color }} />
-                      </div>
+
+                {/* Fixed-height scrollable content body */}
+                <div className="ii-panel-scroll">
+                  <div className="ii-bar-list">
+                    {p.items.map((t, idx) => {
+                      const itemKey = `${p.title}-${t.name}`;
+                      const newGroup = t.group && t.group !== p.items[idx - 1]?.group;
+                      const isHov = hoveredPanelItemKey === itemKey;
+                      const meta = LOGICAL_CONNECTIVITY_META[t.name];
+                      const rowTitle = meta
+                        ? `${t.name} • ${meta.layer} (${meta.protocol}) • ${meta.underlying}`
+                        : t.name;
+
+                      return (
+                        <Fragment key={t.name}>
+                          {newGroup && <div className="ii-bar-group-label">{t.group}</div>}
+                          <div
+                            className={`ii-panel-bar-row ${isHov ? 'is-active' : ''}`}
+                            onClick={() => {
+                              if (isDc) {
+                                if (p.title.includes('Active')) {
+                                  const subTypeParam = t.name.toLowerCase().includes('gpu')
+                                    ? 'gpu_server'
+                                    : t.name.toLowerCase().includes('switch')
+                                    ? 'switch'
+                                    : t.name.toLowerCase().includes('compute server') || t.name.toLowerCase().includes('server')
+                                    ? 'server'
+                                    : t.name.toLowerCase().includes('storage')
+                                    ? 'storage_array'
+                                    : t.name.toLowerCase().includes('router')
+                                    ? 'router'
+                                    : t.name.toLowerCase().includes('firewall')
+                                    ? 'firewall'
+                                    : undefined;
+                                  navigate(subTypeParam
+                                    ? withSolution(`/inventory/resources/physical?type=active&subType=${subTypeParam}&from=Inventory%20insights`)
+                                    : panelRoute);
+                                  return;
+                                }
+                                if (p.title.includes('Passive')) {
+                                  navigate(withSolution('/inventory/resources/physical?type=passive&from=Inventory%20insights'));
+                                  return;
+                                }
+                                if (p.title.includes('Virtual')) {
+                                  navigate(withSolution('/inventory/resources/virtual?from=Inventory%20insights'));
+                                  return;
+                                }
+                                if (p.title.includes('Connectivity')) {
+                                  navigate(withSolution('/inventory/connectivity/links?from=Inventory%20insights'));
+                                  return;
+                                }
+                              }
+                              if (p.route === '/inventory/physical') {
+                                const clsMap: Record<string, string> = {
+                                  'Routers': 'router',
+                                  'Switches': 'switch',
+                                  'Optical': 'dwdm',
+                                  'RAN': 'gnodeb'
+                                };
+                                const cls = Object.entries(clsMap).find(([k]) => t.name.startsWith(k))?.[1];
+                                navigate(cls
+                                  ? withSolution(`/inventory/physical?cls=${cls}&from=Inventory%20insights`)
+                                  : panelRoute);
+                              } else {
+                                navigate(panelRoute);
+                              }
+                            }}
+                            onMouseEnter={() => setHoveredPanelItemKey(itemKey)}
+                            onMouseLeave={() => setHoveredPanelItemKey(null)}
+                            title={rowTitle}
+                          >
+                            <div className="ii-panel-bar-label">
+                              <span className="ii-panel-bar-name" title={rowTitle}>
+                                {t.name.includes(' (') ? (
+                                  <>
+                                    {t.name.slice(0, t.name.indexOf(' ('))}
+                                    <span className="ii-bar-qual">{t.name.slice(t.name.indexOf(' ('))}</span>
+                                  </>
+                                ) : (
+                                  t.name
+                                )}
+                              </span>
+                              <div className="ii-panel-bar-val-group">
+                                <span className="ii-panel-bar-pct">{t.w}</span>
+                                <span className="ii-panel-bar-count">{t.count}</span>
+                              </div>
+                            </div>
+                            <div className={`ii-panel-bar-track ii-track--${panelVariant}`}>
+                              <div
+                                className={`ii-panel-bar-fill ii-fill--${panelVariant}`}
+                                style={{ width: t.w, ['--bar-c' as string]: p.color }}
+                              />
+                            </div>
+                          </div>
+                        </Fragment>
+                      );
+                    })}
+                  </div>
+
+                  <div className="ii-panel-facts-wrap">
+                    <div className="ii-panel-facts-header">Telemetry &amp; Integrity</div>
+                    <div className="ii-panel-facts-list">
+                      {p.facts.map(f => {
+                        const isDriftFact = isDc && f.name.includes('Off approved OS');
+                        const isEolFact = isDc && f.name.includes('EOL / EOS');
+                        const isOpenDefects = f.name.includes('Open defects');
+                        const isClickable = isDriftFact || isEolFact;
+                        const isDash = f.value === '—';
+                        return (
+                          <div
+                            key={f.name}
+                            className={`ii-fact-row ${isClickable ? 'is-clickable' : ''}`}
+                            style={{ cursor: isClickable ? 'pointer' : undefined }}
+                            onClick={isClickable ? () => {
+                              if (isDriftFact) {
+                                navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights'));
+                              } else if (isEolFact) {
+                                navigate(withSolution('/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=active&from=Inventory%20insights'));
+                              }
+                            } : undefined}
+                            title={isDriftFact ? 'Drill down to firmware drift compliance (111)' : isEolFact ? 'Drill down to active EOL exposure (348)' : undefined}
+                          >
+                            <span className="ii-fact-label">{f.name}</span>
+                            <span className={`ii-fact-val ${isDash ? 'is-dash' : ''} ${isOpenDefects ? 'is-defects' : ''} ${isClickable ? 'is-drill' : ''}`}>
+                              {f.value}
+                              {isClickable && <span className="ii-fact-arrow" aria-hidden="true">↗</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                      </Fragment>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
-              <div className="ii-stat-list has-divider" style={{ marginTop: 'auto' }}>
-                {p.facts.map(f => {
-                  const isDriftFact = isDc && f.name.includes('Off approved OS');
-                  const isEolFact = isDc && f.name.includes('EOL / EOS');
-                  const isClickable = isDriftFact || isEolFact;
-                  return (
-                    <div
-                      key={f.name}
-                      className={`ii-stat-row ${isClickable ? 'is-clickable' : ''}`}
-                      style={{ cursor: isClickable ? 'pointer' : undefined }}
-                      onClick={isClickable ? () => {
-                        if (isDriftFact) {
-                          navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights'));
-                        } else if (isEolFact) {
-                          navigate(withSolution('/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=active&from=Inventory%20insights'));
-                        }
-                      } : undefined}
-                      title={isDriftFact ? 'Drill down to firmware drift compliance (111)' : isEolFact ? 'Drill down to active EOL exposure (348)' : undefined}
-                    >
-                      <span>{f.name}</span>
-                      <span className="ii-mono">{f.value}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </section>
 
         {/* ── Needs action now ── */}
         <h2 className="ii-section-eyebrow">Needs action now</h2>
 
-<section aria-label="Decommissioning, end-of-life and software drift" className="ii-grid ii-grid--action">
+        <section aria-label="Decommissioning, end-of-life and software drift" className="ii-grid ii-grid--action">
           {/* Decommission pipeline */}
           <div className="ii-card">
             <div className="ii-card-header">
-              <div className="ii-card-head"><div className="ii-card-title">Decommission &amp; disposal pipeline</div></div>
-              <p className="ii-card-sub">{DECOM_DYNAMIC[dayRange].periodLabel}</p>
+              <div className="ii-card-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span className="ii-card-dot" style={{ background: 'var(--vw-color-blue-600, #2563eb)' }} />
+                  <div className="ii-card-title">Decommission &amp; disposal pipeline</div>
+                </div>
+                <span className="ii-period-tag">{DECOM_DYNAMIC[dayRange].periodLabel}</span>
+              </div>
             </div>
             <div className="ii-pipeline">
               <div
-                className="ii-pipeline-step"
-                onMouseEnter={(e) => showTip({
-                  title: 'Marked Decommissioned',
-                  badge: DECOM_DYNAMIC[dayRange].marked,
-                  rows: [
-                    { label: 'Pipeline state', value: 'Phase 1: Staged for removal' },
-                    { label: 'Queued records', value: `${DECOM_DYNAMIC[dayRange].marked} elements` }
-                  ],
-                  note: 'Service deprovisioned; work orders dispatched for physical decoupling.'
-                }, e)}
-                onMouseMove={moveTip}
-                onMouseLeave={hideTip}
+                className="ii-pipeline-step ii-pipeline-step--staged"
+                title="Phase 1: Staged for removal — service deprovisioned; work orders dispatched for physical decoupling."
               >
+                <span className="ii-pipeline-badge">Staged</span>
                 <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].marked}</div>
                 <div className="ii-pipeline-label">Marked decommissioned</div>
               </div>
-              <div className="ii-pipeline-arrow" aria-hidden="true">→</div>
+              <div className="ii-pipeline-connector" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
               <div
-                className={`ii-pipeline-step ${isDc ? 'is-clickable' : ''}`}
+                className={`ii-pipeline-step ii-pipeline-step--warning ${isDc ? 'is-clickable' : ''}`}
                 style={{ cursor: isDc ? 'pointer' : undefined }}
                 onClick={isDc ? () => navigate(withSolution('/inventory/lifecycle?status=decommission_pending_removal&from=Inventory%20insights')) : undefined}
-                title={isDc ? 'Drill down to decommission pending removal (8)' : undefined}
-                onMouseEnter={(e) => showTip({
-                  title: 'Still Live in Discovery',
-                  badge: DECOM_DYNAMIC[dayRange].live,
-                  badgeColor: 'var(--ii-warning)',
-                  rows: [
-                    { label: 'Pipeline state', value: 'Phase 2: Ghost presence' },
-                    { label: 'Active in EMS', value: `${DECOM_DYNAMIC[dayRange].live} elements` }
-                  ],
-                  note: 'Power/links remain connected in field despite formal decommissioning.'
-                }, e)}
-                onMouseMove={moveTip}
-                onMouseLeave={hideTip}
+                title={isDc ? 'Drill down to decommission pending removal (8) — power/links remain connected in field' : 'Phase 2: Ghost presence — power/links remain connected in field despite formal decommissioning.'}
               >
-                <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].live}</div>
-                <div className="ii-pipeline-label">Still live in discovery — removal pending</div>
+                <span className="ii-pipeline-badge ii-pipeline-badge--warning">Action Pending</span>
+                <div className="ii-mono ii-pipeline-value ii-pipeline-value--warning">{DECOM_DYNAMIC[dayRange].live}</div>
+                <div className="ii-pipeline-label" style={{ color: '#92400e', fontWeight: 500 }}>Still live in discovery — removal pending</div>
               </div>
-              <div className="ii-pipeline-arrow" aria-hidden="true">→</div>
+              <div className="ii-pipeline-connector" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
               <div
-                className="ii-pipeline-step"
-                onMouseEnter={(e) => showTip({
-                  title: 'Confirmed Removed',
-                  badge: DECOM_DYNAMIC[dayRange].confirmed,
-                  badgeColor: 'var(--ii-success)',
-                  rows: [
-                    { label: 'Pipeline state', value: 'Phase 3: Fully retired' },
-                    { label: 'Recovered hardware', value: `${DECOM_DYNAMIC[dayRange].confirmed} elements` }
-                  ],
-                  note: 'Verified absent in network and decommission records archived.'
-                }, e)}
-                onMouseMove={moveTip}
-                onMouseLeave={hideTip}
+                className="ii-pipeline-step ii-pipeline-step--success"
+                title="Phase 3: Fully retired — verified absent in network and decommission records archived."
               >
-                <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].confirmed}</div>
-                <div className="ii-pipeline-label">Confirmed removed</div>
+                <span className="ii-pipeline-badge ii-pipeline-badge--success">Resolved</span>
+                <div className="ii-mono ii-pipeline-value ii-pipeline-value--success">{DECOM_DYNAMIC[dayRange].confirmed}</div>
+                <div className="ii-pipeline-label" style={{ color: '#166534' }}>Confirmed removed</div>
               </div>
             </div>
-            <div className="ii-card-sub">Decommissions by bucket</div>
-            <div className="ii-bar-list ii-bar-list--2col">
+            <div className="ii-sub-section-head">
+              <span className="ii-sub-section-title">Decommissions by bucket</span>
+              <span className="ii-sub-section-note">{DECOM_DYNAMIC[dayRange].periodLabel}</span>
+            </div>
+            <div className="ii-bar-list ii-bar-list--2col" style={{ height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
               {decomByBucket.map(d => (
                 <div
                   key={d.name}
-                  className="ii-panel-bar-row"
-                  onMouseEnter={(e) => showTip({
-                    title: `${d.name} Decommissions`,
-                    dotColor: d.color,
-                    badge: `${d.count}`,
-                    rows: [
-                      { label: 'Bucket', value: d.name },
-                      { label: 'Decommission count', value: `${d.count} elements` },
-                      { label: 'Relative pipeline share', value: d.w }
-                    ],
-                    note: 'Decommission volume tracked during current analysis window.'
-                  }, e)}
-                  onMouseMove={moveTip}
-                  onMouseLeave={hideTip}
+                  className="ii-panel-bar-row ii-decom-bar-row"
+                  title={`${d.name}: ${d.count} units decommissioned (${d.w} of pipeline)`}
                 >
                   <div className="ii-panel-bar-label">
-                    <span>{d.name}</span>
-                    <span className="ii-mono">{d.count}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="ii-dot-xs" style={{ background: d.color }} />
+                      <span>{d.name}</span>
+                    </div>
+                    <div className="ii-panel-bar-val-group">
+                      <span className="ii-panel-bar-pct">{d.w}</span>
+                      <span className="ii-mono">{d.count}</span>
+                    </div>
                   </div>
-                  <div className="ii-panel-bar-track">
-                    <div className="ii-panel-bar-fill" style={{ width: d.w, background: d.color }} />
+                  <div className="ii-panel-bar-track ii-track--decom">
+                    <div className="ii-panel-bar-fill ii-fill--decom" style={{ width: d.w, ['--decom-c' as string]: d.color }} />
                   </div>
                 </div>
               ))}
             </div>
             <div className="ii-note-box">
-              {DECOM_DYNAMIC[dayRange].note}
+              <span className="ii-note-icon" aria-hidden="true">ℹ</span>
+              <span>{DECOM_DYNAMIC[dayRange].note}</span>
             </div>
           </div>
 
           {/* EOL/EOS exposure */}
           <div className="ii-card">
             <div className="ii-card-header">
-              <div className="ii-card-head"><div className="ii-card-title">EOL/EOS exposure — {EOL_DYNAMIC[dayRange].total} assets, by bucket and vendor</div></div>
+              <div className="ii-card-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span className="ii-card-dot" style={{ background: 'var(--vw-color-amber-500, #f59e0b)' }} />
+                  <div className="ii-card-title">EOL/EOS exposure — {EOL_DYNAMIC[dayRange].total} assets</div>
+                </div>
+                <span className="ii-risk-pill">Lifecycle Risk</span>
+              </div>
               <p className="ii-card-sub">
-                Each bar is a leaf bucket (Active and Passive under Physical; Virtual and Connectivity under Connectivity); the colour split shows whose hardware is behind it.
+                Assets reaching End-of-Life / End-of-Support milestone by infrastructure bucket and hardware vendor.
               </p>
             </div>
-            <div className="ii-bar-list" style={{ gap: 8 }}>
+            <div className="ii-bar-list" style={{ gap: 8, height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
               {eolRows.map(r => (
                 <div
                   key={r.name}
@@ -1690,30 +1776,20 @@ export default function InventoryInsights() {
                   onClick={isDc ? () => {
                     navigate(withSolution(`/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=${encodeURIComponent(r.name.toLowerCase())}&from=Inventory%20insights`));
                   } : undefined}
-                  title={isDc ? `Drill down to ${r.name} EOL/EOS exposure (${r.count})` : undefined}
+                  title={isDc ? `Drill down to ${r.name} EOL/EOS exposure (${r.count})` : `${r.name}: ${r.count} exposed assets`}
                 >
                   <span className="ii-axis-label" title={r.name}>{r.name}</span>
-                  <div className="ii-axis-stack" style={{ width: r.w }}>
-                    {r.segs.map((s, idx) => (
-                      <div
-                        key={idx}
-                        className="ii-eol-seg"
-                        style={{ width: s.w, background: s.color }}
-                        onMouseEnter={(e) => showTip({
-                          title: `${r.name} · ${eolVendors[idx]?.name || 'Vendor'}`,
-                          dotColor: s.color,
-                          badge: s.w,
-                          rows: [
-                            { label: 'Category', value: r.name },
-                            { label: 'Vendor proportion', value: s.w },
-                            { label: 'Category total exposed', value: r.count }
-                          ],
-                          note: 'Hardware models reaching vendor End-of-Life / End-of-Support milestone.'
-                        }, e)}
-                        onMouseMove={moveTip}
-                        onMouseLeave={hideTip}
-                      />
-                    ))}
+                  <div className="ii-axis-stack-wrap">
+                    <div className="ii-axis-stack" style={{ width: r.w }}>
+                      {r.segs.map((s, idx) => (
+                        <div
+                          key={idx}
+                          className="ii-eol-seg"
+                          style={{ width: s.w, background: s.color }}
+                          title={`${r.name} · ${eolVendors[idx]?.name || 'Vendor'}: ${s.w} of category`}
+                        />
+                      ))}
+                    </div>
                   </div>
                   <span className="ii-mono ii-axis-value">{r.count}</span>
                 </div>
@@ -1723,60 +1799,53 @@ export default function InventoryInsights() {
               {eolVendors.map(v => (
                 <span
                   key={v.name}
-                  onMouseEnter={(e) => showTip({
-                    title: `${v.name} Lifecycle Exposure`,
-                    dotColor: v.color,
-                    rows: [
-                      { label: 'Vendor', value: v.name },
-                      { label: 'Lifecycle status', value: 'Active EOL milestones catalogued' }
-                    ],
-                    note: 'Filtered across vendor hardware platforms.'
-                  }, e)}
-                  onMouseMove={moveTip}
-                  onMouseLeave={hideTip}
+                  className="ii-legend-pill"
+                  title={`Vendor: ${v.name}`}
                 >
                   <i style={{ background: v.color }} />
-                  {v.name}
+                  <span>{v.name}</span>
                 </span>
               ))}
             </div>
             <div className="ii-note-box">
-              {EOL_DYNAMIC[dayRange].note}
+              <span className="ii-note-icon" aria-hidden="true">ℹ</span>
+              <span>{EOL_DYNAMIC[dayRange].note}</span>
             </div>
           </div>
 
           {/* OS / firmware drift */}
           <div className="ii-card">
             <div className="ii-card-header">
-              <div className="ii-card-head"><div className="ii-card-title">OS / firmware drift — {DRIFT_DYNAMIC[dayRange].total} off baseline</div></div>
+              <div className="ii-card-head">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span className="ii-card-dot" style={{ background: 'var(--vw-color-red-500, #ef4444)' }} />
+                  <div className="ii-card-title">OS / firmware drift — {DRIFT_DYNAMIC[dayRange].total} off baseline</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights'))}
+                  className="ii-link-btn"
+                  title="Drill down to firmware drift compliance"
+                >
+                  View Drift →
+                </button>
+              </div>
               <p className="ii-card-sub">
-                {DRIFT_DYNAMIC[dayRange].total} of the {DRIFT_DYNAMIC[dayRange].activeWithVersion} active elements with a recorded version are off the approved baseline; the drift below is by vendor. Version coverage is tracked separately beneath.
+                {DRIFT_DYNAMIC[dayRange].total} of {DRIFT_DYNAMIC[dayRange].activeWithVersion} monitored elements are off the approved golden baseline; drift breakdown by vendor.
               </p>
             </div>
-            <div className="ii-bar-list" style={{ gap: 8 }}>
+            <div className="ii-bar-list" style={{ gap: 8, height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
               {driftRows.map(d => (
                 <div
                   key={d.name}
                   className={`ii-drift-row ${isDc ? 'is-clickable' : ''}`}
                   style={{ cursor: isDc ? 'pointer' : undefined }}
                   onClick={isDc ? () => navigate(withSolution('/inventory/compliance/firmware?drift=true&from=Inventory%20insights')) : undefined}
-                  title={isDc ? 'Drill down to firmware drift compliance (111)' : undefined}
-                  onMouseEnter={(e) => showTip({
-                    title: `${d.name} Firmware Drift`,
-                    badge: d.w,
-                    rows: [
-                      { label: 'Vendor', value: d.name },
-                      { label: 'Off-baseline elements', value: `${d.count} units` },
-                      { label: 'Proportion of total drift', value: d.w }
-                    ],
-                    note: 'Active OS build differs from network architecture golden baseline.'
-                  }, e)}
-                  onMouseMove={moveTip}
-                  onMouseLeave={hideTip}
+                  title={isDc ? `Drill down to ${d.name} firmware drift (${d.count} devices)` : `${d.name}: ${d.count} devices`}
                 >
                   <span className="ii-axis-label" title={d.name}>{d.name}</span>
                   <div className="ii-axis-track">
-                    <div className="ii-drift-bar-fill ii-axis-fill" style={{ width: d.w, background: 'var(--ii-border-hover)', transition: 'background-color 0.2s ease, width 0.3s ease' }} />
+                    <div className="ii-drift-bar-fill ii-axis-fill" style={{ width: d.w }} />
                   </div>
                   <span className="ii-mono ii-axis-value">{d.count}</span>
                 </div>
@@ -1789,16 +1858,20 @@ export default function InventoryInsights() {
                 onClick={isDc ? () => navigate(withSolution('/inventory/compliance/firmware?drift=true&cve=true&from=Inventory%20insights')) : undefined}
                 title={isDc ? 'Drill down to firmware CVE advisories (18)' : undefined}
               >
-                <span>Of the {DRIFT_DYNAMIC[dayRange].total}: on a version with published CVEs</span>
-                <span className="ii-mono">{DRIFT_DYNAMIC[dayRange].cve}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="ii-warning-badge-dot" />
+                  <span>Of the {DRIFT_DYNAMIC[dayRange].total}: on version with published CVEs</span>
+                </div>
+                <span className="ii-mono ii-cve-pill">{DRIFT_DYNAMIC[dayRange].cve} CVEs</span>
               </div>
               <div className="ii-stat-row">
-                <span>Outside the {DRIFT_DYNAMIC[dayRange].total}: no version recorded (of {TOTAL_RECORDS_DATA[dayRange].managedElements} active)</span>
-                <span className="ii-mono">{DRIFT_DYNAMIC[dayRange].noVersion}</span>
+                <span style={{ color: 'var(--vw-color-slate-500, #64748b)' }}>Outside the {DRIFT_DYNAMIC[dayRange].total}: no version recorded (of {TOTAL_RECORDS_DATA[dayRange].managedElements} active)</span>
+                <span className="ii-mono" style={{ color: 'var(--vw-color-slate-700, #334155)', fontWeight: 600 }}>{DRIFT_DYNAMIC[dayRange].noVersion}</span>
               </div>
             </div>
             <div className="ii-note-box">
-              {DRIFT_DYNAMIC[dayRange].note}
+              <span className="ii-note-icon" aria-hidden="true">ℹ</span>
+              <span>{DRIFT_DYNAMIC[dayRange].note}</span>
             </div>
           </div>
         </section>
@@ -1883,51 +1956,33 @@ export default function InventoryInsights() {
           </div>
         </section>
 
-        {/* ── Tier 5: Drill-down ── */}
-        <h2 className="ii-section-eyebrow">Drill-down</h2>
-
-        {/* 5 Navigation Tiles */}
-        <section aria-label="Navigate" className="ii-grid ii-grid--nav">
-          {BOTTOM_NAVIGATE_DYNAMIC[dayRange].map(n => {
-            const tileRoute = withSolution(n.route.includes('?') ? `${n.route}&from=Inventory%20insights` : `${n.route}?from=Inventory%20insights`);
-            return (
-              <button
-                key={n.name}
-                type="button"
-                onClick={() => navigate(tileRoute)}
-                className="ii-nav-tile"
-                style={{ ['--nc' as string]: n.color }}
-                title={`Drill down to ${n.name}`}
-              >
-                <span className="ii-mono ii-nav-value">{n.count}</span>
-                <span className="ii-nav-name">{n.name}</span>
-                <span className="ii-nav-where">{n.where}</span>
-              </button>
-            );
-          })}
-        </section>
+        {/* ── Infrastructure Directory & Operations ── */}
+        <h2 className="ii-section-eyebrow">{isDc ? 'Data center infrastructure & operations' : 'Sites & Infrastructure'}</h2>
 
         <section aria-label="Sites, services and activity" className="ii-grid ii-grid--detail">
-          {/* Sites / Data centers needing attention */}
+          {/* All 24 Data Centers */}
           <div className="ii-card">
             <div className="ii-card-head">
-              <div className="ii-card-title">{isDc ? 'Data centers needing attention' : 'Sites needing attention'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--vw-color-blue-600, #2563eb)' }} />
+                <div className="ii-card-title">{isDc ? 'All Data Centers (24)' : 'Sites'}</div>
+              </div>
               <button type="button" onClick={() => navigate(withSolution('/inventory/location?from=Inventory%20insights'))} className="ii-link-btn">
-                All {TOTAL_RECORDS_DATA[dayRange].sitesCount} {isDc ? 'data centers' : 'sites'}
+                <span>Location Directory →</span>
               </button>
             </div>
-            <div className="ii-table-wrap">
+            <div className="ii-table-wrap is-scrollable">
               <table className="ii-table ii-table--sites">
                 <thead>
                   <tr>
-                    <th scope="col">{isDc ? 'Data center' : 'Site'}</th>
-                    <th scope="col">Region</th>
-                    <th scope="col">{isDc ? 'Tier / Kind' : 'Site type'}</th>
-                    <th scope="col" className="is-num">Active</th>
-                    <th scope="col" className="is-num">Passive</th>
-                    <th scope="col">Health</th>
-                    <th scope="col" className="is-num">Issues</th>
-                    <th scope="col" className="is-center">Status</th>
+                    <th scope="col" style={{ width: '18%', minWidth: '130px' }}>{isDc ? 'Data center' : 'Site'}</th>
+                    <th scope="col" style={{ width: '20%', minWidth: '150px' }}>Region</th>
+                    <th scope="col" style={{ width: '20%', minWidth: '150px' }}>{isDc ? 'Tier / Kind' : 'Site type'}</th>
+                    <th scope="col" className="is-num" style={{ width: '9%', minWidth: '75px' }}>Active</th>
+                    <th scope="col" className="is-num" style={{ width: '9%', minWidth: '75px' }}>Passive</th>
+                    <th scope="col" style={{ width: '12%', minWidth: '115px' }}>Health</th>
+                    <th scope="col" className="is-num" style={{ width: '6%', minWidth: '60px' }}>Issues</th>
+                    <th scope="col" className="is-center" style={{ width: '6%', minWidth: '85px' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1940,22 +1995,22 @@ export default function InventoryInsights() {
                       className="is-clickable"
                       title={isDc ? `View ${s.name} data center details` : `View ${s.name} location details`}
                     >
-                      <td className="ii-mono" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.name}</td>
-                      <td>{s.region}</td>
-                      <td>{s.kind}</td>
-                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-heading)' }}>{s.active}</td>
-                      <td className="ii-mono is-num" style={{ color: 'var(--ii-text-heading)' }}>{s.passive}</td>
+                      <td className="ii-mono" style={{ fontWeight: 600, color: 'var(--vw-color-slate-900, #0f172a)' }}>{s.name}</td>
+                      <td style={{ color: 'var(--vw-color-slate-700, #334155)' }}>{s.region}</td>
+                      <td style={{ color: 'var(--vw-color-slate-600, #475569)' }}>{s.kind}</td>
+                      <td className="ii-mono is-num" style={{ color: 'var(--vw-color-slate-900, #0f172a)', fontWeight: 500 }}>{s.active}</td>
+                      <td className="ii-mono is-num" style={{ color: 'var(--vw-color-slate-900, #0f172a)', fontWeight: 500 }}>{s.passive}</td>
                       <td>
                         <div className="ii-health-cell">
-                          <div className="ii-prog-track">
-                            <div className="ii-prog-bar" style={{ width: s.healthW, background: s.healthColor }} />
+                          <div className="ii-prog-track ii-health-prog-track" style={{ flex: 1, minWidth: '42px', height: '7px' }}>
+                            <div className="ii-prog-bar ii-health-prog-bar" style={{ width: s.healthW, background: s.healthColor }} />
                           </div>
-                          <span className="ii-mono">{s.health}</span>
+                          <span className="ii-mono ii-health-val" style={{ fontSize: '0.75rem', fontWeight: 600 }}>{s.health}</span>
                         </div>
                       </td>
-                      <td className="ii-mono is-num" style={{ fontWeight: 500, color: 'var(--ii-text-heading)' }}>{s.issues}</td>
+                      <td className="ii-mono is-num" style={{ fontWeight: 700, color: s.issues > 0 ? 'var(--vw-color-amber-700, #b45309)' : 'var(--vw-color-slate-700, #334155)' }}>{s.issues}</td>
                       <td className="is-center">
-                        <span className="ii-pill" style={{ background: s.badgeBg, color: s.badgeFg }}>
+                        <span className="ii-pill" style={{ background: s.badgeBg, color: s.badgeFg, fontWeight: 600 }}>
                           {s.status}
                         </span>
                       </td>
@@ -2054,40 +2109,6 @@ export default function InventoryInsights() {
         );
       })()}
 
-      {/* ── Interactive Chart Floating Tooltip Portal ── */}
-      {tooltip && createPortal(
-        <div
-          className="ii-chart-tooltip"
-          style={{
-            left: Math.min(window.innerWidth - 300, Math.max(16, tooltip.x + 14)),
-            top: Math.min(window.innerHeight - 160, Math.max(16, tooltip.y - 45))
-          }}
-        >
-          <div className="ii-chart-tooltip-head">
-            <div className="ii-chart-tooltip-title">
-              {tooltip.dotColor && (
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tooltip.dotColor, flexShrink: 0 }} />
-              )}
-              <span>{tooltip.title}</span>
-            </div>
-            {tooltip.badge && (
-              <span className="ii-chart-tooltip-badge" style={tooltip.badgeColor ? { color: tooltip.badgeColor } : undefined}>
-                {tooltip.badge}
-              </span>
-            )}
-          </div>
-          {tooltip.rows && tooltip.rows.map(r => (
-            <div key={r.label} className="ii-chart-tooltip-row">
-              <span className="ii-chart-tooltip-label">{r.label}</span>
-              <span className="ii-chart-tooltip-val">{r.value}</span>
-            </div>
-          ))}
-          {tooltip.note && (
-            <div className="ii-chart-tooltip-note">{tooltip.note}</div>
-          )}
-        </div>,
-        document.body
-      )}
     </div>
   );
 }

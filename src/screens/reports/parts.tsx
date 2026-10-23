@@ -39,11 +39,12 @@ export const AUDIENCE_GLYPH: Record<(typeof AUDIENCES)[number], string> = {
 
 export function renderCell(v: CellValue, col: Column): ReactNode {
   if (v === null || v === undefined || v === '') return <span className="rpt-muted">—</span>;
-  if (col.fmt === 'domain') return <DomainDot domain={String(v)} />;
-  if (col.fmt === 'chip') return <Chip tone={col.tones?.[String(v)] ?? 'neutral'}>{v}</Chip>;
-  if (col.fmt === 'mono') return <span className="mono">{v}</span>;
-  if (col.width) return <span className="rpt-wrap" style={{ maxWidth: col.width }}>{cellText(v, col)}</span>;
-  return cellText(v, col);
+  const full = cellText(v, col);
+  if (col.fmt === 'domain') return <span title={full}><DomainDot domain={String(v)} /></span>;
+  if (col.fmt === 'chip') return <span title={full}><Chip tone={col.tones?.[String(v)] ?? 'neutral'}>{v}</Chip></span>;
+  if (col.fmt === 'mono') return <span className="mono" title={full}>{v}</span>;
+  if (col.width) return <span className="rpt-wrap" style={{ maxWidth: col.width }} title={full}>{full}</span>;
+  return <span title={full}>{full}</span>;
 }
 
 /* ── export menu ────────────────────────────────────────── */

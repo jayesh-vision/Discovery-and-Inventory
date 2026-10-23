@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Card, Chip, Mono, StatStrip, TabBar } from '../components/ui';
 import { DataGrid, type Action } from '../components/grid/DataGrid';
 import { Drawer } from '../components/Drawer';
-import { currentGeo, withSolution } from '../solution';
+import { currentGeo } from '../solution';
 import { dcSumList } from '../data/dc/scope';
 
 export type IssueRole = 'GPU' | 'Switch' | 'Storage' | 'Server' | 'Router' | 'Cooling' | 'Power' | 'Passive';
@@ -46,7 +46,6 @@ export interface IssueRecord {
 
 export default function InventoryIssues() {
   const [sp] = useSearchParams();
-  const nav = useNavigate();
   const activeGeo = currentGeo();
   const dcs = useMemo(() => dcSumList(activeGeo), [activeGeo]);
 
@@ -392,41 +391,11 @@ export default function InventoryIssues() {
   const lowCount = allIssues.filter(x => x.severity === 'low').length;       // 20
   const totalCount = allIssues.length;                                       // 34
 
-  const openAssetInPhysical = (issue: IssueRecord) => {
-    const roleTab = issue.assetRole === 'GPU' ? 'gpu'
-      : issue.assetRole === 'Switch' ? 'switch'
-      : issue.assetRole === 'Storage' ? 'storage'
-      : issue.assetRole === 'Server' ? 'server'
-      : issue.assetRole === 'Router' ? 'router'
-      : 'all';
-    nav(withSolution(`/inventory/physical?solution=Datacenter&tab=${encodeURIComponent(roleTab)}&drill=${encodeURIComponent(issue.asset)}`));
-  };
-
-  const openSiteDetails = (dcId: string) => {
-    nav(withSolution(`/inventory/location/site/${encodeURIComponent(dcId)}/details?from=Inventory%20issues`));
-  };
-
-  const openRackLayout = (issue: IssueRecord) => {
-    nav(withSolution(`/inventory/passive?tab=rack&dc=${encodeURIComponent(issue.dcId)}&rack=${encodeURIComponent(issue.rackId)}`));
-  };
-
   const issueActions = (r: IssueRecord): Action[] => [
     {
       l: 'View Correlation & Details',
       primary: true,
       onClick: () => setSelectedIssue(r)
-    },
-    {
-      l: 'View Asset in Physical Inventory',
-      onClick: () => openAssetInPhysical(r)
-    },
-    {
-      l: `View Site Details (${r.dcId})`,
-      onClick: () => openSiteDetails(r.dcId)
-    },
-    {
-      l: `View Rack Layout (${r.rack.split(' · ')[0]})`,
-      onClick: () => openRackLayout(r)
     }
   ];
 
@@ -652,37 +621,6 @@ export default function InventoryIssues() {
                 <span style={{ color: '#64748b' }}>Domain Subsystem:</span>
                 <span>{selectedIssue.domain}</span>
               </div>
-            </div>
-
-            {/* Section 4: Direct Navigation into Inventory */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
-                Inventory Actions
-              </div>
-              <button
-                type="button"
-                className="nst-btn"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={() => openAssetInPhysical(selectedIssue)}
-              >
-                View Asset in Physical Inventory
-              </button>
-              <button
-                type="button"
-                className="nst-btn nst-btn--ghost"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={() => openSiteDetails(selectedIssue.dcId)}
-              >
-                View Site Details ({selectedIssue.dcId})
-              </button>
-              <button
-                type="button"
-                className="nst-btn nst-btn--ghost"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={() => openRackLayout(selectedIssue)}
-              >
-                View Rack Layout ({selectedIssue.rack.split(' · ')[0]})
-              </button>
             </div>
 
           </div>

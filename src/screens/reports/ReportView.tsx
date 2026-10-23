@@ -3,15 +3,100 @@ import { Navigate, useParams } from 'react-router-dom';
 import { Card, Chip, InfoTip } from '../../components/ui';
 import { DataGrid } from '../../components/grid/DataGrid';
 import {
-  type ReportModule, type Row, MODULE_LABEL, STATE_TONE, buildReport, cellText, fmtValue, reportDefById
+  type ReportModule, type Row, type Column, MODULE_LABEL, STATE_TONE, buildReport, cellText, fmtValue, reportDefById
 } from '../../data/reports';
 import {
-  AUDIENCE_GLYPH, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell
+  AUDIENCE_GLYPH, FindingCard, ReportKpi, TrendSpark, VisualCard, renderCell, useReportNav
 } from './parts';
 
 const PRIORITY_TONE = { P1: 'error', P2: 'warning', P3: 'neutral' } as const;
 const PRIORITY_WHEN = { P1: 'This week', P2: 'This month', P3: 'This quarter' } as const;
 const STATE_BANNER = { Stale: 'warning', Running: 'info', Failed: 'error' } as const;
+
+/**
+ * Generic column width computer for reports and tables.
+ * Sizes columns proportionally based on content type, format and semantics:
+ * - Numeric/metric columns stay compact and clean
+ * - Text, domain, schedule, reason and description columns get generous space
+ * - Avoids equal-width stretching that bloats numbers and clips long text
+ */
+function computeGenericColumns(columns: Column[]): { t: string; r?: boolean; w?: string }[] {
+  if (columns.every(c => !!c.width)) {
+    return columns.map(c => ({ t: c.header, r: c.right, w: c.width }));
+  }
+
+  const weights = columns.map((col, index) => {
+    if (col.width) {
+      const parsed = parseFloat(col.width);
+      if (!isNaN(parsed)) return parsed;
+    }
+
+    const key = (col.key || '').toLowerCase();
+    const hdr = (col.header || '').toLowerCase();
+    const fmt = col.fmt;
+
+    // First column / Domain / Primary Entity identifier
+    if (index === 0 || fmt === 'domain' || key === 'domain') {
+      return 185;
+    }
+
+    // Long descriptive, schedule, reason, action, or gap text
+    if (
+      key === 'discovery' || hdr.includes('schedule') ||
+      key === 'why' || hdr.includes('reason') ||
+      key === 'action' || hdr.includes('action') ||
+      key === 'description' || hdr.includes('description') ||
+      key === 'detail' || hdr.includes('detail') ||
+      key === 'gap' || hdr.includes('gap') ||
+      key === 'finding' || hdr.includes('finding') ||
+      key === 'recommendation' || hdr.includes('recommend')
+    ) {
+      return 240;
+    }
+
+    // Secondary identifiers: model, hostname, device name
+    if (key === 'name' || hdr === 'element' || hdr.includes('model') || key === 'model') {
+      return 175;
+    }
+
+    // Serial numbers, work orders, IP addresses
+    if (key === 'sn' || hdr.includes('serial') || key === 'wo' || hdr.includes('work order') || key === 'ip') {
+      return 140;
+    }
+
+    // Status chips, badges
+    if (key === 'status' || fmt === 'chip' || hdr.includes('status')) {
+      return 150;
+    }
+
+    // Dates
+    if (fmt === 'date' || hdr.includes('date') || hdr.includes('decommissioned')) {
+      return 120;
+    }
+
+    // Vendor / OEM / NE Type / Site / Region / Category
+    if (key === 'oem' || key === 'vendor' || key === 'cls' || key === 'loc' || key === 'site' || key === 'region' || key === 'category') {
+      return 110;
+    }
+
+    // Metrics, percentages, numbers, hours (compact numeric columns)
+    if (col.right || fmt === 'num' || fmt === 'pct' || fmt === 'pct2' || fmt === 'hours') {
+      if (col.header.length <= 5) return 80;
+      if (col.header.length <= 9) return 100;
+      return 115;
+    }
+
+    return 130;
+  });
+
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+  return columns.map((c, i) => ({
+    t: c.header,
+    r: c.right,
+    w: `${((weights[i] / totalWeight) * 100).toFixed(2)}%`
+  }));
+}
 
 /* One report read as a document — who it is for, the headline and its
    trend, the numbers that matter, what they mean, the evidence, what to do
@@ -26,6 +111,8 @@ export function ReportView({ module }: { module: ReportModule }) {
   const t = content.table;
   const facetOptions = t.facet ? [...new Set(t.rows.map(r => cellText(r.cells[t.facet!], t.columns.find(c => c.key === t.facet)!)))] : [];
   const subClean = t.sub.replace(/;\s*select a row[^·]*/i, '').trim();
+  const gridColumns = useMemo(() => computeGenericColumns(t.columns), [t.columns]);
+  const navReport = useReportNav();
 
   return (
     <div className="page rpt-page">
@@ -67,7 +154,6 @@ export function ReportView({ module }: { module: ReportModule }) {
 
       <Card className="rpt-block">
         <span className="vw-card-title-sm">Executive summary</span>
-        {content.summary ? <p className="rpt-summary">{content.summary}</p> : null}
         <div className="rpt-findings">{content.findings.map(f => <FindingCard key={f.title} f={f} />)}</div>
       </Card>
 
@@ -103,15 +189,13 @@ export function ReportView({ module }: { module: ReportModule }) {
         )}
         <div className="rpt-noprint">
           <DataGrid<Row>
-            columns={t.columns.map(c => ({
-              t: c.header,
-              r: c.right,
-              w: c.width ?? (t.columns.some(col => col.width) ? undefined : `${(100 / t.columns.length).toFixed(2)}%`)
-            }))}
+            chipWidth="auto"
+            columns={gridColumns}
             rows={t.rows} total={t.rows.length} rowKey={r => r.id}
             searchPlaceholder={`Search ${t.title.toLowerCase()}`}
             filters={t.facet ? [{ n: t.columns.find(c => c.key === t.facet)!.header, o: facetOptions }] : undefined}
             emptyText={t.empty}
+            onRowClick={r => { if (r.link) navReport(r.link); }}
             renderRow={r => t.columns.map(c => renderCell(r.cells[c.key], c))}
           />
         </div>
@@ -124,14 +208,6 @@ export function ReportView({ module }: { module: ReportModule }) {
         {t.rows.length > 60 && <div className="rpt-print-note">First 60 of {t.rows.length.toLocaleString('en-IN')} rows — the full set is in the PDF, Excel and CSV downloads.</div>}
       </Card>
 
-      {module !== 'inventory' && content.methodology && content.methodology.length > 0 && (
-        <Card className="rpt-block">
-          <span className="vw-card-title-sm">Methodology & definitions</span>
-          <dl className="rpt-method">{content.methodology.map(m => (
-            <div key={m.term}><dt>{m.term}</dt><dd>{m.definition}</dd></div>
-          ))}</dl>
-        </Card>
-      )}
     </div>
   );
 }

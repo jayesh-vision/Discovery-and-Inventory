@@ -2566,6 +2566,11 @@
   color: #dc2626;
 }
 
+.net-status-badge.is-planned {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
 .net-name-cell,
 .net-model-cell {
   display: flex;

@@ -174,7 +174,7 @@ function VirtualResourcesDatacenter() {
     setToastMsg(msg);
     setTimeout(() => {
       setToastMsg(null);
-    }, 3800);
+    }, 2200);
   };
 
   // Distinct cluster options from dataset
@@ -264,8 +264,8 @@ function VirtualResourcesDatacenter() {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      showToast('Virtual inventory re-synchronized with VMware, OpenStack & K8s fabrics.');
-    }, 600);
+      showToast('Refreshed successfully');
+    }, 450);
   };
 
   // Draft filter states for the popover (applied on "Apply filters")
@@ -1717,23 +1717,30 @@ function VirtualResourcesDatacenter() {
         <div
           role="status"
           aria-live="polite"
+          className="copy-toast is-in is-right is-success"
           style={{
             position: 'fixed',
-            bottom: 24,
+            top: 72,
             right: 24,
-            background: '#0f172a',
-            color: '#ffffff',
-            padding: '12px 18px',
+            left: 'auto',
+            transform: 'none',
+            zIndex: 9999,
+            background: '#ffffff',
+            color: 'var(--vw-color-emerald-700, #047857)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            padding: '8px 16px',
             borderRadius: 8,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
-            fontSize: 13,
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08)',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
-            zIndex: 2000,
+            gap: 8,
+            pointerEvents: 'auto',
             animation: 'vrFadeIn 0.15s ease'
           }}
         >
+          <span style={{ color: '#059669', fontSize: 13, fontWeight: 700 }}>✓</span>
           <span>{toastMsg}</span>
           <button
             type="button"
@@ -1744,8 +1751,10 @@ function VirtualResourcesDatacenter() {
               color: '#94a3b8',
               cursor: 'pointer',
               fontSize: 16,
-              padding: 0
+              padding: '0 0 0 4px',
+              lineHeight: 1
             }}
+            aria-label="Close"
           >
             ×
           </button>

@@ -117,7 +117,7 @@ const stock: ReportBuilder = () => {
 
   return {
     headline: { value: faulty, fmt: 'num', label: `faulty or with the OEM against ${instore} spares in store`, tone: 'amber', better: 'down' },
-    summary: `${fmtNum(deployed)} elements are deployed, ${planned} are planned, ${instore} are in store and ${faulty} are faulty or with the OEM. Spare cover is thin: ${instore} spares in store against ${faulty} faulty elements (${(instore / faulty).toFixed(2)} spares per fault), with ${EST.spares.rma} units under RMA and ${EST.spares.intransit} in transit. ${noCover.map(r => name(r.k)).join(' and ')} ${noCover.length === 1 ? 'has' : 'have'} faulty units and no spare at all. The highest fault rate is ${name(worstRate.k)} at ${worstRate.faultRate}% of its active population.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${noCover.length} classes with a fault and no spare`, detail: noCover.map(r => `${name(r.k)}: ${r.m.faulty} faulty, 0 in store`).join(' · ') },
       { tone: 'warn', title: `${(instore / faulty).toFixed(2)} spares per faulty element`, detail: `${instore} in store vs ${faulty} faulty; ${EST.spares.rma} out under RMA will partially restore cover when they return.` },
@@ -189,7 +189,7 @@ const lifecycle: ReportBuilder = () => {
 
   return {
     headline: { value: exposed, fmt: 'num', label: 'elements past or within 12 months of end of support', tone: 'red', better: 'down' },
-    summary: `${EST.eol.past} active elements are past end of support and ${EST.eol.within12} more reach it within 12 months — ${fmtNum(exposed)} elements, ${r1(pct(exposed, IL.ne))}% of the estate. The models already past end of support are ${past.map(m => `${m.model} (${m.oem}, ${m.eos})`).join(' and ')}; ${soon.map(m => `${m.model} (${m.eos})`).join(' and ')} are next in the refresh window. Software compliance is ${r1(pct(EST.compliance.compliant, assessed))}%: ${fmtNum(EST.compliance.behind)} elements run behind the baseline, concentrated on ${behindModels.map(m => m.model).join(', ')}, and ${EST.compliance.unknown} could not be assessed because ${unknownModels.length} of ${models.length} models have no support date or baseline on record.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${EST.eol.past} elements past end of support`, detail: `On ${past.map(m => `${m.model} (EOS ${m.eos})`).join(' and ')}. Unsupported hardware receives no security fixes or vendor support.` },
       { tone: 'warn', title: `${EST.eol.within12} more within 12 months`, detail: `The next models to reach end of support are ${soon.map(m => `${m.model} (${m.eos})`).join(', then ')}.` },
@@ -265,7 +265,7 @@ const quality: ReportBuilder = () => {
 
   return {
     headline: { value: discPct, fmt: 'pct', label: 'of active elements verified by discovery', tone: 'cyan', better: 'up' },
-    summary: `${fmtNum(IL.discovered)} of ${fmtNum(IL.ne)} active elements (${discPct}%) are verified by discovery. ${undiscoveredClasses.map(t => t.n).join(', ')} have no discovery adapter at all (${fmtNum(sum(undiscoveredClasses, t => t.c))} elements recorded manually or from EMS feeds). Within the element register, ${fmtNum(n('ok'))} records are verified, ${fmtNum(n('drift'))} have drifted from the network, ${fmtNum(n('stale'))} are stale, ${n('miss')} ${n('miss') === 1 ? 'is' : 'are'} missing from the network and ${fmtNum(n('none'))} have never been discovered.`,
+    summary: '',
     findings: [
       { tone: 'warn', title: `${fmtNum(n('drift'))} records have drifted`, detail: 'The record exists and discovery reached the element, but a value no longer matches — these feed the reconciliation backlog.' },
       { tone: 'warn', title: `${fmtNum(n('stale'))} records are stale`, detail: 'Not re-verified within the expected scan window; their data may be out of date.' },
@@ -337,7 +337,7 @@ const archive: ReportBuilder = () => {
 
   return {
     headline: { value: zombies.length, fmt: 'num', label: 'decommissioned elements still answering on the network', tone: 'red', better: 'down' },
-    summary: `${fmtNum(IL.inactive)} elements are decommissioned and archived; ${lastYear} of them were retired in the last 12 months, and the oldest record is ${DECOMM_OLDEST} old. The main reasons are ${reasons.slice(0, 3).map(([r, c]) => `${r.toLowerCase()} (${c})`).join(', ')}. ${zombies.length} archived ${zombies.length === 1 ? 'element is' : 'elements are'} still answering discovery scans — ${zombies.map(z => `${z.name} at ${z.loc}`).join(' and ')} — which means the hardware is powered and reachable despite being recorded as removed: a security and licensing exposure until confirmed.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${zombies.length} zombie ${zombies.length === 1 ? 'asset' : 'assets'} still answering`, detail: zombies.map(z => `${z.name} (${z.model}, decommissioned ${z.on} by ${z.by}, ${z.wo})`).join('; ') },
       { tone: 'info', title: `${lastYear} decommissioned in the last 12 months`, detail: years.map(([y, c]) => `${y}: ${c}`).join(' · ') },
@@ -379,6 +379,7 @@ const archive: ReportBuilder = () => {
       ],
       rows: [...rows].sort((a, b) => Number(b.zombie) - Number(a.zombie) || parseDmy(b.on).getTime() - parseDmy(a.on).getTime()).map(r => ({
         id: `${r.cls}-${r.sn}`,
+        link: { key: 'inactive', q: `cls=${r.cls}&search=${encodeURIComponent(r.name)}` },
         cells: { status: r.zombie ? 'Still answering' : 'Silent', name: r.name, cls: name(r.cls), model: r.model, oem: r.oem, sn: r.sn, loc: r.loc, on: r.on, why: r.why, by: r.by, wo: r.wo }
       })),
       facet: 'cls', empty: 'The archive is empty.'
@@ -397,13 +398,12 @@ const sites: ReportBuilder = () => {
   });
   const status = countBy(LOCATIONS, l => l.st);
   const hot = s.filter(x => x.powerPct >= 75 || x.rackPct >= 75);
-  const sampleNe = sum(LOCATIONS, l => l.ne), sampleDisc = sum(LOCATIONS, l => l.disc);
   const portPct = r1(pct(EST.ports.used, EST.ports.total));
   const statusTone: Record<string, string> = { 'On-air': TONE_HEX.success, 'In progress': TONE_HEX.info, Planned: TONE_HEX.neutral, Failed: TONE_HEX.error };
 
   return {
     headline: { value: IL.locations, fmt: 'num', label: 'locations in the estate', tone: 'emerald' },
-    summary: `The estate spans ${fmtNum(IL.locations)} locations: ${IL.central} central offices, ${IL.regional} regional sites and ${fmtNum(IL.edge)} edge sites. Estate-wide port utilisation is ${portPct}% (${fmtNum(EST.ports.free)} ports free). Across the ${LOCATIONS.length} surveyed sites with a facility record, ${status.map(([st, c]) => `${c} ${st.toLowerCase()}`).join(', ')}; ${sampleDisc} of ${sampleNe} network elements are discovered. ${hot.length === 1 ? 'One of those sites runs' : `${hot.length} of those sites run`} above 75% of rated power or rack space — ${hot.map(x => `${x.l.id} (power ${x.powerPct}%, racks ${x.rackPct}%)`).join('; ') || 'none'} — and should be checked before new equipment is planned there.`,
+    summary: '',
     findings: [
       { tone: hot.length ? 'warn' : 'good', title: `${plural(hot.length, 'surveyed site')} above 75% power or rack use`, detail: hot.map(x => `${x.l.id}: power ${x.powerPct}%, racks ${x.rackPct}%, ports ${x.portPct}%`).join(' · ') || 'Every surveyed site has headroom.' },
       { tone: status.some(([st]) => st === 'Failed') ? 'crit' : 'info', title: `${status.find(([st]) => st === 'Failed')?.[1] ?? 0} site build failed`, detail: LOCATIONS.filter(l => l.st === 'Failed').map(l => `${l.name} (${l.city}) — ${l.ne} elements recorded, ${l.disc} discovered`).join('; ') || 'No failed builds.' },
@@ -477,7 +477,7 @@ const vendors: ReportBuilder = () => {
 
   return {
     headline: { value: top.share, fmt: 'pct', label: `of network elements from ${top.oem}`, tone: 'purple', better: 'down' },
-    summary: `The element register spans ${oems.length} OEMs. ${top.oem} alone supplies ${top.share}% of elements (${fmtNum(top.n)}), and the top three — ${oems.slice(0, 3).map(o => o.oem).join(', ')} — supply ${top3}% (HHI ${fmtNum(hhi)}, ${hhi > 2500 ? 'highly' : hhi > 1500 ? 'moderately' : 'not'} concentrated). Lifecycle exposure is uneven: ${exposure(riskiest)}% of ${riskiest.oem}'s installed base is on models past or near end of support${riskiest.pastModels.length ? ` (${riskiest.pastModels.join(', ')} already past)` : ''}, and ${top.oem === riskiest.oem ? `as the largest supplier that gives ${top.oem} the most at stake in the next refresh negotiation` : `${top.oem}, the largest supplier, is at ${exposure(top)}%`}.`,
+    summary: '',
     findings: [
       { tone: top.share > 40 ? 'warn' : 'info', title: `${top.oem} supplies ${top.share}% of elements`, detail: `${fmtNum(top.n)} elements across ${top.models} models (${top.classes.join(', ')}). HHI ${fmtNum(hhi)}.` },
       { tone: 'crit', title: `${riskiest.oem}: highest lifecycle exposure (${exposure(riskiest)}%)`, detail: `${riskiest.pastPct}% of its elements are on models past end of support and ${riskiest.soonPct}% in the refresh window.` },

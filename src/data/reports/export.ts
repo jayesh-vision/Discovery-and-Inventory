@@ -12,7 +12,7 @@ import {
 export type ExportFormat = 'pdf' | 'xlsx' | 'csv' | 'doc' | 'html' | 'json';
 export const EXPORT_FORMATS: { k: ExportFormat; n: string; ext: string; hint: string }[] = [
   { k: 'pdf', n: 'PDF document', ext: 'PDF', hint: 'Designed report, ready to share' },
-  { k: 'xlsx', n: 'Excel workbook', ext: 'XLSX', hint: 'Summary, detail, chart data and methodology sheets' },
+  { k: 'xlsx', n: 'Excel workbook', ext: 'XLSX', hint: 'Summary, detail, and chart data sheets' },
   { k: 'csv', n: 'CSV', ext: 'CSV', hint: 'Plain data for any tool' },
   { k: 'doc', n: 'Word document', ext: 'DOC', hint: 'Editable report' },
   { k: 'html', n: 'Web page', ext: 'HTML', hint: 'Standalone file for email or archive' },
@@ -85,10 +85,6 @@ export function reportCsv(d: ReportDef, c: ReportContent): string {
     out.push('', csvRow([`CHART DATA — ${v.title.toUpperCase()}`]), csvRow(data.head));
     data.rows.forEach(row => out.push(csvRow(row)));
   });
-  if (c.methodology.length) {
-    out.push('', csvRow(['METHODOLOGY']));
-    c.methodology.forEach(m => out.push(csvRow([m.term, m.definition])));
-  }
   return `﻿${out.join('\r\n')}`;
 }
 
@@ -152,7 +148,6 @@ export function reportHtml(d: ReportDef, c: ReportContent, forWord = false): str
   ${h2('Recommended actions')}${table(['Priority', 'Action', 'Owner', 'Impact'], c.actions.map(a => [a.priority, a.action, a.owner, a.impact]))}
   ${h2(`${c.table.title} (${c.table.rows.length} rows)`)}<div style="font-size:11px;color:#64748b;margin-bottom:6px">${esc(c.table.sub)}</div>
   ${table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), cols.map(col => !!col.right))}
-  ${c.methodology.length ? `${h2('Methodology & definitions')}${table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]))}` : ''}
   <div style="margin-top:22px;font-size:10.5px;color:#94a3b8">${esc(d.id)} · snapshot ${esc(d.snapshot)} · generated ${esc(TODAY_TEXT())} by NetSingularity OSS</div>`;
 
   if (forWord) {
@@ -261,13 +256,6 @@ async function reportXlsx(d: ReportDef, c: ReportContent): Promise<Blob> {
       });
       cd.addRow([]);
     });
-  }
-
-  if (c.methodology.length) {
-    const md = wb.addWorksheet('Methodology');
-    md.columns = [{ header: 'Term', key: 't', width: 32 }, { header: 'Definition', key: 'd', width: 110 }];
-    md.getRow(1).font = { bold: true };
-    c.methodology.forEach(m => { md.addRow({ t: m.term, d: m.definition }).alignment = { wrapText: true, vertical: 'top' }; });
   }
 
   const buf = await wb.xlsx.writeBuffer();
@@ -549,11 +537,6 @@ async function reportPdf(d: ReportDef, c: ReportContent): Promise<Blob> {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...muted);
   doc.text(pdfText(`${c.table.sub} · ${c.table.rows.length} rows`), M, y); y += 4;
   table(cols.map(col => col.header), c.table.rows.map(r => cols.map(col => cellText(r.cells[col.key], col))), { right: cols.map(col => !!col.right), fontSize: wide ? 6.5 : 7.8 });
-
-  if (c.methodology.length) {
-    h2('Methodology & definitions');
-    table(['Term', 'Definition'], c.methodology.map(m => [m.term, m.definition]), { colWidths: [44, CW - 44] });
-  }
 
   /* footer on every page */
   const pages = doc.getNumberOfPages();

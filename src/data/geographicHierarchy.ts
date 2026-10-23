@@ -41,7 +41,7 @@ export interface RegionItem {
 
 export interface NetworkElementRow {
   id: string;
-  status: 'Verified' | 'Drifted' | 'Stale' | 'Missing' | 'Not discovered';
+  status: 'Verified' | 'Drifted' | 'Stale' | 'Missing' | 'Planned' | 'Not discovered';
   name: string;
   ip: string;
   model: string;
@@ -5792,7 +5792,7 @@ const cityDcs = (cityId: string): DcSum[] => {
   const info = findCityById(cityId);
   return info ? DC_SUM.filter(d => d.state === info.state.name && d.city === info.city.name) : [];
 };
-const DISCOVERY_STATUS: Record<string, NetworkElementRow['status']> = { verified: 'Verified', drifted: 'Drifted', 'not-discovered': 'Not discovered' };
+const DISCOVERY_STATUS: Record<string, NetworkElementRow['status']> = { verified: 'Verified', drifted: 'Drifted', 'not-discovered': 'Planned' };
 /* a site's rollout state, in the status vocabulary this list uses: on-air = verified, being built = drifted from plan, planned = not yet there */
 const SITE_STATUS: Record<DcSum['status'], FacilityItem['status']> = { 'on-air': 'Verified', 'in-progress': 'Drifted', planned: 'Stale', failed: 'Stale' };
 function scopedFacilities(cityId: string, facilityType: 'dc' | 'pop' | 'site'): FacilityItem[] {
@@ -5808,7 +5808,7 @@ function scopedElements(cityId: string, facility: FacilityItem): NetworkElementR
   const info = findCityById(cityId);
   const region = info?.region.name.replace(' Region', '') || 'North';
   return scope().devicesOf(facility.code).map(d => ({
-    id: d.id, status: DISCOVERY_STATUS[d.discovery] ?? 'Not discovered', name: d.name, ip: d.ip, model: d.model, vendor: d.vendor, osVersion: d.os,
+    id: d.id, status: DISCOVERY_STATUS[d.discovery] ?? 'Planned', name: d.name, ip: d.ip, model: d.model, vendor: d.vendor, osVersion: d.os,
     serialNumber: d.serial, region, portsUsed: 0, portsTotal: 0, locationCode: `${facility.code}-${d.rackId.replace(`${d.dcId}-`, '')}`,
     systemDescription: `${d.vendor} ${d.model}, ${d.os}`, category: d.role, facilityType: 'dc' as const, cityId
   }));
@@ -5971,7 +5971,7 @@ interface DeviceTemplate {
   portsTotal: number;
   locSuffix: string;
   systemDescription: string;
-  status: 'Verified' | 'Drifted' | 'Stale' | 'Missing' | 'Not discovered';
+  status: 'Verified' | 'Drifted' | 'Stale' | 'Missing' | 'Planned' | 'Not discovered';
 }
 
 const DC_ROUTER_TEMPLATES: DeviceTemplate[] = [
@@ -6022,9 +6022,9 @@ const DC_SWITCH_TEMPLATES: DeviceTemplate[] = [
 
 const DC_DWDM_TEMPLATES: DeviceTemplate[] = [
   { nameSuffix: 'DWDM-OADM01', model: 'OADM', vendor: 'JUNIPER', osVersion: '21.5.1', serialPrefix: 'JNOADM', portsUsed: 14, portsTotal: 16, locSuffix: 'OT-1 · slot 3', systemDescription: '16-channel Optical Add-Drop Multiplexer, core transport', status: 'Verified' },
-  { nameSuffix: 'DWDM-ILA01', model: 'ILA', vendor: 'CISCO', osVersion: '11.1.2', serialPrefix: 'FOCILA', portsUsed: 6, portsTotal: 8, locSuffix: 'OT-2 · slot 5', systemDescription: 'In-Line Optical Amplifier, long-haul span', status: 'Not discovered' },
+  { nameSuffix: 'DWDM-ILA01', model: 'ILA', vendor: 'CISCO', osVersion: '11.1.2', serialPrefix: 'FOCILA', portsUsed: 6, portsTotal: 8, locSuffix: 'OT-2 · slot 5', systemDescription: 'In-Line Optical Amplifier, long-haul span', status: 'Planned' },
   { nameSuffix: 'DWDM-ROADM01', model: 'ROADM', vendor: 'CISCO', osVersion: '11.0.1', serialPrefix: 'FOCROA', portsUsed: 18, portsTotal: 24, locSuffix: 'OT-1 · slot 7', systemDescription: 'Multi-degree reconfigurable optical add-drop mux', status: 'Verified' },
-  { nameSuffix: 'DWDM-REGEN01', model: 'Regen', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKREGN', portsUsed: 10, portsTotal: 16, locSuffix: 'OT-3 · slot 2', systemDescription: 'Optical regenerator 3R, inter-city lambda', status: 'Not discovered' },
+  { nameSuffix: 'DWDM-REGEN01', model: 'Regen', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKREGN', portsUsed: 10, portsTotal: 16, locSuffix: 'OT-3 · slot 2', systemDescription: 'Optical regenerator 3R, inter-city lambda', status: 'Planned' },
   { nameSuffix: 'DWDM-TRANS01', model: 'Transponder', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKTRNS', portsUsed: 15, portsTotal: 16, locSuffix: 'OT-3 · slot 4', systemDescription: '100G/400G coherent transponder', status: 'Verified' },
   { nameSuffix: 'DWDM-MUX01', model: 'Mux/Demux', vendor: 'HUAWEI', osVersion: 'V100R020', serialPrefix: 'HWMUXD', portsUsed: 15, portsTotal: 16, locSuffix: 'OT-4 · slot 1', systemDescription: '40-channel optical multiplexer/demultiplexer', status: 'Verified' }
 ];
@@ -6069,11 +6069,11 @@ const POP_SWITCH_TEMPLATES: DeviceTemplate[] = [
 
 const POP_DWDM_TEMPLATES: DeviceTemplate[] = [
   { nameSuffix: 'OPT-ROADM01', model: 'ROADM', vendor: 'CISCO', osVersion: '11.0.1', serialPrefix: 'FOCRPO', portsUsed: 10, portsTotal: 16, locSuffix: 'OT-1 · slot 2', systemDescription: 'Metro ROADM terminal, ring aggregation', status: 'Verified' },
-  { nameSuffix: 'OPT-OADM01', model: 'OADM', vendor: 'JUNIPER', osVersion: '21.5.1', serialPrefix: 'JNOADP', portsUsed: 8, portsTotal: 16, locSuffix: 'OT-1 · slot 5', systemDescription: 'Metro Optical Add-Drop Multiplexer', status: 'Not discovered' },
-  { nameSuffix: 'OPT-TRANS01', model: 'Transponder', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKTRNP', portsUsed: 8, portsTotal: 8, locSuffix: 'OT-2 · slot 3', systemDescription: '10G/100G metro transponder', status: 'Verified' },
-  { nameSuffix: 'OPT-ILA01', model: 'ILA', vendor: 'CISCO', osVersion: '11.0.0', serialPrefix: 'FOCILP', portsUsed: 4, portsTotal: 4, locSuffix: 'OT-2 · slot 6', systemDescription: 'In-Line Amplifier, metro fiber span', status: 'Not discovered' },
+  { nameSuffix: 'OPT-OADM01', model: 'OADM', vendor: 'JUNIPER', osVersion: '21.5.1', serialPrefix: 'JNOADP', portsUsed: 8, portsTotal: 16, locSuffix: 'OT-1 · slot 5', systemDescription: 'Metro Optical Add-Drop Multiplexer', status: 'Planned' },
+  { nameSuffix: 'OPT-TRANS01', model: 'Transponder', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKTRNP', portsUsed: 8, portsTotal: 8, locSuffix: 'OT-2 · slot 3', systemDescription: '100G/400G coherent transponder', status: 'Verified' },
+  { nameSuffix: 'OPT-ILA01', model: 'ILA', vendor: 'CISCO', osVersion: '11.0.0', serialPrefix: 'FOCILP', portsUsed: 4, portsTotal: 4, locSuffix: 'OT-2 · slot 6', systemDescription: 'In-Line Amplifier, metro fiber span', status: 'Planned' },
   { nameSuffix: 'OPT-MUX01', model: 'Mux/Demux', vendor: 'HUAWEI', osVersion: 'V100R020', serialPrefix: 'HWMUXP', portsUsed: 14, portsTotal: 16, locSuffix: 'OT-3 · slot 1', systemDescription: 'Metro optical multiplexer unit', status: 'Verified' },
-  { nameSuffix: 'OPT-REGEN01', model: 'Regen', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKREGP', portsUsed: 7, portsTotal: 8, locSuffix: 'OT-3 · slot 6', systemDescription: 'Optical regenerator, ring protection', status: 'Not discovered' }
+  { nameSuffix: 'OPT-REGEN01', model: 'Regen', vendor: 'NOKIA', osVersion: '22.1.2', serialPrefix: 'NKREGP', portsUsed: 7, portsTotal: 8, locSuffix: 'OT-3 · slot 6', systemDescription: 'Optical regenerator, ring protection', status: 'Planned' }
 ];
 
 const SITE_GNODEB_TEMPLATES: DeviceTemplate[] = [

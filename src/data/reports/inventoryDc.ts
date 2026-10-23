@@ -143,8 +143,8 @@ function getDcStats(): DcStats {
     { k: 'switch', n: 'Fabric Switches', c: sum(dcList, d => d.byRole.Switch ?? 0), disc: 663 * mult, planned: 27 * mult, deployed: (679 - 27) * mult, faulty: 3 * mult, decomm: 24 * mult, hex: DC_CLASS_HEX.switch },
     { k: 'server', n: 'Compute (CPU)', c: sum(dcList, d => d.byRole.Server ?? 0), disc: 488 * mult, planned: 22 * mult, deployed: (552 - 22) * mult, faulty: 2 * mult, decomm: 28 * mult, hex: DC_CLASS_HEX.server },
     { k: 'storage', n: 'Storage Arrays', c: sum(dcList, d => d.byRole.Storage ?? 0), disc: 271 * mult, planned: 10 * mult, deployed: (306 - 10) * mult, faulty: 1 * mult, decomm: 16 * mult, hex: DC_CLASS_HEX.storage },
-    { k: 'router', n: 'Border Routers', c: sum(dcList, d => d.byRole.Router ?? 0), disc: 46 * mult, planned: 9 * mult, deployed: (48 - 9) * mult, faulty: 0, decomm: 14 * mult, hex: DC_CLASS_HEX.router },
-    { k: 'firewall', n: 'Security / FW', c: sum(dcList, d => d.byRole.Firewall ?? 0), disc: 46 * mult, planned: 9 * mult, deployed: (48 - 9) * mult, faulty: 0, decomm: 12 * mult, hex: DC_CLASS_HEX.firewall }
+    { k: 'router', n: 'Border Routers', c: sum(dcList, d => d.byRole.Router ?? 0), disc: 46 * mult, planned: 6 * mult, deployed: (48 - 6) * mult, faulty: 0, decomm: 14 * mult, hex: DC_CLASS_HEX.router },
+    { k: 'firewall', n: 'Security / FW', c: sum(dcList, d => d.byRole.Firewall ?? 0), disc: 46 * mult, planned: 6 * mult, deployed: (48 - 6) * mult, faulty: 0, decomm: 12 * mult, hex: DC_CLASS_HEX.firewall }
   ];
 
   return {
@@ -311,7 +311,7 @@ export function buildDcStock(): ReportContent {
 
   return {
     headline: { value: faulty, fmt: 'num', label: `units under scheduled maintenance against ${instore} spares in store`, tone: 'emerald', better: 'down' },
-    summary: `${fmtNum(deployed)} elements are deployed in service, ${planned} are planned for upcoming cluster expansions, ${instore} spare modules and units are held in depot stores, and ${faulty} are under scheduled maintenance or vendor RMA. Spare cover is healthy: ${instore} spares in store against ${faulty} maintenance units (${(instore / faulty).toFixed(2)} spares per unit), with 12 units under OEM RMA and 8 in transit. All 6 equipment classes maintain active spare and vendor SLA cover.`,
+    summary: '',
     findings: [
       { tone: 'good', title: '0 classes without spare cover', detail: 'GPU: 18 in store vs 12 maint · Switch: 8 in store vs 3 maint · Server: 6 in store vs 2 maint · Storage: 4 in store vs 1 maint' },
       { tone: 'good', title: `${(instore / faulty).toFixed(2)} spares per maintenance unit`, detail: `${instore} depot spares vs ${faulty} units in maintenance; 12 RMA units returning will replenish store buffers.` },
@@ -393,7 +393,7 @@ export function buildDcLifecycle(): ReportContent {
 
   return {
     headline: { value: 120, fmt: 'num', label: 'elements in scheduled hardware refresh window (0 past EOS)', tone: 'amber', better: 'down' },
-    summary: `0 active data center elements are past end of support, and 120 legacy inference nodes (representing early T4 architecture) reach the end of their planned 3-year refresh window within 12 months. Modern Hopper and Blackwell GPU clusters, 400G Quantum-2 fabrics, and all-flash storage tiers are fully supported through 2030–2034. Software compliance is 96.9%: ${fmtNum(st.verified)} elements run approved baseline firmware, ${fmtNum(st.drifted)} run behind baseline (concentrated on fabric switch microcode and host BMC revisions), and ${fmtNum(st.notDiscovered)} planned units are in staging.`,
+    summary: '',
     findings: [
       { tone: 'good', title: '0 elements past end of support', detail: 'All production compute, GPU acceleration, and storage hardware is within active vendor lifecycle contracts.' },
       { tone: 'warn', title: '120 elements in 12-month refresh window', detail: 'T4 inference servers (DELL PowerEdge R750xa, SUPERMICRO SYS-4029GP, NVIDIA EGX) scheduled for Hopper/L40S migration.' },
@@ -479,12 +479,12 @@ export function buildDcQuality(): ReportContent {
     { s: 'drift', n: 'Drifted', c: st.drifted, hex: TONE_HEX.warning },
     { s: 'stale', n: 'Stale', c: 0, hex: TONE_HEX.orange },
     { s: 'miss', n: 'Missing', c: 0, hex: TONE_HEX.error },
-    { s: 'none', n: 'Not discovered', c: st.notDiscovered, hex: TONE_HEX.neutral }
+    { s: 'none', n: 'Planned', c: st.notDiscovered, hex: TONE_HEX.neutral }
   ];
 
   return {
     headline: { value: st.discPct, fmt: 'pct', label: 'of active data center elements verified by discovery', tone: 'cyan', better: 'up' },
-    summary: `${fmtNum(st.disc)} of ${fmtNum(st.ne)} active data center elements (${st.discPct}%) are verified by discovery. Across all 6 equipment classes (GPU, Switch, Server, Storage, Router, Firewall), automated discovery adapters and out-of-band telemetry collectors maintain continuous network reachability. Within the element register, ${fmtNum(st.verified)} records are fully verified with zero discrepancies, ${fmtNum(st.drifted)} have configuration drift, 0 are missing from the network, and ${fmtNum(st.notDiscovered)} planned elements are in staging awaiting onboarding.`,
+    summary: '',
     findings: [
       { tone: 'warn', title: `${fmtNum(st.drifted)} records have drifted`, detail: 'Configuration or firmware divergence detected against target template; feeding reconciliation backlog.' },
       { tone: 'good', title: '0 missing records on the network', detail: 'Zero recorded inventory elements failed reachability or dropped offline during scans.' },
@@ -514,7 +514,7 @@ export function buildDcQuality(): ReportContent {
           { k: 'm', n: 'Manual / OOB', c: st.ne - st.disc - st.planned > 0 ? st.ne - st.disc - st.planned : 83, hex: TONE_HEX.neutral }
         ] },
       { kind: 'heat', span: 2, title: 'Class × verification state', sub: 'Data center element register', fmt: 'num',
-        rows: st.roles.map(r => r.n), cols: ['Verified', 'Drifted', 'Not discovered'],
+        rows: st.roles.map(r => r.n), cols: ['Verified', 'Drifted', 'Planned'],
         values: st.roles.map(r => [Math.round(r.disc * 0.97), Math.round(r.disc * 0.03), r.c - r.disc]) }
     ],
     actions: [
@@ -533,7 +533,7 @@ export function buildDcQuality(): ReportContent {
         { key: 'drift', header: 'Drifted', fmt: 'num', right: true },
         { key: 'stale', header: 'Stale', fmt: 'num', right: true },
         { key: 'miss', header: 'Missing', fmt: 'num', right: true },
-        { key: 'none', header: 'Not discovered', fmt: 'num', right: true },
+        { key: 'none', header: 'Planned', fmt: 'num', right: true },
         { key: 'source', header: 'Main source' }
       ],
       rows: st.roles.map(r => {
@@ -591,7 +591,7 @@ export function buildDcArchive(): ReportContent {
 
   return {
     headline: { value: zombies.length, fmt: 'num', label: 'decommissioned elements still answering on the network', tone: 'red', better: 'down' },
-    summary: `${fmtNum(rows.length)} elements are decommissioned and archived; ${lastYear} of them were retired in the last 12 months, and the oldest record is 3.2 years old. The main reasons are hardware refresh under capital upgrade cycles, 400G fabric migration, and end of hardware lease terms. ${zombies.length} archived elements are still answering discovery scans — ${zombies.map(z => `${z.name} at ${z.loc}`).join(' and ')} — which indicates decommissioned assets remain powered and connected in racks: a security and licensing exposure until confirmed.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${zombies.length} zombie assets still answering`, detail: zombies.map(z => `${z.name} (${z.model}, decommissioned ${z.on} by ${z.by}, ${z.wo})`).join('; ') },
       { tone: 'info', title: `${lastYear} decommissioned in the last 12 months`, detail: years.map(([y, c]) => `${y}: ${c}`).join(' · ') },
@@ -638,20 +638,21 @@ export function buildDcArchive(): ReportContent {
     table: {
       title: 'Decommissioned elements', sub: 'Zombies first, then most recent',
       columns: [
-        { key: 'status', header: 'Network status', fmt: 'chip', tones: { 'Still answering': 'error', Silent: 'neutral' } },
-        { key: 'name', header: 'Element', fmt: 'mono' },
-        { key: 'cls', header: 'Class' },
-        { key: 'model', header: 'Model' },
-        { key: 'oem', header: 'OEM' },
-        { key: 'sn', header: 'Serial', fmt: 'mono' },
-        { key: 'loc', header: 'Site', fmt: 'mono' },
-        { key: 'on', header: 'Decommissioned', fmt: 'date' },
-        { key: 'why', header: 'Reason', width: '220px' },
-        { key: 'by', header: 'By' },
-        { key: 'wo', header: 'Work order', fmt: 'mono' }
+        { key: 'status', header: 'Network status', fmt: 'chip', tones: { 'Still answering': 'error', Silent: 'neutral' }, width: '135px' },
+        { key: 'name', header: 'Element', fmt: 'mono', width: '190px' },
+        { key: 'cls', header: 'NE Type', width: '110px' },
+        { key: 'model', header: 'Model', width: '180px' },
+        { key: 'oem', header: 'OEM', width: '110px' },
+        { key: 'sn', header: 'Serial', fmt: 'mono', width: '140px' },
+        { key: 'loc', header: 'Site', fmt: 'mono', width: '105px' },
+        { key: 'on', header: 'Decommissioned', fmt: 'date', width: '130px' },
+        { key: 'why', header: 'Reason', width: '260px' },
+        { key: 'by', header: 'By', width: '130px' },
+        { key: 'wo', header: 'Work order', fmt: 'mono', width: '150px' }
       ],
       rows: [...rows].sort((a, b) => Number(b.zombie) - Number(a.zombie)).map(r => ({
         id: `${r.cls}-${r.sn}`,
+        link: { key: 'inactive', q: `cls=all&search=${encodeURIComponent(r.name)}` },
         cells: {
           status: r.zombie ? 'Still answering' : 'Silent',
           name: r.name,
@@ -701,7 +702,7 @@ export function buildDcSites(): ReportContent {
 
   return {
     headline: { value: st.locations, fmt: 'num', label: 'data center facilities in the estate', tone: 'emerald' },
-    summary: `The data center estate spans ${st.locations} facilities: ${st.central} central hyperscale facilities, ${st.regional} regional data centers and ${st.edge} edge facilities. Estate-wide port utilisation is ${st.portPct}% (${fmtNum(st.portsFree)} ports free). Across the ${st.locations} surveyed data center facilities, ${onAirCount} are on-air, ${inProgressCount} in progress and ${plannedCount} planned; ${fmtNum(st.disc)} of ${fmtNum(st.ne)} network elements are discovered. ${hot.length} sites run above 50% power or 60% rack space utilization and require capacity review before adding high-density clusters.`,
+    summary: '',
     findings: [
       { tone: hot.length ? 'warn' : 'good', title: `${plural(hot.length, 'facility')} above 50% power or 60% rack use`, detail: hot.slice(0, 4).map(x => `${x.d.id}: power ${x.powerPct}%, racks ${x.rackPct}%, ports ${x.portPct}%`).join(' · ') || 'Every facility has adequate power and rack headroom.' },
       { tone: 'info', title: `${st.central} central hyperscale facilities carry 82% of load`, detail: 'Primary concentration of liquid-cooled GPU superclusters and high-radix InfiniBand fabrics.' },
@@ -838,7 +839,7 @@ export function buildDcVendors(): ReportContent {
 
   return {
     headline: { value: top.share, fmt: 'pct', label: `of data center elements from ${top.oem}`, tone: 'purple', better: 'down' },
-    summary: `The data center estate spans ${oems.length} OEMs. ${top.oem} alone supplies ${top.share}% of elements (${fmtNum(top.n)}), and the top three — ${oems.slice(0, 3).map(o => o.oem).join(', ')} — supply ${top3}% (HHI ${fmtNum(hhi)}, ${hhi > 2500 ? 'highly' : 'moderately'} concentrated due to AI compute cluster standardization). Lifecycle exposure across all active vendors is minimal with 0 units on past-EOS models. Drift is lowest on border routing and perimeter security, with minor firmware divergence on server BMCs and fabric switches.`,
+    summary: '',
     findings: [
       { tone: 'info', title: `${top.oem} supplies ${top.share}% of elements`, detail: `${fmtNum(top.n)} elements across ${top.models} models (${top.classes.join(', ')}). HHI ${fmtNum(hhi)}.` },
       { tone: 'good', title: '0% past-EOS exposure across all vendors', detail: 'All 10 OEMs are maintained under active enterprise maintenance and replacement agreements.' },

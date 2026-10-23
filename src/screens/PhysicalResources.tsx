@@ -60,7 +60,7 @@ function dcRow(dev: DcDevice, fac: DcFacility, node?: DcGpuNode): Row {
 }
 
 const FILTERS = [
-  { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Not discovered'] },
+  { n: 'Status', o: ['Verified', 'Drifted', 'Stale', 'Missing', 'Planned'] },
   { n: 'Name' }, { n: 'IP address' }, { n: 'Model' }, { n: 'Vendor', o: ['CISCO', 'JUNIPER', 'NOKIA', 'ERICSSON', 'HUAWEI', 'ADVA', 'CIENA', 'HPE', 'DELL', 'SUPERMICRO', 'PURE', 'NETAPP', 'FORTINET', 'NVIDIA', 'INTEL', 'ARISTA'] },
   { n: 'OS version' }, { n: 'Serial number' }, { n: 'Location' }, { n: 'Region', o: SCOPED ? dcRegionLabels() : ['North', 'East', 'West', 'South'] }
 ];

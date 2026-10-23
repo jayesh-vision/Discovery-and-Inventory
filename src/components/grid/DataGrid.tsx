@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, isValidElement, type ReactNode } from 'react';
 import { ActionIcon, IcFilter, IcKebab, IcSearch, IcX } from './icons';
 import { domainFilterMatches, isDomainKey } from '../../data/discoveryOverview';
 import { exportTable } from '../../utils/tableExport';
+import { RSTATE, type RecState, STOCK_ST, SRC, type Source } from '../../data/ledger';
 
 /* ── types ──────────────────────────────────────────────── */
 /** w: optional column width (e.g. '18%') — a grid with few, short columns
@@ -464,14 +465,37 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
 
   const r = row as any;
   if (r && typeof r === 'object') {
-    if (r.st) text += ' ' + String(r.st).toLowerCase();
-    if (r.stock) text += ' ' + String(r.stock).toLowerCase();
-    if (r.s) text += ' ' + String(r.s).toLowerCase();
+    if (r.st) {
+      text += ' ' + String(r.st).toLowerCase();
+      const rec = RSTATE[r.st as RecState];
+      if (rec) text += ' ' + rec[0].toLowerCase();
+    }
+    if (r.stock) {
+      text += ' ' + String(r.stock).toLowerCase();
+      const st = STOCK_ST.find(s => s.k === r.stock);
+      if (st) text += ' ' + st.n.toLowerCase();
+    }
+    if (r.s) {
+      text += ' ' + String(r.s).toLowerCase();
+      const sc = SRC[r.s as Source];
+      if (sc) text += ' ' + sc[0].toLowerCase();
+    }
     if (r.oem) text += ' ' + String(r.oem).toLowerCase();
+    if (r.vendor) text += ' ' + String(r.vendor).toLowerCase();
     if (r.model) text += ' ' + String(r.model).toLowerCase();
     if (r.name) text += ' ' + String(r.name).toLowerCase();
     if (r.ip) text += ' ' + String(r.ip).toLowerCase();
+    if (r.ip2) text += ' ' + String(r.ip2).toLowerCase();
     if (r.loc) text += ' ' + String(r.loc).toLowerCase();
+    if (r.dcId) text += ' ' + String(r.dcId).toLowerCase();
+    if (r.city) text += ' ' + String(r.city).toLowerCase();
+    if (r.state) text += ' ' + String(r.state).toLowerCase();
+    if (r.region) text += ' ' + String(r.region).toLowerCase();
+    if (r.bucket) text += ' ' + String(r.bucket).toLowerCase();
+    if (r.category) text += ' ' + String(r.category).toLowerCase();
+    if (r.role) text += ' ' + String(r.role).toLowerCase();
+    if (r.assetRole) text += ' ' + String(r.assetRole).toLowerCase();
+    if (r.status) text += ' ' + String(r.status).toLowerCase();
     if (r.zombie) text += ' still answering';
     else if (r.zombie === false) text += ' silent';
   }
@@ -482,22 +506,24 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
     const val = fVal.trim().toLowerCase();
     if (!val) continue;
 
+    const fieldNorm = field.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     /* Domain is a tree, not free text: 'Transport' must keep IP/MPLS rows
        (a sub-domain of Transport), and 'IP/MPLS' must find rows whose key
        is 'IPMPLS' — a substring test does neither, so the domain predicate
        decides, the same way the legacy grid's Domain filter does. */
-    if (field.toLowerCase() === 'domain' && r && typeof r === 'object' && isDomainKey(r.domain)) {
+    if (fieldNorm === 'domain' && r && typeof r === 'object' && isDomainKey(r.domain)) {
       if (!domainFilterMatches(r.domain, val)) return false;
       continue;
     }
 
-    if (field.toLowerCase() === 'discovery' && r && typeof r === 'object' && 'zombie' in r) {
+    if (fieldNorm === 'discovery' && r && typeof r === 'object' && 'zombie' in r) {
       if (val === 'still answering' && !r.zombie) return false;
       if (val === 'silent' && r.zombie) return false;
       continue;
     }
 
-    if (field.toLowerCase().includes('decommissioned') && r && typeof r === 'object' && r.on) {
+    if (fieldNorm.includes('decommissioned') && r && typeof r === 'object' && r.on) {
       if (String(r.on).toLowerCase().includes(val)) {
         continue;
       }
@@ -509,23 +535,121 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
       }
     }
 
+    /* Dedicated status matching across all grid data representations */
+    if (fieldNorm === 'status' && r && typeof r === 'object') {
+      let statusMatch = false;
+
+      // 1. Ledger recState (r.st)
+      if (r.st) {
+        const stLower = String(r.st).toLowerCase();
+        if (stLower === val) statusMatch = true;
+        if (stLower === 'ok' && (val === 'verified' || val === 'ok')) statusMatch = true;
+        if (stLower === 'drift' && (val === 'drifted' || val === 'drift')) statusMatch = true;
+        if (stLower === 'stale' && val === 'stale') statusMatch = true;
+        if (stLower === 'miss' && (val === 'missing' || val === 'miss')) statusMatch = true;
+        if (stLower === 'none' && (val === 'planned' || val === 'not discovered' || val === 'not-discovered' || val === 'non discovered' || val === 'none')) statusMatch = true;
+
+        const recLabel = RSTATE[r.st as RecState]?.[0]?.toLowerCase();
+        if (recLabel && (recLabel === val || recLabel.includes(val) || val.includes(recLabel))) {
+          statusMatch = true;
+        }
+      }
+
+      // 2. Stock state (r.stock)
+      if (r.stock) {
+        const stockLower = String(r.stock).toLowerCase();
+        if (stockLower === val) statusMatch = true;
+        if (stockLower === 'planned' && val === 'planned') statusMatch = true;
+        const stockMetaItem = STOCK_ST.find(s => s.k === r.stock);
+        if (stockMetaItem && (stockMetaItem.n.toLowerCase() === val || stockMetaItem.n.toLowerCase().includes(val))) {
+          statusMatch = true;
+        }
+      }
+
+      // 3. Source (r.s)
+      if (r.s) {
+        const sLower = String(r.s).toLowerCase();
+        if (sLower === 'p' && val.includes('planned')) statusMatch = true;
+        if (sLower === 'd' && val.includes('discovered')) statusMatch = true;
+        const srcMetaItem = SRC[r.s as Source]?.[0]?.toLowerCase();
+        if (srcMetaItem && (srcMetaItem.includes(val) || val.includes(srcMetaItem))) {
+          statusMatch = true;
+        }
+      }
+
+      // 4. Device discovery property (e.g. dev.discovery or r.discovery)
+      if (r.discovery) {
+        const discLower = String(r.discovery).toLowerCase();
+        if (discLower === val) statusMatch = true;
+        if (discLower === 'verified' && val === 'verified') statusMatch = true;
+        if (discLower === 'drifted' && val === 'drifted') statusMatch = true;
+        if (discLower === 'not-discovered' && (val === 'planned' || val === 'not discovered' || val === 'not-discovered')) statusMatch = true;
+      }
+
+      // 5. Direct properties: status, state, lifecycle, lifecyclestatus, outcome, health, depotstatus, chip
+      const directProps = ['status', 'state', 'lifecycle', 'lifecycleStatus', 'lifecyclestatus', 'outcome', 'health', 'depotStatus', 'result', 'chip'];
+      for (const p of directProps) {
+        if (r[p] != null) {
+          const pVal = String(r[p]).toLowerCase();
+          if (pVal === val || pVal.includes(val) || val.includes(pVal)) {
+            statusMatch = true;
+            break;
+          }
+          if (val === 'planned' && (pVal.includes('planned') || pVal === 'not discovered' || pVal === 'not-discovered')) {
+            statusMatch = true;
+            break;
+          }
+        }
+      }
+
+      if (!statusMatch) return false;
+      continue;
+    }
+
     let matchFound = false;
     if (r && typeof r === 'object') {
-      const fieldNorm = field.toLowerCase().replace(/[^a-z0-9]/g, '');
       const fieldAliases: Record<string, string[]> = {
         serialnumber: ['sn', 'serial', 'serialnumber', 'serial_number'],
         vendor: ['oem', 'vendor', 'make', 'manufacturer'],
-        reason: ['why', 'reason'],
+        reason: ['why', 'reason', 'failurereason', 'failure_reason'],
+        failurereason: ['why', 'reason', 'failurereason', 'failure_reason'],
         workorder: ['wo', 'workorder', 'work_order'],
-        model: ['model'],
-        name: ['name']
+        model: ['model', 'hardwaremodel', 'spec'],
+        name: ['name', 'hostname', 'devicename', 'element', 'title', 'id'],
+        ipaddress: ['ip', 'ip2', 'mgmtip', 'ipaddress', 'ip_address', 'address'],
+        location: ['loc', 'location', 'locationid', 'locationcode', 'site', 'facility', 'dcid', 'city', 'state', 'region', 'room', 'rack'],
+        osversion: ['os', 'osversion', 'os_version', 'version', 'firmware', 'observedos', 'approvedos'],
+        datacenter: ['dcid', 'dc', 'datacenter', 'data_center', 'siteid', 'site'],
+        class: ['cls', 'class', 'neclass', 'deviceclass'],
+        categorybucket: ['bucket', 'categorybucket', 'inventorybucket', 'category'],
+        inventorybucket: ['bucket', 'categorybucket', 'inventorybucket', 'category'],
+        assetrole: ['assetrole', 'asset_role', 'role', 'category'],
+        discrepancytype: ['issue', 'discrepancytype', 'type', 'category'],
+        matchclass: ['matchclass', 'match_class'],
+        age: ['age', 'ageband', 'agedays', 'stalenessdays'],
+        protocol: ['protocol'],
+        severity: ['severity'],
+        priority: ['priority'],
+        frequency: ['frequency'],
+        type: ['type', 'scantype', 'subtype', 'ruletype'],
+        region: ['region', 'reg'],
+        state: ['state', 'st']
       };
 
       const keysToCheck = fieldAliases[fieldNorm] || [field.toLowerCase(), fieldNorm];
       for (const k of keysToCheck) {
-        if (r[k] != null && String(r[k]).toLowerCase().includes(val)) {
-          matchFound = true;
-          break;
+        if (r[k] != null) {
+          if (typeof r[k] === 'object') {
+            if (r[k].id && String(r[k].id).toLowerCase().includes(val)) { matchFound = true; break; }
+            if (r[k].name && String(r[k].name).toLowerCase().includes(val)) { matchFound = true; break; }
+            if (r[k].dev?.dcId && String(r[k].dev.dcId).toLowerCase().includes(val)) { matchFound = true; break; }
+          } else {
+            const propVal = String(r[k]).toLowerCase();
+            if (propVal === val || propVal.includes(val) || val.includes(propVal)) {
+              matchFound = true;
+              break;
+            }
+          }
         }
       }
 
@@ -547,6 +671,28 @@ function filterDataRow<Row>(row: Row, searchQuery: string, filterValues: Record<
   }
 
   return true;
+}
+
+function extractCellText(node: ReactNode): string | undefined {
+  if (node === null || node === undefined || typeof node === 'boolean') return undefined;
+  if (typeof node === 'string' || typeof node === 'number') {
+    const s = String(node).trim();
+    return s.length > 0 ? s : undefined;
+  }
+  if (Array.isArray(node)) {
+    const combined = node.map(extractCellText).filter(Boolean).join(' ').trim();
+    return combined.length > 0 ? combined : undefined;
+  }
+  if (isValidElement(node)) {
+    const props = node.props as any;
+    if (props?.title && typeof props.title === 'string' && props.title.trim().length > 0) {
+      return props.title.trim();
+    }
+    if (props?.children !== undefined) {
+      return extractCellText(props.children);
+    }
+  }
+  return undefined;
 }
 
 /* ── the grid ───────────────────────────────────────────── */
@@ -626,13 +772,17 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
         <table className="nst-table">
           {p.columns.some(c => c.w) && (
             <colgroup>
-              {p.columns.map(c => <col key={c.t} style={c.w ? { width: c.w } : undefined} />)}
+              {p.columns.map((c, idx) => <col key={`${c.t}-${idx}`} style={c.w ? { width: c.w } : undefined} />)}
               {p.rowActions && <col style={{ width: '48px' }} />}
             </colgroup>
           )}
           <thead>
             <tr>
-              {p.columns.map(c => <th key={c.t} className={c.r ? 't-right' : undefined}>{c.t}</th>)}
+              {p.columns.map((c, idx) => (
+                <th key={`${c.t}-${idx}`} className={c.r ? 't-right' : undefined} style={c.w ? { width: c.w } : undefined}>
+                  {c.t}
+                </th>
+              ))}
               {p.rowActions && <th className="kb-th" />}
             </tr>
           </thead>
@@ -647,7 +797,8 @@ export function DataGrid<Row>(p: DataGridProps<Row>) {
                   {cells.map((c, i) => {
                     const cls = [p.columns[i]?.r ? 't-right num' : '', i === 0 && !p.columns[0].plain && STATUS_COL.test(p.columns[0].t) ? 'st-td' : '']
                       .filter(Boolean).join(' ');
-                    return <td key={i} className={cls || undefined}>{c}</td>;
+                    const titleText = extractCellText(c);
+                    return <td key={i} className={cls || undefined} title={titleText || undefined}>{c}</td>;
                   })}
                   {p.rowActions && (
                     <RowMenu actions={actions} open={openRow === key}

@@ -8,6 +8,8 @@ export type { InactiveTab };
 export interface ArchiveRow {
   name: string; ip: string; model: string; sn: string; oem: string; loc: string;
   why: string; on: string; by: string; wo: string; zombie: boolean;
+  cls?: string;
+  neType?: string;
 }
 
 /* Decommissioned network elements come from the unified device repository
@@ -253,13 +255,26 @@ export const DEFAULT_DECOMM: Record<InactiveTab, ArchiveRow[]> = Object.fromEntr
 /* DECOMM defaults to DEFAULT_DECOMM for strict estate verification */
 export const DECOMM: Record<InactiveTab, ArchiveRow[]> = DEFAULT_DECOMM;
 
-export const decommRows = (cls: InactiveTab, geo?: DcGeo | null): ArchiveRow[] => {
+export const decommRows = (cls: InactiveTab | 'all', geo?: DcGeo | null): ArchiveRow[] => {
   if (isScoped()) {
-    const targetGeo = geo || (typeof window !== 'undefined' ? currentGeo() : null) || (isDatacenterUser() ? 'us' : 'in');
+    const targetGeo = geo || (typeof window !== 'undefined' ? (currentGeo() || 'us') : null) || (isDatacenterUser() ? 'us' : 'us');
     const store = targetGeo === 'in' ? DC_DECOMM_IN : DC_DECOMM_US;
-    return store[cls] || (cls === 'gpu' ? [] : store.server) || [];
+    if (cls === 'all') {
+      const allCls: InactiveTab[] = ['server', 'switch', 'router', 'storage', 'firewall', 'dwdm', 'link', 'service'];
+      const allRows = allCls.flatMap(k => (store[k] || []).map(r => ({
+        ...r,
+        cls: k,
+        neType: k === 'server' ? 'SERVER' : k === 'switch' ? 'SWITCH' : k === 'router' ? 'ROUTER' : k === 'storage' ? 'STORAGE' : k === 'firewall' ? 'FIREWALL' : k === 'dwdm' ? 'DWDM' : k === 'link' ? 'LINK' : 'SERVICE'
+      })));
+      return allRows.sort((a, b) => Number(b.zombie) - Number(a.zombie));
+    }
+    return (store[cls] || (cls === 'gpu' ? [] : store.server) || []).map(r => ({
+      ...r,
+      cls,
+      neType: cls === 'server' ? 'SERVER' : cls === 'switch' ? 'SWITCH' : cls === 'router' ? 'ROUTER' : cls === 'storage' ? 'STORAGE' : cls === 'firewall' ? 'FIREWALL' : cls === 'dwdm' ? 'DWDM' : cls === 'link' ? 'LINK' : 'SERVICE'
+    }));
   }
-  return DEFAULT_DECOMM[cls] || DEFAULT_DECOMM.router || [];
+  return DEFAULT_DECOMM[cls as InactiveTab] || DEFAULT_DECOMM.router || [];
 };
 
 export const DECOMM_ZOMBIES = NE_CLASSES.flatMap(k => DEFAULT_DECOMM[k]).filter(r => r.zombie).length;

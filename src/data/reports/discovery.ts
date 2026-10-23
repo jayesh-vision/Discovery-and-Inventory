@@ -13,12 +13,12 @@ import {
   TRAJECTORY_PROJECTION_DAYS, TRAJECTORY_TARGET, TRUST_METRICS, DOMAIN_ORDER, domainRoute, type DomainKey
 } from '../discoveryOverview';
 import {
-  DISPOSITIONS, EXCEPTION_TONE, JOB_STATUS_TONE, RECONCILE_EXCEPTIONS, RECONCILE_JOBS, SLA_TONE,
+  EXCEPTION_TONE, JOB_STATUS_TONE, RECONCILE_EXCEPTIONS, RECONCILE_JOBS, SLA_TONE,
   exceptionsForRule, jobsForRule
 } from '../reconciliationOps';
 import { PRIORITY_TONE, RULES, RULE_LIFECYCLE, STATUS_NEXT, STATUS_TONE, ruleById } from '../rules';
 import {
-  type ReportBuilder, TONE_HEX, countBy, fmtNum, fmtUsd, lowerFirst, pct, r1, sum
+  type ReportBuilder, TONE_HEX, countBy, fmtNum, lowerFirst, pct, r1, sum
 } from './model';
 
 /* the domain tree's own order — IP/MPLS directly after Transport */
@@ -122,7 +122,7 @@ const backlog: ReportBuilder = () => {
 
   return {
     headline: { value: open, fmt: 'num', label: 'open discrepancies', tone: 'amber', trend: BACKLOG.trend, better: 'down' },
-    summary: `${open} discrepancies are open across ${DISCREPANCY_TYPES.length} types. The single largest is "${top.label}" (${top.count}, ${Math.round(pct(top.count, open))}% of the backlog, ${DOMAIN_LABEL[top.domain]}), all raised within the last hour by one sweep. ${older7} items are older than 7 days and ${older30} older than 30. The ${regionTotals[0].region} region holds the most (${regionTotals[0].n}, ${Math.round(pct(regionTotals[0].n, open))}%). Today ${detectedToday} new discrepancies were detected and ${resolvedToday} (${Math.round(pct(resolvedToday, detectedToday))}%) were resolved automatically by policy.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `"${top.label}" is ${Math.round(pct(top.count, open))}% of the backlog`, detail: `${top.count} ${DOMAIN_LABEL[top.domain]} items from one sweep. They are live wavelengths with no service record, so they are a billing question as well as an inventory one — approving RUL-TRN-002 lets reconciliation raise them as a batch.` },
       { tone: 'warn', title: `${older7} items older than 7 days, ${older30} older than 30`, detail: `Oldest type: ${oldestTypes.map(t => `${t.label} (${t.count}, ${DOMAIN_LABEL[t.domain]})`).join(', ') || 'none'}. Aged items are the ones an external audit would raise.` },
@@ -170,11 +170,7 @@ const backlog: ReportBuilder = () => {
       })),
       facet: 'domain', empty: 'No open discrepancies.'
     },
-    methodology: [
-      { term: 'Discrepancy', definition: 'A record that disagrees with the live network: an object that exists on one side only (existence), a value that differs (attribute), a changed neighbour or parent link (relationship), or a record not re-verified in time (freshness).' },
-      { term: 'Age band', definition: 'Time since the discrepancy was first detected and left open.' },
-      { term: 'Auto-resolved', definition: 'Closed by a reconciliation policy (accept network or accept record) without an engineer.' }
-    ]
+    methodology: []
   };
 };
 
@@ -190,7 +186,7 @@ const exceptions: ReportBuilder = () => {
 
   return {
     headline: { value: breached.length, fmt: 'num', label: `of ${ex.length} exceptions past SLA`, tone: 'red', better: 'down' },
-    summary: `${ex.length} reconciliation exceptions are open. ${breached.length} have breached SLA and ${atRisk.length} are at risk. Two of the breaches (${tl1.map(e => e.id).join(', ')}) are ${oldest} days old and share one root cause — the expired TL1 credential that suspended rule RUL-TRN-001 on the Transport ROADM ring. ${unowned.length} exceptions have no owner, including one already past SLA. Restoring the TL1 collector and assigning owners clears ${breached.length} of the ${breached.length + atRisk.length} breached or at-risk items.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${breached.length} past SLA — ${tl1.length} from one cause`, detail: `${tl1.map(e => `${e.id} ${e.subject}`).join('; ')}. RUL-TRN-001 has been suspended since 19-Nov-2025.` },
       { tone: 'warn', title: `${unowned.length} exceptions have no owner`, detail: unowned.map(e => `${e.id} ${e.subject} (${e.sla})`).join('; ') },
@@ -239,10 +235,7 @@ const exceptions: ReportBuilder = () => {
       })),
       facet: 'sla', empty: 'No open exceptions.'
     },
-    methodology: [
-      ...DISPOSITIONS.map(d => ({ term: `Disposition: ${d.n}`, definition: d.d })),
-      { term: 'SLA', definition: 'On track, at risk (inside the final quarter of its window) or breached (past its window).' }
-    ]
+    methodology: []
   };
 };
 
@@ -256,7 +249,7 @@ const coverage: ReportBuilder = () => {
 
   return {
     headline: { value: 99.44, fmt: 'pct2', label: 'discovery coverage', tone: 'emerald', trend: COVERAGE.trend, better: 'up' },
-    summary: `Discovery reached and classified ${funnel['Reached & classified']} of ${funnel['Assets in scope']} assets in scope (${COVERAGE.value}). ${funnel['Never verified']} assets have never been verified, ${funnel['Live with no record']} are live with no inventory record and ${funnel['Answered, unidentified']} answered but matched no fingerprint. ${failedTargets} targets are failing for four root causes, not ${failedTargets} separate incidents: the largest is ${ROOT_CAUSE_FAILURES[1].targets} RAN targets behind ${slowCollector.name}, whose p95 poll latency is ${slowCollector.p95}. The weakest adapter is ${weakAdapter.adapter} at ${weakAdapter.successPct}% success (credential warning). ${objects14} new objects were discovered in the last 14 days.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${failedTargets} failing targets, 4 root causes`, detail: ROOT_CAUSE_FAILURES.map(r => `${r.cause} (${r.targets}, ${DOMAIN_LABEL[r.domain]})`).join(' · ') },
       { tone: 'warn', title: `${weakAdapter.adapter} succeeds only ${weakAdapter.successPct}% of the time`, detail: `${weakAdapter.endpoints} ${weakAdapter.proto} endpoints; the credential warning is the same TL1 vault profile behind the Transport exceptions.` },
@@ -309,11 +302,7 @@ const coverage: ReportBuilder = () => {
       }),
       empty: 'No discovery jobs.'
     },
-    methodology: [
-      { term: 'Coverage funnel', definition: COVERAGE_FUNNEL.map(f => `${f.label}: ${f.value}${f.sub ? ` (${f.sub})` : ''}`).join(' · ') },
-      { term: 'Root cause grouping', definition: 'Failing targets are grouped by shared cause (credential, network path, fingerprint, subscription) so one fix is counted once.' },
-      { term: 'p95 latency', definition: 'Poll time within which 95% of a collector’s targets answered in the last sweep.' }
-    ]
+    methodology: []
   };
 };
 
@@ -327,7 +316,7 @@ const automation: ReportBuilder = () => {
 
   return {
     headline: { value: 60.7, fmt: 'pct', label: 'of discrepancies closed without an engineer', tone: 'emerald', better: 'up' },
-    summary: `${DOMAIN_TRUST_TOTAL.touchlessPct} of discrepancies now close by policy without an engineer, up from ${PLATFORM_OUTPUT.touchlessStart}%, and mean time to reconcile fell from ${PLATFORM_OUTPUT.mttrStart}h to ${PLATFORM_OUTPUT.mttrNow}h. In the last 30 days ${fmtNum(PLATFORM_OUTPUT.detected)} discrepancies were detected and ${fmtNum(PLATFORM_OUTPUT.closedNoEngineer)} closed automatically. The latest cycle in each domain scanned ${fmtNum(scanned)} records. Every domain improved over its last three cycles; ${DOMAIN_LABEL[laggard.domain]} still lags at ${laggard.touchlessPct}% touchless with ${laggard.queue} items to the manual queue per cycle.`,
+    summary: '',
     findings: [
       { tone: 'good', title: `Touchless up ${PLATFORM_OUTPUT.touchlessNow - PLATFORM_OUTPUT.touchlessStart} points`, detail: `${PLATFORM_OUTPUT.touchlessStart}% → ${PLATFORM_OUTPUT.touchlessNow}%; MTTR ${PLATFORM_OUTPUT.mttrStart}h → ${PLATFORM_OUTPUT.mttrNow}h.` },
       { tone: 'warn', title: `${DOMAIN_LABEL[laggard.domain]} automates only ${laggard.touchlessPct}%`, detail: `${laggard.drifted} drifted per cycle, ${laggard.autoResolved} auto-resolved, ${laggard.queue} to the queue. Its main rule (RUL-TRN-001) is suspended.` },
@@ -372,11 +361,7 @@ const automation: ReportBuilder = () => {
       rows: RECONCILE_CYCLE_ROWS.map(c => ({ id: `${c.domain}-${c.when}`, link: { key: 'reconcile' }, cells: { domain: c.domain, when: c.when, scanned: c.scanned, drifted: c.drifted, auto: c.autoResolved, queue: c.queue, touchless: c.touchlessPct } })),
       facet: 'domain', empty: 'No cycles recorded.'
     },
-    methodology: [
-      { term: 'Cycle', definition: 'One complete reconciliation pass over a domain’s in-scope records.' },
-      { term: 'Touchless rate', definition: 'Auto-resolved ÷ drifted for a cycle; the estate rate is the 30-day share of closures made without an engineer.' },
-      { term: 'Baseline', definition: `The ${PLATFORM_OUTPUT.touchlessStart}% touchless and ${PLATFORM_OUTPUT.mttrStart}h MTTR starting points are the programme baseline recorded on Insights.` }
-    ]
+    methodology: []
   };
 };
 
@@ -393,7 +378,7 @@ const rules: ReportBuilder = () => {
 
   return {
     headline: { value: live.length, fmt: 'num', label: `of ${RULES.length} rules live in production`, tone: 'emerald', better: 'up' },
-    summary: `${RULES.length} reconciliation rules are defined: ${live.length} are live, ${waiting.length} are waiting on a decision, ${suspended.length} is suspended and the rest are drafts or retired. The live rules' latest runs matched ${fmtNum(liveMatched)} records and raised ${fmtNum(liveEx)} exceptions (${exRate}%). The most consequential pending decision is ${waiting.find(r => r.id === 'RUL-TRN-002')?.id ?? waiting[0].id} — an AI-suggested, high-priority rule that would raise the 52 undocumented Transport wavelengths as one batch. The suspended rule, RUL-TRN-001, is the Transport ROADM match that stopped when its TL1 credential expired.`,
+    summary: '',
     findings: [
       { tone: 'warn', title: `${waiting.length} rules waiting on a decision`, detail: waiting.map(r => `${r.id} ${r.name} (${r.status}, next: ${nextPerson(r)})`).join('; ') },
       { tone: 'crit', title: `${suspended.map(r => r.id).join(', ')} suspended since 19-Nov-2025`, detail: 'Its last run raised 42 exceptions from 61 records before the TL1 credential was rejected.' },
@@ -447,11 +432,7 @@ const rules: ReportBuilder = () => {
       })),
       facet: 'status', empty: 'No rules defined.'
     },
-    methodology: [
-      { term: 'Lifecycle', definition: `${RULE_LIFECYCLE.join(' → ')}. Rules only run while Active or Executing.` },
-      { term: 'Next step with', definition: 'The person who owns the next transition out of the rule’s current status.' },
-      { term: 'Exception rate', definition: 'Exceptions ÷ (matched + exceptions) in the rule’s most recent execution.' }
-    ]
+    methodology: []
   };
 };
 
@@ -461,14 +442,14 @@ const cost: ReportBuilder = () => {
     const c = COST_OF_DRIFT.find(x => x.key === key)!;
     return { card: c, text: c.compute(Object.fromEntries(c.inputs.map(i => [i.key, i.value]))) };
   };
-  const optical = val('optical'), engineer = val('engineer'), dispatch = val('dispatch'), audit = val('audit');
+  const optical = val('optical'), engineer = val('engineer'), audit = val('audit');
   const opticalUsd = 42 * 3800 * 12;
   const engineerUsd = 705_000;
   const dispatchUsd = 34 * 340;
 
   return {
     headline: { value: opticalUsd, fmt: 'usd', label: 'a year of optical capacity live with no service record', tone: 'red', better: 'down' },
-    summary: `Inventory drift has a direct price. 42 wavelengths are live on the network with no service record, which at the assumed managed rate is ${optical.text} of unbilled capacity. Automation already reclaims ${engineer.text} of engineer time (${engineer.card.note}), and tracing 34 West Transport findings to a degraded collector avoided ${dispatch.text} in field visits. An external audit would raise ${audit.text} today (${audit.card.sub}). ${RISK_REGISTER.length} risks are on the register; the largest, unbilled optical capacity, is rising and closes with the same decision as the trust gap: ${lowerFirst(DECISION.ask)}.`,
+    summary: '',
     findings: [
       { tone: 'crit', title: `${optical.text} unbilled optical capacity`, detail: `${optical.card.sub}. Rising — see risk register.` },
       { tone: 'good', title: `${engineer.text} engineer time reclaimed`, detail: `${engineer.card.sub}; ${engineer.card.note}.` },
@@ -518,11 +499,7 @@ const cost: ReportBuilder = () => {
       rows: RISK_REGISTER.map(r => ({ id: r.risk, cells: { risk: r.risk, exposure: r.exposure, accountable: r.accountable, direction: r.direction === 'up' ? 'Rising' : r.direction === 'now' ? 'Action now' : 'Flat', closes: r.closesWith } })),
       empty: 'No open risks.'
     },
-    methodology: [
-      ...COST_OF_DRIFT.filter(c => c.inputs.length).map(c => ({ term: c.label, definition: `${c.sub}. Assumptions: ${c.inputs.map(i => `${i.label} ${i.key === 'minutes' ? '' : '$'}${fmtNum(i.value)} ${i.suffix}`.replace('$$', '$')).join('; ')}.` })),
-      { term: 'Audit exposure', definition: `${audit.card.sub}. ${audit.card.note}.` },
-      { term: 'Assumptions', definition: `Rates can be changed on the Insights executive view; this report uses the defaults (${fmtUsd(3800)} per wavelength-month, $65/h loaded engineer rate, $340 per field visit).` }
-    ]
+    methodology: []
   };
 };
 
