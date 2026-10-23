@@ -39,6 +39,7 @@ export interface RegionItem {
   states: StateItem[];
 }
 
+
 export interface NetworkElementRow {
   id: string;
   status: 'Verified' | 'Drifted' | 'Stale' | 'Missing' | 'Planned' | 'Not discovered';
