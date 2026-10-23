@@ -199,12 +199,12 @@ const DC_DECOMM_SEEDS: Record<InactiveTab, { model: string; oem: string; prefix:
 };
 
 const DC_COUNTS: Record<InactiveTab, number> = {
-  server: 28, gpu: 0, switch: 24, router: 14, storage: 16, firewall: 12, dwdm: 10, link: 16, service: 14,
+  server: 0, gpu: 0, switch: 24, router: 14, storage: 16, firewall: 12, dwdm: 10, link: 16, service: 14,
   enodeb: 0, gnodeb: 0, l2vpn: 0, l3vpn: 0
 };
 
 const buildDcDecomm = (geo: 'us' | 'in' = 'us'): Record<InactiveTab, ArchiveRow[]> => {
-  const res: Record<string, ArchiveRow[]> = { gpu: [] };
+  const res: Record<string, ArchiveRow[]> = { gpu: [], server: [] };
   const isUs = geo === 'us';
   const sites = isUs ? DC_SITES_US : DC_SITES_IN;
   const engineers = isUs ? DC_ENGINEERS_US : DC_ENGINEERS_IN;
@@ -222,7 +222,7 @@ const buildDcDecomm = (geo: 'us' | 'in' = 'us'): Record<InactiveTab, ArchiveRow[
       const year = 2023 + (i % 4);
       const mo = MONTHS[(i * 3 + 2) % 12];
       const day = String(1 + ((i * 7) % 27)).padStart(2, '0');
-      const isZombie = (k === 'server' && i === 3) || (k === 'switch' && i === 1);
+      const isZombie = (k === 'router' && i === 2) || (k === 'switch' && i === 1);
       list.push({
         name: `${loc}-${s.prefix}-OLD-${String(i + 1).padStart(2, '0')}`,
         ip: `${ipPrefix}.${30 + (i % 20)}.${10 + (i % 80)}`,
@@ -260,7 +260,7 @@ export const decommRows = (cls: InactiveTab | 'all', geo?: DcGeo | null): Archiv
     const targetGeo = geo || (typeof window !== 'undefined' ? (currentGeo() || 'us') : null) || (isDatacenterUser() ? 'us' : 'us');
     const store = targetGeo === 'in' ? DC_DECOMM_IN : DC_DECOMM_US;
     if (cls === 'all') {
-      const allCls: InactiveTab[] = ['server', 'switch', 'router', 'storage', 'firewall', 'dwdm', 'link', 'service'];
+      const allCls: InactiveTab[] = ['switch', 'router', 'storage', 'firewall', 'dwdm', 'link', 'service'];
       const allRows = allCls.flatMap(k => (store[k] || []).map(r => ({
         ...r,
         cls: k,
@@ -268,7 +268,7 @@ export const decommRows = (cls: InactiveTab | 'all', geo?: DcGeo | null): Archiv
       })));
       return allRows.sort((a, b) => Number(b.zombie) - Number(a.zombie));
     }
-    return (store[cls] || (cls === 'gpu' ? [] : store.server) || []).map(r => ({
+    return (store[cls] || (cls === 'gpu' || cls === 'server' ? [] : store.switch) || []).map(r => ({
       ...r,
       cls,
       neType: cls === 'server' ? 'SERVER' : cls === 'switch' ? 'SWITCH' : cls === 'router' ? 'ROUTER' : cls === 'storage' ? 'STORAGE' : cls === 'firewall' ? 'FIREWALL' : cls === 'dwdm' ? 'DWDM' : cls === 'link' ? 'LINK' : 'SERVICE'

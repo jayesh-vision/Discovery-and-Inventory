@@ -567,14 +567,13 @@ export function buildDcQuality(): ReportContent {
 export function buildDcArchive(): ReportContent {
   const geo = typeof window !== 'undefined' ? currentGeo() : null;
   const targetGeo = geo || 'us';
-  const rows = ['server', 'switch', 'router', 'storage', 'firewall', 'dwdm', 'link', 'service'].flatMap(k =>
+  const rows = ['switch', 'router', 'storage', 'firewall', 'dwdm', 'link', 'service'].flatMap(k =>
     decommRows(k as any, targetGeo).map(r => ({ ...r, cls: k }))
   );
 
   const zombies = rows.filter(r => r.zombie);
   const lastYear = rows.filter(r => r.on.endsWith('2026') || r.on.endsWith('2025')).length;
   const reasons: [string, number][] = [
-    ['Hardware refresh: upgraded to Sapphire Rapids', 28],
     ['Upgraded fabric to 400G Quantum-2 NDR', 24],
     ['End of 3-year hardware lease, returned to OEM', 16],
     ['Storage pool evacuated to NVMe-oF FlashArray//X', 16],
@@ -583,9 +582,9 @@ export function buildDcArchive(): ReportContent {
     ['Upgraded metro DCI transponder to 800G Waveserver 5', 10]
   ];
   const years = [
-    ['2023', 18],
-    ['2024', 26],
-    ['2025', 34],
+    ['2023', 14],
+    ['2024', 20],
+    ['2025', 46],
     ['2026', 26]
   ] as [string, number][];
 
@@ -601,7 +600,6 @@ export function buildDcArchive(): ReportContent {
       { title: 'Decommissioned', definition: 'Elements retired from data center service and archived.', value: rows.length, fmt: 'num', of: 'archived records', tone: 'slate',
         delta: { text: `${lastYear} in the last 12 months`, better: null },
         visual: { kind: 'segments', parts: [
-          { n: 'Compute', c: 28, hex: DC_CLASS_HEX.server },
           { n: 'Fabric Switches', c: 24, hex: DC_CLASS_HEX.switch },
           { n: 'Storage Arrays', c: 16, hex: DC_CLASS_HEX.storage },
           { n: 'Border Routers', c: 14, hex: DC_CLASS_HEX.router },
@@ -622,7 +620,6 @@ export function buildDcArchive(): ReportContent {
         rows: reasons.slice(0, 6).map(([r, c]) => ({ label: r, value: c as number, hex: cv('slate', 400) })) },
       { kind: 'bars', span: 2, title: 'Decommissioned by class', sub: 'Archive counts', fmt: 'num',
         rows: [
-          { label: 'Compute (CPU)', value: 28, hex: DC_CLASS_HEX.server, sub: '28 retired' },
           { label: 'Fabric Switches', value: 24, hex: DC_CLASS_HEX.switch, sub: '24 retired' },
           { label: 'Storage Arrays', value: 16, hex: DC_CLASS_HEX.storage, sub: '16 retired' },
           { label: 'Border Routers', value: 14, hex: DC_CLASS_HEX.router, sub: '14 retired' },

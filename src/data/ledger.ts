@@ -77,13 +77,12 @@ export const PHY_TABS: ClassMeta[] = SCOPED
 ];
 export type InactiveTab = NeClass | 'l2vpn' | 'l3vpn' | 'link' | 'service';
 export const INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
-  { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' }, { k: 'server', n: 'Server' },
+  { k: 'router', n: 'Router' }, { k: 'switch', n: 'Switch' },
   { k: 'dwdm', n: 'DWDM' }, { k: 'enodeb', n: 'eNodeB' }, { k: 'gnodeb', n: 'gNodeB' },
   { k: 'l2vpn', n: 'L2VPN' }, { k: 'l3vpn', n: 'L3VPN' }
 ];
 
 export const DC_INACTIVE_TABS: { k: InactiveTab; n: string }[] = [
-  { k: 'server', n: 'Compute (CPU)' },
   { k: 'switch', n: 'Fabric Switches' },
   { k: 'router', n: 'Border Routers' },
   { k: 'storage', n: 'Storage Arrays' },
