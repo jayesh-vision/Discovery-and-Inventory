@@ -22,7 +22,7 @@ const DEFAULT_EST = {
 
 /* the data center devices as ledger rows: class, stock state and whether discovery has seen them */
 const DC_CLASS: Record<DcRole, NeClass> = { Router: 'router', Switch: 'switch', Server: 'server', DWDM: 'dwdm', Firewall: 'firewall', Storage: 'storage', GPU: 'gpu' };
-const DC_STOCK: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed' };
+const DC_STOCK: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed', Faulty: 'faulty' };
 const DC_ROWS = SCOPED ? scope().devices : [];
 const dcGeo = typeof window !== 'undefined' ? currentGeo() : null;
 const sumList = SCOPED ? (dcGeo ? DC_SUM.filter(d => d.geo === dcGeo) : DC_SUM) : [];

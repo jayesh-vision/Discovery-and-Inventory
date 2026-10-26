@@ -57,7 +57,7 @@ export interface DcService {
 export interface DcCustomer { id: string; name: string; segment: string; city: string; state: string; plan: string; premium: boolean; am: string; geo: DcGeo; cur: 'INR' | 'USD'; revenue: number }
 export interface DcDevice {
   id: string; dcId: string; name: string; role: DcRole; layer: 'core' | 'spine' | 'leaf' | 'access'; vendor: string; model: string; os: string;
-  serial: string; ip: string; mac: string; rackId: string; u: number; uSize?: number; lifecycle: 'Ready' | 'Planned' | 'Maintenance' | 'Decommissioning';
+  serial: string; ip: string; mac: string; rackId: string; u: number; uSize?: number; lifecycle: 'Ready' | 'Planned' | 'Maintenance' | 'Decommissioning' | 'Faulty';
   discovery: 'verified' | 'drifted' | 'not-discovered'; ndReason?: string; drift?: { attr: string; record: string; observed: string }[];
   duplicateSerialOf?: string; collector?: string; isPe: boolean; tenantId?: string;
 }
@@ -84,10 +84,37 @@ export const DC_COUNTS = manifest.counts as {
 export const DC_IDS: ReadonlySet<string> = new Set((manifest as unknown as { datacenterIds: string[] }).datacenterIds);
 export const DC_SOURCE = manifest.source as { repo: string; commit: string; model: string };
 
+export const DC_FAULTY_IDS: ReadonlySet<string> = new Set([
+  'MH-DC-001-GPU-009', 'MH-DC-001-GPU-015', 'MH-DC-001-GPU-062', 'MH-DC-001-GPU-100', 'MH-DC-002-GPU-052', 'UP-DC-005-GPU-019',
+  'UP-DC-005-GPU-080', 'UP-DC-005-GPU-112', 'UP-DC-006-GPU-038', 'KA-DC-008-GPU-096', 'DL-DC-009-GPU-003', 'DL-DC-009-GPU-039',
+  'MH-DC-001-IB-SPINE-01', 'MH-DC-001-IB-SPINE-02', 'MH-DC-001-IB-SPINE-03', 'MH-DC-002-CPU-0001', 'MH-DC-002-CPU-0002', 'MH-DC-002-STG-001',
+  'VA-DC-001-GPU-032', 'VA-DC-002-GPU-003', 'VA-DC-002-GPU-039', 'VA-DC-002-GPU-061', 'VA-DC-003-GPU-013', 'VA-DC-004-GPU-019',
+  'VA-DC-004-GPU-034', 'VA-DC-004-GPU-036', 'TX-DC-005-GPU-009', 'TX-DC-006-GPU-022', 'TX-DC-006-GPU-081', 'TX-DC-007-GPU-028',
+  'VA-DC-001-IB-SPINE-01', 'VA-DC-001-IB-SPINE-02', 'VA-DC-001-IB-SPINE-03', 'VA-DC-002-CPU-0001', 'VA-DC-002-CPU-0002', 'VA-DC-002-STG-001'
+]);
+
+export const DC_MAINTENANCE_IDS: ReadonlySet<string> = new Set([
+  'MH-DC-001-GPU-035', 'MH-DC-002-GPU-002', 'MH-DC-002-GPU-009', 'MH-DC-002-GPU-064', 'MH-DC-003-GPU-043', 'MH-DC-003-GPU-060',
+  'MH-DC-004-GPU-007', 'MH-DC-004-GPU-017', 'UP-DC-005-GPU-071', 'UP-DC-005-GPU-076', 'UP-DC-005-GPU-082', 'UP-DC-006-GPU-002',
+  'UP-DC-006-GPU-029', 'UP-DC-006-GPU-032', 'MH-DC-001-IB-SPINE-04', 'MH-DC-001-IB-SPINE-05', 'MH-DC-001-ETH-SPINE-01', 'MH-DC-001-ETH-SPINE-02',
+  'MH-DC-002-CPU-0003', 'MH-DC-002-CPU-0004', 'MH-DC-002-CPU-0005', 'MH-DC-002-CPU-0006', 'MH-DC-002-STG-002', 'MH-DC-002-STG-003',
+  'VA-DC-001-GPU-017', 'VA-DC-001-GPU-046', 'VA-DC-001-GPU-091', 'VA-DC-002-GPU-040', 'VA-DC-004-GPU-033', 'VA-DC-004-GPU-039',
+  'TX-DC-005-GPU-065', 'TX-DC-005-GPU-110', 'TX-DC-006-GPU-024', 'TX-DC-007-GPU-050', 'CA-DC-008-GPU-012', 'CA-DC-008-GPU-018',
+  'CA-DC-008-GPU-048', 'CA-DC-008-GPU-063', 'VA-DC-001-IB-SPINE-04', 'VA-DC-001-IB-SPINE-06', 'VA-DC-001-ETH-SPINE-01', 'VA-DC-001-ETH-SPINE-02',
+  'VA-DC-002-CPU-0003', 'VA-DC-002-CPU-0004', 'VA-DC-002-CPU-0005', 'VA-DC-002-CPU-0006', 'VA-DC-002-STG-002', 'VA-DC-002-STG-003'
+]);
+
 /* ---------- lazy loading ---------- */
 const once = <T,>(load: () => Promise<T>) => { let p: Promise<T> | null = null; return () => (p ??= load()); };
 export const loadFacilities = once(() => import('./datacenters.json').then(m => m.default as unknown as DcFacility[]));
-export const loadDevices = once(() => import('./devices.json').then(m => m.default as unknown as DcDevice[]));
+export const loadDevices = once(() => import('./devices.json').then(m => {
+  const devs = m.default as unknown as DcDevice[];
+  return devs.map(d => {
+    if (DC_FAULTY_IDS.has(d.id)) return { ...d, lifecycle: 'Faulty' as const };
+    if (DC_MAINTENANCE_IDS.has(d.id)) return { ...d, lifecycle: 'Maintenance' as const };
+    return d;
+  });
+}));
 export const loadGpu = once(() => import('./gpu.json').then(m => m.default as unknown as DcGpuData));
 export const loadLinks = once(() => import('./links.json').then(m => m.default as unknown as DcLink[]));
 export const loadServices = once(() => import('./services.json').then(m => m.default as unknown as DcService[]));

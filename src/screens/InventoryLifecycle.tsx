@@ -60,6 +60,44 @@ export default function InventoryLifecycle() {
     return list;
   }, [dcs]);
 
+  // 1b. Exactly 40 Confirmed Removed records (Phase 3: drive sanitization complete & awaiting e-waste disposal)
+  const confirmedRemovedRows = useMemo<LifecycleAssetRow[]>(() => {
+    const dcIds = dcs.map(d => d.id);
+    const list: LifecycleAssetRow[] = [];
+    const models: [string, string, number][] = [
+      ['DGX-1 (8x V100 32GB)', 'NVIDIA', 8],
+      ['PowerEdge R740xd', 'Dell', 10],
+      ['ProLiant DL380 Gen10', 'HPE', 8],
+      ['Quantum QM8700 200G', 'Mellanox', 6],
+      ['FlashArray//M50', 'Pure Storage', 4],
+      ['FortiGate 3000D', 'Fortinet', 4]
+    ]; // 8 + 10 + 8 + 6 + 4 + 4 = 40
+    let idx = 1;
+    for (const [model, vendor, count] of models) {
+      for (let i = 0; i < count; i++) {
+        const dcId = dcIds[(idx - 1) % dcIds.length];
+        list.push({
+          id: `DECOM-SAN-${String(idx).padStart(3, '0')}`,
+          name: `RETIRED-SRV-${dcId}-${String(idx + 20).padStart(3, '0')}`,
+          model,
+          vendor,
+          bucket: 'Active',
+          dcId,
+          lifecycleStatus: 'Confirmed Removed / Sanitized',
+          riskType: 'Certified E-Waste / Salvage Disposition',
+          retirementDate: '2026-08-20',
+          actionRequired: 'NIST 800-88 crypto-wipe certified; awaiting metal salvage'
+        });
+        idx++;
+      }
+    }
+    return list;
+  }, [dcs]);
+
+  const decommissionPipelineRows = useMemo<LifecycleAssetRow[]>(() => {
+    return [...pendingRemovalRows, ...confirmedRemovedRows];
+  }, [pendingRemovalRows, confirmedRemovedRows]);
+
   // 2. Exactly 348 Active EOL/EOS records
   const eolActiveRows = useMemo<LifecycleAssetRow[]>(() => {
     const dcIds = dcs.map(d => d.id);
@@ -96,24 +134,28 @@ export default function InventoryLifecycle() {
 
   const activeMode = useMemo(() => {
     if (statusParam === 'decommission_pending_removal') return 'pending_removal';
+    if (statusParam === 'confirmed_removed') return 'confirmed_removed';
+    if (statusParam === 'decommissioned' || statusParam === 'decommission_pipeline') return 'decommission_pipeline';
     if (riskParam === 'eol_eos' && bucketParam === 'active') return 'eol_active';
-    return 'all';
+    return statusParam ? 'decommission_pipeline' : 'decommission_pipeline';
   }, [statusParam, riskParam, bucketParam]);
 
   const displayedRows = useMemo(() => {
     if (activeMode === 'pending_removal') return pendingRemovalRows;
+    if (activeMode === 'confirmed_removed') return confirmedRemovedRows;
+    if (activeMode === 'decommission_pipeline') return decommissionPipelineRows;
     if (activeMode === 'eol_active') return eolActiveRows;
-    return [...pendingRemovalRows, ...eolActiveRows];
-  }, [activeMode, pendingRemovalRows, eolActiveRows]);
+    return decommissionPipelineRows;
+  }, [activeMode, pendingRemovalRows, confirmedRemovedRows, decommissionPipelineRows, eolActiveRows]);
 
   return (
     <div className="page">
 
       <StatStrip cells={[
-        { k: 'Pending removal (BMC live)', v: '8', s: 'phase 2: awaiting un-racking', t: 'amber' },
-        { k: 'Active EOL exposure', v: '348', s: 'vendor support expiration', t: 'red' },
         { k: 'Marked decommissioned', v: '48', s: 'total decommission pipeline', t: 'slate' },
+        { k: 'Pending removal (BMC live)', v: '8', s: 'phase 2: awaiting un-racking', t: 'amber' },
         { k: 'Confirmed removed', v: '40', s: 'phase 3: retired & sanitized', t: 'emerald' },
+        { k: 'Active EOL exposure', v: '348', s: 'vendor support expiration', t: 'red' },
         { k: 'Total EOL portfolio', v: '456', s: 'active, passive, logical & virtual', t: 'purple' },
         { k: 'Refresh lead time', v: '14 wk', s: 'vendor OEM delivery window', t: 'cyan' }
       ]} />
@@ -121,13 +163,19 @@ export default function InventoryLifecycle() {
       <Card>
         <TabBar
           tabs={[
+            { k: 'decommission_pipeline', n: 'Decommission Pipeline', count: 48, title: '48 total retired assets in disposal & e-waste pipeline' },
             { k: 'pending_removal', n: 'Pending Removal (BMC Live)', count: 8, title: '8 nodes awaiting physical extraction' },
+            { k: 'confirmed_removed', n: 'Confirmed Removed (Sanitized)', count: 40, title: '40 nodes with verified drive sanitization' },
             { k: 'eol_active', n: 'Active EOL Exposure', count: 348, title: '348 active nodes with EOL exposure' }
           ]}
-          active={activeMode === 'eol_active' ? 'eol_active' : 'pending_removal'}
+          active={activeMode}
           onChange={(k) => {
             if (k === 'pending_removal') {
               nav(withSolution('/inventory/lifecycle?status=decommission_pending_removal'));
+            } else if (k === 'confirmed_removed') {
+              nav(withSolution('/inventory/lifecycle?status=confirmed_removed'));
+            } else if (k === 'decommission_pipeline') {
+              nav(withSolution('/inventory/lifecycle?status=decommissioned'));
             } else {
               nav(withSolution('/inventory/lifecycle?lifecycle_risk=eol_eos&bucket=active'));
             }

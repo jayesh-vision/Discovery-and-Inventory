@@ -1326,69 +1326,145 @@ export default function InventoryInsights() {
           <div className="ii-card">
             <div className="ii-card-head"><div className="ii-card-title">Lifecycle</div></div>
             <div className="ii-lifecycle-grid">
-              {LIFECYCLE_DYNAMIC[dayRange].states.map(l => (
-                <div
-                  key={l.name}
-                  className={`ii-lifecycle-card ${hoveredLifecycle === l.name ? 'is-active' : ''}`}
-                  onMouseEnter={(e) => {
-                    setHoveredLifecycle(l.name);
-                    showTip({
-                      title: `${l.name} State`,
-                      dotColor: l.color,
-                      badge: l.count,
-                      rows: [
-                        { label: 'Volume', value: `${l.count} assets` },
-                        { label: 'Lifecycle phase', value: l.name }
-                      ],
-                      note: l.name === 'Faulty'
-                        ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
-                        : l.name === 'Planned'
-                        ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
-                        : 'Tracked continuously across active discovery and manual work orders.'
-                    }, e);
-                  }}
-                  onMouseMove={moveTip}
-                  onMouseLeave={() => {
-                    setHoveredLifecycle(null);
-                    hideTip();
-                  }}
-                >
-                  <div className="ii-prog-track" style={{ background: l.color }} />
-                  <div className="ii-mono ii-lifecycle-count">{l.count}</div>
-                  <div className="ii-lifecycle-name" title={l.name}>{l.name}</div>
-                </div>
-              ))}
+              {LIFECYCLE_DYNAMIC[dayRange].states.map(l => {
+                const isMatch = hoveredLifecycle === l.name
+                  || (l.name === 'Maintenance' && hoveredLifecycle === 'Under maintenance')
+                  || (l.name === 'Under maintenance' && hoveredLifecycle === 'Maintenance')
+                  || (l.name === 'Decommissioned' && hoveredLifecycle === 'Decommissioning')
+                  || (l.name === 'Decommissioning' && hoveredLifecycle === 'Decommissioned');
+                return (
+                  <div
+                    key={l.name}
+                    className={`ii-lifecycle-card ${isMatch ? 'is-active' : ''}`}
+                    onClick={() => {
+                      if (l.name === 'In service') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=deployed&lifecycle=Ready&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=deployed&from=Inventory%20insights'));
+                      } else if (l.name === 'Planned') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=planned&lifecycle=Planned&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=planned&from=Inventory%20insights'));
+                      } else if (l.name === 'Faulty') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=faulty&lifecycle=Faulty&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=faulty&from=Inventory%20insights'));
+                      } else if (l.name === 'Maintenance' || l.name === 'Under maintenance') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=faulty&lifecycle=Maintenance&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=faulty&from=Inventory%20insights'));
+                      } else if (l.name === 'Decommissioned' || l.name === 'Decommissioning') {
+                        navigate(isDc
+                          ? withSolution('/inventory/lifecycle?status=decommissioned&from=Inventory%20insights')
+                          : withSolution('/inventory/inactive?from=Inventory%20insights'));
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredLifecycle(l.name);
+                      showTip({
+                        title: `${l.name} State`,
+                        dotColor: l.color,
+                        badge: l.count,
+                        rows: [
+                          { label: 'Volume', value: `${l.count} assets` },
+                          { label: 'Lifecycle phase', value: l.name }
+                        ],
+                        note: l.name === 'Faulty'
+                          ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
+                          : l.name === 'Planned'
+                          ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
+                          : (l.name === 'Maintenance' || l.name === 'Under maintenance')
+                          ? (isDc
+                            ? 'Scheduled firmware patching, optical transceiver swaps, and preventative maintenance windows.'
+                            : 'Elements undergoing scheduled maintenance and vendor service windows.')
+                          : (l.name === 'Decommissioned' || l.name === 'Decommissioning')
+                          ? (isDc
+                            ? 'Hardware retired from production; undergoing cryptographic drive sanitization and certified e-waste disposition.'
+                            : 'Assets removed from service; archived records awaiting physical disposal.')
+                          : 'Tracked continuously across active discovery and manual work orders.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={() => {
+                      setHoveredLifecycle(null);
+                      hideTip();
+                    }}
+                  >
+                    <div className="ii-prog-track" style={{ background: l.color }} />
+                    <div className="ii-mono ii-lifecycle-count">{l.count}</div>
+                    <div className="ii-lifecycle-name" title={l.name}>{l.name}</div>
+                  </div>
+                );
+              })}
             </div>
             <div className="ii-stack">
-              {LIFECYCLE_DYNAMIC[dayRange].bars.map(l => (
-                <div
-                  key={l.name}
-                  className={`ii-lifecycle-seg ${hoveredLifecycle === l.name ? 'is-active' : ''}`}
-                  style={{ width: l.w, background: l.color }}
-                  onMouseEnter={(e) => {
-                    setHoveredLifecycle(l.name);
-                    showTip({
-                      title: `${l.name} State`,
-                      dotColor: l.color,
-                      badge: l.pct,
-                      rows: [
-                        { label: 'Asset count', value: l.count },
-                        { label: 'Fleet proportion', value: l.pct }
-                      ],
-                      note: l.name === 'Faulty'
-                        ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
-                        : l.name === 'Planned'
-                        ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
-                        : 'Network element status synchronized via EMS / NMS telemetry.'
-                    }, e);
-                  }}
-                  onMouseMove={moveTip}
-                  onMouseLeave={() => {
-                    setHoveredLifecycle(null);
-                    hideTip();
-                  }}
-                />
-              ))}
+              {LIFECYCLE_DYNAMIC[dayRange].bars.map(l => {
+                const isMatch = hoveredLifecycle === l.name
+                  || (l.name === 'Under maintenance' && hoveredLifecycle === 'Maintenance')
+                  || (l.name === 'Maintenance' && hoveredLifecycle === 'Under maintenance')
+                  || (l.name === 'Decommissioning' && hoveredLifecycle === 'Decommissioned')
+                  || (l.name === 'Decommissioned' && hoveredLifecycle === 'Decommissioning');
+                return (
+                  <div
+                    key={l.name}
+                    className={`ii-lifecycle-seg ${isMatch ? 'is-active' : ''}`}
+                    style={{ width: l.w, background: l.color }}
+                    onClick={() => {
+                      if (l.name === 'In service') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=deployed&lifecycle=Ready&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=deployed&from=Inventory%20insights'));
+                      } else if (l.name === 'Planned') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=planned&lifecycle=Planned&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=planned&from=Inventory%20insights'));
+                      } else if (l.name === 'Faulty') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=faulty&lifecycle=Faulty&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=faulty&from=Inventory%20insights'));
+                      } else if (l.name === 'Maintenance' || l.name === 'Under maintenance') {
+                        navigate(isDc
+                          ? withSolution('/inventory/resources/physical?type=active&stock=faulty&lifecycle=Maintenance&from=Inventory%20insights')
+                          : withSolution('/inventory/physical?stock=faulty&from=Inventory%20insights'));
+                      } else if (l.name === 'Decommissioned' || l.name === 'Decommissioning') {
+                        navigate(isDc
+                          ? withSolution('/inventory/lifecycle?status=decommissioned&from=Inventory%20insights')
+                          : withSolution('/inventory/inactive?from=Inventory%20insights'));
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredLifecycle(l.name);
+                      showTip({
+                        title: `${l.name} State`,
+                        dotColor: l.color,
+                        badge: l.pct,
+                        rows: [
+                          { label: 'Asset count', value: l.count },
+                          { label: 'Fleet proportion', value: l.pct }
+                        ],
+                        note: l.name === 'Faulty'
+                          ? LIFECYCLE_DYNAMIC[dayRange].faultsNote
+                          : l.name === 'Planned'
+                          ? LIFECYCLE_DYNAMIC[dayRange].leadTimeNote
+                          : (l.name === 'Maintenance' || l.name === 'Under maintenance')
+                          ? (isDc
+                            ? 'Scheduled firmware patching, optical transceiver swaps, and preventative maintenance windows.'
+                            : 'Elements undergoing scheduled maintenance and vendor service windows.')
+                          : (l.name === 'Decommissioned' || l.name === 'Decommissioning')
+                          ? (isDc
+                            ? 'Hardware retired from production; undergoing cryptographic drive sanitization and certified e-waste disposition.'
+                            : 'Assets removed from service; archived records awaiting physical disposal.')
+                          : 'Network element status synchronized via EMS / NMS telemetry.'
+                      }, e);
+                    }}
+                    onMouseMove={moveTip}
+                    onMouseLeave={() => {
+                      setHoveredLifecycle(null);
+                      hideTip();
+                    }}
+                  />
+                );
+              })}
             </div>
             <div className="ii-stat-list" style={{ marginTop: 'auto' }}>
               <p className="ii-foot" style={{ fontSize: 12 }}>{LIFECYCLE_DYNAMIC[dayRange].faultsNote}</p>
@@ -1684,8 +1760,10 @@ export default function InventoryInsights() {
             </div>
             <div className="ii-pipeline">
               <div
-                className="ii-pipeline-step ii-pipeline-step--staged"
-                title="Phase 1: Staged for removal — service deprovisioned; work orders dispatched for physical decoupling."
+                className={`ii-pipeline-step ii-pipeline-step--staged ${isDc ? 'is-clickable' : ''}`}
+                style={{ cursor: isDc ? 'pointer' : undefined }}
+                onClick={isDc ? () => navigate(withSolution('/inventory/lifecycle?status=decommissioned&from=Inventory%20insights')) : undefined}
+                title={isDc ? `Drill down to all decommission pipeline assets (${DECOM_DYNAMIC[dayRange].marked})` : 'Phase 1: Staged for removal — service deprovisioned; work orders dispatched for physical decoupling.'}
               >
                 <span className="ii-pipeline-badge">Staged</span>
                 <div className="ii-mono ii-pipeline-value">{DECOM_DYNAMIC[dayRange].marked}</div>
@@ -1712,8 +1790,10 @@ export default function InventoryInsights() {
                 </svg>
               </div>
               <div
-                className="ii-pipeline-step ii-pipeline-step--success"
-                title="Phase 3: Fully retired — verified absent in network and decommission records archived."
+                className={`ii-pipeline-step ii-pipeline-step--success ${isDc ? 'is-clickable' : ''}`}
+                style={{ cursor: isDc ? 'pointer' : undefined }}
+                onClick={isDc ? () => navigate(withSolution('/inventory/lifecycle?status=confirmed_removed&from=Inventory%20insights')) : undefined}
+                title={isDc ? 'Drill down to confirmed removed & sanitized assets (40)' : 'Phase 3: Fully retired — verified absent in network and decommission records archived.'}
               >
                 <span className="ii-pipeline-badge ii-pipeline-badge--success">Resolved</span>
                 <div className="ii-mono ii-pipeline-value ii-pipeline-value--success">{DECOM_DYNAMIC[dayRange].confirmed}</div>

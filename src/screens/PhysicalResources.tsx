@@ -46,7 +46,7 @@ const NEW_NAME: Partial<Record<PhyTab, string>> = {
 const isNe = (c: PhyTab): c is NeClass => (NE_CLASSES as string[]).includes(c);
 const isDcTab = (c: PhyTab): c is DcTab => c in DC_ROLE_BY_TAB;
 
-const STOCK_OF: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed' };
+const STOCK_OF: Record<DcDevice['lifecycle'], StockState> = { Ready: 'deployed', Planned: 'planned', Maintenance: 'faulty', Decommissioning: 'deployed', Faulty: 'faulty' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const loadNoFacilities = () => Promise.resolve<DcFacility[] | null>(null);
 const loadNoDevices = () => Promise.resolve<DcDevice[] | null>(null);
@@ -141,6 +141,7 @@ export default function PhysicalResources() {
   };
   const [openName, setOpenName] = useState<string | null>(null);
   const stockParam = sp.get('stock');
+  const lifecycleParam = sp.get('lifecycle')?.toLowerCase();
   const stock = useMemo<Set<StockState>>(() => {
     const req = (stockParam ? stockParam.split(',') : []).filter(isActive);
     return new Set(req.length ? req : ACTIVE_STATES);
@@ -169,9 +170,21 @@ export default function PhysicalResources() {
     if (cls !== 'all' && !isDcTab(cls)) return [];
     const role = cls === 'all' ? null : DC_ROLE_BY_TAB[cls as DcTab];
     const fac = new Map(facilities.map(f => [f.id, f]));
-    return devices.filter(d => (!role || d.role === role) && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId)) && stock.has(STOCK_OF[d.lifecycle]))
-      .map(d => dcRow(d, fac.get(d.dcId)!));
-  }, [scoped, devices, facilities, cls, dcId, validFacIds, stock]);
+    return devices.filter(d => {
+      if (role && d.role !== role) return false;
+      if (dcId && d.dcId !== dcId) return false;
+      if (validFacIds && !validFacIds.has(d.dcId)) return false;
+      if (lifecycleParam) {
+        if (lifecycleParam === 'faulty') return d.lifecycle === 'Faulty';
+        if (lifecycleParam === 'maintenance' || lifecycleParam === 'under maintenance') return d.lifecycle === 'Maintenance';
+        if (lifecycleParam === 'ready' || lifecycleParam === 'deployed' || lifecycleParam === 'in service') return d.lifecycle === 'Ready';
+        if (lifecycleParam === 'planned') return d.lifecycle === 'Planned';
+        return d.lifecycle.toLowerCase() === lifecycleParam;
+      }
+      if (stockParam === 'maintenance') return d.lifecycle === 'Maintenance';
+      return stock.has(STOCK_OF[d.lifecycle]);
+    }).map(d => dcRow(d, fac.get(d.dcId)!));
+  }, [scoped, devices, facilities, cls, dcId, validFacIds, stock, lifecycleParam, stockParam]);
   const dcRows = dcAll;
 
   const rows = useMemo(() => [...netRows, ...dcRows], [netRows, dcRows]);
@@ -273,17 +286,28 @@ export default function PhysicalResources() {
     const tabName = cls === 'all' ? 'Active Physical Element' : (tabMeta(cls)?.n ?? NEW_NAME[cls] ?? cap(cls));
     if (scoped) {
       if (!devices || !facilities) return null;
-      const totalInScope = dcAll.length;
-      const ready = dcAll.filter(d => d.stock === 'deployed').length;
-      const planned = dcAll.filter(d => d.stock === 'planned').length;
-      const maint = dcAll.filter(d => d.stock === 'faulty').length;
-      const dcsCount = new Set(dcAll.map(d => d.loc)).size;
+      const role = cls === 'all' ? null : DC_ROLE_BY_TAB[cls as DcTab];
+      const scopedFleet = devices.filter(d => (!role || d.role === role) && (!dcId || d.dcId === dcId) && (!validFacIds || validFacIds.has(d.dcId)));
+      const fleetTotal = scopedFleet.length;
+      const ready = scopedFleet.filter(d => d.lifecycle === 'Ready').length;
+      const planned = scopedFleet.filter(d => d.lifecycle === 'Planned').length;
+      const faulty = scopedFleet.filter(d => d.lifecycle === 'Faulty').length;
+      const maint = scopedFleet.filter(d => d.lifecycle === 'Maintenance').length;
+      const filteredCount = dcAll.length;
+      const dcsCount = new Set(scopedFleet.map(d => d.dcId)).size;
+      const isFiltered = !!(lifecycleParam || stockParam || dcId);
+
       return [
-        { k: `${tabName}s`, v: fmt(totalInScope), s: `${fmt(totalInScope)} across ${dcsCount || totalDcs} data centers`, t: 'cyan' as const },
-        { k: 'Ready / Active', v: fmt(ready), s: `${fmt(ready)} in service`, t: 'emerald' as const },
+        {
+          k: isFiltered ? 'Filtered Elements' : `${tabName}s`,
+          v: fmt(isFiltered ? filteredCount : fleetTotal),
+          s: isFiltered ? `${fmt(filteredCount)} matching of ${fmt(fleetTotal)} total` : `${fmt(fleetTotal)} across ${dcsCount || totalDcs} data centers`,
+          t: 'cyan' as const
+        },
+        { k: 'In service', v: fmt(ready), s: `${fmt(ready)} in service`, t: 'emerald' as const },
         { k: 'Planned', v: fmt(planned), s: `${fmt(planned)} awaiting deployment`, t: 'sky' as const },
+        { k: 'Faulty', v: fmt(faulty), s: faulty ? `${fmt(faulty)} require RMA` : '0 faulty units', t: faulty > 0 ? 'red' as const : 'slate' as const },
         { k: 'Maintenance', v: fmt(maint), s: maint ? `${fmt(maint)} under repair` : '0 under maintenance', t: maint > 0 ? 'amber' as const : 'slate' as const },
-        { k: 'Data centers', v: fmt(dcsCount || totalDcs), s: `${activeGeo ? activeGeo.toUpperCase() : 'All'} regions in scope`, t: 'purple' as const },
       ];
     }
     const meta = tabMeta(cls);
@@ -299,7 +323,7 @@ export default function PhysicalResources() {
       { k: 'Planned', v: fmt(pln), s: 'Pending rollout', t: 'purple' as const },
       { k: 'Faulty', v: fmt(flt), s: flt ? `${fmt(flt)} require RMA` : 'No faulty units', t: flt > 0 ? 'red' as const : 'slate' as const },
     ];
-  }, [cls, scoped, dcAll, totalDcs, activeGeo, stock, devices, facilities]);
+  }, [cls, scoped, dcAll, totalDcs, activeGeo, stock, devices, facilities, dcId, validFacIds, lifecycleParam, stockParam]);
 
   const isPassive = sp.get('type') === 'passive';
   const [passiveTab, setPassiveTab] = useState<string>('all');
@@ -436,7 +460,7 @@ export default function PhysicalResources() {
           key={cls}
           columns={stdCols}
           rows={rows} total={total} rowKey={r => r.name}
-          resetKey={`${cls}|${[...stock].sort().join(',')}|${oem ?? ''}|${model ?? ''}|${scoped}|${dcId}`}
+          resetKey={`${cls}|${[...stock].sort().join(',')}|${lifecycleParam ?? ''}|${oem ?? ''}|${model ?? ''}|${scoped}|${dcId}`}
           searchPlaceholder="Name, IP address, serial" filters={FILTERS} extra={sourceControls}
           emptyText={dcWait ? 'Loading data center records…' : undefined}
           onRowClick={cls === 'gnodeb' ? undefined : rowClick}
@@ -448,8 +472,11 @@ export default function PhysicalResources() {
           renderRow={(r, i) => {
             const [tot, used] = !isNe(cls) || r.dc ? [0, 0] : portsOf(cls, i);
             const [label, tone] = RSTATE[r.st];
+            const dcLifecycle = r.dc?.dev?.lifecycle;
+            const chipTone = dcLifecycle === 'Faulty' ? 'error' : dcLifecycle === 'Maintenance' ? 'warning' : dcLifecycle === 'Planned' ? 'info' : tone;
+            const chipLabel = (dcLifecycle && dcLifecycle !== 'Ready') ? dcLifecycle : label;
             return [
-              <Chip tone={tone}>{label}</Chip>,
+              <Chip tone={chipTone}>{chipLabel}</Chip>,
               <>{cls === 'router' && !r.dc
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
                     onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)}>{r.name}</button>
