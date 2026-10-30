@@ -87,7 +87,8 @@ export default function Topbar() {
      do this: detail screens already carry their own from/drill context. */
   let from = sp.get('from');
   const isSiteScreen = s.key === 'site' || s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
-  const isSiteOrNode = isSiteScreen || s.key === 'node' || s.key === 'resource';
+  const isPassiveDetail = ['fiber', 'odf', 'rack', 'power', 'splice', 'cord', 'duct'].includes(s.key);
+  const isSiteOrNode = isSiteScreen || s.key === 'node' || s.key === 'resource' || isPassiveDetail;
   if (!from && origin && !s.root && (isLanding(s) || s.key === 'dcim' || isSiteOrNode || !drill)) {
     const originSp = new URLSearchParams(origin.search);
     const originFrom = originSp.get('from');
@@ -98,6 +99,8 @@ export default function Topbar() {
       if (originScreen && originScreen.module === s.module && originScreen.key !== s.key) {
         if (originScreen.key === 'inventoryinsights' || originScreen.key === 'home') {
           from = 'Inventory insights' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
+        } else if (originScreen.key === 'passive') {
+          from = 'Passive inventory' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
         } else {
           from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
         }
@@ -129,6 +132,8 @@ export default function Topbar() {
       x.crumb.split(' · ').pop()?.toLowerCase() === p ||
       (norm === 'inventoryinsights' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
       (norm === 'inventory' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
+      (norm === 'passiveinventory' && x.key === 'passive') ||
+      (p === 'passive inventory' && x.key === 'passive') ||
       x.path.toLowerCase() === prefix.toLowerCase();
     /* two modules can own a screen with the same crumb (both have "Reports");
        the one in the reader's own module wins */
@@ -140,6 +145,11 @@ export default function Topbar() {
     const norm = p.replace(/[\s\-_]+/g, '');
     if (s.module === 'Inventory' && (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights' || p === 'resources')) {
       return '/inventory/insights';
+    }
+    if (s.module === 'Inventory' && (norm === 'passiveinventory' || p === 'passive inventory' || norm === 'passiveinfrastructure' || p === 'passive infrastructure' || p === 'passive')) {
+      const hopSp = hopQuery ? new URLSearchParams(hopQuery) : null;
+      const tab = hopSp?.get('tab');
+      return tab ? `/inventory/passive?tab=${encodeURIComponent(tab)}` : '/inventory/passive';
     }
     if (s.module === 'Discovery and reconciliation' && (norm === 'insights' || p === 'discovery insights' || norm === 'discoveryinsights')) {
       return '/discovery/insights';
@@ -264,7 +274,13 @@ export default function Topbar() {
           }
         }
       }
-      const isInventoryInsights = s.module === 'Inventory' && (originScreen?.key === 'inventoryinsights' || originScreen?.key === 'home' || hop.crumb.toLowerCase().includes('inventory'));
+      const isInventoryInsights = s.module === 'Inventory' && (
+        originScreen?.key === 'inventoryinsights' ||
+        originScreen?.key === 'home' ||
+        hop.crumb.toLowerCase() === 'inventory insights' ||
+        hop.crumb.toLowerCase() === 'inventory' ||
+        hop.crumb.toLowerCase().trim() === 'insights'
+      );
       const isDiscoveryInsights = s.module === 'Discovery and reconciliation' && (originScreen?.key === 'insights' || hop.crumb.toLowerCase() === 'insights');
       const label = isInventoryInsights
         ? 'Inventory insights'
@@ -301,7 +317,7 @@ export default function Topbar() {
   } else {
     const chain = ownParts.slice(0, -1);
     segs = chain.map((label, i) => {
-      const displayLabel = label === 'Resources' ? 'Inventory insights' : label;
+      const displayLabel = label === 'Resources' ? 'Inventory insights' : label === 'Passive Infrastructure' ? 'Passive inventory' : label;
       const prefix = chain.slice(0, i + 1).join(' · ');
       const base = targetFor(prefix);
       let to = base;
@@ -781,6 +797,56 @@ export default function Topbar() {
         ];
         finalLeafLabel = dcName;
       }
+    }
+  }
+
+  if (s.key === 'passive') {
+    if (drill) {
+      segs = [{ label: 'Passive inventory', to: '/inventory/passive' }];
+      finalLeafLabel = drill;
+    } else if (from) {
+      const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure') : [];
+      if (originSegs.length > 0) {
+        segs = originSegs;
+      }
+      finalLeafLabel = 'Passive inventory';
+    }
+  }
+
+  const PASSIVE_CATEGORIES: Record<string, { tab: string; label: string }> = {
+    fiber: { tab: 'fiber', label: 'Fiber spans' },
+    odf: { tab: 'odf', label: 'ODF' },
+    rack: { tab: 'rack', label: 'Racks' },
+    power: { tab: 'power', label: 'Power plant' },
+    splice: { tab: 'splice', label: 'Splice closures' },
+    cord: { tab: 'cord', label: 'Patch cords' },
+    duct: { tab: 'duct', label: 'Ducts' }
+  };
+
+  if (s.key in PASSIVE_CATEGORIES) {
+    const cat = PASSIVE_CATEGORIES[s.key];
+    const fromSp = from && from.includes('?') ? new URLSearchParams(from.split('?')[1]) : null;
+    const activeTab = sp.get('tab') || fromSp?.get('tab') || cat.tab;
+    const catLabel = cat.label;
+    const isFromPassive = !from
+      || from.toLowerCase().includes('passive')
+      || (origin && origin.pathname.startsWith('/inventory/passive'))
+      || (!from.toLowerCase().includes('location') && !from.toLowerCase().includes('site') && !from.toLowerCase().includes('city'));
+
+    if (isFromPassive) {
+      segs = [
+        { label: 'Passive inventory', to: '/inventory/passive' },
+        { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` }
+      ];
+      finalLeafLabel = drill || params.id || params.name || 'Element';
+    } else {
+      const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Element' && x.label !== catLabel) : [];
+      segs = [
+        ...originSegs,
+        { label: 'Passive inventory', to: '/inventory/passive' },
+        { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` }
+      ];
+      finalLeafLabel = drill || params.id || params.name || 'Element';
     }
   }
 

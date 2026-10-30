@@ -166,6 +166,10 @@ function drillTo(view, label, q) {
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
     ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
     : null;
+  const passTab = (typeof PASS_TAB !== 'undefined' && PASS_TAB) || (['fiber', 'odf', 'rack', 'power', 'splice', 'cord', 'duct'].includes(view) ? view : null);
+  const passiveDrillFrom = (CURRENT === 'passive')
+    ? `Passive inventory${passTab ? `?tab=${encodeURIComponent(passTab)}` : ''}`
+    : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
      no richer curDrill/inherited state above) needs no "from" at all — the
      breadcrumb's own single-crumb-chain logic already renders "Location >
@@ -180,6 +184,7 @@ function drillTo(view, label, q) {
     || nodeDrillFrom
     || siteDrillFrom
     || phyDrillFrom
+    || passiveDrillFrom
     || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
     || inheritedFrom || (view !== CURRENT ? crumbName : null);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };

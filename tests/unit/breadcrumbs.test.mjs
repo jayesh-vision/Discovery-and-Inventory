@@ -28,5 +28,22 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
     assert.equal(s.key, tab.key, `Screen key for ${tab.path} should be ${tab.key}`);
   }
 
+  // Verify route matching for passive inventory element routes
+  const passiveRoutes = [
+    { key: 'fiber', path: '/inventory/passive/fiber/FS-BGLK-277-INDR-275' },
+    { key: 'odf', path: '/inventory/passive/odf/BGLK-277-ODF-01' },
+    { key: 'rack', path: '/inventory/passive/rack/BGLK-277-RACK-A' },
+    { key: 'power', path: '/inventory/passive/power/BGLK-277-DG-01' },
+    { key: 'splice', path: '/inventory/passive/splice/SC-BGLK-277-011' },
+    { key: 'cord', path: '/inventory/passive/cord/PC-BGLK-277-101' },
+    { key: 'duct', path: '/inventory/passive/duct/DT-BGLK-277-CHE-118' }
+  ];
+
+  for (const r of passiveRoutes) {
+    const s = Topbar.screenFor(r.path);
+    assert.ok(s, `screenFor should find screen for ${r.path}`);
+    assert.equal(s.key, r.key, `Screen key for ${r.path} should be ${r.key}`);
+  }
+
   await closeLoader();
 });
