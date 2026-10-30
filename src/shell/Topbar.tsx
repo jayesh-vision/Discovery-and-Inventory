@@ -41,11 +41,17 @@ function originMap(): Record<string, Origin | null> {
 }
 function originFor(loc: { key: string; pathname: string; search: string; state: unknown }): Origin | null {
   const map = originMap();
+  const isReset = Boolean((loc.state as { reset?: boolean } | null)?.reset);
+  if (isReset) {
+    delete map[loc.key];
+    navTrail.prev = null;
+    try { sessionStorage.setItem(ORIGIN_KEY, JSON.stringify(map)); } catch {}
+    return null;
+  }
   if (loc.key in map) { navTrail.prev = { key: loc.key, pathname: loc.pathname, search: loc.search }; return map[loc.key]; }
   const p = navTrail.prev;
   let o: Origin | null = null;
-  if ((loc.state as { reset?: boolean } | null)?.reset) o = null;
-  else if (p && p.pathname !== loc.pathname) o = { pathname: p.pathname, search: p.search };
+  if (p && p.pathname !== loc.pathname) o = { pathname: p.pathname, search: p.search };
   else if (p) o = map[p.key] ?? null;
   map[loc.key] = o;
   navTrail.prev = { key: loc.key, pathname: loc.pathname, search: loc.search };
@@ -90,24 +96,21 @@ export function computeBreadcrumbs(
     const st = sp.get('state');
     drill = st ? `Locations in ${st}` : 'All locations';
   }
-  /* A landing reached by an in-app jump with no ?from= of its own borrows the
-     screen it came from, so the trail (and the way back) shows. Only landings
-     do this: detail screens already carry their own from/drill context. */
+  /* Detail screens reached by an in-app jump with no ?from= of their own can borrow
+     the screen they came from. Landing screens never borrow an origin: they stay clean. */
   let from = sp.get('from');
   const isSiteScreen = s.key === 'site' || s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
   const isPassiveDetail = ['fiber', 'odf', 'rack', 'power', 'splice', 'cord', 'duct'].includes(s.key);
   const isSiteOrNode = isSiteScreen || s.key === 'node' || s.key === 'resource' || isPassiveDetail;
-  if (!from && origin && !s.root && (isLanding(s) || s.key === 'dcim' || isSiteOrNode || !drill)) {
+  if (!from && origin && !s.root && !isLanding(s) && (s.key === 'dcim' || isSiteOrNode)) {
     const originSp = new URLSearchParams(origin.search);
     const originFrom = originSp.get('from');
     if (originFrom && isSiteOrNode) {
       from = originFrom;
     } else if (!drill) {
       const originScreen = screenFor(origin.pathname);
-      if (originScreen && originScreen.module === s.module && originScreen.key !== s.key) {
-        if (originScreen.key === 'inventoryinsights' || originScreen.key === 'home') {
-          from = 'Inventory insights' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
-        } else if (originScreen.key === 'passive') {
+      if (originScreen && originScreen.module === s.module && originScreen.key !== s.key && originScreen.key !== 'inventoryinsights' && originScreen.key !== 'home') {
+        if (originScreen.key === 'passive') {
           from = 'Passive inventory' + (origin.search ? origin.search.replace(/^\?/, '?') : '');
         } else {
           from = originScreen.crumb + (origin.search ? origin.search.replace(/^\?/, '?') : '');
@@ -139,7 +142,6 @@ export function computeBreadcrumbs(
       x.key.toLowerCase() === norm ||
       x.crumb.split(' · ').pop()?.toLowerCase() === p ||
       (norm === 'inventoryinsights' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
-      (norm === 'inventory' && (x.key === 'inventoryinsights' || x.key === 'home')) ||
       (norm === 'passiveinventory' && x.key === 'passive') ||
       (p === 'passive inventory' && x.key === 'passive') ||
       x.path.toLowerCase() === prefix.toLowerCase();
@@ -151,7 +153,7 @@ export function computeBreadcrumbs(
   const targetFor = (prefix: string, hopQuery?: string): string | null => {
     const p = prefix.toLowerCase().trim();
     const norm = p.replace(/[\s\-_]+/g, '');
-    if (s.module === 'Inventory' && (norm === 'inventoryinsights' || p === 'inventory insights' || (norm === 'inventory' && !p.includes('physical') && !p.includes('virtual') && !p.includes('passive')))) {
+    if (s.module === 'Inventory' && (norm === 'inventoryinsights' || p === 'inventory insights')) {
       return '/inventory/insights';
     }
     if (s.module === 'Inventory' && (norm === 'passiveinventory' || p === 'passive inventory' || norm === 'passiveinfrastructure' || p === 'passive infrastructure' || p === 'passive')) {
@@ -366,10 +368,6 @@ export function computeBreadcrumbs(
       fromClean.startsWith('insights ·') ||
       fromClean === 'home'
     )) ||
-    (!from && origin && (
-      origin.pathname === '/inventory/insights' ||
-      origin.pathname === '/inventory'
-    )) ||
     (hops.length > 0 && (
       hops[hops.length - 1].crumb.toLowerCase().trim() === 'inventory insights' ||
       hops[hops.length - 1].crumb.toLowerCase().trim() === 'insights' ||
@@ -490,9 +488,6 @@ export function computeBreadcrumbs(
     const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
 
     const rootSegs: { label: string; to: string | null }[] = [];
-    if (isFromInsights) {
-      rootSegs.push({ label: 'Inventory insights', to: '/inventory/insights' });
-    }
     rootSegs.push({ label: 'Physical Resources', to: phyTo });
 
     if (s.key === 'resource' && isFromNode) {
@@ -825,7 +820,12 @@ export function computeBreadcrumbs(
       const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure') : [];
       if (originSegs.length > 0) {
         segs = originSegs;
+      } else {
+        segs = [];
       }
+      finalLeafLabel = 'Passive inventory';
+    } else {
+      segs = [];
       finalLeafLabel = 'Passive inventory';
     }
   }

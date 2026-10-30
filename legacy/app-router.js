@@ -150,7 +150,7 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const urlFrom = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('from')) || null;
-  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase() === 'inventory' || f.toLowerCase().startsWith('inventory insights')));
+  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase().startsWith('inventory insights')));
   const effectiveSiteFrom = isInsightsFrom(inheritedFrom)
     ? inheritedFrom
     : isInsightsFrom(urlFrom)
@@ -165,11 +165,14 @@ function drillTo(view, label, q) {
     ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}`
     : null;
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
-    ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
-    : null;
+    ? `Resources · Physical Resources?cls=${encodeURIComponent(TAB.phy)}`
+    : (CURRENT === 'physical' ? 'Resources · Physical Resources' : null);
   const passTab = (typeof PASS_TAB !== 'undefined' && PASS_TAB) || (['fiber', 'odf', 'rack', 'power', 'splice', 'cord', 'duct'].includes(view) ? view : null);
   const passiveDrillFrom = (CURRENT === 'passive')
     ? `Passive inventory${passTab ? `?tab=${encodeURIComponent(passTab)}` : ''}`
+    : null;
+  const virtualDrillFrom = (CURRENT === 'virtual')
+    ? 'Resources · Virtual Resources'
     : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
      no richer curDrill/inherited state above) needs no "from" at all — the
@@ -180,14 +183,15 @@ function drillTo(view, label, q) {
      hop and collapses to a bare, non-clickable label. Only a genuine jump to a
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const sameScreenDrillFrom = (DRILL && DRILL.view === CURRENT && view === CURRENT && DRILL.from) ? DRILL.from : null;
-  const fromName = sameScreenDrillFrom
-    || curDrillFrom
+  const differentScreenFrom = passiveDrillFrom
+    || phyDrillFrom
+    || virtualDrillFrom
     || nodeDrillFrom
     || siteDrillFrom
-    || phyDrillFrom
-    || passiveDrillFrom
-    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
-    || inheritedFrom || (view !== CURRENT ? crumbName : null);
+    || (view !== CURRENT ? crumbName : null);
+  const fromName = view !== CURRENT
+    ? differentScreenFrom
+    : (sameScreenDrillFrom || curDrillFrom || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null) || inheritedFrom);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -986,9 +990,9 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_SVC_TAB = 'l3vpn'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; SVC_VIEW = null; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_SVC_TAB = 'l3vpn'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; SVC_VIEW = null; drillTo('resource', res.dataset.res, 'name=' + encodeURIComponent(res.dataset.res)); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; drillTo('node', nd.dataset.node, 'name=' + encodeURIComponent(nd.dataset.node)); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');

@@ -182,6 +182,13 @@ Degraded,FS-TEST-002,SITE-C ODF-01,SITE-D ODF-01,15000 m,12 / 48,8,04-Mar-2026,0
   // 4. File upload dropzone
   assert.ok(modalHtml.includes('id="passive-dropzone"'), 'File dropzone should exist');
   assert.ok(modalHtml.includes('id="passive-modal-file-input"'), 'File input should exist');
+  const dropzoneHtml = modalHtml.slice(modalHtml.indexOf('id="passive-dropzone"'));
+  // Verify upload icon (arrow pointing up) inside dropzone
+  assert.ok(dropzoneHtml.includes('polyline points="17 8 12 3 7 8"'), 'Dropzone icon should be upload arrow pointing up');
+  assert.ok(!dropzoneHtml.includes('polyline points="7 10 12 15 17 10"'), 'Dropzone icon should not be download arrow');
+  // Verify "Select or Drop File" text is removed
+  assert.ok(!modalHtml.includes('Select or Drop File'), 'Select or Drop File text should be removed');
+
   // 5. Upload & Cancel buttons in footer
   assert.ok(modalHtml.includes('data-submit-passive-upload="1"'), 'Upload button should exist');
   assert.ok(modalHtml.includes('data-close-passive-modal="1"'), 'Cancel button should exist in footer');

@@ -46,10 +46,22 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   }
 
   // 1. Physical Resources -> Router click (Telecom/Default and Datacenter)
+  const insightsOrigin = { pathname: '/inventory/insights', search: '' };
+
+  // Verify clean landings with insights origin
+  const passiveLanding = Topbar.computeBreadcrumbs({ pathname: '/inventory/passive', search: '' }, insightsOrigin);
+  assert.equal(passiveLanding, null, 'Passive landing should be clean and return null');
+
+  const physicalLanding = Topbar.computeBreadcrumbs({ pathname: '/inventory/physical', search: '' }, insightsOrigin);
+  assert.ok(physicalLanding && physicalLanding.isLandingClean, 'Physical landing should be clean');
+
+  const virtualLanding = Topbar.computeBreadcrumbs({ pathname: '/inventory/virtual', search: '' }, insightsOrigin);
+  assert.equal(virtualLanding, null, 'Virtual landing should be clean and return null');
+
   const phyRouterDefault = Topbar.computeBreadcrumbs({
     pathname: '/inventory/node/RTR-BLR-01',
     search: '?site=BLR-DC-01&cls=router&from=Resources%20%C2%B7%20Physical%20Resources%3Fcls%3Drouter'
-  });
+  }, insightsOrigin);
   assert.ok(phyRouterDefault, 'phyRouterDefault should compute breadcrumbs');
   assert.equal(phyRouterDefault.segs[0].label, 'Physical Resources');
   assert.ok(!phyRouterDefault.segs.some(seg => seg.label === 'Inventory insights'), 'Should not contain Inventory insights');
@@ -57,7 +69,7 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const phyRouterDc = Topbar.computeBreadcrumbs({
     pathname: '/inventory/node/RTR-BLR-01',
     search: '?site=BLR-DC-01&cls=router&solution=Datacenter&from=Resources%20%C2%B7%20Physical%20Resources%3Fcls%3Drouter'
-  });
+  }, insightsOrigin);
   assert.ok(phyRouterDc, 'phyRouterDc should compute breadcrumbs');
   assert.equal(phyRouterDc.segs[0].label, 'Physical Resources');
   assert.ok(!phyRouterDc.segs.some(seg => seg.label === 'Inventory insights'), 'Datacenter router click should not contain Inventory insights');
@@ -65,7 +77,7 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const phyResource = Topbar.computeBreadcrumbs({
     pathname: '/inventory/resource/RTR-BLR-01',
     search: '?ip=10.0.0.1&from=Resources%20%C2%B7%20Physical%20Resources%3Fcls%3Drouter'
-  });
+  }, insightsOrigin);
   assert.ok(phyResource, 'phyResource should compute breadcrumbs');
   assert.equal(phyResource.segs[0].label, 'Physical Resources');
   assert.ok(!phyResource.segs.some(seg => seg.label === 'Inventory insights'), 'Resource view should not contain Inventory insights');
@@ -74,7 +86,7 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const vnfLifecycle = Topbar.computeBreadcrumbs({
     pathname: '/inventory/virtual/lifecycle',
     search: ''
-  });
+  }, insightsOrigin);
   assert.ok(vnfLifecycle, 'vnfLifecycle should compute breadcrumbs');
   assert.equal(vnfLifecycle.segs[0].label, 'Virtual Resources');
   assert.equal(vnfLifecycle.finalLeafLabel, 'Lifecycle operation');
@@ -83,7 +95,7 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const vnfLifecycleDc = Topbar.computeBreadcrumbs({
     pathname: '/inventory/virtual/lifecycle',
     search: '?solution=Datacenter'
-  });
+  }, insightsOrigin);
   assert.ok(vnfLifecycleDc, 'vnfLifecycleDc should compute breadcrumbs');
   assert.equal(vnfLifecycleDc.segs[0].label, 'Virtual Resources');
   assert.ok(!vnfLifecycleDc.segs.some(seg => seg.label === 'Inventory insights'), 'VNF lifecycle (Datacenter) should not contain Inventory insights');
@@ -91,29 +103,39 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const vnfCell4g = Topbar.computeBreadcrumbs({
     pathname: '/inventory/virtual/cell-4g-details',
     search: ''
-  });
+  }, insightsOrigin);
   assert.ok(vnfCell4g, 'vnfCell4g should compute breadcrumbs');
   assert.equal(vnfCell4g.segs[0].label, 'Virtual Resources');
   assert.equal(vnfCell4g.segs[1].label, 'View');
   assert.equal(vnfCell4g.finalLeafLabel, 'Cell 4G details');
   assert.ok(!vnfCell4g.segs.some(seg => seg.label === 'Inventory insights'), 'Cell 4G should not contain Inventory insights');
 
-  // 3. Passive Inventory -> Fiber Span
+  // 3. Passive Inventory -> Fiber Span & Rack
   const passiveFiber = Topbar.computeBreadcrumbs({
     pathname: '/inventory/passive/fiber/FS-BGLK-277-INDR-275',
     search: ''
-  });
+  }, insightsOrigin);
   assert.ok(passiveFiber, 'passiveFiber should compute breadcrumbs');
   assert.equal(passiveFiber.segs[0].label, 'Passive inventory');
   assert.equal(passiveFiber.segs[1].label, 'Fiber spans');
   assert.equal(passiveFiber.finalLeafLabel, 'FS-BGLK-277-INDR-275');
   assert.ok(!passiveFiber.segs.some(seg => seg.label === 'Inventory insights'), 'Passive fiber should not contain Inventory insights');
 
+  const passiveRack = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/passive/rack/BGLK-277-RACK-A',
+    search: ''
+  }, insightsOrigin);
+  assert.ok(passiveRack, 'passiveRack should compute breadcrumbs');
+  assert.equal(passiveRack.segs[0].label, 'Passive inventory');
+  assert.equal(passiveRack.segs[1].label, 'Racks');
+  assert.equal(passiveRack.finalLeafLabel, 'BGLK-277-RACK-A');
+  assert.ok(!passiveRack.segs.some(seg => seg.label === 'Inventory insights'), 'Passive rack should not contain Inventory insights');
+
   // 4. Location -> Site -> Equipment
   const siteEquip = Topbar.computeBreadcrumbs({
     pathname: '/inventory/location/site/VA-DC-001/equipment',
     search: ''
-  });
+  }, insightsOrigin);
   assert.ok(siteEquip, 'siteEquip should compute breadcrumbs');
   assert.equal(siteEquip.segs[0].label, 'Location');
   assert.equal(siteEquip.segs[1].label, 'Ashburn');
@@ -125,7 +147,7 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   const dcimDrill = Topbar.computeBreadcrumbs({
     pathname: '/inventory/dcim',
     search: '?drill=Racks'
-  });
+  }, insightsOrigin);
   assert.ok(dcimDrill, 'dcimDrill should compute breadcrumbs');
   assert.equal(dcimDrill.segs[0].label, 'Data centers');
   assert.equal(dcimDrill.finalLeafLabel, 'Racks');

@@ -107,9 +107,10 @@ patch(`    if (window.ResizeObserver) new ResizeObserver(mark).observe(w);
     const curFrom = (DRILL && DRILL.from) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('from') : null);
     const curDrill = (DRILL && DRILL.label) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('drill') : null);
     const siteKeys = ['site', 'capex', 'opex', 'sitedetails', 'siteequipment', 'siteinfra'];
+    const isLandingScreen = ['passive', 'physical', 'virtual', 'location', 'inactive', 'reports', 'links', 'services'].includes(CURRENT);
     const drillObj = (siteKeys.includes(CURRENT) && (curFrom || curDrill))
       ? { label: curDrill || '', q: '', from: curFrom || undefined }
-      : (DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
+      : (DRILL && DRILL.view === CURRENT && (!isLandingScreen || curDrill) ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
     window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT), drillObj);
   }
 }

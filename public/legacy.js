@@ -249453,6 +249453,9 @@ async function handlePassiveFileUpload(file) {
   }
 
   const SC = passScoped();
+  const validDcs = (typeof window !== 'undefined' && window.__dcSum) ? new Set(window.__dcSum.map(d => d.id)) : null;
+  const defaultDcId = PASS_DC || (validDcs && validDcs.size > 0 ? Array.from(validDcs)[0] : (typeof DC_FAC !== 'undefined' && DC_FAC.length ? DC_FAC[0].id : 'VA-DC-001'));
+
   let dataset = SC ? PASSIVE_DC[tabKey] : PASSIVE[tabKey];
   if (!dataset) {
     if (SC) { PASSIVE_DC[tabKey] = []; dataset = PASSIVE_DC[tabKey]; }
@@ -249460,21 +249463,56 @@ async function handlePassiveFileUpload(file) {
   }
 
   for (const item of mapped) {
+    if (SC) {
+      item.dc = true;
+      if (!item.dcId) {
+        if (PASS_DC) item.dcId = PASS_DC;
+        else if (item.site && validDcs && validDcs.has(item.site)) item.dcId = item.site;
+        else item.dcId = defaultDcId;
+      }
+      if (!item.site) item.site = item.dcId;
+    }
     const existingIdx = dataset.findIndex(x => x.n === item.n);
     if (existingIdx !== -1) {
-      dataset[existingIdx] = { ...dataset[existingIdx], ...item };
+      const existing = dataset[existingIdx];
+      dataset.splice(existingIdx, 1);
+      dataset.unshift({ ...existing, ...item });
     } else {
       dataset.unshift(item);
     }
+
+    const altDataset = SC ? (PASSIVE[tabKey] || (PASSIVE[tabKey] = [])) : (PASSIVE_DC[tabKey] || (PASSIVE_DC[tabKey] = []));
+    const altIdx = altDataset.findIndex(x => x.n === item.n);
+    if (altIdx !== -1) {
+      const altExisting = altDataset[altIdx];
+      altDataset.splice(altIdx, 1);
+      altDataset.unshift({ ...altExisting, ...item });
+    } else {
+      altDataset.unshift(item);
+    }
   }
 
-  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
-  const tabObj = tabList.find(x => x.k === tabKey);
-  const tabName = tabObj ? tabObj.n : tabKey;
-  if (tabObj && dataset) tabObj.c = dataset.length;
+  if (typeof PASSIVE_TABS !== 'undefined') {
+    const pt = PASSIVE_TABS.find(x => x.k === tabKey);
+    if (pt && PASSIVE[tabKey]) pt.c = PASSIVE[tabKey].length;
+  }
+  if (typeof PASSIVE_DC_ORDER !== 'undefined' && typeof PASSIVE_DC !== 'undefined') {
+    const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
+    const tabObj = tabList.find(x => x.k === tabKey);
+    if (tabObj && PASSIVE_DC[tabKey]) tabObj.c = PASSIVE_DC[tabKey].length;
+  }
+
+  if (typeof gridOf === 'function') {
+    const g = gridOf('passive');
+    if (g) { g.search = ''; g.filters = {}; }
+  }
+  if (typeof GRID_N !== 'undefined') GRID_N = 0;
 
   PASSIVE_IMPORT_MODAL = false;
   PASSIVE_SELECTED_FILE = null;
+  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
+  const tabObj = tabList.find(x => x.k === tabKey);
+  const tabName = tabObj ? tabObj.n : tabKey;
   PASSIVE_IMPORT_ALERT = {
     count: mapped.length,
     fileName: name,
@@ -249636,10 +249674,7 @@ function renderPassiveImportModal(tabKey) {
       </div>
 
       <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <label style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-700);text-transform:uppercase;letter-spacing:0.04em;margin:0;">
-            Select or Drop File
-          </label>
+        <div style="display:flex;align-items:center;justify-content:flex-end;">
           <button type="button" class="nst-btn nst-btn--xs nst-btn--ghost" data-download-template="${tabKey}|xlsx" style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;padding:3px 10px;border-radius:5px;font-weight:500;color:var(--vw-color-blue-600);border-color:var(--vw-color-blue-200);background:var(--vw-color-blue-50);" title="Download template">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Download Template</span>
@@ -249664,8 +249699,8 @@ function renderPassiveImportModal(tabKey) {
               <div style="width:44px;height:44px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
               <div style="font-weight:600;font-size:0.875rem;color:var(--vw-color-slate-700);">
@@ -249726,7 +249761,7 @@ function viewPassive() {
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
-  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || r.dcId === PASS_DC) && (!validDcs || validDcs.has(r.dcId))) : [];
+  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || !r.dcId || r.dcId === PASS_DC) && (!validDcs || !r.dcId || validDcs.has(r.dcId))) : [];
   const netRows = SC ? [] : (PASSIVE[t] || []);
   const rows = gridApply('passive', SC ? dcPool : netRows);
   const P = PASSIVE_STATS;
@@ -255844,7 +255879,7 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const urlFrom = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('from')) || null;
-  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase() === 'inventory' || f.toLowerCase().startsWith('inventory insights')));
+  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase().startsWith('inventory insights')));
   const effectiveSiteFrom = isInsightsFrom(inheritedFrom)
     ? inheritedFrom
     : isInsightsFrom(urlFrom)
@@ -255859,11 +255894,14 @@ function drillTo(view, label, q) {
     ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}`
     : null;
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
-    ? `${crumbName}?cls=${encodeURIComponent(TAB.phy)}`
-    : null;
+    ? `Resources · Physical Resources?cls=${encodeURIComponent(TAB.phy)}`
+    : (CURRENT === 'physical' ? 'Resources · Physical Resources' : null);
   const passTab = (typeof PASS_TAB !== 'undefined' && PASS_TAB) || (['fiber', 'odf', 'rack', 'power', 'splice', 'cord', 'duct'].includes(view) ? view : null);
   const passiveDrillFrom = (CURRENT === 'passive')
     ? `Passive inventory${passTab ? `?tab=${encodeURIComponent(passTab)}` : ''}`
+    : null;
+  const virtualDrillFrom = (CURRENT === 'virtual')
+    ? 'Resources · Virtual Resources'
     : null;
   /* A plain, first-time drill that stays on the same screen (view === CURRENT,
      no richer curDrill/inherited state above) needs no "from" at all — the
@@ -255874,14 +255912,15 @@ function drillTo(view, label, q) {
      hop and collapses to a bare, non-clickable label. Only a genuine jump to a
      *different* screen (view !== CURRENT) needs crumbName as the origin. */
   const sameScreenDrillFrom = (DRILL && DRILL.view === CURRENT && view === CURRENT && DRILL.from) ? DRILL.from : null;
-  const fromName = sameScreenDrillFrom
-    || curDrillFrom
+  const differentScreenFrom = passiveDrillFrom
+    || phyDrillFrom
+    || virtualDrillFrom
     || nodeDrillFrom
     || siteDrillFrom
-    || phyDrillFrom
-    || passiveDrillFrom
-    || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null)
-    || inheritedFrom || (view !== CURRENT ? crumbName : null);
+    || (view !== CURRENT ? crumbName : null);
+  const fromName = view !== CURRENT
+    ? differentScreenFrom
+    : (sameScreenDrillFrom || curDrillFrom || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null) || inheritedFrom);
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -256144,9 +256183,10 @@ function go(k) {
     const curFrom = (DRILL && DRILL.from) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('from') : null);
     const curDrill = (DRILL && DRILL.label) || (typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('drill') : null);
     const siteKeys = ['site', 'capex', 'opex', 'sitedetails', 'siteequipment', 'siteinfra'];
+    const isLandingScreen = ['passive', 'physical', 'virtual', 'location', 'inactive', 'reports', 'links', 'services'].includes(CURRENT);
     const drillObj = (siteKeys.includes(CURRENT) && (curFrom || curDrill))
       ? { label: curDrill || '', q: '', from: curFrom || undefined }
-      : (DRILL && DRILL.view === CURRENT ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
+      : (DRILL && DRILL.view === CURRENT && (!isLandingScreen || curDrill) ? { label: DRILL.label, q: DRILL.q, from: DRILL.from } : null);
     window.__nsBridge.sync(CURRENT, __legacyParams(CURRENT), drillObj);
   }
 }
@@ -256727,9 +256767,9 @@ document.addEventListener('click', e => {
   const icl = e.target.closest('[data-inactcls]');
   if (icl) { INACT_CLS = icl.dataset.inactcls; go('inactive'); return; }
   const res = e.target.closest('[data-res]');
-  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_SVC_TAB = 'l3vpn'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; SVC_VIEW = null; go('resource'); return; }
+  if (res) { RES_ID = res.dataset.res; RES_TAB = 'overview'; RES_SVC_TAB = 'l3vpn'; RES_ENB_TAB = 'cell'; RES_SW_TAB = 'hardware'; RES_DW_TAB = 'hardware'; NBR_VIEW = null; RES_SVC_VIEW = null; SVC_VIEW = null; drillTo('resource', res.dataset.res, 'name=' + encodeURIComponent(res.dataset.res)); return; }
   const nd = e.target.closest('[data-node]');
-  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; go('node'); return; }
+  if (nd) { NODE_ID = nd.dataset.node; NODE_TAB = 'overview'; NODE_PERF = '24h'; NODE_ALERT_TAB = 'alerts'; NODE_ALERT_SEV = 'All severity'; NODE_ALERT_SRC = 'All sources'; NODE_LINK_PROTO = 'LLDP'; NODE_LINK_SEL = 0; NODE_HW_SEL = 'bbu'; NODE_ENB_LINK_TAB = 'backhaul'; drillTo('node', nd.dataset.node, 'name=' + encodeURIComponent(nd.dataset.node)); return; }
   const ntab = e.target.closest('[data-nodetab]');
   if (ntab) { NODE_TAB = ntab.dataset.nodetab; go('node'); return; }
   const npf = e.target.closest('[data-nperf]');

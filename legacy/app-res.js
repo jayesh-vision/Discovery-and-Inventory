@@ -1220,6 +1220,9 @@ async function handlePassiveFileUpload(file) {
   }
 
   const SC = passScoped();
+  const validDcs = (typeof window !== 'undefined' && window.__dcSum) ? new Set(window.__dcSum.map(d => d.id)) : null;
+  const defaultDcId = PASS_DC || (validDcs && validDcs.size > 0 ? Array.from(validDcs)[0] : (typeof DC_FAC !== 'undefined' && DC_FAC.length ? DC_FAC[0].id : 'VA-DC-001'));
+
   let dataset = SC ? PASSIVE_DC[tabKey] : PASSIVE[tabKey];
   if (!dataset) {
     if (SC) { PASSIVE_DC[tabKey] = []; dataset = PASSIVE_DC[tabKey]; }
@@ -1227,21 +1230,56 @@ async function handlePassiveFileUpload(file) {
   }
 
   for (const item of mapped) {
+    if (SC) {
+      item.dc = true;
+      if (!item.dcId) {
+        if (PASS_DC) item.dcId = PASS_DC;
+        else if (item.site && validDcs && validDcs.has(item.site)) item.dcId = item.site;
+        else item.dcId = defaultDcId;
+      }
+      if (!item.site) item.site = item.dcId;
+    }
     const existingIdx = dataset.findIndex(x => x.n === item.n);
     if (existingIdx !== -1) {
-      dataset[existingIdx] = { ...dataset[existingIdx], ...item };
+      const existing = dataset[existingIdx];
+      dataset.splice(existingIdx, 1);
+      dataset.unshift({ ...existing, ...item });
     } else {
       dataset.unshift(item);
     }
+
+    const altDataset = SC ? (PASSIVE[tabKey] || (PASSIVE[tabKey] = [])) : (PASSIVE_DC[tabKey] || (PASSIVE_DC[tabKey] = []));
+    const altIdx = altDataset.findIndex(x => x.n === item.n);
+    if (altIdx !== -1) {
+      const altExisting = altDataset[altIdx];
+      altDataset.splice(altIdx, 1);
+      altDataset.unshift({ ...altExisting, ...item });
+    } else {
+      altDataset.unshift(item);
+    }
   }
 
-  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
-  const tabObj = tabList.find(x => x.k === tabKey);
-  const tabName = tabObj ? tabObj.n : tabKey;
-  if (tabObj && dataset) tabObj.c = dataset.length;
+  if (typeof PASSIVE_TABS !== 'undefined') {
+    const pt = PASSIVE_TABS.find(x => x.k === tabKey);
+    if (pt && PASSIVE[tabKey]) pt.c = PASSIVE[tabKey].length;
+  }
+  if (typeof PASSIVE_DC_ORDER !== 'undefined' && typeof PASSIVE_DC !== 'undefined') {
+    const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
+    const tabObj = tabList.find(x => x.k === tabKey);
+    if (tabObj && PASSIVE_DC[tabKey]) tabObj.c = PASSIVE_DC[tabKey].length;
+  }
+
+  if (typeof gridOf === 'function') {
+    const g = gridOf('passive');
+    if (g) { g.search = ''; g.filters = {}; }
+  }
+  if (typeof GRID_N !== 'undefined') GRID_N = 0;
 
   PASSIVE_IMPORT_MODAL = false;
   PASSIVE_SELECTED_FILE = null;
+  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
+  const tabObj = tabList.find(x => x.k === tabKey);
+  const tabName = tabObj ? tabObj.n : tabKey;
   PASSIVE_IMPORT_ALERT = {
     count: mapped.length,
     fileName: name,
@@ -1403,10 +1441,7 @@ function renderPassiveImportModal(tabKey) {
       </div>
 
       <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <label style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-700);text-transform:uppercase;letter-spacing:0.04em;margin:0;">
-            Select or Drop File
-          </label>
+        <div style="display:flex;align-items:center;justify-content:flex-end;">
           <button type="button" class="nst-btn nst-btn--xs nst-btn--ghost" data-download-template="${tabKey}|xlsx" style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;padding:3px 10px;border-radius:5px;font-weight:500;color:var(--vw-color-blue-600);border-color:var(--vw-color-blue-200);background:var(--vw-color-blue-50);" title="Download template">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Download Template</span>
@@ -1431,8 +1466,8 @@ function renderPassiveImportModal(tabKey) {
               <div style="width:44px;height:44px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
               <div style="font-weight:600;font-size:0.875rem;color:var(--vw-color-slate-700);">
@@ -1493,7 +1528,7 @@ function viewPassive() {
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
-  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || r.dcId === PASS_DC) && (!validDcs || validDcs.has(r.dcId))) : [];
+  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || !r.dcId || r.dcId === PASS_DC) && (!validDcs || !r.dcId || validDcs.has(r.dcId))) : [];
   const netRows = SC ? [] : (PASSIVE[t] || []);
   const rows = gridApply('passive', SC ? dcPool : netRows);
   const P = PASSIVE_STATS;
