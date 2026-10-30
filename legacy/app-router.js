@@ -150,9 +150,10 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const urlFrom = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('from')) || null;
-  const effectiveSiteFrom = (inheritedFrom && (inheritedFrom.toLowerCase().includes('insight') || inheritedFrom.toLowerCase().startsWith('inventory')))
+  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase() === 'inventory' || f.toLowerCase().startsWith('inventory insights')));
+  const effectiveSiteFrom = isInsightsFrom(inheritedFrom)
     ? inheritedFrom
-    : (urlFrom && (urlFrom.toLowerCase().includes('insight') || urlFrom.toLowerCase().startsWith('inventory')))
+    : isInsightsFrom(urlFrom)
     ? urlFrom
     : inheritedFrom || urlFrom;
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
@@ -451,6 +452,11 @@ document.addEventListener('keydown', e => {
     go(CURRENT);
     return;
   }
+  if (typeof PASSIVE_IMPORT_MODAL !== 'undefined' && PASSIVE_IMPORT_MODAL && e.key === 'Escape') {
+    e.preventDefault();
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -697,6 +703,62 @@ document.addEventListener('click', e => {
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
+  const pib = e.target.closest('[data-passive-import-btn]');
+  if (pib) {
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    if (typeof openPassiveImportModal === 'function') {
+      openPassiveImportModal();
+    } else if (typeof window !== 'undefined' && window.__passiveImport && typeof window.__passiveImport.openPassiveImportModal === 'function') {
+      window.__passiveImport.openPassiveImportModal();
+    }
+    return;
+  }
+  const pac = e.target.closest('[data-passive-alert-close]');
+  if (pac) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
+    go('passive');
+    return;
+  }
+  const cpm = e.target.closest('[data-close-passive-modal]');
+  if (cpm) {
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
+  const isPassiveScrim = (e.target.id === 'passive-import-scrim' || (e.target.classList && e.target.classList.contains('job-modal-scrim'))) && !e.target.closest('.job-modal-panel');
+  if (isPassiveScrim && typeof PASSIVE_IMPORT_MODAL !== 'undefined' && PASSIVE_IMPORT_MODAL) {
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
+  const dlt = e.target.closest('[data-download-template]');
+  if (dlt) {
+    const [tKey, fmt] = dlt.dataset.downloadTemplate.split('|');
+    if (typeof downloadPassiveTemplate === 'function') downloadPassiveTemplate(tKey, fmt);
+    return;
+  }
+  const rmf = e.target.closest('[data-remove-selected-file]');
+  if (rmf) {
+    if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = null;
+    go('passive');
+    return;
+  }
+  const dz = e.target.closest('#passive-dropzone');
+  if (dz) {
+    const finp = document.getElementById('passive-modal-file-input');
+    if (finp) finp.click();
+    return;
+  }
+  const spu = e.target.closest('[data-submit-passive-upload]');
+  if (spu) {
+    if (typeof PASSIVE_SELECTED_FILE !== 'undefined' && PASSIVE_SELECTED_FILE) {
+      const f = PASSIVE_SELECTED_FILE;
+      if (typeof handlePassiveFileUpload === 'function') handlePassiveFileUpload(f);
+    } else {
+      const finp = document.getElementById('passive-modal-file-input');
+      if (finp) finp.click();
+    }
+    return;
+  }
   const cp = e.target.closest('[data-copy]');
   if (cp) {
     const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
@@ -962,7 +1024,15 @@ document.addEventListener('click', e => {
   const rstab = e.target.closest('[data-ressvctab]');
   if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
-  if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
+  if (pst) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    if (typeof PASSIVE_IMPORT_MODAL !== 'undefined') PASSIVE_IMPORT_MODAL = false;
+    PASS_TAB = pst.dataset.passtab;
+    go('passive');
+    return;
+  }
   const fbt = e.target.closest('[data-fibertab]');
   if (fbt) { FIBER_TAB = fbt.dataset.fibertab; go('fiber'); return; }
   const ssec = e.target.closest('[data-sitesection]');
@@ -1186,10 +1256,19 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'passive-modal-file-input') {
+    if (e.target.files && e.target.files[0]) {
+      if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = e.target.files[0];
+      go('passive');
+    }
+    return;
+  }
   if (e.target.hasAttribute && e.target.hasAttribute('data-mapstate')) {
     selectMapState(e.target.value); return;
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-passdc')) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
     PASS_DC = e.target.value; go('passive'); return;
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
@@ -1203,6 +1282,22 @@ document.addEventListener('change', e => {
   const c = e.target.classList;
   if (c && (c.contains('cx-in') || c.contains('cx-hd') || c.contains('ox-in') || c.contains('ox-hd')))
     e.target.dispatchEvent(new Event('input', { bubbles: true }));
+});
+
+document.addEventListener('dragover', e => {
+  if (e.target && e.target.closest && e.target.closest('#passive-dropzone')) {
+    e.preventDefault();
+  }
+});
+document.addEventListener('drop', e => {
+  const dz = e.target && e.target.closest && e.target.closest('#passive-dropzone');
+  if (dz) {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = e.dataTransfer.files[0];
+      go('passive');
+    }
+  }
 });
 
 /* ── map state selection ──────────────────────────────── */

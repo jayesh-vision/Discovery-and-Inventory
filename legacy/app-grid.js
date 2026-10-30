@@ -250,6 +250,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
       ${GRIDMENU ? `<div class="kmenu kmenu-r">
         ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}${(a.d || a.nav) ? '' : ' js-ack'}"${a.d ? dA(a.d) : ''}${
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
+        ${key === 'passive' ? `<button class="kmenu-i" data-passive-import-btn="1">${kIcon('Import')}<span>Import</span></button>` : ''}
         <button class="kmenu-i" data-gridrefresh="1">${kIcon('Refresh')}<span>Refresh</span></button>
         <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
         <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button></div>` : ''}

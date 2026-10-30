@@ -65,11 +65,19 @@ function originFor(loc: { key: string; pathname: string; search: string; state: 
    a site's NE table) names its origin in ?from=<crumb>. The ancestors are
    then the origin's chain — the reader came from there, not from this
    screen's nominal parent — and this screen contributes only its leaf. */
-export default function Topbar() {
-  const loc = useLocation();
+export interface BreadcrumbsResult {
+  isLandingClean: boolean;
+  segs: { label: string; to: string | null }[];
+  finalLeafLabel: string;
+  reportDef: any;
+  reportContent: any;
+}
+
+export function computeBreadcrumbs(
+  loc: { pathname: string; search: string },
+  origin: Origin | null = null
+): BreadcrumbsResult | null {
   const { pathname, search } = loc;
-  const nav = useNavigate();
-  const origin = originFor(loc);
   const s = screenFor(pathname);
   if (!s) return null;
   const params = paramsOf(s.path, pathname);
@@ -119,8 +127,8 @@ export default function Topbar() {
      tab change in the query string on a landing never reveals a crumb. */
   const isLandingClean = Boolean(s.root || (isLanding(s) && !drill && !from));
   // On clean landing pages, Topbar hides breadcrumbs.
-  // Location, Links and Physical Resources render Topbar so breadcrumbs and GeoDropdown are available.
-  if (isLandingClean && s.key !== 'location' && s.key !== 'links' && s.key !== 'physical') return null;
+  // Location, Links, Physical Resources and Data centers render Topbar so breadcrumbs and GeoDropdown are available.
+  if (isLandingClean && s.key !== 'location' && s.key !== 'links' && s.key !== 'physical' && s.key !== 'dcim') return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();
@@ -143,7 +151,7 @@ export default function Topbar() {
   const targetFor = (prefix: string, hopQuery?: string): string | null => {
     const p = prefix.toLowerCase().trim();
     const norm = p.replace(/[\s\-_]+/g, '');
-    if (s.module === 'Inventory' && (norm === 'inventoryinsights' || norm === 'inventory' || p === 'inventory insights' || p === 'resources')) {
+    if (s.module === 'Inventory' && (norm === 'inventoryinsights' || p === 'inventory insights' || (norm === 'inventory' && !p.includes('physical') && !p.includes('virtual') && !p.includes('passive')))) {
       return '/inventory/insights';
     }
     if (s.module === 'Inventory' && (norm === 'passiveinventory' || p === 'passive inventory' || norm === 'passiveinfrastructure' || p === 'passive infrastructure' || p === 'passive')) {
@@ -259,7 +267,8 @@ export default function Topbar() {
         }
         continue;
       }
-      const parts = originScreen ? originScreen.crumb.split(' · ') : [hop.crumb];
+      const isGroupingLabel = (lbl: string) => lbl === 'Resources' || lbl === 'Connectivity';
+      const parts = (originScreen ? originScreen.crumb.split(' · ') : [hop.crumb]).filter(p => !isGroupingLabel(p));
       if (parts.length > 1) {
         for (let i = 0; i < parts.length - 1; i++) {
           const base = targetFor(parts.slice(0, i + 1).join(' · '), hop.query);
@@ -277,9 +286,9 @@ export default function Topbar() {
       const isInventoryInsights = s.module === 'Inventory' && (
         originScreen?.key === 'inventoryinsights' ||
         originScreen?.key === 'home' ||
-        hop.crumb.toLowerCase() === 'inventory insights' ||
-        hop.crumb.toLowerCase() === 'inventory' ||
-        hop.crumb.toLowerCase().trim() === 'insights'
+        hop.crumb.toLowerCase().trim() === 'inventory insights' ||
+        hop.crumb.toLowerCase().trim() === 'insights' ||
+        hop.crumb.toLowerCase().trim() === 'home'
       );
       const isDiscoveryInsights = s.module === 'Discovery and reconciliation' && (originScreen?.key === 'insights' || hop.crumb.toLowerCase() === 'insights');
       const label = isInventoryInsights
@@ -315,10 +324,11 @@ export default function Topbar() {
       }
     }
   } else {
-    const chain = ownParts.slice(0, -1);
-    segs = chain.map((label, i) => {
-      const displayLabel = label === 'Resources' ? 'Inventory insights' : label === 'Passive Infrastructure' ? 'Passive inventory' : label;
-      const prefix = chain.slice(0, i + 1).join(' · ');
+    const isGroupingLabel = (lbl: string) => lbl === 'Resources' || lbl === 'Connectivity';
+    const chain = ownParts.slice(0, -1).filter(p => !isGroupingLabel(p));
+    segs = chain.map(label => {
+      const displayLabel = label === 'Passive Infrastructure' ? 'Passive inventory' : label;
+      const prefix = ownParts.slice(0, ownParts.indexOf(label) + 1).join(' · ');
       const base = targetFor(prefix);
       let to = base;
       if (base && prefix === 'Location · Site details' && sp.get('tab')) {
@@ -346,25 +356,29 @@ export default function Topbar() {
      name already prominent in the page header. */
   let finalLeafLabel = drill || leaf;
 
+  const fromClean = (from || '').toLowerCase().trim();
   const isFromInsights = s.module === 'Inventory' && !!(
     (from && (
-      from.toLowerCase().includes('insight') ||
-      from.toLowerCase() === 'insights' ||
-      from.toLowerCase().startsWith('inventory')
+      fromClean === 'inventory insights' ||
+      fromClean.startsWith('inventory insights') ||
+      fromClean === 'insights' ||
+      fromClean.startsWith('insights?') ||
+      fromClean.startsWith('insights ·') ||
+      fromClean === 'home'
     )) ||
-    (origin && !from && (
-      origin.pathname.includes('/inventory/insights') ||
+    (!from && origin && (
+      origin.pathname === '/inventory/insights' ||
       origin.pathname === '/inventory'
     )) ||
-    (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ns_dc_from_insights') === 'true')
+    (hops.length > 0 && (
+      hops[hops.length - 1].crumb.toLowerCase().trim() === 'inventory insights' ||
+      hops[hops.length - 1].crumb.toLowerCase().trim() === 'insights' ||
+      hops[hops.length - 1].crumb.toLowerCase().trim() === 'home'
+    ))
   );
 
   if (typeof sessionStorage !== 'undefined') {
-    if (isFromInsights) {
-      try { sessionStorage.setItem('ns_dc_from_insights', 'true'); } catch {}
-    } else if (s.key === 'location' && !from && !drill) {
-      try { sessionStorage.removeItem('ns_dc_from_insights'); } catch {}
-    }
+    try { sessionStorage.removeItem('ns_dc_from_insights'); } catch {}
   }
 
   if (s.key === 'citydetails' && params.cityId) {
@@ -475,25 +489,24 @@ export default function Topbar() {
 
     const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
 
+    const rootSegs: { label: string; to: string | null }[] = [];
+    if (isFromInsights) {
+      rootSegs.push({ label: 'Inventory insights', to: '/inventory/insights' });
+    }
+    rootSegs.push({ label: 'Physical Resources', to: phyTo });
+
     if (s.key === 'resource' && isFromNode) {
       segs = [
-        { label: 'Inventory insights', to: '/inventory/insights' },
-        { label: 'Physical Resources', to: phyTo },
+        ...rootSegs,
         { label: 'Node view', to: nodeTo }
       ];
       finalLeafLabel = drill || 'Node resources';
     } else if (s.key === 'resource') {
-      segs = [
-        { label: 'Inventory insights', to: '/inventory/insights' },
-        { label: 'Physical Resources', to: phyTo }
-      ];
+      segs = [...rootSegs];
       finalLeafLabel = drill || params.name || 'Element';
     } else {
       /* s.key === 'node' */
-      segs = [
-        { label: 'Inventory insights', to: '/inventory/insights' },
-        { label: 'Physical Resources', to: phyTo }
-      ];
+      segs = [...rootSegs];
       finalLeafLabel = drill || `${nodeClassName(reqCls)} · ${params.name}` || params.name || 'Node view';
     }
   }
@@ -576,8 +589,10 @@ export default function Topbar() {
       rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
     } else if (originSegs.length > 0) {
       rootSegs = originSegs;
-    } else {
+    } else if (from && (from.toLowerCase().includes('location') || from.toLowerCase().includes('site') || from.toLowerCase().includes('city'))) {
       rootSegs = [{ label: 'Location', to: locTo }];
+    } else {
+      rootSegs = [];
     }
 
     if (drill && drill !== 'Data centers') {
@@ -779,8 +794,10 @@ export default function Topbar() {
         rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
       } else if (originSegs.length > 0) {
         rootSegs = originSegs;
-      } else {
+      } else if (from && (from.toLowerCase().includes('location') || from.toLowerCase().includes('site') || from.toLowerCase().includes('city'))) {
         rootSegs = [{ label: 'Location', to: locTo }];
+      } else {
+        rootSegs = [];
       }
 
       if (drill && drill !== dcName) {
@@ -867,6 +884,23 @@ export default function Topbar() {
   } else {
     segs.push({ label: finalLeafLabel, to: null });
   }
+
+  return {
+    isLandingClean,
+    segs,
+    finalLeafLabel,
+    reportDef,
+    reportContent
+  };
+}
+
+export default function Topbar() {
+  const loc = useLocation();
+  const nav = useNavigate();
+  const origin = originFor(loc);
+  const data = computeBreadcrumbs(loc, origin);
+  if (!data) return null;
+  const { isLandingClean, segs, reportDef, reportContent } = data;
 
   return (
     <div className="topbar">

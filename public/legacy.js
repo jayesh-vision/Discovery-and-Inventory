@@ -243317,6 +243317,7 @@ function gridBar(showing, total, placeholder, spec, extra = '', acts = [], key =
       ${GRIDMENU ? `<div class="kmenu kmenu-r">
         ${acts.length ? acts.map(a => `<button class="kmenu-i${a.primary ? ' is-primary' : ''}${(a.d || a.nav) ? '' : ' js-ack'}"${a.d ? dA(a.d) : ''}${
           a.nav ? ` data-nav="${a.nav}"` : ''}>${kIcon(a.l)}<span>${a.l}</span></button>`).join('') + '<div class="kmenu-sep"></div>' : ''}
+        ${key === 'passive' ? `<button class="kmenu-i" data-passive-import-btn="1">${kIcon('Import')}<span>Import</span></button>` : ''}
         <button class="kmenu-i" data-gridrefresh="1">${kIcon('Refresh')}<span>Refresh</span></button>
         <button class="kmenu-i" data-gridexport="${key}|csv">${kIcon('Export as CSV')}<span>Export as CSV</span></button>
         <button class="kmenu-i" data-gridexport="${key}|xlsx">${kIcon('Export as XLSX')}<span>Export as XLSX</span></button></div>` : ''}
@@ -249108,6 +249109,614 @@ function rackStrip(r) {
   }
   return `<div class="rack-el">${cells.join('')}</div>`;
 }
+
+let PASSIVE_IMPORT_ALERT = null;
+let PASSIVE_IMPORT_MODAL = false;
+let PASSIVE_SELECTED_FILE = null;
+
+function clearPassiveImportAlert() {
+  PASSIVE_IMPORT_ALERT = null;
+}
+
+function openPassiveImportModal() {
+  PASSIVE_IMPORT_MODAL = true;
+  PASSIVE_SELECTED_FILE = null;
+  go('passive');
+}
+
+function closePassiveImportModal() {
+  PASSIVE_IMPORT_MODAL = false;
+  PASSIVE_SELECTED_FILE = null;
+  go('passive');
+}
+
+function escPassive(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function parsePassiveCsv(text) {
+  const clean = (text || '').replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [];
+  let curr = '';
+  let inQuotes = false;
+  for (let i = 0; i < clean.length; i++) {
+    const c = clean[i];
+    if (c === '"') {
+      if (inQuotes && clean[i + 1] === '"') {
+        curr += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      row.push(curr.trim());
+      curr = '';
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && clean[i + 1] === '\n') {
+        i++;
+      }
+      row.push(curr.trim());
+      if (row.some(x => x.length > 0)) {
+        rows.push(row);
+      }
+      row = [];
+      curr = '';
+    } else {
+      curr += c;
+    }
+  }
+  if (curr.length > 0 || row.length > 0) {
+    row.push(curr.trim());
+    if (row.some(x => x.length > 0)) {
+      rows.push(row);
+    }
+  }
+  return rows;
+}
+
+function parsePassiveXmlSpreadsheet(text) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/xml');
+    const rows = [];
+    let rowNodes = doc.getElementsByTagName('Row');
+    if (!rowNodes || !rowNodes.length) {
+      rowNodes = doc.getElementsByTagNameNS('*', 'Row');
+    }
+    for (let i = 0; i < rowNodes.length; i++) {
+      const r = rowNodes[i];
+      const cells = [];
+      let cellNodes = r.getElementsByTagName('Cell');
+      if (!cellNodes || !cellNodes.length) {
+        cellNodes = r.getElementsByTagNameNS('*', 'Cell');
+      }
+      let colIdx = 0;
+      for (let j = 0; j < cellNodes.length; j++) {
+        const c = cellNodes[j];
+        const idxAttr = c.getAttribute('ss:Index') || c.getAttribute('Index');
+        if (idxAttr) {
+          const targetIdx = parseInt(idxAttr, 10) - 1;
+          while (colIdx < targetIdx) {
+            cells.push('');
+            colIdx++;
+          }
+        }
+        cells.push((c.textContent || '').trim());
+        colIdx++;
+      }
+      if (cells.some(v => v.length > 0)) rows.push(cells);
+    }
+    return rows;
+  } catch (e) {
+    return [];
+  }
+}
+
+function mapPassiveImportRows(tabKey, headers, dataRows) {
+  const normHeaders = (headers || []).map(h => (h || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const findIdx = (aliases) => {
+    // 1. Exact match
+    for (const a of aliases) {
+      const target = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const idx = normHeaders.indexOf(target);
+      if (idx !== -1) return idx;
+    }
+    // 2. Substring / partial match
+    for (const a of aliases) {
+      const target = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!target) continue;
+      const idx = normHeaders.findIndex(nh => nh && (nh.includes(target) || target.includes(nh)));
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
+  const getVal = (row, aliases, fallback = '', positionalIdx = -1) => {
+    const idx = findIdx(aliases);
+    if (idx !== -1 && row[idx] !== undefined && row[idx] !== null) {
+      const v = String(row[idx]).trim();
+      if (v !== '') return v;
+    }
+    if (positionalIdx !== -1 && row[positionalIdx] !== undefined && row[positionalIdx] !== null) {
+      const v = String(row[positionalIdx]).trim();
+      if (v !== '') return v;
+    }
+    return fallback;
+  };
+  const chipOfStatus = (st) => {
+    const s = (st || '').toLowerCase();
+    if (s.includes('in service') || s.includes('active') || s.includes('clear')) return 'success';
+    if (s.includes('degraded') || s.includes('warning')) return 'warning';
+    if (s.includes('cut') || s.includes('fault') || s.includes('fail') || s.includes('full') || s.includes('alarm')) return 'error';
+    if (s.includes('planned') || s.includes('spare')) return 'info';
+    return 'neutral';
+  };
+
+  const out = [];
+  for (const r of dataRows) {
+    if (!r || !r.length || r.every(c => !c || !String(c).trim())) continue;
+    const st = getVal(r, ['status', 'st', 'state'], 'In service', 0);
+    const chip = chipOfStatus(st);
+
+    if (tabKey === 'fiber') {
+      let n = getVal(r, ['span', 'name', 'id', 'fs', 'fiberspan', 'spanname'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        a: getVal(r, ['a end', 'aend', 'a', 'origina'], '', 2),
+        b: getVal(r, ['b end', 'bend', 'b', 'originb'], '', 3),
+        len: getVal(r, ['length', 'len'], '10 km', 4),
+        cores: getVal(r, ['cores used', 'coresused', 'cores', 'core'], '24 / 96', 5),
+        splices: parseInt(getVal(r, ['splices', 'splice'], '0', 6), 10) || 0,
+        otdr: getVal(r, ['last otdr', 'lastotdr', 'otdr'], '—', 7),
+        att: getVal(r, ['attenuation', 'att'], '0.22 dB/km', 8),
+        own: getVal(r, ['ownership', 'own'], 'Own', 9)
+      });
+    } else if (tabKey === 'odf') {
+      let n = getVal(r, ['odf', 'name', 'id', 'odfname', 'panel'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      const cap = parseInt(getVal(r, ['capacity', 'cap'], '96', 4), 10) || 96;
+      const used = parseInt(getVal(r, ['used'], '24', 5), 10) || 0;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        type: getVal(r, ['type'], 'Rack mount 96F', 3),
+        cap,
+        used,
+        rack: getVal(r, ['rack position', 'rackposition', 'rack', 'pos'], '—', 8),
+        term: getVal(r, ['termination', 'term'], 'SC/APC', 9)
+      });
+    } else if (tabKey === 'rack') {
+      let n = getVal(r, ['rack', 'name', 'id', 'cabinet', 'cab', 'bay', 'rackname', 'rackid'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim() && chipOfStatus(r[0]) === 'neutral') n = String(r[0]).trim();
+      if (!n) continue;
+      const hStr = getVal(r, ['height', 'h', 'u', 'totalu'], '42', 3);
+      const h = parseInt(String(hStr).replace(/[^0-9]/g, ''), 10) || 42;
+      const usedStr = getVal(r, ['u used', 'uused', 'used', 'occupied'], '20', 4);
+      const used = parseInt(String(usedStr).replace(/[^0-9]/g, ''), 10) || 20;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        h,
+        used,
+        kw: getVal(r, ['power', 'kw'], '2.0 / 5.0', 7),
+        cool: getVal(r, ['cooling', 'cool'], 'Front-to-back', 8),
+        occ: [[1, 2, 'ODF-01', 'odf'], [6, 7, 'SW-01', 'sw'], [20, 21, 'RTR-01', 'rtr']]
+      });
+    } else if (tabKey === 'power') {
+      let n = getVal(r, ['unit', 'name', 'id', 'power', 'device'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        type: getVal(r, ['type'], 'DG set', 3),
+        rating: getVal(r, ['rating'], '250 kVA', 4),
+        runtime: getVal(r, ['autonomy', 'runtime'], '—', 5),
+        tested: getVal(r, ['last tested', 'lasttested', 'tested'], '—', 6),
+        vendor: getVal(r, ['vendor'], '—', 7)
+      });
+    } else if (tabKey === 'splice') {
+      let n = getVal(r, ['closure', 'name', 'id', 'splice', 'enclosure'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        span: getVal(r, ['on span', 'onspan', 'span'], '—', 3),
+        type: getVal(r, ['type'], 'Dome 48F', 4),
+        fibers: getVal(r, ['fibers spliced', 'fibersspliced', 'fibers'], '24 / 48', 5),
+        loss: getVal(r, ['mean splice loss', 'loss'], '0.05 dB', 6),
+        housing: getVal(r, ['housing'], 'Buried', 7),
+        surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
+      });
+    } else if (tabKey === 'cord') {
+      let n = getVal(r, ['patch cord', 'patchcord', 'cord', 'name', 'id'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        a: getVal(r, ['a end', 'aend', 'a'], '—', 3),
+        b: getVal(r, ['b end', 'bend', 'b'], '—', 4),
+        type: getVal(r, ['connector', 'type'], 'LC-LC duplex', 5),
+        len: getVal(r, ['length', 'len'], '2 m', 6),
+        loss: getVal(r, ['insertion loss', 'insertionloss', 'loss'], '0.15 dB', 7),
+        surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
+      });
+    } else if (tabKey === 'duct') {
+      let n = getVal(r, ['duct', 'name', 'id', 'conduit'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        a: getVal(r, ['a end', 'aend', 'a'], '—', 2),
+        b: getVal(r, ['b end', 'bend', 'b'], '—', 3),
+        len: getVal(r, ['length', 'len'], '100 m', 4),
+        ways: getVal(r, ['ways used', 'waysused', 'ways'], '2 / 4', 5),
+        bore: getVal(r, ['bore'], '110 mm', 6),
+        own: getVal(r, ['ownership', 'own'], 'Own', 7),
+        surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
+      });
+    } else if (tabKey === 'cooling') {
+      let n = getVal(r, ['unit', 'name', 'id', 'cooling', 'device'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        zone: getVal(r, ['zone'], 'Zone A', 3),
+        type: getVal(r, ['type'], 'CRAC', 4),
+        cap: parseInt(getVal(r, ['capacity', 'cap'], '50', 5), 10) || 50,
+        load: parseInt(getVal(r, ['load'], '65', 6), 10) || 65,
+        supply: 18, ret: 26
+      });
+    } else if (tabKey === 'sensors') {
+      let n = getVal(r, ['sensor', 'name', 'id', 'device'], '', 1);
+      if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
+      if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
+      if (!n) continue;
+      out.push({
+        st, chip, n,
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        zone: getVal(r, ['zone'], 'Zone A', 3),
+        temp: parseInt(getVal(r, ['temperature', 'temp'], '22', 4), 10) || 22,
+        hum: parseInt(getVal(r, ['humidity', 'hum'], '45', 5), 10) || 45,
+        smoke: /alarm|smoke/i.test(getVal(r, ['smoke'], '', 6)),
+        leak: /alarm|leak/i.test(getVal(r, ['leak'], '', 7))
+      });
+    }
+  }
+  return out;
+}
+
+async function handlePassiveFileUpload(file) {
+  if (!file) return;
+  const name = file.name || '';
+  let rows = [];
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const u8 = new Uint8Array(buffer.slice(0, 4));
+    const isZip = u8[0] === 0x50 && u8[1] === 0x4B;
+
+    if (isZip && window.__nsBridge && window.__nsBridge.parseExcel) {
+      rows = await window.__nsBridge.parseExcel(buffer);
+    } else {
+      const text = new TextDecoder('utf-8').decode(buffer);
+      if (text.includes('<Workbook') || text.includes('<?xml') || text.includes('<Table')) {
+        rows = parsePassiveXmlSpreadsheet(text);
+      } else {
+        rows = parsePassiveCsv(text);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to parse uploaded file', err);
+    if (typeof showCopyToast === 'function') {
+      showCopyToast('right', 72, 'Failed to parse file: ' + (err.message || 'Invalid format'), 'error');
+    }
+    return;
+  }
+
+  // Strip leading empty rows if any
+  while (rows.length && rows[0].every(c => !c || !String(c).trim())) {
+    rows.shift();
+  }
+
+  if (!rows || rows.length < 2) {
+    if (typeof showCopyToast === 'function') {
+      showCopyToast('right', 72, 'Uploaded file contains no data rows', 'error');
+    }
+    return;
+  }
+
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
+  const tabKey = PASS_TAB;
+  const mapped = mapPassiveImportRows(tabKey, headers, dataRows);
+
+  if (!mapped.length) {
+    if (typeof showCopyToast === 'function') {
+      showCopyToast('right', 72, 'No valid ' + tabKey + ' records found in file', 'error');
+    }
+    return;
+  }
+
+  const SC = passScoped();
+  let dataset = SC ? PASSIVE_DC[tabKey] : PASSIVE[tabKey];
+  if (!dataset) {
+    if (SC) { PASSIVE_DC[tabKey] = []; dataset = PASSIVE_DC[tabKey]; }
+    else { PASSIVE[tabKey] = []; dataset = PASSIVE[tabKey]; }
+  }
+
+  for (const item of mapped) {
+    const existingIdx = dataset.findIndex(x => x.n === item.n);
+    if (existingIdx !== -1) {
+      dataset[existingIdx] = { ...dataset[existingIdx], ...item };
+    } else {
+      dataset.unshift(item);
+    }
+  }
+
+  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
+  const tabObj = tabList.find(x => x.k === tabKey);
+  const tabName = tabObj ? tabObj.n : tabKey;
+  if (tabObj && dataset) tabObj.c = dataset.length;
+
+  PASSIVE_IMPORT_MODAL = false;
+  PASSIVE_SELECTED_FILE = null;
+  PASSIVE_IMPORT_ALERT = {
+    count: mapped.length,
+    fileName: name,
+    tabName: tabName
+  };
+
+  if (typeof showCopyToast === 'function') {
+    showCopyToast('right', 72, `File uploaded successfully: ${mapped.length} records imported into ${tabName}`, 'success');
+  }
+  go('passive');
+}
+
+const PASSIVE_TEMPLATES = {
+  fiber: {
+    headers: ['Status', 'Span', 'A end', 'B end', 'Length', 'Cores used', 'Splices', 'Last OTDR', 'Attenuation', 'Ownership'],
+    rows: [
+      ['In service', 'FS-BGLK-277-INDR-275', 'BGLK-277 ODF-01', 'INDR-275 ODF-02', '42,180 m', '24 / 96', '14', '12-Jun-2026', '0.21 dB/km', 'Own'],
+      ['In service', 'FS-BGLK-277-VJA-118', 'BGLK-277 ODF-01', 'VJA-118 ODF-01', '88,640 m', '12 / 48', '31', '04-Mar-2026', '0.24 dB/km', 'Leased'],
+      ['Degraded', 'FS-DEL-279-NDLS-CORE', 'DEL-279 ODF-03', 'NDLS-CORE ODF-01', '6,420 m', '36 / 96', '4', '28-Aug-2026', '0.42 dB/km', 'Own']
+    ]
+  },
+  odf: {
+    headers: ['Status', 'ODF', 'Site', 'Type', 'Capacity', 'Used', 'Free', 'Fill', 'Rack position', 'Termination'],
+    rows: [
+      ['In service', 'BGLK-277-ODF-01', 'BGLK-277', 'Rack mount 96F', '96', '24', '72', '25%', 'RACK-A', 'SC/APC'],
+      ['In service', 'VJA-118-ODF-01', 'VJA-118', 'Rack mount 48F', '48', '12', '36', '25%', 'RACK-B', 'LC/UPC']
+    ]
+  },
+  rack: {
+    headers: ['Status', 'Rack', 'Site', 'Height', 'U used', 'U free', 'Elevation', 'Power', 'Cooling'],
+    rows: [
+      ['In service', 'BGLK-277-RACK-A', 'BGLK-277', '42U', '28', '14', 'Floor 2 Row 4', '3.5 / 8.0 kW', 'Front-to-back'],
+      ['In service', 'INDR-275-RACK-01', 'INDR-275', '45U', '30', '15', 'Floor 1 Row 2', '4.0 / 10.0 kW', 'In-row chilled water']
+    ]
+  },
+  power: {
+    headers: ['Status', 'Unit', 'Site', 'Type', 'Rating', 'Autonomy', 'Last tested', 'Vendor'],
+    rows: [
+      ['In service', 'BGLK-277-DG-01', 'BGLK-277', 'DG set', '500 kVA', '8 h', '12-May-2026', 'Cummins'],
+      ['In service', 'BGLK-277-UPS-01', 'BGLK-277', 'UPS', '120 kVA', '30 min', '10-Jun-2026', 'Schneider Electric']
+    ]
+  },
+  splice: {
+    headers: ['Status', 'Closure', 'Site', 'On span', 'Type', 'Fibers spliced', 'Mean splice loss', 'Housing', 'Last surveyed'],
+    rows: [
+      ['In service', 'SC-BGLK-277-011', 'BGLK-277', 'FS-BGLK-277-INDR-275', 'Dome 96F', '48 / 96', '0.04 dB', 'Buried chamber', '15-Jul-2026'],
+      ['In service', 'SC-DEL-279-002', 'DEL-279', 'FS-DEL-279-NDLS-CORE', 'Inline 48F', '24 / 48', '0.05 dB', 'Aerial', '22-Aug-2026']
+    ]
+  },
+  cord: {
+    headers: ['Status', 'Patch cord', 'Site', 'A end', 'B end', 'Connector', 'Length', 'Insertion loss', 'Last surveyed'],
+    rows: [
+      ['In service', 'PC-BGLK-277-101', 'BGLK-277', 'ODF-01 P01', 'RTR-01 Te0/0/1', 'LC-LC duplex', '3 m', '0.14 dB', '18-Jun-2026'],
+      ['In service', 'PC-VJA-118-204', 'VJA-118', 'ODF-02 P12', 'SW-02 Gi1/0/24', 'SC-LC duplex', '5 m', '0.18 dB', '05-Sep-2026']
+    ]
+  },
+  duct: {
+    headers: ['Status', 'Duct', 'A end', 'B end', 'Length', 'Ways used', 'Bore', 'Ownership', 'Last surveyed'],
+    rows: [
+      ['In service', 'DT-BGLK-277-MH01', 'BGLK-277 MH-01', 'BGLK-277 MH-02', '150 m', '3 / 4', '110 mm', 'Own', '20-Jul-2026'],
+      ['In service', 'DT-DEL-279-CHE-118', 'DEL-279 MH-03', 'CHE-118 MH-01', '420 m', '2 / 4', '110 mm', 'Leased', '14-Aug-2026']
+    ]
+  },
+  cooling: {
+    headers: ['Status', 'Unit', 'Site', 'Zone', 'Type', 'Capacity', 'Load', 'Supply → return'],
+    rows: [
+      ['In service', 'CRAC-BGLK-01', 'BGLK-277', 'Zone A', 'CRAC', '60 kW', '55%', '18 → 26 °C'],
+      ['In service', 'CRAC-DEL-02', 'DEL-279', 'Zone B', 'CRAC', '75 kW', '62%', '17 → 25 °C']
+    ]
+  },
+  sensors: {
+    headers: ['Status', 'Sensor', 'Site', 'Zone', 'Temperature', 'Humidity', 'Smoke', 'Leak'],
+    rows: [
+      ['In service', 'ENV-BGLK-01', 'BGLK-277', 'Zone A', '22 °C', '45%', 'Clear', 'Clear'],
+      ['In service', 'ENV-DEL-02', 'DEL-279', 'Zone B', '24 °C', '50%', 'Clear', 'Clear']
+    ]
+  }
+};
+
+function downloadPassiveTemplate(tabKey, format = 'xlsx') {
+  const tpl = PASSIVE_TEMPLATES[tabKey] || PASSIVE_TEMPLATES.fiber;
+  const stem = `sample-passive-${tabKey}-template`;
+
+  if (window.__nsBridge && window.__nsBridge.exportMatrix) {
+    window.__nsBridge.exportMatrix(tpl.headers, tpl.rows, stem, format);
+    return;
+  }
+
+  const matrix = [tpl.headers, ...tpl.rows];
+  if (format === 'xlsx') {
+    const xmlRows = matrix.map((row, rIdx) => {
+      const isHeader = rIdx === 0;
+      const cells = row.map(val => {
+        const escVal = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `<Cell${isHeader ? ' ss:StyleID="Header"' : ''}><Data ss:Type="String">${escVal}</Data></Cell>`;
+      }).join('');
+      return `<Row>${cells}</Row>`;
+    }).join('\n');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="${tabKey}">
+  <Table>
+   ${xmlRows}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+    const blob = new Blob([xml], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${stem}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } else {
+    const escapeCsv = v => /[",\r\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+    const csv = '\uFEFF' + matrix.map(r => r.map(escapeCsv).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${stem}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
+
+function renderPassiveImportModal(tabKey) {
+  const SC = passScoped();
+  const tabList = SC ? PASSIVE_DC_ORDER.map(k => PASSIVE_TABS.find(x => x.k === k) || PASSIVE_NEW_TABS.find(x => x.k === k)) : PASSIVE_TABS;
+  const tabObj = tabList.find(x => x && x.k === tabKey);
+  const tabName = tabObj ? tabObj.n : tabKey;
+
+  return `
+  <div class="job-modal-scrim" id="passive-import-scrim" style="z-index:9999;">
+    <div class="job-modal-panel" style="max-width:560px;box-shadow:0 25px 50px -12px rgba(15, 23, 42, 0.28);">
+      <div class="job-modal-header" style="padding:18px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="job-modal-header-icon" style="background:var(--vw-color-blue-50);color:var(--vw-color-blue-600);border:1px solid #dbeafe;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="job-modal-title" style="font-size:1.125rem;font-weight:700;margin:0;">Import ${escPassive(tabName)} Records</h2>
+            <p class="job-modal-subtitle" style="font-size:0.8125rem;margin:2px 0 0 0;color:var(--vw-color-slate-500);">
+              Target: <strong>${escPassive(tabName)}</strong> &middot; Supports .xlsx and .csv
+            </p>
+          </div>
+        </div>
+        <button type="button" class="job-modal-close-btn" data-close-passive-modal="1" aria-label="Close dialog" style="font-size:1.25rem;">&times;</button>
+      </div>
+
+      <div class="job-modal-body" style="padding:20px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="font-size:0.8125rem;font-weight:600;color:var(--vw-color-slate-700);text-transform:uppercase;letter-spacing:0.04em;margin:0;">
+            Select or Drop File
+          </label>
+          <button type="button" class="nst-btn nst-btn--xs nst-btn--ghost" data-download-template="${tabKey}|xlsx" style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;padding:3px 10px;border-radius:5px;font-weight:500;color:var(--vw-color-blue-600);border-color:var(--vw-color-blue-200);background:var(--vw-color-blue-50);" title="Download template">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download Template</span>
+          </button>
+        </div>
+
+        <input type="file" id="passive-modal-file-input" accept=".xlsx,.xls,.csv,.xml" style="display:none;">
+        <div id="passive-dropzone" style="border:2px dashed ${PASSIVE_SELECTED_FILE ? '#16a34a' : 'var(--vw-color-slate-300)'};border-radius:10px;padding:26px 20px;text-align:center;background:${PASSIVE_SELECTED_FILE ? '#f0fdf4' : '#fafafa'};cursor:pointer;transition:border-color 0.15s, background-color 0.15s;">
+          ${PASSIVE_SELECTED_FILE ? `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div style="font-weight:600;font-size:0.9375rem;color:var(--vw-color-slate-800);">${escPassive(PASSIVE_SELECTED_FILE.name)}</div>
+              <div style="font-size:0.8125rem;color:var(--vw-color-slate-500);">${(PASSIVE_SELECTED_FILE.size / 1024).toFixed(1)} KB &middot; Ready to import</div>
+              <button type="button" class="nst-btn nst-btn--xs nst-btn--ghost" data-remove-selected-file="1" style="margin-top:4px;color:#ef4444;border-color:#fca5a5;">
+                Choose another file
+              </button>
+            </div>
+          ` : `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+              <div style="width:44px;height:44px;border-radius:50%;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div style="font-weight:600;font-size:0.875rem;color:var(--vw-color-slate-700);">
+                Click to browse or drag and drop your file here
+              </div>
+              <div style="font-size:0.8125rem;color:var(--vw-color-slate-400);">
+                Accepts .xlsx (Excel) or .csv (comma-separated) files
+              </div>
+            </div>
+          `}
+        </div>
+      </div>
+
+      <div class="job-modal-footer" style="padding:14px 24px;border-top:1px solid var(--vw-color-slate-100);background:var(--vw-color-slate-50);display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--ghost" data-close-passive-modal="1">
+          Cancel
+        </button>
+        <button type="button" class="nst-btn nst-btn--sm nst-btn--filled" data-submit-passive-upload="1" style="background:var(--vw-color-blue-600);color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Upload</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function triggerPassiveImport() {
+  openPassiveImportModal();
+}
+
+if (typeof window !== 'undefined') {
+  window.clearPassiveImportAlert = clearPassiveImportAlert;
+  window.openPassiveImportModal = openPassiveImportModal;
+  window.closePassiveImportModal = closePassiveImportModal;
+  window.downloadPassiveTemplate = downloadPassiveTemplate;
+  window.triggerPassiveImport = openPassiveImportModal;
+  window.__passiveImport = {
+    handlePassiveFileUpload,
+    parsePassiveCsv,
+    parsePassiveXmlSpreadsheet,
+    mapPassiveImportRows,
+    triggerPassiveImport: openPassiveImportModal,
+    openPassiveImportModal,
+    closePassiveImportModal,
+    downloadPassiveTemplate,
+    renderPassiveImportModal,
+    clearPassiveImportAlert,
+    PASSIVE_TEMPLATES
+  };
+}
+
 function viewPassive() {
   const SC = passScoped();
   const tabList = SC ? PASSIVE_DC_ORDER.map(k => {
@@ -249205,6 +249814,19 @@ function viewPassive() {
     ])}
 
     ${card(`
+      ${PASSIVE_IMPORT_ALERT ? `<div class="nst-alert nst-alert--success" style="margin-bottom:var(--vw-space-md);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);border-radius:8px;color:#15803d;font-size:0.875rem;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <div>
+            <strong>File uploaded successfully!</strong>
+            <span style="margin-left:6px">${PASSIVE_IMPORT_ALERT.count} records imported into ${escPassive(PASSIVE_IMPORT_ALERT.tabName)} from <strong>${escPassive(PASSIVE_IMPORT_ALERT.fileName)}</strong>.</span>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" data-passive-alert-close="1" style="color:#15803d;font-size:16px;padding:2px 6px;cursor:pointer;background:transparent;border:none;" aria-label="Dismiss">✕</button>
+      </div>` : ''}
       <div class="tabbar" style="margin-top:var(--vw-space-lg)">${tabList.map(x=>`
         <button class="tab${x.k===t?' is-on':''}" data-passtab="${x.k}">${x.n}</button>`).join('')}</div>
       ${gridBar(rows.length, n(SC ? dcPool.length : meta.c), 'Name, site, A/B end', FS.passive, sourceBar,
@@ -249224,6 +249846,8 @@ function viewPassive() {
         <span class="legend-i"><span class="legend-sw" style="background:${cv('purple',300)}"></span>ODF / panel</span>
         <span class="legend-i"><span class="legend-sw" style="background:var(--vw-color-slate-100);border:1px solid var(--vw-color-slate-300)"></span>free U</span>
       </div>` : ''}`)}
+
+    ${PASSIVE_IMPORT_MODAL ? renderPassiveImportModal(t) : ''}
   </div>`;
 }
 
@@ -255220,9 +255844,10 @@ function drillTo(view, label, q) {
     : null;
   const inheritedFrom = DRILL && DRILL.view === CURRENT && DRILL.from ? DRILL.from : null;
   const urlFrom = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('from')) || null;
-  const effectiveSiteFrom = (inheritedFrom && (inheritedFrom.toLowerCase().includes('insight') || inheritedFrom.toLowerCase().startsWith('inventory')))
+  const isInsightsFrom = f => !!(f && (f.toLowerCase().includes('insight') || f.toLowerCase() === 'inventory' || f.toLowerCase().startsWith('inventory insights')));
+  const effectiveSiteFrom = isInsightsFrom(inheritedFrom)
     ? inheritedFrom
-    : (urlFrom && (urlFrom.toLowerCase().includes('insight') || urlFrom.toLowerCase().startsWith('inventory')))
+    : isInsightsFrom(urlFrom)
     ? urlFrom
     : inheritedFrom || urlFrom;
   const siteDrillFrom = (CURRENT === 'site' && typeof SITE_ID !== 'undefined' && SITE_ID)
@@ -255568,6 +256193,11 @@ document.addEventListener('keydown', e => {
     go(CURRENT);
     return;
   }
+  if (typeof PASSIVE_IMPORT_MODAL !== 'undefined' && PASSIVE_IMPORT_MODAL && e.key === 'Escape') {
+    e.preventDefault();
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
   if (e.key !== 'Enter' && e.key !== ' ') return;
   const t = e.target.closest('[role="button"]');
   if (!t) return;
@@ -255814,6 +256444,62 @@ document.addEventListener('click', e => {
   if (gx) { const [, kind] = gx.dataset.gridexport.split('|'); exportNearestTable(gx, kind); return; }
   const gp = e.target.closest('[data-gridprint]');
   if (gp) { window.print(); return; }
+  const pib = e.target.closest('[data-passive-import-btn]');
+  if (pib) {
+    if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
+    if (typeof openPassiveImportModal === 'function') {
+      openPassiveImportModal();
+    } else if (typeof window !== 'undefined' && window.__passiveImport && typeof window.__passiveImport.openPassiveImportModal === 'function') {
+      window.__passiveImport.openPassiveImportModal();
+    }
+    return;
+  }
+  const pac = e.target.closest('[data-passive-alert-close]');
+  if (pac) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
+    go('passive');
+    return;
+  }
+  const cpm = e.target.closest('[data-close-passive-modal]');
+  if (cpm) {
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
+  const isPassiveScrim = (e.target.id === 'passive-import-scrim' || (e.target.classList && e.target.classList.contains('job-modal-scrim'))) && !e.target.closest('.job-modal-panel');
+  if (isPassiveScrim && typeof PASSIVE_IMPORT_MODAL !== 'undefined' && PASSIVE_IMPORT_MODAL) {
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    return;
+  }
+  const dlt = e.target.closest('[data-download-template]');
+  if (dlt) {
+    const [tKey, fmt] = dlt.dataset.downloadTemplate.split('|');
+    if (typeof downloadPassiveTemplate === 'function') downloadPassiveTemplate(tKey, fmt);
+    return;
+  }
+  const rmf = e.target.closest('[data-remove-selected-file]');
+  if (rmf) {
+    if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = null;
+    go('passive');
+    return;
+  }
+  const dz = e.target.closest('#passive-dropzone');
+  if (dz) {
+    const finp = document.getElementById('passive-modal-file-input');
+    if (finp) finp.click();
+    return;
+  }
+  const spu = e.target.closest('[data-submit-passive-upload]');
+  if (spu) {
+    if (typeof PASSIVE_SELECTED_FILE !== 'undefined' && PASSIVE_SELECTED_FILE) {
+      const f = PASSIVE_SELECTED_FILE;
+      if (typeof handlePassiveFileUpload === 'function') handlePassiveFileUpload(f);
+    } else {
+      const finp = document.getElementById('passive-modal-file-input');
+      if (finp) finp.click();
+    }
+    return;
+  }
   const cp = e.target.closest('[data-copy]');
   if (cp) {
     const r = cp.getBoundingClientRect(), value = cp.dataset.copy;
@@ -256079,7 +256765,15 @@ document.addEventListener('click', e => {
   const rstab = e.target.closest('[data-ressvctab]');
   if (rstab) { RES_SVC_TAB = rstab.dataset.ressvctab; go('resource'); return; }
   const pst = e.target.closest('[data-passtab]');
-  if (pst) { PASS_TAB = pst.dataset.passtab; go('passive'); return; }
+  if (pst) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
+    if (typeof closePassiveImportModal === 'function') closePassiveImportModal();
+    if (typeof PASSIVE_IMPORT_MODAL !== 'undefined') PASSIVE_IMPORT_MODAL = false;
+    PASS_TAB = pst.dataset.passtab;
+    go('passive');
+    return;
+  }
   const fbt = e.target.closest('[data-fibertab]');
   if (fbt) { FIBER_TAB = fbt.dataset.fibertab; go('fiber'); return; }
   const ssec = e.target.closest('[data-sitesection]');
@@ -256298,10 +256992,19 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'passive-modal-file-input') {
+    if (e.target.files && e.target.files[0]) {
+      if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = e.target.files[0];
+      go('passive');
+    }
+    return;
+  }
   if (e.target.hasAttribute && e.target.hasAttribute('data-mapstate')) {
     selectMapState(e.target.value); return;
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-passdc')) {
+    if (typeof clearPassiveImportAlert === 'function') clearPassiveImportAlert();
+    if (typeof PASSIVE_IMPORT_ALERT !== 'undefined') PASSIVE_IMPORT_ALERT = null;
     PASS_DC = e.target.value; go('passive'); return;
   }
   if (e.target.hasAttribute && e.target.hasAttribute('data-filterval')) {
@@ -256315,6 +257018,22 @@ document.addEventListener('change', e => {
   const c = e.target.classList;
   if (c && (c.contains('cx-in') || c.contains('cx-hd') || c.contains('ox-in') || c.contains('ox-hd')))
     e.target.dispatchEvent(new Event('input', { bubbles: true }));
+});
+
+document.addEventListener('dragover', e => {
+  if (e.target && e.target.closest && e.target.closest('#passive-dropzone')) {
+    e.preventDefault();
+  }
+});
+document.addEventListener('drop', e => {
+  const dz = e.target && e.target.closest && e.target.closest('#passive-dropzone');
+  if (dz) {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      if (typeof PASSIVE_SELECTED_FILE !== 'undefined') PASSIVE_SELECTED_FILE = e.dataTransfer.files[0];
+      go('passive');
+    }
+  }
 });
 
 /* ── map state selection ──────────────────────────────── */

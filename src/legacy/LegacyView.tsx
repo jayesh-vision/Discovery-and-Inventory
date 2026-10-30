@@ -29,6 +29,8 @@ declare global {
       navigate: (k: string, drill: { label?: string; q?: string } | null, params?: Record<string, string>) => void;
       sync: (k: string, params: Record<string, string>, drill?: { label?: string; q?: string; from?: string } | null) => void;
       exportTable?: (table: HTMLTableElement | null | undefined, kind: 'csv' | 'xlsx', stemName?: string) => Promise<void>;
+      exportMatrix?: (headers: string[], rows: string[][], stemName: string, kind?: 'csv' | 'xlsx') => Promise<void>;
+      parseExcel?: (buffer: ArrayBuffer) => Promise<string[][]>;
     };
   }
 }
@@ -128,7 +130,89 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
           nav(target, { replace: isSameScreen });
         }
       },
-      exportTable: (t, k, n) => exportTable(t, k, n)
+      exportTable: (t, k, n) => exportTable(t, k, n),
+      exportMatrix: async (headers: string[], rows: string[][], stemName: string, kind: 'csv' | 'xlsx' = 'xlsx') => {
+        if (kind === 'xlsx') {
+          const mod = await import('exceljs');
+          const ExcelJS = ((mod as unknown as { default?: typeof mod }).default ?? mod) as any;
+          const wb = new ExcelJS.Workbook();
+          wb.creator = 'NetSingularity OSS';
+          const sheetName = (stemName.replace(/^sample-passive-|-template$/gi, '') || 'Template').slice(0, 31);
+          const ws = wb.addWorksheet(sheetName, { views: [{ state: 'frozen', ySplit: 1 }] });
+          const headerRow = ws.addRow(headers);
+          headerRow.height = 24;
+          headerRow.eachCell((cell: any) => {
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          });
+          rows.forEach(r => ws.addRow(r));
+          ws.columns = headers.map((h, i) => {
+            let maxL = h.length;
+            for (const r of rows) {
+              const l = String(r[i] ?? '').length;
+              if (l > maxL) maxL = l;
+            }
+            return { width: Math.min(40, Math.max(14, maxL + 4)) };
+          });
+          const buf = await wb.xlsx.writeBuffer();
+          const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${stemName}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } else {
+          const escapeCsv = (v: string) => /[",\r\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+          const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(escapeCsv).join(',')).join('\r\n');
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${stemName}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+      },
+      parseExcel: async (buffer: ArrayBuffer) => {
+        const mod = await import('exceljs');
+        const Excel = (mod as any).default ?? mod;
+        const wb = new Excel.Workbook();
+        await wb.xlsx.load(buffer);
+        const ws = wb.worksheets[0];
+        const rows: string[][] = [];
+        if (ws) {
+          ws.eachRow({ includeEmpty: true }, (row: any) => {
+            const vals: string[] = [];
+            const colCount = Math.max(row.cellCount || 0, ws.columnCount || 0, row.actualCellCount || 0);
+            for (let c = 1; c <= colCount; c++) {
+              const cell = row.getCell(c);
+              let val = cell.text;
+              if (val == null || val === '') {
+                if (cell.value && typeof cell.value === 'object') {
+                  if (Array.isArray(cell.value.richText)) {
+                    val = cell.value.richText.map((rt: any) => rt.text || '').join('');
+                  } else {
+                    val = cell.value.result ?? cell.value.text ?? '';
+                  }
+                } else {
+                  val = cell.value ?? '';
+                }
+              }
+              vals.push(String(val).trim());
+            }
+            if (vals.some(v => v.length > 0)) {
+              rows.push(vals);
+            }
+          });
+        }
+        return rows;
+      }
     };
   }, [nav, legacyKey]);
 
