@@ -115,7 +115,7 @@ function exportNearestTable(btn, kind) {
 
 /* ── drill-down ───────────────────────────────────────── */
 let DRILL_PENDING = null;
-function drillTo(view, label, q) {
+function drillTo(view, label, q, fromOverride) {
   if (!VIEWS[view]) return;
   LINK_VIEW = null;
   const crumbName = CURRENT === 'virtual' ? 'Virtual' : ((VIEWS[CURRENT] || {}).crumb || '');
@@ -189,9 +189,10 @@ function drillTo(view, label, q) {
     || nodeDrillFrom
     || siteDrillFrom
     || (view !== CURRENT ? crumbName : null);
-  const fromName = view !== CURRENT
-    ? differentScreenFrom
-    : (sameScreenDrillFrom || curDrillFrom || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null) || inheritedFrom);
+  const fromName = fromOverride
+    || (view !== CURRENT
+      ? differentScreenFrom
+      : (sameScreenDrillFrom || curDrillFrom || (inheritedRoot && inheritedRoot !== crumbName ? inheritedFrom : null) || inheritedFrom));
   DRILL_PENDING = { view, label, q, from: fromName, back: CURRENT };
   applyDrillQuery(view, q, label);
   go(view);
@@ -911,7 +912,7 @@ document.addEventListener('click', e => {
   const dr = e.target.closest('[data-drill]');
   if (dr) {
     if (KEBAB || GRIDMENU) { KEBAB = null; GRIDMENU = false; }
-    drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || '');
+    drillTo(dr.dataset.drill, dr.dataset.dlabel, dr.dataset.dq || '', dr.dataset.dfrom || null);
     return;
   }
   const grp = e.target.closest('[data-group]');

@@ -986,14 +986,15 @@ function mapPassiveImportRows(tabKey, headers, dataRows) {
     // 1. Exact match
     for (const a of aliases) {
       const target = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!target) continue;
       const idx = normHeaders.indexOf(target);
       if (idx !== -1) return idx;
     }
-    // 2. Substring / partial match
+    // 2. Substring / partial match (only for targets and headers of at least 3 chars to prevent single-character false positives)
     for (const a of aliases) {
       const target = a.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!target) continue;
-      const idx = normHeaders.findIndex(nh => nh && (nh.includes(target) || target.includes(nh)));
+      if (!target || target.length < 3) continue;
+      const idx = normHeaders.findIndex(nh => nh && nh.length >= 3 && (nh.includes(target) || target.includes(nh)));
       if (idx !== -1) return idx;
     }
     return -1;
@@ -1026,141 +1027,141 @@ function mapPassiveImportRows(tabKey, headers, dataRows) {
     const chip = chipOfStatus(st);
 
     if (tabKey === 'fiber') {
-      let n = getVal(r, ['span', 'name', 'id', 'fs', 'fiberspan', 'spanname'], '', 1);
+      let n = getVal(r, ['span', 'name', 'id', 'fs', 'fiberspan', 'spanname', 'spancode'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
-        a: getVal(r, ['a end', 'aend', 'a', 'origina'], '', 2),
-        b: getVal(r, ['b end', 'bend', 'b', 'originb'], '', 3),
-        len: getVal(r, ['length', 'len'], '10 km', 4),
-        cores: getVal(r, ['cores used', 'coresused', 'cores', 'core'], '24 / 96', 5),
-        splices: parseInt(getVal(r, ['splices', 'splice'], '0', 6), 10) || 0,
-        otdr: getVal(r, ['last otdr', 'lastotdr', 'otdr'], '—', 7),
-        att: getVal(r, ['attenuation', 'att'], '0.22 dB/km', 8),
-        own: getVal(r, ['ownership', 'own'], 'Own', 9)
+        a: getVal(r, ['a end', 'aend', 'origina', 'origin a', 'from', 'source', 'side a', 'sidea', 'site a', 'a'], '', 2),
+        b: getVal(r, ['b end', 'bend', 'originb', 'origin b', 'to', 'destination', 'side b', 'sideb', 'site b', 'b'], '', 3),
+        len: getVal(r, ['length', 'distance', 'len', 'km', 'span length'], '10 km', 4),
+        cores: getVal(r, ['cores used', 'coresused', 'cores', 'core', 'core count', 'fiber count'], '24 / 96', 5),
+        splices: parseInt(getVal(r, ['splices', 'splice', 'splice count'], '0', 6), 10) || 0,
+        otdr: getVal(r, ['last otdr', 'lastotdr', 'otdr', 'survey', 'tested'], '—', 7),
+        att: getVal(r, ['attenuation', 'att', 'loss', 'dbkm'], '0.22 dB/km', 8),
+        own: getVal(r, ['ownership', 'own', 'lease'], 'Own', 9)
       });
     } else if (tabKey === 'odf') {
-      let n = getVal(r, ['odf', 'name', 'id', 'odfname', 'panel'], '', 1);
+      let n = getVal(r, ['odf', 'name', 'id', 'odfname', 'panel', 'odfid', 'frame'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
-      const cap = parseInt(getVal(r, ['capacity', 'cap'], '96', 4), 10) || 96;
-      const used = parseInt(getVal(r, ['used'], '24', 5), 10) || 0;
+      const cap = parseInt(getVal(r, ['capacity', 'total ports', 'cap', 'total'], '96', 4), 10) || 96;
+      const used = parseInt(getVal(r, ['used', 'ports used', 'occupied', 'used ports'], '24', 5), 10) || 0;
       out.push({
         st, chip, n,
-        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        type: getVal(r, ['type'], 'Rack mount 96F', 3),
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc', 'facility', 'building'], 'BGLK-277', 2),
+        type: getVal(r, ['type', 'model', 'form factor'], 'Rack mount 96F', 3),
         cap,
         used,
-        rack: getVal(r, ['rack position', 'rackposition', 'rack', 'pos'], '—', 8),
-        term: getVal(r, ['termination', 'term'], 'SC/APC', 9)
+        rack: getVal(r, ['rack position', 'rackposition', 'rack', 'pos', 'bay'], '—', 8),
+        term: getVal(r, ['termination', 'term', 'connector'], 'SC/APC', 9)
       });
     } else if (tabKey === 'rack') {
-      let n = getVal(r, ['rack', 'name', 'id', 'cabinet', 'cab', 'bay', 'rackname', 'rackid'], '', 1);
+      let n = getVal(r, ['rack', 'name', 'id', 'cabinet', 'cab', 'bay', 'rackname', 'rackid', 'racknumber', 'rackno', 'asset'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim() && chipOfStatus(r[0]) === 'neutral') n = String(r[0]).trim();
       if (!n) continue;
-      const hStr = getVal(r, ['height', 'h', 'u', 'totalu'], '42', 3);
+      const hStr = getVal(r, ['height', 'totalheight', 'totalu', 'units', 'usize', 'size', 'u', 'h'], '42', 3);
       const h = parseInt(String(hStr).replace(/[^0-9]/g, ''), 10) || 42;
-      const usedStr = getVal(r, ['u used', 'uused', 'used', 'occupied'], '20', 4);
+      const usedStr = getVal(r, ['u used', 'uused', 'used', 'occupied', 'occupancy', 'usedu'], '20', 4);
       const used = parseInt(String(usedStr).replace(/[^0-9]/g, ''), 10) || 20;
       out.push({
         st, chip, n,
-        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc', 'facility', 'building'], 'BGLK-277', 2),
         h,
         used,
-        kw: getVal(r, ['power', 'kw'], '2.0 / 5.0', 7),
-        cool: getVal(r, ['cooling', 'cool'], 'Front-to-back', 8),
+        kw: getVal(r, ['power', 'kw', 'draw', 'load', 'powerkw'], '2.0 / 5.0', 7),
+        cool: getVal(r, ['cooling', 'cool', 'airflow', 'type'], 'Front-to-back', 8),
         occ: [[1, 2, 'ODF-01', 'odf'], [6, 7, 'SW-01', 'sw'], [20, 21, 'RTR-01', 'rtr']]
       });
     } else if (tabKey === 'power') {
-      let n = getVal(r, ['unit', 'name', 'id', 'power', 'device'], '', 1);
+      let n = getVal(r, ['unit', 'name', 'id', 'power', 'device', 'unitname'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
-        site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        type: getVal(r, ['type'], 'DG set', 3),
-        rating: getVal(r, ['rating'], '250 kVA', 4),
-        runtime: getVal(r, ['autonomy', 'runtime'], '—', 5),
-        tested: getVal(r, ['last tested', 'lasttested', 'tested'], '—', 6),
-        vendor: getVal(r, ['vendor'], '—', 7)
+        site: getVal(r, ['site', 'location', 'datacenter', 'dc', 'facility'], 'BGLK-277', 2),
+        type: getVal(r, ['type', 'category', 'kind'], 'DG set', 3),
+        rating: getVal(r, ['rating', 'capacity', 'kva', 'kw'], '250 kVA', 4),
+        runtime: getVal(r, ['autonomy', 'runtime', 'backup'], '—', 5),
+        tested: getVal(r, ['last tested', 'lasttested', 'tested', 'date'], '—', 6),
+        vendor: getVal(r, ['vendor', 'make', 'oem', 'manufacturer'], '—', 7)
       });
     } else if (tabKey === 'splice') {
-      let n = getVal(r, ['closure', 'name', 'id', 'splice', 'enclosure'], '', 1);
+      let n = getVal(r, ['closure', 'name', 'id', 'splice', 'enclosure', 'joint'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
         site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        span: getVal(r, ['on span', 'onspan', 'span'], '—', 3),
-        type: getVal(r, ['type'], 'Dome 48F', 4),
-        fibers: getVal(r, ['fibers spliced', 'fibersspliced', 'fibers'], '24 / 48', 5),
-        loss: getVal(r, ['mean splice loss', 'loss'], '0.05 dB', 6),
-        housing: getVal(r, ['housing'], 'Buried', 7),
+        span: getVal(r, ['on span', 'onspan', 'span', 'fiberspan'], '—', 3),
+        type: getVal(r, ['type', 'model'], 'Dome 48F', 4),
+        fibers: getVal(r, ['fibers spliced', 'fibersspliced', 'fibers', 'spliced'], '24 / 48', 5),
+        loss: getVal(r, ['mean splice loss', 'loss', 'splice loss'], '0.05 dB', 6),
+        housing: getVal(r, ['housing', 'vault', 'chamber'], 'Buried', 7),
         surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
       });
     } else if (tabKey === 'cord') {
-      let n = getVal(r, ['patch cord', 'patchcord', 'cord', 'name', 'id'], '', 1);
+      let n = getVal(r, ['patch cord', 'patchcord', 'cord', 'name', 'id', 'cable'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
         site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        a: getVal(r, ['a end', 'aend', 'a'], '—', 3),
-        b: getVal(r, ['b end', 'bend', 'b'], '—', 4),
-        type: getVal(r, ['connector', 'type'], 'LC-LC duplex', 5),
-        len: getVal(r, ['length', 'len'], '2 m', 6),
+        a: getVal(r, ['a end', 'aend', 'from', 'source', 'port a', 'a'], '—', 3),
+        b: getVal(r, ['b end', 'bend', 'to', 'destination', 'port b', 'b'], '—', 4),
+        type: getVal(r, ['connector', 'type', 'cable type'], 'LC-LC duplex', 5),
+        len: getVal(r, ['length', 'len', 'cable length'], '2 m', 6),
         loss: getVal(r, ['insertion loss', 'insertionloss', 'loss'], '0.15 dB', 7),
         surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
       });
     } else if (tabKey === 'duct') {
-      let n = getVal(r, ['duct', 'name', 'id', 'conduit'], '', 1);
+      let n = getVal(r, ['duct', 'name', 'id', 'conduit', 'pipe'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
-        a: getVal(r, ['a end', 'aend', 'a'], '—', 2),
-        b: getVal(r, ['b end', 'bend', 'b'], '—', 3),
-        len: getVal(r, ['length', 'len'], '100 m', 4),
-        ways: getVal(r, ['ways used', 'waysused', 'ways'], '2 / 4', 5),
-        bore: getVal(r, ['bore'], '110 mm', 6),
-        own: getVal(r, ['ownership', 'own'], 'Own', 7),
+        a: getVal(r, ['a end', 'aend', 'from', 'source', 'pit a', 'a'], '—', 2),
+        b: getVal(r, ['b end', 'bend', 'to', 'destination', 'pit b', 'b'], '—', 3),
+        len: getVal(r, ['length', 'len', 'route length'], '100 m', 4),
+        ways: getVal(r, ['ways used', 'waysused', 'ways', 'subducts'], '2 / 4', 5),
+        bore: getVal(r, ['bore', 'diameter', 'size'], '110 mm', 6),
+        own: getVal(r, ['ownership', 'own', 'lease'], 'Own', 7),
         surveyed: getVal(r, ['last surveyed', 'lastsurveyed', 'surveyed'], '—', 8)
       });
     } else if (tabKey === 'cooling') {
-      let n = getVal(r, ['unit', 'name', 'id', 'cooling', 'device'], '', 1);
+      let n = getVal(r, ['unit', 'name', 'id', 'cooling', 'device', 'crah', 'crac'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
         site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        zone: getVal(r, ['zone'], 'Zone A', 3),
-        type: getVal(r, ['type'], 'CRAC', 4),
-        cap: parseInt(getVal(r, ['capacity', 'cap'], '50', 5), 10) || 50,
-        load: parseInt(getVal(r, ['load'], '65', 6), 10) || 65,
+        zone: getVal(r, ['zone', 'hall', 'room', 'floor'], 'Zone A', 3),
+        type: getVal(r, ['type', 'kind'], 'CRAC', 4),
+        cap: parseInt(getVal(r, ['capacity', 'cap', 'cooling kw', 'kw'], '50', 5), 10) || 50,
+        load: parseInt(getVal(r, ['load', 'utilization'], '65', 6), 10) || 65,
         supply: 18, ret: 26
       });
     } else if (tabKey === 'sensors') {
-      let n = getVal(r, ['sensor', 'name', 'id', 'device'], '', 1);
+      let n = getVal(r, ['sensor', 'name', 'id', 'device', 'probe'], '', 1);
       if (!n && r[1] && String(r[1]).trim()) n = String(r[1]).trim();
       if (!n && r[0] && String(r[0]).trim()) n = String(r[0]).trim();
       if (!n) continue;
       out.push({
         st, chip, n,
         site: getVal(r, ['site', 'location', 'datacenter', 'dc'], 'BGLK-277', 2),
-        zone: getVal(r, ['zone'], 'Zone A', 3),
-        temp: parseInt(getVal(r, ['temperature', 'temp'], '22', 4), 10) || 22,
-        hum: parseInt(getVal(r, ['humidity', 'hum'], '45', 5), 10) || 45,
-        smoke: /alarm|smoke/i.test(getVal(r, ['smoke'], '', 6)),
-        leak: /alarm|leak/i.test(getVal(r, ['leak'], '', 7))
+        zone: getVal(r, ['zone', 'hall', 'room', 'floor'], 'Zone A', 3),
+        temp: parseInt(getVal(r, ['temperature', 'temp', 'celsius'], '22', 4), 10) || 22,
+        hum: parseInt(getVal(r, ['humidity', 'hum', 'rh'], '45', 5), 10) || 45,
+        smoke: /alarm|smoke|true|yes/i.test(getVal(r, ['smoke'], '', 6)),
+        leak: /alarm|leak|true|yes/i.test(getVal(r, ['leak'], '', 7))
       });
     }
   }
@@ -1178,7 +1179,7 @@ async function handlePassiveFileUpload(file) {
     const isZip = u8[0] === 0x50 && u8[1] === 0x4B;
 
     if (isZip && window.__nsBridge && window.__nsBridge.parseExcel) {
-      rows = await window.__nsBridge.parseExcel(buffer);
+      rows = await window.__nsBridge.parseExcel(buffer, PASS_TAB);
     } else {
       const text = new TextDecoder('utf-8').decode(buffer);
       if (text.includes('<Workbook') || text.includes('<?xml') || text.includes('<Table')) {
@@ -1209,12 +1210,32 @@ async function handlePassiveFileUpload(file) {
 
   const headers = rows[0];
   const dataRows = rows.slice(1);
-  const tabKey = PASS_TAB;
-  const mapped = mapPassiveImportRows(tabKey, headers, dataRows);
+  let tabKey = PASS_TAB;
+  let mapped = mapPassiveImportRows(tabKey, headers, dataRows);
+
+  // If active tab yields no records, attempt auto-detecting the tab matching the sheet headers
+  if (!mapped.length) {
+    const candidateTabs = Object.keys(PASSIVE_TEMPLATES);
+    let bestTab = null;
+    let bestMapped = [];
+    for (const cand of candidateTabs) {
+      if (cand === tabKey) continue;
+      const candMapped = mapPassiveImportRows(cand, headers, dataRows);
+      if (candMapped.length > bestMapped.length) {
+        bestMapped = candMapped;
+        bestTab = cand;
+      }
+    }
+    if (bestTab && bestMapped.length > 0) {
+      tabKey = bestTab;
+      mapped = bestMapped;
+      PASS_TAB = tabKey;
+    }
+  }
 
   if (!mapped.length) {
     if (typeof showCopyToast === 'function') {
-      showCopyToast('right', 72, 'No valid ' + tabKey + ' records found in file', 'error');
+      showCopyToast('right', 72, 'No valid records found in file. Please ensure column headers match the template.', 'error');
     }
     return;
   }
@@ -1230,12 +1251,17 @@ async function handlePassiveFileUpload(file) {
   }
 
   for (const item of mapped) {
+    item.imported = true;
     if (SC) {
       item.dc = true;
       if (!item.dcId) {
-        if (PASS_DC) item.dcId = PASS_DC;
-        else if (item.site && validDcs && validDcs.has(item.site)) item.dcId = item.site;
-        else item.dcId = defaultDcId;
+        if (PASS_DC) {
+          item.dcId = PASS_DC;
+        } else if (item.site && validDcs && validDcs.has(item.site)) {
+          item.dcId = item.site;
+        } else {
+          item.dcId = defaultDcId;
+        }
       }
       if (!item.site) item.site = item.dcId;
     }
@@ -1243,7 +1269,7 @@ async function handlePassiveFileUpload(file) {
     if (existingIdx !== -1) {
       const existing = dataset[existingIdx];
       dataset.splice(existingIdx, 1);
-      dataset.unshift({ ...existing, ...item });
+      dataset.unshift({ ...existing, ...item, imported: true });
     } else {
       dataset.unshift(item);
     }
@@ -1253,20 +1279,19 @@ async function handlePassiveFileUpload(file) {
     if (altIdx !== -1) {
       const altExisting = altDataset[altIdx];
       altDataset.splice(altIdx, 1);
-      altDataset.unshift({ ...altExisting, ...item });
+      altDataset.unshift({ ...altExisting, ...item, imported: true });
     } else {
       altDataset.unshift(item);
     }
   }
 
   if (typeof PASSIVE_TABS !== 'undefined') {
-    const pt = PASSIVE_TABS.find(x => x.k === tabKey);
+    const pt = PASSIVE_TABS.find(x => x && x.k === tabKey);
     if (pt && PASSIVE[tabKey]) pt.c = PASSIVE[tabKey].length;
   }
-  if (typeof PASSIVE_DC_ORDER !== 'undefined' && typeof PASSIVE_DC !== 'undefined') {
-    const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
-    const tabObj = tabList.find(x => x.k === tabKey);
-    if (tabObj && PASSIVE_DC[tabKey]) tabObj.c = PASSIVE_DC[tabKey].length;
+  if (typeof PASSIVE_NEW_TABS !== 'undefined') {
+    const pnt = PASSIVE_NEW_TABS.find(x => x && x.k === tabKey);
+    if (pnt && PASSIVE_DC[tabKey]) pnt.c = PASSIVE_DC[tabKey].length;
   }
 
   if (typeof gridOf === 'function') {
@@ -1275,10 +1300,15 @@ async function handlePassiveFileUpload(file) {
   }
   if (typeof GRID_N !== 'undefined') GRID_N = 0;
 
+  // Reset PASS_DC to All data centers so filter doesn't hide imported items
+  if (PASS_DC && !validDcs?.has(PASS_DC)) {
+    PASS_DC = '';
+  }
+
   PASSIVE_IMPORT_MODAL = false;
   PASSIVE_SELECTED_FILE = null;
-  const tabList = SC ? PASSIVE_DC_ORDER : PASSIVE_TABS;
-  const tabObj = tabList.find(x => x.k === tabKey);
+  const allTabsList = typeof PASSIVE_TABS !== 'undefined' ? [...PASSIVE_TABS, ...(typeof PASSIVE_NEW_TABS !== 'undefined' ? PASSIVE_NEW_TABS : [])] : [];
+  const tabObj = allTabsList.find(x => x && x.k === tabKey);
   const tabName = tabObj ? tabObj.n : tabKey;
   PASSIVE_IMPORT_ALERT = {
     count: mapped.length,
@@ -1362,13 +1392,28 @@ const PASSIVE_TEMPLATES = {
 function downloadPassiveTemplate(tabKey, format = 'xlsx') {
   const tpl = PASSIVE_TEMPLATES[tabKey] || PASSIVE_TEMPLATES.fiber;
   const stem = `sample-passive-${tabKey}-template`;
+  const SC = passScoped();
+  const validDcs = (typeof window !== 'undefined' && window.__dcSum) ? new Set(window.__dcSum.map(d => d.id)) : null;
+  const defaultDc = PASS_DC || (validDcs && validDcs.size > 0 ? Array.from(validDcs)[0] : 'VA-DC-001');
+
+  let rows = tpl.rows;
+  if (SC && rows && rows.length) {
+    const siteIdx = tpl.headers.findIndex(h => /site|location|datacenter|dc/i.test(h));
+    if (siteIdx !== -1) {
+      rows = rows.map(r => {
+        const copy = [...r];
+        copy[siteIdx] = defaultDc;
+        return copy;
+      });
+    }
+  }
 
   if (window.__nsBridge && window.__nsBridge.exportMatrix) {
-    window.__nsBridge.exportMatrix(tpl.headers, tpl.rows, stem, format);
+    window.__nsBridge.exportMatrix(tpl.headers, rows, stem, format);
     return;
   }
 
-  const matrix = [tpl.headers, ...tpl.rows];
+  const matrix = [tpl.headers, ...rows];
   if (format === 'xlsx') {
     const xmlRows = matrix.map((row, rIdx) => {
       const isHeader = rIdx === 0;
@@ -1528,7 +1573,7 @@ function viewPassive() {
   if (!tabList.some(x => x.k === PASS_TAB)) PASS_TAB = tabList[0].k;
   const t = PASS_TAB, meta = tabList.find(x => x.k === t);
   const validDcs = window.__dcSum ? new Set(window.__dcSum.map(d => d.id)) : null;
-  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => (!PASS_DC || !r.dcId || r.dcId === PASS_DC) && (!validDcs || !r.dcId || validDcs.has(r.dcId))) : [];
+  const dcPool = SC ? (PASSIVE_DC[t] || []).filter(r => r.imported || ((!PASS_DC || !r.dcId || r.dcId === PASS_DC) && (!validDcs || !r.dcId || validDcs.has(r.dcId)))) : [];
   const netRows = SC ? [] : (PASSIVE[t] || []);
   const rows = gridApply('passive', SC ? dcPool : netRows);
   const P = PASSIVE_STATS;

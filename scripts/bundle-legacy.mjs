@@ -126,6 +126,8 @@ function __legacyParams(k) {
     : k === 'rack' ? { id: RACK_ID } : k === 'power' ? { id: POWER_ID } : k === 'splice' ? { id: SPLICE_ID }
     : k === 'services' ? { tab: TAB.svc || 'l2vpn' }
     : k === 'physical' ? { cls: TAB.phy || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) || 'router' }
+    : k === 'passive' ? { ...(typeof PASS_TAB !== 'undefined' && PASS_TAB ? { tab: PASS_TAB } : {}) }
+    : k === 'links' ? { ...(typeof TAB !== 'undefined' && TAB.link ? { tab: TAB.link } : {}) }
     : k === 'cord' ? { id: CORD_ID } : k === 'duct' ? { id: DUCT_ID } : k === 'fiber' ? { id: FIBER_ID } : {};
 }
 `, 'sync after render');

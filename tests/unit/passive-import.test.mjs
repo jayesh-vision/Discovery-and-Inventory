@@ -229,4 +229,15 @@ Degraded,FS-TEST-002,SITE-C ODF-01,SITE-D ODF-01,15000 m,12 / 48,8,04-Mar-2026,0
     assert.ok(templates[t].headers.length >= 7, `Template for ${t} should have headers`);
     assert.ok(templates[t].rows.length >= 1, `Template for ${t} should have sample rows`);
   }
+
+  // Verify that 'End A' does not match 'Status' column (prevent partial match bug with short alias 'a')
+  const endAHeaders = ['Status', 'Span', 'End A', 'End B', 'Length', 'Cores', 'Splices', 'Last OTDR', 'Attenuation', 'Ownership'];
+  const endARows = [['In service', 'FS-TEST-99', 'SITE-ORIGIN-A', 'SITE-DEST-B', '10 km', '24/96', '4', '—', '0.22', 'Own']];
+  const mappedEndA = helpers.mapPassiveImportRows('fiber', endAHeaders, endARows);
+  assert.equal(mappedEndA.length, 1);
+  assert.equal(mappedEndA[0].a, 'SITE-ORIGIN-A', 'End A must map to side a, NOT Status column');
+  assert.equal(mappedEndA[0].b, 'SITE-DEST-B', 'End B must map to side b');
+
+  // Verify that imported items bypass data center filtering so user immediately sees their data
+  assert.ok(legacySrc.includes('r.imported || ((!PASS_DC || !r.dcId || r.dcId === PASS_DC)'), 'viewPassive must preserve imported items in dcPool');
 });

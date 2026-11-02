@@ -64,22 +64,22 @@ const DEFAULT: LocStats = {
   active: {
     total: 3421, sub: 'Physical elements across the estate · 3,567 verified on the network',
     segs: [{ w: 86, color: '#0284c7', title: 'Router: 2,943' }, { w: 14, color: '#0ea5e9', title: 'Switch: 478' }],
-    chips: [{ label: 'Router', n: 2943, to: '/inventory/physical?tab=router', title: 'View Routers in inventory' },
-      { label: 'Switch', n: 478, to: '/inventory/physical?tab=switch', title: 'View Switches in inventory' }]
+    chips: [{ label: 'Router', n: 2943, to: '/inventory/physical?tab=router&drill=Router&from=Location', title: 'View Routers in inventory' },
+      { label: 'Switch', n: 478, to: '/inventory/physical?tab=switch&drill=Switch&from=Location', title: 'View Switches in inventory' }]
   },
   logical: {
     total: 9222, sub: '6,705 links and 2,517 provisioned services · plus 428 VNFs',
     segs: [{ w: 40, color: '#a855f7', title: 'LLDP: 3,015' }, { w: 22, color: '#0284c7', title: 'OSPF: 1,675' }, { w: 13, color: '#06b6d4', title: 'BGP: 1,006' },
       { w: 18, color: '#0d9488', title: 'L3VPN: 1,865' }, { w: 7, color: '#7c3aed', title: 'L2VPN: 661' }],
-    chips: [{ label: 'LLDP', n: 3015, to: '/inventory/links?tab=lldp', title: 'View LLDP links' }, { label: 'OSPF', n: 1675, to: '/inventory/links?tab=ospf', title: 'View OSPF links' },
-      { label: 'L3VPN', n: 1865, to: '/inventory/services?tab=l3vpn', title: 'View L3VPN services' }, { label: 'L2VPN', n: 661, to: '/inventory/services?tab=l2vpn', title: 'View L2VPN services' }]
+    chips: [{ label: 'LLDP', n: 3015, to: '/inventory/links?tab=lldp&drill=LLDP&from=Location', title: 'View LLDP links' }, { label: 'OSPF', n: 1675, to: '/inventory/links?tab=ospf&drill=OSPF&from=Location', title: 'View OSPF links' },
+      { label: 'L3VPN', n: 1865, to: '/inventory/services?tab=l3vpn&drill=L3VPN&from=Location', title: 'View L3VPN services' }, { label: 'L2VPN', n: 661, to: '/inventory/services?tab=l2vpn&drill=L2VPN&from=Location', title: 'View L2VPN services' }]
   },
   passive: {
     total: 1945, sub: 'Physical plant across 7 categories',
     segs: [{ w: 35, color: '#f59e0b', title: 'ODF: 680' }, { w: 30, color: '#64748b', title: 'Racks: 584' }, { w: 20, color: '#06b6d4', title: 'Fiber spans: 389' }, { w: 15, color: '#a855f7', title: 'Splice closures: 292' }],
-    chips: [{ label: 'ODF', n: 680, to: '/inventory/passive?tab=odf', title: 'View ODF in passive infrastructure' },
-      { label: 'Racks', n: 584, to: '/inventory/passive?tab=rack', title: 'View Racks in passive infrastructure' },
-      { label: 'Fiber', n: 389, to: '/inventory/passive?tab=fiber', title: 'View Fiber spans in passive infrastructure' }]
+    chips: [{ label: 'ODF', n: 680, to: '/inventory/passive?tab=odf&drill=ODF&from=Location', title: 'View ODF in passive infrastructure' },
+      { label: 'Racks', n: 584, to: '/inventory/passive?tab=rack&drill=Racks&from=Location', title: 'View Racks in passive infrastructure' },
+      { label: 'Fiber', n: 389, to: '/inventory/passive?tab=fiber&drill=Fiber&from=Location', title: 'View Fiber spans in passive infrastructure' }]
   },
   circles: DEFAULT_CIRCLES
 };
@@ -132,8 +132,8 @@ export function scopedStats(geo?: DcGeo | null): LocStats {
   };
   const protoCounts = geo ? (GEO_LINK_COUNTS[geo] || DC_COUNTS.linksByProtocol) : DC_COUNTS.linksByProtocol;
   const svcCounts = geo ? (GEO_SVC_COUNTS[geo] || DC_COUNTS.servicesByType) : DC_COUNTS.servicesByType;
-  const parts = [...LINK_TABS.map(([p, k]) => ({ label: p, n: protoCounts[p] ?? 0, to: `/inventory/links?tab=${k}`, title: `View ${p} links` })),
-    ...SVC_TABS.map(([t, k]) => ({ label: t, n: svcCounts[t] ?? 0, to: `/inventory/services?tab=${k}`, title: `View ${t} services` }))].filter(x => x.n > 0);
+  const parts = [...LINK_TABS.map(([p, k]) => ({ label: p, n: protoCounts[p] ?? 0, to: `/inventory/links?tab=${k}&drill=${encodeURIComponent(p)}&from=Location`, title: `View ${p} links` })),
+    ...SVC_TABS.map(([t, k]) => ({ label: t, n: svcCounts[t] ?? 0, to: `/inventory/services?tab=${k}&drill=${encodeURIComponent(t)}&from=Location`, title: `View ${t} services` }))].filter(x => x.n > 0);
   const lTotal = links + services;
   const logical: InvCardData = {
     total: lTotal, sub: `${en(links)} links and ${en(services)} customer services`,
@@ -148,7 +148,7 @@ export function scopedStats(geo?: DcGeo | null): LocStats {
     active: {
       total: active, sub: `Physical elements across the estate · ${en(verified)} verified on the network`,
       segs: counts.map((x, i) => ({ w: share(x.n, active), color: palette[i % palette.length], title: `${x.label}: ${en(x.n)}` })),
-      chips: counts.map(x => ({ label: x.label, n: x.n, to: `/inventory/physical?tab=${x.k}`, title: `View ${x.plural} in inventory` }))
+      chips: counts.map(x => ({ label: x.label, n: x.n, to: `/inventory/physical?tab=${x.k}&drill=${encodeURIComponent(x.label)}&from=Location`, title: `View ${x.plural} in inventory` }))
     },
     logical,
     passive: {

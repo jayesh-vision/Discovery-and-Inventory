@@ -1,0 +1,160 @@
+/* Inventory Assurance — shared layout for the dashboard, upload wizard,
+   rule builder and results screens. Minimal utility classes layered on top
+   of the existing vw-card-section/nst-btn/mono vocabulary; no new design
+   system.
+
+   Theming: this module is re-skinned to the VisionWaves "Black" brand
+   (design/themes/theme-black.design.md) without touching the app-wide
+   theme — every screen's root carries `.ia-page`, which scopes the brand
+   override to just this module via the two CSS custom properties
+   ds-bundle.css's .nst-btn already reads through a fallback chain
+   (`--color-primary` / `--color-primary-hover`, falling back to the
+   global --primaryColor500/400 everywhere else in the app keeps using),
+   plus the `--vw-color-accent-*` ramp .nst-input focus/active states read.
+   Shape tokens (`--ia-radius-*`, `--ia-shadow-*`) mirror the bntv-*
+   component contracts in design/DESIGN.md (button/input-box/card/chip). */
+/* .ia-select-list is portaled to document.body (see Select.tsx) — it is no
+   longer a DOM descendant of .ia-page, so it needs its own copy of the same
+   tokens rather than inheriting them through the cascade. */
+.ia-page,
+.ia-select-list {
+  --color-primary: #000000;       /* theme-black primary 500 */
+  --color-primary-hover: #595959; /* theme-black primary 400 */
+
+  --vw-color-accent-50:  #f2f2f2; /* theme-black accent ramp */
+  --vw-color-accent-100: #d9d9d9;
+  --vw-color-accent-200: #bfbfbf;
+  --vw-color-accent-300: #8c8c8c;
+  --vw-color-accent-400: #595959;
+  --vw-color-accent-500: #090909;
+  --vw-color-accent-600: #000000;
+  --vw-color-accent-700: #0a0a0a;
+  --vw-color-accent-800: #000000;
+  --vw-color-accent-900: #000000;
+
+  /* bntv-* component shape contract (design/DESIGN.md §Components) */
+  --ia-radius-button: 0.75rem;  /* --buttonRadius */
+  --ia-radius-field: 0.75rem;   /* --fieldRadius */
+  --ia-radius-card: 1.6em;      /* --cardRadius */
+  --ia-radius-chip: 1em;        /* --chipRadius */
+  --ia-shadow-card: 0px 1px 2px 0px rgba(0, 0, 0, 0.05), 0px 4px 6px -3px rgba(0, 0, 0, 0.1); /* elevation.sm */
+  --ia-shadow-dropdown: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1); /* elevation.md */
+}
+
+.ia-page .vw-card-section { border-radius: var(--ia-radius-card); box-shadow: var(--ia-shadow-card); }
+.ia-page .nst-btn,
+.ia-page .nst-input,
+.ia-page select.nst-input { border-radius: var(--ia-radius-button); }
+.ia-page .vw-chip { border-radius: var(--ia-radius-chip); }
+.ia-page .nst-input-shell { border-radius: var(--ia-radius-field); }
+
+/* ── Select (src/screens/inventoryAccuracy/Select.tsx) ──────────────────
+   Replaces every native <select> in this module — the browser's own open
+   popup can't be restyled, so the closed trigger reuses .nst-input and the
+   open panel is a themed, portaled listbox. Radii/shadow follow the bntv
+   select-box contract (design/DESIGN.md: --dropdownBorderRadius 0.375rem,
+   --dropdownShadow var(--vw-shadow-md)). */
+.ia-select-trigger {
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  gap: 10px;
+}
+.ia-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--vw-color-accent-500);
+  box-shadow: 0 0 0 3px var(--vw-color-accent-100);
+}
+.ia-select-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ia-select-placeholder { color: var(--vw-color-gray-400, #9ca3af); }
+.ia-select-chevron { flex-shrink: 0; color: var(--vw-color-gray-500, #6b7280); transition: transform 0.15s ease; }
+.ia-select-trigger[aria-expanded="true"] .ia-select-chevron { transform: rotate(180deg); }
+
+.ia-select-list {
+  position: fixed;
+  z-index: 1000;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--vw-color-white, #fff);
+  border: 1px solid var(--vw-color-gray-100, #f3f4f6);
+  border-radius: 0.375rem;
+  box-shadow: var(--ia-shadow-dropdown);
+}
+.ia-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 0.3rem;
+  font-size: 0.875rem;
+  color: var(--vw-color-gray-900, #111827);
+  cursor: pointer;
+}
+.ia-select-option.is-active { background: var(--vw-color-accent-50); }
+.ia-select-option.is-selected { font-weight: 600; color: var(--color-primary); }
+.ia-select-option.is-selected svg { color: var(--color-primary); }
+
+.ia-card-title { margin: 0 0 12px; font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+.ia-card-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ia-empty { margin: 0; font-size: 0.85rem; color: #64748b; }
+.ia-empty-inline { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; }
+
+.ia-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 960px) { .ia-grid-3 { grid-template-columns: 1fr; } }
+
+.ia-bar-list { display: flex; flex-direction: column; gap: 10px; }
+.ia-bar-row { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(80px, 2fr) 56px auto; align-items: center; gap: 10px; }
+.ia-bar-label { font-size: 0.8125rem; color: #334155; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ia-bar-track { position: relative; height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.ia-bar-fill { position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: 999px; transition: width 0.2s ease; }
+.ia-bar-value { font-size: 0.8125rem; font-weight: 600; color: #0f172a; text-align: right; }
+.ia-bar-count { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; }
+
+.ia-seg { display: inline-flex; border: 1px solid #e2e8f0; border-radius: var(--ia-radius-button, 8px); overflow: hidden; }
+.ia-seg-btn { border: none; background: #fff; color: #475569; font-size: 0.75rem; font-weight: 600; padding: 6px 12px; cursor: pointer; }
+.ia-seg-btn + .ia-seg-btn { border-left: 1px solid #e2e8f0; }
+.ia-seg-btn.is-on { background: var(--color-primary, #0f172a); color: #fff; }
+
+.ia-trend-table { width: 100%; margin-top: 10px; font-size: 0.75rem; border-collapse: collapse; }
+.ia-trend-table th { text-align: left; color: #94a3b8; font-weight: 600; padding: 4px 8px; border-bottom: 1px solid #f1f5f9; }
+.ia-trend-table td { padding: 4px 8px; border-bottom: 1px solid #f8fafc; color: #334155; }
+
+/* ── Upload wizard ── */
+.ia-wizard-steps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.ia-wizard-step { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #94a3b8; padding: 4px 10px; border-radius: var(--ia-radius-chip, 999px); background: #f8fafc; }
+.ia-wizard-step.is-on { background: var(--color-primary, #0f172a); color: #fff; font-weight: 600; }
+.ia-wizard-step.is-done { background: var(--vw-color-emerald-50, #ecfdf5); color: var(--vw-color-emerald-700, #047857); } /* semantic success — stays green regardless of brand theme */
+
+.ia-drop { border: 2px dashed #cbd5e1; border-radius: var(--ia-radius-card, 12px); padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.15s, background-color 0.15s; }
+.ia-drop.is-over { border-color: var(--color-primary, #000000); background: var(--vw-color-accent-50, #f2f2f2); }
+.ia-drop-sub { display: block; margin-top: 8px; font-size: 0.75rem; color: #94a3b8; }
+
+.ia-category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+@media (max-width: 800px) { .ia-category-grid { grid-template-columns: 1fr; } }
+.ia-category-card { border: 1px solid #e2e8f0; border-radius: var(--ia-radius-field, 10px); padding: 14px; text-align: left; cursor: pointer; background: #fff; transition: border-color 0.15s, background-color 0.15s; }
+.ia-category-card.is-on { border-color: var(--color-primary, #000000); background: var(--vw-color-accent-50, #f2f2f2); }
+.ia-category-card strong { display: block; font-size: 0.875rem; color: #0f172a; margin-bottom: 4px; }
+.ia-category-card span { font-size: 0.75rem; color: #64748b; }
+
+.ia-map-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.ia-map-table th { text-align: left; color: #94a3b8; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
+.ia-map-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+
+.ia-mode-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+@media (max-width: 800px) { .ia-mode-grid { grid-template-columns: 1fr; } }
+
+.ia-foot { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+
+.ia-score-hero { display: flex; align-items: center; gap: 18px; padding: 8px 0; }
+.ia-score-num { font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1; }
+.ia-score-sub { font-size: 0.8125rem; color: #64748b; }
+
+.ia-rule-cond { font-family: ui-monospace, monospace; font-size: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; color: #334155; }
+
+.ia-diff-cell { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; }
+.ia-diff-old { color: #94a3b8; text-decoration: line-through; }
+.ia-diff-new { color: #0f172a; font-weight: 600; }

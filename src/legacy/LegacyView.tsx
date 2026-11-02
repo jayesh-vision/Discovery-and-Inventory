@@ -179,12 +179,23 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
           setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
       },
-      parseExcel: async (buffer: ArrayBuffer) => {
+      parseExcel: async (buffer: ArrayBuffer, targetSheet?: string) => {
         const mod = await import('exceljs');
         const Excel = (mod as any).default ?? mod;
         const wb = new Excel.Workbook();
         await wb.xlsx.load(buffer);
-        const ws = wb.worksheets[0];
+        // Find best sheet: targetSheet match, or first sheet with actualRowCount > 1 or rowCount > 1
+        let ws = wb.worksheets[0];
+        if (targetSheet) {
+          const match = wb.worksheets.find((s: any) => s && s.name && s.name.toLowerCase().includes(targetSheet.toLowerCase()));
+          if (match && ((match.actualRowCount && match.actualRowCount > 1) || (match.rowCount && match.rowCount > 1))) {
+            ws = match;
+          }
+        }
+        if (!ws || (!ws.actualRowCount && !ws.rowCount)) {
+          const withData = wb.worksheets.find((s: any) => s && ((s.actualRowCount && s.actualRowCount > 1) || (s.rowCount && s.rowCount > 1)));
+          if (withData) ws = withData;
+        }
         const rows: string[][] = [];
         if (ws) {
           ws.eachRow({ includeEmpty: true }, (row: any) => {
@@ -192,19 +203,28 @@ export default function LegacyView({ legacyKey }: { legacyKey: string }) {
             const colCount = Math.max(row.cellCount || 0, ws.columnCount || 0, row.actualCellCount || 0);
             for (let c = 1; c <= colCount; c++) {
               const cell = row.getCell(c);
-              let val = cell.text;
-              if (val == null || val === '') {
-                if (cell.value && typeof cell.value === 'object') {
-                  if (Array.isArray(cell.value.richText)) {
-                    val = cell.value.richText.map((rt: any) => rt.text || '').join('');
-                  } else {
-                    val = cell.value.result ?? cell.value.text ?? '';
-                  }
-                } else {
-                  val = cell.value ?? '';
+              let val = '';
+              const v = cell.value;
+              if (v === null || v === undefined) {
+                val = '';
+              } else if (v instanceof Date) {
+                val = v.toISOString().split('T')[0];
+              } else if (typeof v === 'object') {
+                if (Array.isArray(v.richText)) {
+                  val = v.richText.map((rt: any) => rt.text || '').join('');
+                } else if ('result' in v && v.result !== undefined && v.result !== null) {
+                  val = String(v.result);
+                } else if ('text' in v && typeof v.text === 'string') {
+                  val = v.text;
+                } else if (cell.text && typeof cell.text === 'string') {
+                  val = cell.text;
                 }
+              } else if (cell.text && typeof cell.text === 'string' && cell.text.trim()) {
+                val = cell.text;
+              } else {
+                val = String(v);
               }
-              vals.push(String(val).trim());
+              vals.push(val.trim());
             }
             if (vals.some(v => v.length > 0)) {
               rows.push(vals);

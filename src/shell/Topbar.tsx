@@ -119,6 +119,56 @@ export function computeBreadcrumbs(
     }
   }
 
+  const PHY_TAB_NAMES: Record<string, string> = {
+    router: 'Router',
+    switch: 'Switch',
+    server: 'Server',
+    dwdm: 'DWDM',
+    enodeb: 'eNodeB',
+    gnodeb: 'gNodeB',
+    gpu: 'GPU Servers',
+    storage: 'Storage Arrays',
+    firewall: 'Firewalls',
+    all: 'All Active'
+  };
+  const LINK_TAB_NAMES: Record<string, string> = {
+    lldp: 'LLDP',
+    ospf: 'OSPF',
+    bgp: 'BGP',
+    isis: 'ISIS',
+    ib: 'InfiniBand',
+    eth: 'Ethernet Fabric',
+    access: 'Compute & Storage',
+    oob: 'Management (OOB)'
+  };
+  const SVC_TAB_NAMES: Record<string, string> = {
+    l3vpn: 'L3VPN',
+    l2vpn: 'L2VPN',
+    gpu: 'On-demand GPUs',
+    cpu: 'CPU instances',
+    storage: 'Storage volume',
+    reserved: 'Reserved cluster'
+  };
+
+  if (!drill && from) {
+    if (s.key === 'physical') {
+      const phyTab = sp.get('cls') || sp.get('tab');
+      if (phyTab && PHY_TAB_NAMES[phyTab]) {
+        drill = PHY_TAB_NAMES[phyTab];
+      }
+    } else if (s.key === 'links') {
+      const linkTab = sp.get('tab');
+      if (linkTab && LINK_TAB_NAMES[linkTab]) {
+        drill = LINK_TAB_NAMES[linkTab];
+      }
+    } else if (s.key === 'services') {
+      const svcTab = sp.get('tab');
+      if (svcTab && SVC_TAB_NAMES[svcTab]) {
+        drill = SVC_TAB_NAMES[svcTab];
+      }
+    }
+  }
+
   /* Breadcrumbs only describe a trail, so a landing page (any screen the
      sidebar lists in its own right — see isLanding in routes.ts) has none:
      there is nowhere shallower to go back to, and a crumb would only repeat
@@ -812,24 +862,6 @@ export function computeBreadcrumbs(
     }
   }
 
-  if (s.key === 'passive') {
-    if (drill) {
-      segs = [{ label: 'Passive inventory', to: '/inventory/passive' }];
-      finalLeafLabel = drill;
-    } else if (from) {
-      const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure') : [];
-      if (originSegs.length > 0) {
-        segs = originSegs;
-      } else {
-        segs = [];
-      }
-      finalLeafLabel = 'Passive inventory';
-    } else {
-      segs = [];
-      finalLeafLabel = 'Passive inventory';
-    }
-  }
-
   const PASSIVE_CATEGORIES: Record<string, { tab: string; label: string }> = {
     fiber: { tab: 'fiber', label: 'Fiber spans' },
     odf: { tab: 'odf', label: 'ODF' },
@@ -839,6 +871,30 @@ export function computeBreadcrumbs(
     cord: { tab: 'cord', label: 'Patch cords' },
     duct: { tab: 'duct', label: 'Ducts' }
   };
+
+  if (s.key === 'passive') {
+    const originSegs = hops.length > 0
+      ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure' && x.label !== drill)
+      : [];
+    const passiveTo = from ? `/inventory/passive?from=${encodeURIComponent(from)}` : '/inventory/passive';
+    const activeTab = sp.get('tab');
+    const tabCat = activeTab && PASSIVE_CATEGORIES[activeTab] ? PASSIVE_CATEGORIES[activeTab].label : null;
+    const effectiveDrill = drill || (from && tabCat ? tabCat : null);
+
+    if (effectiveDrill) {
+      segs = [
+        ...originSegs,
+        { label: 'Passive inventory', to: passiveTo }
+      ];
+      finalLeafLabel = effectiveDrill;
+    } else if (from) {
+      segs = originSegs;
+      finalLeafLabel = 'Passive inventory';
+    } else {
+      segs = [];
+      finalLeafLabel = 'Passive inventory';
+    }
+  }
 
   if (s.key in PASSIVE_CATEGORIES) {
     const cat = PASSIVE_CATEGORIES[s.key];

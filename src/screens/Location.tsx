@@ -240,9 +240,9 @@ export default function Location() {
         </div>
 
         <div className="vw-grid vw-grid-cols-3 vw-gap-md">
-          <InvCard tone="sky" title="Active inventory" data={S.active} to="/inventory/physical" ariaSub="Physical elements across the estate" icon={INV_ICON_PATHS.active} />
-          <InvCard tone="purple" title="Logical inventory" data={S.logical} to="/inventory/virtual" ariaSub="Virtual resources and services" icon={INV_ICON_PATHS.logical} />
-          <InvCard tone="amber" title="Passive inventory" data={S.passive} to="/inventory/passive" ariaSub="Physical plant across 7 categories" icon={INV_ICON_PATHS.passive} />
+          <InvCard tone="sky" title="Active inventory" data={S.active} to="/inventory/physical" ariaSub="Physical elements across the estate" icon={INV_ICON_PATHS.active} originFrom={searchParams.get('from') || undefined} />
+          <InvCard tone="purple" title="Logical inventory" data={S.logical} to="/inventory/virtual" ariaSub="Virtual resources and services" icon={INV_ICON_PATHS.logical} originFrom={searchParams.get('from') || undefined} />
+          <InvCard tone="amber" title="Passive inventory" data={S.passive} to="/inventory/passive" ariaSub="Physical plant across 7 categories" icon={INV_ICON_PATHS.passive} originFrom={searchParams.get('from') || undefined} />
         </div>
       </section>
 
@@ -307,13 +307,33 @@ const INV_ICON_PATHS = {
   logical: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>,
   passive: <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></>
 };
-function InvCard({ tone, title, data, to, ariaSub, icon }: { tone: 'sky' | 'purple' | 'amber'; title: string; data: InvCardData; to: string; ariaSub: string; icon: React.ReactNode }) {
+function InvCard({ tone, title, data, to, ariaSub, icon, originFrom }: {
+  tone: 'sky' | 'purple' | 'amber';
+  title: string;
+  data: InvCardData;
+  to: string;
+  ariaSub: string;
+  icon: React.ReactNode;
+  originFrom?: string;
+}) {
   const nav = useNavigate();
+  const effectiveFrom = originFrom ? `Location?from=${encodeURIComponent(originFrom)}` : 'Location';
+
+  const navigateTo = (targetUrl: string, drillLabel?: string) => {
+    const [path, query = ''] = targetUrl.split('?');
+    const p = new URLSearchParams(query);
+    if (drillLabel && !p.has('drill')) {
+      p.set('drill', drillLabel);
+    }
+    p.set('from', effectiveFrom);
+    nav(withSolution(`${path}?${p.toString()}`));
+  };
+
   return (
     <div className="kpi-progress is-clickable" role="button" tabIndex={0} data-tone={tone}
       style={{ borderColor: `var(--vw-color-${tone}-200)`, '--kpi-hover': `var(--vw-color-${tone}-400)` } as React.CSSProperties}
-      onClick={() => nav(to)}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nav(to); } }}
+      onClick={() => navigateTo(to)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateTo(to); } }}
       aria-label={`${title}: ${en(data.total)}. ${ariaSub}`}>
       <div className="row vw-gap-sm vw-items-center">
         <span className="cov-alert-icon" style={{ background: `var(--vw-color-${tone}-50)`, color: `var(--vw-color-${tone}-600)`, width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
@@ -332,7 +352,7 @@ function InvCard({ tone, title, data, to, ariaSub, icon }: { tone: 'sky' | 'purp
         {data.chips.map(c => (
           <button key={c.label} type="button" className="cov-chip inv-chip is-clickable"
             style={{ fontSize: '12px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-            onClick={e => { e.stopPropagation(); nav(c.to); }} title={c.title}>
+            onClick={e => { e.stopPropagation(); navigateTo(c.to, c.label); }} title={c.title}>
             {c.label} <b>{en(c.n)}</b>
           </button>
         ))}

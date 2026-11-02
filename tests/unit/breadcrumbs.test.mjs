@@ -163,5 +163,116 @@ test('Breadcrumb trail verification for site tabs and origins', async (t) => {
   assert.equal(fromInsights.segs[0].label, 'Inventory insights');
   assert.equal(fromInsights.finalLeafLabel, 'Routers');
 
+  // 7. Inventory across the estate clicks from Location
+  // 7a. Active card
+  const fromLocActive = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/physical',
+    search: '?from=Location'
+  });
+  assert.ok(fromLocActive, 'fromLocActive should compute breadcrumbs');
+  assert.equal(fromLocActive.segs[0].label, 'Location');
+  assert.equal(fromLocActive.segs[0].to, '/inventory/location');
+  assert.equal(fromLocActive.segs[1].label, 'Physical Resources');
+  assert.equal(fromLocActive.finalLeafLabel, 'Physical Resources');
+  assert.ok(!fromLocActive.segs.some(s => s.label === 'Inventory insights'), 'Should not contain Inventory insights');
+
+  // 7b. Router chip
+  const fromLocRouter = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/physical',
+    search: '?tab=router&drill=Router&from=Location'
+  });
+  assert.ok(fromLocRouter, 'fromLocRouter should compute breadcrumbs');
+  assert.equal(fromLocRouter.segs[0].label, 'Location');
+  assert.equal(fromLocRouter.segs[1].label, 'Physical Resources');
+  assert.equal(fromLocRouter.segs[2].label, 'Router');
+  assert.equal(fromLocRouter.finalLeafLabel, 'Router');
+  assert.ok(!fromLocRouter.segs.some(s => s.label === 'Inventory insights'), 'Should not contain Inventory insights');
+
+  // 7c. Switch chip (auto tab-derived drill)
+  const fromLocSwitch = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/physical',
+    search: '?tab=switch&from=Location'
+  });
+  assert.ok(fromLocSwitch, 'fromLocSwitch should compute breadcrumbs');
+  assert.equal(fromLocSwitch.segs[0].label, 'Location');
+  assert.equal(fromLocSwitch.segs[1].label, 'Physical Resources');
+  assert.equal(fromLocSwitch.segs[2].label, 'Switch');
+  assert.equal(fromLocSwitch.finalLeafLabel, 'Switch');
+
+  // 7d. Logical card
+  const fromLocLogical = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/virtual',
+    search: '?from=Location'
+  });
+  assert.ok(fromLocLogical, 'fromLocLogical should compute breadcrumbs');
+  assert.equal(fromLocLogical.segs[0].label, 'Location');
+  assert.equal(fromLocLogical.segs[1].label, 'Virtual Resources');
+  assert.equal(fromLocLogical.finalLeafLabel, 'Virtual Resources');
+
+  // 7e. LLDP chip
+  const fromLocLldp = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/links',
+    search: '?tab=lldp&drill=LLDP&from=Location'
+  });
+  assert.ok(fromLocLldp, 'fromLocLldp should compute breadcrumbs');
+  assert.equal(fromLocLldp.segs[0].label, 'Location');
+  assert.equal(fromLocLldp.segs[1].label, 'Links');
+  assert.equal(fromLocLldp.segs[2].label, 'LLDP');
+  assert.equal(fromLocLldp.finalLeafLabel, 'LLDP');
+
+  // 7f. L3VPN chip
+  const fromLocL3vpn = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/services',
+    search: '?tab=l3vpn&drill=L3VPN&from=Location'
+  });
+  assert.ok(fromLocL3vpn, 'fromLocL3vpn should compute breadcrumbs');
+  assert.equal(fromLocL3vpn.segs[0].label, 'Location');
+  assert.equal(fromLocL3vpn.segs[1].label, 'Services');
+  assert.equal(fromLocL3vpn.segs[2].label, 'L3VPN');
+  assert.equal(fromLocL3vpn.finalLeafLabel, 'L3VPN');
+
+  // 7g. Passive card
+  const fromLocPassive = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/passive',
+    search: '?from=Location'
+  });
+  assert.ok(fromLocPassive, 'fromLocPassive should compute breadcrumbs');
+  assert.equal(fromLocPassive.segs[0].label, 'Location');
+  assert.equal(fromLocPassive.segs[1].label, 'Passive inventory');
+  assert.equal(fromLocPassive.finalLeafLabel, 'Passive inventory');
+
+  // 7h. ODF chip
+  const fromLocOdf = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/passive',
+    search: '?tab=odf&drill=ODF&from=Location'
+  });
+  assert.ok(fromLocOdf, 'fromLocOdf should compute breadcrumbs');
+  assert.equal(fromLocOdf.segs[0].label, 'Location');
+  assert.equal(fromLocOdf.segs[1].label, 'Passive inventory');
+  assert.equal(fromLocOdf.segs[2].label, 'ODF');
+  assert.equal(fromLocOdf.finalLeafLabel, 'ODF');
+
+  // 7i. Racks chip
+  const fromLocRacks = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/passive',
+    search: '?tab=rack&drill=Racks&from=Location'
+  });
+  assert.ok(fromLocRacks, 'fromLocRacks should compute breadcrumbs');
+  assert.equal(fromLocRacks.segs[0].label, 'Location');
+  assert.equal(fromLocRacks.segs[1].label, 'Passive inventory');
+  assert.equal(fromLocRacks.segs[2].label, 'Racks');
+  assert.equal(fromLocRacks.finalLeafLabel, 'Racks');
+
+  // 7j. Chained: Insights -> Location -> Router
+  const chainedRouter = Topbar.computeBreadcrumbs({
+    pathname: '/inventory/physical',
+    search: '?tab=router&drill=Router&from=Location%3Ffrom%3DInventory%2520insights'
+  });
+  assert.ok(chainedRouter, 'chainedRouter should compute breadcrumbs');
+  assert.equal(chainedRouter.segs[0].label, 'Inventory insights');
+  assert.equal(chainedRouter.segs[1].label, 'Location');
+  assert.equal(chainedRouter.segs[2].label, 'Physical Resources');
+  assert.equal(chainedRouter.segs[3].label, 'Router');
+
   await closeLoader();
 });

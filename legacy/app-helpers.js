@@ -159,7 +159,7 @@ const kpi = (label, value, sub, tone, d, isSelected) => {
 /* ── drill-down plumbing ──────────────────────────────── */
 let DRILL = null;                 /* { view, label, from } set by the router  */
 /* d = { v:targetView, l:'human label', q:'key=value&key=value' } */
-const dA = d => ` data-drill="${d.v}" data-dlabel="${esc(d.l)}"${d.q ? ` data-dq="${esc(d.q)}"` : ''}`;
+const dA = d => ` data-drill="${d.v}" data-dlabel="${esc(d.l)}"${d.q ? ` data-dq="${esc(d.q)}"` : ''}${d.from ? ` data-dfrom="${esc(d.from)}"` : ''}`;
 
 /* Navigation is the topbar breadcrumb alone now — the in-page drill banner
    is retired. The function stays so every view's \${drillBar()} call keeps

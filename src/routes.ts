@@ -34,6 +34,15 @@ import InventoryLifecycle from './screens/InventoryLifecycle';
 import FirmwareCompliance from './screens/FirmwareCompliance';
 import SparesCoverage from './screens/SparesCoverage';
 import TelemetryStaleness from './screens/TelemetryStaleness';
+import InventoryAccuracyDashboard from './screens/inventoryAccuracy/InventoryAccuracyDashboard';
+import InventoryAccuracyUpload from './screens/inventoryAccuracy/InventoryAccuracyUpload';
+import InventoryAccuracyValidation from './screens/inventoryAccuracy/InventoryAccuracyValidation';
+import InventoryAccuracyReconciliation from './screens/inventoryAccuracy/InventoryAccuracyReconciliation';
+import InventoryAccuracyIssues from './screens/inventoryAccuracy/InventoryAccuracyIssues';
+import InventoryAccuracyRulesList from './screens/inventoryAccuracy/InventoryAccuracyRulesList';
+import InventoryAccuracyRuleDefinition from './screens/inventoryAccuracy/InventoryAccuracyRuleDefinition';
+import InventoryAccuracyRuleDetails from './screens/inventoryAccuracy/InventoryAccuracyRuleDetails';
+import InventoryAccuracyHistory from './screens/inventoryAccuracy/InventoryAccuracyHistory';
 
 /* One registry for the sidebar, the breadcrumb, the router and the legacy
    bridge. `legacy` names the prototype view a screen still renders through;
@@ -131,7 +140,18 @@ export const SCREENS: Screen[] = [
   { key: 'inventorylifecycle', path: '/inventory/lifecycle', module: 'Inventory', crumb: 'Inventory Lifecycle', component: InventoryLifecycle },
   { key: 'firmwarecompliance', path: '/inventory/compliance/firmware', module: 'Inventory', crumb: 'Compliance · Firmware', component: FirmwareCompliance },
   { key: 'sparescoverage', path: '/inventory/spares', module: 'Inventory', crumb: 'Inventory Spares', component: SparesCoverage },
-  { key: 'telemetrystaleness', path: '/inventory/telemetry', module: 'Inventory', crumb: 'Telemetry Staleness', component: TelemetryStaleness }
+  { key: 'telemetrystaleness', path: '/inventory/telemetry', module: 'Inventory', crumb: 'Telemetry Staleness', component: TelemetryStaleness },
+
+  { key: 'inventoryaccuracy', path: '/inventory/accuracy', module: 'Inventory', root: true, crumb: 'Inventory Assurance', component: InventoryAccuracyDashboard },
+  { key: 'inventoryaccuracyupload', path: '/inventory/accuracy/upload', module: 'Inventory', crumb: 'Inventory Assurance · Upload', component: InventoryAccuracyUpload },
+  { key: 'inventoryaccuracyvalidation', path: '/inventory/accuracy/validation', module: 'Inventory', crumb: 'Inventory Assurance · Validation Results', component: InventoryAccuracyValidation },
+  { key: 'inventoryaccuracyreconciliation', path: '/inventory/accuracy/reconciliation', module: 'Inventory', crumb: 'Inventory Assurance · Reconciliation Results', component: InventoryAccuracyReconciliation },
+  { key: 'inventoryaccuracyissues', path: '/inventory/accuracy/issues', module: 'Inventory', crumb: 'Inventory Assurance · Issues & Exceptions', component: InventoryAccuracyIssues },
+  { key: 'inventoryaccuracyrules', path: '/inventory/accuracy/rules', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management', component: InventoryAccuracyRulesList },
+  { key: 'inventoryaccuracyrulenew', path: '/inventory/accuracy/rules/new', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · New rule', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryaccuracyruleedit', path: '/inventory/accuracy/rules/:id/edit', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Edit rule', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryaccuracyruledetails', path: '/inventory/accuracy/rules/:id', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Rule details', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDetails },
+  { key: 'inventoryaccuracyhistory', path: '/inventory/accuracy/history', module: 'Inventory', crumb: 'Inventory Assurance · Execution History', component: InventoryAccuracyHistory }
 ];
 
 export const screenByKey = (k: string) => SCREENS.find(s => s.key === k);

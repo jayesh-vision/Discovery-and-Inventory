@@ -1876,9 +1876,9 @@ function locInsights() {
         : `<span class="cov-chip inv-chip"><span class="legend-sw" style="background:${cv(s.tone,500)}"></span>${s.n} <b class="num">${n(s.c)}</b></span>`).join('')}</div>
     </div>`;
   };
-  const activeSegs = ACTIVE_MIX.map(x => ({ ...x, d: { v:'physical', l:`${x.n} in inventory`, q:`tab=${x.tab}` } }));
-  const linkSegD = (nm, tab) => ({ v:'links', l:`${nm} — filtered list`, q:`tab=${tab}` });
-  const svcSegD = (nm, tab) => ({ v:'services', l:`${nm} — filtered list`, q:`tab=${tab}` });
+  const activeSegs = ACTIVE_MIX.map(x => ({ ...x, d: { v:'physical', l:`${x.n} in inventory`, q:`tab=${x.tab}&from=Location`, from:'Location' } }));
+  const linkSegD = (nm, tab) => ({ v:'links', l:`${nm} — filtered list`, q:`tab=${tab}&from=Location`, from:'Location' });
+  const svcSegD = (nm, tab) => ({ v:'services', l:`${nm} — filtered list`, q:`tab=${tab}&from=Location`, from:'Location' });
   const logicalSegs = [
     { n:'LLDP links', c: LINK_TABS[0].c, tone:'purple', d: linkSegD('LLDP links','lldp') },
     { n:'OSPF', c: LINK_TABS[1].c, tone:'sky', d: linkSegD('OSPF links','ospf') },
@@ -1889,7 +1889,7 @@ function locInsights() {
   ];
   const PASSIVE_TONE = { fiber:'cyan', odf:'sky', rack:'slate', power:'amber', splice:'purple', cord:'teal', duct:'orange' };
   const passiveSegs = PASSIVE_TABS.map(t => ({ n: t.n, c: t.c, tone: PASSIVE_TONE[t.k] || 'slate',
-    d: { v:'passive', l:`${t.n} — filtered list`, q:`tab=${t.k}` } }));
+    d: { v:'passive', l:`${t.n} — filtered list`, q:`tab=${t.k}&from=Location`, from:'Location' } }));
 
   return `
     <div class="vw-grid vw-grid-cols-4 vw-gap-md">
@@ -1909,13 +1909,13 @@ function locInsights() {
       <div class="vw-grid vw-grid-cols-3 vw-gap-md">
         ${invCard('Active inventory', INV_ICON.active, 'sky', n(IL.ne),
           `Physical elements across the estate · ${n(IL.discovered)} verified on the network`,
-          activeSegs, { v:'physical', l:'All network elements' })}
+          activeSegs, { v:'physical', l:'All network elements', q:'from=Location', from:'Location' })}
         ${invCard('Logical inventory', INV_ICON.logical, 'purple', n(IL.links + IL.services),
           `${n(IL.links)} links and ${n(IL.services)} provisioned services · plus ${n(IL.vnf)} VNFs`,
-          logicalSegs, { v:'virtual', l:'All virtual resources' })}
+          logicalSegs, { v:'virtual', l:'All virtual resources', q:'from=Location', from:'Location' })}
         ${invCard('Passive inventory', INV_ICON.passive, 'orange', n(passiveTotal),
           `Physical plant across ${n(PASSIVE_TABS.length)} categories`,
-          passiveSegs, { v:'passive', l:'All passive infrastructure' })}
+          passiveSegs, { v:'passive', l:'All passive infrastructure', q:'from=Location', from:'Location' })}
       </div>`)}
 
     ${locMap()}`;
