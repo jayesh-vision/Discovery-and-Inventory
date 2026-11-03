@@ -1684,7 +1684,7 @@ function viewPassive() {
            entry — so no per-tab mapping table is needed here */
         /* a data center row has no detail page of its own (those pages are derived from the
            network estate's names); it opens the data center's site instead */
-        i => rows[i].dc ? [A('Site info', { v:'site', l:rows[i].dcId, q:'id=' + encodeURIComponent(rows[i].dcId) })] : [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) })])
+        i => rows[i].dc ? [A('Site info', { v:'site', l:'Site info', q:'id=' + encodeURIComponent(rows[i].dcId) })] : [A('View details', { v:t, l:rows[i].n, q:'id=' + encodeURIComponent(rows[i].n) })])
         : `<div class="vw-card-child-shaded vw-card-description" style="padding:var(--vw-space-2xl);text-align:center">
              <strong>${meta.n}</strong> holds ${n(SC ? dcPool.length : meta.c)} records${SC && PASS_DC ? ' at this data center' : ''}.</div>`}
       ${t === 'rack' && netRows.length ? `<div class="vw-card-footer-divider legend">

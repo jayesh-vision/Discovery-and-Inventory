@@ -2420,7 +2420,7 @@ function resolveSite(ref) {
    id, so the breadcrumb, the header and the page can never disagree */
 function siteA(ref) {
   const s = resolveSite(ref);
-  return A('Site info', { v: 'site', l: s.name, q: 'id=' + s.id });
+  return A('Site info', { v: 'site', l: 'Site info', q: 'id=' + s.id });
 }
 
 /* Everything the site page's header shows, as plain data. The React-owned

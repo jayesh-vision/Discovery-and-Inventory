@@ -2047,8 +2047,11 @@ a.side-item.active:not(.is-active) { background: transparent; }
 .topbar-crumb-link:hover { color: var(--vw-color-gray-700); text-decoration: underline; }
 .topbar-crumb-sep { color: var(--vw-color-gray-300); margin: 0 6px; }
 .topbar-crumb-text { color: var(--vw-color-gray-400); }
-.topbar-crumb-current { color: var(--vw-color-gray-700); font-weight: 500; }
+.topbar-crumb-current { color: var(--vw-color-gray-900, #0f172a); font-weight: 600; pointer-events: none; cursor: default; }
+.topbar-crumb-skeleton { display: inline-block; width: 44px; height: 13px; background: var(--vw-color-gray-200, #e2e8f0); border-radius: 4px; animation: vw-pulse 1.5s ease-in-out infinite; }
+@keyframes vw-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 0.25; } }
 .page.rpt-page { padding-top: var(--vw-space-md); }
+
 
 /* ══ Discovery Insights (React) ═════════════════════════ */
 .ins2 { display: flex; gap: var(--vw-space-lg); align-items: flex-start; }

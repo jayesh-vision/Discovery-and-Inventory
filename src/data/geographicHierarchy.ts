@@ -5475,6 +5475,51 @@ export function findCityByFacilityCode(code?: string | null): {
 
   const activeHierarchy = isDcMode() ? scopedHierarchy() : DEFAULT_GEOGRAPHIC_HIERARCHY;
 
+  const KNOWN_PREFIX_MAP: Record<string, { cityName: string; facilityType?: 'dc' | 'pop' | 'site' }> = {
+    BGLK: { cityName: 'Bagalkot', facilityType: 'pop' },
+    MAS: { cityName: 'Chennai', facilityType: 'site' },
+    CHE: { cityName: 'Chennai', facilityType: 'site' },
+    VZG: { cityName: 'Vijayawada', facilityType: 'site' },
+    VJA: { cityName: 'Vijayawada', facilityType: 'site' },
+    INDR: { cityName: 'Indore', facilityType: 'site' },
+    PUN: { cityName: 'Pune', facilityType: 'site' },
+    HYD: { cityName: 'Hyderabad', facilityType: 'site' },
+    KOL: { cityName: 'Kolkata', facilityType: 'site' },
+    AHM: { cityName: 'Ahmedabad', facilityType: 'site' },
+    JAI: { cityName: 'Jaipur', facilityType: 'site' },
+    LKO: { cityName: 'Lucknow', facilityType: 'site' }
+  };
+
+  for (const part of parts) {
+    const known = KNOWN_PREFIX_MAP[part];
+    if (known) {
+      const matchCity = known.cityName.toLowerCase();
+      for (const reg of activeHierarchy) {
+        for (const st of reg.states) {
+          for (const ct of st.cities) {
+            if (ct.name.toLowerCase() === matchCity || ct.id.toLowerCase().includes(matchCity)) {
+              return { city: ct, state: st, region: reg, facilityType: known.facilityType || facilityType };
+            }
+          }
+        }
+      }
+      if (part === 'BGLK') {
+        const southReg = activeHierarchy.find(r => r.id === 'south') || activeHierarchy[0];
+        const kaState = southReg.states.find(s => s.id === 'karnataka') || southReg.states[0];
+        const bagalkotCity: CityItem = {
+          id: 'ka-bagalkot',
+          name: 'Bagalkot',
+          count: 25,
+          stateId: kaState.id,
+          dcCount: 0,
+          popCount: 8,
+          siteCount: 17
+        };
+        return { city: bagalkotCity, state: kaState, region: southReg, facilityType: 'pop' };
+      }
+    }
+  }
+
   // 1. Check 3-letter prefix matching city name prefix (e.g. CEN -> Central Delhi, MUM -> Mumbai)
   for (const reg of activeHierarchy) {
     for (const st of reg.states) {
@@ -5510,6 +5555,20 @@ export function getCityById(cityId: string): { city: CityItem; state: StateItem;
         return { city, state: st, region: reg };
       }
     }
+  }
+  if (cityId.toLowerCase().includes('bagalkot')) {
+    const southReg = activeHierarchy.find(r => r.id === 'south') || activeHierarchy[0];
+    const kaState = southReg.states.find(s => s.id === 'karnataka') || southReg.states[0];
+    const bagalkotCity: CityItem = {
+      id: 'ka-bagalkot',
+      name: 'Bagalkot',
+      count: 25,
+      stateId: kaState.id,
+      dcCount: 0,
+      popCount: 8,
+      siteCount: 17
+    };
+    return { city: bagalkotCity, state: kaState, region: southReg };
   }
   // Default fallback if not found directly
   if (isDcMode()) {

@@ -210,14 +210,17 @@ export default function PhysicalResources() {
      Node view and Site info leave this section, so they carry their origin —
      the breadcrumb then reads Resources > Physical Resources > … instead of
      jumping to the Location chain. */
-  const FROM = `Resources · Physical Resources?cls=${cls}`;
-  const openRack = (r: Row) => r.dc && nav(withSolution(`/inventory/passive?tab=rack&dc=${encodeURIComponent(r.loc)}&rack=${encodeURIComponent(dcShort(r.dc.dev.rackId, r.loc))}`));
+  const fromParam = sp.get('from');
+  const FROM = fromParam
+    ? `Resources · Physical Resources?cls=${cls}&from=${encodeURIComponent(fromParam)}`
+    : `Resources · Physical Resources?cls=${cls}`;
+  const openRack = (r: Row) => r.dc && nav(withSolution(`/inventory/passive?tab=rack&dc=${encodeURIComponent(r.loc)}&rack=${encodeURIComponent(dcShort(r.dc.dev.rackId, r.loc))}&drill=View%20rack&from=${encodeURIComponent(FROM)}`));
   const openSite = (loc: string) => {
     /* the row's location tag is a sample city code — resolve it to the real
        roster site first, so the URL, breadcrumb and page all name one site */
     void loadLegacy().then(() => {
       const s = window.__nsLegacy?.resolveSite?.(loc) ?? null;
-      nav(legacyPath('site', { label: s?.name ?? loc, q: s ? `id=${s.id}` : '', from: FROM }, { id: s?.id ?? loc }));
+      nav(legacyPath('site', { label: 'Site info', q: s ? `id=${s.id}` : '', from: FROM }, { id: s?.id ?? loc }));
     });
   };
   /* View details' legacy page (see viewResource() in app-res.js) only knows
@@ -247,7 +250,7 @@ export default function PhysicalResources() {
       }] : []),
       ...(rowCls === 'server' || !isNe(rowCls) ? [] : [{
         l: 'View details',
-        onClick: () => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)
+        onClick: () => nav(withSolution(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&cls=${encodeURIComponent(rowCls)}&from=${encodeURIComponent(FROM)}`))
       }]),
       { l: 'Site info', onClick: () => openSite(r.loc) }
     ];
@@ -479,7 +482,7 @@ export default function PhysicalResources() {
               <Chip tone={chipTone}>{chipLabel}</Chip>,
               <>{cls === 'router' && !r.dc
                 ? <button className="nst-btn nst-btn--xs nst-btn--ghost" style={{ padding: 0, fontWeight: 500 }}
-                    onClick={() => nav(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&from=${encodeURIComponent(FROM)}`)}>{r.name}</button>
+                    onClick={() => nav(withSolution(`/inventory/resource/${encodeURIComponent(r.name)}?ip=${encodeURIComponent(r.ip)}&cls=${encodeURIComponent(cls)}&from=${encodeURIComponent(FROM)}`))}>{r.name}</button>
                 : <span className="vw-value">{r.name}</span>}<Sub mono>{r.ip}{r.ip2 ? ` · ${r.ip2}` : ''}</Sub></>,
               <><Mono>{r.model}</Mono><Sub>{r.oem}</Sub></>,
               <Mono>{r.os}</Mono>,

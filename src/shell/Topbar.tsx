@@ -1,12 +1,13 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SCREENS, isLanding } from '../routes';
-import { getCityById, findCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
+import { getCityById, findCityByFacilityCode } from '../data/geographicHierarchy';
 import { reportDefById, buildReport } from '../data/reports';
 import { ExportMenu } from '../screens/reports/parts';
 import { store } from '../dcim/api';
-import { isDatacenter, withSolution } from '../solution';
+import { isDatacenter } from '../solution';
 import GeoDropdown from '../components/ui/GeoDropdown';
-import { nodeClassName } from '../data/ledger';
+import Breadcrumb, { type BreadcrumbItem } from '../components/ui/Breadcrumb';
 
 export function screenFor(pathname: string) {
   return SCREENS.filter(x => !x.path.includes(':')).find(x => x.path === pathname)
@@ -73,15 +74,22 @@ function originFor(loc: { key: string; pathname: string; search: string; state: 
    screen's nominal parent — and this screen contributes only its leaf. */
 export interface BreadcrumbsResult {
   isLandingClean: boolean;
-  segs: { label: string; to: string | null }[];
+  segs: BreadcrumbItem[];
+  rawSegs?: BreadcrumbItem[];
   finalLeafLabel: string;
   reportDef: any;
   reportContent: any;
 }
 
+export interface ComputeBreadcrumbsOptions {
+  activeSubTab?: string;
+  legacy?: boolean;
+}
+
 export function computeBreadcrumbs(
   loc: { pathname: string; search: string },
-  origin: Origin | null = null
+  origin: Origin | null = null,
+  options?: ComputeBreadcrumbsOptions
 ): BreadcrumbsResult | null {
   const { pathname, search } = loc;
   const s = screenFor(pathname);
@@ -119,6 +127,8 @@ export function computeBreadcrumbs(
     }
   }
 
+  const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
+
   const PHY_TAB_NAMES: Record<string, string> = {
     router: 'Router',
     switch: 'Switch',
@@ -130,6 +140,27 @@ export function computeBreadcrumbs(
     storage: 'Storage Arrays',
     firewall: 'Firewalls',
     all: 'All Active'
+  };
+
+  const isValidPhyClass = (cls: string | null | undefined): boolean => {
+    if (!cls) return false;
+    const k = cls.trim().toLowerCase();
+    return k !== 'all' && Boolean(PHY_TAB_NAMES[k]);
+  };
+
+  const inferDeviceClass = (name: string | null | undefined): string | null => {
+    if (!name) return null;
+    const n = name.trim().toUpperCase();
+    if (n.startsWith('SW-') || n.includes('-SW-') || n.includes('-TOR-') || n.includes('-SPINE-') || n.includes('-LEAF-')) return 'switch';
+    if (n.startsWith('RTR-') || n.includes('-RTR-') || n.includes('-CR-') || n.includes('-ER-') || n.includes('-PE-')) return 'router';
+    if (n.startsWith('SRV-') || n.includes('-SRV-') || n.includes('-HOST-') || n.includes('-COMPUTE-')) return 'server';
+    if (n.startsWith('DWDM-') || n.includes('-DWDM-') || n.startsWith('OPT-') || n.includes('-OPT-')) return 'dwdm';
+    if (n.startsWith('ENB-') || n.includes('-ENB-') || n.startsWith('ENODEB-') || n.includes('-ENODEB-')) return 'enodeb';
+    if (n.startsWith('GNB-') || n.includes('-GNB-') || n.startsWith('GNODEB-') || n.includes('-GNODEB-')) return 'gnodeb';
+    if (n.startsWith('GPU-') || n.includes('-GPU-')) return 'gpu';
+    if (n.startsWith('STR-') || n.includes('-STR-') || n.startsWith('SAN-') || n.includes('-SAN-') || n.startsWith('NAS-') || n.includes('-NAS-')) return 'storage';
+    if (n.startsWith('FW-') || n.includes('-FW-') || n.startsWith('FIREWALL-') || n.includes('-FIREWALL-')) return 'firewall';
+    return null;
   };
   const LINK_TAB_NAMES: Record<string, string> = {
     lldp: 'LLDP',
@@ -151,8 +182,8 @@ export function computeBreadcrumbs(
   };
 
   if (!drill && from) {
-    if (s.key === 'physical') {
-      const phyTab = sp.get('cls') || sp.get('tab');
+    if (s.key === 'physical' || s.key === 'resourcesphysical') {
+      const phyTab = sp.get('cls') || sp.get('tab') || sp.get('subType');
       if (phyTab && PHY_TAB_NAMES[phyTab]) {
         drill = PHY_TAB_NAMES[phyTab];
       }
@@ -181,7 +212,7 @@ export function computeBreadcrumbs(
   const isLandingClean = Boolean(s.root || (isLanding(s) && !drill && !from));
   // On clean landing pages, Topbar hides breadcrumbs.
   // Location, Links, Physical Resources and Data centers render Topbar so breadcrumbs and GeoDropdown are available.
-  if (isLandingClean && s.key !== 'location' && s.key !== 'links' && s.key !== 'physical' && s.key !== 'dcim') return null;
+  if (isLandingClean && s.key !== 'location' && s.key !== 'links' && s.key !== 'physical' && s.key !== 'resourcesphysical' && s.key !== 'dcim') return null;
 
   const screenForCrumb = (prefix: string) => {
     const p = prefix.toLowerCase().trim();
@@ -344,7 +375,7 @@ export function computeBreadcrumbs(
       );
       const isDiscoveryInsights = s.module === 'Discovery and reconciliation' && (originScreen?.key === 'insights' || hop.crumb.toLowerCase() === 'insights');
       const label = isInventoryInsights
-        ? 'Inventory insights'
+        ? 'Insights'
         : isDiscoveryInsights
           ? (hop.drill || 'Insights')
           : (hop.drill || parts[parts.length - 1]);
@@ -409,21 +440,60 @@ export function computeBreadcrumbs(
   let finalLeafLabel = drill || leaf;
 
   const fromClean = (from || '').toLowerCase().trim();
+  const hasInventoryInsightsHop = hops.some(h => {
+    const c = h.crumb.toLowerCase().trim();
+    return c === 'inventory insights' || c.startsWith('inventory insights');
+  });
+  const isFromInventoryInsights = s.module === 'Inventory' && (
+    fromClean === 'inventory insights' ||
+    fromClean.startsWith('inventory insights') ||
+    hasInventoryInsightsHop
+  );
+
   const isFromInsights = s.module === 'Inventory' && !!(
+    isFromInventoryInsights ||
     (from && (
-      fromClean === 'inventory insights' ||
-      fromClean.startsWith('inventory insights') ||
       fromClean === 'insights' ||
       fromClean.startsWith('insights?') ||
       fromClean.startsWith('insights ·') ||
       fromClean === 'home'
     )) ||
     (hops.length > 0 && (
-      hops[hops.length - 1].crumb.toLowerCase().trim() === 'inventory insights' ||
       hops[hops.length - 1].crumb.toLowerCase().trim() === 'insights' ||
       hops[hops.length - 1].crumb.toLowerCase().trim() === 'home'
     ))
   );
+
+  const INSIGHTS_SECTION_LABELS: Record<string, string> = {
+    physical: 'Physical Inventory',
+    resourcesphysical: 'Physical Inventory',
+    passive: 'Passive Inventory',
+    resourcespassive: 'Passive Inventory',
+    links: 'Connectivity',
+    connectivitylinks: 'Connectivity',
+    virtual: 'Virtual Resources',
+    resourcesvirtual: 'Virtual Resources',
+    location: 'Location',
+    issues: 'Open Issues',
+    lifecycle: 'Lifecycle',
+    compliance: 'Compliance',
+    services: 'Customer Services'
+  };
+
+  const isDirectInsightsDrill = isFromInventoryInsights && !!INSIGHTS_SECTION_LABELS[s.key] && hops.length <= 1;
+
+  if (isDirectInsightsDrill) {
+    const insightsTo = '/inventory/insights';
+    const sectionLabel = INSIGHTS_SECTION_LABELS[s.key];
+    const cleanTo = `${pathname}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
+    segs = [{ label: 'Insights', to: insightsTo }];
+    if (drill && drill !== sectionLabel) {
+      segs.push({ label: sectionLabel, to: cleanTo });
+      finalLeafLabel = drill;
+    } else {
+      finalLeafLabel = sectionLabel;
+    }
+  }
 
   if (typeof sessionStorage !== 'undefined') {
     try { sessionStorage.removeItem('ns_dc_from_insights'); } catch {}
@@ -433,77 +503,34 @@ export function computeBreadcrumbs(
     const cityName = getCityById(params.cityId)?.city.name || 'City';
     const facilityType = sp.get('facility') || 'dc';
     const facilityId = sp.get('facilityId');
-    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
-    const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && x.label !== cityName) : [];
+    const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+    const locTo = isDc ? '/inventory/location?solution=Datacenter' : '/inventory/location';
 
-    let rootSegs: { label: string; to: string | null }[] = [];
-    if (isFromInsights) {
-      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
-    } else if (originSegs.length > 0) {
-      rootSegs = originSegs;
-    } else {
-      rootSegs = [{ label: 'Location', to: locTo }];
-    }
-
-    segs = [...rootSegs];
-
-    if (facilityId) {
-      segs.push({
-        label: cityName,
-        to: `/inventory/location/city/${params.cityId}?facility=${facilityType}${from ? `&from=${encodeURIComponent(from)}` : ''}`
-      });
-      finalLeafLabel = facilityId;
-    } else {
-      finalLeafLabel = cityName;
-    }
-  }
-
-  const isSiteSubRoute = s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
-  if ((s.key === 'site' || isSiteSubRoute) && params.id) {
-    const siteId = params.id;
-    const cityMatch = findCityByFacilityCode(siteId);
-    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
-    const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Location' && (!cityMatch || x.label !== cityMatch.city.name) && x.label !== siteId) : [];
-
-    let rootSegs: { label: string; to: string | null }[] = [];
-    if (isFromInsights) {
-      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
-    } else if (originSegs.length > 0) {
-      rootSegs = originSegs;
-    } else {
-      rootSegs = [{ label: 'Location', to: locTo }];
-    }
-
-    const effectiveSiteFrom = isFromInsights ? (from && from.toLowerCase().includes('insight') ? from : 'Inventory insights') : from;
-    const cityTo = cityMatch
-      ? `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${effectiveSiteFrom ? `&from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`
-      : null;
-    const siteTo = `/inventory/location/site/${siteId}${effectiveSiteFrom ? `?from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`;
-
-    if (isSiteSubRoute) {
-      const subLabel = s.key === 'capex' ? 'Capex'
-        : s.key === 'opex' ? 'Opex'
-        : s.key === 'sitedetails' ? 'Site details'
-        : s.key === 'siteinfra' ? 'Infrastructure'
-        : 'Site equipment';
-
-      segs = [...rootSegs];
-      if (cityMatch && cityTo) {
-        segs.push({ label: cityMatch.city.name, to: cityTo });
-      }
-      segs.push({ label: siteId, to: siteTo });
-      finalLeafLabel = (drill && drill !== siteId && drill !== subLabel) ? drill : subLabel;
-    } else {
-      /* s.key === 'site' */
-      segs = [...rootSegs];
-      if (cityMatch && cityTo) {
-        segs.push({ label: cityMatch.city.name, to: cityTo });
-      }
-      if (drill && drill !== siteId) {
-        segs.push({ label: siteId, to: siteTo });
-        finalLeafLabel = drill;
+    if (isFromInventoryInsights) {
+      const insightsTo = '/inventory/insights';
+      segs = [
+        { label: 'Insights', to: insightsTo },
+        { label: 'Location', to: locTo }
+      ];
+      if (facilityId) {
+        segs.push({
+          label: cityName,
+          to: `/inventory/location/city/${params.cityId}?facility=${facilityType}${isDc ? '&solution=Datacenter' : ''}`
+        });
+        finalLeafLabel = facilityId;
       } else {
-        finalLeafLabel = siteId;
+        finalLeafLabel = cityName;
+      }
+    } else {
+      segs = [{ label: 'Location', to: locTo }];
+      if (facilityId) {
+        segs.push({
+          label: cityName,
+          to: `/inventory/location/city/${params.cityId}?facility=${facilityType}`
+        });
+        finalLeafLabel = facilityId;
+      } else {
+        finalLeafLabel = cityName;
       }
     }
   }
@@ -511,143 +538,332 @@ export function computeBreadcrumbs(
   const isFromPhysical = !!from && (from.toLowerCase().startsWith('resources') || from.toLowerCase().includes('physical'));
   const isFromLocation = !isFromPhysical;
 
+  const isSiteSubRoute = s.key === 'capex' || s.key === 'opex' || s.key === 'sitedetails' || s.key === 'siteequipment' || s.key === 'siteinfra';
+  if ((s.key === 'site' || isSiteSubRoute) && params.id) {
+    const siteId = params.id;
+    const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+    const cityMatch = findCityByFacilityCode(siteId);
+    const locTo = isDc ? '/inventory/location?solution=Datacenter' : '/inventory/location';
+    const cityTo = cityMatch
+      ? `/inventory/location/city/${cityMatch.city.id}?facility=${cityMatch.facilityType}${isDc ? '&solution=Datacenter' : ''}`
+      : null;
+    const siteSp = new URLSearchParams();
+    if (isDc) siteSp.set('solution', 'Datacenter');
+    if (from) siteSp.set('from', from);
+    const siteTo = `/inventory/location/site/${encodeURIComponent(siteId)}${siteSp.toString() ? `?${siteSp.toString()}` : ''}`;
+
+    const subLabel = s.key === 'capex' ? 'Capex'
+      : s.key === 'opex' ? 'Opex'
+      : s.key === 'sitedetails' ? 'Site details'
+      : s.key === 'siteinfra' ? 'Infrastructure'
+      : s.key === 'siteequipment' ? 'Site equipment'
+      : null;
+
+    const isSiteInfo = !isSiteSubRoute && (
+      drill?.toLowerCase() === 'site info' ||
+      drill?.toLowerCase() === 'siteinfo' ||
+      (isFromPhysical && s.key === 'site') ||
+      (fromClean === 'insights' && s.key === 'site') ||
+      (isFromInventoryInsights && s.key === 'site')
+    );
+
+    if (isFromInventoryInsights && isFromPhysical) {
+      const insightsTo = '/inventory/insights';
+      const phyBasePath = isDc ? '/inventory/resources/physical' : '/inventory/physical';
+      const phySpInsights = new URLSearchParams();
+      if (isDc) {
+        phySpInsights.set('type', 'active');
+        phySpInsights.set('solution', 'Datacenter');
+      }
+      phySpInsights.set('from', 'Inventory insights');
+      const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
+      const reqCls = sp.get('cls') || fromSp?.get('cls');
+      const geo = sp.get('geo') || fromSp?.get('geo');
+      if (reqCls) phySpInsights.set('cls', reqCls);
+      if (geo) phySpInsights.set('geo', geo);
+      const phyInsightsTo = `${phyBasePath}?${phySpInsights.toString()}`;
+
+      segs = [
+        { label: 'Insights', to: insightsTo },
+        { label: 'Physical Inventory', to: phyInsightsTo }
+      ];
+      finalLeafLabel = isSiteInfo || drill?.toLowerCase() === 'site info' ? 'Site info' : (isSiteSubRoute && subLabel ? subLabel : siteId);
+    } else if (isFromInventoryInsights) {
+      const insightsTo = '/inventory/insights';
+      segs = [
+        { label: 'Insights', to: insightsTo },
+        { label: 'Location', to: locTo }
+      ];
+      if (isSiteSubRoute && subLabel) {
+        finalLeafLabel = subLabel;
+      } else {
+        finalLeafLabel = isSiteInfo ? 'Site info' : siteId;
+      }
+    } else if (isFromPhysical) {
+      const phyBasePath = isDc ? '/inventory/resources/physical' : '/inventory/physical';
+      const phySp = new URLSearchParams();
+      if (isDc) {
+        phySp.set('type', 'active');
+        phySp.set('solution', 'Datacenter');
+      }
+      const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
+      const rawCls = (isValidPhyClass(sp.get('cls')) ? sp.get('cls') : null)
+        || (isValidPhyClass(fromSp?.get('cls')) ? fromSp?.get('cls') : null)
+        || (isValidPhyClass(sp.get('tab')) ? sp.get('tab') : null)
+        || (isValidPhyClass(fromSp?.get('tab')) ? fromSp?.get('tab') : null);
+      const reqCls = rawCls ? rawCls.toLowerCase() : null;
+      const geo = sp.get('geo') || fromSp?.get('geo');
+      if (reqCls) phySp.set('cls', reqCls);
+      if (geo) phySp.set('geo', geo);
+      const phyTo = `${phyBasePath}?${phySp.toString()}`;
+
+      segs = [
+        { label: 'Physical Resources', to: phyTo }
+      ];
+
+      finalLeafLabel = 'Site info';
+    } else if (fromClean.includes('passive')) {
+      const passiveTo = isDc ? '/inventory/resources/physical?type=passive&solution=Datacenter' : '/inventory/passive';
+      segs = [
+        { label: 'Passive inventory', to: passiveTo }
+      ];
+      if (isSiteSubRoute && subLabel) {
+        finalLeafLabel = subLabel;
+      } else {
+        finalLeafLabel = isSiteInfo ? 'Site info' : siteId;
+      }
+    } else if (fromClean.includes('virtual')) {
+      segs = [
+        { label: 'Virtual Resources', to: '/inventory/virtual' }
+      ];
+      if (isSiteSubRoute && subLabel) {
+        finalLeafLabel = subLabel;
+      } else {
+        finalLeafLabel = isSiteInfo ? 'Site info' : siteId;
+      }
+    } else if (fromClean.includes('link') || fromClean.includes('connectivity')) {
+      segs = [
+        { label: 'Links', to: '/inventory/links' }
+      ];
+      if (isSiteSubRoute && subLabel) {
+        finalLeafLabel = subLabel;
+      } else {
+        finalLeafLabel = isSiteInfo ? 'Site info' : siteId;
+      }
+    } else if (fromClean.includes('service')) {
+      segs = [
+        { label: 'Services', to: '/inventory/services' }
+      ];
+      if (isSiteSubRoute && subLabel) {
+        finalLeafLabel = subLabel;
+      } else {
+        finalLeafLabel = isSiteInfo ? 'Site info' : siteId;
+      }
+    } else {
+      segs = [{ label: 'Location', to: locTo }];
+      if (cityMatch && cityTo) {
+        segs.push({ label: cityMatch.city.name, to: cityTo });
+      }
+      segs.push({ label: siteId, to: siteTo });
+
+      if (isSiteSubRoute) {
+        finalLeafLabel = subLabel || 'Site equipment';
+      } else if (isSiteInfo) {
+        finalLeafLabel = 'Site info';
+      } else {
+        /* s.key === 'site' */
+        const activeSection = sp.get('section') || sp.get('tab');
+        finalLeafLabel = (activeSection === 'attention') ? 'Attention' : 'Network elements';
+      }
+    }
+  }
+
   if (isFromPhysical && (s.key === 'node' || s.key === 'resource')) {
-    const isDc = isDatacenter();
+    const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
     const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
-    const reqCls = sp.get('cls')
-      || fromSp?.get('cls')
-      || (isDc ? null : (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null))
+    const rawCls = (isValidPhyClass(sp.get('cls')) ? sp.get('cls') : null)
+      || (isValidPhyClass(fromSp?.get('cls')) ? fromSp?.get('cls') : null)
+      || (isValidPhyClass(sp.get('tab')) ? sp.get('tab') : null)
+      || (isValidPhyClass(fromSp?.get('tab')) ? fromSp?.get('tab') : null)
+      || (isDc ? null : (typeof sessionStorage !== 'undefined' && isValidPhyClass(sessionStorage.getItem('ns_phy_tab')) ? sessionStorage.getItem('ns_phy_tab') : null))
       || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls
-      || 'router';
+      || inferDeviceClass(params.name)
+      || (isDc ? 'switch' : 'router');
+    const reqCls = rawCls.toLowerCase();
+    const clsLabel = PHY_TAB_NAMES[reqCls] || reqCls.charAt(0).toUpperCase() + reqCls.slice(1);
 
     const geo = sp.get('geo') || fromSp?.get('geo');
     const phySp = new URLSearchParams();
     if (reqCls) phySp.set('cls', reqCls);
     if (geo) phySp.set('geo', geo);
-    const phyTo = `/inventory/physical?${phySp.toString()}`;
+    if (isDc) phySp.set('solution', 'Datacenter');
+    const phyTo = isDc ? `/inventory/resources/physical?${phySp.toString()}` : `/inventory/physical?${phySp.toString()}`;
+
+    const phyBasePath = isDc ? '/inventory/resources/physical' : '/inventory/physical';
+    const phyBaseSp = new URLSearchParams();
+    if (isDc) {
+      phyBaseSp.set('type', 'active');
+      phyBaseSp.set('solution', 'Datacenter');
+    }
+    const phyBaseTo = phyBaseSp.toString() ? `${phyBasePath}?${phyBaseSp.toString()}` : phyBasePath;
+
+    const rawNodeName = params.name || '';
+    const safeNodeName = (!rawNodeName || rawNodeName.startsWith(':')) ? 'Device' : rawNodeName;
 
     const nodeParams = new URLSearchParams();
-    if (params.name) nodeParams.set('name', params.name);
+    if (rawNodeName) nodeParams.set('name', rawNodeName);
     if (sp.get('site')) nodeParams.set('site', sp.get('site')!);
     if (reqCls) nodeParams.set('cls', reqCls);
     if (sp.get('ip')) nodeParams.set('ip', sp.get('ip')!);
     if (geo) nodeParams.set('geo', geo);
+    if (isDc) nodeParams.set('solution', 'Datacenter');
+    if (isFromInventoryInsights) {
+      phySp.set('from', 'Inventory insights');
+    }
     nodeParams.set('from', `Resources · Physical Resources?${phySp.toString()}`);
-    const nodeTo = `/inventory/node/${encodeURIComponent(params.name || '')}?${nodeParams.toString()}`;
+    const nodeTo = `/inventory/node/${encodeURIComponent(rawNodeName)}?${nodeParams.toString()}`;
 
     const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
+    const isInsightsNodeDrill = isFromInventoryInsights && (s.key === 'node' || s.key === 'resource');
 
-    const rootSegs: { label: string; to: string | null }[] = [];
-    rootSegs.push({ label: 'Physical Resources', to: phyTo });
+    if (isInsightsNodeDrill) {
+      const insightsTo = '/inventory/insights';
+      const phySpInsights = new URLSearchParams();
+      if (isDc) {
+        phySpInsights.set('type', 'active');
+        phySpInsights.set('solution', 'Datacenter');
+      }
+      phySpInsights.set('from', 'Inventory insights');
+      if (geo) phySpInsights.set('geo', geo);
+      const phyInsightsTo = `${phyBasePath}?${phySpInsights.toString()}`;
 
-    if (s.key === 'resource' && isFromNode) {
-      segs = [
-        ...rootSegs,
-        { label: 'Node view', to: nodeTo }
-      ];
-      finalLeafLabel = drill || 'Node resources';
-    } else if (s.key === 'resource') {
-      segs = [...rootSegs];
-      finalLeafLabel = drill || params.name || 'Element';
+      const phyClassSp = new URLSearchParams(phySpInsights);
+      if (reqCls) phyClassSp.set('cls', reqCls);
+      const phyClassTo = `${phyBasePath}?${phyClassSp.toString()}`;
+
+      if (s.key === 'node') {
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Physical Inventory', to: phyInsightsTo },
+          { label: clsLabel, to: phyClassTo }
+        ];
+        finalLeafLabel = 'Node view';
+      } else if (s.key === 'resource' && isFromNode) {
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Physical Inventory', to: phyInsightsTo },
+          { label: clsLabel, to: phyClassTo },
+          { label: 'Node view', to: nodeTo }
+        ];
+        finalLeafLabel = 'Node resources';
+      } else {
+        /* s.key === 'resource' && !isFromNode */
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Physical Inventory', to: phyInsightsTo },
+          { label: clsLabel, to: phyClassTo }
+        ];
+        finalLeafLabel = safeNodeName;
+      }
     } else {
-      /* s.key === 'node' */
-      segs = [...rootSegs];
-      finalLeafLabel = drill || `${nodeClassName(reqCls)} · ${params.name}` || params.name || 'Node view';
+      if (s.key === 'node') {
+        segs = [
+          { label: 'Physical Resources', to: phyBaseTo },
+          { label: clsLabel, to: phyTo }
+        ];
+        finalLeafLabel = 'Node view';
+      } else if (s.key === 'resource' && isFromNode) {
+        segs = [
+          { label: 'Physical Resources', to: phyBaseTo },
+          { label: clsLabel, to: phyTo },
+          { label: 'Node view', to: nodeTo }
+        ];
+        finalLeafLabel = 'Node resources';
+      } else {
+        /* s.key === 'resource' && !isFromNode */
+        segs = [
+          { label: 'Physical Resources', to: phyBaseTo },
+          { label: clsLabel, to: phyTo }
+        ];
+        finalLeafLabel = safeNodeName;
+      }
     }
   }
 
   if ((s.key === 'node' || (s.key === 'resource' && isFromLocation)) && isFromLocation) {
+    const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+    const locTo = isDc ? '/inventory/location?solution=Datacenter' : '/inventory/location';
+    const rootLabel = isFromInsights ? 'Inventory insights' : 'Location';
+    const rootTo = isFromInsights ? '/inventory/insights' : (from ? `/inventory/location?from=${encodeURIComponent(from)}${isDc ? '&solution=Datacenter' : ''}` : locTo);
+
+    const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
+    const rawCls = (isValidPhyClass(sp.get('cls')) ? sp.get('cls') : null)
+      || (isValidPhyClass(fromSp?.get('cls')) ? fromSp?.get('cls') : null)
+      || (isValidPhyClass(sp.get('tab')) ? sp.get('tab') : null)
+      || (isValidPhyClass(fromSp?.get('tab')) ? fromSp?.get('tab') : null)
+      || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.cls
+      || inferDeviceClass(params.name)
+      || 'switch';
+    const reqCls = rawCls.toLowerCase();
+    const clsLabel = PHY_TAB_NAMES[reqCls] || reqCls.charAt(0).toUpperCase() + reqCls.slice(1);
+
     const rawSite = sp.get('site') || sp.get('facilityId') || sp.get('id')
       || (window as any).__nsLegacy?.siteForNode?.(params.name, sp.get('ip'))?.id
       || (window as any).__nsLegacy?.resolveSite?.(params.name)?.id;
 
-    const directCityId = sp.get('cityId');
-    const cityMatch = findCityById(directCityId) || findCityByFacilityCode(rawSite || params.name);
-    const facilityType = (sp.get('facility') as 'dc' | 'pop' | 'site') || cityMatch?.facilityType || 'dc';
-    const siteCode = rawSite || (cityMatch ? `${cityMatch.city.name.slice(0, 3).toUpperCase()}-${facilityType.toUpperCase()}-01` : null);
-    const tab = sp.get('tab') || sp.get('cls') || 'router';
-    const cls = sp.get('cls') || 'router';
-    const ip = sp.get('ip');
+    const siteCode = rawSite || null;
+    const siteSp = new URLSearchParams();
+    if (isDc) siteSp.set('solution', 'Datacenter');
+    siteSp.set('tab', reqCls);
+    if (from) siteSp.set('from', from);
+    const siteTo = siteCode ? `/inventory/location/site/${encodeURIComponent(siteCode)}?${siteSp.toString()}` : locTo;
+
+    const rawNodeName = params.name || '';
+    const safeNodeName = (!rawNodeName || rawNodeName.startsWith(':')) ? 'Device' : rawNodeName;
 
     const nodeParams = new URLSearchParams();
-    if (params.name) nodeParams.set('name', params.name);
+    if (rawNodeName) nodeParams.set('name', rawNodeName);
     if (siteCode) nodeParams.set('site', siteCode);
-    if (tab) nodeParams.set('tab', tab);
-    if (cls) nodeParams.set('cls', cls);
-    if (ip) nodeParams.set('ip', ip);
-    const effectiveFrom = isFromInsights ? 'Inventory insights' : from;
-    const fromQuery = effectiveFrom ? `&from=${encodeURIComponent(effectiveFrom)}` : '';
-    const rootLabel = isFromInsights ? 'Inventory insights' : 'Location';
-    const rootTo = isFromInsights ? '/inventory/insights' : (from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location');
+    if (reqCls) nodeParams.set('cls', reqCls);
+    if (sp.get('ip')) nodeParams.set('ip', sp.get('ip')!);
+    if (isDc) nodeParams.set('solution', 'Datacenter');
+    nodeParams.set('from', 'Location · Site details · Node view');
+    const nodeTo = `/inventory/node/${encodeURIComponent(rawNodeName)}?${nodeParams.toString()}`;
 
-    if (effectiveFrom) nodeParams.set('from', effectiveFrom);
-    const nodeTo = `/inventory/node/${encodeURIComponent(params.name || '')}?${nodeParams.toString()}`;
+    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
 
-    const cityTo = cityMatch
-      ? `/inventory/location/city/${cityMatch.city.id}?facility=${facilityType}${fromQuery}`
-      : null;
-    const siteTo = siteCode
-      ? `/inventory/location/site/${encodeURIComponent(siteCode)}?tab=${encodeURIComponent(tab)}${fromQuery}`
-      : null;
-
-    if (cityMatch && siteCode) {
+    if (s.key === 'node') {
       segs = [
         { label: rootLabel, to: rootTo },
-        {
-          label: cityMatch.city.name,
-          to: cityTo
-        },
-        {
-          label: siteCode,
-          to: siteTo
-        }
+        { label: clsLabel, to: siteTo }
       ];
-    } else if (siteCode) {
+      finalLeafLabel = 'Node view';
+    } else if (s.key === 'resource' && isFromNode) {
       segs = [
         { label: rootLabel, to: rootTo },
-        { label: siteCode, to: siteTo }
+        { label: clsLabel, to: siteTo },
+        { label: 'Node view', to: nodeTo }
       ];
+      finalLeafLabel = 'Node resources';
     } else {
+      /* s.key === 'resource' && !isFromNode */
       segs = [
-        { label: rootLabel, to: rootTo }
+        { label: rootLabel, to: rootTo },
+        { label: clsLabel, to: siteTo }
       ];
-    }
-
-    if (s.key === 'resource') {
-      segs.push({ label: 'Node view', to: nodeTo });
-      finalLeafLabel = drill || 'Node resources';
-    } else {
-      finalLeafLabel = drill || params.name || 'Node view';
+      finalLeafLabel = safeNodeName;
     }
   }
 
   if (s.key === 'dcim') {
-    const locTo = from ? `/inventory/location?from=${encodeURIComponent(from)}` : '/inventory/location';
-    const originSegs = hops.length > 0
-      ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers')
-      : [];
     const clientParam = sp.get('client');
     const dcimTo = `/inventory/dcim${clientParam ? `?client=${encodeURIComponent(clientParam)}` : ''}`;
 
-    let rootSegs: { label: string; to: string | null }[] = [];
-    if (isFromInsights) {
-      rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
-    } else if (originSegs.length > 0) {
-      rootSegs = originSegs;
-    } else if (from && (from.toLowerCase().includes('location') || from.toLowerCase().includes('site') || from.toLowerCase().includes('city'))) {
-      rootSegs = [{ label: 'Location', to: locTo }];
-    } else {
-      rootSegs = [];
-    }
-
     if (drill && drill !== 'Data centers') {
-      segs = [
-        ...rootSegs,
-        { label: 'Data centers', to: dcimTo }
-      ];
+      segs = [{ label: 'Data centers', to: dcimTo }];
       finalLeafLabel = drill;
     } else {
-      segs = [...rootSegs];
+      segs = [];
       finalLeafLabel = 'Data centers';
     }
   }
@@ -831,30 +1047,14 @@ export function computeBreadcrumbs(
         finalLeafLabel = dcName;
       }
     } else {
-      const originSegs = hops.length > 0
-        ? segs.filter(x => x.label !== 'Location' && x.label !== 'Data centers' && x.label !== dcName)
-        : [];
-      let rootSegs: { label: string; to: string | null }[] = [];
-      if (isFromInsights) {
-        rootSegs = [{ label: 'Inventory insights', to: '/inventory/insights' }];
-      } else if (originSegs.length > 0) {
-        rootSegs = originSegs;
-      } else if (from && (from.toLowerCase().includes('location') || from.toLowerCase().includes('site') || from.toLowerCase().includes('city'))) {
-        rootSegs = [{ label: 'Location', to: locTo }];
-      } else {
-        rootSegs = [];
-      }
-
       if (drill && drill !== dcName) {
         segs = [
-          ...rootSegs,
           { label: 'Data centers', to: dcimTo },
           { label: dcName, to: dcSelfTo }
         ];
         finalLeafLabel = drill;
       } else {
         segs = [
-          ...rootSegs,
           { label: 'Data centers', to: dcimTo }
         ];
         finalLeafLabel = dcName;
@@ -873,53 +1073,121 @@ export function computeBreadcrumbs(
   };
 
   if (s.key === 'passive') {
-    const originSegs = hops.length > 0
-      ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure' && x.label !== drill)
-      : [];
-    const passiveTo = from ? `/inventory/passive?from=${encodeURIComponent(from)}` : '/inventory/passive';
-    const activeTab = sp.get('tab');
-    const tabCat = activeTab && PASSIVE_CATEGORIES[activeTab] ? PASSIVE_CATEGORIES[activeTab].label : null;
-    const effectiveDrill = drill || (from && tabCat ? tabCat : null);
+    const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+    const isViewRack = drill?.toLowerCase() === 'view rack' || drill?.toLowerCase() === 'view in rack' || (isFromPhysical && (sp.get('tab') === 'rack' || !!sp.get('rack')));
 
-    if (effectiveDrill) {
+    if (isFromInventoryInsights && isFromPhysical) {
+      const insightsTo = '/inventory/insights';
+      const phyBasePath = isDc ? '/inventory/resources/physical' : '/inventory/physical';
+      const phySpInsights = new URLSearchParams();
+      if (isDc) {
+        phySpInsights.set('type', 'active');
+        phySpInsights.set('solution', 'Datacenter');
+      }
+      phySpInsights.set('from', 'Inventory insights');
+      const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
+      const reqCls = sp.get('cls') || fromSp?.get('cls');
+      const geo = sp.get('geo') || fromSp?.get('geo');
+      if (reqCls) phySpInsights.set('cls', reqCls);
+      if (geo) phySpInsights.set('geo', geo);
+      const phyInsightsTo = `${phyBasePath}?${phySpInsights.toString()}`;
+
       segs = [
-        ...originSegs,
-        { label: 'Passive inventory', to: passiveTo }
+        { label: 'Insights', to: insightsTo },
+        { label: 'Physical Inventory', to: phyInsightsTo }
       ];
-      finalLeafLabel = effectiveDrill;
-    } else if (from) {
-      segs = originSegs;
-      finalLeafLabel = 'Passive inventory';
+      finalLeafLabel = isViewRack ? 'View rack' : (sp.get('rack') ? `Rack ${sp.get('rack')}` : 'Racks');
     } else {
-      segs = [];
-      finalLeafLabel = 'Passive inventory';
+      const originSegs = hops.length > 0
+        ? segs.filter(x => x.label !== 'Passive inventory' && x.label !== 'Passive Infrastructure' && x.label !== drill)
+        : [];
+      const passiveTo = from ? `/inventory/passive?from=${encodeURIComponent(from)}` : '/inventory/passive';
+      const activeTab = sp.get('tab');
+      const tabCat = activeTab && PASSIVE_CATEGORIES[activeTab] ? PASSIVE_CATEGORIES[activeTab].label : null;
+      const rackLabel = sp.get('rack') ? `Rack ${sp.get('rack')}` : null;
+      const effectiveDrill = (isViewRack ? 'View rack' : null) || drill || rackLabel || (from && tabCat ? tabCat : null);
+
+      if (effectiveDrill) {
+        segs = [
+          ...originSegs,
+          { label: 'Passive inventory', to: passiveTo }
+        ];
+        finalLeafLabel = effectiveDrill;
+      } else if (from) {
+        segs = originSegs;
+        finalLeafLabel = 'Passive inventory';
+      } else {
+        segs = [];
+        finalLeafLabel = 'Passive inventory';
+      }
     }
   }
 
   if (s.key in PASSIVE_CATEGORIES) {
     const cat = PASSIVE_CATEGORIES[s.key];
+    const isViewRack = drill?.toLowerCase() === 'view rack' || drill?.toLowerCase() === 'view in rack' || (isFromPhysical && s.key === 'rack');
     const fromSp = from && from.includes('?') ? new URLSearchParams(from.split('?')[1]) : null;
     const activeTab = sp.get('tab') || fromSp?.get('tab') || cat.tab;
     const catLabel = cat.label;
-    const isFromPassive = !from
-      || from.toLowerCase().includes('passive')
-      || (origin && origin.pathname.startsWith('/inventory/passive'))
-      || (!from.toLowerCase().includes('location') && !from.toLowerCase().includes('site') && !from.toLowerCase().includes('city'));
+    const rawId = params.id || params.name || '';
+    const safeId = (!rawId || rawId.startsWith(':')) ? 'Element' : rawId;
+    const elemTo = s.path.replace(':id', encodeURIComponent(rawId));
 
-    if (isFromPassive) {
+    if (isFromInventoryInsights && isFromPhysical) {
+      const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+      const insightsTo = '/inventory/insights';
+      const phyBasePath = isDc ? '/inventory/resources/physical' : '/inventory/physical';
+      const phySpInsights = new URLSearchParams();
+      if (isDc) {
+        phySpInsights.set('type', 'active');
+        phySpInsights.set('solution', 'Datacenter');
+      }
+      phySpInsights.set('from', 'Inventory insights');
+      const reqCls = sp.get('cls') || fromSp?.get('cls');
+      const geo = sp.get('geo') || fromSp?.get('geo');
+      if (reqCls) phySpInsights.set('cls', reqCls);
+      if (geo) phySpInsights.set('geo', geo);
+      const phyInsightsTo = `${phyBasePath}?${phySpInsights.toString()}`;
+
       segs = [
-        { label: 'Passive inventory', to: '/inventory/passive' },
-        { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` }
+        { label: 'Insights', to: insightsTo },
+        { label: 'Physical Inventory', to: phyInsightsTo }
       ];
-      finalLeafLabel = drill || params.id || params.name || 'Element';
+      finalLeafLabel = (s.key === 'rack' && isViewRack) ? 'View rack' : safeId;
+    } else if (isFromInventoryInsights) {
+      const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
+      const insightsTo = '/inventory/insights';
+      const passiveTo = isDc
+        ? '/inventory/resources/physical?type=passive&solution=Datacenter&from=Inventory+insights'
+        : '/inventory/passive?from=Inventory+insights';
+      segs = [
+        { label: 'Insights', to: insightsTo },
+        { label: 'Passive Inventory', to: passiveTo }
+      ];
+      finalLeafLabel = (s.key === 'rack' && isViewRack) ? 'View rack' : safeId;
     } else {
-      const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Element' && x.label !== catLabel) : [];
-      segs = [
-        ...originSegs,
-        { label: 'Passive inventory', to: '/inventory/passive' },
-        { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` }
-      ];
-      finalLeafLabel = drill || params.id || params.name || 'Element';
+      const isFromPassive = !from
+        || from.toLowerCase().includes('passive')
+        || (origin && origin.pathname.startsWith('/inventory/passive'))
+        || (!from.toLowerCase().includes('location') && !from.toLowerCase().includes('site') && !from.toLowerCase().includes('city'));
+
+      if (isFromPassive) {
+        segs = [
+          { label: 'Passive inventory', to: '/inventory/passive' },
+          { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` },
+          { label: safeId, to: elemTo }
+        ];
+        finalLeafLabel = (s.key === 'rack' && isViewRack) ? 'View rack' : (drill || 'Overview');
+      } else {
+        const originSegs = hops.length > 0 ? segs.filter(x => x.label !== 'Element' && x.label !== catLabel) : [];
+        segs = [
+          ...originSegs,
+          { label: 'Passive inventory', to: '/inventory/passive' },
+          { label: catLabel, to: `/inventory/passive?tab=${encodeURIComponent(activeTab)}` },
+          { label: safeId, to: elemTo }
+        ];
+        finalLeafLabel = (s.key === 'rack' && isViewRack) ? 'View rack' : (drill || 'Overview');
+      }
     }
   }
 
@@ -941,9 +1209,49 @@ export function computeBreadcrumbs(
     segs.push({ label: finalLeafLabel, to: null });
   }
 
+  const rawSegs = [...segs];
+
+  const appDomain = 'Resource Manager';
+  const appDomainTo = s.module === 'Discovery and reconciliation'
+    ? '/discovery/insights'
+    : '/inventory/insights';
+
+  const primaryModule = s.module === 'Discovery and reconciliation'
+    ? 'Discovery & Reconciliation'
+    : 'Inventory';
+  const primaryModuleTo = s.module === 'Discovery and reconciliation'
+    ? '/discovery/insights'
+    : '/inventory/insights';
+
+  const isPhysicalFlow = isFromPhysical && (s.key === 'site' || isSiteSubRoute);
+  const isNodeViewFlow = s.key === 'node' || (s.key === 'resource' && isFromNode);
+  const isInsightsDrill = isDirectInsightsDrill
+    || (isFromInventoryInsights && isFromPhysical && (s.key === 'node' || s.key === 'resource' || s.key === 'site' || isSiteSubRoute || s.key === 'passive'))
+    || (isFromInventoryInsights && (s.key === 'node' || s.key === 'resource' || s.key === 'site'))
+    || isNodeViewFlow
+    || isPhysicalFlow;
+  const isInsightsFlow = isInsightsDrill;
+
+  const standardizedSegs: BreadcrumbItem[] = [];
+  if (!isInsightsFlow) {
+    standardizedSegs.push({ label: appDomain, to: appDomainTo });
+    standardizedSegs.push({ label: primaryModule, to: primaryModuleTo });
+  }
+
+  for (const seg of segs) {
+    if (!isInsightsFlow) {
+      if (seg.label === appDomain || seg.label === primaryModule) continue;
+      if (hops.length <= 1 && (seg.label === 'Inventory insights' || seg.label === 'Insights')) continue;
+    }
+    standardizedSegs.push(seg);
+  }
+
+  const finalSegs = options?.legacy ? rawSegs : standardizedSegs;
+
   return {
     isLandingClean,
-    segs,
+    segs: finalSegs,
+    rawSegs,
     finalLeafLabel,
     reportDef,
     reportContent
@@ -952,24 +1260,32 @@ export function computeBreadcrumbs(
 
 export default function Topbar() {
   const loc = useLocation();
-  const nav = useNavigate();
   const origin = originFor(loc);
-  const data = computeBreadcrumbs(loc, origin);
+  const [activeSubTab, setActiveSubTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleSubTabChange = (e: any) => {
+      if (e.detail?.tab) {
+        setActiveSubTab(e.detail.tab);
+      }
+    };
+    window.addEventListener('ns:active-subtab-change', handleSubTabChange);
+    return () => {
+      window.removeEventListener('ns:active-subtab-change', handleSubTabChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    setActiveSubTab(null);
+  }, [loc.pathname]);
+
+  const data = computeBreadcrumbs(loc, origin, { activeSubTab: activeSubTab || undefined });
   if (!data) return null;
   const { isLandingClean, segs, reportDef, reportContent } = data;
 
   return (
     <div className="topbar">
-      <nav className="topbar-crumbs" aria-label="Breadcrumb">
-        {!isLandingClean && segs.map((g, i) => (
-          <span key={i} className="topbar-seg">
-            {i > 0 && <span className="topbar-crumb-sep">&gt;</span>}
-            {g.to
-              ? <button className="topbar-crumb-link" onClick={() => nav(withSolution(g.to as string), { state: { reset: true } })}>{g.label}</button>
-              : <span className={i === segs.length - 1 ? 'topbar-crumb-current' : 'topbar-crumb-text'}>{g.label}</span>}
-          </span>
-        ))}
-      </nav>
+      {!isLandingClean && <Breadcrumb items={segs} />}
       <div className="topbar-right" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
         {isDatacenter() && <GeoDropdown />}
         {reportDef && reportContent && (

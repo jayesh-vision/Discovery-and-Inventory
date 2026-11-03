@@ -149,6 +149,20 @@ export default function NodeDetails({ node, external = null, onClose, isDirectPa
   }, [activeTab, t]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && tab) {
+      window.dispatchEvent(new CustomEvent('ns:active-subtab-change', { detail: { tab } }));
+      try {
+        const u = new URL(window.location.href);
+        const cur = u.searchParams.get('tab');
+        if (cur !== tab.toLowerCase()) {
+          u.searchParams.set('tab', tab.toLowerCase());
+          window.history.replaceState(window.history.state, '', u.toString());
+        }
+      } catch (e) {}
+    }
+  }, [tab]);
+
+  useEffect(() => {
     if (isEmbedded) {
       const iv = setInterval(() => setTick(n => n + 1), 1000)
       return () => clearInterval(iv)

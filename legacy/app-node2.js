@@ -59,8 +59,11 @@ function nodeHeaderSwitch(N) {
           const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
           const curOrigin = fromQuery || drillFrom || '';
           const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
-          const fromParam = isPhyOrigin ? 'Resources · Physical Resources · Node view?cls=switch' : 'Location · Site details · Node view';
-          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+          const hasInsights = curOrigin.toLowerCase().includes('insights');
+          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
+          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=switch${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
         })()}
       </div>
     </div>
@@ -525,8 +528,11 @@ function nodeHeaderRouter(N) {
           const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
           const curOrigin = fromQuery || drillFrom || '';
           const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
-          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=${encodeURIComponent(r.cls || 'router')}` : 'Location · Site details · Node view';
-          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}` })}>Node resources</button>`;
+          const hasInsights = curOrigin.toLowerCase().includes('insights');
+          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
+          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=${encodeURIComponent(r.cls || 'router')}${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
         })()}
       </div>
     </div>
@@ -1319,7 +1325,17 @@ function nodeHeaderDwdm(N) {
         </span>
       </div>
       <div class="row" style="flex-shrink:0">
-        <button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}` })}>View details</button>
+        ${(() => {
+          const fromQuery = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('from') : null;
+          const drillFrom = (typeof DRILL !== 'undefined' && DRILL && DRILL.from) ? DRILL.from : null;
+          const curOrigin = fromQuery || drillFrom || '';
+          const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
+          const hasInsights = curOrigin.toLowerCase().includes('insights');
+          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
+          const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=dwdm${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}&cls=dwdm&from=${encodeURIComponent(fromParam)}${solParam}` })}>View details</button>`;
+        })()}
       </div>
     </div>
     <div class="nv-meta" style="grid-template-columns:repeat(5, 1fr);gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--vw-color-slate-100,#f1f5f9)">${cells.map(([k, v]) => `<div class="stack-x">

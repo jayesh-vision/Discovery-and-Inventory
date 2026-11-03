@@ -240,3 +240,6 @@ export const Sub = ({ mono, children }: { mono?: boolean; children: ReactNode })
   <span className={`cell-sub${mono ? ' mono' : ''}`}>{children}</span>;
 export const Mono = ({ children }: { children: ReactNode }) => <span className="mono">{children}</span>;
 export const Num = ({ children }: { children: ReactNode }) => <span className="num">{children}</span>;
+
+export { default as Breadcrumb, type BreadcrumbItem, type BreadcrumbProps } from './ui/Breadcrumb';
+
