@@ -23,6 +23,11 @@ const RAIL: { section: string; items: Item[] }[] = [
     { group: 'res', label: 'Resources', children: [
       { key: 'virtual', label: 'Virtual Resources' }, { key: 'physical', label: 'Physical Resources' }, { key: 'passive', label: 'Passive Infrastructure' } ] },
     { group: 'con', label: 'Connectivity', children: [ { key: 'links', label: 'Links' } ] },
+    { group: 'assurance', label: 'Inventory assurance', children: [
+      { key: 'inventoryqualitydashboard', label: 'Quality dashboard' },
+      { key: 'inventoryupload', label: 'Upload' },
+      { key: 'inventoryrulemanagement', label: 'Rule management' },
+      { key: 'inventoryexecutionhistory', label: 'Execution history' } ] },
     { key: 'services', label: 'Services' }, { key: 'inactive', label: 'Inactive inventory' }, { key: 'reports', label: 'Reports' } ] }
 ];
 
@@ -48,7 +53,7 @@ export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; o
   const { pathname, search } = useLocation();
   const nav = useNavigate();
   const active = activeRailKey(pathname, search);
-  const [open, setOpen] = useState<Record<string, boolean>>({ res: true, con: true, recon: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ res: true, con: true, recon: true, assurance: true });
   useEffect(() => {
     /* a child that is active keeps its group open */
     for (const sec of RAIL) for (const it of sec.items)

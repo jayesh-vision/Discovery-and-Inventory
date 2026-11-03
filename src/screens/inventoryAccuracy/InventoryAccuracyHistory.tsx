@@ -21,7 +21,7 @@ export default function InventoryAccuracyHistory() {
   const compared = useMemo(() => compareIds.map(id => executions.find(e => e.id === id)).filter(Boolean) as AccuracyExecution[], [compareIds, executions]);
 
   if (!executions.length) {
-    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/accuracy/upload'))}>Go to Upload</button></p></Card></div>;
+    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/upload'))}>Go to Upload</button></p></Card></div>;
   }
 
   return (
@@ -33,10 +33,10 @@ export default function InventoryAccuracyHistory() {
           columns={[{ t: '', w: '2.5rem' }, { t: 'Execution', w: '14%' }, { t: 'Entity type', w: '14%' }, { t: 'File', w: '16%' }, { t: 'Uploaded', w: '14%' }, { t: 'Mode', w: '8%' }, { t: 'Records', r: true, w: '8%' }, { t: 'Score', r: true, w: '8%' }, { t: 'Classification', plain: true, w: '12%' }]}
           rows={executions} total={executions.length} rowKey={e => e.id}
           searchPlaceholder="Execution id, file name"
-          onRowClick={e => nav(withSolution(`/inventory/accuracy/validation?exec=${e.id}`))}
+          onRowClick={e => nav(withSolution(`/inventory/validation-results?exec=${e.id}`))}
           rowActions={e => [
-            { l: 'View validation results', primary: true, onClick: () => nav(withSolution(`/inventory/accuracy/validation?exec=${e.id}`)) },
-            { l: 'View reconciliation results', onClick: () => nav(withSolution(`/inventory/accuracy/reconciliation?exec=${e.id}`)) },
+            { l: 'View validation results', primary: true, onClick: () => nav(withSolution(`/inventory/validation-results?exec=${e.id}`)) },
+            { l: 'View reconciliation results', onClick: () => nav(withSolution(`/inventory/reconciliation-results?exec=${e.id}`)) },
             { l: compareIds.includes(e.id) ? 'Remove from comparison' : 'Add to comparison', onClick: () => toggleCompare(e.id) }
           ]}
           renderRow={e => [

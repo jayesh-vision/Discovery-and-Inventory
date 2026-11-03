@@ -141,7 +141,7 @@ export default function InventoryAccuracyIssues() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button type="button" className="nst-btn nst-btn--filled" onClick={() => { setStatus(new Set([drawer.id]), 'Resolved'); setDrawer(null); }}>Mark resolved</button>
               <button type="button" className="nst-btn" onClick={() => { setStatus(new Set([drawer.id]), 'Accepted Exception'); setDrawer(null); }}>Accept as exception</button>
-              <button type="button" className="nst-btn" onClick={() => nav(withSolution(`/inventory/accuracy/validation?exec=${drawer.executionId}`))}>View in Validation Results</button>
+              <button type="button" className="nst-btn" onClick={() => nav(withSolution(`/inventory/validation-results?exec=${drawer.executionId}`))}>View in Validation Results</button>
             </div>
           </div>
         )}

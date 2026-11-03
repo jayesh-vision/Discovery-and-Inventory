@@ -70,7 +70,7 @@ export default function InventoryAccuracyRuleDetails() {
         </table>
 
         <div className="ia-foot">
-          <button type="button" className="nst-btn" onClick={() => nav(withSolution(`/inventory/accuracy/rules/${rule.id}/edit`))}>Edit rule</button>
+          <button type="button" className="nst-btn" onClick={() => nav(withSolution(`/inventory/rule-management/${rule.id}/edit`))}>Edit rule</button>
           <button type="button" className="nst-btn" onClick={testAgainstSample}>Test against sample records</button>
           {next && (
             <>

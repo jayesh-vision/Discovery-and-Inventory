@@ -260,7 +260,7 @@ export default function InventoryAccuracyUpload() {
             </div>
             <div className="ia-foot">
               <button type="button" className="nst-btn" onClick={restart}>Upload another file</button>
-              <button type="button" className="nst-btn nst-btn--filled" onClick={() => nav(withSolution('/inventory/accuracy'))}>Go to dashboard</button>
+              <button type="button" className="nst-btn nst-btn--filled" onClick={() => nav(withSolution('/inventory/quality-dashboard'))}>Go to dashboard</button>
             </div>
           </>
         )}

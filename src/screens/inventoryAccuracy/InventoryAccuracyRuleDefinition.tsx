@@ -60,7 +60,7 @@ export default function InventoryAccuracyRuleDefinition() {
       activity: [...rule.activity, { at: NOW, by: BY, event: existing ? 'Rule definition edited' : 'Rule created' }]
     };
     saveRule(next);
-    nav(withSolution(`/inventory/accuracy/rules/${next.id}`));
+    nav(withSolution(`/inventory/rule-management/${next.id}`));
   };
 
   return (
@@ -141,7 +141,7 @@ export default function InventoryAccuracyRuleDefinition() {
         </div>
 
         <div className="ia-foot">
-          <button type="button" className="nst-btn nst-btn--ghost" onClick={() => nav(withSolution('/inventory/accuracy/rules'))}>Cancel</button>
+          <button type="button" className="nst-btn nst-btn--ghost" onClick={() => nav(withSolution('/inventory/rule-management'))}>Cancel</button>
           <button type="button" className="nst-btn nst-btn--filled" onClick={save}>{existing ? 'Save changes' : 'Create rule'}</button>
         </div>
       </Card>

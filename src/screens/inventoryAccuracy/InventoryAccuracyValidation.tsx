@@ -19,7 +19,7 @@ export default function InventoryAccuracyValidation() {
   const { executions, execution, setId } = useSelectedExecution();
 
   if (!executions.length) {
-    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/accuracy/upload'))}>Go to Upload</button></p></Card></div>;
+    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/upload'))}>Go to Upload</button></p></Card></div>;
   }
 
   return (
@@ -37,7 +37,7 @@ export default function InventoryAccuracyValidation() {
         </div>
       </Card>
 
-      {execution && <ValidationPanel execution={execution} onViewIssue={() => nav(withSolution(`/inventory/accuracy/issues?exec=${execution.id}`))} />}
+      {execution && <ValidationPanel execution={execution} onViewIssue={() => nav(withSolution(`/inventory/assurance-issues?exec=${execution.id}`))} />}
     </div>
   );
 }

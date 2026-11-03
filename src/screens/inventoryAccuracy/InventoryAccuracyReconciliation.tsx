@@ -19,7 +19,7 @@ export default function InventoryAccuracyReconciliation() {
   const { executions, execution, setId } = useSelectedExecution();
 
   if (!executions.length) {
-    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/accuracy/upload'))}>Go to Upload</button></p></Card></div>;
+    return <div className="page ia-page"><Card><p className="ia-empty">No uploads yet. <button type="button" className="nst-btn" onClick={() => nav(withSolution('/inventory/upload'))}>Go to Upload</button></p></Card></div>;
   }
 
   return (

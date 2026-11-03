@@ -142,16 +142,29 @@ export const SCREENS: Screen[] = [
   { key: 'sparescoverage', path: '/inventory/spares', module: 'Inventory', crumb: 'Inventory Spares', component: SparesCoverage },
   { key: 'telemetrystaleness', path: '/inventory/telemetry', module: 'Inventory', crumb: 'Telemetry Staleness', component: TelemetryStaleness },
 
-  { key: 'inventoryaccuracy', path: '/inventory/accuracy', module: 'Inventory', root: true, crumb: 'Inventory Assurance', component: InventoryAccuracyDashboard },
-  { key: 'inventoryaccuracyupload', path: '/inventory/accuracy/upload', module: 'Inventory', crumb: 'Inventory Assurance · Upload', component: InventoryAccuracyUpload },
-  { key: 'inventoryaccuracyvalidation', path: '/inventory/accuracy/validation', module: 'Inventory', crumb: 'Inventory Assurance · Validation Results', component: InventoryAccuracyValidation },
-  { key: 'inventoryaccuracyreconciliation', path: '/inventory/accuracy/reconciliation', module: 'Inventory', crumb: 'Inventory Assurance · Reconciliation Results', component: InventoryAccuracyReconciliation },
-  { key: 'inventoryaccuracyissues', path: '/inventory/accuracy/issues', module: 'Inventory', crumb: 'Inventory Assurance · Issues & Exceptions', component: InventoryAccuracyIssues },
-  { key: 'inventoryaccuracyrules', path: '/inventory/accuracy/rules', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management', component: InventoryAccuracyRulesList },
-  { key: 'inventoryaccuracyrulenew', path: '/inventory/accuracy/rules/new', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · New rule', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDefinition },
-  { key: 'inventoryaccuracyruleedit', path: '/inventory/accuracy/rules/:id/edit', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Edit rule', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDefinition },
-  { key: 'inventoryaccuracyruledetails', path: '/inventory/accuracy/rules/:id', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Rule details', rail: 'inventoryaccuracyrules', component: InventoryAccuracyRuleDetails },
-  { key: 'inventoryaccuracyhistory', path: '/inventory/accuracy/history', module: 'Inventory', crumb: 'Inventory Assurance · Execution History', component: InventoryAccuracyHistory }
+  /* Inventory Assurance module screens with distinct routing paths */
+  { key: 'inventoryqualitydashboard', path: '/inventory/quality-dashboard', module: 'Inventory', root: true, crumb: 'Inventory Assurance · Quality Dashboard', component: InventoryAccuracyDashboard },
+  { key: 'inventoryupload', path: '/inventory/upload', module: 'Inventory', crumb: 'Inventory Assurance · Upload', component: InventoryAccuracyUpload },
+  { key: 'inventoryrulemanagement', path: '/inventory/rule-management', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management', component: InventoryAccuracyRulesList },
+  { key: 'inventoryrulenew', path: '/inventory/rule-management/new', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · New rule', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryruleedit', path: '/inventory/rule-management/:id/edit', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Edit rule', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryruledetails', path: '/inventory/rule-management/:id', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Rule details', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDetails },
+  { key: 'inventoryexecutionhistory', path: '/inventory/execution-history', module: 'Inventory', crumb: 'Inventory Assurance · Execution History', component: InventoryAccuracyHistory },
+  { key: 'inventoryvalidation', path: '/inventory/validation-results', module: 'Inventory', crumb: 'Inventory Assurance · Validation Results', rail: 'inventoryexecutionhistory', component: InventoryAccuracyValidation },
+  { key: 'inventoryreconciliation', path: '/inventory/reconciliation-results', module: 'Inventory', crumb: 'Inventory Assurance · Reconciliation Results', rail: 'inventoryexecutionhistory', component: InventoryAccuracyReconciliation },
+  { key: 'inventoryassuranceissues', path: '/inventory/assurance-issues', module: 'Inventory', crumb: 'Inventory Assurance · Issues & Exceptions', rail: 'inventoryexecutionhistory', component: InventoryAccuracyIssues },
+
+  /* Aliases for backward compatibility */
+  { key: 'inventoryaccuracy', path: '/inventory/accuracy', module: 'Inventory', root: true, crumb: 'Inventory Assurance · Quality Dashboard', rail: 'inventoryqualitydashboard', component: InventoryAccuracyDashboard },
+  { key: 'inventoryaccuracyupload', path: '/inventory/accuracy/upload', module: 'Inventory', crumb: 'Inventory Assurance · Upload', rail: 'inventoryupload', component: InventoryAccuracyUpload },
+  { key: 'inventoryaccuracyvalidation', path: '/inventory/accuracy/validation', module: 'Inventory', crumb: 'Inventory Assurance · Validation Results', rail: 'inventoryexecutionhistory', component: InventoryAccuracyValidation },
+  { key: 'inventoryaccuracyreconciliation', path: '/inventory/accuracy/reconciliation', module: 'Inventory', crumb: 'Inventory Assurance · Reconciliation Results', rail: 'inventoryexecutionhistory', component: InventoryAccuracyReconciliation },
+  { key: 'inventoryaccuracyissues', path: '/inventory/accuracy/issues', module: 'Inventory', crumb: 'Inventory Assurance · Issues & Exceptions', rail: 'inventoryexecutionhistory', component: InventoryAccuracyIssues },
+  { key: 'inventoryaccuracyrules', path: '/inventory/accuracy/rules', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management', rail: 'inventoryrulemanagement', component: InventoryAccuracyRulesList },
+  { key: 'inventoryaccuracyrulenew', path: '/inventory/accuracy/rules/new', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · New rule', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryaccuracyruleedit', path: '/inventory/accuracy/rules/:id/edit', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Edit rule', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDefinition },
+  { key: 'inventoryaccuracyruledetails', path: '/inventory/accuracy/rules/:id', module: 'Inventory', crumb: 'Inventory Assurance · Rule Management · Rule details', rail: 'inventoryrulemanagement', component: InventoryAccuracyRuleDetails },
+  { key: 'inventoryaccuracyhistory', path: '/inventory/accuracy/history', module: 'Inventory', crumb: 'Inventory Assurance · Execution History', rail: 'inventoryexecutionhistory', component: InventoryAccuracyHistory }
 ];
 
 export const screenByKey = (k: string) => SCREENS.find(s => s.key === k);

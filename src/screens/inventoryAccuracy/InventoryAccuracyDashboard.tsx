@@ -89,7 +89,7 @@ export default function InventoryAccuracyDashboard() {
         <Card>
           <h3 className="ia-card-title">No uploads yet</h3>
           <p className="ia-empty">Upload an inventory file to calculate an accuracy score — nothing here is hardcoded; every KPI below is computed from your uploads.</p>
-          <button type="button" className="nst-btn nst-btn--filled" onClick={() => nav(withSolution('/inventory/accuracy/upload'))}>Go to Upload</button>
+          <button type="button" className="nst-btn nst-btn--filled" onClick={() => nav(withSolution('/inventory/upload'))}>Go to Upload</button>
         </Card>
       </div>
     );

@@ -50,11 +50,11 @@ export default function InventoryAccuracyRulesList() {
             { n: 'Status', o: [...RULE_LIFECYCLE] }
           ]}
           onSearch={setQuery} onFilterChange={setFilters}
-          gridActions={[{ l: 'Create rule', primary: true, onClick: () => nav(withSolution('/inventory/accuracy/rules/new')) }]}
-          onRowClick={r => nav(withSolution(`/inventory/accuracy/rules/${r.id}`))}
+          gridActions={[{ l: 'Create rule', primary: true, onClick: () => nav(withSolution('/inventory/rule-management/new')) }]}
+          onRowClick={r => nav(withSolution(`/inventory/rule-management/${r.id}`))}
           rowActions={r => [
-            { l: 'View details', primary: true, onClick: () => nav(withSolution(`/inventory/accuracy/rules/${r.id}`)) },
-            { l: 'Edit rule', onClick: () => nav(withSolution(`/inventory/accuracy/rules/${r.id}/edit`)) }
+            { l: 'View details', primary: true, onClick: () => nav(withSolution(`/inventory/rule-management/${r.id}`)) },
+            { l: 'Edit rule', onClick: () => nav(withSolution(`/inventory/rule-management/${r.id}/edit`)) }
           ]}
           renderRow={r => [
             <><span className="vw-value" style={{ fontWeight: 500 }}>{r.name}</span><div className="cell-sub mono">{r.id}</div></>,
