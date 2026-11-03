@@ -15,7 +15,7 @@
     "audit:estate": "node tests/verify-all-estate-data.mjs",
     "build:single": "VITE_ROUTER=hash vite build && node scripts/single-file.mjs",
     "test": "node tests/run.mjs",
-    "test:unit": "node --test tests/unit/",
+    "test:unit": "node --test tests/unit/*.test.mjs",
     "test:e2e:domains": "node tests/e2e-domains.mjs",
     "gen:dcim-templates": "node scripts/gen-dcim-templates.mjs",
     "test:e2e:dcim": "node tests/e2e-dcim.mjs",

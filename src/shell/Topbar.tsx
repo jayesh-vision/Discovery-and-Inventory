@@ -89,7 +89,7 @@ export interface ComputeBreadcrumbsOptions {
 export function computeBreadcrumbs(
   loc: { pathname: string; search: string },
   origin: Origin | null = null,
-  options?: ComputeBreadcrumbsOptions
+  _options?: ComputeBreadcrumbsOptions
 ): BreadcrumbsResult | null {
   const { pathname, search } = loc;
   const s = screenFor(pathname);
@@ -115,7 +115,7 @@ export function computeBreadcrumbs(
     const originFrom = originSp.get('from');
     if (originFrom && isSiteOrNode) {
       from = originFrom;
-    } else if (!drill) {
+    } else if (!drill || s.key === 'resource') {
       const originScreen = screenFor(origin.pathname);
       if (originScreen && originScreen.module === s.module && originScreen.key !== s.key && originScreen.key !== 'inventoryinsights' && originScreen.key !== 'home') {
         if (originScreen.key === 'passive') {
@@ -127,7 +127,6 @@ export function computeBreadcrumbs(
     }
   }
 
-  const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
 
   const PHY_TAB_NAMES: Record<string, string> = {
     router: 'Router',
@@ -400,7 +399,8 @@ export function computeBreadcrumbs(
         segs[segs.length - 1] = { label, to };
       }
     }
-    if (drill && leaf && drill !== leaf) {
+    const isPlaceholderLeaf = leaf === 'View' || leaf === 'Element' || (drill && drill.startsWith(leaf));
+    if (drill && leaf && drill !== leaf && !isPlaceholderLeaf) {
       if (!segs.some(g => g.label === leaf)) {
         const cleanTo = `${pathname}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
         segs.push({ label: leaf, to: cleanTo });
@@ -723,7 +723,7 @@ export function computeBreadcrumbs(
     nodeParams.set('from', `Resources · Physical Resources?${phySp.toString()}`);
     const nodeTo = `/inventory/node/${encodeURIComponent(rawNodeName)}?${nodeParams.toString()}`;
 
-    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
+    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false) || (origin ? origin.pathname.includes('/node/') : false);
     const isInsightsNodeDrill = isFromInventoryInsights && (s.key === 'node' || s.key === 'resource');
 
     if (isInsightsNodeDrill) {
@@ -793,8 +793,8 @@ export function computeBreadcrumbs(
   if ((s.key === 'node' || (s.key === 'resource' && isFromLocation)) && isFromLocation) {
     const isDc = sp.get('solution')?.toLowerCase() === 'datacenter' || isDatacenter();
     const locTo = isDc ? '/inventory/location?solution=Datacenter' : '/inventory/location';
-    const rootLabel = isFromInsights ? 'Inventory insights' : 'Location';
-    const rootTo = isFromInsights ? '/inventory/insights' : (from ? `/inventory/location?from=${encodeURIComponent(from)}${isDc ? '&solution=Datacenter' : ''}` : locTo);
+    const insightsTo = '/inventory/insights';
+    const rootTo = from ? `/inventory/location?from=${encodeURIComponent(from)}${isDc ? '&solution=Datacenter' : ''}` : locTo;
 
     const fromSp = from ? new URLSearchParams(from.includes('?') ? from.split('?')[1] : '') : null;
     const rawCls = (isValidPhyClass(sp.get('cls')) ? sp.get('cls') : null)
@@ -827,31 +827,58 @@ export function computeBreadcrumbs(
     if (reqCls) nodeParams.set('cls', reqCls);
     if (sp.get('ip')) nodeParams.set('ip', sp.get('ip')!);
     if (isDc) nodeParams.set('solution', 'Datacenter');
-    nodeParams.set('from', 'Location · Site details · Node view');
+    nodeParams.set('from', isFromInsights ? 'Location · Site details · Node view?from=Inventory insights' : 'Location · Site details · Node view');
     const nodeTo = `/inventory/node/${encodeURIComponent(rawNodeName)}?${nodeParams.toString()}`;
 
-    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false);
+    const isFromNode = (from ? from.toLowerCase().includes('node') : false) || (drill ? drill.toLowerCase().includes('node resources') : false) || (origin ? origin.pathname.includes('/node/') : false);
 
-    if (s.key === 'node') {
-      segs = [
-        { label: rootLabel, to: rootTo },
-        { label: clsLabel, to: siteTo }
-      ];
-      finalLeafLabel = 'Node view';
-    } else if (s.key === 'resource' && isFromNode) {
-      segs = [
-        { label: rootLabel, to: rootTo },
-        { label: clsLabel, to: siteTo },
-        { label: 'Node view', to: nodeTo }
-      ];
-      finalLeafLabel = 'Node resources';
+    if (isFromInsights) {
+      if (s.key === 'node') {
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Location', to: locTo },
+          { label: clsLabel, to: siteTo }
+        ];
+        finalLeafLabel = 'Node view';
+      } else if (s.key === 'resource' && isFromNode) {
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Location', to: locTo },
+          { label: clsLabel, to: siteTo },
+          { label: 'Node view', to: nodeTo }
+        ];
+        finalLeafLabel = 'Node resources';
+      } else {
+        /* s.key === 'resource' && !isFromNode */
+        segs = [
+          { label: 'Insights', to: insightsTo },
+          { label: 'Location', to: locTo },
+          { label: clsLabel, to: siteTo }
+        ];
+        finalLeafLabel = safeNodeName;
+      }
     } else {
-      /* s.key === 'resource' && !isFromNode */
-      segs = [
-        { label: rootLabel, to: rootTo },
-        { label: clsLabel, to: siteTo }
-      ];
-      finalLeafLabel = safeNodeName;
+      if (s.key === 'node') {
+        segs = [
+          { label: 'Location', to: rootTo },
+          { label: clsLabel, to: siteTo }
+        ];
+        finalLeafLabel = 'Node view';
+      } else if (s.key === 'resource' && isFromNode) {
+        segs = [
+          { label: 'Location', to: rootTo },
+          { label: clsLabel, to: siteTo },
+          { label: 'Node view', to: nodeTo }
+        ];
+        finalLeafLabel = 'Node resources';
+      } else {
+        /* s.key === 'resource' && !isFromNode */
+        segs = [
+          { label: 'Location', to: rootTo },
+          { label: clsLabel, to: siteTo }
+        ];
+        finalLeafLabel = safeNodeName;
+      }
     }
   }
 
@@ -1209,49 +1236,29 @@ export function computeBreadcrumbs(
     segs.push({ label: finalLeafLabel, to: null });
   }
 
-  const rawSegs = [...segs];
-
-  const appDomain = 'Resource Manager';
-  const appDomainTo = s.module === 'Discovery and reconciliation'
-    ? '/discovery/insights'
-    : '/inventory/insights';
-
-  const primaryModule = s.module === 'Discovery and reconciliation'
-    ? 'Discovery & Reconciliation'
-    : 'Inventory';
-  const primaryModuleTo = s.module === 'Discovery and reconciliation'
-    ? '/discovery/insights'
-    : '/inventory/insights';
-
-  const isPhysicalFlow = isFromPhysical && (s.key === 'site' || isSiteSubRoute);
-  const isNodeViewFlow = s.key === 'node' || (s.key === 'resource' && isFromNode);
-  const isInsightsDrill = isDirectInsightsDrill
-    || (isFromInventoryInsights && isFromPhysical && (s.key === 'node' || s.key === 'resource' || s.key === 'site' || isSiteSubRoute || s.key === 'passive'))
-    || (isFromInventoryInsights && (s.key === 'node' || s.key === 'resource' || s.key === 'site'))
-    || isNodeViewFlow
-    || isPhysicalFlow;
-  const isInsightsFlow = isInsightsDrill;
-
-  const standardizedSegs: BreadcrumbItem[] = [];
-  if (!isInsightsFlow) {
-    standardizedSegs.push({ label: appDomain, to: appDomainTo });
-    standardizedSegs.push({ label: primaryModule, to: primaryModuleTo });
-  }
-
+  const cleanedSegs: BreadcrumbItem[] = [];
   for (const seg of segs) {
-    if (!isInsightsFlow) {
-      if (seg.label === appDomain || seg.label === primaryModule) continue;
-      if (hops.length <= 1 && (seg.label === 'Inventory insights' || seg.label === 'Insights')) continue;
+    if (
+      seg.label === 'Resource Manager' ||
+      seg.label === 'Inventory' ||
+      seg.label === 'Discovery & Reconciliation' ||
+      seg.label === 'View' ||
+      seg.label === 'Element'
+    ) {
+      continue;
     }
-    standardizedSegs.push(seg);
+    if (cleanedSegs.length > 0 && cleanedSegs[cleanedSegs.length - 1].label === seg.label) {
+      continue;
+    }
+    cleanedSegs.push(seg);
   }
 
-  const finalSegs = options?.legacy ? rawSegs : standardizedSegs;
+  const finalSegs = cleanedSegs;
 
   return {
     isLandingClean,
     segs: finalSegs,
-    rawSegs,
+    rawSegs: finalSegs,
     finalLeafLabel,
     reportDef,
     reportContent

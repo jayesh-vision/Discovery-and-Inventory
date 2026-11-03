@@ -253957,10 +253957,10 @@ function nodeHeaderSwitch(N) {
           const curOrigin = fromQuery || drillFrom || '';
           const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
           const hasInsights = curOrigin.toLowerCase().includes('insights');
-          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const insightsParam = hasInsights ? (isPhyOrigin ? '&from=Inventory%20insights' : '?from=Inventory%20insights') : '';
           const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
           const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=switch${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
-          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, from: fromParam, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=switch&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
         })()}
       </div>
     </div>
@@ -254426,10 +254426,10 @@ function nodeHeaderRouter(N) {
           const curOrigin = fromQuery || drillFrom || '';
           const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
           const hasInsights = curOrigin.toLowerCase().includes('insights');
-          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const insightsParam = hasInsights ? (isPhyOrigin ? '&from=Inventory%20insights' : '?from=Inventory%20insights') : '';
           const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
           const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=${encodeURIComponent(r.cls || 'router')}${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
-          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `Node resources · ${N.name}`, from: fromParam, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}${r.loc ? `&site=${encodeURIComponent(r.loc)}` : ''}&cls=${encodeURIComponent(r.cls || 'router')}&from=${encodeURIComponent(fromParam)}${solParam}` })}>Node resources</button>`;
         })()}
       </div>
     </div>
@@ -255228,10 +255228,10 @@ function nodeHeaderDwdm(N) {
           const curOrigin = fromQuery || drillFrom || '';
           const isPhyOrigin = curOrigin.toLowerCase().startsWith('resources') || curOrigin.toLowerCase().includes('physical');
           const hasInsights = curOrigin.toLowerCase().includes('insights');
-          const insightsParam = hasInsights ? '&from=Inventory%20insights' : '';
+          const insightsParam = hasInsights ? (isPhyOrigin ? '&from=Inventory%20insights' : '?from=Inventory%20insights') : '';
           const solParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('solution') === 'Datacenter') ? '&solution=Datacenter' : '';
           const fromParam = isPhyOrigin ? `Resources · Physical Resources · Node view?cls=dwdm${insightsParam}` : `Location · Site details · Node view${insightsParam}`;
-          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}&cls=dwdm&from=${encodeURIComponent(fromParam)}${solParam}` })}>View details</button>`;
+          return `<button class="nst-btn nst-btn--sm"${dA({ v: 'resource', l: `${nodeClassName('dwdm')} · ${N.name}`, from: fromParam, q: `name=${encodeURIComponent(N.name)}${r.ip ? `&ip=${encodeURIComponent(r.ip)}` : ''}&cls=dwdm&from=${encodeURIComponent(fromParam)}${solParam}` })}>View details</button>`;
         })()}
       </div>
     </div>
@@ -255807,9 +255807,9 @@ const VIEWS = {
   opexForm:  { mod:'Inventory', crumb:'Location · Site details · Opex edit',  render:viewOpex },
   virtual:   { mod:'Inventory', crumb:'Resources · Virtual Resources',  render:viewVirtual },
   vnflifecycle: { mod:'Inventory', crumb:'Resources · Virtual Resources · Lifecycle operation', render:viewVnfLifecycle },
-  vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View', render:viewVnfDetails },
-  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View · Cell 4G details', render:viewCell4gDetails },
-  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · View · Cell 5G details', render:viewCell5gDetails },
+  vnfdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Virtual element details', render:viewVnfDetails },
+  cell4gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 4G details', render:viewCell4gDetails },
+  cell5gdetails: { mod:'Inventory', crumb:'Resources · Virtual Resources · Cell 5G details', render:viewCell5gDetails },
   physical:  { mod:'Inventory', crumb:'Resources · Physical Resources', render:viewPhysical },
   inactive:  { mod:'Inventory', crumb:'Inactive inventory', render:viewInactive },
   resource:  { mod:'Inventory', crumb:'Resources · Physical Resources · Element', render:viewResource },
@@ -255950,9 +255950,16 @@ function drillTo(view, label, q, fromOverride) {
     ? `${crumbName}?id=${encodeURIComponent(SITE_ID)}&site=${encodeURIComponent(SITE_ID)}&tab=${encodeURIComponent(typeof SITE_TAB !== 'undefined' ? SITE_TAB : 'router')}${effectiveSiteFrom ? `&from=${encodeURIComponent(effectiveSiteFrom)}` : ''}`
     : null;
   const inheritedRoot = inheritedFrom ? inheritedFrom.split('?')[0] : null;
-  const isInheritedPhysical = inheritedFrom && (inheritedFrom.toLowerCase().startsWith('resources') || inheritedFrom.toLowerCase().includes('physical'));
+  const effectiveNodeFrom = isInsightsFrom(inheritedFrom)
+    ? inheritedFrom
+    : isInsightsFrom(urlFrom)
+    ? urlFrom
+    : inheritedFrom || urlFrom;
+  const isInheritedPhysical = effectiveNodeFrom && (effectiveNodeFrom.toLowerCase().startsWith('resources') || effectiveNodeFrom.toLowerCase().includes('physical'));
+  const hasNodeInsights = isInsightsFrom(effectiveNodeFrom);
+  const nodeInsightsParam = hasNodeInsights ? (isInheritedPhysical ? '&from=Inventory%20insights' : '?from=Inventory%20insights') : '';
   const nodeDrillFrom = (CURRENT === 'node' && typeof NODE_ID !== 'undefined' && NODE_ID)
-    ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}`
+    ? `${isInheritedPhysical ? 'Resources · Physical Resources · Node view' : crumbName}?name=${encodeURIComponent(NODE_ID)}${typeof NODE_SITE !== 'undefined' && NODE_SITE ? `&site=${encodeURIComponent(NODE_SITE)}` : ''}${typeof NODE_IP !== 'undefined' && NODE_IP ? `&ip=${encodeURIComponent(NODE_IP)}` : ''}${nodeInsightsParam}`
     : null;
   const phyDrillFrom = (CURRENT === 'physical' && typeof TAB !== 'undefined' && TAB.phy)
     ? `Resources · Physical Resources?cls=${encodeURIComponent(TAB.phy)}`
