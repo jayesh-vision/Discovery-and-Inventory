@@ -98,10 +98,9 @@ export default function PhysicalResources() {
   const modelClass = model && (['router', 'switch'] as const).find(k => PHY[k].some(r => r.model === model));
   const typeParam = (sp.get('type') || '').toLowerCase();
   const urlClass = sp.get('cls') || sp.get('tab') || mappedSubtype || (scoped && typeParam === 'active' ? 'all' : null);
-  const savedClass = (!scoped && typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ns_phy_tab') : null) as PhyTab | null;
   const rawCls: PhyTab = isClass(urlClass)
     ? urlClass
-    : (mappedSubtype || modelClass || (isClass(savedClass) ? savedClass : TAB_ORDER[0]));
+    : (mappedSubtype || modelClass || TAB_ORDER[0]);
   const cls: PhyTab = discoveryScoped && rawCls !== 'router' && rawCls !== 'switch' ? 'router' : rawCls;
 
   useEffect(() => {
@@ -112,14 +111,6 @@ export default function PhysicalResources() {
       sessionStorage.removeItem('ns_phy_tab');
     }
   }, [cls, scoped]);
-
-  useEffect(() => {
-    if (!scoped && !urlClass && !discoveryScoped && !modelClass && isClass(savedClass) && savedClass !== 'router') {
-      const next = new URLSearchParams(sp);
-      next.set('cls', savedClass);
-      setSp(next, { replace: true });
-    }
-  }, [scoped, urlClass, discoveryScoped, modelClass, savedClass, setSp, sp]);
 
   /* Every class is a tab. Server has no node-level digital twin, so its Node
      view stays in the row menu, disabled, rather than the whole class being
