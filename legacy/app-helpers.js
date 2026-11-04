@@ -102,12 +102,13 @@ const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = nul
   const gid = 'g' + (GRID_N++);
   const menu = acts ? (typeof acts === 'function' ? acts : i => acts[i]) : null;
   const rowD = rowDrill ? (typeof rowDrill === 'function' ? rowDrill : i => rowDrill[i]) : null;
-  const span = cols.length + (menu ? 1 : 0);
+  const hasMenu = Boolean(menu && rows.some((_, ri) => { const it = menu(ri); return it && it.length > 0; }));
+  const span = cols.length + (hasMenu ? 1 : 0);
   return `<div class="tbl-wrap"><table class="nst-table ${cls}">
-    <thead><tr>${cols.map(c=>`<th${c.r?' class="t-right"':''}>${c.t}</th>`).join('')}${menu?'<th class="kb-th"></th>':''}</tr></thead>
+    <thead><tr>${cols.map(c=>`<th${c.r?' class="t-right"':''}${c.w?` style="width:${c.w}"`:''}>${c.t}</th>`).join('')}${hasMenu?'<th class="kb-th"></th>':''}</tr></thead>
     <tbody>${rows.length
       ? rows.map((r,ri)=>{
-          const items = menu ? (menu(ri) || []) : [];
+          const items = hasMenu ? (menu(ri) || []) : [];
           /* an explicit rowDrill wins outright; otherwise the row opens
              whatever its own first kebab action would — its "view info"
              destination — only when that action truly goes somewhere; a
@@ -126,7 +127,7 @@ const table = (cols, rows, cls = '', acts = null, rowAttr = null, rowDrill = nul
           const combined = [attrStr, rowClick].filter(Boolean).join(' ');
           return `<tr${combined ? ' ' + combined : ''}>${r.map((c,i)=>{
             const kls = [cols[i].r ? 't-right num' : '', i === 0 && !cols[i].plain && STATUS_COL.test(cols[i].t) ? 'st-td' : ''].filter(Boolean).join(' ');
-            return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${menu?kebabCell(items,gid,ri):''}</tr>`;
+            return `<td${kls?` class="${kls}"`:''}>${c}</td>`; }).join('')}${hasMenu?kebabCell(items,gid,ri):''}</tr>`;
         }).join('')
       : `<tr><td colspan="${span}" class="tbl-empty">No records match the current filter.</td></tr>`}</tbody>
   </table></div>`;
